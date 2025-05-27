@@ -120,7 +120,6 @@ func handleNewAd(w http.ResponseWriter, r *http.Request) {
 	_ = Page(
 		"New Ad - Parts Pile",
 		[]g.Node{
-			Script(Src("https://unpkg.com/htmx.org@1.9.10")),
 			H1(Class("text-4xl font-bold mb-8"), g.Text("Create New Ad")),
 			Form(
 				ID("newAdForm"),
@@ -217,7 +216,8 @@ func handleYears(w http.ResponseWriter, r *http.Request) {
 					hx.Get("/api/models"),
 					hx.Target("#modelsDiv"),
 					hx.Include("[name='make'],[name='years']:checked"),
-					hx.Swap("outerHTML"),
+					hx.Swap("innerHTML"),
+					g.Attr("onclick", "document.getElementById('enginesDiv').innerHTML = ''"),
 				),
 				Label(For("year-"+year), g.Text(year)),
 			),
@@ -377,7 +377,6 @@ func handleModels(w http.ResponseWriter, r *http.Request) {
 			hx.Target("#enginesDiv"),
 			hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
 			hx.Swap("innerHTML"),
-			hx.Indicator("#engines-loading"),
 		}
 		if !isAvailable {
 			inputAttrs = append(inputAttrs, Disabled())
@@ -413,12 +412,6 @@ func handleModels(w http.ResponseWriter, r *http.Request) {
 		Div(
 			Class("grid grid-cols-2 gap-4"),
 			g.Group(checkboxes),
-		),
-		// Add a loading indicator for engines
-		Div(
-			ID("engines-loading"),
-			Class("htmx-indicator"),
-			g.Text("Loading engines..."),
 		),
 	).Render(w)
 }
@@ -650,17 +643,7 @@ func Page(title string, content []g.Node) g.Node {
 			Meta(Name("viewport"), Content("width=device-width, initial-scale=1")),
 			Title(title),
 			Link(Rel("stylesheet"), Href("https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css")),
-			g.Raw(`<style>
-				.htmx-indicator {
-					display: none;
-				}
-				.htmx-request .htmx-indicator {
-					display: block;
-				}
-				.htmx-request.htmx-indicator {
-					display: block;
-				}
-			</style>`),
+			Script(Src("https://unpkg.com/htmx.org@1.9.10")),
 		),
 		Body(
 			Div(
