@@ -1,4 +1,4 @@
-module github.com/sfeldma/parts-pile
+module github.com/sfeldma/parts-pile/site
 
 go 1.23.0
 
