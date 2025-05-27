@@ -37,6 +37,7 @@ func Start() error {
 	mux.HandleFunc("/api/new-ad", handlers.HandleNewAdSubmission)
 	mux.HandleFunc("/api/update-ad", handlers.HandleUpdateAdSubmission)
 	mux.HandleFunc("/ad/", handlers.HandleViewAd)
+	mux.HandleFunc("/delete-ad/", handlers.HandleDeleteAd)
 
 	fmt.Printf("Starting server on port %s...\n", port)
 	return http.ListenAndServe(":"+port, mux)

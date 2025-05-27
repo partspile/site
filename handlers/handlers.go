@@ -461,6 +461,17 @@ func HandleViewAd(w http.ResponseWriter, r *http.Request) {
 						Class("bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"),
 						g.Text("Edit Ad"),
 					),
+					Button(
+						Class("bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"),
+						hx.Delete(fmt.Sprintf("/delete-ad/%d", ad.ID)),
+						hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
+						hx.Target("#result"),
+						g.Text("Delete Ad"),
+					),
+				),
+				Div(
+					ID("result"),
+					Class("mt-4"),
 				),
 			),
 		},
@@ -797,5 +808,25 @@ func HandleUpdateAdSubmission(w http.ResponseWriter, r *http.Request) {
 	_ = templates.SuccessMessage(
 		"Ad updated successfully! Redirecting...",
 		fmt.Sprintf("setTimeout(function() { window.location = '/ad/%d' }, 1000)", adID),
+	).Render(w)
+}
+
+func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
+	var adID int
+	fmt.Sscanf(r.URL.Path[11:], "%d", &adID)
+
+	vehicle.AdsMutex.Lock()
+	for i, ad := range vehicle.Ads {
+		if ad.ID == adID {
+			// Remove the ad from the slice
+			vehicle.Ads = append(vehicle.Ads[:i], vehicle.Ads[i+1:]...)
+			break
+		}
+	}
+	vehicle.AdsMutex.Unlock()
+
+	_ = templates.SuccessMessage(
+		"Ad deleted successfully! Redirecting...",
+		"setTimeout(function() { window.location = '/' }, 1000)",
 	).Render(w)
 }
