@@ -124,9 +124,43 @@ func handleNewAd(w http.ResponseWriter, r *http.Request) {
 		"New Ad - Parts Pile",
 		[]g.Node{
 			H1(Class("text-4xl font-bold mb-8"), g.Text("Create New Ad")),
+			Script(g.Raw(`
+				function validateForm() {
+					const make = document.getElementById('make').value;
+					const years = document.querySelectorAll('input[name="years"]:checked');
+					const models = document.querySelectorAll('input[name="models"]:checked');
+					const engines = document.querySelectorAll('input[name="engines"]:checked');
+					
+					let errorMessage = '';
+					if (!make) {
+						errorMessage = 'Please select a make first';
+					} else if (years.length === 0) {
+						errorMessage = 'Please select at least one year';
+					} else if (models.length === 0) {
+						errorMessage = 'Please select at least one model';
+					} else if (engines.length === 0) {
+						errorMessage = 'Please select at least one engine size';
+					}
+
+					if (errorMessage) {
+						const errorDiv = document.getElementById('validationError');
+						errorDiv.textContent = errorMessage;
+						errorDiv.style.display = 'block';
+						return false;
+					}
+					
+					const errorDiv = document.getElementById('validationError');
+					errorDiv.style.display = 'none';
+					return true;
+				}
+			`)),
 			Form(
 				ID("newAdForm"),
 				Class("space-y-6"),
+				Div(
+					ID("validationError"),
+					Class("hidden bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded mb-4"),
+				),
 				Div(
 					Class("space-y-2"),
 					Label(For("make"), Class("block"), g.Text("Make")),
@@ -180,6 +214,7 @@ func handleNewAd(w http.ResponseWriter, r *http.Request) {
 					Class("bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"),
 					hx.Post("/api/new-ad"),
 					hx.Target("#result"),
+					g.Attr("onclick", "return validateForm()"),
 					g.Text("Submit"),
 				),
 				Div(
@@ -504,6 +539,40 @@ func handleNewAdSubmission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate make selection first
+	if r.FormValue("make") == "" {
+		_ = Div(
+			Class("bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded"),
+			g.Text("Please select a make first"),
+		).Render(w)
+		return
+	}
+
+	// Validate required selections
+	if len(r.Form["years"]) == 0 {
+		_ = Div(
+			Class("bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded"),
+			g.Text("Please select at least one year"),
+		).Render(w)
+		return
+	}
+
+	if len(r.Form["models"]) == 0 {
+		_ = Div(
+			Class("bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded"),
+			g.Text("Please select at least one model"),
+		).Render(w)
+		return
+	}
+
+	if len(r.Form["engines"]) == 0 {
+		_ = Div(
+			Class("bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded"),
+			g.Text("Please select at least one engine size"),
+		).Render(w)
+		return
+	}
+
 	price := 0.0
 	fmt.Sscanf(r.FormValue("price"), "%f", &price)
 
@@ -754,9 +823,43 @@ func handleEditAd(w http.ResponseWriter, r *http.Request) {
 		"Edit Ad - Parts Pile",
 		[]g.Node{
 			H1(Class("text-4xl font-bold mb-8"), g.Text("Edit Ad")),
+			Script(g.Raw(`
+				function validateEditForm() {
+					const make = document.getElementById('make').value;
+					const years = document.querySelectorAll('input[name="years"]:checked');
+					const models = document.querySelectorAll('input[name="models"]:checked');
+					const engines = document.querySelectorAll('input[name="engines"]:checked');
+					
+					let errorMessage = '';
+					if (!make) {
+						errorMessage = 'Please select a make first';
+					} else if (years.length === 0) {
+						errorMessage = 'Please select at least one year';
+					} else if (models.length === 0) {
+						errorMessage = 'Please select at least one model';
+					} else if (engines.length === 0) {
+						errorMessage = 'Please select at least one engine size';
+					}
+
+					if (errorMessage) {
+						const errorDiv = document.getElementById('validationError');
+						errorDiv.textContent = errorMessage;
+						errorDiv.style.display = 'block';
+						return false;
+					}
+					
+					const errorDiv = document.getElementById('validationError');
+					errorDiv.style.display = 'none';
+					return true;
+				}
+			`)),
 			Form(
 				ID("editAdForm"),
 				Class("space-y-6"),
+				Div(
+					ID("validationError"),
+					Class("hidden bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded mb-4"),
+				),
 				Div(
 					Class("space-y-2"),
 					Label(For("make"), Class("block"), g.Text("Make")),
@@ -839,6 +942,7 @@ func handleEditAd(w http.ResponseWriter, r *http.Request) {
 					Class("bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"),
 					hx.Post("/api/update-ad"),
 					hx.Target("#result"),
+					g.Attr("onclick", "return validateEditForm()"),
 					g.Text("Update"),
 				),
 				Div(
@@ -853,6 +957,40 @@ func handleEditAd(w http.ResponseWriter, r *http.Request) {
 func handleUpdateAdSubmission(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
+		return
+	}
+
+	// Validate make selection first
+	if r.FormValue("make") == "" {
+		_ = Div(
+			Class("bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded"),
+			g.Text("Please select a make first"),
+		).Render(w)
+		return
+	}
+
+	// Validate required selections
+	if len(r.Form["years"]) == 0 {
+		_ = Div(
+			Class("bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded"),
+			g.Text("Please select at least one year"),
+		).Render(w)
+		return
+	}
+
+	if len(r.Form["models"]) == 0 {
+		_ = Div(
+			Class("bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded"),
+			g.Text("Please select at least one model"),
+		).Render(w)
+		return
+	}
+
+	if len(r.Form["engines"]) == 0 {
+		_ = Div(
+			Class("bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded"),
+			g.Text("Please select at least one engine size"),
+		).Render(w)
 		return
 	}
 
