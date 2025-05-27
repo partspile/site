@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"sync"
 
 	g "maragu.dev/gomponents"
+	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 )
 
@@ -35,7 +35,7 @@ var (
 
 func main() {
 	// Load vehicle data
-	data, err := ioutil.ReadFile("make-year-model.json")
+	data, err := os.ReadFile("make-year-model.json")
 	if err != nil {
 		log.Fatal("Error reading vehicle data:", err)
 	}
@@ -73,14 +73,16 @@ func handleHome(w http.ResponseWriter, r *http.Request) {
 	adsMutex.Lock()
 	for _, ad := range ads {
 		adsList = append(adsList,
-			Div(
-				Class("border p-4 mb-4 rounded hover:bg-gray-50 cursor-pointer"),
-				g.Attr("data-ad-id", fmt.Sprintf("%d", ad.ID)),
-				H3(Class("text-xl font-bold"), g.Text(ad.Make)),
-				P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", ad.Years))),
-				P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", ad.Models))),
-				P(Class("mt-2"), g.Text(ad.Description)),
-				P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
+			A(
+				Href(fmt.Sprintf("/ad/%d", ad.ID)),
+				Class("block border p-4 mb-4 rounded hover:bg-gray-50"),
+				Div(
+					H3(Class("text-xl font-bold"), g.Text(ad.Make)),
+					P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", ad.Years))),
+					P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", ad.Models))),
+					P(Class("mt-2"), g.Text(ad.Description)),
+					P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
+				),
 			),
 		)
 	}
@@ -130,10 +132,10 @@ func handleNewAd(w http.ResponseWriter, r *http.Request) {
 						ID("make"),
 						Name("make"),
 						Class("w-full p-2 border rounded"),
-						g.Attr("hx-trigger", "change"),
-						g.Attr("hx-get", "/api/years"),
-						g.Attr("hx-target", "#yearsDiv"),
-						g.Attr("hx-include", "this"),
+						hx.Trigger("change"),
+						hx.Get("/api/years"),
+						hx.Target("#yearsDiv"),
+						hx.Include("this"),
 						Option(Value(""), g.Text("Select a make")),
 						g.Group(makeOptions),
 					),
@@ -174,8 +176,8 @@ func handleNewAd(w http.ResponseWriter, r *http.Request) {
 				Button(
 					Type("submit"),
 					Class("bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"),
-					g.Attr("hx-post", "/api/new-ad"),
-					g.Attr("hx-target", "#result"),
+					hx.Post("/api/new-ad"),
+					hx.Target("#result"),
 					g.Text("Submit"),
 				),
 				Div(
@@ -211,11 +213,11 @@ func handleYears(w http.ResponseWriter, r *http.Request) {
 					Name("years"),
 					Value(year),
 					ID("year-"+year),
-					g.Attr("hx-trigger", "change"),
-					g.Attr("hx-get", "/api/models"),
-					g.Attr("hx-target", "#modelsDiv"),
-					g.Attr("hx-include", "[name='make'],[name='years']:checked"),
-					g.Attr("hx-swap", "outerHTML"),
+					hx.Trigger("change"),
+					hx.Get("/api/models"),
+					hx.Target("#modelsDiv"),
+					hx.Include("[name='make'],[name='years']:checked"),
+					hx.Swap("outerHTML"),
 				),
 				Label(For("year-"+year), g.Text(year)),
 			),
@@ -370,11 +372,12 @@ func handleModels(w http.ResponseWriter, r *http.Request) {
 			Name("models"),
 			Value(model),
 			ID("model-" + model),
-			g.Attr("hx-trigger", "change"),
-			g.Attr("hx-get", "/api/engines"),
-			g.Attr("hx-target", "#enginesDiv"),
-			g.Attr("hx-include", "[name='make'],[name='years']:checked,[name='models']:checked"),
-			g.Attr("hx-swap", "outerHTML"),
+			hx.Trigger("change"),
+			hx.Get("/api/engines"),
+			hx.Target("#enginesDiv"),
+			hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
+			hx.Swap("innerHTML"),
+			hx.Indicator("#engines-loading"),
 		}
 		if !isAvailable {
 			inputAttrs = append(inputAttrs, Disabled())
@@ -410,6 +413,12 @@ func handleModels(w http.ResponseWriter, r *http.Request) {
 		Div(
 			Class("grid grid-cols-2 gap-4"),
 			g.Group(checkboxes),
+		),
+		// Add a loading indicator for engines
+		Div(
+			ID("engines-loading"),
+			Class("htmx-indicator"),
+			g.Text("Loading engines..."),
 		),
 	).Render(w)
 }
@@ -641,15 +650,17 @@ func Page(title string, content []g.Node) g.Node {
 			Meta(Name("viewport"), Content("width=device-width, initial-scale=1")),
 			Title(title),
 			Link(Rel("stylesheet"), Href("https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css")),
-			Script(g.Raw(`
-				document.addEventListener('DOMContentLoaded', function() {
-					document.querySelectorAll('[data-ad-id]').forEach(function(el) {
-						el.addEventListener('click', function() {
-							window.location = '/ad/' + this.getAttribute('data-ad-id');
-						});
-					});
-				});
-			`)),
+			g.Raw(`<style>
+				.htmx-indicator {
+					display: none;
+				}
+				.htmx-request .htmx-indicator {
+					display: block;
+				}
+				.htmx-request.htmx-indicator {
+					display: block;
+				}
+			</style>`),
 		),
 		Body(
 			Div(
