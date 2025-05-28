@@ -3,7 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"sort"
 
 	g "maragu.dev/gomponents"
@@ -15,6 +17,27 @@ import (
 	"github.com/sfeldma/parts-pile/site/vehicle"
 )
 
+// saveAdsToFile saves the current ads to ads.json
+func saveAdsToFile() {
+	vehicle.AdsMutex.Lock()
+	defer vehicle.AdsMutex.Unlock()
+	f, err := os.Create("ads.json")
+	if err != nil {
+		log.Printf("Error creating ads.json: %v", err)
+		return
+	}
+	defer f.Close()
+
+	adsJSON, err := json.MarshalIndent(vehicle.Ads, "", "\t")
+	if err != nil {
+		log.Printf("Error encoding ads to ads.json: %v", err)
+		return
+	}
+	if _, err := f.Write(adsJSON); err != nil {
+		log.Printf("Error writing ads to ads.json: %v", err)
+	}
+}
+
 func HandleHome(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
@@ -23,7 +46,14 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 
 	adsList := []g.Node{}
 	vehicle.AdsMutex.Lock()
-	for _, ad := range vehicle.Ads {
+	// Collect and sort ad IDs
+	adIDs := make([]int, 0, len(vehicle.Ads))
+	for id := range vehicle.Ads {
+		adIDs = append(adIDs, id)
+	}
+	sort.Ints(adIDs)
+	for _, id := range adIDs {
+		ad := vehicle.Ads[id]
 		adsList = append(adsList,
 			A(
 				Href(fmt.Sprintf("/ad/%d", ad.ID)),
@@ -307,9 +337,11 @@ func HandleNewAdSubmission(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vehicle.AdsMutex.Lock()
-	vehicle.Ads = append(vehicle.Ads, ad)
+	vehicle.Ads[ad.ID] = ad
 	vehicle.NextAdID++
 	vehicle.AdsMutex.Unlock()
+
+	saveAdsToFile()
 
 	_ = templates.SuccessMessageWithRedirect("Ad created successfully!", "/").Render(w)
 }
@@ -319,16 +351,10 @@ func HandleViewAd(w http.ResponseWriter, r *http.Request) {
 	fmt.Sscanf(r.PathValue("id"), "%d", &adID)
 
 	vehicle.AdsMutex.Lock()
-	var ad models.Ad
-	for _, a := range vehicle.Ads {
-		if a.ID == adID {
-			ad = a
-			break
-		}
-	}
+	ad, ok := vehicle.Ads[adID]
 	vehicle.AdsMutex.Unlock()
 
-	if ad.ID == 0 {
+	if !ok || ad.ID == 0 {
 		http.NotFound(w, r)
 		return
 	}
@@ -359,16 +385,10 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 	fmt.Sscanf(r.PathValue("id"), "%d", &adID)
 
 	vehicle.AdsMutex.Lock()
-	var ad models.Ad
-	for _, a := range vehicle.Ads {
-		if a.ID == adID {
-			ad = a
-			break
-		}
-	}
+	ad, ok := vehicle.Ads[adID]
 	vehicle.AdsMutex.Unlock()
 
-	if ad.ID == 0 {
+	if !ok || ad.ID == 0 {
 		http.NotFound(w, r)
 		return
 	}
@@ -579,13 +599,10 @@ func HandleUpdateAdSubmission(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vehicle.AdsMutex.Lock()
-	for i, ad := range vehicle.Ads {
-		if ad.ID == adID {
-			vehicle.Ads[i] = updatedAd
-			break
-		}
-	}
+	vehicle.Ads[adID] = updatedAd
 	vehicle.AdsMutex.Unlock()
+
+	saveAdsToFile()
 
 	_ = templates.SuccessMessageWithRedirect("Ad updated successfully!", fmt.Sprintf("/ad/%d", adID)).Render(w)
 }
@@ -595,14 +612,10 @@ func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
 	fmt.Sscanf(r.PathValue("id"), "%d", &adID)
 
 	vehicle.AdsMutex.Lock()
-	for i, ad := range vehicle.Ads {
-		if ad.ID == adID {
-			// Remove the ad from the slice
-			vehicle.Ads = append(vehicle.Ads[:i], vehicle.Ads[i+1:]...)
-			break
-		}
-	}
+	delete(vehicle.Ads, adID)
 	vehicle.AdsMutex.Unlock()
+
+	saveAdsToFile()
 
 	_ = templates.SuccessMessageWithRedirect("Ad deleted successfully!", "/").Render(w)
 }

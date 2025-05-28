@@ -21,6 +21,27 @@ func Start() error {
 		return fmt.Errorf("error parsing vehicle data: %v", err)
 	}
 
+	// Load ads data
+	adsData, err := os.ReadFile("ads.json")
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("error reading ads data: %v", err)
+		}
+		// If file doesn't exist, continue without loading
+	} else {
+		if err := json.Unmarshal(adsData, &vehicle.Ads); err != nil {
+			fmt.Printf("error parsing ads data: %v\n", err)
+		} else {
+			maxID := 0
+			for id := range vehicle.Ads {
+				if id > maxID {
+					maxID = id
+				}
+			}
+			vehicle.NextAdID = maxID + 1
+		}
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -36,7 +57,7 @@ func Start() error {
 
 	// API endpoints
 	mux.HandleFunc("GET /api/makes", handlers.HandleMakes)
-	mux.HandleFunc("GET /api/years/{make}", handlers.HandleYears)
+	mux.HandleFunc("GET /api/years", handlers.HandleYears)
 	mux.HandleFunc("GET /api/models", handlers.HandleModels)
 	mux.HandleFunc("GET /api/engines", handlers.HandleEngines)
 	mux.HandleFunc("POST /api/new-ad", handlers.HandleNewAdSubmission)

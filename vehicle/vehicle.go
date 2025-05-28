@@ -9,7 +9,7 @@ import (
 
 var (
 	Data     models.VehicleData
-	Ads      []models.Ad
+	Ads      map[int]models.Ad
 	AdsMutex sync.Mutex
 	NextAdID = 1
 )
