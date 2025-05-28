@@ -4,12 +4,14 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/sfeldma/parts-pile/site/models"
+	"github.com/sfeldma/parts-pile/site/ad"
 )
 
+type VehicleData map[string]map[string]map[string][]string
+
 var (
-	Data     models.VehicleData
-	Ads      map[int]models.Ad
+	Data     VehicleData
+	Ads      map[int]ad.Ad
 	AdsMutex sync.Mutex
 	NextAdID = 1
 )

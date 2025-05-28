@@ -7,7 +7,7 @@ import (
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
-	"github.com/sfeldma/parts-pile/site/models"
+	"github.com/sfeldma/parts-pile/site/ad"
 )
 
 // ---- Page Layout ----
@@ -241,7 +241,7 @@ func ResultContainer() g.Node {
 // ---- Ad Components ----
 
 // AdDetails creates a standardized ad details display
-func AdDetails(ad models.Ad) g.Node {
+func AdDetails(ad ad.Ad) g.Node {
 	return GridContainer(1,
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", ad.Years))),
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", ad.Models))),

@@ -12,7 +12,7 @@ import (
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
-	"github.com/sfeldma/parts-pile/site/models"
+	"github.com/sfeldma/parts-pile/site/ad"
 	"github.com/sfeldma/parts-pile/site/templates"
 	"github.com/sfeldma/parts-pile/site/vehicle"
 )
@@ -326,7 +326,7 @@ func HandleNewAdSubmission(w http.ResponseWriter, r *http.Request) {
 	price := 0.0
 	fmt.Sscanf(r.FormValue("price"), "%f", &price)
 
-	ad := models.Ad{
+	ad := ad.Ad{
 		ID:          vehicle.NextAdID,
 		Make:        r.FormValue("make"),
 		Years:       r.Form["years"],
@@ -588,7 +588,7 @@ func HandleUpdateAdSubmission(w http.ResponseWriter, r *http.Request) {
 	price := 0.0
 	fmt.Sscanf(r.FormValue("price"), "%f", &price)
 
-	updatedAd := models.Ad{
+	updatedAd := ad.Ad{
 		ID:          adID,
 		Make:        r.FormValue("make"),
 		Years:       r.Form["years"],

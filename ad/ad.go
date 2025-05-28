@@ -1,6 +1,4 @@
-package models
-
-type VehicleData map[string]map[string]map[string][]string
+package ad
 
 type Ad struct {
 	ID          int      `json:"id"`
