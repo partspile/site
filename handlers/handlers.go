@@ -43,14 +43,10 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 	_ = templates.Page(
 		"Parts Pile - Auto Parts and Sales",
 		[]g.Node{
-			H1(Class("text-4xl font-bold mb-8"), g.Text("Parts Pile")),
+			templates.PageHeader("Parts Pile"),
 			Div(
 				Class("mb-8"),
-				A(
-					Href("/new-ad"),
-					Class("bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"),
-					g.Text("New Ad"),
-				),
+				templates.StyledLink("New Ad", "/new-ad", templates.ButtonPrimary),
 			),
 			Div(
 				Class("space-y-4"),
@@ -72,17 +68,12 @@ func HandleNewAd(w http.ResponseWriter, r *http.Request) {
 	_ = templates.Page(
 		"New Ad - Parts Pile",
 		[]g.Node{
-			H1(Class("text-4xl font-bold mb-8"), g.Text("Create New Ad")),
+			templates.PageHeader("Create New Ad"),
 			Form(
 				ID("newAdForm"),
 				Class("space-y-6"),
-				Div(
-					ID("validationError"),
-					Class("hidden bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded mb-4"),
-				),
-				Div(
-					Class("space-y-2"),
-					Label(For("make"), Class("block"), g.Text("Make")),
+				templates.ValidationErrorContainer(),
+				templates.FormGroup("Make", "make",
 					Select(
 						ID("make"),
 						Name("make"),
@@ -107,9 +98,7 @@ func HandleNewAd(w http.ResponseWriter, r *http.Request) {
 					ID("enginesDiv"),
 					Class("space-y-2"),
 				),
-				Div(
-					Class("space-y-2"),
-					Label(For("description"), Class("block"), g.Text("Description")),
+				templates.FormGroup("Description", "description",
 					Textarea(
 						ID("description"),
 						Name("description"),
@@ -117,9 +106,7 @@ func HandleNewAd(w http.ResponseWriter, r *http.Request) {
 						Rows("4"),
 					),
 				),
-				Div(
-					Class("space-y-2"),
-					Label(For("price"), Class("block"), g.Text("Price")),
+				templates.FormGroup("Price", "price",
 					Input(
 						Type("number"),
 						ID("price"),
@@ -128,12 +115,10 @@ func HandleNewAd(w http.ResponseWriter, r *http.Request) {
 						Step("0.01"),
 					),
 				),
-				Button(
+				templates.StyledButton("Submit", templates.ButtonPrimary,
 					Type("submit"),
-					Class("bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"),
 					hx.Post("/api/new-ad"),
 					hx.Target("#result"),
-					g.Text("Submit"),
 				),
 				Div(
 					ID("result"),
@@ -161,21 +146,13 @@ func HandleYears(w http.ResponseWriter, r *http.Request) {
 
 	for _, year := range years {
 		checkboxes = append(checkboxes,
-			Div(
-				Class("flex items-center space-x-2"),
-				Input(
-					Type("checkbox"),
-					Name("years"),
-					Value(year),
-					ID("year-"+year),
-					hx.Trigger("change"),
-					hx.Get("/api/models"),
-					hx.Target("#modelsDiv"),
-					hx.Include("[name='make'],[name='years']:checked"),
-					hx.Swap("innerHTML"),
-					g.Attr("onclick", "document.getElementById('enginesDiv').innerHTML = ''"),
-				),
-				Label(For("year-"+year), g.Text(year)),
+			templates.Checkbox("years", year, year, false, false,
+				hx.Trigger("change"),
+				hx.Get("/api/models"),
+				hx.Target("#modelsDiv"),
+				hx.Include("[name='make'],[name='years']:checked"),
+				hx.Swap("innerHTML"),
+				g.Attr("onclick", "document.getElementById('enginesDiv').innerHTML = ''"),
 			),
 		)
 	}
@@ -183,11 +160,8 @@ func HandleYears(w http.ResponseWriter, r *http.Request) {
 	_ = Div(
 		ID("yearsDiv"),
 		Class("space-y-4"),
-		Label(Class("block font-bold"), g.Text("Years")),
-		Div(
-			Class("grid grid-cols-4 gap-4"),
-			g.Group(checkboxes),
-		),
+		templates.SectionHeader("Years", ""),
+		templates.GridContainer(4, checkboxes...),
 	).Render(w)
 }
 
@@ -204,22 +178,14 @@ func HandleModels(w http.ResponseWriter, r *http.Request) {
 		_ = Div(
 			ID("modelsDiv"),
 			Class("space-y-4"),
-			Label(Class("block font-bold"), g.Text("Models")),
-			P(
-				Class("text-sm text-gray-600 mb-2"),
-				g.Text("Select one or more years to see available models"),
-			),
+			templates.SectionHeader("Models", "Select one or more years to see available models"),
 		).Render(w)
 
 		// Also clear the engines div
 		_ = Div(
 			ID("enginesDiv"),
 			Class("space-y-4"),
-			Label(Class("block font-bold"), g.Text("Engines")),
-			P(
-				Class("text-sm text-gray-600 mb-2"),
-				g.Text("Select one or more models to see available engines"),
-			),
+			templates.SectionHeader("Engines", "Select one or more models to see available engines"),
 		).Render(w)
 		return
 	}
@@ -236,36 +202,13 @@ func HandleModels(w http.ResponseWriter, r *http.Request) {
 
 	for _, model := range models {
 		isAvailable := modelAvailability[model]
-		inputAttrs := []g.Node{
-			Type("checkbox"),
-			Name("models"),
-			Value(model),
-			ID("model-" + model),
-			hx.Trigger("change"),
-			hx.Get("/api/engines"),
-			hx.Target("#enginesDiv"),
-			hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
-			hx.Swap("innerHTML"),
-		}
-		if !isAvailable {
-			inputAttrs = append(inputAttrs, Disabled())
-			inputAttrs = append(inputAttrs, g.Attr("class", "opacity-50 cursor-not-allowed"))
-		}
-
 		checkboxes = append(checkboxes,
-			Div(
-				Class("flex items-center space-x-2"),
-				Input(inputAttrs...),
-				Label(
-					For("model-"+model),
-					func() g.Node {
-						if !isAvailable {
-							return Class("text-gray-400")
-						}
-						return g.Text("")
-					}(),
-					g.Text(model),
-				),
+			templates.Checkbox("models", model, model, false, !isAvailable,
+				hx.Trigger("change"),
+				hx.Get("/api/engines"),
+				hx.Target("#enginesDiv"),
+				hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
+				hx.Swap("innerHTML"),
 			),
 		)
 	}
@@ -273,15 +216,8 @@ func HandleModels(w http.ResponseWriter, r *http.Request) {
 	_ = Div(
 		ID("modelsDiv"),
 		Class("space-y-4"),
-		Label(Class("block font-bold"), g.Text("Models")),
-		P(
-			Class("text-sm text-gray-600 mb-2"),
-			g.Text("Grayed out models are not available for all selected years"),
-		),
-		Div(
-			Class("grid grid-cols-2 gap-4"),
-			g.Group(checkboxes),
-		),
+		templates.SectionHeader("Models", "Grayed out models are not available for all selected years"),
+		templates.GridContainer(2, checkboxes...),
 	).Render(w)
 }
 
@@ -299,11 +235,7 @@ func HandleEngines(w http.ResponseWriter, r *http.Request) {
 		_ = Div(
 			ID("enginesDiv"),
 			Class("space-y-4"),
-			Label(Class("block font-bold"), g.Text("Engines")),
-			P(
-				Class("text-sm text-gray-600 mb-2"),
-				g.Text("Select one or more models to see available engines"),
-			),
+			templates.SectionHeader("Engines", "Select one or more models to see available engines"),
 		).Render(w)
 		return
 	}
@@ -320,47 +252,16 @@ func HandleEngines(w http.ResponseWriter, r *http.Request) {
 
 	for _, engine := range engines {
 		isAvailable := engineAvailability[engine]
-		inputAttrs := []g.Node{
-			Type("checkbox"),
-			Name("engines"),
-			Value(engine),
-			ID("engine-" + engine),
-		}
-		if !isAvailable {
-			inputAttrs = append(inputAttrs, Disabled())
-			inputAttrs = append(inputAttrs, g.Attr("class", "opacity-50 cursor-not-allowed"))
-		}
-
 		checkboxes = append(checkboxes,
-			Div(
-				Class("flex items-center space-x-2"),
-				Input(inputAttrs...),
-				Label(
-					For("engine-"+engine),
-					func() g.Node {
-						if !isAvailable {
-							return Class("text-gray-400")
-						}
-						return g.Text("")
-					}(),
-					g.Text(engine),
-				),
-			),
+			templates.Checkbox("engines", engine, engine, false, !isAvailable),
 		)
 	}
 
 	_ = Div(
 		ID("enginesDiv"),
 		Class("space-y-4"),
-		Label(Class("block font-bold"), g.Text("Engines")),
-		P(
-			Class("text-sm text-gray-600 mb-2"),
-			g.Text("Grayed out engines are not available for all selected year-model combinations"),
-		),
-		Div(
-			Class("grid grid-cols-2 gap-4"),
-			g.Group(checkboxes),
-		),
+		templates.SectionHeader("Engines", "Grayed out engines are not available for all selected year-model combinations"),
+		templates.GridContainer(2, checkboxes...),
 	).Render(w)
 }
 
@@ -410,15 +311,12 @@ func HandleNewAdSubmission(w http.ResponseWriter, r *http.Request) {
 	vehicle.NextAdID++
 	vehicle.AdsMutex.Unlock()
 
-	_ = templates.SuccessMessage(
-		"Ad created successfully! Redirecting...",
-		"setTimeout(function() { window.location = '/' }, 1000)",
-	).Render(w)
+	_ = templates.SuccessMessageWithRedirect("Ad created successfully!", "/").Render(w)
 }
 
 func HandleViewAd(w http.ResponseWriter, r *http.Request) {
 	var adID int
-	fmt.Sscanf(r.URL.Path[4:], "%d", &adID)
+	fmt.Sscanf(r.PathValue("id"), "%d", &adID)
 
 	vehicle.AdsMutex.Lock()
 	var ad models.Ad
@@ -440,34 +338,12 @@ func HandleViewAd(w http.ResponseWriter, r *http.Request) {
 		[]g.Node{
 			Div(
 				Class("max-w-2xl mx-auto"),
-				H1(Class("text-4xl font-bold mb-8"), g.Text(ad.Make)),
-				Div(
-					Class("space-y-4"),
-					P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", ad.Years))),
-					P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", ad.Models))),
-					P(Class("text-gray-600"), g.Text(fmt.Sprintf("Engines: %v", ad.Engines))),
-					P(Class("mt-4"), g.Text(ad.Description)),
-					P(Class("text-2xl font-bold mt-4"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
-				),
-				Div(
-					Class("mt-8 space-x-4"),
-					A(
-						Href("/"),
-						Class("text-blue-500 hover:underline"),
-						g.Text("← Back to listings"),
-					),
-					A(
-						Href(fmt.Sprintf("/edit-ad/%d", ad.ID)),
-						Class("bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"),
-						g.Text("Edit Ad"),
-					),
-					Button(
-						Class("bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"),
-						hx.Delete(fmt.Sprintf("/delete-ad/%d", ad.ID)),
-						hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
-						hx.Target("#result"),
-						g.Text("Delete Ad"),
-					),
+				templates.PageHeader(ad.Make),
+				templates.AdDetails(ad),
+				templates.ActionButtons(
+					templates.BackToListingsButton(),
+					templates.StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", ad.ID), templates.ButtonPrimary),
+					templates.DeleteButton(ad.ID),
 				),
 				Div(
 					ID("result"),
@@ -480,7 +356,7 @@ func HandleViewAd(w http.ResponseWriter, r *http.Request) {
 
 func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 	var adID int
-	fmt.Sscanf(r.URL.Path[9:], "%d", &adID)
+	fmt.Sscanf(r.PathValue("id"), "%d", &adID)
 
 	vehicle.AdsMutex.Lock()
 	var ad models.Ad
@@ -520,25 +396,12 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
-		attrs := []g.Node{
-			Type("checkbox"),
-			Name("years"),
-			Value(year),
-			ID("year-" + year),
-			hx.Trigger("change"),
-			hx.Get("/api/models"),
-			hx.Target("#modelsDiv"),
-			hx.Include("[name='make'],[name='years']:checked"),
-			hx.Swap("innerHTML"),
-		}
-		if isChecked {
-			attrs = append(attrs, Checked())
-		}
 		yearCheckboxes = append(yearCheckboxes,
-			Div(
-				Class("flex items-center space-x-2"),
-				Input(attrs...),
-				Label(For("year-"+year), g.Text(year)),
+			templates.Checkbox("years", year, year, isChecked, false,
+				hx.Trigger("change"),
+				hx.Get("/api/models"),
+				hx.Target("#modelsDiv"),
+				hx.Include("[name='make'],[name='years']:checked"),
 			),
 		)
 	}
@@ -561,39 +424,13 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
-		inputAttrs := []g.Node{
-			Type("checkbox"),
-			Name("models"),
-			Value(model),
-			ID("model-" + model),
-			hx.Trigger("change"),
-			hx.Get("/api/engines"),
-			hx.Target("#enginesDiv"),
-			hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
-			hx.Swap("innerHTML"),
-		}
-		if !isAvailable {
-			inputAttrs = append(inputAttrs, Disabled())
-			inputAttrs = append(inputAttrs, g.Attr("class", "opacity-50 cursor-not-allowed"))
-		}
-		if isChecked && isAvailable {
-			inputAttrs = append(inputAttrs, Checked())
-		}
-
 		modelCheckboxes = append(modelCheckboxes,
-			Div(
-				Class("flex items-center space-x-2"),
-				Input(inputAttrs...),
-				Label(
-					For("model-"+model),
-					func() g.Node {
-						if !isAvailable {
-							return Class("text-gray-400")
-						}
-						return g.Text("")
-					}(),
-					g.Text(model),
-				),
+			templates.Checkbox("models", model, model, isChecked, !isAvailable,
+				hx.Trigger("change"),
+				hx.Get("/api/engines"),
+				hx.Target("#enginesDiv"),
+				hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
+				hx.Swap("innerHTML"),
 			),
 		)
 	}
@@ -616,52 +453,20 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 				break
 			}
 		}
-		inputAttrs := []g.Node{
-			Type("checkbox"),
-			Name("engines"),
-			Value(engine),
-			ID("engine-" + engine),
-		}
-		if !isAvailable {
-			inputAttrs = append(inputAttrs, Disabled())
-			inputAttrs = append(inputAttrs, g.Attr("class", "opacity-50 cursor-not-allowed"))
-		}
-		if isChecked && isAvailable {
-			inputAttrs = append(inputAttrs, Checked())
-		}
-
 		engineCheckboxes = append(engineCheckboxes,
-			Div(
-				Class("flex items-center space-x-2"),
-				Input(inputAttrs...),
-				Label(
-					For("engine-"+engine),
-					func() g.Node {
-						if !isAvailable {
-							return Class("text-gray-400")
-						}
-						return g.Text("")
-					}(),
-					g.Text(engine),
-				),
-			),
+			templates.Checkbox("engines", engine, engine, isChecked, !isAvailable),
 		)
 	}
 
 	_ = templates.Page(
 		"Edit Ad - Parts Pile",
 		[]g.Node{
-			H1(Class("text-4xl font-bold mb-8"), g.Text("Edit Ad")),
+			templates.PageHeader("Edit Ad"),
 			Form(
 				ID("editAdForm"),
 				Class("space-y-6"),
-				Div(
-					ID("validationError"),
-					Class("hidden bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded mb-4"),
-				),
-				Div(
-					Class("space-y-2"),
-					Label(For("make"), Class("block"), g.Text("Make")),
+				templates.ValidationErrorContainer(),
+				templates.FormGroup("Make", "make",
 					Select(
 						ID("make"),
 						Name("make"),
@@ -676,41 +481,22 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 				Div(
 					ID("yearsDiv"),
 					Class("space-y-4"),
-					Label(Class("block font-bold"), g.Text("Years")),
-					Div(
-						Class("grid grid-cols-4 gap-4"),
-						g.Group(yearCheckboxes),
-					),
+					templates.SectionHeader("Years", ""),
+					templates.GridContainer(4, yearCheckboxes...),
 				),
 				Div(
 					ID("modelsDiv"),
 					Class("space-y-4"),
-					Label(Class("block font-bold"), g.Text("Models")),
-					P(
-						Class("text-sm text-gray-600 mb-2"),
-						g.Text("Grayed out models are not available for all selected years"),
-					),
-					Div(
-						Class("grid grid-cols-2 gap-4"),
-						g.Group(modelCheckboxes),
-					),
+					templates.SectionHeader("Models", "Grayed out models are not available for all selected years"),
+					templates.GridContainer(2, modelCheckboxes...),
 				),
 				Div(
 					ID("enginesDiv"),
 					Class("space-y-4"),
-					Label(Class("block font-bold"), g.Text("Engines")),
-					P(
-						Class("text-sm text-gray-600 mb-2"),
-						g.Text("Grayed out engines are not available for all selected year-model combinations"),
-					),
-					Div(
-						Class("grid grid-cols-2 gap-4"),
-						g.Group(engineCheckboxes),
-					),
+					templates.SectionHeader("Engines", "Grayed out engines are not available for all selected year-model combinations"),
+					templates.GridContainer(2, engineCheckboxes...),
 				),
-				Div(
-					Class("space-y-2"),
-					Label(For("description"), Class("block"), g.Text("Description")),
+				templates.FormGroup("Description", "description",
 					Textarea(
 						ID("description"),
 						Name("description"),
@@ -719,9 +505,7 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 						g.Text(ad.Description),
 					),
 				),
-				Div(
-					Class("space-y-2"),
-					Label(For("price"), Class("block"), g.Text("Price")),
+				templates.FormGroup("Price", "price",
 					Input(
 						Type("number"),
 						ID("price"),
@@ -736,12 +520,10 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 					Name("id"),
 					Value(fmt.Sprintf("%d", ad.ID)),
 				),
-				Button(
+				templates.StyledButton("Update", templates.ButtonPrimary,
 					Type("submit"),
-					Class("bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"),
 					hx.Post("/api/update-ad"),
 					hx.Target("#result"),
-					g.Text("Update"),
 				),
 				Div(
 					ID("result"),
@@ -805,15 +587,12 @@ func HandleUpdateAdSubmission(w http.ResponseWriter, r *http.Request) {
 	}
 	vehicle.AdsMutex.Unlock()
 
-	_ = templates.SuccessMessage(
-		"Ad updated successfully! Redirecting...",
-		fmt.Sprintf("setTimeout(function() { window.location = '/ad/%d' }, 1000)", adID),
-	).Render(w)
+	_ = templates.SuccessMessageWithRedirect("Ad updated successfully!", fmt.Sprintf("/ad/%d", adID)).Render(w)
 }
 
 func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
 	var adID int
-	fmt.Sscanf(r.URL.Path[11:], "%d", &adID)
+	fmt.Sscanf(r.PathValue("id"), "%d", &adID)
 
 	vehicle.AdsMutex.Lock()
 	for i, ad := range vehicle.Ads {
@@ -825,8 +604,5 @@ func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
 	}
 	vehicle.AdsMutex.Unlock()
 
-	_ = templates.SuccessMessage(
-		"Ad deleted successfully! Redirecting...",
-		"setTimeout(function() { window.location = '/' }, 1000)",
-	).Render(w)
+	_ = templates.SuccessMessageWithRedirect("Ad deleted successfully!", "/").Render(w)
 }

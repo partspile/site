@@ -27,17 +27,21 @@ func Start() error {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", handlers.HandleHome)
-	mux.HandleFunc("/new-ad", handlers.HandleNewAd)
-	mux.HandleFunc("/edit-ad/", handlers.HandleEditAd)
-	mux.HandleFunc("/api/makes", handlers.HandleMakes)
-	mux.HandleFunc("/api/years", handlers.HandleYears)
-	mux.HandleFunc("/api/models", handlers.HandleModels)
-	mux.HandleFunc("/api/engines", handlers.HandleEngines)
-	mux.HandleFunc("/api/new-ad", handlers.HandleNewAdSubmission)
-	mux.HandleFunc("/api/update-ad", handlers.HandleUpdateAdSubmission)
-	mux.HandleFunc("/ad/", handlers.HandleViewAd)
-	mux.HandleFunc("/delete-ad/", handlers.HandleDeleteAd)
+
+	// Main pages
+	mux.HandleFunc("GET /", handlers.HandleHome)
+	mux.HandleFunc("GET /new-ad", handlers.HandleNewAd)
+	mux.HandleFunc("GET /edit-ad/{id}", handlers.HandleEditAd)
+	mux.HandleFunc("GET /ad/{id}", handlers.HandleViewAd)
+
+	// API endpoints
+	mux.HandleFunc("GET /api/makes", handlers.HandleMakes)
+	mux.HandleFunc("GET /api/years/{make}", handlers.HandleYears)
+	mux.HandleFunc("GET /api/models", handlers.HandleModels)
+	mux.HandleFunc("GET /api/engines", handlers.HandleEngines)
+	mux.HandleFunc("POST /api/new-ad", handlers.HandleNewAdSubmission)
+	mux.HandleFunc("POST /api/update-ad", handlers.HandleUpdateAdSubmission)
+	mux.HandleFunc("DELETE /delete-ad/{id}", handlers.HandleDeleteAd)
 
 	fmt.Printf("Starting server on port %s...\n", port)
 	return http.ListenAndServe(":"+port, mux)
