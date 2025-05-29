@@ -250,3 +250,18 @@ func AdDetails(ad ad.Ad) g.Node {
 		P(Class("text-2xl font-bold mt-4"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
 	)
 }
+
+// AdCard renders a single ad card for use in lists
+func AdCard(ad ad.Ad) g.Node {
+	return A(
+		Href(fmt.Sprintf("/ad/%d", ad.ID)),
+		Class("block border p-4 mb-4 rounded hover:bg-gray-50"),
+		Div(
+			H3(Class("text-xl font-bold"), g.Text(ad.Make)),
+			P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", ad.Years))),
+			P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", ad.Models))),
+			P(Class("mt-2"), g.Text(ad.Description)),
+			P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
+		),
+	)
+}

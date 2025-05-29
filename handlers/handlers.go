@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"strings"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -54,19 +55,7 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 	sort.Ints(adIDs)
 	for _, id := range adIDs {
 		ad := vehicle.Ads[id]
-		adsList = append(adsList,
-			A(
-				Href(fmt.Sprintf("/ad/%d", ad.ID)),
-				Class("block border p-4 mb-4 rounded hover:bg-gray-50"),
-				Div(
-					H3(Class("text-xl font-bold"), g.Text(ad.Make)),
-					P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", ad.Years))),
-					P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", ad.Models))),
-					P(Class("mt-2"), g.Text(ad.Description)),
-					P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
-				),
-			),
-		)
+		adsList = append(adsList, templates.AdCard(ad))
 	}
 	vehicle.AdsMutex.Unlock()
 
@@ -75,10 +64,38 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 		[]g.Node{
 			templates.PageHeader("Parts Pile"),
 			Div(
-				Class("mb-8"),
+				Class("mb-8 flex items-center gap-4"),
 				templates.StyledLink("New Ad", "/new-ad", templates.ButtonPrimary),
+				Form(
+					ID("searchForm"),
+					Class("flex-1"),
+					hx.Get("/search"),
+					hx.Target("#adsList"),
+					hx.Trigger("submit, input[empty]"),
+					Input(
+						Type("search"),
+						ID("searchBox"),
+						Name("q"),
+						Class("w-full p-2 border rounded"),
+						Placeholder("Search by make, model, or description..."),
+					),
+				),
 			),
+			Script(g.Raw(`
+				document.addEventListener('DOMContentLoaded', function() {
+				  var searchBox = document.getElementById('searchBox');
+				  var searchForm = document.getElementById('searchForm');
+				  if (searchBox && searchForm) {
+				    searchBox.addEventListener('input', function() {
+				      if (searchBox.value === '') {
+				        searchForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+				      }
+				    });
+				  }
+				});
+			`)),
 			Div(
+				ID("adsList"),
 				Class("space-y-4"),
 				g.Group(adsList),
 			),
@@ -618,4 +635,46 @@ func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
 	saveAdsToFile()
 
 	_ = templates.SuccessMessageWithRedirect("Ad deleted successfully!", "/").Render(w)
+}
+
+// HandleSearch filters ads by query and returns the filtered list as HTML for HTMX
+func HandleSearch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("q")
+	adsList := []g.Node{}
+	vehicle.AdsMutex.Lock()
+	adIDs := make([]int, 0, len(vehicle.Ads))
+	for id := range vehicle.Ads {
+		adIDs = append(adIDs, id)
+	}
+	sort.Ints(adIDs)
+	for _, id := range adIDs {
+		ad := vehicle.Ads[id]
+		if q == "" ||
+			containsIgnoreCase(ad.Make, q) ||
+			containsIgnoreCaseSlice(ad.Models, q) ||
+			containsIgnoreCase(ad.Description, q) {
+			adsList = append(adsList, templates.AdCard(ad))
+		}
+	}
+	vehicle.AdsMutex.Unlock()
+	_ = Div(
+		ID("adsList"),
+		Class("space-y-4"),
+		g.Group(adsList),
+	).Render(w)
+}
+
+// containsIgnoreCase checks if s contains substr, case-insensitive
+func containsIgnoreCase(s, substr string) bool {
+	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
+}
+
+// containsIgnoreCaseSlice checks if any string in the slice contains substr, case-insensitive
+func containsIgnoreCaseSlice(slice []string, substr string) bool {
+	for _, s := range slice {
+		if containsIgnoreCase(s, substr) {
+			return true
+		}
+	}
+	return false
 }
