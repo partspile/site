@@ -74,6 +74,7 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 					hx.Get("/search"),
 					hx.Target("#adsList"),
 					hx.Trigger("submit, input[empty]"),
+					hx.Indicator("#waiting"),
 					Input(
 						Type("search"),
 						ID("searchBox"),
@@ -96,6 +97,7 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 				  }
 				});
 			`)),
+			H1(ID("waiting"), Class("text-4xl font-bold mb-8 htmx-indicator"), g.Text("WAITING")),
 			Div(
 				ID("adsList"),
 				Class("space-y-4"),
