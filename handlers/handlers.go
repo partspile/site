@@ -638,6 +638,16 @@ func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
 	_ = templates.SuccessMessageWithRedirect("Ad deleted successfully!", "/").Render(w)
 }
 
+// SearchSchema defines the expected JSON structure for search queries
+type SearchSchema struct {
+	Make        string
+	Years       []string
+	Models      []string
+	EngineSizes []string
+	Category    string
+	SubCategory string
+}
+
 // HandleSearch filters ads by query and returns the filtered list as HTML for HTMX
 func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
@@ -649,29 +659,47 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Step 1: Build the first prompt (no VehicleData)
-	firstPrompt := `You are an expert vehicle parts assistant. Your job is to extract a structured query from a user's search request.\n\nThe user has entered the following search query:\n<UserPrompt>\n` + q + `\n</UserPrompt>\n\nYour task is to return a JSON object matching the following schema, filling in as many fields as possible based on the user prompt. If a field is not specified by the user but can be inferred, include it.\n\nJSON Schema:\n{\n    "Make": string,\n    "Years": [string],\n    "Models": [string],\n    "EngineSize": [string],\n    "Category": string,\n    "SubCategory": string\n}\n\nReturn ONLY the JSON object, nothing else.`
-	fmt.Println("Grok FIRST PROMPT:\n", firstPrompt)
-	grokResp, err := grok.CallGrok(firstPrompt)
-	fmt.Println("Grok FIRST RESPONSE:\n", grokResp)
+	// Step 1: Build the prompt
+	prompt := `You are an expert vehicle parts assistant.
+
+Your job is to extract a structured query from a user's search request.
+
+The user has entered the following search query:
+
+<UserPrompt>
+` + q + `
+</UserPrompt>
+
+Extract the make, years, models, engine sizes, category, and subcategory from
+this query. If a field is not specified by the user but can be inferred,
+include it.
+
+Return JSON encoding this Go structure with the vehicle parts data:
+
+struct {
+	Make        string
+	Years       []string
+	Models      []string
+	EngineSizes []string
+	Category    string
+	SubCategory string
+}
+
+Only return the JSON.  Nothing else.
+`
+	fmt.Println("PROMPT:\n", prompt)
+	resp, err := grok.CallGrok(prompt)
+	fmt.Println("RESPONSE:\n", resp)
 	if err != nil {
 		http.Error(w, "Grok error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Step 2: Parse the structured prompt
-	type StructuredPrompt struct {
-		Make        string   `json:"Make"`
-		Years       []string `json:"Years"`
-		Models      []string `json:"Models"`
-		EngineSize  []string `json:"EngineSize"`
-		Category    string   `json:"Category"`
-		SubCategory string   `json:"SubCategory"`
-	}
-	var sp StructuredPrompt
-	err = json.Unmarshal([]byte(grokResp), &sp)
+	var searchQuery SearchSchema
+	err = json.Unmarshal([]byte(resp), &searchQuery)
 	if err != nil {
-		http.Error(w, "Failed to parse Grok structured prompt: "+err.Error()+"\nResponse: "+grokResp, http.StatusInternalServerError)
+		http.Error(w, "Failed to parse Grok structured prompt: "+err.Error()+"\nResponse: "+resp, http.StatusInternalServerError)
 		return
 	}
 
@@ -679,16 +707,16 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	vehicle.AdsMutex.Lock()
 	filteredAds := []ad.Ad{}
 	for _, ad := range vehicle.Ads {
-		if sp.Make != "" && !strings.EqualFold(ad.Make, sp.Make) {
+		if searchQuery.Make != "" && !strings.EqualFold(ad.Make, searchQuery.Make) {
 			continue
 		}
-		if len(sp.Years) > 0 && !anyStringInSlice(ad.Years, sp.Years) {
+		if len(searchQuery.Years) > 0 && !anyStringInSlice(ad.Years, searchQuery.Years) {
 			continue
 		}
-		if len(sp.Models) > 0 && !anyStringInSlice(ad.Models, sp.Models) {
+		if len(searchQuery.Models) > 0 && !anyStringInSlice(ad.Models, searchQuery.Models) {
 			continue
 		}
-		if len(sp.EngineSize) > 0 && !anyStringInSlice(ad.Engines, sp.EngineSize) {
+		if len(searchQuery.EngineSizes) > 0 && !anyStringInSlice(ad.Engines, searchQuery.EngineSizes) {
 			continue
 		}
 		// Category/SubCategory filtering can be added if ads have those fields

@@ -15,8 +15,9 @@ const (
 )
 
 type GrokRequest struct {
-	Model    string        `json:"model"`
-	Messages []GrokMessage `json:"messages"`
+	Model           string        `json:"model"`
+	ReasoningEffort string        `json:"reasoning_effort"`
+	Messages        []GrokMessage `json:"messages"`
 }
 
 type GrokMessage struct {
@@ -40,7 +41,8 @@ func CallGrok(prompt string) (string, error) {
 	}
 
 	payload := GrokRequest{
-		Model: GrokModel,
+		Model:           GrokModel,
+		ReasoningEffort: "low",
 		Messages: []GrokMessage{
 			{
 				Role:    "user",
@@ -53,6 +55,7 @@ func CallGrok(prompt string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal payload: %w", err)
 	}
+	fmt.Println(string(data))
 
 	req, err := http.NewRequest("POST", GrokAPIURL, bytes.NewBuffer(data))
 	if err != nil {
