@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/sfeldma/parts-pile/site/server"
+	"github.com/parts-pile/site/server"
 )
 
 func main() {

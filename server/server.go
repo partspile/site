@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/sfeldma/parts-pile/site/handlers"
-	"github.com/sfeldma/parts-pile/site/vehicle"
+	"github.com/parts-pile/site/handlers"
+	"github.com/parts-pile/site/vehicle"
 )
 
 func Start() error {

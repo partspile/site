@@ -13,9 +13,10 @@ import (
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
-	"github.com/sfeldma/parts-pile/site/ad"
-	"github.com/sfeldma/parts-pile/site/templates"
-	"github.com/sfeldma/parts-pile/site/vehicle"
+	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/grok"
+	"github.com/parts-pile/site/templates"
+	"github.com/parts-pile/site/vehicle"
 )
 
 // saveAdsToFile saves the current ads to ads.json
@@ -640,23 +641,66 @@ func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
 // HandleSearch filters ads by query and returns the filtered list as HTML for HTMX
 func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
-	adsList := []g.Node{}
-	vehicle.AdsMutex.Lock()
-	adIDs := make([]int, 0, len(vehicle.Ads))
-	for id := range vehicle.Ads {
-		adIDs = append(adIDs, id)
+	if q == "" {
+		_ = Div(
+			ID("adsList"),
+			Class("space-y-4"),
+		).Render(w)
+		return
 	}
-	sort.Ints(adIDs)
-	for _, id := range adIDs {
-		ad := vehicle.Ads[id]
-		if q == "" ||
-			containsIgnoreCase(ad.Make, q) ||
-			containsIgnoreCaseSlice(ad.Models, q) ||
-			containsIgnoreCase(ad.Description, q) {
-			adsList = append(adsList, templates.AdCard(ad))
+
+	// Step 1: Build the first prompt (no VehicleData)
+	firstPrompt := `You are an expert vehicle parts assistant. Your job is to extract a structured query from a user's search request.\n\nThe user has entered the following search query:\n<UserPrompt>\n` + q + `\n</UserPrompt>\n\nYour task is to return a JSON object matching the following schema, filling in as many fields as possible based on the user prompt. If a field is not specified by the user but can be inferred, include it.\n\nJSON Schema:\n{\n    "Make": string,\n    "Years": [string],\n    "Models": [string],\n    "EngineSize": [string],\n    "Category": string,\n    "SubCategory": string\n}\n\nReturn ONLY the JSON object, nothing else.`
+	fmt.Println("Grok FIRST PROMPT:\n", firstPrompt)
+	grokResp, err := grok.CallGrok(firstPrompt)
+	fmt.Println("Grok FIRST RESPONSE:\n", grokResp)
+	if err != nil {
+		http.Error(w, "Grok error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Step 2: Parse the structured prompt
+	type StructuredPrompt struct {
+		Make        string   `json:"Make"`
+		Years       []string `json:"Years"`
+		Models      []string `json:"Models"`
+		EngineSize  []string `json:"EngineSize"`
+		Category    string   `json:"Category"`
+		SubCategory string   `json:"SubCategory"`
+	}
+	var sp StructuredPrompt
+	err = json.Unmarshal([]byte(grokResp), &sp)
+	if err != nil {
+		http.Error(w, "Failed to parse Grok structured prompt: "+err.Error()+"\nResponse: "+grokResp, http.StatusInternalServerError)
+		return
+	}
+
+	// Step 3: Filter ads using the structured prompt (no second LLM call)
+	vehicle.AdsMutex.Lock()
+	filteredAds := []ad.Ad{}
+	for _, ad := range vehicle.Ads {
+		if sp.Make != "" && !strings.EqualFold(ad.Make, sp.Make) {
+			continue
 		}
+		if len(sp.Years) > 0 && !anyStringInSlice(ad.Years, sp.Years) {
+			continue
+		}
+		if len(sp.Models) > 0 && !anyStringInSlice(ad.Models, sp.Models) {
+			continue
+		}
+		if len(sp.EngineSize) > 0 && !anyStringInSlice(ad.Engines, sp.EngineSize) {
+			continue
+		}
+		// Category/SubCategory filtering can be added if ads have those fields
+		filteredAds = append(filteredAds, ad)
 	}
 	vehicle.AdsMutex.Unlock()
+
+	// Step 4: Render the results
+	adsList := []g.Node{}
+	for _, ad := range filteredAds {
+		adsList = append(adsList, templates.AdCard(ad))
+	}
 	_ = Div(
 		ID("adsList"),
 		Class("space-y-4"),
@@ -664,16 +708,13 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	).Render(w)
 }
 
-// containsIgnoreCase checks if s contains substr, case-insensitive
-func containsIgnoreCase(s, substr string) bool {
-	return strings.Contains(strings.ToLower(s), strings.ToLower(substr))
-}
-
-// containsIgnoreCaseSlice checks if any string in the slice contains substr, case-insensitive
-func containsIgnoreCaseSlice(slice []string, substr string) bool {
-	for _, s := range slice {
-		if containsIgnoreCase(s, substr) {
-			return true
+// Helper: check if any string in a is in b
+func anyStringInSlice(a, b []string) bool {
+	for _, s := range a {
+		for _, t := range b {
+			if strings.EqualFold(s, t) {
+				return true
+			}
 		}
 	}
 	return false

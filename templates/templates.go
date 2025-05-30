@@ -7,7 +7,7 @@ import (
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
-	"github.com/sfeldma/parts-pile/site/ad"
+	"github.com/parts-pile/site/ad"
 )
 
 // ---- Page Layout ----

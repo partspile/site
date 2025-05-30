@@ -1,4 +1,4 @@
-module github.com/sfeldma/parts-pile/site/cmd/scraper
+module github.com/parts-pile/site/cmd/scraper
 
 go 1.23.0
 
