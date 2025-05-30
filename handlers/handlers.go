@@ -8,6 +8,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -648,31 +649,43 @@ type SearchSchema struct {
 	SubCategory string
 }
 
-// HandleSearch filters ads by query and returns the filtered list as HTML for HTMX
-func HandleSearch(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query().Get("q")
-	if q == "" {
-		_ = Div(
-			ID("adsList"),
-			Class("space-y-4"),
-		).Render(w)
-		return
-	}
-
-	// Step 1: Build the prompt
-	prompt := `You are an expert vehicle parts assistant.
+const searchPrompt = `You are an expert vehicle parts assistant.
 
 Your job is to extract a structured query from a user's search request.
 
 The user has entered the following search query:
 
 <UserPrompt>
-` + q + `
+%s
 </UserPrompt>
 
 Extract the make, years, models, engine sizes, category, and subcategory from
 this query. If a field is not specified by the user but can be inferred,
 include it.
+
+<Makes>
+%s
+</Makes>
+
+<Years>
+%s
+</Years>
+
+<Models>
+%s
+</Models>
+
+<EngineSizes>
+%s
+</EngineSizes>
+
+<Categories>
+%s
+</Categories>
+
+<SubCategories>
+%s
+</SubCategories>
 
 Return JSON encoding this Go structure with the vehicle parts data:
 
@@ -687,6 +700,27 @@ struct {
 
 Only return the JSON.  Nothing else.
 `
+
+// HandleSearch filters ads by query and returns the filtered list as HTML for HTMX
+func HandleSearch(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("q")
+	if q == "" {
+		_ = Div(
+			ID("adsList"),
+			Class("space-y-4"),
+		).Render(w)
+		return
+	}
+
+	// Step 1: Build the prompt
+	makes := strings.Join(vehicle.GetMakes(), ",")
+	years := fmt.Sprintf("Years must be within [1990-%d]", time.Now().Year())
+	models := strings.Join(vehicle.GetAllModels(), ",")
+	engineSizes := strings.Join(vehicle.GetAllEngineSizes(), ",")
+	categories := ""
+	subCategories := ""
+	prompt := fmt.Sprintf(searchPrompt, q, makes, years, models, engineSizes, categories, subCategories)
+
 	fmt.Println("PROMPT:\n", prompt)
 	resp, err := grok.CallGrok(prompt)
 	fmt.Println("RESPONSE:\n", resp)

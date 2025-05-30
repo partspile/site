@@ -1,6 +1,7 @@
 package vehicle
 
 import (
+	"slices"
 	"sort"
 	"sync"
 
@@ -11,7 +12,7 @@ type VehicleData map[string]map[string]map[string][]string
 
 var (
 	Data     VehicleData
-	Ads      map[int]ad.Ad
+	Ads      = make(map[int]ad.Ad)
 	AdsMutex sync.Mutex
 	NextAdID = 1
 )
@@ -34,6 +35,19 @@ func GetYears(makeName string) []string {
 	}
 	sort.Strings(years)
 	return years
+}
+
+func GetAllModels() []string {
+	models := make([]string, 0)
+	for _, makeData := range Data {
+		for _, yearData := range makeData {
+			for model := range yearData {
+				models = append(models, model)
+			}
+		}
+	}
+	sort.Strings(models)
+	return slices.Compact(models)
 }
 
 func GetModelsWithAvailability(makeName string, years []string) map[string]bool {
@@ -119,4 +133,17 @@ func GetEnginesWithAvailability(makeName string, years []string, models []string
 		}
 	}
 	return availableInAllCombos
+}
+
+func GetAllEngineSizes() []string {
+	engines := make([]string, 0)
+	for _, makeData := range Data {
+		for _, yearData := range makeData {
+			for _, enginesList := range yearData {
+				engines = append(engines, enginesList...)
+			}
+		}
+	}
+	sort.Strings(engines)
+	return slices.Compact(engines)
 }
