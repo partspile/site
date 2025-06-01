@@ -2,6 +2,8 @@ package templates
 
 import (
 	"fmt"
+	"net/http"
+	"sort"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -264,4 +266,36 @@ func AdCard(ad ad.Ad) g.Node {
 			P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
 		),
 	)
+}
+
+// AdListContainer creates a container for a list of ads
+func AdListContainer(children ...g.Node) g.Node {
+	return Div(
+		ID("adsList"),
+		Class("space-y-4"),
+		g.Group(children),
+	)
+}
+
+// BuildAdListNodes returns a slice of nodes for the ads, sorted by ID
+func BuildAdListNodes(ads map[int]ad.Ad) []g.Node {
+	// Sort ads by ID for consistent display
+	adIDs := make([]int, 0, len(ads))
+	for id := range ads {
+		adIDs = append(adIDs, id)
+	}
+	sort.Ints(adIDs)
+
+	adsList := []g.Node{}
+	for _, id := range adIDs {
+		adsList = append(adsList, AdCard(ads[id]))
+	}
+	return adsList
+}
+
+// RenderAdList renders a list of ads sorted by ID directly to the response writer
+func RenderAdList(w http.ResponseWriter, ads map[int]ad.Ad) {
+	_ = AdListContainer(
+		g.Group(BuildAdListNodes(ads)),
+	).Render(w)
 }

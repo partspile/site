@@ -33,20 +33,6 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	adsList := []g.Node{}
-	allAds := ad.GetAllAds()
-
-	adIDs := make([]int, 0, len(allAds))
-	for id := range allAds {
-		adIDs = append(adIDs, id)
-	}
-	sort.Ints(adIDs)
-
-	for _, id := range adIDs {
-		ad := allAds[id]
-		adsList = append(adsList, templates.AdCard(ad))
-	}
-
 	_ = templates.Page(
 		"Parts Pile - Auto Parts and Sales",
 		[]g.Node{
@@ -71,10 +57,8 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 				),
 			),
 			H1(ID("waiting"), Class("text-4xl font-bold mb-8 htmx-indicator"), g.Text("WAITING")),
-			Div(
-				ID("adsList"),
-				Class("space-y-4"),
-				g.Group(adsList),
+			templates.AdListContainer(
+				g.Group(templates.BuildAdListNodes(ad.GetAllAds())),
 			),
 		},
 	).Render(w)
@@ -675,14 +659,23 @@ struct {
 Only return the JSON.  Nothing else.
 `
 
+// Helper: check if any string in a is in b
+func anyStringInSlice(a, b []string) bool {
+	for _, s := range a {
+		for _, t := range b {
+			if strings.EqualFold(s, t) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // HandleSearch filters ads by query and returns the filtered list as HTML for HTMX
 func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	userPrompt := r.URL.Query().Get("q")
 	if userPrompt == "" {
-		_ = Div(
-			ID("adsList"),
-			Class("space-y-4"),
-		).Render(w)
+		templates.RenderAdList(w, ad.GetAllAds())
 		return
 	}
 
@@ -733,26 +726,12 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 		filteredAds = append(filteredAds, ad)
 	}
 
-	// Step 4: Render the results
-	adsList := []g.Node{}
+	// Convert filteredAds slice to map for consistent handling
+	filteredAdsMap := make(map[int]ad.Ad, len(filteredAds))
 	for _, ad := range filteredAds {
-		adsList = append(adsList, templates.AdCard(ad))
+		filteredAdsMap[ad.ID] = ad
 	}
-	_ = Div(
-		ID("adsList"),
-		Class("space-y-4"),
-		g.Group(adsList),
-	).Render(w)
-}
 
-// Helper: check if any string in a is in b
-func anyStringInSlice(a, b []string) bool {
-	for _, s := range a {
-		for _, t := range b {
-			if strings.EqualFold(s, t) {
-				return true
-			}
-		}
-	}
-	return false
+	// Step 4: Render the results
+	templates.RenderAdList(w, filteredAdsMap)
 }
