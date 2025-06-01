@@ -1,5 +1,10 @@
 package part
 
+import (
+	"encoding/json"
+	"os"
+)
+
 type PartData map[string][]string
 
 var (
@@ -27,4 +32,13 @@ func GetAllSubCategories() []string {
 		result = append(result, sub)
 	}
 	return result
+}
+
+func LoadData() error {
+	data, err := os.ReadFile("part.json")
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(data, &Data)
 }

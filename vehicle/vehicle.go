@@ -1,6 +1,8 @@
 package vehicle
 
 import (
+	"encoding/json"
+	"os"
 	"slices"
 	"sort"
 	"sync"
@@ -146,4 +148,13 @@ func GetAllEngineSizes() []string {
 	}
 	sort.Strings(engines)
 	return slices.Compact(engines)
+}
+
+func LoadData() error {
+	data, err := os.ReadFile("make-year-model.json")
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(data, &Data)
 }
