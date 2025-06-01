@@ -5,18 +5,12 @@ import (
 	"os"
 	"slices"
 	"sort"
-	"sync"
-
-	"github.com/parts-pile/site/ad"
 )
 
 type VehicleData map[string]map[string]map[string][]string
 
 var (
-	Data     VehicleData
-	Ads      = make(map[int]ad.Ad)
-	AdsMutex sync.Mutex
-	NextAdID = 1
+	Data VehicleData
 )
 
 func GetMakes() []string {

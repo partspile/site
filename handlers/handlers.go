@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -23,22 +22,8 @@ import (
 
 // saveAdsToFile saves the current ads to ads.json
 func saveAdsToFile() {
-	vehicle.AdsMutex.Lock()
-	defer vehicle.AdsMutex.Unlock()
-	f, err := os.Create("ads.json")
-	if err != nil {
-		log.Printf("Error creating ads.json: %v", err)
-		return
-	}
-	defer f.Close()
-
-	adsJSON, err := json.MarshalIndent(vehicle.Ads, "", "\t")
-	if err != nil {
-		log.Printf("Error encoding ads to ads.json: %v", err)
-		return
-	}
-	if _, err := f.Write(adsJSON); err != nil {
-		log.Printf("Error writing ads to ads.json: %v", err)
+	if err := ad.SaveAds("ads.json"); err != nil {
+		log.Printf("Error saving ads to ads.json: %v", err)
 	}
 }
 
@@ -49,18 +34,18 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 	}
 
 	adsList := []g.Node{}
-	vehicle.AdsMutex.Lock()
-	// Collect and sort ad IDs
-	adIDs := make([]int, 0, len(vehicle.Ads))
-	for id := range vehicle.Ads {
+	allAds := ad.GetAllAds()
+
+	adIDs := make([]int, 0, len(allAds))
+	for id := range allAds {
 		adIDs = append(adIDs, id)
 	}
 	sort.Ints(adIDs)
+
 	for _, id := range adIDs {
-		ad := vehicle.Ads[id]
+		ad := allAds[id]
 		adsList = append(adsList, templates.AdCard(ad))
 	}
-	vehicle.AdsMutex.Unlock()
 
 	_ = templates.Page(
 		"Parts Pile - Auto Parts and Sales",
@@ -335,21 +320,23 @@ func HandleNewAdSubmission(w http.ResponseWriter, r *http.Request) {
 	price := 0.0
 	fmt.Sscanf(r.FormValue("price"), "%f", &price)
 
-	ad := ad.Ad{
-		ID:          vehicle.NextAdID,
-		Make:        r.FormValue("make"),
-		Years:       r.Form["years"],
-		Models:      r.Form["models"],
-		Engines:     r.Form["engines"],
-		Description: r.FormValue("description"),
+	make := r.FormValue("make")
+	years := r.Form["years"]
+	models := r.Form["models"]
+	engines := r.Form["engines"]
+	description := r.FormValue("description")
+
+	newAd := ad.Ad{
+		ID:          ad.GetNextAdID(),
+		Make:        make,
+		Years:       years,
+		Models:      models,
+		Engines:     engines,
+		Description: description,
 		Price:       price,
 	}
 
-	vehicle.AdsMutex.Lock()
-	vehicle.Ads[ad.ID] = ad
-	vehicle.NextAdID++
-	vehicle.AdsMutex.Unlock()
-
+	ad.AddAd(newAd)
 	saveAdsToFile()
 
 	_ = templates.SuccessMessageWithRedirect("Ad created successfully!", "/").Render(w)
@@ -359,10 +346,7 @@ func HandleViewAd(w http.ResponseWriter, r *http.Request) {
 	var adID int
 	fmt.Sscanf(r.PathValue("id"), "%d", &adID)
 
-	vehicle.AdsMutex.Lock()
-	ad, ok := vehicle.Ads[adID]
-	vehicle.AdsMutex.Unlock()
-
+	ad, ok := ad.GetAd(adID)
 	if !ok || ad.ID == 0 {
 		http.NotFound(w, r)
 		return
@@ -393,10 +377,7 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 	var adID int
 	fmt.Sscanf(r.PathValue("id"), "%d", &adID)
 
-	vehicle.AdsMutex.Lock()
-	ad, ok := vehicle.Ads[adID]
-	vehicle.AdsMutex.Unlock()
-
+	ad, ok := ad.GetAd(adID)
 	if !ok || ad.ID == 0 {
 		http.NotFound(w, r)
 		return
@@ -597,19 +578,26 @@ func HandleUpdateAdSubmission(w http.ResponseWriter, r *http.Request) {
 	price := 0.0
 	fmt.Sscanf(r.FormValue("price"), "%f", &price)
 
+	make := r.FormValue("make")
+	years := r.Form["years"]
+	models := r.Form["models"]
+	engines := r.Form["engines"]
+	description := r.FormValue("description")
+
 	updatedAd := ad.Ad{
 		ID:          adID,
-		Make:        r.FormValue("make"),
-		Years:       r.Form["years"],
-		Models:      r.Form["models"],
-		Engines:     r.Form["engines"],
-		Description: r.FormValue("description"),
+		Make:        make,
+		Years:       years,
+		Models:      models,
+		Engines:     engines,
+		Description: description,
 		Price:       price,
 	}
 
-	vehicle.AdsMutex.Lock()
-	vehicle.Ads[adID] = updatedAd
-	vehicle.AdsMutex.Unlock()
+	if !ad.UpdateAd(adID, updatedAd) {
+		http.Error(w, "Ad not found", http.StatusNotFound)
+		return
+	}
 
 	saveAdsToFile()
 
@@ -620,9 +608,10 @@ func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
 	var adID int
 	fmt.Sscanf(r.PathValue("id"), "%d", &adID)
 
-	vehicle.AdsMutex.Lock()
-	delete(vehicle.Ads, adID)
-	vehicle.AdsMutex.Unlock()
+	if !ad.DeleteAd(adID) {
+		http.Error(w, "Ad not found", http.StatusNotFound)
+		return
+	}
 
 	saveAdsToFile()
 
@@ -724,9 +713,10 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Step 3: Filter ads using the structured prompt (no second LLM call)
-	vehicle.AdsMutex.Lock()
 	filteredAds := []ad.Ad{}
-	for _, ad := range vehicle.Ads {
+	allAds := ad.GetAllAds()
+
+	for _, ad := range allAds {
 		if searchQuery.Make != "" && !strings.EqualFold(ad.Make, searchQuery.Make) {
 			continue
 		}
@@ -742,7 +732,6 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 		// Category/SubCategory filtering can be added if ads have those fields
 		filteredAds = append(filteredAds, ad)
 	}
-	vehicle.AdsMutex.Unlock()
 
 	// Step 4: Render the results
 	adsList := []g.Node{}

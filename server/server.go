@@ -1,54 +1,29 @@
 package server
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/handlers"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/vehicle"
 )
 
 func Start() error {
-	// Load vehicle data
-	vdata, err := os.ReadFile("make-year-model.json")
-	if err != nil {
-		return fmt.Errorf("error reading vehicle data: %v", err)
-	}
-	if err := json.Unmarshal(vdata, &vehicle.Data); err != nil {
-		return fmt.Errorf("error parsing vehicle data: %v", err)
+	// Load initial data
+	if err := vehicle.LoadData(); err != nil {
+		return fmt.Errorf("error loading vehicle data: %v", err)
 	}
 
-	// Load part data
-	pdata, err := os.ReadFile("part.json")
-	if err != nil {
-		return fmt.Errorf("error reading part data: %v", err)
-	}
-	if err := json.Unmarshal(pdata, &part.Data); err != nil {
-		return fmt.Errorf("error parsing part data: %v", err)
+	if err := part.LoadData(); err != nil {
+		return fmt.Errorf("error loading part data: %v", err)
 	}
 
 	// Load ads data
-	adsData, err := os.ReadFile("ads.json")
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return fmt.Errorf("error reading ads data: %v", err)
-		}
-		// If file doesn't exist, continue without loading
-	} else {
-		if err := json.Unmarshal(adsData, &vehicle.Ads); err != nil {
-			fmt.Printf("error parsing ads data: %v\n", err)
-		} else {
-			maxID := 0
-			for id := range vehicle.Ads {
-				if id > maxID {
-					maxID = id
-				}
-			}
-			vehicle.NextAdID = maxID + 1
-		}
+	if err := ad.LoadAds("ads.json"); err != nil {
+		fmt.Printf("error parsing ads data: %v\n", err)
 	}
 
 	port := os.Getenv("PORT")
