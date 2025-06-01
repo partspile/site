@@ -681,7 +681,7 @@ func anyStringInSlice(a, b []string) bool {
 func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	userPrompt := r.URL.Query().Get("q")
 	if userPrompt == "" {
-		templates.RenderAdList(w, ad.GetAllAds())
+		_ = templates.SearchResultsContainer(templates.SearchSchema{}, ad.GetAllAds()).Render(w)
 		return
 	}
 

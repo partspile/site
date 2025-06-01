@@ -2,7 +2,6 @@ package templates
 
 import (
 	"fmt"
-	"net/http"
 	"sort"
 
 	g "maragu.dev/gomponents"
@@ -301,13 +300,6 @@ func BuildAdListNodes(ads map[int]ad.Ad) []g.Node {
 		adsList = append(adsList, AdCard(ads[id]))
 	}
 	return adsList
-}
-
-// RenderAdList renders a list of ads sorted by ID directly to the response writer
-func RenderAdList(w http.ResponseWriter, ads map[int]ad.Ad) {
-	_ = AdListContainer(
-		g.Group(BuildAdListNodes(ads)),
-	).Render(w)
 }
 
 // FilterCheckbox creates a disabled checked checkbox for a filter value
