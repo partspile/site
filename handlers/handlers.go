@@ -73,30 +73,17 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 					Class("flex-1"),
 					hx.Get("/search"),
 					hx.Target("#adsList"),
-					hx.Trigger("submit, input[empty]"),
 					hx.Indicator("#waiting"),
 					Input(
 						Type("search"),
 						ID("searchBox"),
 						Name("q"),
 						Class("w-full p-2 border rounded"),
-						Placeholder("Search by make, model, or description..."),
+						Placeholder("Search by make, year, model, or description..."),
+						hx.Trigger("search"),
 					),
 				),
 			),
-			Script(g.Raw(`
-				document.addEventListener('DOMContentLoaded', function() {
-				  var searchBox = document.getElementById('searchBox');
-				  var searchForm = document.getElementById('searchForm');
-				  if (searchBox && searchForm) {
-				    searchBox.addEventListener('input', function() {
-				      if (searchBox.value === '') {
-				        searchForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-				      }
-				    });
-				  }
-				});
-			`)),
 			H1(ID("waiting"), Class("text-4xl font-bold mb-8 htmx-indicator"), g.Text("WAITING")),
 			Div(
 				ID("adsList"),
@@ -651,19 +638,14 @@ type SearchSchema struct {
 	SubCategory string
 }
 
-const searchPrompt = `You are an expert vehicle parts assistant.
+const sysPrompt = `You are an expert vehicle parts assistant.
 
 Your job is to extract a structured query from a user's search request.
 
 The user has entered the following search query:
 
-<UserPrompt>
-%s
-</UserPrompt>
-
 Extract the make, years, models, engine sizes, category, and subcategory from
-this query. If a field is not specified by the user but can be inferred,
-include it.
+this query.
 
 <Makes>
 %s
@@ -705,8 +687,8 @@ Only return the JSON.  Nothing else.
 
 // HandleSearch filters ads by query and returns the filtered list as HTML for HTMX
 func HandleSearch(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query().Get("q")
-	if q == "" {
+	userPrompt := r.URL.Query().Get("q")
+	if userPrompt == "" {
 		_ = Div(
 			ID("adsList"),
 			Class("space-y-4"),
@@ -715,17 +697,18 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Step 1: Build the prompt
+
 	makes := strings.Join(vehicle.GetMakes(), ",")
-	years := fmt.Sprintf("Years must be within [1990-%d]", time.Now().Year())
+	years := fmt.Sprintf("Years must be within [1990-%d]", time.Now().Year()+1)
 	models := strings.Join(vehicle.GetAllModels(), ",")
 	engineSizes := strings.Join(vehicle.GetAllEngineSizes(), ",")
 	categories := ""
 	subCategories := ""
-	prompt := fmt.Sprintf(searchPrompt, q, makes, years, models, engineSizes, categories, subCategories)
 
-	fmt.Println("PROMPT:\n", prompt)
-	resp, err := grok.CallGrok(prompt)
-	fmt.Println("RESPONSE:\n", resp)
+	systemPrompt := fmt.Sprintf(sysPrompt, makes, years, models,
+		engineSizes, categories, subCategories)
+
+	resp, err := grok.CallGrok(systemPrompt, userPrompt)
 	if err != nil {
 		http.Error(w, "Grok error: "+err.Error(), http.StatusInternalServerError)
 		return

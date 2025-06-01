@@ -33,8 +33,8 @@ type GrokResponse struct {
 	} `json:"choices"`
 }
 
-// CallGrok sends a prompt to the Grok API and returns the response string
-func CallGrok(prompt string) (string, error) {
+// CallGrok sends prompts to the Grok API and returns the response string
+func CallGrok(systemPrompt, userPrompt string) (string, error) {
 	apiKey := os.Getenv("GROK_API_KEY")
 	if apiKey == "" {
 		return "", fmt.Errorf("GROK_API_KEY environment variable not set")
@@ -45,16 +45,22 @@ func CallGrok(prompt string) (string, error) {
 		ReasoningEffort: "low",
 		Messages: []GrokMessage{
 			{
+				Role:    "system",
+				Content: systemPrompt,
+			},
+			{
 				Role:    "user",
-				Content: prompt,
+				Content: userPrompt,
 			},
 		},
 	}
 
-	data, err := json.Marshal(payload)
+	data, err := json.MarshalIndent(payload, "", "\t")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal payload: %w", err)
 	}
+
+	fmt.Println("REQUEST")
 	fmt.Println(string(data))
 
 	req, err := http.NewRequest("POST", GrokAPIURL, bytes.NewBuffer(data))
@@ -86,6 +92,9 @@ func CallGrok(prompt string) (string, error) {
 	if len(grokResp.Choices) == 0 {
 		return "", fmt.Errorf("no response from Grok API")
 	}
+
+	fmt.Println("RESPONSE")
+	fmt.Println(grokResp.Choices[0].Message.Content)
 
 	return grokResp.Choices[0].Message.Content, nil
 }
