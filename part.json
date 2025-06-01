@@ -1,0 +1,25 @@
+{
+	"Belt Drive": [
+		"Belt",
+		"Idler Pulley"
+	],
+	"Body & Lamp Assembly": [],
+	"Brakes & Wheel Hub": [],
+	"Cooling System": [],
+	"Drivetrain": [],
+	"Electrical": [
+		"Alternator",
+	       	"Alternator Brush",
+	       	"Alternator Commutator End Bearing",
+	       	"Alternator Drive End Bearing",
+	       	"Battery",
+	       	"Battery Cable"
+	],
+	"Electrical-Bulb & Socket": [],
+	"Electrical-Connector": [],
+	"Electrical-Switch & Relay": [],
+	"Engine": [],
+	"Exhaust & Emission": [],
+	"Fuel & Air": [],
+	"Heat & Air Conditioning": []
+}

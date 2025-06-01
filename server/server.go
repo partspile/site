@@ -7,18 +7,27 @@ import (
 	"os"
 
 	"github.com/parts-pile/site/handlers"
+	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/vehicle"
 )
 
 func Start() error {
 	// Load vehicle data
-	data, err := os.ReadFile("make-year-model.json")
+	vdata, err := os.ReadFile("make-year-model.json")
 	if err != nil {
 		return fmt.Errorf("error reading vehicle data: %v", err)
 	}
-
-	if err := json.Unmarshal(data, &vehicle.Data); err != nil {
+	if err := json.Unmarshal(vdata, &vehicle.Data); err != nil {
 		return fmt.Errorf("error parsing vehicle data: %v", err)
+	}
+
+	// Load part data
+	pdata, err := os.ReadFile("part.json")
+	if err != nil {
+		return fmt.Errorf("error reading part data: %v", err)
+	}
+	if err := json.Unmarshal(pdata, &part.Data); err != nil {
+		return fmt.Errorf("error parsing part data: %v", err)
 	}
 
 	// Load ads data

@@ -16,6 +16,7 @@ import (
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/grok"
+	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/templates"
 	"github.com/parts-pile/site/vehicle"
 )
@@ -702,8 +703,8 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	years := fmt.Sprintf("Years must be within [1990-%d]", time.Now().Year()+1)
 	models := strings.Join(vehicle.GetAllModels(), ",")
 	engineSizes := strings.Join(vehicle.GetAllEngineSizes(), ",")
-	categories := ""
-	subCategories := ""
+	categories := strings.Join(part.GetAllCategories(), ",")
+	subCategories := strings.Join(part.GetAllSubCategories(), ",")
 
 	systemPrompt := fmt.Sprintf(sysPrompt, makes, years, models,
 		engineSizes, categories, subCategories)
