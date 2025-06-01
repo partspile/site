@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"sort"
 	"strings"
-	"time"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -38,28 +37,34 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 		[]g.Node{
 			templates.PageHeader("Parts Pile"),
 			Div(
-				Class("mb-8 flex items-center gap-4"),
+				Class("mb-8 flex items-start gap-4"),
 				templates.StyledLink("New Ad", "/new-ad", templates.ButtonPrimary),
-				Form(
-					ID("searchForm"),
-					Class("flex-1"),
-					hx.Get("/search"),
-					hx.Target("#adsList"),
-					hx.Indicator("#waiting"),
-					Input(
-						Type("search"),
-						ID("searchBox"),
-						Name("q"),
-						Class("w-full p-2 border rounded"),
-						Placeholder("Search by make, year, model, or description..."),
-						hx.Trigger("search"),
+				Div(
+					Class("flex-1 flex flex-col gap-4"),
+					Form(
+						ID("searchForm"),
+						Class("w-full"),
+						hx.Get("/search"),
+						hx.Target("#searchResults"),
+						hx.Indicator("#searchWaiting"),
+						hx.Swap("outerHTML"),
+						Input(
+							Type("search"),
+							ID("searchBox"),
+							Name("q"),
+							Class("w-full p-2 border rounded"),
+							Placeholder("Search by make, year, model, or description..."),
+							hx.Trigger("search"),
+						),
+					),
+					Div(
+						ID("searchWaiting"),
+						Class("htmx-indicator text-4xl font-bold my-4"),
+						g.Text("WAITING"),
 					),
 				),
 			),
-			H1(ID("waiting"), Class("text-4xl font-bold mb-8 htmx-indicator"), g.Text("WAITING")),
-			templates.AdListContainer(
-				g.Group(templates.BuildAdListNodes(ad.GetAllAds())),
-			),
+			templates.SearchResultsContainer(templates.SearchSchema{}, ad.GetAllAds()),
 		},
 	).Render(w)
 }
@@ -616,10 +621,11 @@ const sysPrompt = `You are an expert vehicle parts assistant.
 
 Your job is to extract a structured query from a user's search request.
 
-The user has entered the following search query:
-
 Extract the make, years, models, engine sizes, category, and subcategory from
-this query.
+the user's search request.  Use your best judgement as a vehicle parts export
+to fill out the structured query as much as possible.  When filling out the
+structured query, only use values from the lists below, and not the user's values.
+For example, if user entered "Ford", the structure query would use "FORD".
 
 <Makes>
 %s
@@ -680,9 +686,8 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Step 1: Build the prompt
-
 	makes := strings.Join(vehicle.GetMakes(), ",")
-	years := fmt.Sprintf("Years must be within [1990-%d]", time.Now().Year()+1)
+	years := strings.Join(vehicle.GetYearRange(), ",")
 	models := strings.Join(vehicle.GetAllModels(), ",")
 	engineSizes := strings.Join(vehicle.GetAllEngineSizes(), ",")
 	categories := strings.Join(part.GetAllCategories(), ",")
@@ -698,7 +703,7 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Step 2: Parse the structured prompt
-	var searchQuery SearchSchema
+	var searchQuery templates.SearchSchema
 	err = json.Unmarshal([]byte(resp), &searchQuery)
 	if err != nil {
 		http.Error(w, "Failed to parse Grok structured prompt: "+err.Error()+"\nResponse: "+resp, http.StatusInternalServerError)
@@ -732,6 +737,6 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 		filteredAdsMap[ad.ID] = ad
 	}
 
-	// Step 4: Render the results
-	templates.RenderAdList(w, filteredAdsMap)
+	// Render just the filters and ad list
+	_ = templates.SearchResultsContainer(searchQuery, filteredAdsMap).Render(w)
 }

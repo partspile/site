@@ -5,6 +5,8 @@ import (
 	"os"
 	"slices"
 	"sort"
+	"strconv"
+	"time"
 )
 
 type VehicleData map[string]map[string]map[string][]string
@@ -142,6 +144,15 @@ func GetAllEngineSizes() []string {
 	}
 	sort.Strings(engines)
 	return slices.Compact(engines)
+}
+
+func GetYearRange() []string {
+	currentYear := time.Now().Year() + 1
+	years := make([]string, 0, currentYear-1900+1)
+	for year := 1900; year <= currentYear; year++ {
+		years = append(years, strconv.Itoa(year))
+	}
+	return years
 }
 
 func LoadData() error {

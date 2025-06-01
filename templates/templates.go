@@ -12,6 +12,16 @@ import (
 	"github.com/parts-pile/site/ad"
 )
 
+// SearchSchema defines the expected JSON structure for search queries
+type SearchSchema struct {
+	Make        string
+	Years       []string
+	Models      []string
+	EngineSizes []string
+	Category    string
+	SubCategory string
+}
+
 // ---- Page Layout ----
 
 // Page creates the base HTML page template with common head elements and layout
@@ -298,4 +308,78 @@ func RenderAdList(w http.ResponseWriter, ads map[int]ad.Ad) {
 	_ = AdListContainer(
 		g.Group(BuildAdListNodes(ads)),
 	).Render(w)
+}
+
+// FilterCheckbox creates a disabled checked checkbox for a filter value
+func FilterCheckbox(value string) g.Node {
+	return Div(
+		Class("flex items-center space-x-2"),
+		Input(
+			Type("checkbox"),
+			Checked(),
+			Disabled(),
+			Class("opacity-50 cursor-not-allowed"),
+		),
+		Label(Class("text-gray-600"), g.Text(value)),
+	)
+}
+
+// SearchFilters creates a container for displaying parsed search filters as checkboxes
+func SearchFilters(filters SearchSchema) g.Node {
+	if filters.Make == "" && len(filters.Years) == 0 && len(filters.Models) == 0 &&
+		len(filters.EngineSizes) == 0 && filters.Category == "" && filters.SubCategory == "" {
+		return g.Text("")
+	}
+
+	checkboxes := []g.Node{}
+
+	// Add make filter
+	if filters.Make != "" {
+		checkboxes = append(checkboxes, FilterCheckbox(filters.Make))
+	}
+
+	// Add year filters
+	for _, year := range filters.Years {
+		checkboxes = append(checkboxes, FilterCheckbox(year))
+	}
+
+	// Add model filters
+	for _, model := range filters.Models {
+		checkboxes = append(checkboxes, FilterCheckbox(model))
+	}
+
+	// Add engine size filters
+	for _, engine := range filters.EngineSizes {
+		checkboxes = append(checkboxes, FilterCheckbox(engine))
+	}
+
+	// Add category filter
+	if filters.Category != "" {
+		checkboxes = append(checkboxes, FilterCheckbox(filters.Category))
+	}
+
+	// Add subcategory filter
+	if filters.SubCategory != "" {
+		checkboxes = append(checkboxes, FilterCheckbox(filters.SubCategory))
+	}
+
+	return Div(
+		Class("flex flex-wrap gap-4 mt-2"),
+		g.Group(checkboxes),
+	)
+}
+
+// SearchResultsContainer creates a container for search results with filters and ad list
+func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad) g.Node {
+	return Div(
+		ID("searchResults"),
+		Div(
+			ID("searchFilters"),
+			Class("flex flex-wrap gap-4"),
+			SearchFilters(filters),
+		),
+		AdListContainer(
+			g.Group(BuildAdListNodes(ads)),
+		),
+	)
 }
