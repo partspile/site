@@ -22,8 +22,8 @@ func Start() error {
 	}
 
 	// Load ads data
-	if err := ad.LoadAds("ads.json"); err != nil {
-		fmt.Printf("error parsing ads data: %v\n", err)
+	if err := ad.InitDB("ads.db"); err != nil {
+		return fmt.Errorf("error initializing ads database: %v", err)
 	}
 
 	port := os.Getenv("PORT")

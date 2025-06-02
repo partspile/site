@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"sort"
 	"strings"
@@ -18,13 +17,6 @@ import (
 	"github.com/parts-pile/site/templates"
 	"github.com/parts-pile/site/vehicle"
 )
-
-// saveAdsToFile saves the current ads to ads.json
-func saveAdsToFile() {
-	if err := ad.SaveAds("ads.json"); err != nil {
-		log.Printf("Error saving ads to ads.json: %v", err)
-	}
-}
 
 func HandleHome(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
@@ -326,7 +318,6 @@ func HandleNewAdSubmission(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ad.AddAd(newAd)
-	saveAdsToFile()
 
 	_ = templates.SuccessMessageWithRedirect("Ad created successfully!", "/").Render(w)
 }
@@ -588,8 +579,6 @@ func HandleUpdateAdSubmission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	saveAdsToFile()
-
 	_ = templates.SuccessMessageWithRedirect("Ad updated successfully!", fmt.Sprintf("/ad/%d", adID)).Render(w)
 }
 
@@ -601,8 +590,6 @@ func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Ad not found", http.StatusNotFound)
 		return
 	}
-
-	saveAdsToFile()
 
 	_ = templates.SuccessMessageWithRedirect("Ad deleted successfully!", "/").Render(w)
 }

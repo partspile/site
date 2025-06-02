@@ -1,9 +1,10 @@
 package ad
 
 import (
+	"database/sql"
 	"encoding/json"
-	"os"
-	"sync"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Ad struct {
@@ -16,122 +17,90 @@ type Ad struct {
 	Price       float64  `json:"price"`
 }
 
-var (
-	ads      = make(map[int]Ad)
-	adsMutex sync.Mutex
-	nextAdID = 1
-)
+var db *sql.DB
 
-// GetAllAds returns a copy of all ads
+func InitDB(path string) error {
+	var err error
+	db, err = sql.Open("sqlite3", path)
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS ads (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		make TEXT,
+		years TEXT,
+		models TEXT,
+		engines TEXT,
+		description TEXT,
+		price REAL
+	)`)
+	return err
+}
+
 func GetAllAds() map[int]Ad {
-	adsMutex.Lock()
-	defer adsMutex.Unlock()
-
-	// Create a copy to prevent external modification
-	copy := make(map[int]Ad, len(ads))
-	for k, v := range ads {
-		copy[k] = v
+	rows, err := db.Query("SELECT id, make, years, models, engines, description, price FROM ads")
+	if err != nil {
+		return map[int]Ad{}
 	}
-	return copy
+	defer rows.Close()
+	ads := make(map[int]Ad)
+	for rows.Next() {
+		var ad Ad
+		var years, models, engines string
+		if err := rows.Scan(&ad.ID, &ad.Make, &years, &models, &engines, &ad.Description, &ad.Price); err != nil {
+			continue
+		}
+		json.Unmarshal([]byte(years), &ad.Years)
+		json.Unmarshal([]byte(models), &ad.Models)
+		json.Unmarshal([]byte(engines), &ad.Engines)
+		ads[ad.ID] = ad
+	}
+	return ads
 }
 
-// GetAd returns a specific ad by ID
 func GetAd(id int) (Ad, bool) {
-	adsMutex.Lock()
-	defer adsMutex.Unlock()
-	ad, ok := ads[id]
-	return ad, ok
+	row := db.QueryRow("SELECT id, make, years, models, engines, description, price FROM ads WHERE id = ?", id)
+	var ad Ad
+	var years, models, engines string
+	if err := row.Scan(&ad.ID, &ad.Make, &years, &models, &engines, &ad.Description, &ad.Price); err != nil {
+		return Ad{}, false
+	}
+	json.Unmarshal([]byte(years), &ad.Years)
+	json.Unmarshal([]byte(models), &ad.Models)
+	json.Unmarshal([]byte(engines), &ad.Engines)
+	return ad, true
 }
 
-// AddAd adds a new ad and returns its ID
 func AddAd(ad Ad) int {
-	adsMutex.Lock()
-	defer adsMutex.Unlock()
-
-	ad.ID = nextAdID
-	ads[ad.ID] = ad
-	nextAdID++
-	return ad.ID
+	years, _ := json.Marshal(ad.Years)
+	models, _ := json.Marshal(ad.Models)
+	engines, _ := json.Marshal(ad.Engines)
+	res, err := db.Exec("INSERT INTO ads (make, years, models, engines, description, price) VALUES (?, ?, ?, ?, ?, ?)", ad.Make, string(years), string(models), string(engines), ad.Description, ad.Price)
+	if err != nil {
+		return 0
+	}
+	id, _ := res.LastInsertId()
+	return int(id)
 }
 
-// UpdateAd updates an existing ad
 func UpdateAd(id int, ad Ad) bool {
-	adsMutex.Lock()
-	defer adsMutex.Unlock()
-
-	if _, exists := ads[id]; !exists {
-		return false
-	}
-	ad.ID = id
-	ads[id] = ad
-	return true
+	years, _ := json.Marshal(ad.Years)
+	models, _ := json.Marshal(ad.Models)
+	engines, _ := json.Marshal(ad.Engines)
+	_, err := db.Exec("UPDATE ads SET make=?, years=?, models=?, engines=?, description=?, price=? WHERE id=?", ad.Make, string(years), string(models), string(engines), ad.Description, ad.Price, id)
+	return err == nil
 }
 
-// DeleteAd deletes an ad by ID
 func DeleteAd(id int) bool {
-	adsMutex.Lock()
-	defer adsMutex.Unlock()
-
-	if _, exists := ads[id]; !exists {
-		return false
-	}
-	delete(ads, id)
-	return true
+	_, err := db.Exec("DELETE FROM ads WHERE id=?", id)
+	return err == nil
 }
 
-// GetNextAdID returns the next available ad ID
 func GetNextAdID() int {
-	adsMutex.Lock()
-	defer adsMutex.Unlock()
-	return nextAdID
-}
-
-// SetNextAdID sets the next available ad ID
-func SetNextAdID(id int) {
-	adsMutex.Lock()
-	defer adsMutex.Unlock()
-	nextAdID = id
-}
-
-// LoadAds loads ads from a JSON file and sets up the next available ID
-func LoadAds(filename string) error {
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		if os.IsNotExist(err) {
-			// If file doesn't exist, that's fine - we'll start with an empty map
-			return nil
-		}
-		return err
+	row := db.QueryRow("SELECT seq FROM sqlite_sequence WHERE name='ads'")
+	var seq int
+	if err := row.Scan(&seq); err != nil {
+		return 1
 	}
-
-	adsMutex.Lock()
-	defer adsMutex.Unlock()
-
-	if err := json.Unmarshal(data, &ads); err != nil {
-		return err
-	}
-
-	// Find max ID to set next ID
-	maxID := 0
-	for _, ad := range ads {
-		if ad.ID > maxID {
-			maxID = ad.ID
-		}
-	}
-	nextAdID = maxID + 1
-
-	return nil
-}
-
-// SaveAds saves ads to a JSON file
-func SaveAds(filename string) error {
-	adsMutex.Lock()
-	defer adsMutex.Unlock()
-
-	data, err := json.MarshalIndent(ads, "", "\t")
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(filename, data, 0644)
+	return seq + 1
 }
