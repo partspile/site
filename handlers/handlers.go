@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -56,7 +57,19 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 					),
 				),
 			),
-			templates.SearchResultsContainer(templates.SearchSchema{}, ad.GetAllAds()),
+			Div(
+				ID("searchResults"),
+				Div(
+					ID("adsList"),
+					Class("space-y-4"),
+					g.Raw(`<div class="htmx-indicator" id="loader"
+						hx-get="/ads"
+						hx-trigger="load"
+						hx-swap="beforeend"
+						hx-target="#adsList"
+						hx-on="htmx:afterRequest: this.remove()">Loading ads...</div>`),
+				),
+			),
 		},
 	).Render(w)
 }
@@ -726,4 +739,120 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 
 	// Render just the filters and ad list
 	_ = templates.SearchResultsContainer(searchQuery, filteredAdsMap).Render(w)
+}
+
+// HandleAdsPage serves a page of ads for infinite scrolling
+func HandleAdsPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	cursorStr := r.URL.Query().Get("cursor")
+	cursorID := 0
+	if cursorStr != "" {
+		fmt.Sscanf(cursorStr, "%d", &cursorID)
+	}
+	limit := 10
+	ads, hasMore := ad.GetAdsPage(cursorID, limit)
+
+	for _, ad := range ads {
+		_ = templates.AdCard(ad).Render(w)
+	}
+
+	if hasMore && len(ads) > 0 {
+		nextCursor := ads[len(ads)-1].ID
+		fmt.Fprintf(w, `<div class=\"htmx-indicator\" id=\"loader\" 
+			hx-get=\"/ads?cursor=%d\" 
+			hx-trigger=\"revealed\"
+			hx-swap=\"beforeend\"
+			hx-target=\"#adsList\"
+			hx-on=\"htmx:afterRequest: this.remove()\">
+			Loading more ads...
+		</div>`, nextCursor)
+	}
+}
+
+// HandleSearchPage serves a page of filtered ads for infinite scrolling
+func HandleSearchPage(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html")
+	q := r.URL.Query().Get("q")
+	cursorID := 0
+	cursorCreatedAt := ""
+	if r.URL.Query().Get("cursor_id") != "" {
+		fmt.Sscanf(r.URL.Query().Get("cursor_id"), "%d", &cursorID)
+	}
+	if r.URL.Query().Get("cursor_created_at") != "" {
+		cursorCreatedAt = r.URL.Query().Get("cursor_created_at")
+	}
+	var cursorTime time.Time
+	if cursorCreatedAt != "" {
+		cursorTime, _ = time.Parse(time.RFC3339Nano, cursorCreatedAt)
+	}
+	limit := 10
+
+	// Use the same filtering logic as HandleSearch, but get a slice sorted by CreatedAt DESC, ID DESC
+	userPrompt := q
+	var searchQuery templates.SearchSchema
+	if userPrompt != "" {
+		makes := strings.Join(vehicle.GetMakes(), ",")
+		years := strings.Join(vehicle.GetYearRange(), ",")
+		models := strings.Join(vehicle.GetAllModels(), ",")
+		engineSizes := strings.Join(vehicle.GetAllEngineSizes(), ",")
+		categories := strings.Join(part.GetAllCategories(), ",")
+		subCategories := strings.Join(part.GetAllSubCategories(), ",")
+		systemPrompt := fmt.Sprintf(sysPrompt, makes, years, models, engineSizes, categories, subCategories)
+		resp, err := grok.CallGrok(systemPrompt, userPrompt)
+		if err == nil {
+			_ = json.Unmarshal([]byte(resp), &searchQuery)
+		}
+	}
+
+	allAds := ad.GetAllAds()
+	filteredAds := []ad.Ad{}
+	for _, ad := range allAds {
+		if searchQuery.Make != "" && !strings.EqualFold(ad.Make, searchQuery.Make) {
+			continue
+		}
+		if len(searchQuery.Years) > 0 && !anyStringInSlice(ad.Years, searchQuery.Years) {
+			continue
+		}
+		if len(searchQuery.Models) > 0 && !anyStringInSlice(ad.Models, searchQuery.Models) {
+			continue
+		}
+		if len(searchQuery.EngineSizes) > 0 && !anyStringInSlice(ad.Engines, searchQuery.EngineSizes) {
+			continue
+		}
+		filteredAds = append(filteredAds, ad)
+	}
+	// Sort filteredAds by CreatedAt DESC, ID DESC
+	sort.Slice(filteredAds, func(i, j int) bool {
+		if filteredAds[i].CreatedAt.Equal(filteredAds[j].CreatedAt) {
+			return filteredAds[i].ID > filteredAds[j].ID
+		}
+		return filteredAds[i].CreatedAt.After(filteredAds[j].CreatedAt)
+	})
+
+	page, hasMore := ad.GetFilteredAdsPage(filteredAds, cursorID, cursorTime, limit)
+	for _, ad := range page {
+		_ = templates.AdCard(ad).Render(w)
+	}
+	if hasMore && len(page) > 0 {
+		last := page[len(page)-1]
+		fmt.Fprintf(w, `<div class=\"htmx-indicator\" id=\"loader\" 
+			hx-get=\"/search?q=%s&cursor_id=%d&cursor_created_at=%s\" 
+			hx-trigger=\"revealed\"
+			hx-swap=\"beforeend\"
+			hx-target=\"#adsList\"
+			hx-on=\"htmx:afterRequest: this.remove()\">Loading more ads...</div>`,
+			htmlEscape(q), last.ID, last.CreatedAt.Format(time.RFC3339Nano))
+	}
+}
+
+// htmlEscape escapes a string for safe use in HTML attributes
+func htmlEscape(s string) string {
+	replacer := strings.NewReplacer(
+		"&", "&amp;",
+		"'", "&#39;",
+		`"`, "&quot;",
+		"<", "&lt;",
+		">", "&gt;",
+	)
+	return replacer.Replace(s)
 }

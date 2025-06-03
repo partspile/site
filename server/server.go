@@ -38,7 +38,8 @@ func Start() error {
 	mux.HandleFunc("GET /new-ad", handlers.HandleNewAd)
 	mux.HandleFunc("GET /edit-ad/{id}", handlers.HandleEditAd)
 	mux.HandleFunc("GET /ad/{id}", handlers.HandleViewAd)
-	mux.HandleFunc("GET /search", handlers.HandleSearch)
+	mux.HandleFunc("GET /search", handlers.HandleSearchPage)
+	mux.HandleFunc("GET /ads", handlers.HandleAdsPage)
 
 	// API endpoints
 	mux.HandleFunc("GET /api/makes", handlers.HandleMakes)
