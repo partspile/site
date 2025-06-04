@@ -27,11 +27,18 @@ type SearchSchema struct {
 func Page(title string, content []g.Node) g.Node {
 	return HTML(
 		Head(
+			g.Raw(`<title>`+title+`</title>`),
 			Meta(Charset("utf-8")),
 			Meta(Name("viewport"), Content("width=device-width, initial-scale=1")),
-			Title(title),
-			Link(Rel("stylesheet"), Href("https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css")),
-			Script(Src("https://unpkg.com/htmx.org@1.9.10")),
+			Link(
+				Rel("stylesheet"),
+				Href("https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"),
+			),
+			Script(
+				Type("text/javascript"),
+				Src("https://unpkg.com/htmx.org@1.9.10"),
+				Defer(),
+			),
 		),
 		Body(
 			Div(
@@ -273,6 +280,10 @@ func AdCard(ad ad.Ad) g.Node {
 			P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", ad.Models))),
 			P(Class("mt-2"), g.Text(ad.Description)),
 			P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
+			P(
+				Class("text-xs text-gray-400 mt-4"),
+				g.Text(fmt.Sprintf("ID: %d • Posted: %s", ad.ID, ad.CreatedAt.Format("Jan 2, 2006 15:04:05 MST"))),
+			),
 		),
 	)
 }

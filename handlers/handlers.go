@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -19,12 +20,61 @@ import (
 	"github.com/parts-pile/site/vehicle"
 )
 
+const sysPrompt = `You are an expert vehicle parts assistant.
+
+Your job is to extract a structured query from a user's search request.
+
+Extract the make, years, models, engine sizes, category, and subcategory from
+the user's search request.  Use your best judgement as a vehicle parts export
+to fill out the structured query as much as possible.  When filling out the
+structured query, only use values from the lists below, and not the user's values.
+For example, if user entered "Ford", the structure query would use "FORD".
+
+<Makes>
+%s
+</Makes>
+
+<Years>
+%s
+</Years>
+
+<Models>
+%s
+</Models>
+
+<EngineSizes>
+%s
+</EngineSizes>
+
+<Categories>
+%s
+</Categories>
+
+<SubCategories>
+%s
+</SubCategories>
+
+Return JSON encoding this Go structure with the vehicle parts data:
+
+struct {
+	Make        string
+	Years       []string
+	Models      []string
+	EngineSizes []string
+	Category    string
+	SubCategory string
+}
+
+Only return the JSON.  Nothing else.
+`
+
 func HandleHome(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
 	}
 
+	// Build the initial page structure with search box
 	_ = templates.Page(
 		"Parts Pile - Auto Parts and Sales",
 		[]g.Node{
@@ -57,18 +107,10 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 					),
 				),
 			),
+			// Initial search results with empty query
 			Div(
 				ID("searchResults"),
-				Div(
-					ID("adsList"),
-					Class("space-y-4"),
-					g.Raw(`<div class="htmx-indicator" id="loader"
-						hx-get="/ads"
-						hx-trigger="load"
-						hx-swap="beforeend"
-						hx-target="#adsList"
-						hx-on="htmx:afterRequest: this.remove()">Loading ads...</div>`),
-				),
+				g.Raw(`<div hx-get="/search?q=" hx-trigger="load" hx-target="this" hx-swap="outerHTML"></div>`),
 			),
 		},
 	).Render(w)
@@ -607,63 +649,136 @@ func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
 	_ = templates.SuccessMessageWithRedirect("Ad deleted successfully!", "/").Render(w)
 }
 
-// SearchSchema defines the expected JSON structure for search queries
-type SearchSchema struct {
-	Make        string
-	Years       []string
-	Models      []string
-	EngineSizes []string
-	Category    string
-	SubCategory string
+// SearchQuery represents a structured query for filtering ads
+type SearchQuery struct {
+	Make        string   `json:"make,omitempty"`
+	Years       []string `json:"years,omitempty"`
+	Models      []string `json:"models,omitempty"`
+	EngineSizes []string `json:"engine_sizes,omitempty"`
+	Category    string   `json:"category,omitempty"`
+	SubCategory string   `json:"sub_category,omitempty"`
 }
 
-const sysPrompt = `You are an expert vehicle parts assistant.
-
-Your job is to extract a structured query from a user's search request.
-
-Extract the make, years, models, engine sizes, category, and subcategory from
-the user's search request.  Use your best judgement as a vehicle parts export
-to fill out the structured query as much as possible.  When filling out the
-structured query, only use values from the lists below, and not the user's values.
-For example, if user entered "Ford", the structure query would use "FORD".
-
-<Makes>
-%s
-</Makes>
-
-<Years>
-%s
-</Years>
-
-<Models>
-%s
-</Models>
-
-<EngineSizes>
-%s
-</EngineSizes>
-
-<Categories>
-%s
-</Categories>
-
-<SubCategories>
-%s
-</SubCategories>
-
-Return JSON encoding this Go structure with the vehicle parts data:
-
-struct {
-	Make        string
-	Years       []string
-	Models      []string
-	EngineSizes []string
-	Category    string
-	SubCategory string
+// SearchCursor represents a point in the search results for pagination
+type SearchCursor struct {
+	Query      SearchQuery `json:"q"`           // The structured query
+	LastID     int         `json:"last_id"`     // Last ID seen
+	LastPosted time.Time   `json:"last_posted"` // Timestamp of last item
 }
 
-Only return the JSON.  Nothing else.
-`
+// EncodeCursor converts a SearchCursor to a base64 string
+func EncodeCursor(c SearchCursor) string {
+	b, _ := json.Marshal(c)
+	return base64.URLEncoding.EncodeToString(b)
+}
+
+// DecodeCursor converts a base64 string back to a SearchCursor
+func DecodeCursor(s string) (SearchCursor, error) {
+	var c SearchCursor
+	b, err := base64.URLEncoding.DecodeString(s)
+	if err != nil {
+		return c, err
+	}
+	err = json.Unmarshal(b, &c)
+	return c, err
+}
+
+// ParseSearchQuery converts a user's text query into a structured SearchQuery
+func ParseSearchQuery(q string) (SearchQuery, error) {
+	if q == "" {
+		// Empty query matches everything
+		return SearchQuery{}, nil
+	}
+
+	// Call Grok to parse the query
+	makes := strings.Join(vehicle.GetMakes(), ",")
+	years := strings.Join(vehicle.GetYearRange(), ",")
+	models := strings.Join(vehicle.GetAllModels(), ",")
+	engineSizes := strings.Join(vehicle.GetAllEngineSizes(), ",")
+	categories := strings.Join(part.GetAllCategories(), ",")
+	subCategories := strings.Join(part.GetAllSubCategories(), ",")
+	systemPrompt := fmt.Sprintf(sysPrompt, makes, years, models, engineSizes, categories, subCategories)
+
+	resp, err := grok.CallGrok(systemPrompt, q)
+	if err != nil {
+		return SearchQuery{}, err
+	}
+
+	var query SearchQuery
+	err = json.Unmarshal([]byte(resp), &query)
+	return query, err
+}
+
+// FilterAds applies a SearchQuery to a list of ads
+func FilterAds(query SearchQuery, ads []ad.Ad) []ad.Ad {
+	if query.Make == "" && len(query.Years) == 0 && len(query.Models) == 0 &&
+		len(query.EngineSizes) == 0 && query.Category == "" && query.SubCategory == "" {
+		return ads // Empty query matches everything
+	}
+
+	filtered := []ad.Ad{}
+	for _, ad := range ads {
+		if query.Make != "" && !strings.EqualFold(ad.Make, query.Make) {
+			continue
+		}
+		if len(query.Years) > 0 && !anyStringInSlice(ad.Years, query.Years) {
+			continue
+		}
+		if len(query.Models) > 0 && !anyStringInSlice(ad.Models, query.Models) {
+			continue
+		}
+		if len(query.EngineSizes) > 0 && !anyStringInSlice(ad.Engines, query.EngineSizes) {
+			continue
+		}
+		filtered = append(filtered, ad)
+	}
+	return filtered
+}
+
+// GetNextPage returns the next page of ads after the cursor
+func GetNextPage(query SearchQuery, cursor *SearchCursor, limit int) ([]ad.Ad, *SearchCursor, error) {
+	// Convert map to slice
+	allAds := []ad.Ad{}
+	for _, a := range ad.GetAllAds() {
+		allAds = append(allAds, a)
+	}
+
+	filtered := FilterAds(query, allAds)
+
+	// Sort by CreatedAt DESC, ID DESC
+	sort.Slice(filtered, func(i, j int) bool {
+		if filtered[i].CreatedAt.Equal(filtered[j].CreatedAt) {
+			return filtered[i].ID > filtered[j].ID
+		}
+		return filtered[i].CreatedAt.After(filtered[j].CreatedAt)
+	})
+
+	// Apply cursor if provided
+	if cursor != nil {
+		i := 0
+		for ; i < len(filtered); i++ {
+			if filtered[i].CreatedAt.Before(cursor.LastPosted) ||
+				(filtered[i].CreatedAt.Equal(cursor.LastPosted) && filtered[i].ID <= cursor.LastID) {
+				break
+			}
+		}
+		filtered = filtered[i:]
+	}
+
+	// Get next page
+	var nextCursor *SearchCursor
+	if len(filtered) > limit {
+		last := filtered[limit-1]
+		nextCursor = &SearchCursor{
+			Query:      query,
+			LastID:     last.ID,
+			LastPosted: last.CreatedAt,
+		}
+		filtered = filtered[:limit]
+	}
+
+	return filtered, nextCursor, nil
+}
 
 // Helper: check if any string in a is in b
 func anyStringInSlice(a, b []string) bool {
@@ -680,93 +795,83 @@ func anyStringInSlice(a, b []string) bool {
 // HandleSearch filters ads by query and returns the filtered list as HTML for HTMX
 func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	userPrompt := r.URL.Query().Get("q")
-	if userPrompt == "" {
-		_ = templates.SearchResultsContainer(templates.SearchSchema{}, ad.GetAllAds()).Render(w)
-		return
-	}
-
-	// Step 1: Build the prompt
-	makes := strings.Join(vehicle.GetMakes(), ",")
-	years := strings.Join(vehicle.GetYearRange(), ",")
-	models := strings.Join(vehicle.GetAllModels(), ",")
-	engineSizes := strings.Join(vehicle.GetAllEngineSizes(), ",")
-	categories := strings.Join(part.GetAllCategories(), ",")
-	subCategories := strings.Join(part.GetAllSubCategories(), ",")
-
-	systemPrompt := fmt.Sprintf(sysPrompt, makes, years, models,
-		engineSizes, categories, subCategories)
-
-	resp, err := grok.CallGrok(systemPrompt, userPrompt)
-	if err != nil {
-		http.Error(w, "Grok error: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Step 2: Parse the structured prompt
-	var searchQuery templates.SearchSchema
-	err = json.Unmarshal([]byte(resp), &searchQuery)
-	if err != nil {
-		http.Error(w, "Failed to parse Grok structured prompt: "+err.Error()+"\nResponse: "+resp, http.StatusInternalServerError)
-		return
-	}
-
-	// Step 3: Filter ads using the structured prompt (no second LLM call)
-	filteredAds := []ad.Ad{}
-	allAds := ad.GetAllAds()
-
-	for _, ad := range allAds {
-		if searchQuery.Make != "" && !strings.EqualFold(ad.Make, searchQuery.Make) {
-			continue
-		}
-		if len(searchQuery.Years) > 0 && !anyStringInSlice(ad.Years, searchQuery.Years) {
-			continue
-		}
-		if len(searchQuery.Models) > 0 && !anyStringInSlice(ad.Models, searchQuery.Models) {
-			continue
-		}
-		if len(searchQuery.EngineSizes) > 0 && !anyStringInSlice(ad.Engines, searchQuery.EngineSizes) {
-			continue
-		}
-		// Category/SubCategory filtering can be added if ads have those fields
-		filteredAds = append(filteredAds, ad)
-	}
-
-	// Convert filteredAds slice to map for consistent handling
-	filteredAdsMap := make(map[int]ad.Ad, len(filteredAds))
-	for _, ad := range filteredAds {
-		filteredAdsMap[ad.ID] = ad
-	}
-
-	// Render just the filters and ad list
-	_ = templates.SearchResultsContainer(searchQuery, filteredAdsMap).Render(w)
-}
-
-// HandleAdsPage serves a page of ads for infinite scrolling
-func HandleAdsPage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
 	cursorStr := r.URL.Query().Get("cursor")
-	cursorID := 0
+
+	var query SearchQuery
+	var cursor *SearchCursor
+	var err error
+
+	// If we have a cursor, use its query instead of parsing again
 	if cursorStr != "" {
-		fmt.Sscanf(cursorStr, "%d", &cursorID)
+		c, err := DecodeCursor(cursorStr)
+		if err != nil {
+			http.Error(w, "Invalid cursor", http.StatusBadRequest)
+			return
+		}
+		cursor = &c
+		query = c.Query
+	} else {
+		// Only parse search query if this is the initial request
+		query, err = ParseSearchQuery(userPrompt)
+		if err != nil {
+			http.Error(w, "Error parsing search query", http.StatusBadRequest)
+			return
+		}
 	}
+
+	// Get the next page of results
 	limit := 10
-	ads, hasMore := ad.GetAdsPage(cursorID, limit)
-
-	for _, ad := range ads {
-		_ = templates.AdCard(ad).Render(w)
+	page, nextCursor, err := GetNextPage(query, cursor, limit)
+	if err != nil {
+		http.Error(w, "Error getting results", http.StatusInternalServerError)
+		return
 	}
 
-	if hasMore && len(ads) > 0 {
-		nextCursor := ads[len(ads)-1].ID
-		fmt.Fprintf(w, `<div class=\"htmx-indicator\" id=\"loader\" 
-			hx-get=\"/ads?cursor=%d\" 
-			hx-trigger=\"revealed\"
-			hx-swap=\"beforeend\"
-			hx-target=\"#adsList\"
-			hx-on=\"htmx:afterRequest: this.remove()\">
-			Loading more ads...
-		</div>`, nextCursor)
+	fmt.Printf("Search request - query: %s, results: %d, hasMore: %v\n",
+		userPrompt, len(page), nextCursor != nil)
+
+	// For pagination requests, just return the ad cards and loader
+	if cursor != nil {
+		// Render each ad card
+		for _, ad := range page {
+			_ = templates.AdCard(ad).Render(w)
+		}
+
+		// Add the loader if there are more results
+		if nextCursor != nil {
+			nextCursorStr := EncodeCursor(*nextCursor)
+			loaderURL := fmt.Sprintf("/search?q=%s&cursor=%s",
+				htmlEscape(userPrompt),
+				htmlEscape(nextCursorStr))
+			fmt.Fprintf(w, `<div class="htmx-indicator" id="loader" hx-get="%s" hx-trigger="revealed" hx-swap="beforeend" hx-target="#adsList" hx-on="htmx:afterRequest: this.remove()">Loading more ads...</div>`, loaderURL)
+		}
+		return
 	}
+
+	// For initial search, return the full search results structure
+	adNodes := []g.Node{}
+	for _, ad := range page {
+		adNodes = append(adNodes, templates.AdCard(ad))
+	}
+
+	// Add the loader if there are more results
+	if nextCursor != nil {
+		nextCursorStr := EncodeCursor(*nextCursor)
+		loaderURL := fmt.Sprintf("/search?q=%s&cursor=%s",
+			htmlEscape(userPrompt),
+			htmlEscape(nextCursorStr))
+		adNodes = append(adNodes, g.Raw(fmt.Sprintf(`<div class="htmx-indicator" id="loader" hx-get="%s" hx-trigger="revealed" hx-swap="beforeend" hx-target="#adsList" hx-on="htmx:afterRequest: this.remove()">Loading more ads...</div>`, loaderURL)))
+	}
+
+	// Render the initial search results
+	_ = Div(
+		ID("searchResults"),
+		Div(
+			ID("adsList"),
+			Class("space-y-4"),
+			g.Group(adNodes),
+		),
+	).Render(w)
 }
 
 // HandleSearchPage serves a page of filtered ads for infinite scrolling
@@ -787,7 +892,9 @@ func HandleSearchPage(w http.ResponseWriter, r *http.Request) {
 	}
 	limit := 10
 
-	// Use the same filtering logic as HandleSearch, but get a slice sorted by CreatedAt DESC, ID DESC
+	fmt.Printf("Search request - query: %s, cursorID: %d, cursorTime: %v\n", q, cursorID, cursorTime)
+
+	// Use the same filtering logic as HandleSearch
 	userPrompt := q
 	var searchQuery templates.SearchSchema
 	if userPrompt != "" {
@@ -830,18 +937,18 @@ func HandleSearchPage(w http.ResponseWriter, r *http.Request) {
 	})
 
 	page, hasMore := ad.GetFilteredAdsPage(filteredAds, cursorID, cursorTime, limit)
+	fmt.Printf("Found %d ads, hasMore=%v\n", len(page), hasMore)
+
 	for _, ad := range page {
 		_ = templates.AdCard(ad).Render(w)
 	}
+
 	if hasMore && len(page) > 0 {
 		last := page[len(page)-1]
-		fmt.Fprintf(w, `<div class=\"htmx-indicator\" id=\"loader\" 
-			hx-get=\"/search?q=%s&cursor_id=%d&cursor_created_at=%s\" 
-			hx-trigger=\"revealed\"
-			hx-swap=\"beforeend\"
-			hx-target=\"#adsList\"
-			hx-on=\"htmx:afterRequest: this.remove()\">Loading more ads...</div>`,
+		loaderHTML := fmt.Sprintf(`<div class="htmx-indicator" id="loader" hx-get="/search?q=%s&cursor_id=%d&cursor_created_at=%s" hx-trigger="revealed" hx-swap="beforeend" hx-target="#adsList" hx-on="htmx:afterRequest: this.remove()">Loading more ads...</div>`,
 			htmlEscape(q), last.ID, last.CreatedAt.Format(time.RFC3339Nano))
+		fmt.Printf("Adding loader with HTML: %s\n", loaderHTML)
+		fmt.Fprint(w, loaderHTML)
 	}
 }
 

@@ -3,6 +3,7 @@ package ad
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -27,6 +28,8 @@ func InitDB(path string) error {
 	if err != nil {
 		return err
 	}
+
+	// Create the ads table with the schema
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS ads (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		make TEXT,
@@ -35,7 +38,7 @@ func InitDB(path string) error {
 		engines TEXT,
 		description TEXT,
 		price REAL,
-		created_at DATETIME
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 	)`)
 	return err
 }
@@ -121,6 +124,7 @@ func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 
 	rows, err := db.Query(query, args...)
 	if err != nil {
+		fmt.Printf("Error querying ads: %v\n", err)
 		return nil, false
 	}
 	defer rows.Close()
@@ -130,6 +134,7 @@ func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 		var ad Ad
 		var years, models, engines string
 		if err := rows.Scan(&ad.ID, &ad.Make, &years, &models, &engines, &ad.Description, &ad.Price, &ad.CreatedAt); err != nil {
+			fmt.Printf("Error scanning ad: %v\n", err)
 			continue
 		}
 		json.Unmarshal([]byte(years), &ad.Years)
@@ -169,4 +174,12 @@ func GetFilteredAdsPage(filtered []Ad, cursorID int, cursorCreatedAt time.Time, 
 	page := filtered[start:end]
 	hasMore := end < len(filtered)
 	return page, hasMore
+}
+
+// CloseDB closes the database connection
+func CloseDB() error {
+	if db != nil {
+		return db.Close()
+	}
+	return nil
 }
