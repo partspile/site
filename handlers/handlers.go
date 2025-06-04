@@ -650,21 +650,10 @@ func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
 }
 
 // SearchQuery represents a structured query for filtering ads
-type SearchQuery struct {
-	Make        string   `json:"make,omitempty"`
-	Years       []string `json:"years,omitempty"`
-	Models      []string `json:"models,omitempty"`
-	EngineSizes []string `json:"engine_sizes,omitempty"`
-	Category    string   `json:"category,omitempty"`
-	SubCategory string   `json:"sub_category,omitempty"`
-}
+type SearchQuery = ad.SearchQuery
 
 // SearchCursor represents a point in the search results for pagination
-type SearchCursor struct {
-	Query      SearchQuery `json:"q"`           // The structured query
-	LastID     int         `json:"last_id"`     // Last ID seen
-	LastPosted time.Time   `json:"last_posted"` // Timestamp of last item
-}
+type SearchCursor = ad.SearchCursor
 
 // EncodeCursor converts a SearchCursor to a base64 string
 func EncodeCursor(c SearchCursor) string {
@@ -737,47 +726,24 @@ func FilterAds(query SearchQuery, ads []ad.Ad) []ad.Ad {
 
 // GetNextPage returns the next page of ads after the cursor
 func GetNextPage(query SearchQuery, cursor *SearchCursor, limit int) ([]ad.Ad, *SearchCursor, error) {
-	// Convert map to slice
-	allAds := []ad.Ad{}
-	for _, a := range ad.GetAllAds() {
-		allAds = append(allAds, a)
+	// Get filtered page from database
+	ads, hasMore, err := ad.GetFilteredAdsPageDB(query, cursor, limit)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	filtered := FilterAds(query, allAds)
-
-	// Sort by CreatedAt DESC, ID DESC
-	sort.Slice(filtered, func(i, j int) bool {
-		if filtered[i].CreatedAt.Equal(filtered[j].CreatedAt) {
-			return filtered[i].ID > filtered[j].ID
-		}
-		return filtered[i].CreatedAt.After(filtered[j].CreatedAt)
-	})
-
-	// Apply cursor if provided
-	if cursor != nil {
-		i := 0
-		for ; i < len(filtered); i++ {
-			if filtered[i].CreatedAt.Before(cursor.LastPosted) ||
-				(filtered[i].CreatedAt.Equal(cursor.LastPosted) && filtered[i].ID <= cursor.LastID) {
-				break
-			}
-		}
-		filtered = filtered[i:]
-	}
-
-	// Get next page
+	// Create next cursor if there are more results
 	var nextCursor *SearchCursor
-	if len(filtered) > limit {
-		last := filtered[limit-1]
+	if hasMore && len(ads) > 0 {
+		last := ads[len(ads)-1]
 		nextCursor = &SearchCursor{
 			Query:      query,
 			LastID:     last.ID,
 			LastPosted: last.CreatedAt,
 		}
-		filtered = filtered[:limit]
 	}
 
-	return filtered, nextCursor, nil
+	return ads, nextCursor, nil
 }
 
 // Helper: check if any string in a is in b

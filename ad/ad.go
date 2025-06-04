@@ -4,10 +4,28 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
+
+// SearchQuery represents a structured query for filtering ads
+type SearchQuery struct {
+	Make        string   `json:"make,omitempty"`
+	Years       []string `json:"years,omitempty"`
+	Models      []string `json:"models,omitempty"`
+	EngineSizes []string `json:"engine_sizes,omitempty"`
+	Category    string   `json:"category,omitempty"`
+	SubCategory string   `json:"sub_category,omitempty"`
+}
+
+// SearchCursor represents a point in the search results for pagination
+type SearchCursor struct {
+	Query      SearchQuery `json:"q"`           // The structured query
+	LastID     int         `json:"last_id"`     // Last ID seen
+	LastPosted time.Time   `json:"last_posted"` // Timestamp of last item
+}
 
 type Ad struct {
 	ID          int       `json:"id"`
@@ -174,6 +192,81 @@ func GetFilteredAdsPage(filtered []Ad, cursorID int, cursorCreatedAt time.Time, 
 	page := filtered[start:end]
 	hasMore := end < len(filtered)
 	return page, hasMore
+}
+
+// GetFilteredAdsPageDB returns a page of filtered ads directly from the database
+func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([]Ad, bool, error) {
+	sqlQuery := "SELECT id, make, years, models, engines, description, price, created_at FROM ads WHERE 1=1"
+	args := []interface{}{}
+
+	// Apply filters
+	if query.Make != "" {
+		sqlQuery += " AND LOWER(make) = LOWER(?)"
+		args = append(args, query.Make)
+	}
+
+	// Apply cursor pagination
+	if cursor != nil {
+		sqlQuery += " AND (created_at < ? OR (created_at = ? AND id < ?))"
+		args = append(args, cursor.LastPosted, cursor.LastPosted, cursor.LastID)
+	}
+
+	// Order by created_at DESC, id DESC
+	sqlQuery += " ORDER BY created_at DESC, id DESC LIMIT ?"
+	args = append(args, limit+1) // Get one extra to check if there are more results
+
+	rows, err := db.Query(sqlQuery, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	defer rows.Close()
+
+	ads := []Ad{}
+	for rows.Next() {
+		var ad Ad
+		var years, models, engines string
+		if err := rows.Scan(&ad.ID, &ad.Make, &years, &models, &engines, &ad.Description, &ad.Price, &ad.CreatedAt); err != nil {
+			continue
+		}
+		json.Unmarshal([]byte(years), &ad.Years)
+		json.Unmarshal([]byte(models), &ad.Models)
+		json.Unmarshal([]byte(engines), &ad.Engines)
+
+		// Apply array filters in memory since SQLite doesn't handle array operations well
+		if len(query.Years) > 0 || len(query.Models) > 0 || len(query.EngineSizes) > 0 {
+			if len(query.Years) > 0 && !anyStringInSlice(ad.Years, query.Years) {
+				continue
+			}
+			if len(query.Models) > 0 && !anyStringInSlice(ad.Models, query.Models) {
+				continue
+			}
+			if len(query.EngineSizes) > 0 && !anyStringInSlice(ad.Engines, query.EngineSizes) {
+				continue
+			}
+		}
+
+		ads = append(ads, ad)
+	}
+
+	hasMore := false
+	if len(ads) > limit {
+		hasMore = true
+		ads = ads[:limit]
+	}
+
+	return ads, hasMore, nil
+}
+
+// Helper function for case-insensitive string slice comparison
+func anyStringInSlice(a, b []string) bool {
+	for _, s := range a {
+		for _, t := range b {
+			if strings.EqualFold(s, t) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // CloseDB closes the database connection
