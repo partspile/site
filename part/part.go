@@ -1,44 +1,77 @@
 package part
 
 import (
-	"encoding/json"
-	"os"
+	"database/sql"
 )
 
-type PartData map[string][]string
+var db *sql.DB
 
-var (
-	Data PartData
-)
+// InitDB sets the database connection for the part package
+func InitDB(database *sql.DB) {
+	db = database
+}
 
 func GetAllCategories() []string {
-	categories := make([]string, 0, len(Data))
-	for category := range Data {
+	rows, err := db.Query("SELECT name FROM PartCategory ORDER BY name")
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	
+	var categories []string
+	for rows.Next() {
+		var category string
+		if err := rows.Scan(&category); err != nil {
+			continue
+		}
 		categories = append(categories, category)
 	}
 	return categories
 }
 
 func GetAllSubCategories() []string {
-	subCategories := make(map[string]struct{})
-	for _, subs := range Data {
-		for _, sub := range subs {
-			subCategories[sub] = struct{}{}
+	rows, err := db.Query("SELECT DISTINCT name FROM PartSubCategory ORDER BY name")
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	
+	var subCategories []string
+	for rows.Next() {
+		var subCategory string
+		if err := rows.Scan(&subCategory); err != nil {
+			continue
 		}
+		subCategories = append(subCategories, subCategory)
 	}
-
-	result := make([]string, 0, len(subCategories))
-	for sub := range subCategories {
-		result = append(result, sub)
-	}
-	return result
+	return subCategories
 }
 
-func LoadData() error {
-	data, err := os.ReadFile("part.json")
+func GetSubCategoriesForCategory(categoryName string) []string {
+	rows, err := db.Query(`
+		SELECT psc.name 
+		FROM PartSubCategory psc
+		JOIN PartCategory pc ON psc.category_id = pc.id
+		WHERE pc.name = ?
+		ORDER BY psc.name
+	`, categoryName)
 	if err != nil {
-		return err
+		return nil
 	}
+	defer rows.Close()
+	
+	var subCategories []string
+	for rows.Next() {
+		var subCategory string
+		if err := rows.Scan(&subCategory); err != nil {
+			continue
+		}
+		subCategories = append(subCategories, subCategory)
+	}
+	return subCategories
+}
 
-	return json.Unmarshal(data, &Data)
+// LoadData is kept for compatibility but no longer needed since data is in database
+func LoadData() error {
+	return nil
 }

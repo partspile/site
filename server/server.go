@@ -12,19 +12,17 @@ import (
 )
 
 func Start() error {
-	// Load initial data
-	if err := vehicle.LoadData(); err != nil {
-		return fmt.Errorf("error loading vehicle data: %v", err)
+	// Initialize ads/project database
+	if err := ad.InitDB("project.db"); err != nil {
+		return fmt.Errorf("error initializing project database: %v", err)
 	}
 
-	if err := part.LoadData(); err != nil {
-		return fmt.Errorf("error loading part data: %v", err)
-	}
-
-	// Load ads data
-	if err := ad.InitDB("ads.db"); err != nil {
-		return fmt.Errorf("error initializing ads database: %v", err)
-	}
+	// Initialize vehicle package with the same DB
+	// (ensures vehicle uses project.db)
+	vehicle.InitDB(ad.DB)
+	
+	// Initialize part package with the same DB
+	part.InitDB(ad.DB)
 
 	port := os.Getenv("PORT")
 	if port == "" {

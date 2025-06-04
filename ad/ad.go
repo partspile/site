@@ -2,7 +2,6 @@ package ad
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -28,17 +27,25 @@ type SearchCursor struct {
 }
 
 type Ad struct {
-	ID          int       `json:"id"`
-	Make        string    `json:"make"`
-	Years       []string  `json:"years"`
-	Models      []string  `json:"models"`
-	Engines     []string  `json:"engines"`
-	Description string    `json:"description"`
-	Price       float64   `json:"price"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID            int       `json:"id"`
+	Description   string    `json:"description"`
+	Price         float64   `json:"price"`
+	CreatedAt     time.Time `json:"created_at"`
+	CategoryID    *int      `json:"category_id,omitempty"`
+	SubCategoryID *int      `json:"subcategory_id,omitempty"`
+	// Runtime fields populated via joins
+	Make        string   `json:"make"`
+	Years       []string `json:"years"`
+	Models      []string `json:"models"`
+	Engines     []string `json:"engines"`
+	Category    string   `json:"category,omitempty"`
+	SubCategory string   `json:"subcategory,omitempty"`
 }
 
 var db *sql.DB
+
+// Exported for use by other packages
+var DB *sql.DB
 
 func InitDB(path string) error {
 	var err error
@@ -46,82 +53,313 @@ func InitDB(path string) error {
 	if err != nil {
 		return err
 	}
-
-	// Create the ads table with the schema
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS ads (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		make TEXT,
-		years TEXT,
-		models TEXT,
-		engines TEXT,
-		description TEXT,
-		price REAL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-	)`)
-	return err
+	DB = db
+	return nil
 }
 
 func GetAllAds() map[int]Ad {
-	rows, err := db.Query("SELECT id, make, years, models, engines, description, price, created_at FROM ads")
+	ads := make(map[int]Ad)
+	
+	// Get basic ad data
+	rows, err := db.Query(`
+		SELECT a.id, a.description, a.price, a.created_at, a.category_id, a.subcategory_id,
+		       pc.name as category, psc.name as subcategory
+		FROM Ad a
+		LEFT JOIN PartCategory pc ON a.category_id = pc.id
+		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+	`)
 	if err != nil {
-		return map[int]Ad{}
+		return ads
 	}
 	defer rows.Close()
-	ads := make(map[int]Ad)
+	
 	for rows.Next() {
 		var ad Ad
-		var years, models, engines string
-		if err := rows.Scan(&ad.ID, &ad.Make, &years, &models, &engines, &ad.Description, &ad.Price, &ad.CreatedAt); err != nil {
+		var category, subcategory sql.NullString
+		if err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, 
+			&ad.CategoryID, &ad.SubCategoryID, &category, &subcategory); err != nil {
 			continue
 		}
-		json.Unmarshal([]byte(years), &ad.Years)
-		json.Unmarshal([]byte(models), &ad.Models)
-		json.Unmarshal([]byte(engines), &ad.Engines)
+		if category.Valid {
+			ad.Category = category.String
+		}
+		if subcategory.Valid {
+			ad.SubCategory = subcategory.String
+		}
 		ads[ad.ID] = ad
 	}
+	
+	// Get vehicle data for each ad
+	for id, ad := range ads {
+		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(id)
+		ads[id] = ad
+	}
+	
 	return ads
 }
 
+// getAdVehicleData retrieves vehicle information for an ad
+func getAdVehicleData(adID int) (makeName string, years []string, models []string, engines []string) {
+	rows, err := db.Query(`
+		SELECT DISTINCT m.name, y.year, mo.name, e.description
+		FROM AdCarEngine ace
+		JOIN CarEngine ce ON ace.car_engine_id = ce.id
+		JOIN Car c ON ce.car_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN Engine e ON ce.engine_id = e.id
+		WHERE ace.ad_id = ?
+		ORDER BY m.name, y.year, mo.name, e.description
+	`, adID)
+	if err != nil {
+		return "", nil, nil, nil
+	}
+	defer rows.Close()
+	
+	makeSet := make(map[string]bool)
+	yearSet := make(map[string]bool)
+	modelSet := make(map[string]bool)
+	engineSet := make(map[string]bool)
+	
+	for rows.Next() {
+		var makeName, modelName, engineDesc string
+		var year int
+		if err := rows.Scan(&makeName, &year, &modelName, &engineDesc); err != nil {
+			continue
+		}
+		makeSet[makeName] = true
+		yearSet[fmt.Sprintf("%d", year)] = true
+		modelSet[modelName] = true
+		engineSet[engineDesc] = true
+	}
+	
+	// Convert sets to slices
+	for m := range makeSet {
+		makeName = m // Assuming single make per ad
+		break
+	}
+	for y := range yearSet {
+		years = append(years, y)
+	}
+	for m := range modelSet {
+		models = append(models, m)
+	}
+	for e := range engineSet {
+		engines = append(engines, e)
+	}
+	
+	return makeName, years, models, engines
+}
+
 func GetAd(id int) (Ad, bool) {
-	row := db.QueryRow("SELECT id, make, years, models, engines, description, price, created_at FROM ads WHERE id = ?", id)
+	row := db.QueryRow(`
+		SELECT a.id, a.description, a.price, a.created_at, a.category_id, a.subcategory_id,
+		       pc.name as category, psc.name as subcategory
+		FROM Ad a
+		LEFT JOIN PartCategory pc ON a.category_id = pc.id
+		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		WHERE a.id = ?
+	`, id)
+	
 	var ad Ad
-	var years, models, engines string
-	if err := row.Scan(&ad.ID, &ad.Make, &years, &models, &engines, &ad.Description, &ad.Price, &ad.CreatedAt); err != nil {
+	var category, subcategory sql.NullString
+	if err := row.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, 
+		&ad.CategoryID, &ad.SubCategoryID, &category, &subcategory); err != nil {
 		return Ad{}, false
 	}
-	json.Unmarshal([]byte(years), &ad.Years)
-	json.Unmarshal([]byte(models), &ad.Models)
-	json.Unmarshal([]byte(engines), &ad.Engines)
+	
+	if category.Valid {
+		ad.Category = category.String
+	}
+	if subcategory.Valid {
+		ad.SubCategory = subcategory.String
+	}
+	
+	// Get vehicle data
+	ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(id)
+	
 	return ad, true
 }
 
 func AddAd(ad Ad) int {
-	years, _ := json.Marshal(ad.Years)
-	models, _ := json.Marshal(ad.Models)
-	engines, _ := json.Marshal(ad.Engines)
-	res, err := db.Exec("INSERT INTO ads (make, years, models, engines, description, price, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", ad.Make, string(years), string(models), string(engines), ad.Description, ad.Price, time.Now())
+	// Start transaction
+	tx, err := db.Begin()
 	if err != nil {
 		return 0
 	}
-	id, _ := res.LastInsertId()
-	return int(id)
+	defer tx.Rollback()
+	
+	// Insert the ad
+	res, err := tx.Exec("INSERT INTO Ad (description, price, created_at, category_id, subcategory_id) VALUES (?, ?, ?, ?, ?)", 
+		ad.Description, ad.Price, time.Now(), ad.CategoryID, ad.SubCategoryID)
+	if err != nil {
+		return 0
+	}
+	adID, _ := res.LastInsertId()
+	
+	// Create vehicle associations if provided
+	if ad.Make != "" || len(ad.Years) > 0 || len(ad.Models) > 0 || len(ad.Engines) > 0 {
+		if err := addAdVehicleAssociations(tx, int(adID), ad.Make, ad.Years, ad.Models, ad.Engines); err != nil {
+			return 0
+		}
+	}
+	
+	if err := tx.Commit(); err != nil {
+		return 0
+	}
+	
+	return int(adID)
+}
+
+// addAdVehicleAssociations creates the normalized vehicle associations for an ad
+func addAdVehicleAssociations(tx *sql.Tx, adID int, makeName string, years []string, models []string, engines []string) error {
+	// If no vehicle data provided, skip
+	if makeName == "" && len(years) == 0 && len(models) == 0 && len(engines) == 0 {
+		return nil
+	}
+	
+	// Create all combinations of make/year/model/engine
+	for _, yearStr := range years {
+		for _, modelName := range models {
+			for _, engineDesc := range engines {
+				// Get or create Car
+				var carID int
+				err := tx.QueryRow(`
+					SELECT c.id FROM Car c
+					JOIN Make m ON c.make_id = m.id
+					JOIN Year y ON c.year_id = y.id
+					JOIN Model mo ON c.model_id = mo.id
+					WHERE m.name = ? AND y.year = ? AND mo.name = ?
+				`, makeName, yearStr, modelName).Scan(&carID)
+				
+				if err == sql.ErrNoRows {
+					// Car doesn't exist, create it
+					var makeID, yearID, modelID int
+					
+					// Get make ID
+					err = tx.QueryRow("SELECT id FROM Make WHERE name = ?", makeName).Scan(&makeID)
+					if err != nil {
+						continue
+					}
+					
+					// Get year ID  
+					err = tx.QueryRow("SELECT id FROM Year WHERE year = ?", yearStr).Scan(&yearID)
+					if err != nil {
+						continue
+					}
+					
+					// Get model ID
+					err = tx.QueryRow("SELECT id FROM Model WHERE name = ?", modelName).Scan(&modelID)
+					if err != nil {
+						continue
+					}
+					
+					// Create car
+					res, err := tx.Exec("INSERT INTO Car (make_id, year_id, model_id) VALUES (?, ?, ?)", makeID, yearID, modelID)
+					if err != nil {
+						continue
+					}
+					id, _ := res.LastInsertId()
+					carID = int(id)
+				} else if err != nil {
+					continue
+				}
+				
+				// Get or create CarEngine
+				var carEngineID int
+				err = tx.QueryRow(`
+					SELECT ce.id FROM CarEngine ce
+					JOIN Engine e ON ce.engine_id = e.id
+					WHERE ce.car_id = ? AND e.description = ?
+				`, carID, engineDesc).Scan(&carEngineID)
+				
+				if err == sql.ErrNoRows {
+					// CarEngine doesn't exist, create it
+					var engineID int
+					err = tx.QueryRow("SELECT id FROM Engine WHERE description = ?", engineDesc).Scan(&engineID)
+					if err != nil {
+						continue
+					}
+					
+					res, err := tx.Exec("INSERT INTO CarEngine (car_id, engine_id) VALUES (?, ?)", carID, engineID)
+					if err != nil {
+						continue
+					}
+					id, _ := res.LastInsertId()
+					carEngineID = int(id)
+				} else if err != nil {
+					continue
+				}
+				
+				// Create AdCarEngine association
+				_, err = tx.Exec("INSERT OR IGNORE INTO AdCarEngine (ad_id, car_engine_id) VALUES (?, ?)", adID, carEngineID)
+				if err != nil {
+					continue
+				}
+			}
+		}
+	}
+	
+	return nil
 }
 
 func UpdateAd(id int, ad Ad) bool {
-	years, _ := json.Marshal(ad.Years)
-	models, _ := json.Marshal(ad.Models)
-	engines, _ := json.Marshal(ad.Engines)
-	_, err := db.Exec("UPDATE ads SET make=?, years=?, models=?, engines=?, description=?, price=? WHERE id=?", ad.Make, string(years), string(models), string(engines), ad.Description, ad.Price, id)
-	return err == nil
+	// Start transaction
+	tx, err := db.Begin()
+	if err != nil {
+		return false
+	}
+	defer tx.Rollback()
+	
+	// Update the ad
+	_, err = tx.Exec("UPDATE Ad SET description=?, price=?, category_id=?, subcategory_id=? WHERE id=?", 
+		ad.Description, ad.Price, ad.CategoryID, ad.SubCategoryID, id)
+	if err != nil {
+		return false
+	}
+	
+	// Remove existing vehicle associations
+	_, err = tx.Exec("DELETE FROM AdCarEngine WHERE ad_id = ?", id)
+	if err != nil {
+		return false
+	}
+	
+	// Add new vehicle associations
+	if ad.Make != "" || len(ad.Years) > 0 || len(ad.Models) > 0 || len(ad.Engines) > 0 {
+		if err := addAdVehicleAssociations(tx, id, ad.Make, ad.Years, ad.Models, ad.Engines); err != nil {
+			return false
+		}
+	}
+	
+	return tx.Commit() == nil
 }
 
 func DeleteAd(id int) bool {
-	_, err := db.Exec("DELETE FROM ads WHERE id=?", id)
-	return err == nil
+	// Start transaction
+	tx, err := db.Begin()
+	if err != nil {
+		return false
+	}
+	defer tx.Rollback()
+	
+	// Delete vehicle associations first
+	_, err = tx.Exec("DELETE FROM AdCarEngine WHERE ad_id = ?", id)
+	if err != nil {
+		return false
+	}
+	
+	// Delete the ad
+	_, err = tx.Exec("DELETE FROM Ad WHERE id=?", id)
+	if err != nil {
+		return false
+	}
+	
+	return tx.Commit() == nil
 }
 
 func GetNextAdID() int {
-	row := db.QueryRow("SELECT seq FROM sqlite_sequence WHERE name='ads'")
+	row := db.QueryRow("SELECT seq FROM sqlite_sequence WHERE name='Ad'")
 	var seq int
 	if err := row.Scan(&seq); err != nil {
 		return 1
@@ -131,13 +369,19 @@ func GetNextAdID() int {
 
 // GetAdsPage returns a slice of ads for cursor-based pagination
 func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
-	query := "SELECT id, make, years, models, engines, description, price, created_at FROM ads"
+	query := `
+		SELECT a.id, a.description, a.price, a.created_at, a.category_id, a.subcategory_id,
+		       pc.name as category, psc.name as subcategory
+		FROM Ad a
+		LEFT JOIN PartCategory pc ON a.category_id = pc.id
+		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+	`
 	args := []interface{}{}
 	if cursorID > 0 {
-		query += " WHERE id < ?"
+		query += " WHERE a.id < ?"
 		args = append(args, cursorID)
 	}
-	query += " ORDER BY id DESC LIMIT ?"
+	query += " ORDER BY a.id DESC LIMIT ?"
 	args = append(args, limit+1) // Fetch one extra to check for more
 
 	rows, err := db.Query(query, args...)
@@ -150,14 +394,22 @@ func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 	ads := []Ad{}
 	for rows.Next() {
 		var ad Ad
-		var years, models, engines string
-		if err := rows.Scan(&ad.ID, &ad.Make, &years, &models, &engines, &ad.Description, &ad.Price, &ad.CreatedAt); err != nil {
+		var category, subcategory sql.NullString
+		if err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, 
+			&ad.CategoryID, &ad.SubCategoryID, &category, &subcategory); err != nil {
 			fmt.Printf("Error scanning ad: %v\n", err)
 			continue
 		}
-		json.Unmarshal([]byte(years), &ad.Years)
-		json.Unmarshal([]byte(models), &ad.Models)
-		json.Unmarshal([]byte(engines), &ad.Engines)
+		
+		if category.Valid {
+			ad.Category = category.String
+		}
+		if subcategory.Valid {
+			ad.SubCategory = subcategory.String
+		}
+		
+		// Get vehicle data
+		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
 		ads = append(ads, ad)
 	}
 
@@ -196,23 +448,94 @@ func GetFilteredAdsPage(filtered []Ad, cursorID int, cursorCreatedAt time.Time, 
 
 // GetFilteredAdsPageDB returns a page of filtered ads directly from the database
 func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([]Ad, bool, error) {
-	sqlQuery := "SELECT id, make, years, models, engines, description, price, created_at FROM ads WHERE 1=1"
-	args := []interface{}{}
-
-	// Apply filters
-	if query.Make != "" {
-		sqlQuery += " AND LOWER(make) = LOWER(?)"
-		args = append(args, query.Make)
+	// Check if we have any vehicle filters
+	hasVehicleFilters := query.Make != "" || len(query.Years) > 0 || len(query.Models) > 0 || len(query.EngineSizes) > 0
+	
+	var sqlQuery string
+	var args []interface{}
+	
+	if hasVehicleFilters {
+		// Use JOIN-based query when we have vehicle filters
+		sqlQuery = `
+			SELECT DISTINCT a.id, a.description, a.price, a.created_at, a.category_id, a.subcategory_id,
+			       pc.name as category, psc.name as subcategory
+			FROM Ad a
+			LEFT JOIN PartCategory pc ON a.category_id = pc.id
+			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+			JOIN AdCarEngine ace ON a.id = ace.ad_id
+			JOIN CarEngine ce ON ace.car_engine_id = ce.id
+			JOIN Car c ON ce.car_id = c.id
+			JOIN Make m ON c.make_id = m.id
+			JOIN Year y ON c.year_id = y.id
+			JOIN Model mo ON c.model_id = mo.id
+			JOIN Engine e ON ce.engine_id = e.id
+			WHERE 1=1
+		`
+		
+		// Apply vehicle filters
+		if query.Make != "" {
+			sqlQuery += " AND m.name = ?"
+			args = append(args, strings.ToUpper(query.Make))
+		}
+		
+		if len(query.Years) > 0 {
+			placeholders := make([]string, len(query.Years))
+			for i, year := range query.Years {
+				placeholders[i] = "?"
+				args = append(args, year)
+			}
+			sqlQuery += " AND y.year IN (" + strings.Join(placeholders, ",") + ")"
+		}
+		
+		if len(query.Models) > 0 {
+			placeholders := make([]string, len(query.Models))
+			for i, model := range query.Models {
+				placeholders[i] = "?"
+				args = append(args, strings.ToUpper(model))
+			}
+			sqlQuery += " AND mo.name IN (" + strings.Join(placeholders, ",") + ")"
+		}
+		
+		if len(query.EngineSizes) > 0 {
+			placeholders := make([]string, len(query.EngineSizes))
+			for i, engine := range query.EngineSizes {
+				placeholders[i] = "?"
+				args = append(args, engine)
+			}
+			sqlQuery += " AND e.description IN (" + strings.Join(placeholders, ",") + ")"
+		}
+	} else {
+		// Use simple query when no vehicle filters - this includes ALL ads
+		sqlQuery = `
+			SELECT a.id, a.description, a.price, a.created_at, a.category_id, a.subcategory_id,
+			       pc.name as category, psc.name as subcategory
+			FROM Ad a
+			LEFT JOIN PartCategory pc ON a.category_id = pc.id
+			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+			WHERE 1=1
+		`
+	}
+	
+	// Apply category filters (works for both queries)
+	if query.Category != "" {
+		sqlQuery += " AND LOWER(pc.name) = LOWER(?)"
+		args = append(args, query.Category)
+	}
+	
+	if query.SubCategory != "" {
+		sqlQuery += " AND LOWER(psc.name) = LOWER(?)"
+		args = append(args, query.SubCategory)
 	}
 
 	// Apply cursor pagination
 	if cursor != nil {
-		sqlQuery += " AND (created_at < ? OR (created_at = ? AND id < ?))"
-		args = append(args, cursor.LastPosted, cursor.LastPosted, cursor.LastID)
+		sqlQuery += " AND (a.created_at < ? OR (a.created_at = ? AND a.id < ?))"
+		timeStr := cursor.LastPosted.Format(time.RFC3339Nano)
+		args = append(args, timeStr, timeStr, cursor.LastID)
 	}
 
 	// Order by created_at DESC, id DESC
-	sqlQuery += " ORDER BY created_at DESC, id DESC LIMIT ?"
+	sqlQuery += " ORDER BY a.created_at DESC, a.id DESC LIMIT ?"
 	args = append(args, limit+1) // Get one extra to check if there are more results
 
 	rows, err := db.Query(sqlQuery, args...)
@@ -222,29 +545,31 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([
 	defer rows.Close()
 
 	ads := []Ad{}
+	seenIDs := make(map[int]bool)
+	
 	for rows.Next() {
 		var ad Ad
-		var years, models, engines string
-		if err := rows.Scan(&ad.ID, &ad.Make, &years, &models, &engines, &ad.Description, &ad.Price, &ad.CreatedAt); err != nil {
+		var category, subcategory sql.NullString
+		if err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, 
+			&ad.CategoryID, &ad.SubCategoryID, &category, &subcategory); err != nil {
 			continue
 		}
-		json.Unmarshal([]byte(years), &ad.Years)
-		json.Unmarshal([]byte(models), &ad.Models)
-		json.Unmarshal([]byte(engines), &ad.Engines)
-
-		// Apply array filters in memory since SQLite doesn't handle array operations well
-		if len(query.Years) > 0 || len(query.Models) > 0 || len(query.EngineSizes) > 0 {
-			if len(query.Years) > 0 && !anyStringInSlice(ad.Years, query.Years) {
-				continue
-			}
-			if len(query.Models) > 0 && !anyStringInSlice(ad.Models, query.Models) {
-				continue
-			}
-			if len(query.EngineSizes) > 0 && !anyStringInSlice(ad.Engines, query.EngineSizes) {
-				continue
-			}
+		
+		// Skip if we've already processed this ad (due to potential duplicates in JOIN query)
+		if seenIDs[ad.ID] {
+			continue
 		}
-
+		seenIDs[ad.ID] = true
+		
+		if category.Valid {
+			ad.Category = category.String
+		}
+		if subcategory.Valid {
+			ad.SubCategory = subcategory.String
+		}
+		
+		// Get vehicle data
+		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
 		ads = append(ads, ad)
 	}
 
