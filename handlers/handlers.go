@@ -80,7 +80,7 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 		[]g.Node{
 			templates.PageHeader("Parts Pile"),
 			Div(
-				Class("mb-8 flex items-start gap-4"),
+				Class("flex items-start gap-4"),
 				templates.StyledLink("New Ad", "/new-ad", templates.ButtonPrimary),
 				Div(
 					Class("flex-1 flex flex-col gap-4 relative"),

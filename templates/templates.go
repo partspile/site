@@ -394,7 +394,7 @@ func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad) g.Node {
 		ID("searchResults"),
 		Div(
 			ID("searchFilters"),
-			Class("flex flex-wrap gap-4"),
+			Class("flex flex-wrap gap-4 mb-4"),
 			SearchFilters(filters),
 		),
 		AdListContainer(
