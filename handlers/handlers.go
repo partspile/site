@@ -146,6 +146,7 @@ func HandleNewAd(w http.ResponseWriter, r *http.Request) {
 						hx.Get("/api/years"),
 						hx.Target("#yearsDiv"),
 						hx.Include("this"),
+						g.Attr("onchange", "document.getElementById('modelsDiv').innerHTML = ''; document.getElementById('enginesDiv').innerHTML = '';"),
 						Option(Value(""), g.Text("Select a make")),
 						g.Group(makeOptions),
 					),
