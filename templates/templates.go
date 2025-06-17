@@ -260,10 +260,16 @@ func ResultContainer() g.Node {
 
 // AdDetails creates a standardized ad details display
 func AdDetails(ad ad.Ad) g.Node {
+	sortedYears := append([]string{}, ad.Years...)
+	sortedModels := append([]string{}, ad.Models...)
+	sortedEngines := append([]string{}, ad.Engines...)
+	sort.Strings(sortedYears)
+	sort.Strings(sortedModels)
+	sort.Strings(sortedEngines)
 	return GridContainer(1,
-		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", ad.Years))),
-		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", ad.Models))),
-		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Engines: %v", ad.Engines))),
+		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", sortedYears))),
+		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", sortedModels))),
+		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Engines: %v", sortedEngines))),
 		P(Class("mt-4"), g.Text(ad.Description)),
 		P(Class("text-2xl font-bold mt-4"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
 	)
@@ -271,13 +277,17 @@ func AdDetails(ad ad.Ad) g.Node {
 
 // AdCard renders a single ad card for use in lists
 func AdCard(ad ad.Ad) g.Node {
+	sortedYears := append([]string{}, ad.Years...)
+	sort.Strings(sortedYears)
+	sortedModels := append([]string{}, ad.Models...)
+	sort.Strings(sortedModels)
 	return A(
 		Href(fmt.Sprintf("/ad/%d", ad.ID)),
 		Class("block border p-4 mb-4 rounded hover:bg-gray-50"),
 		Div(
 			H3(Class("text-xl font-bold"), g.Text(ad.Make)),
-			P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", ad.Years))),
-			P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", ad.Models))),
+			P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", sortedYears))),
+			P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", sortedModels))),
 			P(Class("mt-2"), g.Text(ad.Description)),
 			P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
 			P(
@@ -297,18 +307,24 @@ func AdListContainer(children ...g.Node) g.Node {
 	)
 }
 
-// BuildAdListNodes returns a slice of nodes for the ads, sorted by ID
+// BuildAdListNodes returns a slice of nodes for the ads, sorted by CreatedAt DESC, ID DESC
 func BuildAdListNodes(ads map[int]ad.Ad) []g.Node {
-	// Sort ads by ID for consistent display
-	adIDs := make([]int, 0, len(ads))
-	for id := range ads {
-		adIDs = append(adIDs, id)
+	// Convert map to slice
+	adSlice := make([]ad.Ad, 0, len(ads))
+	for _, ad := range ads {
+		adSlice = append(adSlice, ad)
 	}
-	sort.Ints(adIDs)
-
+	// Sort by CreatedAt DESC, ID DESC
+	sort.Slice(adSlice, func(i, j int) bool {
+		if adSlice[i].CreatedAt.Equal(adSlice[j].CreatedAt) {
+			return adSlice[i].ID > adSlice[j].ID
+		}
+		return adSlice[i].CreatedAt.After(adSlice[j].CreatedAt)
+	})
+	// Build nodes
 	adsList := []g.Node{}
-	for _, id := range adIDs {
-		adsList = append(adsList, AdCard(ads[id]))
+	for _, ad := range adSlice {
+		adsList = append(adsList, AdCard(ad))
 	}
 	return adsList
 }
