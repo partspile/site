@@ -3,6 +3,7 @@ package ad
 import (
 	"database/sql"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -128,9 +129,13 @@ func getAdVehicleData(adID int) (makeName string, years []string, models []strin
 	}
 
 	// Convert sets to slices
+	makes := make([]string, 0, len(makeSet))
 	for m := range makeSet {
-		makeName = m // Assuming single make per ad
-		break
+		makes = append(makes, m)
+	}
+	sort.Strings(makes)
+	if len(makes) > 0 {
+		makeName = makes[0]
 	}
 	for y := range yearSet {
 		years = append(years, y)
