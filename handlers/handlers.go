@@ -83,7 +83,7 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 				Class("mb-8 flex items-start gap-4"),
 				templates.StyledLink("New Ad", "/new-ad", templates.ButtonPrimary),
 				Div(
-					Class("flex-1 flex flex-col gap-4"),
+					Class("flex-1 flex flex-col gap-4 relative"),
 					Form(
 						ID("searchForm"),
 						Class("w-full"),
@@ -100,10 +100,14 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 							hx.Trigger("search"),
 						),
 					),
-					Div(
-						ID("searchWaiting"),
-						Class("htmx-indicator text-4xl font-bold my-4"),
-						g.Text("WAITING"),
+				),
+				Div(
+					ID("searchWaiting"),
+					Class("htmx-indicator absolute inset-0 flex items-center justify-center bg-white bg-opacity-60 z-10 pointer-events-none"),
+					Img(
+						Src("/static/spinner.gif"),
+						Alt("Loading..."),
+						Class("w-12 h-12 pointer-events-auto"),
 					),
 				),
 			),

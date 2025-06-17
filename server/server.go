@@ -20,7 +20,7 @@ func Start() error {
 	// Initialize vehicle package with the same DB
 	// (ensures vehicle uses project.db)
 	vehicle.InitDB(ad.DB)
-	
+
 	// Initialize part package with the same DB
 	part.InitDB(ad.DB)
 
@@ -31,8 +31,11 @@ func Start() error {
 
 	mux := http.NewServeMux()
 
+	// Static file handler
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
 	// Main pages
-	mux.HandleFunc("GET /", handlers.HandleHome)
+	mux.HandleFunc("GET /{$}", handlers.HandleHome)
 	mux.HandleFunc("GET /new-ad", handlers.HandleNewAd)
 	mux.HandleFunc("GET /edit-ad/{id}", handlers.HandleEditAd)
 	mux.HandleFunc("GET /ad/{id}", handlers.HandleViewAd)
