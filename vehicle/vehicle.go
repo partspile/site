@@ -8,6 +8,13 @@ import (
 )
 
 var db *sql.DB
+var (
+	makesCache          []string
+	yearsCache          = make(map[string][]string)
+	allModelsCache      []string
+	allEngineSizesCache []string
+	yearRangeCache      []string
+)
 
 // InitDB sets the database connection for the vehicle package
 func InitDB(database *sql.DB) {
@@ -15,6 +22,9 @@ func InitDB(database *sql.DB) {
 }
 
 func GetMakes() []string {
+	if makesCache != nil {
+		return makesCache
+	}
 	rows, err := db.Query("SELECT name FROM Make ORDER BY name")
 	if err != nil {
 		return nil
@@ -26,10 +36,14 @@ func GetMakes() []string {
 		rows.Scan(&make)
 		makes = append(makes, make)
 	}
+	makesCache = makes
 	return makes
 }
 
 func GetYears(makeName string) []string {
+	if years, ok := yearsCache[makeName]; ok {
+		return years
+	}
 	query := `SELECT DISTINCT Year.year FROM Car
 	JOIN Make ON Car.make_id = Make.id
 	JOIN Year ON Car.year_id = Year.id
@@ -45,10 +59,14 @@ func GetYears(makeName string) []string {
 		rows.Scan(&year)
 		years = append(years, strconv.Itoa(year))
 	}
+	yearsCache[makeName] = years
 	return years
 }
 
 func GetAllModels() []string {
+	if allModelsCache != nil {
+		return allModelsCache
+	}
 	rows, err := db.Query("SELECT DISTINCT name FROM Model ORDER BY name")
 	if err != nil {
 		return nil
@@ -60,6 +78,7 @@ func GetAllModels() []string {
 		rows.Scan(&model)
 		models = append(models, model)
 	}
+	allModelsCache = models
 	return models
 }
 
@@ -140,13 +159,12 @@ func GetEnginesWithAvailability(makeName string, years []string, models []string
 		modelPlaceholders[i] = "?"
 		args = append(args, model)
 	}
-	query := `SELECT DISTINCT Engine.description FROM Car
+	query := `SELECT DISTINCT Engine.name FROM Car
 	JOIN Make ON Car.make_id = Make.id
 	JOIN Model ON Car.model_id = Model.id
 	JOIN Year ON Car.year_id = Year.id
-	JOIN CarEngine ON Car.id = CarEngine.car_id
-	JOIN Engine ON CarEngine.engine_id = Engine.id
-	WHERE Make.name = ? AND Year.year IN (` + strings.Join(yearPlaceholders, ",") + `) AND Model.name IN (` + strings.Join(modelPlaceholders, ",") + `) ORDER BY Engine.description`
+	JOIN Engine ON Car.engine_id = Engine.id
+	WHERE Make.name = ? AND Year.year IN (` + strings.Join(yearPlaceholders, ",") + `) AND Model.name IN (` + strings.Join(modelPlaceholders, ",") + `) ORDER BY Engine.name`
 	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil
@@ -170,9 +188,8 @@ func GetEnginesWithAvailability(makeName string, years []string, models []string
 				JOIN Make ON Car.make_id = Make.id
 				JOIN Model ON Car.model_id = Model.id
 				JOIN Year ON Car.year_id = Year.id
-				JOIN CarEngine ON Car.id = CarEngine.car_id
-				JOIN Engine ON CarEngine.engine_id = Engine.id
-				WHERE Make.name = ? AND Model.name = ? AND Year.year = ? AND Engine.description = ?`, makeName, model, year, engine).Scan(&count)
+				JOIN Engine ON Car.engine_id = Engine.id
+				WHERE Make.name = ? AND Model.name = ? AND Year.year = ? AND Engine.name = ?`, makeName, model, year, engine).Scan(&count)
 				if err != nil {
 					return nil
 				}
@@ -190,7 +207,10 @@ func GetEnginesWithAvailability(makeName string, years []string, models []string
 }
 
 func GetAllEngineSizes() []string {
-	rows, err := db.Query("SELECT DISTINCT description FROM Engine ORDER BY description")
+	if allEngineSizesCache != nil {
+		return allEngineSizesCache
+	}
+	rows, err := db.Query("SELECT DISTINCT name FROM Engine ORDER BY name")
 	if err != nil {
 		return nil
 	}
@@ -201,14 +221,19 @@ func GetAllEngineSizes() []string {
 		rows.Scan(&engine)
 		engines = append(engines, engine)
 	}
+	allEngineSizesCache = engines
 	return engines
 }
 
 func GetYearRange() []string {
+	if yearRangeCache != nil {
+		return yearRangeCache
+	}
 	currentYear := time.Now().Year() + 1
 	years := make([]string, 0, currentYear-1900+1)
 	for year := 1900; year <= currentYear; year++ {
 		years = append(years, strconv.Itoa(year))
 	}
+	yearRangeCache = years
 	return years
 }
