@@ -796,28 +796,26 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Search request - query: %s, results: %d, hasMore: %v\n",
 		userPrompt, len(page), nextCursor != nil)
 
-	// For pagination requests, just return the ad cards and loader
-	if cursor != nil {
-		// Render each ad card
-		for _, ad := range page {
-			_ = templates.AdCard(ad).Render(w)
+	// For initial search, return the full search results structure
+	var searchQuery templates.SearchSchema
+	if userPrompt != "" {
+		makes := strings.Join(vehicle.GetMakes(), ",")
+		years := strings.Join(vehicle.GetYearRange(), ",")
+		models := strings.Join(vehicle.GetAllModels(), ",")
+		engineSizes := strings.Join(vehicle.GetAllEngineSizes(), ",")
+		categories := strings.Join(part.GetAllCategories(), ",")
+		subCategories := strings.Join(part.GetAllSubCategories(), ",")
+		systemPrompt := fmt.Sprintf(sysPrompt, makes, years, models, engineSizes, categories, subCategories)
+		resp, err := grok.CallGrok(systemPrompt, userPrompt)
+		if err == nil {
+			_ = json.Unmarshal([]byte(resp), &searchQuery)
 		}
-
-		// Add the loader if there are more results
-		if nextCursor != nil {
-			nextCursorStr := EncodeCursor(*nextCursor)
-			loaderURL := fmt.Sprintf("/search?q=%s&cursor=%s",
-				htmlEscape(userPrompt),
-				htmlEscape(nextCursorStr))
-			fmt.Fprintf(w, `<div class="htmx-indicator" id="loader" hx-get="%s" hx-trigger="revealed" hx-swap="beforeend" hx-target="#adsList" hx-on="htmx:afterRequest: this.remove()">Loading more ads...</div>`, loaderURL)
-		}
-		return
 	}
 
-	// For initial search, return the full search results structure
-	adNodes := []g.Node{}
+	// Build ad map for SearchResultsContainer
+	adsMap := make(map[int]ad.Ad)
 	for _, ad := range page {
-		adNodes = append(adNodes, templates.AdCard(ad))
+		adsMap[ad.ID] = ad
 	}
 
 	// Add the loader if there are more results
@@ -826,18 +824,10 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 		loaderURL := fmt.Sprintf("/search?q=%s&cursor=%s",
 			htmlEscape(userPrompt),
 			htmlEscape(nextCursorStr))
-		adNodes = append(adNodes, g.Raw(fmt.Sprintf(`<div class="htmx-indicator" id="loader" hx-get="%s" hx-trigger="revealed" hx-swap="beforeend" hx-target="#adsList" hx-on="htmx:afterRequest: this.remove()">Loading more ads...</div>`, loaderURL)))
+		adsMap[-1] = ad.Ad{Description: fmt.Sprintf(`<div class=\"htmx-indicator\" id=\"loader\" hx-get=\"%s\" hx-trigger=\"revealed\" hx-swap=\"beforeend\" hx-target=\"#adsList\" hx-on=\"htmx:afterRequest: this.remove()\">Loading more ads...</div>`, loaderURL)}
 	}
 
-	// Render the initial search results
-	_ = Div(
-		ID("searchResults"),
-		Div(
-			ID("adsList"),
-			Class("space-y-4"),
-			g.Group(adNodes),
-		),
-	).Render(w)
+	_ = templates.SearchResultsContainer(searchQuery, adsMap).Render(w)
 }
 
 // HandleSearchPage serves a page of filtered ads for infinite scrolling
