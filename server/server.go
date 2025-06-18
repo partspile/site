@@ -8,6 +8,7 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/handlers"
 	"github.com/parts-pile/site/part"
+	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vehicle"
 )
 
@@ -23,6 +24,9 @@ func Start() error {
 
 	// Initialize part package with the same DB
 	part.InitDB(ad.DB)
+
+	// Initialize user package with the same DB
+	user.InitDB(ad.DB)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -40,6 +44,13 @@ func Start() error {
 	mux.HandleFunc("GET /edit-ad/{id}", handlers.HandleEditAd)
 	mux.HandleFunc("GET /ad/{id}", handlers.HandleViewAd)
 	mux.HandleFunc("GET /search", handlers.HandleSearch)
+
+	// User registration/authentication
+	mux.HandleFunc("GET /register", handlers.HandleRegister)
+	mux.HandleFunc("POST /api/register", handlers.HandleRegisterSubmission)
+	mux.HandleFunc("GET /login", handlers.HandleLogin)
+	mux.HandleFunc("POST /api/login", handlers.HandleLoginSubmission)
+	mux.HandleFunc("POST /logout", handlers.HandleLogout)
 
 	// API endpoints
 	mux.HandleFunc("GET /api/makes", handlers.HandleMakes)

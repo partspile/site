@@ -17,7 +17,9 @@ import (
 	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/templates"
+	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vehicle"
+	"golang.org/x/crypto/bcrypt"
 )
 
 const sysPrompt = `You are an expert vehicle parts assistant.
@@ -74,10 +76,13 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build the initial page structure with search box
+	var currentUser *user.User
+	currentUser, _ = GetCurrentUser(r)
+
 	_ = templates.Page(
 		"Parts Pile - Auto Parts and Sales",
 		[]g.Node{
+			templates.UserNav(currentUser),
 			templates.PageHeader("Parts Pile"),
 			Div(
 				Class("flex items-start gap-4"),
@@ -923,4 +928,149 @@ func htmlEscape(s string) string {
 		">", "&gt;",
 	)
 	return replacer.Replace(s)
+}
+
+// HandleRegister renders the registration form
+func HandleRegister(w http.ResponseWriter, r *http.Request) {
+	_ = templates.Page(
+		"Register - Parts Pile",
+		[]g.Node{
+			templates.PageHeader("Register"),
+			Form(
+				ID("registerForm"),
+				Class("space-y-6"),
+				templates.ValidationErrorContainer(),
+				templates.FormGroup("Name", "name",
+					Input(Type("text"), ID("name"), Name("name"), Class("w-full p-2 border rounded")),
+				),
+				templates.FormGroup("Phone", "phone",
+					Input(Type("text"), ID("phone"), Name("phone"), Class("w-full p-2 border rounded")),
+				),
+				templates.FormGroup("Password", "password",
+					Input(Type("password"), ID("password"), Name("password"), Class("w-full p-2 border rounded")),
+				),
+				templates.StyledButton("Register", templates.ButtonPrimary, Type("submit"), hx.Post("/api/register"), hx.Target("#result")),
+				Div(ID("result"), Class("mt-4")),
+			),
+		},
+	).Render(w)
+}
+
+// HandleRegisterSubmission processes registration
+func HandleRegisterSubmission(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
+		return
+	}
+	name := r.FormValue("name")
+	phone := r.FormValue("phone")
+	password := r.FormValue("password")
+	if name == "" || phone == "" || password == "" {
+		_ = templates.ValidationError("All fields are required").Render(w)
+		return
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		http.Error(w, "Error hashing password", http.StatusInternalServerError)
+		return
+	}
+	_, err = user.CreateUser(name, phone, string(hash))
+	if err != nil {
+		_ = templates.ValidationError("Phone already registered").Render(w)
+		return
+	}
+	_ = templates.SuccessMessageWithRedirect("Registration successful! Please log in.", "/login").Render(w)
+}
+
+// HandleLogin renders the login form
+func HandleLogin(w http.ResponseWriter, r *http.Request) {
+	_ = templates.Page(
+		"Login - Parts Pile",
+		[]g.Node{
+			templates.PageHeader("Login"),
+			Form(
+				ID("loginForm"),
+				Class("space-y-6"),
+				templates.ValidationErrorContainer(),
+				templates.FormGroup("Phone", "phone",
+					Input(Type("text"), ID("phone"), Name("phone"), Class("w-full p-2 border rounded")),
+				),
+				templates.FormGroup("Password", "password",
+					Input(Type("password"), ID("password"), Name("password"), Class("w-full p-2 border rounded")),
+				),
+				templates.StyledButton("Login", templates.ButtonPrimary, Type("submit"), hx.Post("/api/login"), hx.Target("#result")),
+				Div(ID("result"), Class("mt-4")),
+			),
+		},
+	).Render(w)
+}
+
+// HandleLoginSubmission processes login
+func HandleLoginSubmission(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
+		return
+	}
+	phone := r.FormValue("phone")
+	password := r.FormValue("password")
+	if phone == "" || password == "" {
+		_ = templates.ValidationError("All fields are required").Render(w)
+		return
+	}
+	u, err := user.GetUserByPhone(phone)
+	if err != nil {
+		_ = templates.ValidationError("Invalid phone or password").Render(w)
+		return
+	}
+	if bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)) != nil {
+		_ = templates.ValidationError("Invalid phone or password").Render(w)
+		return
+	}
+	// Set session cookie (simple user_id cookie for now)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "user_id",
+		Value:    fmt.Sprintf("%d", u.ID),
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   86400 * 30, // 30 days
+	})
+	_ = templates.SuccessMessageWithRedirect("Login successful!", "/").Render(w)
+}
+
+// HandleLogout logs the user out by clearing the user_id cookie
+func HandleLogout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:   "user_id",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+// GetCurrentUserID retrieves the user_id from the session cookie
+func GetCurrentUserID(r *http.Request) (int, error) {
+	cookie, err := r.Cookie("user_id")
+	if err != nil {
+		return 0, err
+	}
+	var userID int
+	_, err = fmt.Sscanf(cookie.Value, "%d", &userID)
+	if err != nil {
+		return 0, err
+	}
+	return userID, nil
+}
+
+// GetCurrentUser retrieves the current user from the session cookie
+func GetCurrentUser(r *http.Request) (*user.User, error) {
+	userID, err := GetCurrentUserID(r)
+	if err != nil {
+		return nil, err
+	}
+	u, err := user.GetUserByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	return &u, nil
 }

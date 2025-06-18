@@ -72,6 +72,38 @@ CREATE TABLE AdCar (
     PRIMARY KEY (ad_id, car_id)
 );
 
+-- User table
+CREATE TABLE User (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL UNIQUE,
+    token_balance REAL NOT NULL DEFAULT 0.0,
+    password_hash TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- TokenTransaction table
+CREATE TABLE TokenTransaction (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL, -- e.g., 'ad_post', 'payout', 'purchase', 'transfer_in', 'transfer_out', 'cash_out', 'ad_click'
+    amount REAL NOT NULL, -- positive or negative, number of tokens
+    related_user_id INTEGER, -- nullable, for peer-to-peer transfers
+    ad_id INTEGER, -- nullable, for ad-related transactions
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    description TEXT,
+    FOREIGN KEY (user_id) REFERENCES User(id),
+    FOREIGN KEY (related_user_id) REFERENCES User(id),
+    FOREIGN KEY (ad_id) REFERENCES Ad(id)
+);
+
+-- PayoutFund table (singleton row)
+CREATE TABLE PayoutFund (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    balance REAL NOT NULL,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Indexes for efficient queries and pagination
 CREATE INDEX idx_car_make_year_model_engine ON Car(make_id, year_id, model_id, engine_id);
 CREATE INDEX idx_ad_created_at_id ON Ad(created_at, id);

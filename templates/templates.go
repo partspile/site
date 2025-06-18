@@ -9,6 +9,7 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/user"
 )
 
 // SearchSchema defines the expected JSON structure for search queries
@@ -400,5 +401,25 @@ func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad) g.Node {
 		AdListContainer(
 			g.Group(BuildAdListNodes(ads)),
 		),
+	)
+}
+
+// UserNav renders the user navigation bar (register/login/logout, show user name if logged in)
+func UserNav(currentUser *user.User) g.Node {
+	if currentUser != nil {
+		return Div(
+			Class("flex items-center gap-4"),
+			Span(Class("font-semibold"), g.Text(currentUser.Name)),
+			Form(
+				Action("/logout"),
+				Method("post"),
+				StyledButton("Logout", ButtonSecondary),
+			),
+		)
+	}
+	return Div(
+		Class("flex items-center gap-4"),
+		StyledLink("Register", "/register", ButtonSecondary),
+		StyledLink("Login", "/login", ButtonSecondary),
 	)
 }
