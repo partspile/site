@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"sort"
 	"strings"
-	"time"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -883,92 +882,81 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 		adsMap[ad.ID] = ad
 	}
 
+	// Debug: print all ad IDs and first 60 chars of description
+	fmt.Println("DEBUG: adsMap contents before render:")
+	for id, ad := range adsMap {
+		desc := ad.Description
+		if len(desc) > 60 {
+			desc = desc[:60] + "..."
+		}
+		fmt.Printf("  ID: %d, Desc: %q\n", id, desc)
+	}
+
+	// Render the search results container
+	_ = templates.SearchResultsContainer(searchQuery, adsMap).Render(w)
+
 	// Add the loader if there are more results
 	if nextCursor != nil {
 		nextCursorStr := EncodeCursor(*nextCursor)
 		loaderURL := fmt.Sprintf("/search?q=%s&cursor=%s",
 			htmlEscape(userPrompt),
 			htmlEscape(nextCursorStr))
-		adsMap[-1] = ad.Ad{Description: fmt.Sprintf(`<div class=\"htmx-indicator\" id=\"loader\" hx-get=\"%s\" hx-trigger=\"revealed\" hx-swap=\"beforeend\" hx-target=\"#adsList\" hx-on=\"htmx:afterRequest: this.remove()\">Loading more ads...</div>`, loaderURL)}
+		loaderHTML := fmt.Sprintf(`<div class="htmx-indicator" id="loader" hx-get="%s" hx-trigger="revealed" hx-swap="beforeend" hx-target="#adsList" hx-on="htmx:afterRequest: this.remove()">Loading more ads...</div>`, loaderURL)
+		fmt.Fprint(w, loaderHTML)
 	}
-
-	_ = templates.SearchResultsContainer(searchQuery, adsMap).Render(w)
 }
 
 // HandleSearchPage serves a page of filtered ads for infinite scrolling
 func HandleSearchPage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html")
-	q := r.URL.Query().Get("q")
-	cursorID := 0
-	cursorCreatedAt := ""
-	if r.URL.Query().Get("cursor_id") != "" {
-		fmt.Sscanf(r.URL.Query().Get("cursor_id"), "%d", &cursorID)
+	userPrompt := r.URL.Query().Get("q")
+	cursorStr := r.URL.Query().Get("cursor")
+
+	var query SearchQuery
+	var cursor *SearchCursor
+	var err error
+
+	// If we have a cursor, use its query instead of parsing again
+	if cursorStr != "" {
+		c, err := DecodeCursor(cursorStr)
+		if err != nil {
+			http.Error(w, "Invalid cursor", http.StatusBadRequest)
+			return
+		}
+		cursor = &c
+		query = c.Query
+	} else {
+		// Only parse search query if this is the initial request
+		query, err = ParseSearchQuery(userPrompt)
+		if err != nil {
+			http.Error(w, "Error parsing search query", http.StatusBadRequest)
+			return
+		}
 	}
-	if r.URL.Query().Get("cursor_created_at") != "" {
-		cursorCreatedAt = r.URL.Query().Get("cursor_created_at")
-	}
-	var cursorTime time.Time
-	if cursorCreatedAt != "" {
-		cursorTime, _ = time.Parse(time.RFC3339Nano, cursorCreatedAt)
-	}
+
+	// Get the next page of results
 	limit := 10
-
-	fmt.Printf("Search request - query: %s, cursorID: %d, cursorTime: %v\n", q, cursorID, cursorTime)
-
-	// Use the same filtering logic as HandleSearch
-	userPrompt := q
-	var searchQuery templates.SearchSchema
-	if userPrompt != "" {
-		makes := strings.Join(vehicle.GetMakes(), ",")
-		years := strings.Join(vehicle.GetYearRange(), ",")
-		models := strings.Join(vehicle.GetAllModels(), ",")
-		engineSizes := strings.Join(vehicle.GetAllEngineSizes(), ",")
-		categories := strings.Join(part.GetAllCategories(), ",")
-		subCategories := strings.Join(part.GetAllSubCategories(), ",")
-		systemPrompt := fmt.Sprintf(sysPrompt, makes, years, models, engineSizes, categories, subCategories)
-		resp, err := grok.CallGrok(systemPrompt, userPrompt)
-		if err == nil {
-			_ = json.Unmarshal([]byte(resp), &searchQuery)
-		}
+	page, nextCursor, err := GetNextPage(query, cursor, limit)
+	if err != nil {
+		http.Error(w, "Error getting results", http.StatusInternalServerError)
+		return
 	}
 
-	allAds := ad.GetAllAds()
-	filteredAds := []ad.Ad{}
-	for _, ad := range allAds {
-		if searchQuery.Make != "" && !strings.EqualFold(ad.Make, searchQuery.Make) {
-			continue
-		}
-		if len(searchQuery.Years) > 0 && !anyStringInSlice(ad.Years, searchQuery.Years) {
-			continue
-		}
-		if len(searchQuery.Models) > 0 && !anyStringInSlice(ad.Models, searchQuery.Models) {
-			continue
-		}
-		if len(searchQuery.EngineSizes) > 0 && !anyStringInSlice(ad.Engines, searchQuery.EngineSizes) {
-			continue
-		}
-		filteredAds = append(filteredAds, ad)
-	}
-	// Sort filteredAds by CreatedAt DESC, ID DESC
-	sort.Slice(filteredAds, func(i, j int) bool {
-		if filteredAds[i].CreatedAt.Equal(filteredAds[j].CreatedAt) {
-			return filteredAds[i].ID > filteredAds[j].ID
-		}
-		return filteredAds[i].CreatedAt.After(filteredAds[j].CreatedAt)
-	})
+	fmt.Printf("Search request - query: %s, results: %d, hasMore: %v\n",
+		userPrompt, len(page), nextCursor != nil)
 
-	page, hasMore := ad.GetFilteredAdsPage(filteredAds, cursorID, cursorTime, limit)
-	fmt.Printf("Found %d ads, hasMore=%v\n", len(page), hasMore)
-
+	// Render each ad card
 	for _, ad := range page {
 		_ = templates.AdCard(ad).Render(w)
 	}
 
-	if hasMore && len(page) > 0 {
-		last := page[len(page)-1]
-		loaderHTML := fmt.Sprintf(`<div class="htmx-indicator" id="loader" hx-get="/search?q=%s&cursor_id=%d&cursor_created_at=%s" hx-trigger="revealed" hx-swap="beforeend" hx-target="#adsList" hx-on="htmx:afterRequest: this.remove()">Loading more ads...</div>`,
-			htmlEscape(q), last.ID, last.CreatedAt.Format(time.RFC3339Nano))
-		fmt.Printf("Adding loader with HTML: %s\n", loaderHTML)
+	// Add the loader if there are more results
+	if nextCursor != nil {
+		nextCursorStr := EncodeCursor(*nextCursor)
+		loaderURL := fmt.Sprintf("/search?q=%s&cursor=%s",
+			htmlEscape(userPrompt),
+			htmlEscape(nextCursorStr))
+		loaderHTML := fmt.Sprintf(`<div class="htmx-indicator" id="loader" hx-get="%s" hx-trigger="revealed" hx-swap="beforeend" hx-target="#adsList" hx-on="htmx:afterRequest: this.remove()">Loading more ads...</div>`, loaderURL)
 		fmt.Fprint(w, loaderHTML)
 	}
 }

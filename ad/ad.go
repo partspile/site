@@ -183,8 +183,9 @@ func AddAd(ad Ad) int {
 	}
 	defer tx.Rollback()
 
+	createdAt := time.Now().UTC().Format(time.RFC3339)
 	res, err := tx.Exec("INSERT INTO Ad (description, price, created_at, subcategory_id) VALUES (?, ?, ?, ?)",
-		ad.Description, ad.Price, time.Now(), ad.SubCategoryID)
+		ad.Description, ad.Price, createdAt, ad.SubCategoryID)
 	if err != nil {
 		return 0
 	}
@@ -400,7 +401,8 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([
 		// Use JOIN-based query when we have vehicle filters
 		sqlQuery = `
 			SELECT DISTINCT a.id, a.description, a.price, a.created_at, a.subcategory_id,
-			       psc.name as subcategory
+			       psc.name as subcategory,
+			       m.name as make_name, y.year, mo.name as model_name, e.name as engine_name
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 			JOIN AdCar ac ON a.id = ac.ad_id
@@ -448,7 +450,8 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([
 		// Use simple query when no vehicle filters - this includes ALL ads
 		sqlQuery = `
 			SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
-			       psc.name as subcategory
+			       psc.name as subcategory,
+			       NULL as make_name, NULL as year, NULL as model_name, NULL as engine_name
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 			WHERE 1=1
@@ -463,14 +466,17 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([
 
 	// Apply cursor pagination
 	if cursor != nil {
+		fmt.Printf("DEBUG: Applying cursor - LastID: %d, LastPosted: %s\n", cursor.LastID, cursor.LastPosted.Format(time.RFC3339Nano))
 		sqlQuery += " AND (a.created_at < ? OR (a.created_at = ? AND a.id < ?))"
 		timeStr := cursor.LastPosted.Format(time.RFC3339Nano)
 		args = append(args, timeStr, timeStr, cursor.LastID)
 	}
 
 	// Order by created_at DESC, id DESC
-	sqlQuery += " ORDER BY a.created_at DESC, a.id DESC LIMIT ?"
-	args = append(args, limit+1) // Get one extra to check if there are more results
+	sqlQuery += " ORDER BY a.created_at DESC, a.id DESC"
+
+	fmt.Printf("DEBUG: SQL Query: %s\n", sqlQuery)
+	fmt.Printf("DEBUG: SQL Args: %v\n", args)
 
 	rows, err := db.Query(sqlQuery, args...)
 	if err != nil {
@@ -478,37 +484,163 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([
 	}
 	defer rows.Close()
 
-	ads := []Ad{}
-	seenIDs := make(map[int]bool)
+	// Debug: print all raw rows returned by SQL
+	fmt.Printf("DEBUG: Raw SQL rows returned: ")
+	rowCount := 0
+	for rows2, _ := db.Query(sqlQuery, args...); rows2.Next(); {
+		var (
+			id          int
+			description string
+			price       float64
+			createdAt   time.Time
+			subcatID    sql.NullInt64
+			subcategory sql.NullString
+			makeName    sql.NullString
+			year        sql.NullInt64
+			modelName   sql.NullString
+			engineName  sql.NullString
+		)
+		if err := rows2.Scan(&id, &description, &price, &createdAt, &subcatID, &subcategory, &makeName, &year, &modelName, &engineName); err == nil {
+			fmt.Printf("[ID: %d, CreatedAt: %s] ", id, createdAt.Format(time.RFC3339Nano))
+			rowCount++
+		}
+	}
+	fmt.Printf("Total: %d\n", rowCount)
+	// Reset rows for actual processing
+	rows, err = db.Query(sqlQuery, args...)
+	if err != nil {
+		return nil, false, err
+	}
+	defer rows.Close()
+
+	// Map to collect all vehicle data for each ad
+	adMap := make(map[int]*Ad)
+	makeSet := make(map[int]map[string]bool)
+	yearSet := make(map[int]map[string]bool)
+	modelSet := make(map[int]map[string]bool)
+	engineSet := make(map[int]map[string]bool)
 
 	for rows.Next() {
-		var ad Ad
-		var subcategory sql.NullString
-		if err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt,
-			&ad.SubCategoryID, &subcategory); err != nil {
+		var (
+			id          int
+			description string
+			price       float64
+			createdAt   time.Time
+			subcatID    sql.NullInt64
+			subcategory sql.NullString
+			makeName    sql.NullString
+			year        sql.NullInt64
+			modelName   sql.NullString
+			engineName  sql.NullString
+		)
+
+		if err := rows.Scan(&id, &description, &price, &createdAt,
+			&subcatID, &subcategory, &makeName, &year, &modelName, &engineName); err != nil {
 			continue
 		}
 
-		// Skip if we've already processed this ad (due to potential duplicates in JOIN query)
-		if seenIDs[ad.ID] {
-			continue
-		}
-		seenIDs[ad.ID] = true
+		// Get or create ad
+		ad, exists := adMap[id]
+		if !exists {
+			ad = &Ad{
+				ID:          id,
+				Description: description,
+				Price:       price,
+				CreatedAt:   createdAt,
+			}
+			if subcatID.Valid {
+				intVal := int(subcatID.Int64)
+				ad.SubCategoryID = &intVal
+			}
+			if subcategory.Valid {
+				ad.SubCategory = subcategory.String
+			}
+			adMap[id] = ad
 
-		if subcategory.Valid {
-			ad.SubCategory = subcategory.String
+			// Initialize sets for this ad
+			makeSet[id] = make(map[string]bool)
+			yearSet[id] = make(map[string]bool)
+			modelSet[id] = make(map[string]bool)
+			engineSet[id] = make(map[string]bool)
 		}
 
-		// Get vehicle data
-		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
-		ads = append(ads, ad)
+		// Collect vehicle data
+		if makeName.Valid {
+			makeSet[id][makeName.String] = true
+		}
+		if year.Valid {
+			yearSet[id][fmt.Sprintf("%d", year.Int64)] = true
+		}
+		if modelName.Valid {
+			modelSet[id][modelName.String] = true
+		}
+		if engineName.Valid {
+			engineSet[id][engineName.String] = true
+		}
 	}
 
+	// Convert map to sorted slice
+	ads := make([]Ad, 0, len(adMap))
+	for id, ad := range adMap {
+		// Convert sets to sorted slices
+		makes := make([]string, 0, len(makeSet[id]))
+		for m := range makeSet[id] {
+			makes = append(makes, m)
+		}
+		sort.Strings(makes)
+		if len(makes) > 0 {
+			ad.Make = makes[0]
+		}
+
+		years := make([]string, 0, len(yearSet[id]))
+		for y := range yearSet[id] {
+			years = append(years, y)
+		}
+		sort.Strings(years)
+		ad.Years = years
+
+		models := make([]string, 0, len(modelSet[id]))
+		for m := range modelSet[id] {
+			models = append(models, m)
+		}
+		sort.Strings(models)
+		ad.Models = models
+
+		engines := make([]string, 0, len(engineSet[id]))
+		for e := range engineSet[id] {
+			engines = append(engines, e)
+		}
+		sort.Strings(engines)
+		ad.Engines = engines
+
+		// If there are no vehicle filters, populate vehicle data using getAdVehicleData
+		if !hasVehicleFilters {
+			ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(id)
+		}
+
+		ads = append(ads, *ad)
+	}
+
+	// Sort by created_at DESC, id DESC
+	sort.Slice(ads, func(i, j int) bool {
+		if ads[i].CreatedAt.Equal(ads[j].CreatedAt) {
+			return ads[i].ID > ads[j].ID
+		}
+		return ads[i].CreatedAt.After(ads[j].CreatedAt)
+	})
+
+	// Apply limit and check for more results
 	hasMore := false
 	if len(ads) > limit {
 		hasMore = true
 		ads = ads[:limit]
 	}
+
+	fmt.Printf("DEBUG: Returning ads for this page: ")
+	for _, ad := range ads {
+		fmt.Printf("[ID: %d, CreatedAt: %s] ", ad.ID, ad.CreatedAt.Format(time.RFC3339Nano))
+	}
+	fmt.Println()
 
 	return ads, hasMore, nil
 }
