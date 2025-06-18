@@ -79,14 +79,21 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 	var currentUser *user.User
 	currentUser, _ = GetCurrentUser(r)
 
+	var newAdButton g.Node
+	if currentUser != nil {
+		newAdButton = templates.StyledLink("New Ad", "/new-ad", templates.ButtonPrimary)
+	} else {
+		newAdButton = templates.StyledLinkDisabled("New Ad", templates.ButtonPrimary)
+	}
+
 	_ = templates.Page(
 		"Parts Pile - Auto Parts and Sales",
+		currentUser,
 		[]g.Node{
-			templates.UserNav(currentUser),
 			templates.PageHeader("Parts Pile"),
 			Div(
 				Class("flex items-start gap-4"),
-				templates.StyledLink("New Ad", "/new-ad", templates.ButtonPrimary),
+				newAdButton,
 				Div(
 					Class("flex-1 flex flex-col gap-4 relative"),
 					Form(
@@ -126,6 +133,12 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleNewAd(w http.ResponseWriter, r *http.Request) {
+	currentUser, err := GetCurrentUser(r)
+	if err != nil || currentUser == nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	makes := vehicle.GetMakes()
 	makeOptions := []g.Node{}
 	for _, makeName := range makes {
@@ -136,7 +149,13 @@ func HandleNewAd(w http.ResponseWriter, r *http.Request) {
 
 	_ = templates.Page(
 		"New Ad - Parts Pile",
+		currentUser,
 		[]g.Node{
+			Div(
+				Class("mb-4 flex items-center gap-4"),
+				Span(Class("font-semibold"), g.Text(currentUser.Name)),
+				Span(Class("text-green-700 font-bold"), g.Text(fmt.Sprintf("Balance: %.2f tokens", currentUser.TokenBalance))),
+			),
 			templates.PageHeader("Create New Ad"),
 			Form(
 				ID("newAdForm"),
@@ -336,6 +355,12 @@ func HandleEngines(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleNewAdSubmission(w http.ResponseWriter, r *http.Request) {
+	currentUser, err := GetCurrentUser(r)
+	if err != nil || currentUser == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
 		return
@@ -397,8 +422,19 @@ func HandleViewAd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	currentUser, _ := GetCurrentUser(r)
+	var editButton, deleteButton g.Node
+	if currentUser != nil {
+		editButton = templates.StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", ad.ID), templates.ButtonPrimary)
+		deleteButton = templates.DeleteButton(ad.ID)
+	} else {
+		editButton = templates.StyledLinkDisabled("Edit Ad", templates.ButtonPrimary)
+		deleteButton = templates.StyledLinkDisabled("Delete Ad", templates.ButtonDanger)
+	}
+
 	_ = templates.Page(
 		fmt.Sprintf("Ad %d - Parts Pile", ad.ID),
+		currentUser,
 		[]g.Node{
 			Div(
 				Class("max-w-2xl mx-auto"),
@@ -406,8 +442,8 @@ func HandleViewAd(w http.ResponseWriter, r *http.Request) {
 				templates.AdDetails(ad),
 				templates.ActionButtons(
 					templates.BackToListingsButton(),
-					templates.StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", ad.ID), templates.ButtonPrimary),
-					templates.DeleteButton(ad.ID),
+					editButton,
+					deleteButton,
 				),
 				Div(
 					ID("result"),
@@ -419,6 +455,12 @@ func HandleViewAd(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleEditAd(w http.ResponseWriter, r *http.Request) {
+	currentUser, err := GetCurrentUser(r)
+	if err != nil || currentUser == nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
 	var adID int
 	fmt.Sscanf(r.PathValue("id"), "%d", &adID)
 
@@ -515,6 +557,7 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 
 	_ = templates.Page(
 		"Edit Ad - Parts Pile",
+		currentUser,
 		[]g.Node{
 			templates.PageHeader("Edit Ad"),
 			Form(
@@ -590,6 +633,12 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleUpdateAdSubmission(w http.ResponseWriter, r *http.Request) {
+	currentUser, err := GetCurrentUser(r)
+	if err != nil || currentUser == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
 		return
@@ -648,6 +697,12 @@ func HandleUpdateAdSubmission(w http.ResponseWriter, r *http.Request) {
 }
 
 func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
+	currentUser, err := GetCurrentUser(r)
+	if err != nil || currentUser == nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	var adID int
 	fmt.Sscanf(r.PathValue("id"), "%d", &adID)
 
@@ -932,8 +987,10 @@ func htmlEscape(s string) string {
 
 // HandleRegister renders the registration form
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
+	currentUser, _ := GetCurrentUser(r)
 	_ = templates.Page(
 		"Register - Parts Pile",
+		currentUser,
 		[]g.Node{
 			templates.PageHeader("Register"),
 			Form(
@@ -984,8 +1041,10 @@ func HandleRegisterSubmission(w http.ResponseWriter, r *http.Request) {
 
 // HandleLogin renders the login form
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
+	currentUser, _ := GetCurrentUser(r)
 	_ = templates.Page(
 		"Login - Parts Pile",
+		currentUser,
 		[]g.Node{
 			templates.PageHeader("Login"),
 			Form(

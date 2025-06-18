@@ -25,7 +25,7 @@ type SearchSchema struct {
 // ---- Page Layout ----
 
 // Page creates the base HTML page template with common head elements and layout
-func Page(title string, content []g.Node) g.Node {
+func Page(title string, currentUser *user.User, content []g.Node) g.Node {
 	return HTML(
 		Head(
 			g.Raw(`<title>`+title+`</title>`),
@@ -44,6 +44,10 @@ func Page(title string, content []g.Node) g.Node {
 		Body(
 			Div(
 				Class("container mx-auto px-4 py-8"),
+				Div(
+					Class("mb-8 border-b pb-4 flex items-center justify-between"),
+					UserNav(currentUser),
+				),
 				g.Group(content),
 			),
 		),
@@ -179,10 +183,18 @@ func StyledButton(text string, variant ButtonVariant, attrs ...g.Node) g.Node {
 	return Button(append(allAttrs, g.Text(text))...)
 }
 
-// StyledLink creates a styled link for navigation
+// StyledLink creates a styled link for navigation, with optional disabled state
 func StyledLink(text string, href string, variant ButtonVariant, attrs ...g.Node) g.Node {
 	allAttrs := append([]g.Node{Href(href), Class(getButtonClass(variant))}, attrs...)
 	return A(append(allAttrs, g.Text(text))...)
+}
+
+// StyledLinkDisabled creates a styled link that is visually disabled
+func StyledLinkDisabled(text string, variant ButtonVariant) g.Node {
+	return Span(
+		Class(getButtonClass(variant)+" opacity-50 cursor-not-allowed"),
+		g.Text(text),
+	)
 }
 
 // DeleteButton creates a standard delete button with confirmation
@@ -404,12 +416,13 @@ func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad) g.Node {
 	)
 }
 
-// UserNav renders the user navigation bar (register/login/logout, show user name if logged in)
+// UserNav renders the user navigation bar (register/login/logout, show user name and balance if logged in)
 func UserNav(currentUser *user.User) g.Node {
 	if currentUser != nil {
 		return Div(
 			Class("flex items-center gap-4"),
 			Span(Class("font-semibold"), g.Text(currentUser.Name)),
+			Span(Class("text-green-700 font-bold"), g.Text(fmt.Sprintf("Balance: %.2f tokens", currentUser.TokenBalance))),
 			Form(
 				Action("/logout"),
 				Method("post"),
