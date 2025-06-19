@@ -988,11 +988,11 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 				ID("registerForm"),
 				Class("space-y-6"),
 				templates.ValidationErrorContainer(),
-				templates.FormGroup("Name", "name",
+				templates.FormGroup("Username", "username",
 					Input(
 						Type("text"),
-						ID("name"),
-						Name("name"),
+						ID("username"),
+						Name("username"),
 						Class("w-full p-2 border rounded"),
 						g.Attr(`hx-on:input`, "document.getElementById('result').innerHTML = ''"),
 					),
@@ -1028,23 +1028,23 @@ func HandleRegisterSubmission(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
 		return
 	}
-	name := r.FormValue("name")
+	username := r.FormValue("username")
 	phone := r.FormValue("phone")
 	password := r.FormValue("password")
-	if name == "" || phone == "" || password == "" {
+	if username == "" || phone == "" || password == "" {
 		_ = templates.ValidationError("All fields are required").Render(w)
 		return
 	}
 
 	// Check if username is already taken
-	if _, err := user.GetUserByName(name); err == nil {
+	if _, err := user.GetUserByName(username); err == nil {
 		_ = templates.ValidationError("Username already taken").Render(w)
 		return
 	}
 
 	// LLM-based username validation
 	systemPrompt := `You are a registration assistant for an auto parts website. Your job is to check if a proposed username is offensive, hateful, or inappropriate for a public site. Car-guy humor, puns, and light-hearted jokes are allowed, but anything that would be considered offensive, hateful, or discriminatory in a public forum is not allowed. If the name is not allowed, explain why in a single sentence. If the name is allowed, reply with ONLY the word 'OK'.`
-	llmResp, err := grok.CallGrok(systemPrompt, name)
+	llmResp, err := grok.CallGrok(systemPrompt, username)
 	if err != nil {
 		_ = templates.ValidationError("Error validating username. Please try again.").Render(w)
 		return
@@ -1060,7 +1060,7 @@ func HandleRegisterSubmission(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error hashing password", http.StatusInternalServerError)
 		return
 	}
-	_, err = user.CreateUser(name, phone, string(hash))
+	_, err = user.CreateUser(username, phone, string(hash))
 	if err != nil {
 		_ = templates.ValidationError("Phone already registered").Render(w)
 		return
@@ -1080,14 +1080,23 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 				ID("loginForm"),
 				Class("space-y-6"),
 				templates.ValidationErrorContainer(),
-				templates.FormGroup("Phone", "phone",
-					Input(Type("text"), ID("phone"), Name("phone"), Class("w-full p-2 border rounded")),
+				templates.FormGroup("Username", "username",
+					Input(Type("text"), ID("username"), Name("username"), Class("w-full p-2 border rounded")),
 				),
 				templates.FormGroup("Password", "password",
 					Input(Type("password"), ID("password"), Name("password"), Class("w-full p-2 border rounded")),
 				),
 				templates.StyledButton("Login", templates.ButtonPrimary, Type("submit"), hx.Post("/api/login"), hx.Target("#result")),
 				Div(ID("result"), Class("mt-4")),
+				// Clear username and password fields on page load
+				g.Raw(`<script>
+				document.addEventListener('DOMContentLoaded', function() {
+				  var username = document.getElementById('username');
+				  var password = document.getElementById('password');
+				  if (username) username.value = '';
+				  if (password) password.value = '';
+				});
+				</script>`),
 			),
 		},
 	).Render(w)
@@ -1099,19 +1108,19 @@ func HandleLoginSubmission(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
 		return
 	}
-	phone := r.FormValue("phone")
+	username := r.FormValue("username")
 	password := r.FormValue("password")
-	if phone == "" || password == "" {
+	if username == "" || password == "" {
 		_ = templates.ValidationError("All fields are required").Render(w)
 		return
 	}
-	u, err := user.GetUserByPhone(phone)
+	u, err := user.GetUserByName(username)
 	if err != nil {
-		_ = templates.ValidationError("Invalid phone or password").Render(w)
+		_ = templates.ValidationError("Invalid username or password").Render(w)
 		return
 	}
 	if bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)) != nil {
-		_ = templates.ValidationError("Invalid phone or password").Render(w)
+		_ = templates.ValidationError("Invalid username or password").Render(w)
 		return
 	}
 	// Set session cookie (simple user_id cookie for now)
