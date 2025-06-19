@@ -75,7 +75,7 @@ CREATE TABLE AdCar (
 -- User table
 CREATE TABLE User (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     phone TEXT NOT NULL UNIQUE,
     token_balance REAL NOT NULL DEFAULT 0.0,
     password_hash TEXT NOT NULL,

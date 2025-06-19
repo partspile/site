@@ -61,3 +61,16 @@ func UpdateTokenBalance(userID int, newBalance float64) error {
 	_, err := db.Exec(`UPDATE User SET token_balance = ? WHERE id = ?`, newBalance, userID)
 	return err
 }
+
+// GetUserByName retrieves a user by name (username)
+func GetUserByName(name string) (User, error) {
+	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, created_at FROM User WHERE name = ?`, name)
+	var u User
+	var createdAt string
+	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt)
+	if err != nil {
+		return User{}, err
+	}
+	u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+	return u, nil
+}

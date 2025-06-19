@@ -989,13 +989,31 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 				Class("space-y-6"),
 				templates.ValidationErrorContainer(),
 				templates.FormGroup("Name", "name",
-					Input(Type("text"), ID("name"), Name("name"), Class("w-full p-2 border rounded")),
+					Input(
+						Type("text"),
+						ID("name"),
+						Name("name"),
+						Class("w-full p-2 border rounded"),
+						g.Attr(`hx-on:input`, "document.getElementById('result').innerHTML = ''"),
+					),
 				),
 				templates.FormGroup("Phone", "phone",
-					Input(Type("text"), ID("phone"), Name("phone"), Class("w-full p-2 border rounded")),
+					Input(
+						Type("text"),
+						ID("phone"),
+						Name("phone"),
+						Class("w-full p-2 border rounded"),
+						g.Attr(`hx-on:input`, "document.getElementById('result').innerHTML = ''"),
+					),
 				),
 				templates.FormGroup("Password", "password",
-					Input(Type("password"), ID("password"), Name("password"), Class("w-full p-2 border rounded")),
+					Input(
+						Type("password"),
+						ID("password"),
+						Name("password"),
+						Class("w-full p-2 border rounded"),
+						g.Attr(`hx-on:input`, "document.getElementById('result').innerHTML = ''"),
+					),
 				),
 				templates.StyledButton("Register", templates.ButtonPrimary, Type("submit"), hx.Post("/api/register"), hx.Target("#result")),
 				Div(ID("result"), Class("mt-4")),
@@ -1015,6 +1033,12 @@ func HandleRegisterSubmission(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 	if name == "" || phone == "" || password == "" {
 		_ = templates.ValidationError("All fields are required").Render(w)
+		return
+	}
+
+	// Check if username is already taken
+	if _, err := user.GetUserByName(name); err == nil {
+		_ = templates.ValidationError("Username already taken").Render(w)
 		return
 	}
 
