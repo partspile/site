@@ -37,6 +37,7 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 ### 3.4 Search & Filtering
 - Users can search ads by free text, which is parsed by a Large Language Model (LLM) into a structured query (e.g., SQL or equivalent), enabling flexible, natural language search with accurate filtering by vehicle and part attributes.
 - Search supports cursor-based infinite scroll/pagination.
+- **Implementation Note:** The cursor used for pagination is a base64-encoded JSON string, which encodes the current search state and position. This allows stateless, robust pagination for infinite scroll and API endpoints.
 
 ### 3.5 API Endpoints
 - RESTful endpoints for CRUD operations on ads and for fetching vehicle/part data for dynamic forms.
@@ -44,10 +45,12 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 ### 3.6 Modern UI/UX
 - Modern, accessible web UI using Tailwind CSS and HTMX for dynamic updates.
 - Form validation and user feedback for all actions.
+- **Ad timestamps are displayed in the user's local timezone, using browser-provided timezone information when available.**
 - On "Create New Ad" page, the current ad cost is displayed and updates dynamically as the user selects make/model/category.
   - Green if it's a payout (user receives tokens).
   - Red if it's an expense (user pays tokens).
-- User's token balance is shown on the home page, clickable for exchange and transaction history.
+- User's token balance is shown in the navigation bar on all pages, and is clickable for exchange and transaction history.
+- UI elements that require authentication (such as "New Ad", "Edit Ad", or "Delete Ad" buttons) are shown in a disabled state or with limited interactivity for unauthenticated users, providing clear feedback that login is required to access these features.
 
 ### 3.7 Ad Cost, Token Economy, and Incentives
 - Posting an ad incurs a cost, which can be positive (user pays) or negative (user receives payout).
@@ -79,6 +82,38 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - The first paid ad always appears at the top of search results; additional paid ads are interleaved at pagination boundaries (e.g., after each page of results).
 - Clicks on paid ads charge the advertiser; a portion of this charge is contributed to the payout fund.
 - Paid ads are intermixed with regular ads, but clearly marked.
+
+### 3.9 LLM-based Username Moderation
+- During user registration, the system uses a Large Language Model (LLM) to check the proposed username for appropriateness.
+- The LLM evaluates whether the username is offensive, hateful, or inappropriate for a public site.
+- Car-guy humor, puns, and light-hearted jokes are allowed, but anything that would be considered offensive, hateful, or discriminatory in a public forum is not allowed.
+- If the username is not allowed, the LLM provides a brief explanation; if allowed, registration proceeds.
+- This moderation step is in addition to uniqueness checks (e.g., no duplicate usernames).
+
+### 3.10 User Registration & Authentication
+- **Registration Requirements:**
+  - Users must provide:
+    - **Username** (must be unique, subject to LLM moderation for appropriateness; see 3.9)
+    - **Phone number** (must be unique, used for account recovery and verification)
+    - **Password** (stored securely using strong hashing, e.g., bcrypt)
+  - Registration form validates all fields are present and unique.
+  - Usernames are checked by an LLM for appropriateness (car-guy humor allowed, but offensive/inappropriate names are rejected with a clear message).
+
+- **Login Requirements:**
+  - Users log in with their **username** and **password**.
+  - On successful login, a secure session is established (e.g., via a session cookie).
+  - Incorrect username or password results in a generic error message (do not reveal which field is incorrect).
+
+- **Logout:**
+  - Users can log out, which clears their session.
+  - **Logout is performed via a POST form (not a GET link), following security best practices.**
+
+- **Security:**
+  - Passwords are never stored in plain text.
+  - Passwords are hashed using bcrypt before being stored in the database.
+  - Session management is handled via an HTTP-only cookie that stores the user's `user_id` upon successful login. This cookie is used to authenticate the user for subsequent requests.
+  - Phone numbers are not displayed publicly.
+  - Session cookies are HTTP-only to prevent access from client-side scripts.
 
 ---
 
