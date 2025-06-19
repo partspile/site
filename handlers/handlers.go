@@ -1017,6 +1017,20 @@ func HandleRegisterSubmission(w http.ResponseWriter, r *http.Request) {
 		_ = templates.ValidationError("All fields are required").Render(w)
 		return
 	}
+
+	// LLM-based username validation
+	systemPrompt := `You are a registration assistant for an auto parts website. Your job is to check if a proposed username is offensive, hateful, or inappropriate for a public site. Car-guy humor, puns, and light-hearted jokes are allowed, but anything that would be considered offensive, hateful, or discriminatory in a public forum is not allowed. If the name is not allowed, explain why in a single sentence. If the name is allowed, reply with ONLY the word 'OK'.`
+	llmResp, err := grok.CallGrok(systemPrompt, name)
+	if err != nil {
+		_ = templates.ValidationError("Error validating username. Please try again.").Render(w)
+		return
+	}
+	llmResp = strings.TrimSpace(llmResp)
+	if strings.ToUpper(llmResp) != "OK" {
+		_ = templates.ValidationError(llmResp).Render(w)
+		return
+	}
+
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "Error hashing password", http.StatusInternalServerError)
