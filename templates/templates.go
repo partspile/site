@@ -296,7 +296,7 @@ func AdCard(ad ad.Ad, loc *time.Location) g.Node {
 	sort.Strings(sortedYears)
 	sortedModels := append([]string{}, ad.Models...)
 	sort.Strings(sortedModels)
-	posted := ad.CreatedAt.In(loc).Format("Jan 2, 2006 15:04:05 MST")
+	posted := ad.CreatedAt.In(loc).Format("Jan 2, 2006 3:04:05 PM MST")
 	return A(
 		Href(fmt.Sprintf("/ad/%d", ad.ID)),
 		Class("block border p-4 mb-4 rounded hover:bg-gray-50"),
