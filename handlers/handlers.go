@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -860,6 +861,13 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Search request - query: %s, results: %d, hasMore: %v\n",
 		userPrompt, len(page), nextCursor != nil)
 
+	// Get the browser timezone from the header
+	tzName := r.Header.Get("X-Timezone")
+	loc, errLoc := time.LoadLocation(tzName)
+	if tzName == "" || errLoc != nil {
+		loc = time.UTC
+	}
+
 	// For initial search, return the full search results structure
 	var searchQuery templates.SearchSchema
 	if userPrompt != "" {
@@ -882,18 +890,7 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 		adsMap[ad.ID] = ad
 	}
 
-	// Debug: print all ad IDs and first 60 chars of description
-	fmt.Println("DEBUG: adsMap contents before render:")
-	for id, ad := range adsMap {
-		desc := ad.Description
-		if len(desc) > 60 {
-			desc = desc[:60] + "..."
-		}
-		fmt.Printf("  ID: %d, Desc: %q\n", id, desc)
-	}
-
-	// Render the search results container
-	_ = templates.SearchResultsContainer(searchQuery, adsMap).Render(w)
+	_ = templates.SearchResultsContainer(searchQuery, adsMap, loc).Render(w)
 
 	// Add the loader if there are more results
 	if nextCursor != nil {
@@ -945,9 +942,15 @@ func HandleSearchPage(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Search request - query: %s, results: %d, hasMore: %v\n",
 		userPrompt, len(page), nextCursor != nil)
 
-	// Render each ad card
+	// Get the browser timezone from the header
+	tzName := r.Header.Get("X-Timezone")
+	loc, errLoc := time.LoadLocation(tzName)
+	if tzName == "" || errLoc != nil {
+		loc = time.UTC
+	}
+
 	for _, ad := range page {
-		_ = templates.AdCard(ad).Render(w)
+		_ = templates.AdCard(ad, loc).Render(w)
 	}
 
 	// Add the loader if there are more results

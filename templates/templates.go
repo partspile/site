@@ -3,6 +3,7 @@ package templates
 import (
 	"fmt"
 	"sort"
+	"time"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -44,6 +45,7 @@ func Page(title string, currentUser *user.User, content []g.Node) g.Node {
 		Body(
 			Div(
 				Class("container mx-auto px-4 py-8"),
+				hx.Headers(`js:{'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone}`),
 				Div(
 					Class("mb-8 border-b pb-4 flex items-center justify-between"),
 					UserNav(currentUser),
@@ -289,11 +291,12 @@ func AdDetails(ad ad.Ad) g.Node {
 }
 
 // AdCard renders a single ad card for use in lists
-func AdCard(ad ad.Ad) g.Node {
+func AdCard(ad ad.Ad, loc *time.Location) g.Node {
 	sortedYears := append([]string{}, ad.Years...)
 	sort.Strings(sortedYears)
 	sortedModels := append([]string{}, ad.Models...)
 	sort.Strings(sortedModels)
+	posted := ad.CreatedAt.In(loc).Format("Jan 2, 2006 15:04:05 MST")
 	return A(
 		Href(fmt.Sprintf("/ad/%d", ad.ID)),
 		Class("block border p-4 mb-4 rounded hover:bg-gray-50"),
@@ -305,7 +308,7 @@ func AdCard(ad ad.Ad) g.Node {
 			P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
 			P(
 				Class("text-xs text-gray-400 mt-4"),
-				g.Text(fmt.Sprintf("ID: %d • Posted: %s", ad.ID, ad.CreatedAt.Format("Jan 2, 2006 15:04:05 MST"))),
+				g.Text(fmt.Sprintf("ID: %d • Posted: %s", ad.ID, posted)),
 			),
 		),
 	)
@@ -321,7 +324,7 @@ func AdListContainer(children ...g.Node) g.Node {
 }
 
 // BuildAdListNodes returns a slice of nodes for the ads, sorted by CreatedAt DESC, ID DESC
-func BuildAdListNodes(ads map[int]ad.Ad) []g.Node {
+func BuildAdListNodes(ads map[int]ad.Ad, loc *time.Location) []g.Node {
 	// Convert map to slice
 	adSlice := make([]ad.Ad, 0, len(ads))
 	for _, ad := range ads {
@@ -337,7 +340,7 @@ func BuildAdListNodes(ads map[int]ad.Ad) []g.Node {
 	// Build nodes
 	adsList := []g.Node{}
 	for _, ad := range adSlice {
-		adsList = append(adsList, AdCard(ad))
+		adsList = append(adsList, AdCard(ad, loc))
 	}
 	return adsList
 }
@@ -402,7 +405,7 @@ func SearchFilters(filters SearchSchema) g.Node {
 }
 
 // SearchResultsContainer creates a container for search results with filters and ad list
-func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad) g.Node {
+func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad, loc *time.Location) g.Node {
 	return Div(
 		ID("searchResults"),
 		Div(
@@ -411,7 +414,7 @@ func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad) g.Node {
 			SearchFilters(filters),
 		),
 		AdListContainer(
-			g.Group(BuildAdListNodes(ads)),
+			g.Group(BuildAdListNodes(ads, loc)),
 		),
 	)
 }
