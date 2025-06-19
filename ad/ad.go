@@ -466,7 +466,6 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([
 
 	// Apply cursor pagination
 	if cursor != nil {
-		fmt.Printf("DEBUG: Applying cursor - LastID: %d, LastPosted: %s\n", cursor.LastID, cursor.LastPosted.Format(time.RFC3339Nano))
 		sqlQuery += " AND (a.created_at < ? OR (a.created_at = ? AND a.id < ?))"
 		timeStr := cursor.LastPosted.Format(time.RFC3339Nano)
 		args = append(args, timeStr, timeStr, cursor.LastID)
@@ -475,39 +474,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([
 	// Order by created_at DESC, id DESC
 	sqlQuery += " ORDER BY a.created_at DESC, a.id DESC"
 
-	fmt.Printf("DEBUG: SQL Query: %s\n", sqlQuery)
-	fmt.Printf("DEBUG: SQL Args: %v\n", args)
-
 	rows, err := db.Query(sqlQuery, args...)
-	if err != nil {
-		return nil, false, err
-	}
-	defer rows.Close()
-
-	// Debug: print all raw rows returned by SQL
-	fmt.Printf("DEBUG: Raw SQL rows returned: ")
-	rowCount := 0
-	for rows2, _ := db.Query(sqlQuery, args...); rows2.Next(); {
-		var (
-			id          int
-			description string
-			price       float64
-			createdAt   time.Time
-			subcatID    sql.NullInt64
-			subcategory sql.NullString
-			makeName    sql.NullString
-			year        sql.NullInt64
-			modelName   sql.NullString
-			engineName  sql.NullString
-		)
-		if err := rows2.Scan(&id, &description, &price, &createdAt, &subcatID, &subcategory, &makeName, &year, &modelName, &engineName); err == nil {
-			fmt.Printf("[ID: %d, CreatedAt: %s] ", id, createdAt.Format(time.RFC3339Nano))
-			rowCount++
-		}
-	}
-	fmt.Printf("Total: %d\n", rowCount)
-	// Reset rows for actual processing
-	rows, err = db.Query(sqlQuery, args...)
 	if err != nil {
 		return nil, false, err
 	}
@@ -635,12 +602,6 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([
 		hasMore = true
 		ads = ads[:limit]
 	}
-
-	fmt.Printf("DEBUG: Returning ads for this page: ")
-	for _, ad := range ads {
-		fmt.Printf("[ID: %d, CreatedAt: %s] ", ad.ID, ad.CreatedAt.Format(time.RFC3339Nano))
-	}
-	fmt.Println()
 
 	return ads, hasMore, nil
 }

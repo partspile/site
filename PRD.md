@@ -148,6 +148,9 @@ The platform is built with the following technologies:
 - **PartSubCategory**: id, category_id, name
 - **Ad**: id, description, price, created_at, subcategory_id
 - **AdCar**: ad_id, car_id
+- **User**: id, name, phone, token_balance, password_hash, created_at
+- **TokenTransaction**: id, user_id, type, amount, related_user_id, ad_id, created_at, description
+- **PayoutFund**: id, balance, updated_at
 
 See `schema.sql` for full schema and indexes.
 
@@ -167,6 +170,11 @@ See `schema.sql` for full schema and indexes.
 - `POST /api/new-ad` — Create new ad
 - `POST /api/update-ad` — Update ad
 - `DELETE /delete-ad/{id}` — Delete ad
+- `GET /register` — Registration form
+- `POST /api/register` — Register new user
+- `GET /login` — Login form
+- `POST /api/login` — User login
+- `POST /logout` — User logout
 
 ---
 

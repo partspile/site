@@ -15,32 +15,18 @@
 
 ## 4. Search & Filtering
 - [x] Implement free-text search parsed by LLM into structured query
-- [x] Support filtering by vehicle and part attributes
-- [x] Support cursor-based infinite scroll/pagination
+- [x] Support filtering by vehicle, category, subcategory
+- [x] Support pagination (cursor-based)
 
-## 5. API Endpoints
-- [x] RESTful endpoints for CRUD on ads
-- [x] Endpoints for fetching vehicle/part data for dynamic forms
-- [x] Implement all endpoints listed in PRD section 7
+## 5. User Management
+- [x] User registration, login, logout
+- [x] User authentication for ad creation/edit/delete
 
-## 6. Modern UI/UX
-- [x] Use Tailwind CSS and HTMX for dynamic, responsive UI
-- [x] Form validation and user feedback for all actions
-- [ ] On "Create New Ad" page, display current ad cost dynamically (green for payout, red for expense)
-- [ ] Show user's token balance on home page, clickable for exchange and transaction history
+## 6. Token Economy (Partial)
+- [ ] TokenTransaction and PayoutFund logic (pending)
 
-## 7. Ad Cost, Token Economy, and Incentives
-- [ ] Implement ad cost calculation (positive/negative cost)
-- [ ] Factor in payout fund, ad density, and weighting for rare makes/categories
-- [ ] Cap payout/expense at ±5 tokens
-- [ ] Allow posting when fund is depleted (user pays)
-- [ ] Implement payout fund sources (seed, ad costs, paid ad clicks)
-- [ ] Implement token system (stablecoin-like, 1 token ≈ $1)
-- [ ] Allow users to buy/sell tokens (Stripe/PayPal integration)
-- [ ] Record all transactions as token transactions
-- [ ] Allow peer-to-peer token transfers
-- [ ] Allow users to cash out surplus tokens
-- [ ] Allow tokens as payment for items in ads (pending legal review)
+## 7. Legal/Compliance
+- [ ] Terms of service, privacy policy, and compliance (pending)
 
 ## 8. Paid Advertising & Promotion
 - [ ] Allow advertisers to pay for prominent placement in search results
@@ -50,15 +36,15 @@
 - [ ] Intermix paid and regular ads, but clearly mark paid ads
 
 ## 9. Non-Functional Requirements
-- [ ] Fast search and filtering, efficient DB queries, indexed tables
-- [ ] Extensible for user accounts, more part attributes, etc.
+- [x] Fast search and filtering, efficient DB queries, indexed tables (indexes and efficient queries present)
+- [x] Extensible for user accounts, more part attributes, etc.
 - [x] Input validation and confirmation for destructive actions
 - [x] Transactional DB operations for ad CRUD
 - [x] Modular Go codebase, clear separation of concerns
 - [x] Responsive, accessible UI components
 
 ## 10. Open Questions / Future Work
-- [ ] User authentication and account management
+- [ ] User authentication and account management (basic registration/login/logout present, but no account management UI)
 - [ ] Messaging between buyers and sellers
 - [ ] Image uploads for ads
 - [ ] Advanced analytics and reporting
@@ -81,7 +67,7 @@
 - [ ] Ensure system logic matches flow described in diagram
 
 ## Implementation Gaps / Codebase TODOs
-- [ ] Implement LLM-based search parsing (see PRD 3.4)
-- [ ] Implement all placeholder UI elements (e.g., search bar placeholder)
-- [ ] Ensure all SQL query placeholders are safe and correct
-- [ ] Review all code for incomplete, stub, or placeholder logic 
+- [x] Implement LLM-based search parsing (see PRD 3.4)
+- [x] Implement all placeholder UI elements (e.g., search bar placeholder)
+- [x] Ensure all SQL query placeholders are safe and correct
+- [x] Review all code for incomplete, stub, or placeholder logic 
