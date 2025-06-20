@@ -2,6 +2,7 @@ package user
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -16,9 +17,25 @@ type User struct {
 }
 
 var db *sql.DB
+var sessions = make(map[string]int) // session token -> user ID
 
 func InitDB(database *sql.DB) {
 	db = database
+}
+
+func CreateSession(userID int) (string, error) {
+	// Simple session token for now
+	sessionToken := fmt.Sprintf("session_token_%d_%d", userID, time.Now().UnixNano())
+	sessions[sessionToken] = userID
+	return sessionToken, nil
+}
+
+func VerifySession(sessionToken string) (int, error) {
+	userID, ok := sessions[sessionToken]
+	if !ok {
+		return 0, fmt.Errorf("invalid session token")
+	}
+	return userID, nil
 }
 
 // CreateUser inserts a new user into the database

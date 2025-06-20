@@ -17,7 +17,7 @@ func GetAllCategories() []string {
 		return nil
 	}
 	defer rows.Close()
-	
+
 	var categories []string
 	for rows.Next() {
 		var category string
@@ -35,7 +35,7 @@ func GetAllSubCategories() []string {
 		return nil
 	}
 	defer rows.Close()
-	
+
 	var subCategories []string
 	for rows.Next() {
 		var subCategory string
@@ -59,7 +59,7 @@ func GetSubCategoriesForCategory(categoryName string) []string {
 		return nil
 	}
 	defer rows.Close()
-	
+
 	var subCategories []string
 	for rows.Next() {
 		var subCategory string
@@ -69,9 +69,4 @@ func GetSubCategoriesForCategory(categoryName string) []string {
 		subCategories = append(subCategories, subCategory)
 	}
 	return subCategories
-}
-
-// LoadData is kept for compatibility but no longer needed since data is in database
-func LoadData() error {
-	return nil
 }
