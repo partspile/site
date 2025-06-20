@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/parts-pile/site/templates"
+	"github.com/parts-pile/site/components"
 	"github.com/parts-pile/site/user"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -15,7 +15,7 @@ func HandleSettings(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	_ = templates.SettingsPage(currentUser, r.URL.Path).Render(w)
+	_ = components.SettingsPage(currentUser, r.URL.Path).Render(w)
 }
 
 func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +25,7 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	confirmNewPassword := r.FormValue("confirmNewPassword")
 
 	if newPassword != confirmNewPassword {
-		templates.ValidationError("New passwords do not match").Render(w)
+		components.ValidationError("New passwords do not match").Render(w)
 		return
 	}
 
@@ -37,7 +37,7 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 
 	err = bcrypt.CompareHashAndPassword([]byte(currentUser.PasswordHash), []byte(currentPassword))
 	if err != nil {
-		templates.ValidationError("Invalid current password").Render(w)
+		components.ValidationError("Invalid current password").Render(w)
 		return
 	}
 
@@ -48,9 +48,9 @@ func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := user.UpdateUserPassword(currentUser.ID, string(newHash)); err != nil {
-		templates.ValidationError("Failed to update password").Render(w)
+		components.ValidationError("Failed to update password").Render(w)
 	} else {
-		templates.SuccessMessage("Password changed successfully", "").Render(w)
+		components.SuccessMessage("Password changed successfully", "").Render(w)
 	}
 }
 
@@ -66,12 +66,12 @@ func HandleDeleteAccount(w http.ResponseWriter, r *http.Request) {
 
 	err = bcrypt.CompareHashAndPassword([]byte(currentUser.PasswordHash), []byte(password))
 	if err != nil {
-		templates.ValidationError("Invalid password").Render(w)
+		components.ValidationError("Invalid password").Render(w)
 		return
 	}
 
 	if err := user.DeleteUser(currentUser.ID); err != nil {
-		templates.ValidationError("Failed to delete account").Render(w)
+		components.ValidationError("Failed to delete account").Render(w)
 	} else {
 		// Clear session cookie
 		cookie := &http.Cookie{

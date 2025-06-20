@@ -7,7 +7,7 @@ import (
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 
-	"github.com/parts-pile/site/templates"
+	"github.com/parts-pile/site/components"
 	"github.com/parts-pile/site/vehicle"
 )
 
@@ -28,7 +28,7 @@ func HandleYears(w http.ResponseWriter, r *http.Request) {
 
 	for _, year := range years {
 		checkboxes = append(checkboxes,
-			templates.Checkbox("years", year, year, false, false,
+			components.Checkbox("years", year, year, false, false,
 				hx.Trigger("change"),
 				hx.Get("/api/models"),
 				hx.Target("#modelsDiv"),
@@ -59,7 +59,7 @@ func HandleModels(w http.ResponseWriter, r *http.Request) {
 	checkboxes := []g.Node{}
 	for model, isAvailable := range modelAvailability {
 		checkboxes = append(checkboxes,
-			templates.Checkbox("models", model, model, false, !isAvailable,
+			components.Checkbox("models", model, model, false, !isAvailable,
 				hx.Trigger("change"),
 				hx.Get("/api/engines"),
 				hx.Target("#enginesDiv"),
@@ -95,7 +95,7 @@ func HandleEngines(w http.ResponseWriter, r *http.Request) {
 	checkboxes := []g.Node{}
 	for engine, isAvailable := range engineAvailability {
 		checkboxes = append(checkboxes,
-			templates.Checkbox("engines", engine, engine, false, !isAvailable),
+			components.Checkbox("engines", engine, engine, false, !isAvailable),
 		)
 	}
 	g.Group(checkboxes).Render(w)

@@ -10,7 +10,7 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/templates"
+	"github.com/parts-pile/site/components"
 	"github.com/parts-pile/site/vehicle"
 )
 
@@ -29,7 +29,7 @@ func HandleNewAd(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	_ = templates.Page(
+	_ = components.Page(
 		"New Ad - Parts Pile",
 		currentUser,
 		r.URL.Path,
@@ -39,12 +39,12 @@ func HandleNewAd(w http.ResponseWriter, r *http.Request) {
 				Span(Class("font-semibold"), g.Text(currentUser.Name)),
 				Span(Class("text-green-700 font-bold"), g.Text(fmt.Sprintf("Balance: %.2f tokens", currentUser.TokenBalance))),
 			),
-			templates.PageHeader("Create New Ad"),
+			components.PageHeader("Create New Ad"),
 			Form(
 				ID("newAdForm"),
 				Class("space-y-6"),
-				templates.ValidationErrorContainer(),
-				templates.FormGroup("Make", "make",
+				components.ValidationErrorContainer(),
+				components.FormGroup("Make", "make",
 					Select(
 						ID("make"),
 						Name("make"),
@@ -70,7 +70,7 @@ func HandleNewAd(w http.ResponseWriter, r *http.Request) {
 					ID("enginesDiv"),
 					Class("space-y-2"),
 				),
-				templates.FormGroup("Description", "description",
+				components.FormGroup("Description", "description",
 					Textarea(
 						ID("description"),
 						Name("description"),
@@ -78,7 +78,7 @@ func HandleNewAd(w http.ResponseWriter, r *http.Request) {
 						Rows("4"),
 					),
 				),
-				templates.FormGroup("Price", "price",
+				components.FormGroup("Price", "price",
 					Input(
 						Type("number"),
 						ID("price"),
@@ -87,12 +87,12 @@ func HandleNewAd(w http.ResponseWriter, r *http.Request) {
 						Step("0.01"),
 					),
 				),
-				templates.StyledButton("Submit", templates.ButtonPrimary,
+				components.StyledButton("Submit", components.ButtonPrimary,
 					Type("submit"),
 					hx.Post("/api/new-ad"),
 					hx.Target("#result"),
 				),
-				templates.ResultContainer(),
+				components.ResultContainer(),
 			),
 		},
 	).Render(w)
@@ -112,23 +112,23 @@ func HandleNewAdSubmission(w http.ResponseWriter, r *http.Request) {
 
 	// Validate make selection first
 	if r.FormValue("make") == "" {
-		_ = templates.ValidationError("Please select a make first").Render(w)
+		_ = components.ValidationError("Please select a make first").Render(w)
 		return
 	}
 
 	// Validate required selections
 	if len(r.Form["years"]) == 0 {
-		_ = templates.ValidationError("Please select at least one year").Render(w)
+		_ = components.ValidationError("Please select at least one year").Render(w)
 		return
 	}
 
 	if len(r.Form["models"]) == 0 {
-		_ = templates.ValidationError("Please select at least one model").Render(w)
+		_ = components.ValidationError("Please select at least one model").Render(w)
 		return
 	}
 
 	if len(r.Form["engines"]) == 0 {
-		_ = templates.ValidationError("Please select at least one engine size").Render(w)
+		_ = components.ValidationError("Please select at least one engine size").Render(w)
 		return
 	}
 
@@ -154,7 +154,7 @@ func HandleNewAdSubmission(w http.ResponseWriter, r *http.Request) {
 
 	ad.AddAd(newAd)
 
-	_ = templates.SuccessMessageWithRedirect("Ad created successfully!", "/").Render(w)
+	_ = components.SuccessMessageWithRedirect("Ad created successfully!", "/").Render(w)
 }
 
 func HandleViewAd(w http.ResponseWriter, r *http.Request) {
@@ -170,24 +170,24 @@ func HandleViewAd(w http.ResponseWriter, r *http.Request) {
 	currentUser, _ := GetCurrentUser(r)
 	var editButton, deleteButton g.Node
 	if currentUser != nil {
-		editButton = templates.StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", ad.ID), templates.ButtonPrimary)
-		deleteButton = templates.DeleteButton(ad.ID)
+		editButton = components.StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", ad.ID), components.ButtonPrimary)
+		deleteButton = components.DeleteButton(ad.ID)
 	} else {
-		editButton = templates.StyledLinkDisabled("Edit Ad", templates.ButtonPrimary)
-		deleteButton = templates.StyledLinkDisabled("Delete Ad", templates.ButtonDanger)
+		editButton = components.StyledLinkDisabled("Edit Ad", components.ButtonPrimary)
+		deleteButton = components.StyledLinkDisabled("Delete Ad", components.ButtonDanger)
 	}
 
-	_ = templates.Page(
+	_ = components.Page(
 		fmt.Sprintf("Ad %d - Parts Pile", ad.ID),
 		currentUser,
 		r.URL.Path,
 		[]g.Node{
 			Div(
 				Class("max-w-2xl mx-auto"),
-				templates.PageHeader(ad.Make),
-				templates.AdDetails(ad),
-				templates.ActionButtons(
-					templates.BackToListingsButton(),
+				components.PageHeader(ad.Make),
+				components.AdDetails(ad),
+				components.ActionButtons(
+					components.BackToListingsButton(),
 					editButton,
 					deleteButton,
 				),
@@ -240,7 +240,7 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		yearCheckboxes = append(yearCheckboxes,
-			templates.Checkbox("years", year, year, isChecked, false,
+			components.Checkbox("years", year, year, isChecked, false,
 				hx.Trigger("change"),
 				hx.Get("/api/models"),
 				hx.Target("#modelsDiv"),
@@ -268,7 +268,7 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		modelCheckboxes = append(modelCheckboxes,
-			templates.Checkbox("models", model, model, isChecked, !isAvailable,
+			components.Checkbox("models", model, model, isChecked, !isAvailable,
 				hx.Trigger("change"),
 				hx.Get("/api/engines"),
 				hx.Target("#enginesDiv"),
@@ -297,21 +297,21 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		engineCheckboxes = append(engineCheckboxes,
-			templates.Checkbox("engines", engine, engine, isChecked, !isAvailable),
+			components.Checkbox("engines", engine, engine, isChecked, !isAvailable),
 		)
 	}
 
-	_ = templates.Page(
+	_ = components.Page(
 		"Edit Ad - Parts Pile",
 		currentUser,
 		r.URL.Path,
 		[]g.Node{
-			templates.PageHeader("Edit Ad"),
+			components.PageHeader("Edit Ad"),
 			Form(
 				ID("editAdForm"),
 				Class("space-y-6"),
-				templates.ValidationErrorContainer(),
-				templates.FormGroup("Make", "make",
+				components.ValidationErrorContainer(),
+				components.FormGroup("Make", "make",
 					Select(
 						ID("make"),
 						Name("make"),
@@ -326,22 +326,22 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 				Div(
 					ID("yearsDiv"),
 					Class("space-y-4"),
-					templates.SectionHeader("Years", ""),
-					templates.GridContainer(4, yearCheckboxes...),
+					components.SectionHeader("Years", ""),
+					components.GridContainer(4, yearCheckboxes...),
 				),
 				Div(
 					ID("modelsDiv"),
 					Class("space-y-4"),
-					templates.SectionHeader("Models", "Grayed out models are not available for all selected years"),
-					templates.GridContainer(2, modelCheckboxes...),
+					components.SectionHeader("Models", "Grayed out models are not available for all selected years"),
+					components.GridContainer(2, modelCheckboxes...),
 				),
 				Div(
 					ID("enginesDiv"),
 					Class("space-y-4"),
-					templates.SectionHeader("Engines", "Grayed out engines are not available for all selected year-model combinations"),
-					templates.GridContainer(2, engineCheckboxes...),
+					components.SectionHeader("Engines", "Grayed out engines are not available for all selected year-model combinations"),
+					components.GridContainer(2, engineCheckboxes...),
 				),
-				templates.FormGroup("Description", "description",
+				components.FormGroup("Description", "description",
 					Textarea(
 						ID("description"),
 						Name("description"),
@@ -350,7 +350,7 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 						g.Text(ad.Description),
 					),
 				),
-				templates.FormGroup("Price", "price",
+				components.FormGroup("Price", "price",
 					Input(
 						Type("number"),
 						ID("price"),
@@ -365,7 +365,7 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 					Name("id"),
 					Value(fmt.Sprintf("%d", ad.ID)),
 				),
-				templates.StyledButton("Update", templates.ButtonPrimary,
+				components.StyledButton("Update", components.ButtonPrimary,
 					Type("submit"),
 					hx.Post("/api/update-ad"),
 					hx.Target("#result"),
@@ -393,23 +393,23 @@ func HandleUpdateAdSubmission(w http.ResponseWriter, r *http.Request) {
 
 	// Validate make selection first
 	if r.FormValue("make") == "" {
-		_ = templates.ValidationError("Please select a make first").Render(w)
+		_ = components.ValidationError("Please select a make first").Render(w)
 		return
 	}
 
 	// Validate required selections
 	if len(r.Form["years"]) == 0 {
-		_ = templates.ValidationError("Please select at least one year").Render(w)
+		_ = components.ValidationError("Please select at least one year").Render(w)
 		return
 	}
 
 	if len(r.Form["models"]) == 0 {
-		_ = templates.ValidationError("Please select at least one model").Render(w)
+		_ = components.ValidationError("Please select at least one model").Render(w)
 		return
 	}
 
 	if len(r.Form["engines"]) == 0 {
-		_ = templates.ValidationError("Please select at least one engine size").Render(w)
+		_ = components.ValidationError("Please select at least one engine size").Render(w)
 		return
 	}
 
@@ -440,7 +440,7 @@ func HandleUpdateAdSubmission(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = templates.SuccessMessageWithRedirect("Ad updated successfully!", fmt.Sprintf("/ad/%d", adID)).Render(w)
+	_ = components.SuccessMessageWithRedirect("Ad updated successfully!", fmt.Sprintf("/ad/%d", adID)).Render(w)
 }
 
 func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
@@ -458,5 +458,5 @@ func HandleDeleteAd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = templates.SuccessMessageWithRedirect("Ad deleted successfully!", "/").Render(w)
+	_ = components.SuccessMessageWithRedirect("Ad deleted successfully!", "/").Render(w)
 }

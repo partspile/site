@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/parts-pile/site/templates"
+	"github.com/parts-pile/site/components"
 	"github.com/parts-pile/site/user"
 )
 
@@ -22,7 +22,7 @@ func AdminRequired(next http.HandlerFunc) http.HandlerFunc {
 
 func HandleAdminDashboard(w http.ResponseWriter, r *http.Request) {
 	currentUser, _ := GetCurrentUser(r)
-	_ = templates.AdminDashboard(currentUser, r.URL.Path).Render(w)
+	_ = components.AdminDashboard(currentUser, r.URL.Path).Render(w)
 }
 
 func HandleAdminUsers(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +32,7 @@ func HandleAdminUsers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not get users", http.StatusInternalServerError)
 		return
 	}
-	_ = templates.AdminUsers(currentUser, r.URL.Path, users).Render(w)
+	_ = components.AdminUsers(currentUser, r.URL.Path, users).Render(w)
 }
 
 func HandleSetAdmin(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +59,7 @@ func HandleSetAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_ = templates.AdminUserTable(users).Render(w)
+	_ = components.AdminUserTable(users).Render(w)
 }
 
 func HandleAdminAds(w http.ResponseWriter, r *http.Request) {

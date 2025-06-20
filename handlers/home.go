@@ -5,7 +5,7 @@ import (
 
 	g "maragu.dev/gomponents"
 
-	"github.com/parts-pile/site/templates"
+	"github.com/parts-pile/site/components"
 	"github.com/parts-pile/site/user"
 )
 
@@ -20,18 +20,18 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 
 	var newAdButton g.Node
 	if currentUser != nil {
-		newAdButton = templates.StyledLink("New Ad", "/new-ad", templates.ButtonPrimary)
+		newAdButton = components.StyledLink("New Ad", "/new-ad", components.ButtonPrimary)
 	} else {
-		newAdButton = templates.StyledLinkDisabled("New Ad", templates.ButtonPrimary)
+		newAdButton = components.StyledLinkDisabled("New Ad", components.ButtonPrimary)
 	}
 
-	_ = templates.Page(
+	_ = components.Page(
 		"Parts Pile - Auto Parts and Sales",
 		currentUser,
 		r.URL.Path,
 		[]g.Node{
-			templates.SearchWidget(newAdButton),
-			templates.InitialSearchResults(),
+			components.SearchWidget(newAdButton),
+			components.InitialSearchResults(),
 		},
 	).Render(w)
 }

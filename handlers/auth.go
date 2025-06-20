@@ -7,41 +7,41 @@ import (
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 
-	"github.com/parts-pile/site/templates"
+	"github.com/parts-pile/site/components"
 	"github.com/parts-pile/site/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
 func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	currentUser, _ := GetCurrentUser(r)
-	_ = templates.Page(
+	_ = components.Page(
 		"Register",
 		currentUser,
 		r.URL.Path,
 		[]g.Node{
-			templates.PageHeader("Register"),
-			templates.ContentContainer(
-				templates.FormContainer("registerForm",
-					templates.FormGroup("Username", "name",
-						templates.TextInput("name", "name", ""),
+			components.PageHeader("Register"),
+			components.ContentContainer(
+				components.FormContainer("registerForm",
+					components.FormGroup("Username", "name",
+						components.TextInput("name", "name", ""),
 					),
-					templates.FormGroup("Phone Number", "phone",
-						templates.TextInput("phone", "phone", ""),
+					components.FormGroup("Phone Number", "phone",
+						components.TextInput("phone", "phone", ""),
 					),
-					templates.FormGroup("Password", "password",
-						templates.PasswordInput("password", "password"),
+					components.FormGroup("Password", "password",
+						components.PasswordInput("password", "password"),
 					),
-					templates.FormGroup("Confirm Password", "password2",
-						templates.PasswordInput("password2", "password2"),
+					components.FormGroup("Confirm Password", "password2",
+						components.PasswordInput("password2", "password2"),
 					),
-					templates.ActionButtons(
-						templates.StyledButton("Register", templates.ButtonPrimary,
+					components.ActionButtons(
+						components.StyledButton("Register", components.ButtonPrimary,
 							hx.Post("/api/register"),
 							hx.Target("#result"),
 							hx.Indicator("#registerForm"),
 						),
 					),
-					templates.ResultContainer(),
+					components.ResultContainer(),
 				),
 			),
 		},
@@ -56,7 +56,7 @@ func HandleRegisterSubmission(w http.ResponseWriter, r *http.Request) {
 	password2 := r.FormValue("password2")
 
 	if password != password2 {
-		templates.ValidationError("Passwords do not match").Render(w)
+		components.ValidationError("Passwords do not match").Render(w)
 		return
 	}
 
@@ -67,36 +67,36 @@ func HandleRegisterSubmission(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if _, err := user.CreateUser(name, phone, string(hashedPassword)); err != nil {
-		templates.ValidationError("User already exists or another error occurred.").Render(w)
+		components.ValidationError("User already exists or another error occurred.").Render(w)
 	} else {
-		templates.SuccessMessageWithRedirect("Registration successful!", "/login").Render(w)
+		components.SuccessMessageWithRedirect("Registration successful!", "/login").Render(w)
 	}
 }
 
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	currentUser, _ := GetCurrentUser(r)
-	_ = templates.Page(
+	_ = components.Page(
 		"Login",
 		currentUser,
 		r.URL.Path,
 		[]g.Node{
-			templates.PageHeader("Login"),
-			templates.ContentContainer(
-				templates.FormContainer("loginForm",
-					templates.FormGroup("Username", "name",
-						templates.TextInput("name", "name", ""),
+			components.PageHeader("Login"),
+			components.ContentContainer(
+				components.FormContainer("loginForm",
+					components.FormGroup("Username", "name",
+						components.TextInput("name", "name", ""),
 					),
-					templates.FormGroup("Password", "password",
-						templates.PasswordInput("password", "password"),
+					components.FormGroup("Password", "password",
+						components.PasswordInput("password", "password"),
 					),
-					templates.ActionButtons(
-						templates.StyledButton("Login", templates.ButtonPrimary,
+					components.ActionButtons(
+						components.StyledButton("Login", components.ButtonPrimary,
 							hx.Post("/api/login"),
 							hx.Target("#result"),
 							hx.Indicator("#loginForm"),
 						),
 					),
-					templates.ResultContainer(),
+					components.ResultContainer(),
 				),
 			),
 		},
@@ -110,13 +110,13 @@ func HandleLoginSubmission(w http.ResponseWriter, r *http.Request) {
 
 	u, err := user.GetUserByName(name)
 	if err != nil {
-		templates.ValidationError("Invalid username or password").Render(w)
+		components.ValidationError("Invalid username or password").Render(w)
 		return
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
 	if err != nil {
-		templates.ValidationError("Invalid username or password").Render(w)
+		components.ValidationError("Invalid username or password").Render(w)
 		return
 	}
 
@@ -132,7 +132,7 @@ func HandleLoginSubmission(w http.ResponseWriter, r *http.Request) {
 			Path:     "/",
 		}
 		http.SetCookie(w, cookie)
-		templates.SuccessMessageWithRedirect("Login successful!", "/").Render(w)
+		components.SuccessMessageWithRedirect("Login successful!", "/").Render(w)
 	}
 }
 

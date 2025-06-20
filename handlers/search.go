@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/templates"
+	"github.com/parts-pile/site/components"
 )
 
 func HandleSearch(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +31,7 @@ func HandleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// For the initial search, we render the whole container.
-	templates.SearchResultsContainer(templates.SearchSchema(query), adsMap, loc).Render(w)
+	components.SearchResultsContainer(components.SearchSchema(query), adsMap, loc).Render(w)
 
 	// Add the loader if there are more results
 	if nextCursor != nil {
@@ -70,7 +70,7 @@ func HandleSearchPage(w http.ResponseWriter, r *http.Request) {
 
 	// For subsequent loads, we just render the new ad cards, and the next loader
 	for _, ad := range ads {
-		templates.AdCard(ad, loc).Render(w)
+		components.AdCard(ad, loc).Render(w)
 	}
 
 	if nextCursor != nil {

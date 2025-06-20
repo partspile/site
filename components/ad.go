@@ -1,4 +1,4 @@
-package templates
+package components
 
 import (
 	"fmt"
