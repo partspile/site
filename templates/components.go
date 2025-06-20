@@ -6,6 +6,8 @@ import (
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
+
+	"github.com/parts-pile/site/config"
 )
 
 // ---- Layout Components ----
@@ -132,8 +134,8 @@ func SuccessMessageWithRedirect(message string, redirectURL string) g.Node {
 		Class("bg-green-100 border-green-500 text-green-700 px-4 py-3 rounded"),
 		g.Raw(fmt.Sprintf(`
 			<div>%s</div>
-			<script>setTimeout(function() { window.location = '%s' }, 2000)</script>
-		`, message+" Redirecting...", redirectURL)),
+			<script>setTimeout(function() { window.location = '%s' }, %d)</script>
+		`, message+" Redirecting...", redirectURL, config.RedirectDelay.Milliseconds())),
 	)
 }
 
