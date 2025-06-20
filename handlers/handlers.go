@@ -89,6 +89,7 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 	_ = templates.Page(
 		"Parts Pile - Auto Parts and Sales",
 		currentUser,
+		r.URL.Path,
 		[]g.Node{
 			templates.PageHeader("Parts Pile"),
 			Div(
@@ -150,6 +151,7 @@ func HandleNewAd(w http.ResponseWriter, r *http.Request) {
 	_ = templates.Page(
 		"New Ad - Parts Pile",
 		currentUser,
+		r.URL.Path,
 		[]g.Node{
 			Div(
 				Class("mb-4 flex items-center gap-4"),
@@ -436,6 +438,7 @@ func HandleViewAd(w http.ResponseWriter, r *http.Request) {
 	_ = templates.Page(
 		fmt.Sprintf("Ad %d - Parts Pile", ad.ID),
 		currentUser,
+		r.URL.Path,
 		[]g.Node{
 			Div(
 				Class("max-w-2xl mx-auto"),
@@ -559,6 +562,7 @@ func HandleEditAd(w http.ResponseWriter, r *http.Request) {
 	_ = templates.Page(
 		"Edit Ad - Parts Pile",
 		currentUser,
+		r.URL.Path,
 		[]g.Node{
 			templates.PageHeader("Edit Ad"),
 			Form(
@@ -983,6 +987,7 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 	_ = templates.Page(
 		"Register - Parts Pile",
 		currentUser,
+		r.URL.Path,
 		[]g.Node{
 			templates.PageHeader("Register"),
 			Form(
@@ -1016,7 +1021,10 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 						g.Attr(`hx-on:input`, "document.getElementById('result').innerHTML = ''"),
 					),
 				),
-				templates.StyledButton("Register", templates.ButtonPrimary, Type("submit"), hx.Post("/api/register"), hx.Target("#result")),
+				templates.ActionButtons(
+					templates.StyledButton("Register", templates.ButtonPrimary, Type("submit"), hx.Post("/api/register"), hx.Target("#result")),
+					templates.StyledLink("Cancel", "/", templates.ButtonSecondary),
+				),
 				Div(ID("result"), Class("mt-4")),
 			),
 		},
@@ -1075,6 +1083,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	_ = templates.Page(
 		"Login - Parts Pile",
 		currentUser,
+		r.URL.Path,
 		[]g.Node{
 			templates.PageHeader("Login"),
 			Form(
@@ -1087,7 +1096,10 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 				templates.FormGroup("Password", "password",
 					Input(Type("password"), ID("password"), Name("password"), Class("w-full p-2 border rounded")),
 				),
-				templates.StyledButton("Login", templates.ButtonPrimary, Type("submit"), hx.Post("/api/login"), hx.Target("#result")),
+				templates.ActionButtons(
+					templates.StyledButton("Login", templates.ButtonPrimary, Type("submit"), hx.Post("/api/login"), hx.Target("#result")),
+					templates.StyledLink("Cancel", "/", templates.ButtonSecondary),
+				),
 				Div(ID("result"), Class("mt-4")),
 				// Clear username and password fields on page load
 				g.Raw(`<script>
@@ -1182,7 +1194,7 @@ func HandleSettings(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	_ = templates.SettingsPage(currentUser).Render(w)
+	_ = templates.SettingsPage(currentUser, r.URL.Path).Render(w)
 }
 
 // HandleChangePassword processes password change requests

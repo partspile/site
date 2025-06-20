@@ -26,7 +26,7 @@ type SearchSchema struct {
 // ---- Page Layout ----
 
 // Page creates the base HTML page template with common head elements and layout
-func Page(title string, currentUser *user.User, content []g.Node) g.Node {
+func Page(title string, currentUser *user.User, currentPath string, content []g.Node) g.Node {
 	return HTML(
 		Head(
 			g.Raw(`<title>`+title+`</title>`),
@@ -48,7 +48,7 @@ func Page(title string, currentUser *user.User, content []g.Node) g.Node {
 				hx.Headers(`js:{'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone}`),
 				Div(
 					Class("mb-8 border-b pb-4 flex items-center justify-between"),
-					UserNav(currentUser),
+					UserNav(currentUser, currentPath),
 				),
 				g.Group(content),
 			),
@@ -420,7 +420,7 @@ func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad, loc *time.L
 }
 
 // UserNav renders the user navigation bar (register/login/logout, show user name and balance if logged in)
-func UserNav(currentUser *user.User) g.Node {
+func UserNav(currentUser *user.User, currentPath string) g.Node {
 	if currentUser != nil {
 		return Div(
 			Class("flex items-center gap-4"),
@@ -430,16 +430,25 @@ func UserNav(currentUser *user.User) g.Node {
 			A(Href("/settings"), Class("text-2xl"), g.Text("⚙️")),
 		)
 	}
+
+	var nodes []g.Node
+	if currentPath != "/login" {
+		nodes = append(nodes, A(Href("/login"), Class("text-blue-500 hover:underline"), g.Text("Login")))
+	}
+	if currentPath != "/register" {
+		nodes = append(nodes, A(Href("/register"), Class("text-blue-500 hover:underline"), g.Text("Register")))
+	}
 	return Div(
-		A(Href("/login"), Class("text-blue-500 hover:underline"), g.Text("Login")),
-		A(Href("/register"), Class("text-blue-500 hover:underline"), g.Text("Register")),
+		Class("flex items-center gap-4"),
+		g.Group(nodes),
 	)
 }
 
-func SettingsPage(currentUser *user.User) g.Node {
+func SettingsPage(currentUser *user.User, currentPath string) g.Node {
 	return Page(
 		"Settings",
 		currentUser,
+		currentPath,
 		[]g.Node{
 			PageHeader("Settings"),
 			ContentContainer(
