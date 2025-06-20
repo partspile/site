@@ -3,7 +3,10 @@ package user
 import (
 	"database/sql"
 	"fmt"
+	"sync"
 	"time"
+
+	"github.com/parts-pile/site/config"
 )
 
 type User struct {
@@ -17,25 +20,76 @@ type User struct {
 }
 
 var db *sql.DB
-var sessions = make(map[string]int) // session token -> user ID
+
+// session represents a single user session.
+type session struct {
+	userID    int
+	expiresAt time.Time
+}
+
+// sessionStore holds our active sessions and a mutex for safe access.
+type sessionStore struct {
+	sync.RWMutex
+	sessions map[string]session
+}
+
+// globalSessionStore is our in-memory session store.
+var globalSessionStore = &sessionStore{
+	sessions: make(map[string]session),
+}
 
 func InitDB(database *sql.DB) {
 	db = database
+	go globalSessionStore.cleanupExpiredSessions()
+}
+
+// cleanupExpiredSessions periodically iterates through the session store and
+// removes sessions that have expired.
+func (s *sessionStore) cleanupExpiredSessions() {
+	for {
+		time.Sleep(config.SessionCleanupInterval)
+		s.Lock()
+		for token, sess := range s.sessions {
+			if time.Now().After(sess.expiresAt) {
+				delete(s.sessions, token)
+			}
+		}
+		s.Unlock()
+	}
 }
 
 func CreateSession(userID int) (string, error) {
-	// Simple session token for now
 	sessionToken := fmt.Sprintf("session_token_%d_%d", userID, time.Now().UnixNano())
-	sessions[sessionToken] = userID
+	expiresAt := time.Now().Add(config.SessionDuration)
+
+	globalSessionStore.Lock()
+	defer globalSessionStore.Unlock()
+
+	globalSessionStore.sessions[sessionToken] = session{
+		userID:    userID,
+		expiresAt: expiresAt,
+	}
+
 	return sessionToken, nil
 }
 
 func VerifySession(sessionToken string) (int, error) {
-	userID, ok := sessions[sessionToken]
+	globalSessionStore.RLock()
+	defer globalSessionStore.RUnlock()
+
+	sess, ok := globalSessionStore.sessions[sessionToken]
 	if !ok {
 		return 0, fmt.Errorf("invalid session token")
 	}
-	return userID, nil
+
+	if time.Now().After(sess.expiresAt) {
+		// The cleanup goroutine will eventually get this, but we can also
+		// proactively remove it. To do that without a deferred RUnlock,
+		// we'd need to manage the lock manually.
+		return 0, fmt.Errorf("session expired")
+	}
+
+	return sess.userID, nil
 }
 
 // CreateUser inserts a new user into the database

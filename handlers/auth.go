@@ -129,9 +129,10 @@ func HandleLoginSubmission(w http.ResponseWriter, r *http.Request) {
 			Value:    sessionToken,
 			Expires:  time.Now().Add(24 * time.Hour),
 			HttpOnly: true,
+			Path:     "/",
 		}
 		http.SetCookie(w, cookie)
-		w.Header().Set("HX-Redirect", "/")
+		templates.SuccessMessageWithRedirect("Login successful!", "/").Render(w)
 	}
 }
 
