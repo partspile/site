@@ -27,17 +27,22 @@ type SearchCursor struct {
 	LastPosted time.Time   `json:"last_posted"` // Timestamp of last item
 }
 
+// Ad represents an advertisement in the system
 type Ad struct {
 	ID            int       `json:"id"`
+	Title         string    `json:"title"`
 	Description   string    `json:"description"`
 	Price         float64   `json:"price"`
 	CreatedAt     time.Time `json:"created_at"`
 	SubCategoryID *int      `json:"subcategory_id,omitempty"`
+	UserID        int       `json:"user_id"`
 	// Runtime fields populated via joins
+	Year        string   `json:"year,omitempty"`
 	Make        string   `json:"make"`
 	Years       []string `json:"years"`
 	Models      []string `json:"models"`
 	Engines     []string `json:"engines"`
+	Category    string   `json:"category,omitempty"`
 	SubCategory string   `json:"subcategory,omitempty"`
 }
 
@@ -54,43 +59,6 @@ func InitDB(path string) error {
 	}
 	DB = db
 	return nil
-}
-
-func GetAllAds() map[int]Ad {
-	ads := make(map[int]Ad)
-
-	// Get basic ad data
-	rows, err := db.Query(`
-		SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
-		       psc.name as subcategory
-		FROM Ad a
-		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
-	`)
-	if err != nil {
-		return ads
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var ad Ad
-		var subcategory sql.NullString
-		if err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt,
-			&ad.SubCategoryID, &subcategory); err != nil {
-			continue
-		}
-		if subcategory.Valid {
-			ad.SubCategory = subcategory.String
-		}
-		ads[ad.ID] = ad
-	}
-
-	// Get vehicle data for each ad
-	for id, ad := range ads {
-		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(id)
-		ads[id] = ad
-	}
-
-	return ads
 }
 
 // getAdVehicleData retrieves vehicle information for an ad
@@ -184,8 +152,8 @@ func AddAd(ad Ad) int {
 	defer tx.Rollback()
 
 	createdAt := time.Now().UTC().Format(time.RFC3339)
-	res, err := tx.Exec("INSERT INTO Ad (description, price, created_at, subcategory_id) VALUES (?, ?, ?, ?)",
-		ad.Description, ad.Price, createdAt, ad.SubCategoryID)
+	res, err := tx.Exec("INSERT INTO Ad (description, price, created_at, subcategory_id, user_id) VALUES (?, ?, ?, ?, ?)",
+		ad.Description, ad.Price, createdAt, ad.SubCategoryID, ad.UserID)
 	if err != nil {
 		return 0
 	}
@@ -256,53 +224,6 @@ func addAdVehicleAssociations(tx *sql.Tx, adID int, makeName string, years []str
 		}
 	}
 	return nil
-}
-
-func UpdateAd(id int, ad Ad) bool {
-	tx, err := db.Begin()
-	if err != nil {
-		return false
-	}
-	defer tx.Rollback()
-
-	_, err = tx.Exec("UPDATE Ad SET description=?, price=?, subcategory_id=? WHERE id=?",
-		ad.Description, ad.Price, ad.SubCategoryID, id)
-	if err != nil {
-		return false
-	}
-
-	_, err = tx.Exec("DELETE FROM AdCar WHERE ad_id = ?", id)
-	if err != nil {
-		return false
-	}
-
-	if ad.Make != "" || len(ad.Years) > 0 || len(ad.Models) > 0 || len(ad.Engines) > 0 {
-		if err := addAdVehicleAssociations(tx, id, ad.Make, ad.Years, ad.Models, ad.Engines); err != nil {
-			return false
-		}
-	}
-
-	return tx.Commit() == nil
-}
-
-func DeleteAd(id int) bool {
-	tx, err := db.Begin()
-	if err != nil {
-		return false
-	}
-	defer tx.Rollback()
-
-	_, err = tx.Exec("DELETE FROM AdCar WHERE ad_id = ?", id)
-	if err != nil {
-		return false
-	}
-
-	_, err = tx.Exec("DELETE FROM Ad WHERE id=?", id)
-	if err != nil {
-		return false
-	}
-
-	return tx.Commit() == nil
 }
 
 func GetNextAdID() int {
@@ -624,4 +545,243 @@ func CloseDB() error {
 		return db.Close()
 	}
 	return nil
+}
+
+// GetAllAds returns all ads in the system
+func GetAllAds() ([]Ad, error) {
+	rows, err := db.Query(`
+		SELECT a.id, a.user_id, a.title, a.description, a.price, a.created_at,
+		       ac.year, ac.make, ac.model, ac.category, ac.subcategory
+		FROM Ad a
+		LEFT JOIN AdCar ac ON a.id = ac.ad_id
+		ORDER BY a.created_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ads []Ad
+	for rows.Next() {
+		var ad Ad
+		var createdAt string
+		var year, make, model, category, subcategory sql.NullString
+		err := rows.Scan(&ad.ID, &ad.UserID, &ad.Title, &ad.Description, &ad.Price,
+			&createdAt, &year, &make, &model, &category, &subcategory)
+		if err != nil {
+			return nil, err
+		}
+		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+		if year.Valid {
+			ad.Year = year.String
+			ad.Make = make.String
+			ad.Models = []string{model.String}
+			ad.Category = category.String
+			ad.SubCategory = subcategory.String
+		}
+		ads = append(ads, ad)
+	}
+	return ads, nil
+}
+
+// GetAdsByUserID returns all ads for a given user
+func GetAdsByUserID(userID int) ([]Ad, error) {
+	rows, err := db.Query(`
+		SELECT a.id, a.user_id, a.title, a.description, a.price, a.created_at,
+		       ac.year, ac.make, ac.model, ac.category, ac.subcategory
+		FROM Ad a
+		LEFT JOIN AdCar ac ON a.id = ac.ad_id
+		WHERE a.user_id = ?
+		ORDER BY a.created_at DESC`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ads []Ad
+	for rows.Next() {
+		var ad Ad
+		var createdAt string
+		var year, make, model, category, subcategory sql.NullString
+		err := rows.Scan(&ad.ID, &ad.UserID, &ad.Title, &ad.Description, &ad.Price,
+			&createdAt, &year, &make, &model, &category, &subcategory)
+		if err != nil {
+			return nil, err
+		}
+		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+		if year.Valid {
+			ad.Year = year.String
+			ad.Make = make.String
+			ad.Models = []string{model.String}
+			ad.Category = category.String
+			ad.SubCategory = subcategory.String
+		}
+		ads = append(ads, ad)
+	}
+	return ads, nil
+}
+
+// GetAdByID returns a single ad by ID
+func GetAdByID(id int) (Ad, error) {
+	var ad Ad
+	var createdAt string
+	var year, make, model, category, subcategory sql.NullString
+	err := db.QueryRow(`
+		SELECT a.id, a.user_id, a.title, a.description, a.price, a.created_at,
+		       ac.year, ac.make, ac.model, ac.category, ac.subcategory
+		FROM Ad a
+		LEFT JOIN AdCar ac ON a.id = ac.ad_id
+		WHERE a.id = ?`, id).Scan(&ad.ID, &ad.UserID, &ad.Title, &ad.Description, &ad.Price,
+		&createdAt, &year, &make, &model, &category, &subcategory)
+	if err != nil {
+		return Ad{}, err
+	}
+	ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+	if year.Valid {
+		ad.Year = year.String
+		ad.Make = make.String
+		ad.Models = []string{model.String}
+		ad.Category = category.String
+		ad.SubCategory = subcategory.String
+	}
+	return ad, nil
+}
+
+// CreateAd creates a new ad
+func CreateAd(ad Ad) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	res, err := tx.Exec(`INSERT INTO Ad (user_id, title, description, price) VALUES (?, ?, ?, ?)`,
+		ad.UserID, ad.Title, ad.Description, ad.Price)
+	if err != nil {
+		return err
+	}
+
+	id, _ := res.LastInsertId()
+	ad.ID = int(id)
+
+	if ad.Year != "" {
+		_, err = tx.Exec(`INSERT INTO AdCar (ad_id, year, make, model, category, subcategory) VALUES (?, ?, ?, ?, ?, ?)`,
+			ad.ID, ad.Year, ad.Make, ad.Models[0], ad.Category, ad.SubCategory)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+// UpdateAd updates an existing ad
+func UpdateAd(ad Ad) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec(`UPDATE Ad SET title = ?, description = ?, price = ? WHERE id = ?`,
+		ad.Title, ad.Description, ad.Price, ad.ID)
+	if err != nil {
+		return err
+	}
+
+	if ad.Year != "" {
+		_, err = tx.Exec(`UPDATE AdCar SET year = ?, make = ?, model = ?, category = ?, subcategory = ? WHERE ad_id = ?`,
+			ad.Year, ad.Make, ad.Models[0], ad.Category, ad.SubCategory, ad.ID)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+// DeleteAd deletes an ad
+func DeleteAd(id int) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec(`DELETE FROM AdCar WHERE ad_id = ?`, id)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(`DELETE FROM Ad WHERE id = ?`, id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+// DeleteAdsByUserID deletes all ads for a given user
+func DeleteAdsByUserID(userID int) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Get all ad IDs for the user
+	rows, err := tx.Query(`SELECT id FROM Ad WHERE user_id = ?`, userID)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	// Delete each ad's car info
+	for rows.Next() {
+		var adID int
+		if err := rows.Scan(&adID); err != nil {
+			return err
+		}
+		_, err = tx.Exec(`DELETE FROM AdCar WHERE ad_id = ?`, adID)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Delete all ads for the user
+	_, err = tx.Exec(`DELETE FROM Ad WHERE user_id = ?`, userID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+// GetAdsByMakeModel returns all ads for a given make and model
+func GetAdsByMakeModel(make, model string) ([]Ad, error) {
+	// ... existing code ...
+	return nil, nil
+}
+
+// GetAdsBySubCategory returns all ads for a given subcategory
+func GetAdsBySubCategory(subCategoryID int) ([]Ad, error) {
+	// ... existing code ...
+	return nil, nil
+}
+
+// GetAdsByMakeModelYear returns all ads for a given make, model, and year
+func GetAdsByMakeModelYear(make, model, year string) ([]Ad, error) {
+	// ... existing code ...
+	return nil, nil
+}
+
+// GetAdsByMakeModelYearEngine returns all ads for a given make, model, year, and engine
+func GetAdsByMakeModelYearEngine(make, model, year, engine string) ([]Ad, error) {
+	// ... existing code ...
+	return nil, nil
+}
+
+// GetAdsByMakeModelYearEngineSubCategory returns all ads for a given make, model, year, engine, and subcategory
+func GetAdsByMakeModelYearEngineSubCategory(make, model, year, engine string, subCategoryID int) ([]Ad, error) {
+	// ... existing code ...
+	return nil, nil
 }

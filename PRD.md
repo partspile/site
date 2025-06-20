@@ -115,6 +115,42 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
   - Phone numbers are not displayed publicly.
   - Session cookies are HTTP-only to prevent access from client-side scripts.
 
+### 3.11 User Settings & Account Management
+- Authenticated users can access a dedicated settings page (via a gear icon in the navigation bar) to manage their account.
+- The settings page allows users to:
+  - Change their password (current password required for confirmation).
+  - Delete their account (with confirmation prompt).
+- The settings page is accessible only to logged-in users.
+- UI/UX: The gear icon is shown in the user navigation bar on all pages when logged in.
+- **Account Deletion:**
+  - When a user deletes their account:
+    - User data is archived (not deleted) for historical record keeping
+    - All user's ads are archived (not deleted)
+    - User's token transactions are marked as involving a deleted user
+    - The user and their ads are no longer visible in the main application
+    - This action is irreversible and requires password confirmation
+
+### 3.12 Data Archiving & Admin Interface
+- **Data Archiving:**
+  - Deleted user data is preserved in archive tables for historical records
+  - Archive tables maintain the same structure as live tables, with additional deletion timestamps
+  - Archived data includes:
+    - User profiles (UserDead table)
+    - User's ads (AdDead table)
+    - Ad-car relationships (AdCarDead table)
+    - Token transactions (marked with user_deleted flag)
+  - This preserves data for auditing while removing it from active use
+
+- **Admin Interface:**
+  - Administrators can access archived data through dedicated endpoints
+  - Admin features include:
+    - View archived users with deletion dates
+    - View archived ads for any deleted user
+    - Search archived data by various criteria
+    - Export archived data for analysis
+    - View token transaction history, including deleted users
+  - Admin access is restricted by role-based authentication
+
 ---
 
 ## 4. Technology Stack
@@ -134,11 +170,13 @@ The platform is built with the following technologies:
 - As a user, I want to browse categories and subcategories to discover available parts.
 - As a seller, I want to edit or delete my ads if details change or the part is sold.
 - As a user, I want fast, accurate search results and a modern, easy-to-use interface.
+- As a user, I want to manage my account settings, including changing my password or deleting my account, from a dedicated settings page.
 
 ---
 
 ## 6. Data Model (Simplified)
 
+### Live Tables
 - **Make**: id, name
 - **Year**: id, year
 - **Model**: id, name
@@ -146,13 +184,20 @@ The platform is built with the following technologies:
 - **Car**: id, make_id, year_id, model_id, engine_id
 - **PartCategory**: id, name
 - **PartSubCategory**: id, category_id, name
-- **Ad**: id, description, price, created_at, subcategory_id
+- **Ad**: id, description, price, created_at, subcategory_id, user_id
 - **AdCar**: ad_id, car_id
 - **User**: id, name, phone, token_balance, password_hash, created_at
-- **TokenTransaction**: id, user_id, type, amount, related_user_id, ad_id, created_at, description
+- **TokenTransaction**: id, user_id, type, amount, related_user_id, ad_id, created_at, description, user_deleted
 - **PayoutFund**: id, balance, updated_at
 
+### Archive Tables
+- **UserDead**: id, name, phone, token_balance, password_hash, created_at, deletion_date
+- **AdDead**: id, description, price, created_at, subcategory_id, user_id, deletion_date
+- **AdCarDead**: ad_id, car_id, deletion_date
+
 See `schema.sql` for full schema and indexes.
+
+**Note:** Archive tables maintain historical data for deleted users and their content, with deletion timestamps for auditing purposes.
 
 ---
 
@@ -175,6 +220,17 @@ See `schema.sql` for full schema and indexes.
 - `GET /login` — Login form
 - `POST /api/login` — User login
 - `POST /logout` — User logout
+- `GET /settings` — User settings page (change password, delete account)
+- `POST /api/change-password` — Change user password
+- `POST /api/delete-account` — Delete user account
+
+### Admin Endpoints
+- `GET /admin/archived/users` — List archived users
+- `GET /admin/archived/users/{id}` — View specific archived user
+- `GET /admin/archived/users/{id}/ads` — View archived ads for user
+- `GET /admin/archived/search` — Search archived data
+- `GET /admin/archived/transactions` — View token transactions (including deleted users)
+- `GET /admin/archived/export` — Export archived data (CSV/JSON)
 
 ---
 

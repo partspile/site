@@ -21,6 +21,7 @@
 ## 5. User Management
 - [x] User registration, login, logout
 - [x] User authentication for ad creation/edit/delete
+- [ ] User settings page (change password, delete account)
 
 ## 6. Token Economy (Partial)
 - [ ] TokenTransaction and PayoutFund logic (pending)
