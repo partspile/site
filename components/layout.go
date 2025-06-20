@@ -22,7 +22,7 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 			),
 			Script(
 				Type("text/javascript"),
-				Src("https://unpkg.com/htmx.org@1.9.10"),
+				Src("https://unpkg.com/htmx.org@2.0.4"),
 				Defer(),
 			),
 		),
