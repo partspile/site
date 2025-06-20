@@ -34,11 +34,6 @@ func HandleNewAd(w http.ResponseWriter, r *http.Request) {
 		currentUser,
 		r.URL.Path,
 		[]g.Node{
-			Div(
-				Class("mb-4 flex items-center gap-4"),
-				Span(Class("font-semibold"), g.Text(currentUser.Name)),
-				Span(Class("text-green-700 font-bold"), g.Text(fmt.Sprintf("Balance: %.2f tokens", currentUser.TokenBalance))),
-			),
 			components.PageHeader("Create New Ad"),
 			Form(
 				ID("newAdForm"),
