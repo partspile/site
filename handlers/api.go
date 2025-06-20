@@ -39,7 +39,7 @@ func HandleYears(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	g.Group(checkboxes).Render(w)
+	components.GridContainer(5, checkboxes...).Render(w)
 }
 
 func HandleModels(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +69,7 @@ func HandleModels(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	g.Group(checkboxes).Render(w)
+	components.GridContainer(5, checkboxes...).Render(w)
 }
 
 func HandleEngines(w http.ResponseWriter, r *http.Request) {
@@ -98,5 +98,5 @@ func HandleEngines(w http.ResponseWriter, r *http.Request) {
 			components.Checkbox("engines", engine, engine, false, !isAvailable),
 		)
 	}
-	g.Group(checkboxes).Render(w)
+	components.GridContainer(5, checkboxes...).Render(w)
 }
