@@ -24,8 +24,12 @@ func UserNav(currentUser *user.User, currentPath string) g.Node {
 				A(Href("/admin"), Class("text-blue-500 hover:underline"), g.Text("Admin")),
 			)
 		}
+		if currentPath != "/settings" {
+			navItems = append(navItems,
+				A(Href("/settings"), Class("text-blue-500 hover:underline"), g.Text("Settings")),
+			)
+		}
 		navItems = append(navItems,
-			A(Href("/settings"), Class("text-blue-500 hover:underline"), g.Text("Settings")),
 			Form(
 				Action("/logout"),
 				Method("POST"),
