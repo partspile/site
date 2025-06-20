@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Don't use Go's html/template or text/template for HTML generation.  Use Gomponents (https://github.com/maragudk/gomponents) instead.

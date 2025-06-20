@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+When making code updates, keep the PRD.md and TODO.md updated to match code.
