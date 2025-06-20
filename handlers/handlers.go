@@ -1182,86 +1182,52 @@ func HandleSettings(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	_ = templates.Page(
-		"User Settings - Parts Pile",
-		currentUser,
-		[]g.Node{
-			templates.PageHeader("User Settings"),
-			Div(
-				Class("max-w-md mx-auto space-y-8"),
-				Form(
-					ID("changePasswordForm"),
-					Class("space-y-4 border p-4 rounded"),
-					templates.SectionHeader("Change Password", "Update your account password."),
-					templates.ValidationErrorContainer(),
-					templates.FormGroup("Current Password", "current_password",
-						Input(Type("password"), ID("current_password"), Name("current_password"), Class("w-full p-2 border rounded")),
-					),
-					templates.FormGroup("New Password", "new_password",
-						Input(Type("password"), ID("new_password"), Name("new_password"), Class("w-full p-2 border rounded")),
-					),
-					templates.FormGroup("Confirm New Password", "confirm_new_password",
-						Input(Type("password"), ID("confirm_new_password"), Name("confirm_new_password"), Class("w-full p-2 border rounded")),
-					),
-					templates.StyledButton("Change Password", templates.ButtonPrimary, Type("submit"), hx.Post("/api/change-password"), hx.Target("#settingsResult")),
-				),
-				Form(
-					ID("deleteAccountForm"),
-					Class("space-y-4 border p-4 rounded mt-8"),
-					templates.SectionHeader("Delete Account", "This action is irreversible. All your data and ads will be deleted."),
-					templates.ValidationErrorContainer(),
-					templates.FormGroup("Confirm Password", "delete_password",
-						Input(Type("password"), ID("delete_password"), Name("delete_password"), Class("w-full p-2 border rounded")),
-					),
-					templates.StyledButton("Delete Account", templates.ButtonDanger, Type("submit"), hx.Post("/api/delete-account"), hx.Target("#settingsResult"), hx.Confirm("Are you sure you want to delete your account? This cannot be undone.")),
-				),
-				Div(ID("settingsResult"), Class("mt-4")),
-			),
-		},
-	).Render(w)
+	_ = templates.SettingsPage(currentUser).Render(w)
 }
 
 // HandleChangePassword processes password change requests
 func HandleChangePassword(w http.ResponseWriter, r *http.Request) {
 	currentUser, err := GetCurrentUser(r)
 	if err != nil || currentUser == nil {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "Error parsing form", http.StatusBadRequest)
-		return
-	}
-	current := r.FormValue("current_password")
-	newpw := r.FormValue("new_password")
-	conf := r.FormValue("confirm_new_password")
-	if current == "" || newpw == "" || conf == "" {
-		_ = templates.ValidationError("All fields are required").Render(w)
-		return
-	}
-	if newpw != conf {
+
+	currentPassword := r.FormValue("currentPassword")
+	newPassword := r.FormValue("newPassword")
+	confirmNewPassword := r.FormValue("confirmNewPassword")
+
+	if newPassword != confirmNewPassword {
 		_ = templates.ValidationError("New passwords do not match").Render(w)
 		return
 	}
-	if len(newpw) < 6 {
-		_ = templates.ValidationError("New password must be at least 6 characters").Render(w)
+
+	if err := bcrypt.CompareHashAndPassword([]byte(currentUser.PasswordHash), []byte(currentPassword)); err != nil {
+		_ = templates.ValidationError("Invalid current password").Render(w)
 		return
 	}
-	if err := bcrypt.CompareHashAndPassword([]byte(currentUser.PasswordHash), []byte(current)); err != nil {
-		_ = templates.ValidationError("Current password is incorrect").Render(w)
-		return
-	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(newpw), bcrypt.DefaultCost)
+
+	newPasswordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
 		http.Error(w, "Error hashing password", http.StatusInternalServerError)
 		return
 	}
-	_, err = user.UpdatePassword(currentUser.ID, string(hash))
+
+	_, err = user.UpdateUserPassword(currentUser.ID, string(newPasswordHash))
 	if err != nil {
-		http.Error(w, "Error updating password", http.StatusInternalServerError)
+		_ = templates.ValidationError("Failed to update password").Render(w)
 		return
 	}
-	_ = templates.SuccessMessage("Password changed successfully!", "window.location.reload();").Render(w)
+
+	// Log the user out by clearing the session cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:   "user_id",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
+
+	_ = templates.SuccessMessageWithRedirect("Password updated successfully. Please log in again.", "/login").Render(w)
 }
 
 // HandleDeleteAccount processes account deletion requests
@@ -1272,20 +1238,25 @@ func HandleDeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := user.DeleteUserAndAds(currentUser.ID); err != nil {
-		// Log the error and show a generic error page
-		fmt.Printf("Error deleting account for user %d: %v\n", currentUser.ID, err)
-		http.Error(w, "There was a problem deleting your account. Please try again later.", http.StatusInternalServerError)
+	password := r.FormValue("password")
+
+	if err := bcrypt.CompareHashAndPassword([]byte(currentUser.PasswordHash), []byte(password)); err != nil {
+		_ = templates.ValidationError("Invalid password").Render(w)
 		return
 	}
 
-	// Invalidate the session cookie
+	if err := user.DeleteUser(currentUser.ID); err != nil {
+		_ = templates.ValidationError("Failed to delete account").Render(w)
+		return
+	}
+
+	// Log the user out by clearing the session cookie
 	http.SetCookie(w, &http.Cookie{
-		Name:   "session_token",
-		Value:  "",
-		Path:   "/",
-		MaxAge: -1,
+		Name:    "session_token",
+		Value:   "",
+		Expires: time.Unix(0, 0),
+		Path:    "/",
 	})
 
-	_ = templates.SuccessMessageWithRedirect("Your account has been deleted.", "/").Render(w)
+	_ = templates.SuccessMessageWithRedirect("Account deleted successfully.", "/").Render(w)
 }

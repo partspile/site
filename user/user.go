@@ -82,8 +82,8 @@ func GetUserByName(name string) (User, error) {
 	return u, nil
 }
 
-// UpdatePassword updates a user's password hash
-func UpdatePassword(userID int, newHash string) (int, error) {
+// UpdateUserPassword updates a user's password hash
+func UpdateUserPassword(userID int, newHash string) (int, error) {
 	res, err := db.Exec(`UPDATE User SET password_hash = ? WHERE id = ?`, newHash, userID)
 	if err != nil {
 		return 0, err
@@ -92,8 +92,8 @@ func UpdatePassword(userID int, newHash string) (int, error) {
 	return int(n), err
 }
 
-// DeleteUserAndAds archives a user and all their ads instead of deleting them
-func DeleteUserAndAds(userID int) error {
+// DeleteUser archives a user and all their ads instead of deleting them
+func DeleteUser(userID int) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err

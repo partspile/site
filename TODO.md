@@ -21,7 +21,7 @@
 ## 5. User Management
 - [x] User registration, login, logout
 - [x] User authentication for ad creation/edit/delete
-- [ ] User settings page (change password, delete account)
+- [x] User settings page (change password, delete account)
 
 ## 6. Token Economy (Partial)
 - [ ] TokenTransaction and PayoutFund logic (pending)
@@ -45,7 +45,7 @@
 - [x] Responsive, accessible UI components
 
 ## 10. Open Questions / Future Work
-- [ ] User authentication and account management (basic registration/login/logout present, but no account management UI)
+- [x] User authentication and account management (basic registration/login/logout present, but no account management UI)
 - [ ] Messaging between buyers and sellers
 - [ ] Image uploads for ads
 - [ ] Advanced analytics and reporting

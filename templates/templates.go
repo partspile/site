@@ -426,16 +426,84 @@ func UserNav(currentUser *user.User) g.Node {
 			Class("flex items-center gap-4"),
 			Span(Class("font-semibold"), g.Text(currentUser.Name)),
 			Span(Class("text-green-700 font-bold"), g.Text(fmt.Sprintf("Balance: %.2f tokens", currentUser.TokenBalance))),
-			Form(
-				Action("/logout"),
-				Method("post"),
-				StyledButton("Logout", ButtonSecondary),
-			),
+			A(Href("/logout"), Class("text-blue-500 hover:underline"), g.Text("Logout")),
+			A(Href("/settings"), Class("text-2xl"), g.Text("⚙️")),
 		)
 	}
 	return Div(
-		Class("flex items-center gap-4"),
-		StyledLink("Register", "/register", ButtonSecondary),
-		StyledLink("Login", "/login", ButtonSecondary),
+		A(Href("/login"), Class("text-blue-500 hover:underline"), g.Text("Login")),
+		A(Href("/register"), Class("text-blue-500 hover:underline"), g.Text("Register")),
+	)
+}
+
+func SettingsPage(currentUser *user.User) g.Node {
+	return Page(
+		"Settings",
+		currentUser,
+		[]g.Node{
+			PageHeader("Settings"),
+			ContentContainer(
+				// Change Password Form
+				SectionHeader("Change Password", ""),
+				FormContainer("changePasswordForm",
+					FormGroup("Current Password", "currentPassword",
+						Input(
+							Type("password"),
+							ID("currentPassword"),
+							Name("currentPassword"),
+							Class("w-full p-2 border rounded"),
+						),
+					),
+					FormGroup("New Password", "newPassword",
+						Input(
+							Type("password"),
+							ID("newPassword"),
+							Name("newPassword"),
+							Class("w-full p-2 border rounded"),
+						),
+					),
+					FormGroup("Confirm New Password", "confirmNewPassword",
+						Input(
+							Type("password"),
+							ID("confirmNewPassword"),
+							Name("confirmNewPassword"),
+							Class("w-full p-2 border rounded"),
+						),
+					),
+					ActionButtons(
+						StyledButton("Change Password", ButtonPrimary,
+							hx.Post("/api/change-password"),
+							hx.Target("#result"),
+							hx.Indicator("#changePasswordForm"),
+						),
+					),
+				),
+
+				// Delete Account Form
+				Div(Class("mt-12"),
+					SectionHeader("Delete Account", "This will permanently delete your account and all associated data. This action cannot be undone."),
+					FormContainer("deleteAccountForm",
+						FormGroup("Password", "deletePassword",
+							Input(
+								Type("password"),
+								ID("deletePassword"),
+								Name("password"),
+								Class("w-full p-2 border rounded"),
+								Placeholder("Enter your password to confirm"),
+							),
+						),
+						ActionButtons(
+							StyledButton("Delete My Account", ButtonDanger,
+								hx.Post("/api/delete-account"),
+								hx.Confirm("Are you sure you want to delete your account? This action is permanent."),
+								hx.Target("#result"),
+								hx.Indicator("#deleteAccountForm"),
+							),
+						),
+					),
+				),
+				ResultContainer(),
+			),
+		},
 	)
 }
