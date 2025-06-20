@@ -91,7 +91,6 @@ func HandleHome(w http.ResponseWriter, r *http.Request) {
 		currentUser,
 		r.URL.Path,
 		[]g.Node{
-			templates.PageHeader("Parts Pile"),
 			Div(
 				Class("flex items-start gap-4"),
 				newAdButton,

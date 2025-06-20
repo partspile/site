@@ -57,15 +57,13 @@ func Start() error {
 	mux.HandleFunc("POST /api/change-password", handlers.HandleChangePassword)
 	mux.HandleFunc("POST /api/delete-account", handlers.HandleDeleteAccount)
 
-	/*
-		// Admin routes
-		mux.HandleFunc("GET /admin", handlers.AdminRequired(handlers.HandleAdminDashboard))
-		mux.HandleFunc("GET /admin/users", handlers.AdminRequired(handlers.HandleAdminUsers))
-		mux.HandleFunc("POST /admin/users/set-admin", handlers.AdminRequired(handlers.HandleSetAdmin))
-		mux.HandleFunc("GET /admin/ads", handlers.AdminRequired(handlers.HandleAdminAds))
-		mux.HandleFunc("GET /admin/transactions", handlers.AdminRequired(handlers.HandleAdminTransactions))
-		mux.HandleFunc("GET /admin/export", handlers.AdminRequired(handlers.HandleAdminExport))
-	*/
+	// Admin routes
+	mux.HandleFunc("GET /admin", handlers.AdminRequired(handlers.HandleAdminDashboard))
+	mux.HandleFunc("GET /admin/users", handlers.AdminRequired(handlers.HandleAdminUsers))
+	mux.HandleFunc("POST /api/admin/users/set-admin", handlers.AdminRequired(handlers.HandleSetAdmin))
+	mux.HandleFunc("GET /admin/ads", handlers.AdminRequired(handlers.HandleAdminAds))
+	mux.HandleFunc("GET /admin/transactions", handlers.AdminRequired(handlers.HandleAdminTransactions))
+	mux.HandleFunc("GET /admin/export", handlers.AdminRequired(handlers.HandleAdminExport))
 
 	// API endpoints
 	mux.HandleFunc("GET /api/makes", handlers.HandleMakes)

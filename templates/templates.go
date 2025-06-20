@@ -421,26 +421,53 @@ func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad, loc *time.L
 
 // UserNav renders the user navigation bar (register/login/logout, show user name and balance if logged in)
 func UserNav(currentUser *user.User, currentPath string) g.Node {
+	var navItems []g.Node
 	if currentUser != nil {
-		return Div(
-			Class("flex items-center gap-4"),
+		// Logged-in user navigation
+		navItems = []g.Node{
+			A(Href("/"), Class("text-xl font-bold"), g.Text("Parts Pile")),
+			Span(Class("flex-grow")), // Pushes items to the right
 			Span(Class("font-semibold"), g.Text(currentUser.Name)),
 			Span(Class("text-green-700 font-bold"), g.Text(fmt.Sprintf("Balance: %.2f tokens", currentUser.TokenBalance))),
-			A(Href("/logout"), Class("text-blue-500 hover:underline"), g.Text("Logout")),
-			A(Href("/settings"), Class("text-2xl"), g.Text("⚙️")),
+		}
+		if currentUser.IsAdmin {
+			navItems = append(navItems,
+				A(Href("/admin"), Class("text-blue-500 hover:underline"), g.Text("Admin")),
+			)
+		}
+		navItems = append(navItems,
+			A(Href("/settings"), Class("text-blue-500 hover:underline"), g.Text("Settings")),
+			Form(
+				Action("/logout"),
+				Method("POST"),
+				Button(
+					Type("submit"),
+					Class("text-blue-500 hover:underline"),
+					g.Text("Logout"),
+				),
+			),
 		)
+	} else {
+		// Logged-out user navigation
+		navItems = []g.Node{
+			A(Href("/"), Class("text-xl font-bold"), g.Text("Parts Pile")),
+			Span(Class("flex-grow")), // Pushes items to the right
+		}
+		if currentPath != "/login" {
+			navItems = append(navItems,
+				A(Href("/login"), Class("text-blue-500 hover:underline"), g.Text("Login")),
+			)
+		}
+		if currentPath != "/register" {
+			navItems = append(navItems,
+				A(Href("/register"), Class("text-blue-500 hover:underline"), g.Text("Register")),
+			)
+		}
 	}
 
-	var nodes []g.Node
-	if currentPath != "/login" {
-		nodes = append(nodes, A(Href("/login"), Class("text-blue-500 hover:underline"), g.Text("Login")))
-	}
-	if currentPath != "/register" {
-		nodes = append(nodes, A(Href("/register"), Class("text-blue-500 hover:underline"), g.Text("Register")))
-	}
-	return Div(
-		Class("flex items-center gap-4"),
-		g.Group(nodes),
+	return Nav(
+		Class("flex items-center space-x-4 w-full"),
+		g.Group(navItems),
 	)
 }
 
