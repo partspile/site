@@ -258,7 +258,7 @@ func SuccessMessageWithRedirect(message string, redirectURL string) g.Node {
 		Class("bg-green-100 border-green-500 text-green-700 px-4 py-3 rounded"),
 		g.Raw(fmt.Sprintf(`
 			<div>%s</div>
-			<script>setTimeout(function() { window.location = '%s' }, 1000)</script>
+			<script>setTimeout(function() { window.location = '%s' }, 2000)</script>
 		`, message+" Redirecting...", redirectURL)),
 	)
 }

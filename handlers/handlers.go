@@ -990,42 +990,57 @@ func HandleRegister(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path,
 		[]g.Node{
 			templates.PageHeader("Register"),
-			Form(
-				ID("registerForm"),
-				Class("space-y-6"),
-				templates.ValidationErrorContainer(),
-				templates.FormGroup("Username", "username",
-					Input(
-						Type("text"),
-						ID("username"),
-						Name("username"),
-						Class("w-full p-2 border rounded"),
-						g.Attr(`hx-on:input`, "document.getElementById('result').innerHTML = ''"),
+			Div(
+				Class("relative"),
+				Form(
+					ID("registerForm"),
+					Class("space-y-6"),
+					templates.ValidationErrorContainer(),
+					templates.FormGroup("Username", "username",
+						Input(
+							Type("text"),
+							ID("username"),
+							Name("username"),
+							Class("w-full p-2 border rounded"),
+							g.Attr(`hx-on:input`, "document.getElementById('result').innerHTML = ''"),
+						),
 					),
-				),
-				templates.FormGroup("Phone", "phone",
-					Input(
-						Type("text"),
-						ID("phone"),
-						Name("phone"),
-						Class("w-full p-2 border rounded"),
-						g.Attr(`hx-on:input`, "document.getElementById('result').innerHTML = ''"),
+					templates.FormGroup("Phone", "phone",
+						Input(
+							Type("text"),
+							ID("phone"),
+							Name("phone"),
+							Class("w-full p-2 border rounded"),
+							g.Attr(`hx-on:input`, "document.getElementById('result').innerHTML = ''"),
+						),
 					),
-				),
-				templates.FormGroup("Password", "password",
-					Input(
-						Type("password"),
-						ID("password"),
-						Name("password"),
-						Class("w-full p-2 border rounded"),
-						g.Attr(`hx-on:input`, "document.getElementById('result').innerHTML = ''"),
+					templates.FormGroup("Password", "password",
+						Input(
+							Type("password"),
+							ID("password"),
+							Name("password"),
+							Class("w-full p-2 border rounded"),
+							g.Attr(`hx-on:input`, "document.getElementById('result').innerHTML = ''"),
+						),
 					),
+					templates.FormGroup("Confirm Password", "confirm_password",
+						Input(Type("password"), ID("confirm_password"), Name("confirm_password"), Class("w-full p-2 border rounded")),
+					),
+					templates.ActionButtons(
+						templates.StyledButton("Register", templates.ButtonPrimary, Type("submit"), hx.Post("/api/register"), hx.Target("#result"), hx.Indicator("#registerWaiting")),
+						templates.StyledLink("Cancel", "/", templates.ButtonSecondary),
+					),
+					Div(ID("result"), Class("mt-4")),
 				),
-				templates.ActionButtons(
-					templates.StyledButton("Register", templates.ButtonPrimary, Type("submit"), hx.Post("/api/register"), hx.Target("#result")),
-					templates.StyledLink("Cancel", "/", templates.ButtonSecondary),
+			),
+			Div(
+				ID("registerWaiting"),
+				Class("htmx-indicator absolute inset-0 flex items-center justify-center bg-white bg-opacity-60 z-10 pointer-events-none"),
+				Img(
+					Src("/static/spinner.gif"),
+					Alt("Loading..."),
+					Class("w-12 h-12 pointer-events-auto"),
 				),
-				Div(ID("result"), Class("mt-4")),
 			),
 		},
 	).Render(w)
@@ -1040,8 +1055,15 @@ func HandleRegisterSubmission(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	phone := r.FormValue("phone")
 	password := r.FormValue("password")
+	confirmPassword := r.FormValue("confirm_password")
+
 	if username == "" || phone == "" || password == "" {
 		_ = templates.ValidationError("All fields are required").Render(w)
+		return
+	}
+
+	if password != confirmPassword {
+		_ = templates.ValidationError("Passwords do not match").Render(w)
 		return
 	}
 
