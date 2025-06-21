@@ -35,6 +35,7 @@ func HandleNewAd(c *fiber.Ctx) error {
 			Form(
 				ID("newAdForm"),
 				Class("space-y-6"),
+				EncType("multipart/form-data"),
 				ui.ValidationErrorContainer(),
 				ui.FormGroup("Make", "make",
 					Select(
@@ -82,6 +83,7 @@ func HandleNewAd(c *fiber.Ctx) error {
 				ui.StyledButton("Submit", ui.ButtonPrimary,
 					Type("submit"),
 					hx.Post("/api/new-ad"),
+					hx.Encoding("multipart/form-data"),
 					hx.Target("#result"),
 				),
 				ui.ResultContainer(),
@@ -100,7 +102,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 
 	form, err := c.MultipartForm()
 	if err != nil {
-		return err
+		return render(c, ui.ValidationError(err.Error()))
 	}
 
 	// Validate required selections
@@ -295,6 +297,7 @@ func HandleEditAd(c *fiber.Ctx) error {
 			Form(
 				ID("editAdForm"),
 				Class("space-y-6"),
+				EncType("multipart/form-data"),
 				ui.ValidationErrorContainer(),
 				ui.FormGroup("Make", "make",
 					Select(
@@ -335,6 +338,7 @@ func HandleEditAd(c *fiber.Ctx) error {
 				ui.StyledButton("Submit", ui.ButtonPrimary,
 					Type("submit"),
 					hx.Post(fmt.Sprintf("/api/update-ad/%d", ad.ID)),
+					hx.Encoding("multipart/form-data"),
 					hx.Target("#result"),
 				),
 				ui.ResultContainer(),
@@ -361,7 +365,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 
 	form, err := c.MultipartForm()
 	if err != nil {
-		return err
+		return render(c, ui.ValidationError(err.Error()))
 	}
 
 	if len(form.Value["years"]) == 0 || len(form.Value["models"]) == 0 || len(form.Value["engines"]) == 0 {
