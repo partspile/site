@@ -63,7 +63,7 @@ func main() {
 	app.Get("/", handlers.HandleHome)
 	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd)
 	app.Get("/edit-ad/:id", handlers.AuthRequired, handlers.HandleEditAd)
-	app.Get("/ad/:id", handlers.HandleViewAd)
+	app.Get("/ad/:id", handlers.OptionalAuth, handlers.HandleViewAd)
 	app.Get("/search", handlers.HandleSearch)
 	app.Get("/search-page", handlers.HandleSearchPage)
 

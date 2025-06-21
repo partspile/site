@@ -121,7 +121,7 @@ func getAdVehicleData(adID int) (makeName string, years []string, models []strin
 func GetAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
 		SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
-		       psc.name as subcategory
+		       a.user_id, psc.name as subcategory
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 		WHERE a.id = ?
@@ -130,7 +130,7 @@ func GetAd(id int) (Ad, bool) {
 	var ad Ad
 	var subcategory sql.NullString
 	if err := row.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt,
-		&ad.SubCategoryID, &subcategory); err != nil {
+		&ad.SubCategoryID, &ad.UserID, &subcategory); err != nil {
 		return Ad{}, false
 	}
 
@@ -682,16 +682,21 @@ func UpdateAd(ad Ad) error {
 	}
 	defer tx.Rollback()
 
-	_, err = tx.Exec(`UPDATE Ad SET title = ?, description = ?, price = ? WHERE id = ?`,
-		ad.Title, ad.Description, ad.Price, ad.ID)
+	_, err = tx.Exec("UPDATE Ad SET description = ?, price = ?, subcategory_id = ? WHERE id = ?",
+		ad.Description, ad.Price, ad.SubCategoryID, ad.ID)
 	if err != nil {
 		return err
 	}
 
-	if ad.Year != "" {
-		_, err = tx.Exec(`UPDATE AdCar SET year = ?, make = ?, model = ?, category = ?, subcategory = ? WHERE ad_id = ?`,
-			ad.Year, ad.Make, ad.Models[0], ad.Category, ad.SubCategory, ad.ID)
-		if err != nil {
+	// First, remove existing vehicle associations for this ad
+	_, err = tx.Exec("DELETE FROM AdCar WHERE ad_id = ?", ad.ID)
+	if err != nil {
+		return err
+	}
+
+	// Then, add the new ones
+	if ad.Make != "" || len(ad.Years) > 0 || len(ad.Models) > 0 || len(ad.Engines) > 0 {
+		if err := addAdVehicleAssociations(tx, ad.ID, ad.Make, ad.Years, ad.Models, ad.Engines); err != nil {
 			return err
 		}
 	}

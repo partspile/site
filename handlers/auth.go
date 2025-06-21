@@ -89,6 +89,15 @@ func AuthRequired(c *fiber.Ctx) error {
 	return c.Next()
 }
 
+// OptionalAuth is a middleware that checks for a user but does not require one.
+func OptionalAuth(c *fiber.Ctx) error {
+	user, err := GetCurrentUser(c)
+	if err == nil && user != nil {
+		c.Locals("user", user)
+	}
+	return c.Next()
+}
+
 // AdminRequired is a middleware that requires a user to be an admin.
 func AdminRequired(c *fiber.Ctx) error {
 	user, err := GetCurrentUser(c)

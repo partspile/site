@@ -154,7 +154,7 @@ func HandleViewAd(c *fiber.Ctx) error {
 		return fiber.ErrNotFound
 	}
 
-	currentUser, _ := GetCurrentUser(c)
+	currentUser, _ := c.Locals("user").(*user.User)
 	var editButton, deleteButton g.Node
 	if currentUser != nil && currentUser.ID == ad.UserID {
 		editButton = ui.StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", ad.ID), ui.ButtonPrimary)
