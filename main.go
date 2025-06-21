@@ -12,9 +12,9 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/components"
 	"github.com/parts-pile/site/handlers"
 	"github.com/parts-pile/site/part"
+	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vehicle"
 )
@@ -120,6 +120,5 @@ func customErrorHandler(ctx *fiber.Ctx, err error) error {
 
 	// Send custom error page
 	ctx.Set(fiber.HeaderContentType, fiber.MIMETextHTML)
-	// This component needs to be created
-	return components.ErrorPage(code, err.Error()).Render(ctx)
+	return ui.ErrorPage(code, err.Error()).Render(ctx)
 }

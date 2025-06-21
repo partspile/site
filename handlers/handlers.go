@@ -13,9 +13,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/components"
 	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/part"
+	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vehicle"
 	"golang.org/x/crypto/bcrypt"
@@ -31,13 +31,13 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 	u, err := user.GetUserByName(name)
 	if err != nil {
 		c.Response().SetStatusCode(fiber.StatusUnauthorized)
-		return render(c, components.ValidationError("Invalid username or password"))
+		return render(c, ui.ValidationError("Invalid username or password"))
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
 	if err != nil {
 		c.Response().SetStatusCode(fiber.StatusUnauthorized)
-		return render(c, components.ValidationError("Invalid username or password"))
+		return render(c, ui.ValidationError("Invalid username or password"))
 	}
 
 	store := c.Locals("session_store").(*session.Store)
@@ -52,7 +52,7 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to save session.")
 	}
 
-	return render(c, components.SuccessMessageWithRedirect("Login successful", "/"))
+	return render(c, ui.SuccessMessageWithRedirect("Login successful", "/"))
 }
 
 func HandleLogout(c *fiber.Ctx) error {
@@ -66,7 +66,7 @@ func HandleLogout(c *fiber.Ctx) error {
 	if err := sess.Destroy(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to log you out.")
 	}
-	return render(c, components.SuccessMessageWithRedirect("You have been logged out", "/"))
+	return render(c, ui.SuccessMessageWithRedirect("You have been logged out", "/"))
 }
 
 func GetCurrentUser(c *fiber.Ctx) (*user.User, error) {
@@ -129,18 +129,18 @@ func HandleHome(c *fiber.Ctx) error {
 
 	var newAdButton g.Node
 	if currentUser != nil {
-		newAdButton = components.StyledLink("New Ad", "/new-ad", components.ButtonPrimary)
+		newAdButton = ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
 	} else {
-		newAdButton = components.StyledLinkDisabled("New Ad", components.ButtonPrimary)
+		newAdButton = ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
 	}
 
-	return render(c, components.Page(
+	return render(c, ui.Page(
 		"Parts Pile - Auto Parts and Sales",
 		currentUser,
 		c.Path(),
 		[]g.Node{
-			components.SearchWidget(newAdButton),
-			components.InitialSearchResults(),
+			ui.SearchWidget(newAdButton),
+			ui.InitialSearchResults(),
 		},
 	))
 }
@@ -156,17 +156,17 @@ func HandleNewAd(c *fiber.Ctx) error {
 		)
 	}
 
-	return render(c, components.Page(
+	return render(c, ui.Page(
 		"New Ad - Parts Pile",
 		currentUser,
 		c.Path(),
 		[]g.Node{
-			components.PageHeader("Create New Ad"),
+			ui.PageHeader("Create New Ad"),
 			Form(
 				ID("newAdForm"),
 				Class("space-y-6"),
-				components.ValidationErrorContainer(),
-				components.FormGroup("Make", "make",
+				ui.ValidationErrorContainer(),
+				ui.FormGroup("Make", "make",
 					Select(
 						ID("make"),
 						Name("make"),
@@ -192,7 +192,7 @@ func HandleNewAd(c *fiber.Ctx) error {
 					ID("enginesDiv"),
 					Class("space-y-2"),
 				),
-				components.FormGroup("Description", "description",
+				ui.FormGroup("Description", "description",
 					Textarea(
 						ID("description"),
 						Name("description"),
@@ -200,7 +200,7 @@ func HandleNewAd(c *fiber.Ctx) error {
 						Rows("4"),
 					),
 				),
-				components.FormGroup("Price", "price",
+				ui.FormGroup("Price", "price",
 					Input(
 						Type("number"),
 						ID("price"),
@@ -209,12 +209,12 @@ func HandleNewAd(c *fiber.Ctx) error {
 						Step("0.01"),
 					),
 				),
-				components.StyledButton("Submit", components.ButtonPrimary,
+				ui.StyledButton("Submit", ui.ButtonPrimary,
 					Type("submit"),
 					hx.Post("/api/new-ad"),
 					hx.Target("#result"),
 				),
-				components.ResultContainer(),
+				ui.ResultContainer(),
 			),
 		},
 	))
@@ -225,7 +225,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 
 	// Validate make selection first
 	if c.FormValue("make") == "" {
-		return render(c, components.ValidationError("Please select a make first"))
+		return render(c, ui.ValidationError("Please select a make first"))
 	}
 
 	form, err := c.MultipartForm()
@@ -235,15 +235,15 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 
 	// Validate required selections
 	if len(form.Value["years"]) == 0 {
-		return render(c, components.ValidationError("Please select at least one year"))
+		return render(c, ui.ValidationError("Please select at least one year"))
 	}
 
 	if len(form.Value["models"]) == 0 {
-		return render(c, components.ValidationError("Please select at least one model"))
+		return render(c, ui.ValidationError("Please select at least one model"))
 	}
 
 	if len(form.Value["engines"]) == 0 {
-		return render(c, components.ValidationError("Please select at least one engine size"))
+		return render(c, ui.ValidationError("Please select at least one engine size"))
 	}
 
 	price := 0.0
@@ -268,7 +268,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 
 	ad.AddAd(newAd)
 
-	return render(c, components.SuccessMessageWithRedirect("Ad created successfully", "/"))
+	return render(c, ui.SuccessMessageWithRedirect("Ad created successfully", "/"))
 }
 
 func HandleViewAd(c *fiber.Ctx) error {
@@ -285,24 +285,24 @@ func HandleViewAd(c *fiber.Ctx) error {
 	currentUser, _ := GetCurrentUser(c)
 	var editButton, deleteButton g.Node
 	if currentUser != nil && currentUser.ID == ad.UserID {
-		editButton = components.StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", ad.ID), components.ButtonPrimary)
-		deleteButton = components.DeleteButton(ad.ID)
+		editButton = ui.StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", ad.ID), ui.ButtonPrimary)
+		deleteButton = ui.DeleteButton(ad.ID)
 	} else {
-		editButton = components.StyledLinkDisabled("Edit Ad", components.ButtonPrimary)
-		deleteButton = components.StyledLinkDisabled("Delete Ad", components.ButtonDanger)
+		editButton = ui.StyledLinkDisabled("Edit Ad", ui.ButtonPrimary)
+		deleteButton = ui.StyledLinkDisabled("Delete Ad", ui.ButtonDanger)
 	}
 
-	return render(c, components.Page(
+	return render(c, ui.Page(
 		fmt.Sprintf("Ad %d - Parts Pile", ad.ID),
 		currentUser,
 		c.Path(),
 		[]g.Node{
 			Div(
 				Class("max-w-2xl mx-auto"),
-				components.PageHeader(ad.Make),
-				components.AdDetails(ad),
-				components.ActionButtons(
-					components.BackToListingsButton(),
+				ui.PageHeader(ad.Make),
+				ui.AdDetails(ad),
+				ui.ActionButtons(
+					ui.BackToListingsButton(),
 					editButton,
 					deleteButton,
 				),
@@ -356,7 +356,7 @@ func HandleEditAd(c *fiber.Ctx) error {
 			}
 		}
 		yearCheckboxes = append(yearCheckboxes,
-			components.Checkbox("years", year, year, isChecked, false,
+			ui.Checkbox("years", year, year, isChecked, false,
 				hx.Trigger("change"),
 				hx.Get("/api/models"),
 				hx.Target("#modelsDiv"),
@@ -384,7 +384,7 @@ func HandleEditAd(c *fiber.Ctx) error {
 			}
 		}
 		modelCheckboxes = append(modelCheckboxes,
-			components.Checkbox("models", modelName, modelName, isChecked, !isAvailable,
+			ui.Checkbox("models", modelName, modelName, isChecked, !isAvailable,
 				hx.Trigger("change"),
 				hx.Get("/api/engines"),
 				hx.Target("#enginesDiv"),
@@ -412,21 +412,21 @@ func HandleEditAd(c *fiber.Ctx) error {
 			}
 		}
 		engineCheckboxes = append(engineCheckboxes,
-			components.Checkbox("engines", engineName, engineName, isChecked, !isAvailable),
+			ui.Checkbox("engines", engineName, engineName, isChecked, !isAvailable),
 		)
 	}
 
-	return render(c, components.Page(
+	return render(c, ui.Page(
 		"Edit Ad - Parts Pile",
 		currentUser,
 		c.Path(),
 		[]g.Node{
-			components.PageHeader("Edit Ad"),
+			ui.PageHeader("Edit Ad"),
 			Form(
 				ID("editAdForm"),
 				Class("space-y-6"),
-				components.ValidationErrorContainer(),
-				components.FormGroup("Make", "make",
+				ui.ValidationErrorContainer(),
+				ui.FormGroup("Make", "make",
 					Select(
 						ID("make"),
 						Name("make"),
@@ -440,10 +440,10 @@ func HandleEditAd(c *fiber.Ctx) error {
 						g.Group(makeOptions),
 					),
 				),
-				components.FormGroup("Years", "years", Div(ID("yearsDiv"), Class("space-y-2"), g.Group(yearCheckboxes))),
-				components.FormGroup("Models", "models", Div(ID("modelsDiv"), Class("space-y-2"), g.Group(modelCheckboxes))),
-				components.FormGroup("Engines", "engines", Div(ID("enginesDiv"), Class("space-y-2"), g.Group(engineCheckboxes))),
-				components.FormGroup("Description", "description",
+				ui.FormGroup("Years", "years", Div(ID("yearsDiv"), Class("space-y-2"), g.Group(yearCheckboxes))),
+				ui.FormGroup("Models", "models", Div(ID("modelsDiv"), Class("space-y-2"), g.Group(modelCheckboxes))),
+				ui.FormGroup("Engines", "engines", Div(ID("enginesDiv"), Class("space-y-2"), g.Group(engineCheckboxes))),
+				ui.FormGroup("Description", "description",
 					Textarea(
 						ID("description"),
 						Name("description"),
@@ -452,7 +452,7 @@ func HandleEditAd(c *fiber.Ctx) error {
 						g.Text(ad.Description),
 					),
 				),
-				components.FormGroup("Price", "price",
+				ui.FormGroup("Price", "price",
 					Input(
 						Type("number"),
 						ID("price"),
@@ -462,12 +462,12 @@ func HandleEditAd(c *fiber.Ctx) error {
 						Value(fmt.Sprintf("%.2f", ad.Price)),
 					),
 				),
-				components.StyledButton("Submit", components.ButtonPrimary,
+				ui.StyledButton("Submit", ui.ButtonPrimary,
 					Type("submit"),
 					hx.Post(fmt.Sprintf("/api/update-ad/%d", ad.ID)),
 					hx.Target("#result"),
 				),
-				components.ResultContainer(),
+				ui.ResultContainer(),
 			),
 		},
 	))
@@ -495,7 +495,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	}
 
 	if len(form.Value["years"]) == 0 || len(form.Value["models"]) == 0 || len(form.Value["engines"]) == 0 {
-		return render(c, components.ValidationError("Please make sure you have selected a year, model, and engine"))
+		return render(c, ui.ValidationError("Please make sure you have selected a year, model, and engine"))
 	}
 
 	price := 0.0
@@ -514,7 +514,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 
 	ad.UpdateAd(updatedAd)
 
-	return render(c, components.SuccessMessageWithRedirect("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
+	return render(c, ui.SuccessMessageWithRedirect("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
 }
 
 func HandleDeleteAd(c *fiber.Ctx) error {
@@ -535,12 +535,12 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 
 	ad.DeleteAd(adID)
 
-	return render(c, components.SuccessMessageWithRedirect("Ad deleted successfully", "/"))
+	return render(c, ui.SuccessMessageWithRedirect("Ad deleted successfully", "/"))
 }
 
 func HandleAdminDashboard(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
-	return render(c, components.AdminDashboard(currentUser, c.Path()))
+	return render(c, ui.AdminDashboard(currentUser, c.Path()))
 }
 
 func HandleAdminUsers(c *fiber.Ctx) error {
@@ -549,7 +549,7 @@ func HandleAdminUsers(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
-	return render(c, components.AdminUsers(currentUser, c.Path(), users))
+	return render(c, ui.AdminUsers(currentUser, c.Path(), users))
 }
 
 func HandleSetAdmin(c *fiber.Ctx) error {
@@ -568,7 +568,7 @@ func HandleSetAdmin(c *fiber.Ctx) error {
 		return fiber.ErrInternalServerError
 	}
 
-	return render(c, components.AdminUserTable(users))
+	return render(c, ui.AdminUserTable(users))
 }
 
 func HandleAdminAds(c *fiber.Ctx) error {
@@ -599,7 +599,7 @@ func HandleYears(c *fiber.Ctx) error {
 
 	for _, year := range years {
 		checkboxes = append(checkboxes,
-			components.Checkbox("years", year, year, false, false,
+			ui.Checkbox("years", year, year, false, false,
 				hx.Trigger("change"),
 				hx.Get("/api/models"),
 				hx.Target("#modelsDiv"),
@@ -610,7 +610,7 @@ func HandleYears(c *fiber.Ctx) error {
 		)
 	}
 
-	return render(c, components.FormGroup("Years", "years", components.GridContainer(5, checkboxes...)))
+	return render(c, ui.FormGroup("Years", "years", ui.GridContainer(5, checkboxes...)))
 }
 
 func HandleModels(c *fiber.Ctx) error {
@@ -632,7 +632,7 @@ func HandleModels(c *fiber.Ctx) error {
 	checkboxes := []g.Node{}
 	for model, isAvailable := range modelAvailability {
 		checkboxes = append(checkboxes,
-			components.Checkbox("models", model, model, false, !isAvailable,
+			ui.Checkbox("models", model, model, false, !isAvailable,
 				hx.Trigger("change"),
 				hx.Get("/api/engines"),
 				hx.Target("#enginesDiv"),
@@ -642,7 +642,7 @@ func HandleModels(c *fiber.Ctx) error {
 		)
 	}
 
-	return render(c, components.FormGroup("Models", "models", components.GridContainer(5, checkboxes...)))
+	return render(c, ui.FormGroup("Models", "models", ui.GridContainer(5, checkboxes...)))
 }
 
 func HandleEngines(c *fiber.Ctx) error {
@@ -669,42 +669,42 @@ func HandleEngines(c *fiber.Ctx) error {
 	checkboxes := []g.Node{}
 	for engine, isAvailable := range engineAvailability {
 		checkboxes = append(checkboxes,
-			components.Checkbox("engines", engine, engine, false, !isAvailable),
+			ui.Checkbox("engines", engine, engine, false, !isAvailable),
 		)
 	}
-	return render(c, components.FormGroup("Engines", "engines", components.GridContainer(5, checkboxes...)))
+	return render(c, ui.FormGroup("Engines", "engines", ui.GridContainer(5, checkboxes...)))
 }
 
 func HandleRegister(c *fiber.Ctx) error {
 	currentUser, _ := GetCurrentUser(c)
-	return render(c, components.Page(
+	return render(c, ui.Page(
 		"Register",
 		currentUser,
 		c.Path(),
 		[]g.Node{
-			components.PageHeader("Register"),
-			components.ContentContainer(
-				components.FormContainer("registerForm",
-					components.FormGroup("Username", "name",
-						components.TextInput("name", "name", ""),
+			ui.PageHeader("Register"),
+			ui.ContentContainer(
+				ui.FormContainer("registerForm",
+					ui.FormGroup("Username", "name",
+						ui.TextInput("name", "name", ""),
 					),
-					components.FormGroup("Phone Number", "phone",
-						components.TextInput("phone", "phone", ""),
+					ui.FormGroup("Phone Number", "phone",
+						ui.TextInput("phone", "phone", ""),
 					),
-					components.FormGroup("Password", "password",
-						components.PasswordInput("password", "password"),
+					ui.FormGroup("Password", "password",
+						ui.PasswordInput("password", "password"),
 					),
-					components.FormGroup("Confirm Password", "password2",
-						components.PasswordInput("password2", "password2"),
+					ui.FormGroup("Confirm Password", "password2",
+						ui.PasswordInput("password2", "password2"),
 					),
-					components.ActionButtons(
-						components.StyledButton("Register", components.ButtonPrimary,
+					ui.ActionButtons(
+						ui.StyledButton("Register", ui.ButtonPrimary,
 							hx.Post("/api/register"),
 							hx.Target("#result"),
 							hx.Indicator("#registerForm"),
 						),
 					),
-					components.ResultContainer(),
+					ui.ResultContainer(),
 				),
 			),
 		},
@@ -718,7 +718,7 @@ func HandleRegisterSubmission(c *fiber.Ctx) error {
 	password2 := c.FormValue("password2")
 
 	if password != password2 {
-		return render(c, components.ValidationError("Passwords do not match"))
+		return render(c, ui.ValidationError("Passwords do not match"))
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -727,36 +727,36 @@ func HandleRegisterSubmission(c *fiber.Ctx) error {
 	}
 
 	if _, err := user.CreateUser(name, phone, string(hashedPassword)); err != nil {
-		return render(c, components.ValidationError("User already exists or another error occurred."))
+		return render(c, ui.ValidationError("User already exists or another error occurred."))
 	}
 
-	return render(c, components.SuccessMessageWithRedirect("Registration successful", "/login"))
+	return render(c, ui.SuccessMessageWithRedirect("Registration successful", "/login"))
 }
 
 func HandleLogin(c *fiber.Ctx) error {
 	currentUser, _ := GetCurrentUser(c)
-	return render(c, components.Page(
+	return render(c, ui.Page(
 		"Login",
 		currentUser,
 		c.Path(),
 		[]g.Node{
-			components.PageHeader("Login"),
-			components.ContentContainer(
-				components.FormContainer("loginForm",
-					components.FormGroup("Username", "name",
-						components.TextInput("name", "name", ""),
+			ui.PageHeader("Login"),
+			ui.ContentContainer(
+				ui.FormContainer("loginForm",
+					ui.FormGroup("Username", "name",
+						ui.TextInput("name", "name", ""),
 					),
-					components.FormGroup("Password", "password",
-						components.PasswordInput("password", "password"),
+					ui.FormGroup("Password", "password",
+						ui.PasswordInput("password", "password"),
 					),
-					components.ActionButtons(
-						components.StyledButton("Login", components.ButtonPrimary,
+					ui.ActionButtons(
+						ui.StyledButton("Login", ui.ButtonPrimary,
 							hx.Post("/api/login"),
 							hx.Target("#result"),
 							hx.Indicator("#loginForm"),
 						),
 					),
-					components.ResultContainer(),
+					ui.ResultContainer(),
 				),
 			),
 		},
@@ -783,7 +783,7 @@ func HandleSearch(c *fiber.Ctx) error {
 	}
 
 	// For the initial search, we render the whole container.
-	render(c, components.SearchResultsContainer(components.SearchSchema(query), adsMap, loc))
+	render(c, ui.SearchResultsContainer(ui.SearchSchema(query), adsMap, loc))
 
 	// Add the loader if there are more results
 	if nextCursor != nil {
@@ -821,7 +821,7 @@ func HandleSearchPage(c *fiber.Ctx) error {
 
 	// For subsequent loads, we just render the new ad cards, and the next loader
 	for _, ad := range ads {
-		render(c, components.AdCard(ad, loc))
+		render(c, ui.AdCard(ad, loc))
 	}
 
 	if nextCursor != nil {
@@ -837,7 +837,7 @@ func HandleSearchPage(c *fiber.Ctx) error {
 
 func HandleSettings(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
-	return render(c, components.SettingsPage(currentUser, c.Path()))
+	return render(c, ui.SettingsPage(currentUser, c.Path()))
 }
 
 func HandleChangePassword(c *fiber.Ctx) error {
@@ -846,14 +846,14 @@ func HandleChangePassword(c *fiber.Ctx) error {
 	confirmNewPassword := c.FormValue("confirmNewPassword")
 
 	if newPassword != confirmNewPassword {
-		return render(c, components.ValidationError("New passwords do not match"))
+		return render(c, ui.ValidationError("New passwords do not match"))
 	}
 
 	currentUser := c.Locals("user").(*user.User)
 
 	err := bcrypt.CompareHashAndPassword([]byte(currentUser.PasswordHash), []byte(currentPassword))
 	if err != nil {
-		return render(c, components.ValidationError("Invalid current password"))
+		return render(c, ui.ValidationError("Invalid current password"))
 	}
 
 	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
@@ -862,9 +862,9 @@ func HandleChangePassword(c *fiber.Ctx) error {
 	}
 
 	if _, err := user.UpdateUserPassword(currentUser.ID, string(newHash)); err != nil {
-		return render(c, components.ValidationError("Failed to update password"))
+		return render(c, ui.ValidationError("Failed to update password"))
 	}
-	return render(c, components.SuccessMessage("Password changed successfully", ""))
+	return render(c, ui.SuccessMessage("Password changed successfully", ""))
 }
 
 func HandleDeleteAccount(c *fiber.Ctx) error {
@@ -873,28 +873,28 @@ func HandleDeleteAccount(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
 	if currentUser == nil {
 		c.Response().SetStatusCode(fiber.StatusUnauthorized)
-		return render(c, components.ValidationError("You must be logged in to delete your account"))
+		return render(c, ui.ValidationError("You must be logged in to delete your account"))
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(currentUser.PasswordHash), []byte(password))
 	if err != nil {
 		c.Response().SetStatusCode(fiber.StatusUnauthorized)
-		return render(c, components.ValidationError("Invalid password"))
+		return render(c, ui.ValidationError("Invalid password"))
 	}
 
 	err = ad.DeleteAdsByUserID(currentUser.ID)
 	if err != nil {
 		c.Response().SetStatusCode(fiber.StatusInternalServerError)
-		return render(c, components.ValidationError("Could not delete ads for user"))
+		return render(c, ui.ValidationError("Could not delete ads for user"))
 	}
 
 	err = user.DeleteUser(currentUser.ID)
 	if err != nil {
 		c.Response().SetStatusCode(fiber.StatusInternalServerError)
-		return render(c, components.ValidationError("Could not delete user"))
+		return render(c, ui.ValidationError("Could not delete user"))
 	}
 
-	return render(c, components.SuccessMessageWithRedirect("Account deleted successfully", "/"))
+	return render(c, ui.SuccessMessageWithRedirect("Account deleted successfully", "/"))
 }
 
 const sysPrompt = `You are an expert vehicle parts assistant.
