@@ -155,13 +155,15 @@ func HandleViewAd(c *fiber.Ctx) error {
 	}
 
 	currentUser, _ := c.Locals("user").(*user.User)
-	var editButton, deleteButton g.Node
+
+	actionButtons := []g.Node{
+		ui.BackToListingsButton(),
+	}
+
 	if currentUser != nil && currentUser.ID == ad.UserID {
-		editButton = ui.StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", ad.ID), ui.ButtonPrimary)
-		deleteButton = ui.DeleteButton(ad.ID)
-	} else {
-		editButton = ui.StyledLinkDisabled("Edit Ad", ui.ButtonPrimary)
-		deleteButton = ui.StyledLinkDisabled("Delete Ad", ui.ButtonDanger)
+		editButton := ui.StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", ad.ID), ui.ButtonPrimary)
+		deleteButton := ui.DeleteButton(ad.ID)
+		actionButtons = append(actionButtons, editButton, deleteButton)
 	}
 
 	return render(c, ui.Page(
@@ -173,11 +175,7 @@ func HandleViewAd(c *fiber.Ctx) error {
 				Class("max-w-2xl mx-auto"),
 				ui.PageHeader(ad.Make),
 				ui.AdDetails(ad),
-				ui.ActionButtons(
-					ui.BackToListingsButton(),
-					editButton,
-					deleteButton,
-				),
+				ui.ActionButtons(actionButtons...),
 				Div(
 					ID("result"),
 					Class("mt-4"),

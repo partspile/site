@@ -4,4 +4,4 @@ globs:
 alwaysApply: true
 ---
 
-Don't staged commits unless asked to do so.
+Don't staged commits unless asked to do so.  Don't git add/rm unless asked to.  Don't do any git staging.
