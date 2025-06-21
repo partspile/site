@@ -16,6 +16,8 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 			g.Raw(`<title>`+title+`</title>`),
 			Meta(Charset("utf-8")),
 			Meta(Name("viewport"), Content("width=device-width, initial-scale=1")),
+			Link(Rel("icon"), Type("image/png"), Href("/favicon-32x32.png"), g.Attr("sizes", "32x32")),
+			Link(Rel("icon"), Type("image/png"), Href("/favicon-16x16.png"), g.Attr("sizes", "16x16")),
 			Link(
 				Rel("stylesheet"),
 				Href("https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"),

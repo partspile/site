@@ -56,7 +56,7 @@ func main() {
 	app.Use(logger.New())
 
 	// Static file handler
-	app.Static("/static", "./static")
+	app.Static("/", "./static")
 
 	// Main pages
 	// Using an adaptor for now to get things working.
