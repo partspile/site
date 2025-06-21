@@ -116,7 +116,7 @@ func SearchWidget(newAdButton g.Node) g.Node {
 			ID("searchWaiting"),
 			Class("htmx-indicator absolute inset-0 flex items-center justify-center bg-white bg-opacity-60 z-10 pointer-events-none"),
 			Img(
-				Src("/static/spinner.gif"),
+				Src("/spinner.gif"),
 				Alt("Loading..."),
 				Class("w-12 h-12 pointer-events-auto"),
 			),
