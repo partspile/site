@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
@@ -46,7 +47,10 @@ func main() {
 	})
 
 	// Add rate limiter
-	app.Use(limiter.New())
+	app.Use(limiter.New(limiter.Config{
+		Max:        20,
+		Expiration: 30 * time.Second,
+	}))
 
 	// Add logger middleware
 	app.Use(logger.New())
