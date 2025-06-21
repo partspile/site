@@ -311,9 +311,9 @@ func HandleEditAd(c *fiber.Ctx) error {
 						g.Group(makeOptions),
 					),
 				),
-				ui.FormGroup("Years", "years", Div(ID("yearsDiv"), Class("space-y-2"), g.Group(yearCheckboxes))),
-				ui.FormGroup("Models", "models", Div(ID("modelsDiv"), Class("space-y-2"), g.Group(modelCheckboxes))),
-				ui.FormGroup("Engines", "engines", Div(ID("enginesDiv"), Class("space-y-2"), g.Group(engineCheckboxes))),
+				ui.FormGroup("Years", "years", Div(ID("yearsDiv"), ui.GridContainer(5, yearCheckboxes...))),
+				ui.FormGroup("Models", "models", Div(ID("modelsDiv"), ui.GridContainer(5, modelCheckboxes...))),
+				ui.FormGroup("Engines", "engines", Div(ID("enginesDiv"), ui.GridContainer(5, engineCheckboxes...))),
 				ui.FormGroup("Description", "description",
 					Textarea(
 						ID("description"),
