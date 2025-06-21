@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+ On Go code, try to keep line lengths under 80 chars, so wrap the lines as necessary to satisfy gofmt -s.

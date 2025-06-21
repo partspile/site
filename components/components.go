@@ -145,3 +145,15 @@ func ResultContainer() g.Node {
 		Class("mt-4"),
 	)
 }
+
+func ErrorPage(code int, message string) g.Node {
+	return Page(
+		fmt.Sprintf("Error %d", code),
+		nil, // no current user on error page
+		"",  // no current path
+		[]g.Node{
+			PageHeader(fmt.Sprintf("Error %d", code)),
+			P(g.Text(message)),
+		},
+	)
+}

@@ -157,7 +157,7 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 
 The platform is built with the following technologies:
 
-- **Backend:** Written in Go, providing performance, reliability, and maintainability.
+- **Backend:** Written in Go, using the [Fiber](https://gofiber.io/) web framework for high performance. Fiber will handle routing, middleware, sessions, authentication, and request/response logic.
 - **HTML Generation:** Uses Gomponents for type-safe, composable UI components in Go.
 - **Frontend:** Tailwind CSS and HTMX for responsive, dynamic user interfaces.
 
