@@ -30,14 +30,12 @@ func UserNav(currentUser *user.User, currentPath string) g.Node {
 			)
 		}
 		navItems = append(navItems,
-			Form(
-				Action("/logout"),
-				Method("POST"),
-				Button(
-					Type("submit"),
-					Class("text-blue-500 hover:underline"),
-					g.Text("Logout"),
-				),
+			A(
+				Class("text-blue-500 hover:underline"),
+				Href("#"),
+				hx.Post("/logout"),
+				hx.Target("#result"),
+				g.Text("Logout"),
 			),
 		)
 	} else {

@@ -53,7 +53,7 @@ func HandleLogout(c *fiber.Ctx) error {
 	if err := sess.Destroy(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to log you out.")
 	}
-	return render(c, ui.SuccessMessageWithRedirect("You have been logged out", "/"))
+	return render(c, ui.SuccessMessageWithRedirect("You have been logged out", "/login"))
 }
 
 func GetCurrentUser(c *fiber.Ctx) (*user.User, error) {

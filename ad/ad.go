@@ -550,11 +550,22 @@ func CloseDB() error {
 // GetAllAds returns all ads in the system
 func GetAllAds() ([]Ad, error) {
 	rows, err := db.Query(`
-		SELECT a.id, a.user_id, a.title, a.description, a.price, a.created_at,
-		       ac.year, ac.make, ac.model, ac.category, ac.subcategory
+		SELECT
+			a.id, a.description, a.price, a.created_at, a.user_id,
+			GROUP_CONCAT(DISTINCT m.name) as make,
+			GROUP_CONCAT(DISTINCT y.year) as years,
+			GROUP_CONCAT(DISTINCT mo.name) as models,
+			GROUP_CONCAT(DISTINCT e.name) as engines
 		FROM Ad a
 		LEFT JOIN AdCar ac ON a.id = ac.ad_id
-		ORDER BY a.created_at DESC`)
+		LEFT JOIN Car c ON ac.car_id = c.id
+		LEFT JOIN Make m ON c.make_id = m.id
+		LEFT JOIN Year y ON c.year_id = y.id
+		LEFT JOIN Model mo ON c.model_id = mo.id
+		LEFT JOIN Engine e ON c.engine_id = e.id
+		GROUP BY a.id
+		ORDER BY a.created_at DESC
+	`)
 	if err != nil {
 		return nil, err
 	}
@@ -563,23 +574,30 @@ func GetAllAds() ([]Ad, error) {
 	var ads []Ad
 	for rows.Next() {
 		var ad Ad
-		var createdAt string
-		var year, make, model, category, subcategory sql.NullString
-		err := rows.Scan(&ad.ID, &ad.UserID, &ad.Title, &ad.Description, &ad.Price,
-			&createdAt, &year, &make, &model, &category, &subcategory)
-		if err != nil {
+		var make, years, models, engines sql.NullString
+		if err := rows.Scan(
+			&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID,
+			&make, &years, &models, &engines,
+		); err != nil {
 			return nil, err
 		}
-		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-		if year.Valid {
-			ad.Year = year.String
+
+		if make.Valid {
 			ad.Make = make.String
-			ad.Models = []string{model.String}
-			ad.Category = category.String
-			ad.SubCategory = subcategory.String
 		}
+		if years.Valid {
+			ad.Years = strings.Split(years.String, ",")
+		}
+		if models.Valid {
+			ad.Models = strings.Split(models.String, ",")
+		}
+		if engines.Valid {
+			ad.Engines = strings.Split(engines.String, ",")
+		}
+
 		ads = append(ads, ad)
 	}
+
 	return ads, nil
 }
 

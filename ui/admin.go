@@ -2,7 +2,9 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/user"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -81,5 +83,127 @@ func AdminUserTable(users []user.User) g.Node {
 				})),
 			),
 		),
+	)
+}
+
+func AdminAds(currentUser *user.User, path string, ads []ad.Ad) g.Node {
+	return Page(
+		"Admin - Ads",
+		currentUser,
+		path,
+		[]g.Node{
+			H1(g.Text("Ad Management")),
+			AdminAdTable(ads),
+		},
+	)
+}
+
+func AdminAdTable(ads []ad.Ad) g.Node {
+	return Div(
+		ID("adminAdTable"),
+		Class("overflow-x-auto"),
+		Table(
+			Class("min-w-full border border-gray-300 bg-white shadow-sm"),
+			THead(
+				Tr(
+					Class("bg-gray-200"),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Make")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Years")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Models")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Price")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Actions")),
+				),
+			),
+			TBody(
+				g.Group(g.Map(ads, func(a ad.Ad) g.Node {
+					return Tr(
+						Class("hover:bg-gray-50"),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", a.ID)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(a.Make)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(strings.Join(a.Years, ", "))),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(strings.Join(a.Models, ", "))),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("$%.2f", a.Price)),
+						Td(Class("border border-gray-300 px-4 py-2"),
+							A(Href(fmt.Sprintf("/ad/%d", a.ID)), g.Text("View")),
+						),
+					)
+				})),
+			),
+		),
+	)
+}
+
+func AdminTransactions(currentUser *user.User, path string, transactions []user.Transaction) g.Node {
+	return Page(
+		"Admin - Transactions",
+		currentUser,
+		path,
+		[]g.Node{
+			H1(g.Text("Transaction Log")),
+			AdminTransactionTable(transactions),
+		},
+	)
+}
+
+func AdminTransactionTable(transactions []user.Transaction) g.Node {
+	return Div(
+		ID("adminTransactionTable"),
+		Class("overflow-x-auto"),
+		Table(
+			Class("min-w-full border border-gray-300 bg-white shadow-sm"),
+			THead(
+				Tr(
+					Class("bg-gray-200"),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("User ID")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Amount")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Type")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Date")),
+				),
+			),
+			TBody(
+				g.Group(g.Map(transactions, func(t user.Transaction) g.Node {
+					return Tr(
+						Class("hover:bg-gray-50"),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", t.ID)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", t.UserID)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("$%.2f", t.Amount)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(t.Type)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(t.CreatedAt.Format("2006-01-02 15:04:05"))),
+					)
+				})),
+			),
+		),
+	)
+}
+
+func AdminExport(currentUser *user.User, path string) g.Node {
+	return Page(
+		"Admin - Export",
+		currentUser,
+		path,
+		[]g.Node{
+			H1(g.Text("Export Data")),
+			P(g.Text("Select the data you would like to export as a CSV file.")),
+			Div(
+				Class("flex space-x-4"),
+				A(
+					Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
+					Href("/api/admin/export/users"),
+					g.Text("Export Users"),
+				),
+				A(
+					Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
+					Href("/api/admin/export/ads"),
+					g.Text("Export Ads"),
+				),
+				A(
+					Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
+					Href("/api/admin/export/transactions"),
+					g.Text("Export Transactions"),
+				),
+			),
+		},
 	)
 }

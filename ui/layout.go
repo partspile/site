@@ -37,6 +37,7 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 					UserNav(currentUser, currentPath),
 				),
 				g.Group(content),
+				ResultContainer(),
 			),
 		),
 	)

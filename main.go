@@ -89,6 +89,9 @@ func main() {
 
 	// Other Admin routes
 	app.Post("/api/admin/users/set-admin", handlers.AdminRequired, handlers.HandleSetAdmin)
+	app.Get("/api/admin/export/users", handlers.AdminRequired, handlers.HandleAdminExportUsers)
+	app.Get("/api/admin/export/ads", handlers.AdminRequired, handlers.HandleAdminExportAds)
+	app.Get("/api/admin/export/transactions", handlers.AdminRequired, handlers.HandleAdminExportTransactions)
 
 	// API endpoints
 	app.Get("/api/makes", handlers.HandleMakes)
