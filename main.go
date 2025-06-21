@@ -48,8 +48,8 @@ func main() {
 
 	// Add rate limiter
 	app.Use(limiter.New(limiter.Config{
-		Max:        20,
-		Expiration: 30 * time.Second,
+		Max:        60,
+		Expiration: 1 * time.Minute,
 	}))
 
 	// Add logger middleware

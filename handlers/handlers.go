@@ -52,8 +52,7 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to save session.")
 	}
 
-	c.Response().Header.Set("HX-Redirect", "/")
-	return c.SendStatus(fiber.StatusOK)
+	return render(c, components.SuccessMessageWithRedirect("Login successful", "/"))
 }
 
 func HandleLogout(c *fiber.Ctx) error {
@@ -67,7 +66,7 @@ func HandleLogout(c *fiber.Ctx) error {
 	if err := sess.Destroy(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to log you out.")
 	}
-	return c.Redirect("/", fiber.StatusSeeOther)
+	return render(c, components.SuccessMessageWithRedirect("You have been logged out", "/"))
 }
 
 func GetCurrentUser(c *fiber.Ctx) (*user.User, error) {
@@ -269,8 +268,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 
 	ad.AddAd(newAd)
 
-	c.Response().Header.Set("HX-Redirect", "/")
-	return c.SendStatus(fiber.StatusOK)
+	return render(c, components.SuccessMessageWithRedirect("Ad created successfully", "/"))
 }
 
 func HandleViewAd(c *fiber.Ctx) error {
@@ -516,8 +514,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 
 	ad.UpdateAd(updatedAd)
 
-	c.Response().Header.Set("HX-Redirect", fmt.Sprintf("/ad/%d", adID))
-	return c.SendStatus(fiber.StatusOK)
+	return render(c, components.SuccessMessageWithRedirect("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
 }
 
 func HandleDeleteAd(c *fiber.Ctx) error {
@@ -538,8 +535,7 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 
 	ad.DeleteAd(adID)
 
-	c.Response().Header.Set("HX-Redirect", "/")
-	return c.SendStatus(fiber.StatusOK)
+	return render(c, components.SuccessMessageWithRedirect("Ad deleted successfully", "/"))
 }
 
 func HandleAdminDashboard(c *fiber.Ctx) error {
@@ -734,8 +730,7 @@ func HandleRegisterSubmission(c *fiber.Ctx) error {
 		return render(c, components.ValidationError("User already exists or another error occurred."))
 	}
 
-	c.Response().Header.Set("HX-Redirect", "/login")
-	return c.SendStatus(fiber.StatusOK)
+	return render(c, components.SuccessMessageWithRedirect("Registration successful", "/login"))
 }
 
 func HandleLogin(c *fiber.Ctx) error {
@@ -899,8 +894,7 @@ func HandleDeleteAccount(c *fiber.Ctx) error {
 		return render(c, components.ValidationError("Could not delete user"))
 	}
 
-	c.Response().Header.Set("HX-Refresh", "true")
-	return c.SendStatus(fiber.StatusOK)
+	return render(c, components.SuccessMessageWithRedirect("Account deleted successfully", "/"))
 }
 
 const sysPrompt = `You are an expert vehicle parts assistant.
