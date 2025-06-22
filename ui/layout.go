@@ -3,6 +3,7 @@ package ui
 import (
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
+	"maragu.dev/gomponents/components"
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/user"
@@ -11,11 +12,10 @@ import (
 // ---- Page Layout ----
 
 func Page(title string, currentUser *user.User, currentPath string, content []g.Node) g.Node {
-	return HTML(
-		Head(
-			g.Raw(`<title>`+title+`</title>`),
-			Meta(Charset("utf-8")),
-			Meta(Name("viewport"), Content("width=device-width, initial-scale=1")),
+	return components.HTML5(components.HTML5Props{
+		Title:    title,
+		Language: "en",
+		Head: []g.Node{
 			Link(Rel("icon"), Type("image/png"), Href("/favicon-32x32.png"), g.Attr("sizes", "32x32")),
 			Link(Rel("icon"), Type("image/png"), Href("/favicon-16x16.png"), g.Attr("sizes", "16x16")),
 			Link(
@@ -27,8 +27,8 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 				Src("https://unpkg.com/htmx.org@2.0.4"),
 				Defer(),
 			),
-		),
-		Body(
+		},
+		Body: []g.Node{
 			Div(
 				Class("container mx-auto px-4 py-8"),
 				hx.Headers(`js:{'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone}`),
@@ -39,8 +39,8 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 				g.Group(content),
 				ResultContainer(),
 			),
-		),
-	)
+		},
+	})
 }
 
 func PageHeader(text string) g.Node {
