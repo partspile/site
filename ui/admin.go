@@ -30,7 +30,6 @@ func AdminDashboard(currentUser *user.User, path string) g.Node {
 				Li(A(Href("/admin/years"), g.Text("Manage Years"))),
 				Li(A(Href("/admin/part-categories"), g.Text("Manage Part Categories"))),
 				Li(A(Href("/admin/part-sub-categories"), g.Text("Manage Part Sub-Categories"))),
-				Li(A(Href("/admin/export"), g.Text("Export Data"))),
 			),
 		},
 	)
@@ -43,7 +42,15 @@ func AdminUsers(currentUser *user.User, path string, users []user.User, status s
 		path,
 		[]g.Node{
 			H1(g.Text("User Management")),
-			AdminStatusSelector("users", status),
+			Div(
+				Class("flex justify-between items-center my-4"),
+				AdminStatusSelector("users", status),
+				A(
+					Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
+					Href(fmt.Sprintf("/api/admin/export/users?status=%s", status)),
+					g.Text("Export Users"),
+				),
+			),
 			AdminUserTable(users, status),
 		},
 	)
@@ -123,7 +130,15 @@ func AdminAds(currentUser *user.User, path string, ads []ad.Ad, status string) g
 		path,
 		[]g.Node{
 			H1(g.Text("Ad Management")),
-			AdminStatusSelector("ads", status),
+			Div(
+				Class("flex justify-between items-center my-4"),
+				AdminStatusSelector("ads", status),
+				A(
+					Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
+					Href(fmt.Sprintf("/api/admin/export/ads?status=%s", status)),
+					g.Text("Export Ads"),
+				),
+			),
 			AdminAdTable(ads, status),
 		},
 	)
@@ -220,6 +235,14 @@ func AdminTransactions(currentUser *user.User, path string, transactions []user.
 		path,
 		[]g.Node{
 			H1(g.Text("Transaction Log")),
+			Div(
+				Class("my-4"),
+				A(
+					Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
+					Href("/api/admin/export/transactions"),
+					g.Text("Export Transactions"),
+				),
+			),
 			AdminTransactionTable(transactions),
 		},
 	)
@@ -254,36 +277,6 @@ func AdminTransactionTable(transactions []user.Transaction) g.Node {
 				})),
 			),
 		),
-	)
-}
-
-func AdminExport(currentUser *user.User, path string) g.Node {
-	return Page(
-		"Admin - Export",
-		currentUser,
-		path,
-		[]g.Node{
-			H1(g.Text("Export Data")),
-			P(g.Text("Select the data you would like to export as a CSV file.")),
-			Div(
-				Class("flex space-x-4"),
-				A(
-					Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
-					Href("/api/admin/export/users"),
-					g.Text("Export Users"),
-				),
-				A(
-					Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
-					Href("/api/admin/export/ads"),
-					g.Text("Export Ads"),
-				),
-				A(
-					Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
-					Href("/api/admin/export/transactions"),
-					g.Text("Export Transactions"),
-				),
-			),
-		},
 	)
 }
 

@@ -90,7 +90,6 @@ func main() {
 	admin.Get("/years", handlers.HandleAdminYears)
 	admin.Get("/part-categories", handlers.HandleAdminPartCategories)
 	admin.Get("/part-sub-categories", handlers.HandleAdminPartSubCategories)
-	admin.Get("/export", handlers.HandleAdminExport)
 
 	// Other Admin routes
 	app.Post("/api/admin/users/set-admin", handlers.AdminRequired, handlers.HandleSetAdmin)
