@@ -166,8 +166,24 @@ func ParseSearchQuery(q string) (SearchQuery, error) {
 	allYears := vehicle.GetYearRange()
 	allModels := vehicle.GetAllModels()
 	allEngineSizes := vehicle.GetAllEngineSizes()
-	allCategories := part.GetAllCategories()
-	allSubCategories := part.GetAllSubCategories()
+
+	categories, err := part.GetAllCategories()
+	if err != nil {
+		return SearchQuery{}, fmt.Errorf("error getting categories: %w", err)
+	}
+	allCategories := make([]string, len(categories))
+	for i, c := range categories {
+		allCategories[i] = c.Name
+	}
+
+	subCategories, err := part.GetAllSubCategories()
+	if err != nil {
+		return SearchQuery{}, fmt.Errorf("error getting subcategories: %w", err)
+	}
+	allSubCategories := make([]string, len(subCategories))
+	for i, sc := range subCategories {
+		allSubCategories[i] = sc.Name
+	}
 
 	prompt := fmt.Sprintf(sysPrompt,
 		strings.Join(allMakes, "\n"),

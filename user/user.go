@@ -167,6 +167,77 @@ func DeleteUser(userID int) error {
 	return tx.Commit()
 }
 
+// ResurrectUser moves a user from the UserDead table back to the active User table
+func ResurrectUser(userID int) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Get user data from archive
+	var user User
+	err = tx.QueryRow(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin 
+		FROM UserDead WHERE id = ?`, userID).Scan(
+		&user.ID, &user.Name, &user.Phone, &user.TokenBalance,
+		&user.PasswordHash, &user.CreatedAt, &user.IsAdmin)
+	if err != nil {
+		return err
+	}
+
+	// Restore user
+	_, err = tx.Exec(`INSERT INTO User (id, name, phone, token_balance, password_hash, created_at, is_admin)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		user.ID, user.Name, user.Phone, user.TokenBalance,
+		user.PasswordHash, user.CreatedAt, user.IsAdmin)
+	if err != nil {
+		return err
+	}
+
+	// Restore all ads by this user
+	_, err = tx.Exec(`INSERT INTO Ad (id, description, price, created_at, subcategory_id, user_id)
+		SELECT id, description, price, created_at, subcategory_id, user_id
+		FROM AdDead WHERE user_id = ?`, userID)
+	if err != nil {
+		return err
+	}
+
+	// Restore all ad-car relationships for this user's ads
+	_, err = tx.Exec(`INSERT INTO AdCar (ad_id, car_id)
+		SELECT acd.ad_id, acd.car_id
+		FROM AdCarDead acd
+		JOIN AdDead ad ON ad.id = acd.ad_id
+		WHERE ad.user_id = ?`, userID)
+	if err != nil {
+		return err
+	}
+
+	// Un-mark TokenTransaction records
+	_, err = tx.Exec(`UPDATE TokenTransaction 
+		SET user_deleted = 0 
+		WHERE user_id = ? OR related_user_id = ?`, userID, userID)
+	if err != nil {
+		return err
+	}
+
+	// Delete from archive tables
+	_, err = tx.Exec(`DELETE FROM AdCarDead WHERE ad_id IN (
+		SELECT id FROM AdDead WHERE user_id = ?)`, userID)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`DELETE FROM AdDead WHERE user_id = ?`, userID)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`DELETE FROM UserDead WHERE id = ?`, userID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
 // SetAdmin sets or removes admin privileges for a user
 func SetAdmin(userID int, isAdmin bool) error {
 	_, err := db.Exec(`UPDATE User SET is_admin = ? WHERE id = ?`,
@@ -177,6 +248,30 @@ func SetAdmin(userID int, isAdmin bool) error {
 // GetAllUsers returns all users in the system
 func GetAllUsers() ([]User, error) {
 	rows, err := db.Query(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM User`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []User
+	for rows.Next() {
+		var u User
+		var createdAt string
+		var isAdmin int
+		err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin)
+		if err != nil {
+			return nil, err
+		}
+		u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+		u.IsAdmin = isAdmin == 1
+		users = append(users, u)
+	}
+	return users, nil
+}
+
+// GetAllDeadUsers returns all archived users
+func GetAllDeadUsers() ([]User, error) {
+	rows, err := db.Query(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM UserDead`)
 	if err != nil {
 		return nil, err
 	}

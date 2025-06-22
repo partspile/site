@@ -37,13 +37,14 @@ type Ad struct {
 	SubCategoryID *int      `json:"subcategory_id,omitempty"`
 	UserID        int       `json:"user_id"`
 	// Runtime fields populated via joins
-	Year        string   `json:"year,omitempty"`
-	Make        string   `json:"make"`
-	Years       []string `json:"years"`
-	Models      []string `json:"models"`
-	Engines     []string `json:"engines"`
-	Category    string   `json:"category,omitempty"`
-	SubCategory string   `json:"subcategory,omitempty"`
+	Year         string     `json:"year,omitempty"`
+	Make         string     `json:"make"`
+	Years        []string   `json:"years"`
+	Models       []string   `json:"models"`
+	Engines      []string   `json:"engines"`
+	Category     string     `json:"category,omitempty"`
+	SubCategory  string     `json:"subcategory,omitempty"`
+	DeletionDate *time.Time `json:"deletion_date,omitempty"`
 }
 
 var db *sql.DB
@@ -601,6 +602,37 @@ func GetAllAds() ([]Ad, error) {
 	return ads, nil
 }
 
+// GetAllDeadAds returns all archived ads in the system
+func GetAllDeadAds() ([]Ad, error) {
+	rows, err := db.Query(`
+		SELECT id, description, price, created_at, user_id, deletion_date
+		FROM AdDead
+		ORDER BY deletion_date DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ads []Ad
+	for rows.Next() {
+		var ad Ad
+		var deletionDate string
+		err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &deletionDate)
+		if err != nil {
+			return nil, err
+		}
+		// For dead ads, we'll fetch the basic info and the deletion date.
+		// Vehicle info like make, model, etc., is not directly available in AdDead
+		// and is not required for this admin view.
+		if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
+			ad.DeletionDate = &parsedTime
+		}
+		ads = append(ads, ad)
+	}
+	return ads, nil
+}
+
 // GetAdsByUserID returns all ads for a given user
 func GetAdsByUserID(userID int) ([]Ad, error) {
 	rows, err := db.Query(`
@@ -807,4 +839,49 @@ func GetAdsByMakeModelYearEngine(make, model, year, engine string) ([]Ad, error)
 func GetAdsByMakeModelYearEngineSubCategory(make, model, year, engine string, subCategoryID int) ([]Ad, error) {
 	// ... existing code ...
 	return nil, nil
+}
+
+func ResurrectAd(adID int) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	// Get ad data from archive
+	var ad Ad
+	err = tx.QueryRow(`SELECT id, description, price, created_at, subcategory_id, user_id 
+		FROM AdDead WHERE id = ?`, adID).Scan(
+		&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.SubCategoryID, &ad.UserID)
+	if err != nil {
+		return err
+	}
+
+	// Restore ad
+	_, err = tx.Exec(`INSERT INTO Ad (id, description, price, created_at, subcategory_id, user_id)
+		VALUES (?, ?, ?, ?, ?, ?)`,
+		ad.ID, ad.Description, ad.Price, ad.CreatedAt, ad.SubCategoryID, ad.UserID)
+	if err != nil {
+		return err
+	}
+
+	// Restore ad-car relationships
+	_, err = tx.Exec(`INSERT INTO AdCar (ad_id, car_id)
+		SELECT ad_id, car_id
+		FROM AdCarDead WHERE ad_id = ?`, adID)
+	if err != nil {
+		return err
+	}
+
+	// Delete from archive tables
+	_, err = tx.Exec(`DELETE FROM AdCarDead WHERE ad_id = ?`, adID)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`DELETE FROM AdDead WHERE id = ?`, adID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }

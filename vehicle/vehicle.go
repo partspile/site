@@ -7,6 +7,21 @@ import (
 	"time"
 )
 
+type Make struct {
+	ID   int
+	Name string
+}
+
+type Model struct {
+	ID   int
+	Name string
+}
+
+type Year struct {
+	ID   int
+	Year int
+}
+
 var db *sql.DB
 var (
 	makesCache          []string
@@ -38,6 +53,41 @@ func GetMakes() []string {
 	}
 	makesCache = makes
 	return makes
+}
+
+func GetAllMakes() ([]Make, error) {
+	rows, err := db.Query("SELECT id, name FROM Make ORDER BY name")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var makes []Make
+	for rows.Next() {
+		var make Make
+		if err := rows.Scan(&make.ID, &make.Name); err != nil {
+			return nil, err
+		}
+		makes = append(makes, make)
+	}
+	return makes, nil
+}
+
+func GetAllYears() ([]Year, error) {
+	rows, err := db.Query("SELECT id, year FROM Year ORDER BY year")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var years []Year
+	for rows.Next() {
+		var year Year
+		if err := rows.Scan(&year.ID, &year.Year); err != nil {
+			return nil, err
+		}
+		years = append(years, year)
+	}
+	return years, nil
 }
 
 func GetYears(makeName string) []string {
@@ -80,6 +130,23 @@ func GetAllModels() []string {
 	}
 	allModelsCache = models
 	return models
+}
+
+func GetAllModelsWithID() ([]Model, error) {
+	rows, err := db.Query("SELECT id, name FROM Model ORDER BY name")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var models []Model
+	for rows.Next() {
+		var model Model
+		if err := rows.Scan(&model.ID, &model.Name); err != nil {
+			return nil, err
+		}
+		models = append(models, model)
+	}
+	return models, nil
 }
 
 func GetModelsWithAvailability(makeName string, years []string) map[string]bool {

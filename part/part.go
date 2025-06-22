@@ -11,40 +11,51 @@ func InitDB(database *sql.DB) {
 	db = database
 }
 
-func GetAllCategories() []string {
-	rows, err := db.Query("SELECT name FROM PartCategory ORDER BY name")
-	if err != nil {
-		return nil
-	}
-	defer rows.Close()
-
-	var categories []string
-	for rows.Next() {
-		var category string
-		if err := rows.Scan(&category); err != nil {
-			continue
-		}
-		categories = append(categories, category)
-	}
-	return categories
+type Category struct {
+	ID   int
+	Name string
 }
 
-func GetAllSubCategories() []string {
-	rows, err := db.Query("SELECT DISTINCT name FROM PartSubCategory ORDER BY name")
+type SubCategory struct {
+	ID         int
+	CategoryID int
+	Name       string
+}
+
+func GetAllCategories() ([]Category, error) {
+	rows, err := db.Query("SELECT id, name FROM PartCategory ORDER BY name")
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	defer rows.Close()
 
-	var subCategories []string
+	var categories []Category
 	for rows.Next() {
-		var subCategory string
-		if err := rows.Scan(&subCategory); err != nil {
-			continue
+		var c Category
+		if err := rows.Scan(&c.ID, &c.Name); err != nil {
+			return nil, err
 		}
-		subCategories = append(subCategories, subCategory)
+		categories = append(categories, c)
 	}
-	return subCategories
+	return categories, nil
+}
+
+func GetAllSubCategories() ([]SubCategory, error) {
+	rows, err := db.Query("SELECT id, category_id, name FROM PartSubCategory ORDER BY name")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var subCategories []SubCategory
+	for rows.Next() {
+		var sc SubCategory
+		if err := rows.Scan(&sc.ID, &sc.CategoryID, &sc.Name); err != nil {
+			return nil, err
+		}
+		subCategories = append(subCategories, sc)
+	}
+	return subCategories, nil
 }
 
 func GetSubCategoriesForCategory(categoryName string) []string {
