@@ -2,6 +2,7 @@ package ui
 
 import (
 	g "maragu.dev/gomponents"
+	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 )
 
@@ -77,4 +78,47 @@ func PasswordInput(id, name string) g.Node {
 		Name(name),
 		Class("w-full p-2 border rounded"),
 	)
+}
+
+func YearsFormGroup(years []string) g.Node {
+	checkboxes := []g.Node{}
+	for _, year := range years {
+		checkboxes = append(checkboxes,
+			Checkbox("years", year, year, false, false,
+				hx.Trigger("change"),
+				hx.Get("/api/models"),
+				hx.Target("#modelsDiv"),
+				hx.Include("[name='make'],[name='years']:checked"),
+				hx.Swap("innerHTML"),
+				g.Attr("onclick", "document.getElementById('enginesDiv').innerHTML = ''"),
+			),
+		)
+	}
+	return FormGroup("Years", "years", GridContainer(5, checkboxes...))
+}
+
+func ModelsFormGroup(modelAvailability map[string]bool) g.Node {
+	checkboxes := []g.Node{}
+	for model, isAvailable := range modelAvailability {
+		checkboxes = append(checkboxes,
+			Checkbox("models", model, model, false, !isAvailable,
+				hx.Trigger("change"),
+				hx.Get("/api/engines"),
+				hx.Target("#enginesDiv"),
+				hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
+				hx.Swap("innerHTML"),
+			),
+		)
+	}
+	return FormGroup("Models", "models", GridContainer(5, checkboxes...))
+}
+
+func EnginesFormGroup(engineAvailability map[string]bool) g.Node {
+	checkboxes := []g.Node{}
+	for engine, isAvailable := range engineAvailability {
+		checkboxes = append(checkboxes,
+			Checkbox("engines", engine, engine, false, !isAvailable),
+		)
+	}
+	return FormGroup("Engines", "engines", GridContainer(5, checkboxes...))
 }
