@@ -7,8 +7,6 @@ import (
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	"golang.org/x/crypto/bcrypt"
-	g "maragu.dev/gomponents"
-	hx "maragu.dev/gomponents-htmx"
 )
 
 func HandleLoginSubmission(c *fiber.Ctx) error {
@@ -116,38 +114,7 @@ func AdminRequired(c *fiber.Ctx) error {
 
 func HandleRegister(c *fiber.Ctx) error {
 	currentUser, _ := GetCurrentUser(c)
-	return render(c, ui.Page(
-		"Register",
-		currentUser,
-		c.Path(),
-		[]g.Node{
-			ui.PageHeader("Register"),
-			ui.ContentContainer(
-				ui.FormContainer("registerForm",
-					ui.FormGroup("Username", "name",
-						ui.TextInput("name", "name", ""),
-					),
-					ui.FormGroup("Phone Number", "phone",
-						ui.TextInput("phone", "phone", ""),
-					),
-					ui.FormGroup("Password", "password",
-						ui.PasswordInput("password", "password"),
-					),
-					ui.FormGroup("Confirm Password", "password2",
-						ui.PasswordInput("password2", "password2"),
-					),
-					ui.ActionButtons(
-						ui.StyledButton("Register", ui.ButtonPrimary,
-							hx.Post("/api/register"),
-							hx.Target("#result"),
-							hx.Indicator("#registerForm"),
-						),
-					),
-					ui.ResultContainer(),
-				),
-			),
-		},
-	))
+	return render(c, ui.RegisterPage(currentUser, c.Path()))
 }
 
 func HandleRegisterSubmission(c *fiber.Ctx) error {
@@ -174,32 +141,7 @@ func HandleRegisterSubmission(c *fiber.Ctx) error {
 
 func HandleLogin(c *fiber.Ctx) error {
 	currentUser, _ := GetCurrentUser(c)
-	return render(c, ui.Page(
-		"Login",
-		currentUser,
-		c.Path(),
-		[]g.Node{
-			ui.PageHeader("Login"),
-			ui.ContentContainer(
-				ui.FormContainer("loginForm",
-					ui.FormGroup("Username", "name",
-						ui.TextInput("name", "name", ""),
-					),
-					ui.FormGroup("Password", "password",
-						ui.PasswordInput("password", "password"),
-					),
-					ui.ActionButtons(
-						ui.StyledButton("Login", ui.ButtonPrimary,
-							hx.Post("/api/login"),
-							hx.Target("#result"),
-							hx.Indicator("#loginForm"),
-						),
-					),
-					ui.ResultContainer(),
-				),
-			),
-		},
-	))
+	return render(c, ui.LoginPage(currentUser, c.Path()))
 }
 
 func HandleChangePassword(c *fiber.Ctx) error {
