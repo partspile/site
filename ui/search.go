@@ -71,9 +71,61 @@ func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad, loc *time.L
 			Class("flex flex-wrap gap-4 mb-4"),
 			SearchFilters(filters),
 		),
+
+		// View toggle buttons
+		ViewToggleButtons("list"),
+
+		// View Wrapper
+		Div(
+			ID("view-wrapper"),
+			ListView(ads, loc),
+		),
+	)
+}
+
+func ViewToggleButtons(activeView string) g.Node {
+	listClass := "btn btn-sm"
+	treeClass := "btn btn-sm"
+	if activeView == "list" {
+		listClass += " btn-active"
+	} else {
+		treeClass += " btn-active"
+	}
+
+	return Div(
+		Class("my-4"),
+		Button(
+			Class(listClass),
+			hx.Get("/htmx/view/list"),
+			hx.Target("#view-wrapper"),
+			hx.Indicator("#searchWaiting"),
+			g.Text("List View"),
+		),
+		Button(
+			Class(treeClass),
+			hx.Get("/htmx/view/tree"),
+			hx.Target("#view-wrapper"),
+			hx.Indicator("#searchWaiting"),
+			g.Text("Tree View"),
+		),
+	)
+}
+
+func ListView(ads map[int]ad.Ad, loc *time.Location) g.Node {
+	return Div(
+		ID("list-view"),
 		AdListContainer(
 			g.Group(BuildAdListNodes(ads, loc)),
 		),
+	)
+}
+
+func TreeView() g.Node {
+	return Div(
+		ID("tree-view"),
+		hx.Get("/tree"),
+		hx.Trigger("load"),
+		hx.Swap("innerHTML"),
 	)
 }
 
@@ -102,13 +154,14 @@ func SearchWidget(newAdButton g.Node) g.Node {
 				hx.Target("#searchResults"),
 				hx.Indicator("#searchWaiting"),
 				hx.Swap("outerHTML"),
+				Input(Type("hidden"), Name("view"), Value("list"), ID("view-type-input")),
 				Input(
 					Type("search"),
 					ID("searchBox"),
 					Name("q"),
 					Class("w-full p-2 border rounded"),
 					Placeholder("Search by make, year, model, or description..."),
-					hx.Trigger("search"),
+					hx.Trigger("keyup changed delay:500ms, search"),
 				),
 			),
 		),

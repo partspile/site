@@ -66,6 +66,9 @@ func main() {
 	app.Get("/ad/:id", handlers.OptionalAuth, handlers.HandleViewAd)
 	app.Get("/search", handlers.HandleSearch)
 	app.Get("/search-page", handlers.HandleSearchPage)
+	app.Get("/tree", handlers.TreeView)
+	app.Get("/tree/*", handlers.TreeView)
+	app.Get("/tree-collapsed/*", handlers.HandleTreeCollapse)
 
 	// User registration/authentication
 	app.Get("/register", handlers.HandleRegister)
@@ -100,6 +103,10 @@ func main() {
 	app.Get("/api/admin/export/users", handlers.AdminRequired, handlers.HandleAdminExportUsers)
 	app.Get("/api/admin/export/ads", handlers.AdminRequired, handlers.HandleAdminExportAds)
 	app.Get("/api/admin/export/transactions", handlers.AdminRequired, handlers.HandleAdminExportTransactions)
+
+	// HTMX view routes
+	app.Get("/htmx/view/list", handlers.HandleListView)
+	app.Get("/htmx/view/tree", handlers.HandleTreeViewContent)
 
 	// API endpoints
 	app.Get("/api/makes", handlers.HandleMakes)

@@ -13,6 +13,9 @@ import (
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vehicle"
+	g "maragu.dev/gomponents"
+	hx "maragu.dev/gomponents-htmx"
+	. "maragu.dev/gomponents/html"
 )
 
 const sysPrompt = `You are an expert vehicle parts assistant.
@@ -209,8 +212,7 @@ func ParseSearchQuery(q string) (SearchQuery, error) {
 }
 
 func FilterAds(query SearchQuery, ads []ad.Ad) []ad.Ad {
-	if query.Make == "" && len(query.Years) == 0 && len(query.Models) == 0 &&
-		len(query.EngineSizes) == 0 && query.Category == "" && query.SubCategory == "" {
+	if query.IsEmpty() {
 		return ads
 	}
 	var filteredAds []ad.Ad
@@ -247,16 +249,120 @@ func GetNextPage(query SearchQuery, cursor *SearchCursor, limit int) ([]ad.Ad, *
 		return nil, nil, err
 	}
 
-	// Create next cursor if there are more results
 	var nextCursor *SearchCursor
 	if hasMore && len(ads) > 0 {
-		last := ads[len(ads)-1]
+		lastAd := ads[len(ads)-1]
 		nextCursor = &SearchCursor{
 			Query:      query,
-			LastID:     last.ID,
-			LastPosted: last.CreatedAt,
+			LastID:     lastAd.ID,
+			LastPosted: lastAd.CreatedAt,
 		}
 	}
 
 	return ads, nextCursor, nil
+}
+
+func HandleTreeCollapse(c *fiber.Ctx) error {
+	q := c.Query("q")
+	path := c.Params("*")
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+
+	name := parts[len(parts)-1]
+	level := len(parts) - 1
+
+	return render(c, ui.CollapsedTreeNode(name, "/"+path, q, level))
+}
+
+func TreeView(c *fiber.Ctx) error {
+	q := c.Query("q")
+	path := c.Params("*")
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+	if len(parts) == 1 && parts[0] == "" {
+		parts = []string{}
+	}
+	level := len(parts)
+
+	var childNodes []g.Node
+	var err error
+
+	// Get ads for the current node
+	ads, err := part.GetAdsForNode(parts, q)
+	if err != nil {
+		return err
+	}
+	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
+	for _, ad := range ads {
+		childNodes = append(childNodes, ui.AdCard(ad, loc))
+	}
+
+	// Get children for the next level
+	var children []string
+	switch level {
+	case 0: // Root, get makes
+		children, err = part.GetMakes(q)
+	case 1: // Make, get years
+		children, err = part.GetYearsForMake(parts[0], q)
+	case 2: // Year, get models
+		children, err = part.GetModelsForMakeYear(parts[0], parts[1], q)
+	case 3: // Model, get engines
+		children, err = part.GetEnginesForMakeYearModel(parts[0], parts[1], parts[2], q)
+	case 4: // Engine, get categories
+		children, err = part.GetCategoriesForMakeYearModelEngine(parts[0], parts[1], parts[2], parts[3], q)
+	case 5: // Category, get subcategories
+		children, err = part.GetSubCategoriesForMakeYearModelEngineCategory(parts[0], parts[1], parts[2], parts[3], parts[4], q)
+	}
+	if err != nil {
+		return err
+	}
+
+	for _, child := range children {
+		childNodes = append(childNodes, ui.CollapsedTreeNode(child, "/"+path+"/"+child, q, level+1))
+	}
+
+	if level == 0 {
+		return render(c, g.Group(childNodes))
+	}
+
+	name := parts[len(parts)-1]
+	return render(c, ui.ExpandedTreeNode(name, "/"+path, q, level, g.Group(childNodes)))
+}
+
+func HandleListView(c *fiber.Ctx) error {
+	q := c.Query("q")
+	query, err := ParseSearchQuery(q)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
+	}
+
+	ads, _, err := GetNextPage(query, nil, 10)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Could not get ads")
+	}
+
+	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
+	adsMap := make(map[int]ad.Ad)
+	for _, ad := range ads {
+		adsMap[ad.ID] = ad
+	}
+
+	hiddenInput := Input(
+		Type("hidden"),
+		Name("view"),
+		Value("list"),
+		ID("view-type-input"),
+		hx.SwapOOB("true"),
+	)
+
+	return render(c, g.Group([]g.Node{ui.ListView(adsMap, loc), hiddenInput}))
+}
+
+func HandleTreeViewContent(c *fiber.Ctx) error {
+	hiddenInput := Input(
+		Type("hidden"),
+		Name("view"),
+		Value("tree"),
+		ID("view-type-input"),
+		hx.SwapOOB("true"),
+	)
+	return render(c, g.Group([]g.Node{ui.TreeView(), hiddenInput}))
 }
