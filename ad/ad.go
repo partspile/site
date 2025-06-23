@@ -20,6 +20,11 @@ type SearchQuery struct {
 	SubCategory string   `json:"sub_category,omitempty"`
 }
 
+func (sq SearchQuery) IsEmpty() bool {
+	return sq.Make == "" && len(sq.Years) == 0 && len(sq.Models) == 0 &&
+		len(sq.EngineSizes) == 0 && sq.Category == "" && sq.SubCategory == ""
+}
+
 // SearchCursor represents a point in the search results for pagination
 type SearchCursor struct {
 	Query      SearchQuery `json:"q"`           // The structured query

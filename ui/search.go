@@ -84,12 +84,14 @@ func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad, loc *time.L
 }
 
 func ViewToggleButtons(activeView string) g.Node {
-	listClass := "btn btn-sm"
-	treeClass := "btn btn-sm"
+	listClass := "px-2 py-1 rounded text-sm"
+	treeClass := "px-2 py-1 rounded text-sm"
 	if activeView == "list" {
-		listClass += " btn-active"
+		listClass += " bg-blue-500 text-white"
+		treeClass += " bg-gray-200"
 	} else {
-		treeClass += " btn-active"
+		listClass += " bg-gray-200"
+		treeClass += " bg-blue-500 text-white"
 	}
 
 	return Div(
