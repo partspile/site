@@ -767,11 +767,28 @@ func DeleteAd(id int) error {
 	}
 	defer tx.Rollback()
 
+	// Archive the ad to AdDead with deletion_date
+	_, err = tx.Exec(`INSERT INTO AdDead (id, description, price, created_at, subcategory_id, user_id, deletion_date)
+		SELECT id, description, price, created_at, subcategory_id, user_id, ? FROM Ad WHERE id = ?`,
+		time.Now().UTC().Format(time.RFC3339Nano), id)
+	if err != nil {
+		return err
+	}
+
+	// Archive ad-car relationships to AdCarDead
+	_, err = tx.Exec(`INSERT INTO AdCarDead (ad_id, car_id)
+		SELECT ad_id, car_id FROM AdCar WHERE ad_id = ?`, id)
+	if err != nil {
+		return err
+	}
+
+	// Delete from AdCar
 	_, err = tx.Exec(`DELETE FROM AdCar WHERE ad_id = ?`, id)
 	if err != nil {
 		return err
 	}
 
+	// Delete from Ad
 	_, err = tx.Exec(`DELETE FROM Ad WHERE id = ?`, id)
 	if err != nil {
 		return err
@@ -889,4 +906,87 @@ func ResurrectAd(adID int) error {
 	}
 
 	return tx.Commit()
+}
+
+// GetDeadAd retrieves a dead ad by ID
+func GetDeadAd(id int) (Ad, bool) {
+	row := db.QueryRow(`
+		SELECT id, description, price, created_at, subcategory_id, user_id, deletion_date
+		FROM AdDead
+		WHERE id = ?
+	`, id)
+
+	var ad Ad
+	var deletionDate string
+	if err := row.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt,
+		&ad.SubCategoryID, &ad.UserID, &deletionDate); err != nil {
+		return Ad{}, false
+	}
+
+	// Parse deletion date
+	if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
+		ad.DeletionDate = &parsedTime
+	}
+
+	// Get vehicle data from AdCarDead
+	ad.Make, ad.Years, ad.Models, ad.Engines = getDeadAdVehicleData(id)
+
+	return ad, true
+}
+
+// getDeadAdVehicleData retrieves vehicle information for a dead ad
+func getDeadAdVehicleData(adID int) (makeName string, years []string, models []string, engines []string) {
+	rows, err := db.Query(`
+		SELECT DISTINCT m.name, y.year, mo.name, e.name
+		FROM AdCarDead acd
+		JOIN Car c ON acd.car_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN Engine e ON c.engine_id = e.id
+		WHERE acd.ad_id = ?
+		ORDER BY m.name, y.year, mo.name, e.name
+	`, adID)
+	if err != nil {
+		return "", nil, nil, nil
+	}
+	defer rows.Close()
+
+	makeSet := make(map[string]bool)
+	yearSet := make(map[string]bool)
+	modelSet := make(map[string]bool)
+	engineSet := make(map[string]bool)
+
+	for rows.Next() {
+		var makeName, modelName, engineName string
+		var year int
+		if err := rows.Scan(&makeName, &year, &modelName, &engineName); err != nil {
+			continue
+		}
+		makeSet[makeName] = true
+		yearSet[fmt.Sprintf("%d", year)] = true
+		modelSet[modelName] = true
+		engineSet[engineName] = true
+	}
+
+	// Convert sets to slices
+	makes := make([]string, 0, len(makeSet))
+	for m := range makeSet {
+		makes = append(makes, m)
+	}
+	sort.Strings(makes)
+	if len(makes) > 0 {
+		makeName = makes[0]
+	}
+	for y := range yearSet {
+		years = append(years, y)
+	}
+	for m := range modelSet {
+		models = append(models, m)
+	}
+	for e := range engineSet {
+		engines = append(engines, e)
+	}
+
+	return makeName, years, models, engines
 }

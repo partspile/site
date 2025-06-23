@@ -164,10 +164,23 @@ func ViewAdPage(currentUser *user.User, path string, ad ad.Ad) g.Node {
 		BackToListingsButton(),
 	}
 
-	if currentUser != nil && currentUser.ID == ad.UserID {
+	// Check if this is a dead ad
+	isDeadAd := ad.DeletionDate != nil
+
+	// Only show edit/delete buttons for active ads owned by the current user
+	if currentUser != nil && currentUser.ID == ad.UserID && !isDeadAd {
 		editButton := StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", ad.ID), ButtonPrimary)
 		deleteButton := DeleteButton(ad.ID)
 		actionButtons = append(actionButtons, editButton, deleteButton)
+	}
+
+	// Add dead status indicator if it's a dead ad
+	statusIndicator := g.Node(nil)
+	if isDeadAd {
+		statusIndicator = Div(
+			Class("bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded mb-4"),
+			g.Text("DEAD - This ad has been deleted"),
+		)
 	}
 
 	return Page(
@@ -178,6 +191,7 @@ func ViewAdPage(currentUser *user.User, path string, ad ad.Ad) g.Node {
 			Div(
 				Class("max-w-2xl mx-auto"),
 				PageHeader(ad.Make),
+				statusIndicator,
 				AdDetails(ad),
 				ActionButtons(actionButtons...),
 				Div(

@@ -173,12 +173,16 @@ func AdminAdTable(ads []ad.Ad, status string) g.Node {
 						Td(Class("border border-gray-300 px-4 py-2"),
 							func() g.Node {
 								if status == "dead" {
-									return Button(
-										g.Text("Resurrect"),
-										Class("px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"),
-										hx.Post(fmt.Sprintf("/api/admin/ads/resurrect/%d", a.ID)),
-										hx.Target("#adminAdTable"),
-										hx.Swap("outerHTML"),
+									return Div(
+										Class("flex space-x-2"),
+										StyledLink("View", fmt.Sprintf("/ad/%d", a.ID), ButtonPrimary),
+										Button(
+											g.Text("Resurrect"),
+											Class("px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"),
+											hx.Post(fmt.Sprintf("/api/admin/ads/resurrect/%d", a.ID)),
+											hx.Target("#adminAdTable"),
+											hx.Swap("outerHTML"),
+										),
 									)
 								}
 								return Div(
