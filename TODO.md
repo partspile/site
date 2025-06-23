@@ -71,4 +71,7 @@
 - [x] Implement LLM-based search parsing (see PRD 3.4)
 - [x] Implement all placeholder UI elements (e.g., search bar placeholder)
 - [x] Ensure all SQL query placeholders are safe and correct
-- [x] Review all code for incomplete, stub, or placeholder logic 
+- [x] Review all code for incomplete, stub, or placeholder logic
+
+## Miscellaneous
+- [x] Quieted server logs by handling Chrome DevTools requests for `/.well-known/appspecific/com.chrome.devtools.json`. 

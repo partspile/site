@@ -55,6 +55,11 @@ func main() {
 	// Add logger middleware
 	app.Use(logger.New())
 
+	// Handle Chrome DevTools requests
+	app.Get("/.well-known/appspecific/com.chrome.devtools.json", func(c *fiber.Ctx) error {
+		return c.SendStatus(fiber.StatusNoContent)
+	})
+
 	// Static file handler
 	app.Static("/", "./static")
 
