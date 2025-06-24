@@ -165,7 +165,7 @@ func ViewAdPage(currentUser *user.User, path string, ad ad.Ad) g.Node {
 	}
 
 	// Check if this is a dead ad
-	isDeadAd := ad.DeletionDate != nil
+	isDeadAd := ad.IsDead()
 
 	// Only show edit/delete buttons for active ads owned by the current user
 	if currentUser != nil && currentUser.ID == ad.UserID && !isDeadAd {

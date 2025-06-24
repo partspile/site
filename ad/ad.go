@@ -10,6 +10,22 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// Table name constants
+const (
+	TableAd        = "Ad"
+	TableAdDead    = "AdDead"
+	TableAdCar     = "AdCar"
+	TableAdCarDead = "AdCarDead"
+)
+
+// AdStatus represents the status of an ad
+type AdStatus string
+
+const (
+	StatusActive AdStatus = "active"
+	StatusDead   AdStatus = "dead"
+)
+
 // SearchQuery represents a structured query for filtering ads
 type SearchQuery struct {
 	Make        string   `json:"make,omitempty"`
@@ -52,6 +68,11 @@ type Ad struct {
 	DeletionDate *time.Time `json:"deletion_date,omitempty"`
 }
 
+// IsDead returns true if the ad has been deleted
+func (a Ad) IsDead() bool {
+	return a.DeletionDate != nil
+}
+
 var db *sql.DB
 
 // Exported for use by other packages
@@ -67,11 +88,11 @@ func InitDB(path string) error {
 	return nil
 }
 
-// getAdVehicleData retrieves vehicle information for an ad
-func getAdVehicleData(adID int) (makeName string, years []string, models []string, engines []string) {
-	rows, err := db.Query(`
+// getVehicleData retrieves vehicle information for an ad from the specified table
+func getVehicleData(adID int, adCarTable string) (makeName string, years []string, models []string, engines []string) {
+	query := fmt.Sprintf(`
 		SELECT DISTINCT m.name, y.year, mo.name, e.name
-		FROM AdCar ac
+		FROM %s ac
 		JOIN Car c ON ac.car_id = c.id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Year y ON c.year_id = y.id
@@ -79,7 +100,9 @@ func getAdVehicleData(adID int) (makeName string, years []string, models []strin
 		JOIN Engine e ON c.engine_id = e.id
 		WHERE ac.ad_id = ?
 		ORDER BY m.name, y.year, mo.name, e.name
-	`, adID)
+	`, adCarTable)
+
+	rows, err := db.Query(query, adID)
 	if err != nil {
 		return "", nil, nil, nil
 	}
@@ -122,6 +145,34 @@ func getAdVehicleData(adID int) (makeName string, years []string, models []strin
 	}
 
 	return makeName, years, models, engines
+}
+
+// getAdVehicleData retrieves vehicle information for an active ad
+func getAdVehicleData(adID int) (makeName string, years []string, models []string, engines []string) {
+	return getVehicleData(adID, TableAdCar)
+}
+
+// getDeadAdVehicleData retrieves vehicle information for a dead ad
+func getDeadAdVehicleData(adID int) (makeName string, years []string, models []string, engines []string) {
+	return getVehicleData(adID, TableAdCarDead)
+}
+
+// GetAdByID retrieves an ad by ID from either active or dead tables
+// Returns the ad, its status, and whether it was found
+func GetAdByID(id int) (Ad, AdStatus, bool) {
+	// Try active ads first
+	ad, ok := GetAd(id)
+	if ok {
+		return ad, StatusActive, true
+	}
+
+	// Try dead ads
+	deadAd, ok := GetDeadAd(id)
+	if ok {
+		return deadAd, StatusDead, true
+	}
+
+	return Ad{}, StatusActive, false
 }
 
 func GetAd(id int) (Ad, bool) {
@@ -675,30 +726,30 @@ func GetAdsByUserID(userID int) ([]Ad, error) {
 	return ads, nil
 }
 
-// GetAdByID returns a single ad by ID
-func GetAdByID(id int) (Ad, error) {
+// GetDeadAd retrieves a dead ad by ID
+func GetDeadAd(id int) (Ad, bool) {
+	row := db.QueryRow(`
+		SELECT id, description, price, created_at, subcategory_id, user_id, deletion_date
+		FROM AdDead
+		WHERE id = ?
+	`, id)
+
 	var ad Ad
-	var createdAt string
-	var year, make, model, category, subcategory sql.NullString
-	err := db.QueryRow(`
-		SELECT a.id, a.user_id, a.title, a.description, a.price, a.created_at,
-		       ac.year, ac.make, ac.model, ac.category, ac.subcategory
-		FROM Ad a
-		LEFT JOIN AdCar ac ON a.id = ac.ad_id
-		WHERE a.id = ?`, id).Scan(&ad.ID, &ad.UserID, &ad.Title, &ad.Description, &ad.Price,
-		&createdAt, &year, &make, &model, &category, &subcategory)
-	if err != nil {
-		return Ad{}, err
+	var deletionDate string
+	if err := row.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt,
+		&ad.SubCategoryID, &ad.UserID, &deletionDate); err != nil {
+		return Ad{}, false
 	}
-	ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-	if year.Valid {
-		ad.Year = year.String
-		ad.Make = make.String
-		ad.Models = []string{model.String}
-		ad.Category = category.String
-		ad.SubCategory = subcategory.String
+
+	// Parse deletion date
+	if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
+		ad.DeletionDate = &parsedTime
 	}
-	return ad, nil
+
+	// Get vehicle data from AdCarDead
+	ad.Make, ad.Years, ad.Models, ad.Engines = getDeadAdVehicleData(id)
+
+	return ad, true
 }
 
 // CreateAd creates a new ad
@@ -906,87 +957,4 @@ func ResurrectAd(adID int) error {
 	}
 
 	return tx.Commit()
-}
-
-// GetDeadAd retrieves a dead ad by ID
-func GetDeadAd(id int) (Ad, bool) {
-	row := db.QueryRow(`
-		SELECT id, description, price, created_at, subcategory_id, user_id, deletion_date
-		FROM AdDead
-		WHERE id = ?
-	`, id)
-
-	var ad Ad
-	var deletionDate string
-	if err := row.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt,
-		&ad.SubCategoryID, &ad.UserID, &deletionDate); err != nil {
-		return Ad{}, false
-	}
-
-	// Parse deletion date
-	if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
-		ad.DeletionDate = &parsedTime
-	}
-
-	// Get vehicle data from AdCarDead
-	ad.Make, ad.Years, ad.Models, ad.Engines = getDeadAdVehicleData(id)
-
-	return ad, true
-}
-
-// getDeadAdVehicleData retrieves vehicle information for a dead ad
-func getDeadAdVehicleData(adID int) (makeName string, years []string, models []string, engines []string) {
-	rows, err := db.Query(`
-		SELECT DISTINCT m.name, y.year, mo.name, e.name
-		FROM AdCarDead acd
-		JOIN Car c ON acd.car_id = c.id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Year y ON c.year_id = y.id
-		JOIN Model mo ON c.model_id = mo.id
-		JOIN Engine e ON c.engine_id = e.id
-		WHERE acd.ad_id = ?
-		ORDER BY m.name, y.year, mo.name, e.name
-	`, adID)
-	if err != nil {
-		return "", nil, nil, nil
-	}
-	defer rows.Close()
-
-	makeSet := make(map[string]bool)
-	yearSet := make(map[string]bool)
-	modelSet := make(map[string]bool)
-	engineSet := make(map[string]bool)
-
-	for rows.Next() {
-		var makeName, modelName, engineName string
-		var year int
-		if err := rows.Scan(&makeName, &year, &modelName, &engineName); err != nil {
-			continue
-		}
-		makeSet[makeName] = true
-		yearSet[fmt.Sprintf("%d", year)] = true
-		modelSet[modelName] = true
-		engineSet[engineName] = true
-	}
-
-	// Convert sets to slices
-	makes := make([]string, 0, len(makeSet))
-	for m := range makeSet {
-		makes = append(makes, m)
-	}
-	sort.Strings(makes)
-	if len(makes) > 0 {
-		makeName = makes[0]
-	}
-	for y := range yearSet {
-		years = append(years, y)
-	}
-	for m := range modelSet {
-		models = append(models, m)
-	}
-	for e := range engineSet {
-		engines = append(engines, e)
-	}
-
-	return makeName, years, models, engines
 }

@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
@@ -75,17 +74,10 @@ func HandleViewAd(c *fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 
-	// Try to get the ad from active ads first
-	adObj, ok := ad.GetAd(adID)
-	if !ok || adObj.ID == 0 {
-		// If not found in active ads, try dead ads
-		deadAd, ok := ad.GetDeadAd(adID)
-		if !ok || deadAd.ID == 0 {
-			return fiber.ErrNotFound
-		}
-		// Mark as dead ad
-		deadAd.DeletionDate = &time.Time{} // Set a non-nil value to indicate it's dead
-		adObj = deadAd
+	// Get ad from either active or dead tables
+	adObj, _, ok := ad.GetAdByID(adID)
+	if !ok {
+		return fiber.ErrNotFound
 	}
 
 	currentUser, _ := c.Locals("user").(*user.User)
