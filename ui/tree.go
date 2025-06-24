@@ -26,6 +26,7 @@ func TreeNode(name, path string, level int) g.Node {
 }
 
 func CollapsedTreeNode(name, path, q string, level int) g.Node {
+	decodedName, _ := url.QueryUnescape(name)
 	return Div(
 		Class("ml-4"),
 		Button(
@@ -35,11 +36,12 @@ func CollapsedTreeNode(name, path, q string, level int) g.Node {
 			hx.Swap("outerHTML"),
 			g.Text("+"),
 		),
-		g.Text(name),
+		g.Text(decodedName),
 	)
 }
 
 func ExpandedTreeNode(name, path, q string, level int, children g.Node) g.Node {
+	decodedName, _ := url.QueryUnescape(name)
 	return Div(
 		Class("ml-4"),
 		Button(
@@ -49,7 +51,7 @@ func ExpandedTreeNode(name, path, q string, level int, children g.Node) g.Node {
 			hx.Swap("outerHTML"),
 			g.Text("-"),
 		),
-		g.Text(name),
+		g.Text(decodedName),
 		children,
 	)
 }

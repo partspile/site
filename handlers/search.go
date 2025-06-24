@@ -290,6 +290,12 @@ func TreeView(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	adIDs := make([]int, len(ads))
+	for i, ad := range ads {
+		adIDs[i] = ad.ID
+	}
+	fmt.Printf("[DEBUG] TreeView: path=%v, got %d ads, adIDs=%v\n", parts, len(ads), adIDs)
+
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
 	for _, ad := range ads {
 		childNodes = append(childNodes, ui.AdCard(ad, loc))
@@ -315,9 +321,12 @@ func TreeView(c *fiber.Ctx) error {
 		return err
 	}
 
-	for _, child := range children {
-		childNodes = append(childNodes, ui.CollapsedTreeNode(child, "/"+path+"/"+child, q, level+1))
-	}
+	// If there are children, render them; otherwise, render ads at the leaf
+	if len(children) > 0 {
+		for _, child := range children {
+			childNodes = append(childNodes, ui.CollapsedTreeNode(child, "/"+path+"/"+child, q, level+1))
+		}
+	} // else, childNodes already contains the ads
 
 	if level == 0 {
 		return render(c, g.Group(childNodes))

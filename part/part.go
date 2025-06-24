@@ -3,6 +3,7 @@ package part
 import (
 	"database/sql"
 	"fmt"
+	"net/url"
 	"strings"
 
 	"github.com/parts-pile/site/ad"
@@ -261,9 +262,21 @@ func GetSubCategoriesForMakeYearModelEngineCategory(makeName, year, model, engin
 }
 
 func GetAdsForNode(parts []string, q string) ([]ad.Ad, error) {
+	fmt.Printf("[DEBUG] GetAdsForNode: parts=%v\n", parts)
+	// Decode all path segments
+	decodedParts := make([]string, len(parts))
+	for i, p := range parts {
+		d, err := url.QueryUnescape(p)
+		if err != nil {
+			decodedParts[i] = p
+		} else {
+			decodedParts[i] = d
+		}
+	}
 	query := `
-		SELECT DISTINCT a.id, a.description, a.price, a.created_at, a.subcategory_id,
-		       a.user_id, psc.name as subcategory, pc.name as category
+		SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
+		       a.user_id, psc.name as subcategory, pc.name as category,
+		       m.name, y.year, mo.name, e.name
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
@@ -277,29 +290,29 @@ func GetAdsForNode(parts []string, q string) ([]ad.Ad, error) {
 	var args []interface{}
 	var conditions []string
 
-	if len(parts) > 0 && parts[0] != "" {
+	if len(decodedParts) > 0 && decodedParts[0] != "" {
 		conditions = append(conditions, "m.name = ?")
-		args = append(args, parts[0])
+		args = append(args, decodedParts[0])
 	}
-	if len(parts) > 1 {
+	if len(decodedParts) > 1 {
 		conditions = append(conditions, "y.year = ?")
-		args = append(args, parts[1])
+		args = append(args, decodedParts[1])
 	}
-	if len(parts) > 2 {
+	if len(decodedParts) > 2 {
 		conditions = append(conditions, "mo.name = ?")
-		args = append(args, parts[2])
+		args = append(args, decodedParts[2])
 	}
-	if len(parts) > 3 {
+	if len(decodedParts) > 3 {
 		conditions = append(conditions, "e.name = ?")
-		args = append(args, parts[3])
+		args = append(args, decodedParts[3])
 	}
-	if len(parts) > 4 {
+	if len(decodedParts) > 4 {
 		conditions = append(conditions, "pc.name = ?")
-		args = append(args, parts[4])
+		args = append(args, decodedParts[4])
 	}
-	if len(parts) > 5 {
+	if len(decodedParts) > 5 {
 		conditions = append(conditions, "psc.name = ?")
-		args = append(args, parts[5])
+		args = append(args, decodedParts[5])
 	}
 
 	if len(conditions) > 0 {
@@ -313,31 +326,49 @@ func GetAdsForNode(parts []string, q string) ([]ad.Ad, error) {
 	defer rows.Close()
 
 	var ads []ad.Ad
+	var adIDs []int
 	for rows.Next() {
-		var ad ad.Ad
-		var subcategory, category sql.NullString
-		if err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.SubCategoryID, &ad.UserID, &subcategory, &category); err != nil {
+		var adID int
+		var adObj ad.Ad
+		var subcategory, category, makeName, modelName, engineName sql.NullString
+		var year sql.NullInt64
+		if err := rows.Scan(&adID, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName); err != nil {
 			return nil, err
 		}
+		adObj.ID = adID
 		if subcategory.Valid {
-			ad.SubCategory = subcategory.String
+			adObj.SubCategory = subcategory.String
 		}
 		if category.Valid {
-			ad.Category = category.String
+			adObj.Category = category.String
 		}
-		ads = append(ads, ad)
+		if makeName.Valid {
+			adObj.Make = makeName.String
+		}
+		if year.Valid {
+			adObj.Years = []string{fmt.Sprintf("%d", year.Int64)}
+		}
+		if modelName.Valid {
+			adObj.Models = []string{modelName.String}
+		}
+		if engineName.Valid {
+			adObj.Engines = []string{engineName.String}
+		}
+		// Populate all years, models, engines for the ad
+		fullAd, ok := ad.GetAd(adID)
+		if ok {
+			adObj.Years = fullAd.Years
+			adObj.Models = fullAd.Models
+			adObj.Engines = fullAd.Engines
+		}
+		ads = append(ads, adObj)
+		adIDs = append(adIDs, adID)
 	}
+	fmt.Printf("[DEBUG] GetAdsForNode: found %d ads, adIDs=%v\n", len(ads), adIDs)
 
-	// This is N+1, but OK for now. The tree view will limit queries.
-	for i := range ads {
-		// This is a placeholder for getting full vehicle data for an ad.
-		// A proper implementation would do a more efficient query.
-		ads[i].Years = []string{"2024"}
-		ads[i].Models = []string{"Some Model"}
-		ads[i].Engines = []string{"V8"}
-		if len(parts) > 0 {
-			ads[i].Make = parts[0]
-		}
+	// Only show ads at leaf nodes (make/year/model/engine)
+	if len(decodedParts) < 4 {
+		return nil, nil
 	}
 
 	return ads, nil
