@@ -109,11 +109,11 @@ func main() {
 	app.Get("/api/admin/export/ads", handlers.AdminRequired, handlers.HandleAdminExportAds)
 	app.Get("/api/admin/export/transactions", handlers.AdminRequired, handlers.HandleAdminExportTransactions)
 
-	// HTMX view routes
-	app.Get("/htmx/view/list", handlers.HandleListView)
-	app.Get("/htmx/view/tree", handlers.HandleTreeViewContent)
-	app.Post("/htmx/view/list", handlers.HandleListView)
-	app.Post("/htmx/view/tree", handlers.HandleTreeViewContent)
+	// View routes (for HTMX and direct navigation)
+	app.Get("/view/list", handlers.HandleListView)
+	app.Get("/view/tree", handlers.HandleTreeViewContent)
+	app.Post("/view/list", handlers.HandleListView)
+	app.Post("/view/tree", handlers.HandleTreeViewContent)
 
 	// API endpoints
 	app.Get("/api/makes", handlers.HandleMakes)
