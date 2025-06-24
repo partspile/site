@@ -66,10 +66,16 @@ func GetCurrentUser(c *fiber.Ctx) (*user.User, error) {
 		return nil, nil // No user ID in session
 	}
 
-	u, err := user.GetUserByID(userID)
-	if err != nil {
-		return nil, err
+	u, status, found := user.GetUserByID(userID)
+	if !found {
+		return nil, nil // User not found
 	}
+
+	// Only return active users for current user sessions
+	if status == user.StatusDead {
+		return nil, nil // Don't allow dead users to be current user
+	}
+
 	return &u, nil
 }
 

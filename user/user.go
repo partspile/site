@@ -5,6 +5,20 @@ import (
 	"time"
 )
 
+// Table name constants
+const (
+	TableUser     = "User"
+	TableUserDead = "UserDead"
+)
+
+// UserStatus represents the status of a user
+type UserStatus string
+
+const (
+	StatusActive UserStatus = "active"
+	StatusDead   UserStatus = "dead"
+)
+
 type User struct {
 	ID           int
 	Name         string
@@ -13,6 +27,12 @@ type User struct {
 	PasswordHash string
 	CreatedAt    time.Time
 	IsAdmin      bool
+	DeletionDate *time.Time `json:"deletion_date,omitempty"`
+}
+
+// IsDead returns true if the user has been deleted
+func (u User) IsDead() bool {
+	return u.DeletionDate != nil
 }
 
 var db *sql.DB
@@ -31,6 +51,24 @@ func CreateUser(name, phone, passwordHash string) (int, error) {
 	return int(id), nil
 }
 
+// GetUserByID retrieves a user by ID from either active or dead tables
+// Returns the user, its status, and whether it was found
+func GetUserByID(id int) (User, UserStatus, bool) {
+	// Try active users first
+	user, err := GetUser(id)
+	if err == nil {
+		return user, StatusActive, true
+	}
+
+	// Try dead users
+	deadUser, ok := GetDeadUser(id)
+	if ok {
+		return deadUser, StatusDead, true
+	}
+
+	return User{}, StatusActive, false
+}
+
 // GetUserByPhone retrieves a user by phone number
 func GetUserByPhone(phone string) (User, error) {
 	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM User WHERE phone = ?`, phone)
@@ -46,8 +84,8 @@ func GetUserByPhone(phone string) (User, error) {
 	return u, nil
 }
 
-// GetUserByID retrieves a user by ID
-func GetUserByID(id int) (User, error) {
+// GetUser retrieves a user by ID (active users only)
+func GetUser(id int) (User, error) {
 	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM User WHERE id = ?`, id)
 	var u User
 	var createdAt string
@@ -59,6 +97,27 @@ func GetUserByID(id int) (User, error) {
 	u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 	u.IsAdmin = isAdmin == 1
 	return u, nil
+}
+
+// GetDeadUser retrieves a dead user by ID
+func GetDeadUser(id int) (User, bool) {
+	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin, deletion_date FROM UserDead WHERE id = ?`, id)
+	var u User
+	var createdAt, deletionDate string
+	var isAdmin int
+	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin, &deletionDate)
+	if err != nil {
+		return User{}, false
+	}
+	u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+	u.IsAdmin = isAdmin == 1
+
+	// Parse deletion date
+	if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
+		u.DeletionDate = &parsedTime
+	}
+
+	return u, true
 }
 
 // UpdateTokenBalance updates a user's token balance
@@ -110,19 +169,20 @@ func DeleteUser(userID int) error {
 		return err
 	}
 
-	// Archive user
-	_, err = tx.Exec(`INSERT INTO UserDead (id, name, phone, token_balance, password_hash, created_at)
-		VALUES (?, ?, ?, ?, ?, ?)`,
+	// Archive user with deletion_date
+	deletionDate := time.Now().UTC().Format(time.RFC3339Nano)
+	_, err = tx.Exec(`INSERT INTO UserDead (id, name, phone, token_balance, password_hash, created_at, deletion_date)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		user.ID, user.Name, user.Phone, user.TokenBalance,
-		user.PasswordHash, user.CreatedAt)
+		user.PasswordHash, user.CreatedAt, deletionDate)
 	if err != nil {
 		return err
 	}
 
 	// Archive all ads by this user
-	_, err = tx.Exec(`INSERT INTO AdDead (id, description, price, created_at, subcategory_id, user_id)
-		SELECT id, description, price, created_at, subcategory_id, user_id
-		FROM Ad WHERE user_id = ?`, userID)
+	_, err = tx.Exec(`INSERT INTO AdDead (id, description, price, created_at, subcategory_id, user_id, deletion_date)
+		SELECT id, description, price, created_at, subcategory_id, user_id, ?
+		FROM Ad WHERE user_id = ?`, deletionDate, userID)
 	if err != nil {
 		return err
 	}
@@ -245,9 +305,16 @@ func SetAdmin(userID int, isAdmin bool) error {
 	return err
 }
 
-// GetAllUsers returns all users in the system
-func GetAllUsers() ([]User, error) {
-	rows, err := db.Query(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM User`)
+// getUsersFromTable retrieves users from the specified table
+func getUsersFromTable(tableName string) ([]User, error) {
+	var query string
+	if tableName == TableUserDead {
+		query = `SELECT id, name, phone, token_balance, password_hash, created_at, is_admin, deletion_date FROM ` + tableName
+	} else {
+		query = `SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM ` + tableName
+	}
+
+	rows, err := db.Query(query)
 	if err != nil {
 		return nil, err
 	}
@@ -258,39 +325,40 @@ func GetAllUsers() ([]User, error) {
 		var u User
 		var createdAt string
 		var isAdmin int
-		err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin)
-		if err != nil {
-			return nil, err
+
+		if tableName == TableUserDead {
+			var deletionDate string
+			err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin, &deletionDate)
+			if err != nil {
+				return nil, err
+			}
+			// Parse deletion date
+			if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
+				u.DeletionDate = &parsedTime
+			}
+		} else {
+			err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin)
+			if err != nil {
+				return nil, err
+			}
 		}
+
 		u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		u.IsAdmin = isAdmin == 1
+
 		users = append(users, u)
 	}
 	return users, nil
 }
 
+// GetAllUsers returns all users in the system
+func GetAllUsers() ([]User, error) {
+	return getUsersFromTable(TableUser)
+}
+
 // GetAllDeadUsers returns all archived users
 func GetAllDeadUsers() ([]User, error) {
-	rows, err := db.Query(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM UserDead`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var users []User
-	for rows.Next() {
-		var u User
-		var createdAt string
-		var isAdmin int
-		err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin)
-		if err != nil {
-			return nil, err
-		}
-		u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-		u.IsAdmin = isAdmin == 1
-		users = append(users, u)
-	}
-	return users, nil
+	return getUsersFromTable(TableUserDead)
 }
 
 // Transaction represents a token transaction
