@@ -336,9 +336,20 @@ func TreeView(c *fiber.Ctx) error {
 
 func HandleListView(c *fiber.Ctx) error {
 	q := c.Query("q")
-	query, err := ParseSearchQuery(q)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
+	structuredQuery := c.FormValue("structured_query")
+
+	var query SearchQuery
+	if structuredQuery != "" {
+		err := json.Unmarshal([]byte(structuredQuery), &query)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, "Invalid structured_query")
+		}
+	} else {
+		var err error
+		query, err = ParseSearchQuery(q)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
+		}
 	}
 
 	ads, _, err := GetNextPage(query, nil, 10)
@@ -357,9 +368,20 @@ func HandleListView(c *fiber.Ctx) error {
 
 func HandleTreeViewContent(c *fiber.Ctx) error {
 	q := c.Query("q")
-	query, err := ParseSearchQuery(q)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
+	structuredQuery := c.FormValue("structured_query")
+
+	var query SearchQuery
+	if structuredQuery != "" {
+		err := json.Unmarshal([]byte(structuredQuery), &query)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, "Invalid structured_query")
+		}
+	} else {
+		var err error
+		query, err = ParseSearchQuery(q)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
+		}
 	}
 
 	ads, _, err := GetNextPage(query, nil, 10)

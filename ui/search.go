@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"encoding/json"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -64,8 +65,15 @@ func SearchFilters(filters SearchSchema) g.Node {
 }
 
 func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad, loc *time.Location, view string) g.Node {
+	// Marshal the structured query as JSON for the hidden input
+	structuredQueryJSON, _ := json.Marshal(filters)
 	return Div(
 		ID("searchResults"),
+		Input(
+			Type("hidden"),
+			Name("structured_query"),
+			Value(string(structuredQueryJSON)),
+		),
 		Div(
 			ID("searchFilters"),
 			Class("flex flex-wrap gap-4 mb-4"),
@@ -106,6 +114,7 @@ func ViewToggleButtons(activeView string) g.Node {
 			hx.Get("/htmx/view/list"),
 			hx.Target("#searchResults"),
 			hx.Indicator("#searchWaiting"),
+			hx.Include("[name='q'],[name='structured_query']"),
 			g.Text("List View"),
 		),
 		Button(
@@ -113,6 +122,7 @@ func ViewToggleButtons(activeView string) g.Node {
 			hx.Get("/htmx/view/tree"),
 			hx.Target("#searchResults"),
 			hx.Indicator("#searchWaiting"),
+			hx.Include("[name='q'],[name='structured_query']"),
 			g.Text("Tree View"),
 		),
 	)
