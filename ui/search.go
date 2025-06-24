@@ -63,7 +63,7 @@ func SearchFilters(filters SearchSchema) g.Node {
 	)
 }
 
-func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad, loc *time.Location) g.Node {
+func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad, loc *time.Location, view string) g.Node {
 	return Div(
 		ID("searchResults"),
 		Div(
@@ -73,12 +73,17 @@ func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad, loc *time.L
 		),
 
 		// View toggle buttons
-		ViewToggleButtons("list"),
+		ViewToggleButtons(view),
 
 		// View Wrapper
 		Div(
 			ID("view-wrapper"),
-			ListView(ads, loc),
+			func() g.Node {
+				if view == "tree" {
+					return TreeView()
+				}
+				return ListView(ads, loc)
+			}(),
 		),
 	)
 }
@@ -99,14 +104,14 @@ func ViewToggleButtons(activeView string) g.Node {
 		Button(
 			Class(listClass),
 			hx.Get("/htmx/view/list"),
-			hx.Target("#view-wrapper"),
+			hx.Target("#searchResults"),
 			hx.Indicator("#searchWaiting"),
 			g.Text("List View"),
 		),
 		Button(
 			Class(treeClass),
 			hx.Get("/htmx/view/tree"),
-			hx.Target("#view-wrapper"),
+			hx.Target("#searchResults"),
 			hx.Indicator("#searchWaiting"),
 			g.Text("Tree View"),
 		),

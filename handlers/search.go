@@ -14,8 +14,6 @@ import (
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vehicle"
 	g "maragu.dev/gomponents"
-	hx "maragu.dev/gomponents-htmx"
-	. "maragu.dev/gomponents/html"
 )
 
 const sysPrompt = `You are an expert vehicle parts assistant.
@@ -90,7 +88,7 @@ func HandleSearch(c *fiber.Ctx) error {
 	}
 
 	// For the initial search, we render the whole container.
-	render(c, ui.SearchResultsContainer(ui.SearchSchema(query), adsMap, loc))
+	render(c, ui.SearchResultsContainer(ui.SearchSchema(query), adsMap, loc, "list"))
 
 	// Add the loader if there are more results
 	if nextCursor != nil {
@@ -354,24 +352,26 @@ func HandleListView(c *fiber.Ctx) error {
 		adsMap[ad.ID] = ad
 	}
 
-	hiddenInput := Input(
-		Type("hidden"),
-		Name("view"),
-		Value("list"),
-		ID("view-type-input"),
-		hx.SwapOOB("true"),
-	)
-
-	return render(c, g.Group([]g.Node{ui.ListView(adsMap, loc), hiddenInput}))
+	return render(c, ui.SearchResultsContainer(ui.SearchSchema(query), adsMap, loc, "list"))
 }
 
 func HandleTreeViewContent(c *fiber.Ctx) error {
-	hiddenInput := Input(
-		Type("hidden"),
-		Name("view"),
-		Value("tree"),
-		ID("view-type-input"),
-		hx.SwapOOB("true"),
-	)
-	return render(c, g.Group([]g.Node{ui.TreeView(), hiddenInput}))
+	q := c.Query("q")
+	query, err := ParseSearchQuery(q)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
+	}
+
+	ads, _, err := GetNextPage(query, nil, 10)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Could not get ads")
+	}
+
+	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
+	adsMap := make(map[int]ad.Ad)
+	for _, ad := range ads {
+		adsMap[ad.ID] = ad
+	}
+
+	return render(c, ui.SearchResultsContainer(ui.SearchSchema(query), adsMap, loc, "tree"))
 }
