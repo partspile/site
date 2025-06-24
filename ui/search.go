@@ -111,7 +111,7 @@ func ViewToggleButtons(activeView string) g.Node {
 		Class("my-4"),
 		Button(
 			Class(listClass),
-			hx.Get("/htmx/view/list"),
+			hx.Post("/htmx/view/list"),
 			hx.Target("#searchResults"),
 			hx.Indicator("#searchWaiting"),
 			hx.Include("[name='q'],[name='structured_query']"),
@@ -119,7 +119,7 @@ func ViewToggleButtons(activeView string) g.Node {
 		),
 		Button(
 			Class(treeClass),
-			hx.Get("/htmx/view/tree"),
+			hx.Post("/htmx/view/tree"),
 			hx.Target("#searchResults"),
 			hx.Indicator("#searchWaiting"),
 			hx.Include("[name='q'],[name='structured_query']"),

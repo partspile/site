@@ -112,6 +112,8 @@ func main() {
 	// HTMX view routes
 	app.Get("/htmx/view/list", handlers.HandleListView)
 	app.Get("/htmx/view/tree", handlers.HandleTreeViewContent)
+	app.Post("/htmx/view/list", handlers.HandleListView)
+	app.Post("/htmx/view/tree", handlers.HandleTreeViewContent)
 
 	// API endpoints
 	app.Get("/api/makes", handlers.HandleMakes)
