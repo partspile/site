@@ -64,7 +64,6 @@ func main() {
 	app.Static("/", "./static")
 
 	// Main pages
-	// Using an adaptor for now to get things working.
 	app.Get("/", handlers.HandleHome)
 	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd)
 	app.Get("/edit-ad/:id", handlers.AuthRequired, handlers.HandleEditAd)
