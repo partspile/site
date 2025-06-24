@@ -37,7 +37,7 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to save session.")
 	}
 
-	return render(c, ui.SuccessMessageWithRedirect("Login successful", "/"))
+	return render(c, ui.SuccessMessage("Login successful", "/"))
 }
 
 func HandleLogout(c *fiber.Ctx) error {
@@ -51,7 +51,7 @@ func HandleLogout(c *fiber.Ctx) error {
 	if err := sess.Destroy(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to log you out.")
 	}
-	return render(c, ui.SuccessMessageWithRedirect("You have been logged out", "/login"))
+	return render(c, ui.SuccessMessage("You have been logged out", "/login"))
 }
 
 func GetCurrentUser(c *fiber.Ctx) (*user.User, error) {
@@ -142,7 +142,7 @@ func HandleRegisterSubmission(c *fiber.Ctx) error {
 		return render(c, ui.ValidationError("User already exists or another error occurred."))
 	}
 
-	return render(c, ui.SuccessMessageWithRedirect("Registration successful", "/login"))
+	return render(c, ui.SuccessMessage("Registration successful", "/login"))
 }
 
 func HandleLogin(c *fiber.Ctx) error {
@@ -204,5 +204,5 @@ func HandleDeleteAccount(c *fiber.Ctx) error {
 		return render(c, ui.ValidationError("Could not delete user"))
 	}
 
-	return render(c, ui.SuccessMessageWithRedirect("Account deleted successfully", "/"))
+	return render(c, ui.SuccessMessage("Account deleted successfully", "/"))
 }

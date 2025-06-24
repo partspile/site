@@ -65,7 +65,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 
 	ad.AddAd(newAd)
 
-	return render(c, ui.SuccessMessageWithRedirect("Ad created successfully", "/"))
+	return render(c, ui.SuccessMessage("Ad created successfully", "/"))
 }
 
 func HandleViewAd(c *fiber.Ctx) error {
@@ -155,7 +155,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 
 	ad.UpdateAd(updatedAd)
 
-	return render(c, ui.SuccessMessageWithRedirect("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
+	return render(c, ui.SuccessMessage("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
 }
 
 func HandleDeleteAd(c *fiber.Ctx) error {
@@ -176,5 +176,5 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 
 	ad.DeleteAd(adID)
 
-	return render(c, ui.SuccessMessageWithRedirect("Ad deleted successfully", "/"))
+	return render(c, ui.SuccessMessage("Ad deleted successfully", "/"))
 }

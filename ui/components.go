@@ -121,22 +121,18 @@ func ValidationError(message string) g.Node {
 	)
 }
 
-func SuccessMessage(message string, redirectScript string) g.Node {
-	return Div(
+func SuccessMessage(message string, redirectURL string) g.Node {
+	nodes := []g.Node{
 		Class("bg-green-100 border-green-500 text-green-700 px-4 py-3 rounded"),
 		g.Text(message),
-		Script(g.Raw(redirectScript)),
-	)
-}
-
-func SuccessMessageWithRedirect(message string, redirectURL string) g.Node {
-	return Div(
-		Class("bg-green-100 border-green-500 text-green-700 px-4 py-3 rounded"),
-		g.Raw(fmt.Sprintf(`
-			<div>%s</div>
-			<script>setTimeout(function() { window.location = '%s' }, %d)</script>
-		`, message+" Redirecting...", redirectURL, config.RedirectDelay.Milliseconds())),
-	)
+	}
+	if redirectURL != "" {
+		nodes = append(nodes, Script(g.Raw(fmt.Sprintf(
+			"setTimeout(function() { window.location = '%s' }, %d);",
+			redirectURL, config.RedirectDelay.Milliseconds(),
+		))))
+	}
+	return Div(nodes...)
 }
 
 func ResultContainer() g.Node {
