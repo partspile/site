@@ -557,7 +557,7 @@ func GetAdsForNode(parts []string, q string) ([]ad.Ad, error) {
 	return ads, nil
 }
 
-func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery) ([]ad.Ad, error) {
+func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]ad.Ad, error) {
 	// Decode all path segments
 	decodedParts := make([]string, len(parts))
 	for i, p := range parts {
@@ -571,7 +571,8 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery) ([]ad.Ad, error)
 	query := `
 		SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
 		       a.user_id, psc.name as subcategory, pc.name as category,
-		       m.name, y.year, mo.name, e.name
+		       m.name, y.year, mo.name, e.name,
+		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_flagged
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
@@ -581,8 +582,10 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery) ([]ad.Ad, error)
 		JOIN Year y ON c.year_id = y.id
 		JOIN Model mo ON c.model_id = mo.id
 		JOIN Engine e ON c.engine_id = e.id
+		LEFT JOIN FlaggedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
 	`
 	var args []interface{}
+	args = append(args, userID)
 	var conditions []string
 
 	if len(decodedParts) > 0 && decodedParts[0] != "" {
@@ -596,28 +599,34 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery) ([]ad.Ad, error)
 		conditions = append(conditions, "y.year = ?")
 		args = append(args, decodedParts[1])
 	} else if len(sq.Years) > 0 {
-		conditions = append(conditions, "y.year IN ("+strings.Repeat("?,", len(sq.Years)-1)+"?)")
-		for _, y := range sq.Years {
+		placeholders := make([]string, len(sq.Years))
+		for i, y := range sq.Years {
+			placeholders[i] = "?"
 			args = append(args, y)
 		}
+		conditions = append(conditions, "y.year IN ("+strings.Join(placeholders, ",")+")")
 	}
 	if len(decodedParts) > 2 {
 		conditions = append(conditions, "mo.name = ?")
 		args = append(args, decodedParts[2])
 	} else if len(sq.Models) > 0 {
-		conditions = append(conditions, "mo.name IN ("+strings.Repeat("?,", len(sq.Models)-1)+"?)")
-		for _, m := range sq.Models {
+		placeholders := make([]string, len(sq.Models))
+		for i, m := range sq.Models {
+			placeholders[i] = "?"
 			args = append(args, m)
 		}
+		conditions = append(conditions, "mo.name IN ("+strings.Join(placeholders, ",")+")")
 	}
 	if len(decodedParts) > 3 {
 		conditions = append(conditions, "e.name = ?")
 		args = append(args, decodedParts[3])
 	} else if len(sq.EngineSizes) > 0 {
-		conditions = append(conditions, "e.name IN ("+strings.Repeat("?,", len(sq.EngineSizes)-1)+"?)")
-		for _, e := range sq.EngineSizes {
+		placeholders := make([]string, len(sq.EngineSizes))
+		for i, e := range sq.EngineSizes {
+			placeholders[i] = "?"
 			args = append(args, e)
 		}
+		conditions = append(conditions, "e.name IN ("+strings.Join(placeholders, ",")+")")
 	}
 	if len(decodedParts) > 4 {
 		conditions = append(conditions, "pc.name = ?")
@@ -645,13 +654,13 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery) ([]ad.Ad, error)
 	defer rows.Close()
 
 	var ads []ad.Ad
-	var adIDs []int
 	for rows.Next() {
 		var adID int
 		var adObj ad.Ad
 		var subcategory, category, makeName, modelName, engineName sql.NullString
 		var year sql.NullInt64
-		if err := rows.Scan(&adID, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName); err != nil {
+		var isFlagged int
+		if err := rows.Scan(&adID, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName, &isFlagged); err != nil {
 			return nil, err
 		}
 		adObj.ID = adID
@@ -673,6 +682,7 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery) ([]ad.Ad, error)
 		if engineName.Valid {
 			adObj.Engines = []string{engineName.String}
 		}
+		adObj.Flagged = isFlagged == 1
 		// Populate all years, models, engines for the ad
 		fullAd, ok := ad.GetAd(adID)
 		if ok {
@@ -681,7 +691,6 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery) ([]ad.Ad, error)
 			adObj.Engines = fullAd.Engines
 		}
 		ads = append(ads, adObj)
-		adIDs = append(adIDs, adID)
 	}
 
 	// Only show ads at leaf nodes (make/year/model/engine)

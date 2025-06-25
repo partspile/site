@@ -316,7 +316,12 @@ func TreeView(c *fiber.Ctx) error {
 	var err error
 
 	// Get ads for the current node (filtered by structured query)
-	ads, err := part.GetAdsForNodeStructured(parts, structuredQuery)
+	currentUser, _ := GetCurrentUser(c)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
+	ads, err := part.GetAdsForNodeStructured(parts, structuredQuery, userID)
 	if err != nil {
 		return err
 	}
@@ -325,7 +330,7 @@ func TreeView(c *fiber.Ctx) error {
 	if level == 0 {
 		var children []string
 		if structuredQuery.Make != "" {
-			adsForMake, err := part.GetAdsForNodeStructured([]string{structuredQuery.Make}, structuredQuery)
+			adsForMake, err := part.GetAdsForNodeStructured([]string{structuredQuery.Make}, structuredQuery, userID)
 			if err != nil {
 				return err
 			}
@@ -343,27 +348,10 @@ func TreeView(c *fiber.Ctx) error {
 		}
 	}
 
-	adIDs := make([]int, len(ads))
-	for i, ad := range ads {
-		adIDs[i] = ad.ID
-	}
-
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
 
-	// Get current user and flagged ads
-	currentUser, _ := GetCurrentUser(c)
-	userID := 0
-	flaggedMap := make(map[int]bool)
-	if currentUser != nil {
-		userID = currentUser.ID
-		flaggedIDs, _ := ad.GetFlaggedAdIDsByUser(currentUser.ID)
-		for _, fid := range flaggedIDs {
-			flaggedMap[fid] = true
-		}
-	}
-
 	for _, ad := range ads {
-		childNodes = append(childNodes, ui.AdCardWithFlag(ad, loc, flaggedMap[ad.ID], userID))
+		childNodes = append(childNodes, ui.AdCardWithFlag(ad, loc, ad.Flagged, userID))
 	}
 
 	// Get children for the next level, filtered by structured query
@@ -371,7 +359,7 @@ func TreeView(c *fiber.Ctx) error {
 	switch level {
 	case 0: // Root, get makes
 		if structuredQuery.Make != "" {
-			adsForMake, err := part.GetAdsForNodeStructured([]string{structuredQuery.Make}, structuredQuery)
+			adsForMake, err := part.GetAdsForNodeStructured([]string{structuredQuery.Make}, structuredQuery, userID)
 			if err != nil {
 				return err
 			}
