@@ -64,15 +64,20 @@ func SearchFilters(filters SearchSchema) g.Node {
 	)
 }
 
-func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad, loc *time.Location, view string) g.Node {
+func SearchResultsContainer(newAdButton g.Node, filters SearchSchema, ads map[int]ad.Ad, loc *time.Location, view string, query string) g.Node {
 	// Marshal the structured query as JSON for the hidden input
 	structuredQueryJSON, _ := json.Marshal(filters)
 	return Div(
 		ID("searchResults"),
+		SearchWidget(newAdButton, view, query),
 		Input(
 			Type("hidden"),
 			Name("structured_query"),
 			Value(string(structuredQueryJSON)),
+		),
+		Div(
+			Class("text-xs text-red-600 mb-2"),
+			g.Text("[DEBUG] Current view: "+view),
 		),
 		Div(
 			ID("searchFilters"),
@@ -87,8 +92,9 @@ func SearchResultsContainer(filters SearchSchema, ads map[int]ad.Ad, loc *time.L
 		Div(
 			ID("view-wrapper"),
 			func() g.Node {
+				structuredQueryJSON, _ := json.Marshal(filters)
 				if view == "tree" {
-					return TreeView()
+					return TreeViewWithQuery(query, string(structuredQueryJSON))
 				}
 				return ListView(ads, loc)
 			}(),
@@ -108,13 +114,13 @@ func ViewToggleButtons(activeView string) g.Node {
 	}
 
 	return Div(
-		Class("my-4"),
+		Class("flex justify-end gap-2 my-4"),
 		Button(
 			Class(listClass),
 			hx.Post("/view/list"),
 			hx.Target("#searchResults"),
 			hx.Indicator("#searchWaiting"),
-			hx.Include("[name='q'],[name='structured_query']"),
+			hx.Include("[name='q'],[name='structured_query'],[name='view']"),
 			g.Text("List View"),
 		),
 		Button(
@@ -122,7 +128,7 @@ func ViewToggleButtons(activeView string) g.Node {
 			hx.Post("/view/tree"),
 			hx.Target("#searchResults"),
 			hx.Indicator("#searchWaiting"),
-			hx.Include("[name='q'],[name='structured_query']"),
+			hx.Include("[name='q'],[name='structured_query'],[name='view']"),
 			g.Text("Tree View"),
 		),
 	)
@@ -146,6 +152,19 @@ func TreeView() g.Node {
 	)
 }
 
+func TreeViewWithQuery(query, structuredQuery string) g.Node {
+	return Div(
+		ID("tree-view"),
+		hx.Get("/tree?q="+query+"&structured_query="+structuredQuery),
+		hx.Trigger("load"),
+		hx.Swap("innerHTML"),
+	)
+}
+
+func TreeViewWithStructuredQuery(query, structuredQuery string) g.Node {
+	return TreeViewWithQuery(query, structuredQuery)
+}
+
 func InitialSearchResults() g.Node {
 	return Div(
 		ID("searchResults"),
@@ -158,7 +177,7 @@ func InitialSearchResults() g.Node {
 	)
 }
 
-func SearchWidget(newAdButton g.Node) g.Node {
+func SearchWidget(newAdButton g.Node, view string, query string) g.Node {
 	return Div(
 		Class("flex items-start gap-4"),
 		newAdButton,
@@ -171,11 +190,12 @@ func SearchWidget(newAdButton g.Node) g.Node {
 				hx.Target("#searchResults"),
 				hx.Indicator("#searchWaiting"),
 				hx.Swap("outerHTML"),
-				Input(Type("hidden"), Name("view"), Value("list"), ID("view-type-input")),
+				Input(Type("hidden"), Name("view"), Value(view), ID("view-type-input")),
 				Input(
 					Type("search"),
 					ID("searchBox"),
 					Name("q"),
+					Value(query),
 					Class("w-full p-2 border rounded"),
 					Placeholder("Search by make, year, model, or description..."),
 					hx.Trigger("keyup changed delay:500ms, search"),

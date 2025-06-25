@@ -122,6 +122,9 @@ func ValidationError(message string) g.Node {
 }
 
 func SuccessMessage(message string, redirectURL string) g.Node {
+	if redirectURL != "" {
+		message = message + fmt.Sprintf(" ...Redirecting to %s", redirectURL)
+	}
 	nodes := []g.Node{
 		Class("bg-green-100 border-green-500 text-green-700 px-4 py-3 rounded"),
 		g.Text(message),

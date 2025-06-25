@@ -88,8 +88,36 @@ func GetSubCategoriesForCategory(categoryName string) []string {
 }
 
 func GetMakes(query string) ([]string, error) {
-	// The query parameter is not used yet, but will be used to filter makes
-	// based on the search query.
+	// If there's a search query, filter makes based on matching ads
+	if query != "" {
+		// Parse the query to get structured search criteria
+		// For now, we'll do a simple text search on ad descriptions
+		rows, err := db.Query(`
+			SELECT DISTINCT m.name
+			FROM Make m
+			JOIN Car c ON m.id = c.make_id
+			JOIN AdCar ac ON c.id = ac.car_id
+			JOIN Ad a ON ac.ad_id = a.id
+			WHERE a.description LIKE ?
+			ORDER BY m.name
+		`, "%"+query+"%")
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var makes []string
+		for rows.Next() {
+			var make string
+			if err := rows.Scan(&make); err != nil {
+				return nil, err
+			}
+			makes = append(makes, make)
+		}
+		return makes, nil
+	}
+
+	// If no query, return all makes
 	rows, err := db.Query(`
 		SELECT DISTINCT m.name
 		FROM Make m
@@ -114,7 +142,35 @@ func GetMakes(query string) ([]string, error) {
 }
 
 func GetYearsForMake(makeName string, query string) ([]string, error) {
-	// query is not used yet
+	// If there's a search query, filter years based on matching ads
+	if query != "" {
+		rows, err := db.Query(`
+			SELECT DISTINCT y.year
+			FROM Year y
+			JOIN Car c ON y.id = c.year_id
+			JOIN Make m ON c.make_id = m.id
+			JOIN AdCar ac ON c.id = ac.car_id
+			JOIN Ad a ON ac.ad_id = a.id
+			WHERE m.name = ? AND a.description LIKE ?
+			ORDER BY y.year DESC
+		`, makeName, "%"+query+"%")
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var years []string
+		for rows.Next() {
+			var year string
+			if err := rows.Scan(&year); err != nil {
+				return nil, err
+			}
+			years = append(years, year)
+		}
+		return years, nil
+	}
+
+	// If no query, return all years for the make
 	rows, err := db.Query(`
 		SELECT DISTINCT y.year
 		FROM Year y
@@ -141,7 +197,36 @@ func GetYearsForMake(makeName string, query string) ([]string, error) {
 }
 
 func GetModelsForMakeYear(makeName, year, query string) ([]string, error) {
-	// query is not used yet
+	// If there's a search query, filter models based on matching ads
+	if query != "" {
+		rows, err := db.Query(`
+			SELECT DISTINCT mo.name
+			FROM Model mo
+			JOIN Car c ON mo.id = c.model_id
+			JOIN Make m ON c.make_id = m.id
+			JOIN Year y ON c.year_id = y.id
+			JOIN AdCar ac ON c.id = ac.car_id
+			JOIN Ad a ON ac.ad_id = a.id
+			WHERE m.name = ? AND y.year = ? AND a.description LIKE ?
+			ORDER BY mo.name
+		`, makeName, year, "%"+query+"%")
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var models []string
+		for rows.Next() {
+			var model string
+			if err := rows.Scan(&model); err != nil {
+				return nil, err
+			}
+			models = append(models, model)
+		}
+		return models, nil
+	}
+
+	// If no query, return all models for the make/year
 	rows, err := db.Query(`
 		SELECT DISTINCT mo.name
 		FROM Model mo
@@ -169,7 +254,37 @@ func GetModelsForMakeYear(makeName, year, query string) ([]string, error) {
 }
 
 func GetEnginesForMakeYearModel(makeName, year, model, query string) ([]string, error) {
-	// query is not used yet
+	// If there's a search query, filter engines based on matching ads
+	if query != "" {
+		rows, err := db.Query(`
+			SELECT DISTINCT e.name
+			FROM Engine e
+			JOIN Car c ON e.id = c.engine_id
+			JOIN Make m ON c.make_id = m.id
+			JOIN Year y ON c.year_id = y.id
+			JOIN Model mo ON c.model_id = mo.id
+			JOIN AdCar ac ON c.id = ac.car_id
+			JOIN Ad a ON ac.ad_id = a.id
+			WHERE m.name = ? AND y.year = ? AND mo.name = ? AND a.description LIKE ?
+			ORDER BY e.name
+		`, makeName, year, model, "%"+query+"%")
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var engines []string
+		for rows.Next() {
+			var engine string
+			if err := rows.Scan(&engine); err != nil {
+				return nil, err
+			}
+			engines = append(engines, engine)
+		}
+		return engines, nil
+	}
+
+	// If no query, return all engines for the make/year/model
 	rows, err := db.Query(`
 		SELECT DISTINCT e.name
 		FROM Engine e
@@ -198,7 +313,39 @@ func GetEnginesForMakeYearModel(makeName, year, model, query string) ([]string, 
 }
 
 func GetCategoriesForMakeYearModelEngine(makeName, year, model, engine, query string) ([]string, error) {
-	// query is not used yet
+	// If there's a search query, filter categories based on matching ads
+	if query != "" {
+		rows, err := db.Query(`
+			SELECT DISTINCT pc.name
+			FROM PartCategory pc
+			JOIN PartSubCategory psc ON pc.id = psc.category_id
+			JOIN Ad a ON psc.id = a.subcategory_id
+			JOIN AdCar ac ON a.id = ac.ad_id
+			JOIN Car c ON ac.car_id = c.id
+			JOIN Make m ON c.make_id = m.id
+			JOIN Year y ON c.year_id = y.id
+			JOIN Model mo ON c.model_id = mo.id
+			JOIN Engine e ON c.engine_id = e.id
+			WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND a.description LIKE ?
+			ORDER BY pc.name
+		`, makeName, year, model, engine, "%"+query+"%")
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var categories []string
+		for rows.Next() {
+			var category string
+			if err := rows.Scan(&category); err != nil {
+				return nil, err
+			}
+			categories = append(categories, category)
+		}
+		return categories, nil
+	}
+
+	// If no query, return all categories for the make/year/model/engine
 	rows, err := db.Query(`
 		SELECT DISTINCT pc.name
 		FROM PartCategory pc
@@ -230,7 +377,39 @@ func GetCategoriesForMakeYearModelEngine(makeName, year, model, engine, query st
 }
 
 func GetSubCategoriesForMakeYearModelEngineCategory(makeName, year, model, engine, category, query string) ([]string, error) {
-	// query is not used yet
+	// If there's a search query, filter subcategories based on matching ads
+	if query != "" {
+		rows, err := db.Query(`
+			SELECT DISTINCT psc.name
+			FROM PartSubCategory psc
+			JOIN PartCategory pc ON psc.category_id = pc.id
+			JOIN Ad a ON psc.id = a.subcategory_id
+			JOIN AdCar ac ON a.id = ac.ad_id
+			JOIN Car c ON ac.car_id = c.id
+			JOIN Make m ON c.make_id = m.id
+			JOIN Year y ON c.year_id = y.id
+			JOIN Model mo ON c.model_id = mo.id
+			JOIN Engine e ON c.engine_id = e.id
+			WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND pc.name = ? AND a.description LIKE ?
+			ORDER BY psc.name
+		`, makeName, year, model, engine, category, "%"+query+"%")
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		var subCategories []string
+		for rows.Next() {
+			var subCategory string
+			if err := rows.Scan(&subCategory); err != nil {
+				return nil, err
+			}
+			subCategories = append(subCategories, subCategory)
+		}
+		return subCategories, nil
+	}
+
+	// If no query, return all subcategories for the make/year/model/engine/category
 	rows, err := db.Query(`
 		SELECT DISTINCT psc.name
 		FROM PartSubCategory psc
@@ -262,7 +441,7 @@ func GetSubCategoriesForMakeYearModelEngineCategory(makeName, year, model, engin
 }
 
 func GetAdsForNode(parts []string, q string) ([]ad.Ad, error) {
-	fmt.Printf("[DEBUG] GetAdsForNode: parts=%v\n", parts)
+	fmt.Printf("[DEBUG] GetAdsForNode: parts=%v, query=%q\n", parts, q)
 	// Decode all path segments
 	decodedParts := make([]string, len(parts))
 	for i, p := range parts {
@@ -315,6 +494,12 @@ func GetAdsForNode(parts []string, q string) ([]ad.Ad, error) {
 		args = append(args, decodedParts[5])
 	}
 
+	// Add search query filter if provided
+	if q != "" {
+		conditions = append(conditions, "a.description LIKE ?")
+		args = append(args, "%"+q+"%")
+	}
+
 	if len(conditions) > 0 {
 		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
@@ -365,6 +550,143 @@ func GetAdsForNode(parts []string, q string) ([]ad.Ad, error) {
 		adIDs = append(adIDs, adID)
 	}
 	fmt.Printf("[DEBUG] GetAdsForNode: found %d ads, adIDs=%v\n", len(ads), adIDs)
+
+	// Only show ads at leaf nodes (make/year/model/engine)
+	if len(decodedParts) < 4 {
+		return nil, nil
+	}
+
+	return ads, nil
+}
+
+func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery) ([]ad.Ad, error) {
+	fmt.Printf("[DEBUG] GetAdsForNodeStructured: parts=%v, sq=%+v\n", parts, sq)
+	// Decode all path segments
+	decodedParts := make([]string, len(parts))
+	for i, p := range parts {
+		d, err := url.QueryUnescape(p)
+		if err != nil {
+			decodedParts[i] = p
+		} else {
+			decodedParts[i] = d
+		}
+	}
+	query := `
+		SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
+		       a.user_id, psc.name as subcategory, pc.name as category,
+		       m.name, y.year, mo.name, e.name
+		FROM Ad a
+		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
+		JOIN AdCar ac ON a.id = ac.ad_id
+		JOIN Car c ON ac.car_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN Engine e ON c.engine_id = e.id
+	`
+	var args []interface{}
+	var conditions []string
+
+	if len(decodedParts) > 0 && decodedParts[0] != "" {
+		conditions = append(conditions, "m.name = ?")
+		args = append(args, decodedParts[0])
+	} else if sq.Make != "" {
+		conditions = append(conditions, "m.name = ?")
+		args = append(args, sq.Make)
+	}
+	if len(decodedParts) > 1 {
+		conditions = append(conditions, "y.year = ?")
+		args = append(args, decodedParts[1])
+	} else if len(sq.Years) > 0 {
+		conditions = append(conditions, "y.year IN ("+strings.Repeat("?,", len(sq.Years)-1)+"?)")
+		for _, y := range sq.Years {
+			args = append(args, y)
+		}
+	}
+	if len(decodedParts) > 2 {
+		conditions = append(conditions, "mo.name = ?")
+		args = append(args, decodedParts[2])
+	} else if len(sq.Models) > 0 {
+		conditions = append(conditions, "mo.name IN ("+strings.Repeat("?,", len(sq.Models)-1)+"?)")
+		for _, m := range sq.Models {
+			args = append(args, m)
+		}
+	}
+	if len(decodedParts) > 3 {
+		conditions = append(conditions, "e.name = ?")
+		args = append(args, decodedParts[3])
+	} else if len(sq.EngineSizes) > 0 {
+		conditions = append(conditions, "e.name IN ("+strings.Repeat("?,", len(sq.EngineSizes)-1)+"?)")
+		for _, e := range sq.EngineSizes {
+			args = append(args, e)
+		}
+	}
+	if len(decodedParts) > 4 {
+		conditions = append(conditions, "pc.name = ?")
+		args = append(args, decodedParts[4])
+	} else if sq.Category != "" {
+		conditions = append(conditions, "pc.name = ?")
+		args = append(args, sq.Category)
+	}
+	if len(decodedParts) > 5 {
+		conditions = append(conditions, "psc.name = ?")
+		args = append(args, decodedParts[5])
+	} else if sq.SubCategory != "" {
+		conditions = append(conditions, "psc.name = ?")
+		args = append(args, sq.SubCategory)
+	}
+
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query failed: %w; query: %s; args: %v", err, query, args)
+	}
+	defer rows.Close()
+
+	var ads []ad.Ad
+	var adIDs []int
+	for rows.Next() {
+		var adID int
+		var adObj ad.Ad
+		var subcategory, category, makeName, modelName, engineName sql.NullString
+		var year sql.NullInt64
+		if err := rows.Scan(&adID, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName); err != nil {
+			return nil, err
+		}
+		adObj.ID = adID
+		if subcategory.Valid {
+			adObj.SubCategory = subcategory.String
+		}
+		if category.Valid {
+			adObj.Category = category.String
+		}
+		if makeName.Valid {
+			adObj.Make = makeName.String
+		}
+		if year.Valid {
+			adObj.Years = []string{fmt.Sprintf("%d", year.Int64)}
+		}
+		if modelName.Valid {
+			adObj.Models = []string{modelName.String}
+		}
+		if engineName.Valid {
+			adObj.Engines = []string{engineName.String}
+		}
+		// Populate all years, models, engines for the ad
+		fullAd, ok := ad.GetAd(adID)
+		if ok {
+			adObj.Years = fullAd.Years
+			adObj.Models = fullAd.Models
+			adObj.Engines = fullAd.Engines
+		}
+		ads = append(ads, adObj)
+		adIDs = append(adIDs, adID)
+	}
+	fmt.Printf("[DEBUG] GetAdsForNodeStructured: found %d ads, adIDs=%v\n", len(ads), adIDs)
 
 	// Only show ads at leaf nodes (make/year/model/engine)
 	if len(decodedParts) < 4 {

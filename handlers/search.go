@@ -70,6 +70,11 @@ type SearchCursor = ad.SearchCursor
 
 func HandleSearch(c *fiber.Ctx) error {
 	userPrompt := c.Query("q")
+	view := c.FormValue("view")
+	if view == "" {
+		view = "list"
+	}
+
 	query, err := ParseSearchQuery(userPrompt)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
@@ -87,8 +92,17 @@ func HandleSearch(c *fiber.Ctx) error {
 		adsMap[ad.ID] = ad
 	}
 
+	// Determine newAdButton based on user
+	var newAdButton g.Node
+	currentUser, _ := GetCurrentUser(c)
+	if currentUser != nil {
+		newAdButton = ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
+	} else {
+		newAdButton = ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
+	}
+
 	// For the initial search, we render the whole container.
-	render(c, ui.SearchResultsContainer(ui.SearchSchema(query), adsMap, loc, "list"))
+	render(c, ui.SearchResultsContainer(newAdButton, ui.SearchSchema(query), adsMap, loc, view, userPrompt))
 
 	// Add the loader if there are more results
 	if nextCursor != nil {
@@ -262,17 +276,19 @@ func GetNextPage(query SearchQuery, cursor *SearchCursor, limit int) ([]ad.Ad, *
 
 func HandleTreeCollapse(c *fiber.Ctx) error {
 	q := c.Query("q")
+	structuredQueryStr := c.Query("structured_query")
 	path := c.Params("*")
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 
 	name := parts[len(parts)-1]
 	level := len(parts) - 1
 
-	return render(c, ui.CollapsedTreeNode(name, "/"+path, q, level))
+	return render(c, ui.CollapsedTreeNode(name, "/"+path, q, structuredQueryStr, level))
 }
 
 func TreeView(c *fiber.Ctx) error {
 	q := c.Query("q")
+	structuredQueryStr := c.Query("structured_query")
 	path := c.Params("*")
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 	if len(parts) == 1 && parts[0] == "" {
@@ -280,11 +296,24 @@ func TreeView(c *fiber.Ctx) error {
 	}
 	level := len(parts)
 
+	var structuredQuery SearchQuery
+	if structuredQueryStr != "" {
+		err := json.Unmarshal([]byte(structuredQueryStr), &structuredQuery)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, "Invalid structured_query")
+		}
+	} else {
+		structuredQuery, _ = ParseSearchQuery(q)
+		// If we just parsed it, re-marshal for passing to children
+		structuredQueryStrBytes, _ := json.Marshal(structuredQuery)
+		structuredQueryStr = string(structuredQueryStrBytes)
+	}
+
 	var childNodes []g.Node
 	var err error
 
-	// Get ads for the current node
-	ads, err := part.GetAdsForNode(parts, q)
+	// Get ads for the current node (filtered by structured query)
+	ads, err := part.GetAdsForNodeStructured(parts, structuredQuery)
 	if err != nil {
 		return err
 	}
@@ -292,28 +321,51 @@ func TreeView(c *fiber.Ctx) error {
 	for i, ad := range ads {
 		adIDs[i] = ad.ID
 	}
-	fmt.Printf("[DEBUG] TreeView: path=%v, got %d ads, adIDs=%v\n", parts, len(ads), adIDs)
 
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
 	for _, ad := range ads {
 		childNodes = append(childNodes, ui.AdCard(ad, loc))
 	}
 
-	// Get children for the next level
+	// Get children for the next level, filtered by structured query
 	var children []string
 	switch level {
 	case 0: // Root, get makes
-		children, err = part.GetMakes(q)
+		if structuredQuery.Make != "" {
+			children = []string{structuredQuery.Make}
+		} else {
+			children, err = part.GetMakes("")
+		}
 	case 1: // Make, get years
-		children, err = part.GetYearsForMake(parts[0], q)
+		if len(structuredQuery.Years) > 0 {
+			children = structuredQuery.Years
+		} else {
+			children, err = part.GetYearsForMake(parts[0], "")
+		}
 	case 2: // Year, get models
-		children, err = part.GetModelsForMakeYear(parts[0], parts[1], q)
+		if len(structuredQuery.Models) > 0 {
+			children = structuredQuery.Models
+		} else {
+			children, err = part.GetModelsForMakeYear(parts[0], parts[1], "")
+		}
 	case 3: // Model, get engines
-		children, err = part.GetEnginesForMakeYearModel(parts[0], parts[1], parts[2], q)
+		if len(structuredQuery.EngineSizes) > 0 {
+			children = structuredQuery.EngineSizes
+		} else {
+			children, err = part.GetEnginesForMakeYearModel(parts[0], parts[1], parts[2], "")
+		}
 	case 4: // Engine, get categories
-		children, err = part.GetCategoriesForMakeYearModelEngine(parts[0], parts[1], parts[2], parts[3], q)
+		if structuredQuery.Category != "" {
+			children = []string{structuredQuery.Category}
+		} else {
+			children, err = part.GetCategoriesForMakeYearModelEngine(parts[0], parts[1], parts[2], parts[3], "")
+		}
 	case 5: // Category, get subcategories
-		children, err = part.GetSubCategoriesForMakeYearModelEngineCategory(parts[0], parts[1], parts[2], parts[3], parts[4], q)
+		if structuredQuery.SubCategory != "" {
+			children = []string{structuredQuery.SubCategory}
+		} else {
+			children, err = part.GetSubCategoriesForMakeYearModelEngineCategory(parts[0], parts[1], parts[2], parts[3], parts[4], "")
+		}
 	}
 	if err != nil {
 		return err
@@ -322,7 +374,7 @@ func TreeView(c *fiber.Ctx) error {
 	// If there are children, render them; otherwise, render ads at the leaf
 	if len(children) > 0 {
 		for _, child := range children {
-			childNodes = append(childNodes, ui.CollapsedTreeNode(child, "/"+path+"/"+child, q, level+1))
+			childNodes = append(childNodes, ui.CollapsedTreeNode(child, "/"+path+"/"+child, q, structuredQueryStr, level+1))
 		}
 	} // else, childNodes already contains the ads
 
@@ -331,43 +383,23 @@ func TreeView(c *fiber.Ctx) error {
 	}
 
 	name := parts[len(parts)-1]
-	return render(c, ui.ExpandedTreeNode(name, "/"+path, q, level, g.Group(childNodes)))
+	return render(c, ui.ExpandedTreeNode(name, "/"+path, q, structuredQueryStr, level, g.Group(childNodes)))
 }
 
 func HandleListView(c *fiber.Ctx) error {
-	q := c.Query("q")
-	structuredQuery := c.FormValue("structured_query")
-
-	var query SearchQuery
-	if structuredQuery != "" {
-		err := json.Unmarshal([]byte(structuredQuery), &query)
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Invalid structured_query")
-		}
-	} else {
-		var err error
-		query, err = ParseSearchQuery(q)
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
-		}
-	}
-
-	ads, _, err := GetNextPage(query, nil, 10)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Could not get ads")
-	}
-
-	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
-	adsMap := make(map[int]ad.Ad)
-	for _, ad := range ads {
-		adsMap[ad.ID] = ad
-	}
-
-	return render(c, ui.SearchResultsContainer(ui.SearchSchema(query), adsMap, loc, "list"))
+	return handleViewSwitch(c, "list")
 }
 
 func HandleTreeViewContent(c *fiber.Ctx) error {
-	q := c.Query("q")
+	return handleViewSwitch(c, "tree")
+}
+
+// handleViewSwitch is a unified handler for switching between list and tree views
+func handleViewSwitch(c *fiber.Ctx, view string) error {
+	userPrompt := c.Query("q")
+	if userPrompt == "" {
+		userPrompt = c.FormValue("q")
+	}
 	structuredQuery := c.FormValue("structured_query")
 
 	var query SearchQuery
@@ -378,7 +410,7 @@ func HandleTreeViewContent(c *fiber.Ctx) error {
 		}
 	} else {
 		var err error
-		query, err = ParseSearchQuery(q)
+		query, err = ParseSearchQuery(userPrompt)
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
 		}
@@ -395,5 +427,13 @@ func HandleTreeViewContent(c *fiber.Ctx) error {
 		adsMap[ad.ID] = ad
 	}
 
-	return render(c, ui.SearchResultsContainer(ui.SearchSchema(query), adsMap, loc, "tree"))
+	var newAdButton g.Node
+	currentUser, _ := GetCurrentUser(c)
+	if currentUser != nil {
+		newAdButton = ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
+	} else {
+		newAdButton = ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
+	}
+
+	return render(c, ui.SearchResultsContainer(newAdButton, ui.SearchSchema(query), adsMap, loc, view, userPrompt))
 }
