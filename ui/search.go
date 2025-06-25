@@ -76,10 +76,6 @@ func SearchResultsContainer(newAdButton g.Node, filters SearchSchema, ads map[in
 			Value(string(structuredQueryJSON)),
 		),
 		Div(
-			Class("text-xs text-red-600 mb-2"),
-			g.Text("[DEBUG] Current view: "+view),
-		),
-		Div(
 			ID("searchFilters"),
 			Class("flex flex-wrap gap-4 mb-4"),
 			SearchFilters(filters),

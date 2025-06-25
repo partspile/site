@@ -441,7 +441,6 @@ func GetSubCategoriesForMakeYearModelEngineCategory(makeName, year, model, engin
 }
 
 func GetAdsForNode(parts []string, q string) ([]ad.Ad, error) {
-	fmt.Printf("[DEBUG] GetAdsForNode: parts=%v, query=%q\n", parts, q)
 	// Decode all path segments
 	decodedParts := make([]string, len(parts))
 	for i, p := range parts {
@@ -549,7 +548,6 @@ func GetAdsForNode(parts []string, q string) ([]ad.Ad, error) {
 		ads = append(ads, adObj)
 		adIDs = append(adIDs, adID)
 	}
-	fmt.Printf("[DEBUG] GetAdsForNode: found %d ads, adIDs=%v\n", len(ads), adIDs)
 
 	// Only show ads at leaf nodes (make/year/model/engine)
 	if len(decodedParts) < 4 {
@@ -560,7 +558,6 @@ func GetAdsForNode(parts []string, q string) ([]ad.Ad, error) {
 }
 
 func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery) ([]ad.Ad, error) {
-	fmt.Printf("[DEBUG] GetAdsForNodeStructured: parts=%v, sq=%+v\n", parts, sq)
 	// Decode all path segments
 	decodedParts := make([]string, len(parts))
 	for i, p := range parts {
@@ -686,7 +683,6 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery) ([]ad.Ad, error)
 		ads = append(ads, adObj)
 		adIDs = append(adIDs, adID)
 	}
-	fmt.Printf("[DEBUG] GetAdsForNodeStructured: found %d ads, adIDs=%v\n", len(ads), adIDs)
 
 	// Only show ads at leaf nodes (make/year/model/engine)
 	if len(decodedParts) < 4 {
