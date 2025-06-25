@@ -210,7 +210,7 @@ func SearchWidget(newAdButton g.Node, view string, query string) g.Node {
 	)
 }
 
-func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, ads []ad.Ad, flaggedMap map[int]bool, userID int, loc *time.Location, view string, query string) g.Node {
+func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, ads []ad.Ad, _ interface{}, userID int, loc *time.Location, view string, query string) g.Node {
 	// Marshal the structured query as JSON for the hidden input
 	structuredQueryJSON, _ := json.Marshal(filters)
 	return Div(
@@ -234,25 +234,25 @@ func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, a
 				if view == "tree" {
 					return TreeViewWithQuery(query, string(structuredQueryJSON))
 				}
-				return ListViewWithFlags(ads, flaggedMap, userID, loc)
+				return ListViewWithFlags(ads, userID, loc)
 			}(),
 		),
 	)
 }
 
-func ListViewWithFlags(ads []ad.Ad, flaggedMap map[int]bool, userID int, loc *time.Location) g.Node {
+func ListViewWithFlags(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 	return Div(
 		ID("list-view"),
 		AdListContainer(
-			g.Group(BuildAdListNodesWithFlags(ads, flaggedMap, userID, loc)),
+			g.Group(BuildAdListNodesWithFlags(ads, userID, loc)),
 		),
 	)
 }
 
-func BuildAdListNodesWithFlags(ads []ad.Ad, flaggedMap map[int]bool, userID int, loc *time.Location) []g.Node {
+func BuildAdListNodesWithFlags(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
 	nodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
-		nodes = append(nodes, AdCardWithFlag(ad, loc, flaggedMap[ad.ID], userID))
+		nodes = append(nodes, AdCardWithFlag(ad, loc, ad.Flagged, userID))
 	}
 	return nodes
 }

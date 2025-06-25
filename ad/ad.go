@@ -66,6 +66,7 @@ type Ad struct {
 	Category     string     `json:"category,omitempty"`
 	SubCategory  string     `json:"subcategory,omitempty"`
 	DeletionDate *time.Time `json:"deletion_date,omitempty"`
+	Flagged      bool       `json:"flagged"` // true if flagged by current user
 }
 
 // IsDead returns true if the ad has been deleted
@@ -368,7 +369,7 @@ func GetFilteredAdsPage(filtered []Ad, cursorID int, cursorCreatedAt time.Time, 
 }
 
 // GetFilteredAdsPageDB returns a page of filtered ads directly from the database
-func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([]Ad, bool, error) {
+func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, userID int) ([]Ad, bool, error) {
 	// Check if we have any vehicle filters
 	hasVehicleFilters := query.Make != "" || len(query.Years) > 0 || len(query.Models) > 0 || len(query.EngineSizes) > 0
 
@@ -380,7 +381,8 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([
 		sqlQuery = `
 			SELECT DISTINCT a.id, a.description, a.price, a.created_at, a.subcategory_id,
 			       psc.name as subcategory,
-			       m.name as make_name, y.year, mo.name as model_name, e.name as engine_name
+			       m.name as make_name, y.year, mo.name as model_name, e.name as engine_name,
+			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_flagged
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 			JOIN AdCar ac ON a.id = ac.ad_id
@@ -389,8 +391,10 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([
 			JOIN Year y ON c.year_id = y.id
 			JOIN Model mo ON c.model_id = mo.id
 			JOIN Engine e ON c.engine_id = e.id
+			LEFT JOIN FlaggedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
 			WHERE 1=1
 		`
+		args = append(args, userID)
 
 		// Apply vehicle filters
 		if query.Make != "" {
@@ -429,11 +433,14 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([
 		sqlQuery = `
 			SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
 			       psc.name as subcategory,
-			       NULL as make_name, NULL as year, NULL as model_name, NULL as engine_name
+			       NULL as make_name, NULL as year, NULL as model_name, NULL as engine_name,
+			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_flagged
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+			LEFT JOIN FlaggedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
 			WHERE 1=1
 		`
+		args = append(args, userID)
 	}
 
 	// Apply category filters (works for both queries)
@@ -477,10 +484,11 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([
 			year        sql.NullInt64
 			modelName   sql.NullString
 			engineName  sql.NullString
+			isFlagged   int
 		)
 
 		if err := rows.Scan(&id, &description, &price, &createdAt,
-			&subcatID, &subcategory, &makeName, &year, &modelName, &engineName); err != nil {
+			&subcatID, &subcategory, &makeName, &year, &modelName, &engineName, &isFlagged); err != nil {
 			continue
 		}
 
@@ -522,6 +530,8 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int) ([
 		if engineName.Valid {
 			engineSet[id][engineName.String] = true
 		}
+
+		ad.Flagged = isFlagged == 1
 	}
 
 	// Convert map to sorted slice
