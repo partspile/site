@@ -317,6 +317,29 @@ func TreeView(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	// At the root, only show a blank tree if there are no children (makes with ads)
+	if level == 0 {
+		var children []string
+		if structuredQuery.Make != "" {
+			adsForMake, err := part.GetAdsForNodeStructured([]string{structuredQuery.Make}, structuredQuery)
+			if err != nil {
+				return err
+			}
+			if len(adsForMake) > 0 {
+				children = []string{structuredQuery.Make}
+			}
+		} else {
+			children, err = part.GetMakes("")
+			if err != nil {
+				return err
+			}
+		}
+		if len(children) == 0 {
+			return c.SendString("")
+		}
+	}
+
 	adIDs := make([]int, len(ads))
 	for i, ad := range ads {
 		adIDs[i] = ad.ID
@@ -332,7 +355,13 @@ func TreeView(c *fiber.Ctx) error {
 	switch level {
 	case 0: // Root, get makes
 		if structuredQuery.Make != "" {
-			children = []string{structuredQuery.Make}
+			adsForMake, err := part.GetAdsForNodeStructured([]string{structuredQuery.Make}, structuredQuery)
+			if err != nil {
+				return err
+			}
+			if len(adsForMake) > 0 {
+				children = []string{structuredQuery.Make}
+			}
 		} else {
 			children, err = part.GetMakes("")
 		}
