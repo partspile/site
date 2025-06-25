@@ -9,30 +9,48 @@ import (
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vehicle"
+	g "maragu.dev/gomponents"
 )
 
 func HandleAdminDashboard(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
-	return render(c, ui.AdminDashboard(currentUser, c.Path()))
+	users, err := user.GetAllUsers()
+	if err != nil {
+		return fiber.ErrInternalServerError
+	}
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "users", ui.AdminUsersSection(users, "")))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "users", ui.AdminUsersSection(users, ""))},
+	))
 }
 
 func HandleAdminUsers(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
-
 	status := c.Query("status")
 	var users []user.User
 	var err error
-
 	if status == "dead" {
 		users, err = user.GetAllDeadUsers()
 	} else {
 		users, err = user.GetAllUsers()
 	}
-
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
-	return render(c, ui.AdminUsers(currentUser, c.Path(), users, status))
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "users", ui.AdminUsersSection(users, status)))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "users", ui.AdminUsersSection(users, status))},
+	))
 }
 
 func HandleSetAdmin(c *fiber.Ctx) error {
@@ -59,17 +77,23 @@ func HandleAdminAds(c *fiber.Ctx) error {
 	status := c.Query("status")
 	var ads []ad.Ad
 	var err error
-
 	if status == "dead" {
 		ads, err = ad.GetAllDeadAds()
 	} else {
 		ads, err = ad.GetAllAds()
 	}
-
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
-	return render(c, ui.AdminAds(currentUser, c.Path(), ads, status))
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "ads", ui.AdminAdsSection(ads, status)))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "ads", ui.AdminAdsSection(ads, status))},
+	))
 }
 
 func HandleAdminTransactions(c *fiber.Ctx) error {
@@ -78,7 +102,15 @@ func HandleAdminTransactions(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
-	return render(c, ui.AdminTransactions(currentUser, c.Path(), transactions))
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "transactions", ui.AdminTransactionsSection(transactions)))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "transactions", ui.AdminTransactionsSection(transactions))},
+	))
 }
 
 func HandleAdminExportUsers(c *fiber.Ctx) error {
@@ -146,7 +178,15 @@ func HandleAdminMakes(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
-	return render(c, ui.AdminMakes(currentUser, c.Path(), makes))
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "makes", ui.AdminMakesSection(makes)))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "makes", ui.AdminMakesSection(makes))},
+	))
 }
 
 func HandleAdminModels(c *fiber.Ctx) error {
@@ -155,7 +195,15 @@ func HandleAdminModels(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
-	return render(c, ui.AdminModels(currentUser, c.Path(), models))
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "models", ui.AdminModelsSection(models)))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "models", ui.AdminModelsSection(models))},
+	))
 }
 
 func HandleAdminYears(c *fiber.Ctx) error {
@@ -164,7 +212,15 @@ func HandleAdminYears(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
-	return render(c, ui.AdminYears(currentUser, c.Path(), years))
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "years", ui.AdminYearsSection(years)))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "years", ui.AdminYearsSection(years))},
+	))
 }
 
 func HandleAdminPartCategories(c *fiber.Ctx) error {
@@ -173,7 +229,15 @@ func HandleAdminPartCategories(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
-	return render(c, ui.AdminPartCategories(currentUser, c.Path(), categories))
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "part-categories", ui.AdminPartCategoriesSection(categories)))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "part-categories", ui.AdminPartCategoriesSection(categories))},
+	))
 }
 
 func HandleAdminPartSubCategories(c *fiber.Ctx) error {
@@ -182,7 +246,15 @@ func HandleAdminPartSubCategories(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
-	return render(c, ui.AdminPartSubCategories(currentUser, c.Path(), subCategories))
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "part-sub-categories", ui.AdminPartSubCategoriesSection(subCategories)))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "part-sub-categories", ui.AdminPartSubCategoriesSection(subCategories))},
+	))
 }
 
 func HandleKillUser(c *fiber.Ctx) error {

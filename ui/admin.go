@@ -13,25 +13,93 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
+// AdminSectionPage renders the admin section navigation and the current section content.
+func AdminSectionPage(currentUser *user.User, path, activeSection string, content g.Node) g.Node {
+	sections := []struct {
+		Name  string
+		Label string
+	}{
+		{"users", "Users"},
+		{"ads", "Ads"},
+		{"transactions", "Transactions"},
+		{"makes", "Makes"},
+		{"models", "Models"},
+		{"years", "Years"},
+		{"part-categories", "Part Categories"},
+		{"part-sub-categories", "Part Sub-Categories"},
+	}
+	return Div(
+		ID("admin-section"),
+		Class("my-8"),
+		H1(g.Text("Admin Dashboard")),
+		P(g.Text("Welcome to the admin dashboard.")),
+		Div(
+			Class("flex flex-wrap gap-2 mb-6"),
+			g.Group(g.Map(sections, func(s struct{ Name, Label string }) g.Node {
+				colorClass := "bg-gray-200 text-gray-800 hover:bg-gray-300"
+				if s.Name == activeSection {
+					colorClass = "bg-blue-500 text-white"
+				}
+				return Button(
+					Class("px-4 py-1 rounded "+colorClass),
+					Name("admin-section-btn"),
+					ID("btn-"+s.Name),
+					hx.Get("/admin/"+s.Name),
+					hx.Target("#admin-section"),
+					hx.Swap("outerHTML"),
+					g.Text(s.Label),
+				)
+			})),
+		),
+		Div(
+			ID("admin-section-content"),
+			content,
+		),
+	)
+}
+
+// Update AdminDashboard to default to users section
 func AdminDashboard(currentUser *user.User, path string) g.Node {
 	return Page(
 		"Admin Dashboard",
 		currentUser,
 		path,
 		[]g.Node{
-			H1(g.Text("Admin Dashboard")),
-			P(g.Text("Welcome to the admin dashboard.")),
-			Ul(
-				Li(A(Href("/admin/users"), Class("text-blue-500 hover:underline"), g.Text("Manage Users"))),
-				Li(A(Href("/admin/ads"), Class("text-blue-500 hover:underline"), g.Text("Manage Ads"))),
-				Li(A(Href("/admin/transactions"), Class("text-blue-500 hover:underline"), g.Text("View Transactions"))),
-				Li(A(Href("/admin/makes"), Class("text-blue-500 hover:underline"), g.Text("Manage Makes"))),
-				Li(A(Href("/admin/models"), Class("text-blue-500 hover:underline"), g.Text("Manage Models"))),
-				Li(A(Href("/admin/years"), Class("text-blue-500 hover:underline"), g.Text("Manage Years"))),
-				Li(A(Href("/admin/part-categories"), Class("text-blue-500 hover:underline"), g.Text("Manage Part Categories"))),
-				Li(A(Href("/admin/part-sub-categories"), Class("text-blue-500 hover:underline"), g.Text("Manage Part Sub-Categories"))),
-			),
+			AdminSectionPage(currentUser, path, "users", nil),
 		},
+	)
+}
+
+// Update section UIs to return only the section content
+func AdminUsersSection(users []user.User, status string) g.Node {
+	return Div(
+		H1(g.Text("User Management")),
+		Div(
+			Class("flex justify-between items-center my-4"),
+			AdminStatusSelector("users", status),
+			A(
+				Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
+				Href(fmt.Sprintf("/api/admin/export/users?status=%s", status)),
+				g.Text("Export Users"),
+			),
+		),
+		AdminUserTable(users, status),
+	)
+}
+
+func AdminAdsSection(ads []ad.Ad, status string) g.Node {
+	return Div(
+		H1(g.Text("Ad Management")),
+		Div(
+			Class("flex justify-between items-center my-4"),
+			AdminStatusSelector("ads", status),
+			A(
+				Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
+				Href(fmt.Sprintf("/api/admin/export/ads?status=%s", status)),
+				g.Text("Export Ads"),
+			),
+		),
+		AdminAdTable(ads, status),
 	)
 }
 
@@ -41,17 +109,7 @@ func AdminUsers(currentUser *user.User, path string, users []user.User, status s
 		currentUser,
 		path,
 		[]g.Node{
-			H1(g.Text("User Management")),
-			Div(
-				Class("flex justify-between items-center my-4"),
-				AdminStatusSelector("users", status),
-				A(
-					Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
-					Href(fmt.Sprintf("/api/admin/export/users?status=%s", status)),
-					g.Text("Export Users"),
-				),
-			),
-			AdminUserTable(users, status),
+			AdminUsersSection(users, status),
 		},
 	)
 }
@@ -129,17 +187,7 @@ func AdminAds(currentUser *user.User, path string, ads []ad.Ad, status string) g
 		currentUser,
 		path,
 		[]g.Node{
-			H1(g.Text("Ad Management")),
-			Div(
-				Class("flex justify-between items-center my-4"),
-				AdminStatusSelector("ads", status),
-				A(
-					Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
-					Href(fmt.Sprintf("/api/admin/export/ads?status=%s", status)),
-					g.Text("Export Ads"),
-				),
-			),
-			AdminAdTable(ads, status),
+			AdminAdsSection(ads, status),
 		},
 	)
 }
@@ -238,17 +286,23 @@ func AdminTransactions(currentUser *user.User, path string, transactions []user.
 		currentUser,
 		path,
 		[]g.Node{
-			H1(g.Text("Transaction Log")),
-			Div(
-				Class("my-4"),
-				A(
-					Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
-					Href("/api/admin/export/transactions"),
-					g.Text("Export Transactions"),
-				),
-			),
-			AdminTransactionTable(transactions),
+			AdminTransactionsSection(transactions),
 		},
+	)
+}
+
+func AdminTransactionsSection(transactions []user.Transaction) g.Node {
+	return Div(
+		H1(g.Text("Transaction Log")),
+		Div(
+			Class("flex justify-end my-4"),
+			A(
+				Class("px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"),
+				Href("/api/admin/export/transactions"),
+				g.Text("Export Transactions"),
+			),
+		),
+		AdminTransactionTable(transactions),
 	)
 }
 
@@ -290,25 +344,31 @@ func AdminMakes(currentUser *user.User, path string, makes []vehicle.Make) g.Nod
 		currentUser,
 		path,
 		[]g.Node{
-			H1(g.Text("Make Management")),
-			Table(
-				Class("min-w-full border border-gray-300 bg-white shadow-sm"),
-				THead(
-					Tr(Class("bg-gray-200"),
-						Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
-						Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Make")),
-					),
-				),
-				TBody(
-					g.Group(g.Map(makes, func(m vehicle.Make) g.Node {
-						return Tr(Class("hover:bg-gray-50"),
-							Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", m.ID)),
-							Td(Class("border border-gray-300 px-4 py-2"), g.Text(m.Name)),
-						)
-					})),
+			AdminMakesSection(makes),
+		},
+	)
+}
+
+func AdminMakesSection(makes []vehicle.Make) g.Node {
+	return Div(
+		H1(g.Text("Make Management")),
+		Table(
+			Class("min-w-full border border-gray-300 bg-white shadow-sm"),
+			THead(
+				Tr(Class("bg-gray-200"),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Make")),
 				),
 			),
-		},
+			TBody(
+				g.Group(g.Map(makes, func(m vehicle.Make) g.Node {
+					return Tr(Class("hover:bg-gray-50"),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", m.ID)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(m.Name)),
+					)
+				})),
+			),
+		),
 	)
 }
 
@@ -318,25 +378,31 @@ func AdminModels(currentUser *user.User, path string, models []vehicle.Model) g.
 		currentUser,
 		path,
 		[]g.Node{
-			H1(g.Text("Model Management")),
-			Table(
-				Class("min-w-full border border-gray-300 bg-white shadow-sm"),
-				THead(
-					Tr(Class("bg-gray-200"),
-						Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
-						Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Model")),
-					),
-				),
-				TBody(
-					g.Group(g.Map(models, func(m vehicle.Model) g.Node {
-						return Tr(Class("hover:bg-gray-50"),
-							Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", m.ID)),
-							Td(Class("border border-gray-300 px-4 py-2"), g.Text(m.Name)),
-						)
-					})),
+			AdminModelsSection(models),
+		},
+	)
+}
+
+func AdminModelsSection(models []vehicle.Model) g.Node {
+	return Div(
+		H1(g.Text("Model Management")),
+		Table(
+			Class("min-w-full border border-gray-300 bg-white shadow-sm"),
+			THead(
+				Tr(Class("bg-gray-200"),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Model")),
 				),
 			),
-		},
+			TBody(
+				g.Group(g.Map(models, func(m vehicle.Model) g.Node {
+					return Tr(Class("hover:bg-gray-50"),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", m.ID)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(m.Name)),
+					)
+				})),
+			),
+		),
 	)
 }
 
@@ -346,25 +412,31 @@ func AdminYears(currentUser *user.User, path string, years []vehicle.Year) g.Nod
 		currentUser,
 		path,
 		[]g.Node{
-			H1(g.Text("Year Management")),
-			Table(
-				Class("min-w-full border border-gray-300 bg-white shadow-sm"),
-				THead(
-					Tr(Class("bg-gray-200"),
-						Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
-						Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Year")),
-					),
-				),
-				TBody(
-					g.Group(g.Map(years, func(y vehicle.Year) g.Node {
-						return Tr(Class("hover:bg-gray-50"),
-							Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", y.ID)),
-							Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", y.Year)),
-						)
-					})),
+			AdminYearsSection(years),
+		},
+	)
+}
+
+func AdminYearsSection(years []vehicle.Year) g.Node {
+	return Div(
+		H1(g.Text("Year Management")),
+		Table(
+			Class("min-w-full border border-gray-300 bg-white shadow-sm"),
+			THead(
+				Tr(Class("bg-gray-200"),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Year")),
 				),
 			),
-		},
+			TBody(
+				g.Group(g.Map(years, func(y vehicle.Year) g.Node {
+					return Tr(Class("hover:bg-gray-50"),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", y.ID)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", y.Year)),
+					)
+				})),
+			),
+		),
 	)
 }
 
@@ -374,25 +446,31 @@ func AdminPartCategories(currentUser *user.User, path string, categories []part.
 		currentUser,
 		path,
 		[]g.Node{
-			H1(g.Text("Part Category Management")),
-			Table(
-				Class("min-w-full border border-gray-300 bg-white shadow-sm"),
-				THead(
-					Tr(Class("bg-gray-200"),
-						Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
-						Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Name")),
-					),
-				),
-				TBody(
-					g.Group(g.Map(categories, func(c part.Category) g.Node {
-						return Tr(Class("hover:bg-gray-50"),
-							Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", c.ID)),
-							Td(Class("border border-gray-300 px-4 py-2"), g.Text(c.Name)),
-						)
-					})),
+			AdminPartCategoriesSection(categories),
+		},
+	)
+}
+
+func AdminPartCategoriesSection(categories []part.Category) g.Node {
+	return Div(
+		H1(g.Text("Part Category Management")),
+		Table(
+			Class("min-w-full border border-gray-300 bg-white shadow-sm"),
+			THead(
+				Tr(Class("bg-gray-200"),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Name")),
 				),
 			),
-		},
+			TBody(
+				g.Group(g.Map(categories, func(c part.Category) g.Node {
+					return Tr(Class("hover:bg-gray-50"),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", c.ID)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(c.Name)),
+					)
+				})),
+			),
+		),
 	)
 }
 
@@ -402,26 +480,32 @@ func AdminPartSubCategories(currentUser *user.User, path string, subCategories [
 		currentUser,
 		path,
 		[]g.Node{
-			H1(g.Text("Part Sub-Category Management")),
-			Table(
-				Class("min-w-full border border-gray-300 bg-white shadow-sm"),
-				THead(
-					Tr(Class("bg-gray-200"),
-						Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
-						Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Category ID")),
-						Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Name")),
-					),
-				),
-				TBody(
-					g.Group(g.Map(subCategories, func(sc part.SubCategory) g.Node {
-						return Tr(Class("hover:bg-gray-50"),
-							Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", sc.ID)),
-							Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", sc.CategoryID)),
-							Td(Class("border border-gray-300 px-4 py-2"), g.Text(sc.Name)),
-						)
-					})),
+			AdminPartSubCategoriesSection(subCategories),
+		},
+	)
+}
+
+func AdminPartSubCategoriesSection(subCategories []part.SubCategory) g.Node {
+	return Div(
+		H1(g.Text("Part Sub-Category Management")),
+		Table(
+			Class("min-w-full border border-gray-300 bg-white shadow-sm"),
+			THead(
+				Tr(Class("bg-gray-200"),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Category ID")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Name")),
 				),
 			),
-		},
+			TBody(
+				g.Group(g.Map(subCategories, func(sc part.SubCategory) g.Node {
+					return Tr(Class("hover:bg-gray-50"),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", sc.ID)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", sc.CategoryID)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(sc.Name)),
+					)
+				})),
+			),
+		),
 	)
 }
