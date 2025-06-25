@@ -81,8 +81,12 @@ func HandleViewAd(c *fiber.Ctx) error {
 	}
 
 	currentUser, _ := c.Locals("user").(*user.User)
+	flagged := false
+	if currentUser != nil {
+		flagged, _ = ad.IsAdFlaggedByUser(currentUser.ID, adID)
+	}
 
-	return render(c, ui.ViewAdPage(currentUser, c.Path(), adObj))
+	return render(c, ui.ViewAdPage(currentUser, c.Path(), adObj, flagged))
 }
 
 func HandleEditAd(c *fiber.Ctx) error {
@@ -177,4 +181,46 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 	ad.DeleteAd(adID)
 
 	return render(c, ui.SuccessMessage("Ad deleted successfully", "/"))
+}
+
+// Handler to flag an ad
+func HandleFlagAd(c *fiber.Ctx) error {
+	currentUser := c.Locals("user").(*user.User)
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.ErrBadRequest
+	}
+	if err := ad.FlagAd(currentUser.ID, adID); err != nil {
+		return fiber.ErrInternalServerError
+	}
+	// Return the flagged button HTML for HTMX swap
+	return render(c, ui.FlagButton(true, adID))
+}
+
+// Handler to unflag an ad
+func HandleUnflagAd(c *fiber.Ctx) error {
+	currentUser := c.Locals("user").(*user.User)
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.ErrBadRequest
+	}
+	if err := ad.UnflagAd(currentUser.ID, adID); err != nil {
+		return fiber.ErrInternalServerError
+	}
+	// Return the unflagged button HTML for HTMX swap
+	return render(c, ui.FlagButton(false, adID))
+}
+
+// Handler to get flagged ads for the current user (for settings page)
+func HandleFlaggedAds(c *fiber.Ctx) error {
+	currentUser := c.Locals("user").(*user.User)
+	adIDs, err := ad.GetFlaggedAdIDsByUser(currentUser.ID)
+	if err != nil {
+		return fiber.ErrInternalServerError
+	}
+	ads, err := ad.GetAdsByIDs(adIDs)
+	if err != nil {
+		return fiber.ErrInternalServerError
+	}
+	return render(c, ui.FlaggedAdsSection(currentUser, ads))
 }

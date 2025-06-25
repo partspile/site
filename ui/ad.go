@@ -31,25 +31,68 @@ func AdDetails(ad ad.Ad) g.Node {
 	)
 }
 
-func AdCard(ad ad.Ad, loc *time.Location) g.Node {
+// Add a flag icon SVG component
+func FlagIcon(flagged bool) g.Node {
+	if flagged {
+		// Heroicons filled flag, green
+		return g.Raw(`<svg xmlns="http://www.w3.org/2000/svg" class="inline w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M6.75 3.75v16.5m0-16.5h10.5a.75.75 0 0 1 .67 1.08l-2.1 4.2a.75.75 0 0 0 0 .67l2.1 4.2a.75.75 0 0 1-.67 1.08H6.75"/></svg>`)
+	}
+	// Heroicons outline flag, gray
+	return g.Raw(`<svg xmlns="http://www.w3.org/2000/svg" class="inline w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6.75 3.75v16.5m0-16.5h10.5a.75.75 0 0 1 .67 1.08l-2.1 4.2a.75.75 0 0 0 0 .67l2.1 4.2a.75.75 0 0 1-.67 1.08H6.75"/></svg>`)
+}
+
+// AdCard now takes a flagged parameter
+func AdCardWithFlag(ad ad.Ad, loc *time.Location, flagged bool, userID int) g.Node {
 	sortedYears := append([]string{}, ad.Years...)
 	sort.Strings(sortedYears)
 	sortedModels := append([]string{}, ad.Models...)
 	sort.Strings(sortedModels)
 	posted := ad.CreatedAt.In(loc).Format("Jan 2, 2006 3:04:05 PM MST")
-	return A(
-		Href(fmt.Sprintf("/ad/%d", ad.ID)),
-		Class("block border p-4 mb-4 rounded hover:bg-gray-50"),
+	flagBtn := g.Node(nil)
+	if userID > 0 {
+		if flagged {
+			flagBtn = Button(
+				Type("button"),
+				Class("ml-2 focus:outline-none"),
+				hx.Delete(fmt.Sprintf("/api/flag-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#flag-btn-%d", ad.ID)),
+				hx.Swap("outerHTML"),
+				ID(fmt.Sprintf("flag-btn-%d", ad.ID)),
+				g.Attr("onclick", "event.stopPropagation()"),
+				FlagIcon(true),
+			)
+		} else {
+			flagBtn = Button(
+				Type("button"),
+				Class("ml-2 focus:outline-none"),
+				hx.Post(fmt.Sprintf("/api/flag-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#flag-btn-%d", ad.ID)),
+				hx.Swap("outerHTML"),
+				ID(fmt.Sprintf("flag-btn-%d", ad.ID)),
+				g.Attr("onclick", "event.stopPropagation()"),
+				FlagIcon(false),
+			)
+		}
+	}
+	return Div(
+		Class("block border p-4 mb-4 rounded hover:bg-gray-50 relative"),
+		A(
+			Href(fmt.Sprintf("/ad/%d", ad.ID)),
+			Class("absolute inset-0 z-0"),
+			g.Attr("aria-label", "View ad details"),
+		),
 		Div(
+			Class("flex items-center justify-between relative z-10"),
 			H3(Class("text-xl font-bold"), g.Text(ad.Make)),
-			P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", sortedYears))),
-			P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", sortedModels))),
-			P(Class("mt-2"), g.Text(ad.Description)),
-			P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
-			P(
-				Class("text-xs text-gray-400 mt-4"),
-				g.Text(fmt.Sprintf("ID: %d • Posted: %s", ad.ID, posted)),
-			),
+			flagBtn,
+		),
+		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", sortedYears))),
+		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", sortedModels))),
+		P(Class("mt-2"), g.Text(ad.Description)),
+		P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
+		P(
+			Class("text-xs text-gray-400 mt-4"),
+			g.Text(fmt.Sprintf("ID: %d • Posted: %s", ad.ID, posted)),
 		),
 	)
 }
@@ -159,22 +202,46 @@ func NewAdPage(currentUser *user.User, path string, makes []string) g.Node {
 	)
 }
 
-func ViewAdPage(currentUser *user.User, path string, ad ad.Ad) g.Node {
-	actionButtons := []g.Node{
-		BackToListingsButton(),
+func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad, flagged bool) g.Node {
+	flagBtn := g.Node(nil)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
 	}
-
-	// Check if this is a dead ad
-	isDeadAd := ad.IsDead()
-
-	// Only show edit/delete buttons for active ads owned by the current user
-	if currentUser != nil && currentUser.ID == ad.UserID && !isDeadAd {
-		editButton := StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", ad.ID), ButtonPrimary)
-		deleteButton := DeleteButton(ad.ID)
-		actionButtons = append(actionButtons, editButton, deleteButton)
+	// Action buttons: flag, edit, delete
+	actionButtons := []g.Node{flagBtn}
+	isDeadAd := adObj.IsDead()
+	if userID > 0 {
+		if flagged {
+			flagBtn = Button(
+				Type("button"),
+				Class("ml-2 focus:outline-none"),
+				hx.Delete(fmt.Sprintf("/api/flag-ad/%d", adObj.ID)),
+				hx.Target(fmt.Sprintf("#flag-btn-%d", adObj.ID)),
+				hx.Swap("outerHTML"),
+				ID(fmt.Sprintf("flag-btn-%d", adObj.ID)),
+				g.Attr("onclick", "event.stopPropagation()"),
+				FlagIcon(true),
+			)
+		} else {
+			flagBtn = Button(
+				Type("button"),
+				Class("ml-2 focus:outline-none"),
+				hx.Post(fmt.Sprintf("/api/flag-ad/%d", adObj.ID)),
+				hx.Target(fmt.Sprintf("#flag-btn-%d", adObj.ID)),
+				hx.Swap("outerHTML"),
+				ID(fmt.Sprintf("flag-btn-%d", adObj.ID)),
+				g.Attr("onclick", "event.stopPropagation()"),
+				FlagIcon(false),
+			)
+		}
+		actionButtons[0] = flagBtn
+		if currentUser.ID == adObj.UserID && !isDeadAd {
+			editButton := StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", adObj.ID), ButtonPrimary)
+			deleteButton := DeleteButton(adObj.ID)
+			actionButtons = append(actionButtons, editButton, deleteButton)
+		}
 	}
-
-	// Add dead status indicator if it's a dead ad
 	statusIndicator := g.Node(nil)
 	if isDeadAd {
 		statusIndicator = Div(
@@ -182,22 +249,24 @@ func ViewAdPage(currentUser *user.User, path string, ad ad.Ad) g.Node {
 			g.Text("DEAD - This ad has been deleted"),
 		)
 	}
-
 	return Page(
-		fmt.Sprintf("Ad %d - Parts Pile", ad.ID),
+		fmt.Sprintf("Ad %d - Parts Pile", adObj.ID),
 		currentUser,
 		path,
 		[]g.Node{
 			Div(
-				Class("max-w-2xl mx-auto"),
-				PageHeader(ad.Make),
-				statusIndicator,
-				AdDetails(ad),
-				ActionButtons(actionButtons...),
+				Class("flex items-center justify-between mb-4"),
+				H2(Class("text-2xl font-bold"), g.Text(adObj.Make)),
 				Div(
-					ID("result"),
-					Class("mt-4"),
+					append([]g.Node{Class("flex items-center gap-2")}, actionButtons...)...,
 				),
+			),
+			statusIndicator,
+			AdDetails(adObj),
+
+			// Add action buttons at the bottom
+			ActionButtons(
+				BackToListingsButton(),
 			),
 		},
 	)
@@ -340,5 +409,36 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 				ResultContainer(),
 			),
 		},
+	)
+}
+
+// For compatibility, keep the original AdCard
+func AdCard(ad ad.Ad, loc *time.Location) g.Node {
+	return AdCardWithFlag(ad, loc, false, 0)
+}
+
+// FlagButton returns the flag toggle button for HTMX swaps
+func FlagButton(flagged bool, adID int) g.Node {
+	if flagged {
+		return Button(
+			Type("button"),
+			Class("ml-2 focus:outline-none"),
+			hx.Delete(fmt.Sprintf("/api/flag-ad/%d", adID)),
+			hx.Target(fmt.Sprintf("#flag-btn-%d", adID)),
+			hx.Swap("outerHTML"),
+			ID(fmt.Sprintf("flag-btn-%d", adID)),
+			g.Attr("onclick", "event.stopPropagation()"),
+			FlagIcon(true),
+		)
+	}
+	return Button(
+		Type("button"),
+		Class("ml-2 focus:outline-none"),
+		hx.Post(fmt.Sprintf("/api/flag-ad/%d", adID)),
+		hx.Target(fmt.Sprintf("#flag-btn-%d", adID)),
+		hx.Swap("outerHTML"),
+		ID(fmt.Sprintf("flag-btn-%d", adID)),
+		g.Attr("onclick", "event.stopPropagation()"),
+		FlagIcon(false),
 	)
 }

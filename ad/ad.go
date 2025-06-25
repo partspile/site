@@ -958,3 +958,83 @@ func ResurrectAd(adID int) error {
 
 	return tx.Commit()
 }
+
+// Flag/unflag and flagged ads logic
+
+// FlagAd flags an ad for a user
+func FlagAd(userID, adID int) error {
+	_, err := db.Exec(`INSERT OR IGNORE INTO FlaggedAd (user_id, ad_id) VALUES (?, ?)`, userID, adID)
+	return err
+}
+
+// UnflagAd removes a flag for an ad by a user
+func UnflagAd(userID, adID int) error {
+	_, err := db.Exec(`DELETE FROM FlaggedAd WHERE user_id = ? AND ad_id = ?`, userID, adID)
+	return err
+}
+
+// IsAdFlaggedByUser checks if a user has flagged an ad
+func IsAdFlaggedByUser(userID, adID int) (bool, error) {
+	row := db.QueryRow(`SELECT 1 FROM FlaggedAd WHERE user_id = ? AND ad_id = ?`, userID, adID)
+	var exists int
+	err := row.Scan(&exists)
+	if err == sql.ErrNoRows {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+// GetFlaggedAdIDsByUser returns a list of ad IDs flagged by the user
+func GetFlaggedAdIDsByUser(userID int) ([]int, error) {
+	rows, err := db.Query(`SELECT ad_id FROM FlaggedAd WHERE user_id = ? ORDER BY flagged_at DESC`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var adIDs []int
+	for rows.Next() {
+		var adID int
+		if err := rows.Scan(&adID); err != nil {
+			continue
+		}
+		adIDs = append(adIDs, adID)
+	}
+	return adIDs, nil
+}
+
+// GetAdsByIDs returns ads for a list of IDs (order preserved as much as possible)
+func GetAdsByIDs(ids []int) ([]Ad, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	// Build query with IN clause
+	placeholders := make([]string, len(ids))
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	query := `SELECT id, description, price, created_at, subcategory_id, user_id FROM Ad WHERE id IN (` + strings.Join(placeholders, ",") + `)`
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	adMap := make(map[int]Ad)
+	for rows.Next() {
+		var ad Ad
+		if err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.SubCategoryID, &ad.UserID); err != nil {
+			continue
+		}
+		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
+		adMap[ad.ID] = ad
+	}
+	// Preserve order of ids
+	ads := make([]Ad, 0, len(ids))
+	for _, id := range ids {
+		if ad, ok := adMap[id]; ok {
+			ads = append(ads, ad)
+		}
+	}
+	return ads, nil
+}

@@ -209,3 +209,50 @@ func SearchWidget(newAdButton g.Node, view string, query string) g.Node {
 		),
 	)
 }
+
+func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, ads []ad.Ad, flaggedMap map[int]bool, userID int, loc *time.Location, view string, query string) g.Node {
+	// Marshal the structured query as JSON for the hidden input
+	structuredQueryJSON, _ := json.Marshal(filters)
+	return Div(
+		ID("searchResults"),
+		SearchWidget(newAdButton, view, query),
+		Input(
+			Type("hidden"),
+			Name("structured_query"),
+			Value(string(structuredQueryJSON)),
+		),
+		Div(
+			ID("searchFilters"),
+			Class("flex flex-wrap gap-4 mb-4"),
+			SearchFilters(filters),
+		),
+		ViewToggleButtons(view),
+		Div(
+			ID("view-wrapper"),
+			func() g.Node {
+				structuredQueryJSON, _ := json.Marshal(filters)
+				if view == "tree" {
+					return TreeViewWithQuery(query, string(structuredQueryJSON))
+				}
+				return ListViewWithFlags(ads, flaggedMap, userID, loc)
+			}(),
+		),
+	)
+}
+
+func ListViewWithFlags(ads []ad.Ad, flaggedMap map[int]bool, userID int, loc *time.Location) g.Node {
+	return Div(
+		ID("list-view"),
+		AdListContainer(
+			g.Group(BuildAdListNodesWithFlags(ads, flaggedMap, userID, loc)),
+		),
+	)
+}
+
+func BuildAdListNodesWithFlags(ads []ad.Ad, flaggedMap map[int]bool, userID int, loc *time.Location) []g.Node {
+	nodes := make([]g.Node, 0, len(ads))
+	for _, ad := range ads {
+		nodes = append(nodes, AdCardWithFlag(ad, loc, flaggedMap[ad.ID], userID))
+	}
+	return nodes
+}

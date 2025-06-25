@@ -88,21 +88,31 @@ func HandleSearch(c *fiber.Ctx) error {
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
 
 	adsMap := make(map[int]ad.Ad)
+	adIDs := make([]int, 0, len(ads))
 	for _, ad := range ads {
 		adsMap[ad.ID] = ad
+		adIDs = append(adIDs, ad.ID)
 	}
 
 	// Determine newAdButton based on user
 	var newAdButton g.Node
 	currentUser, _ := GetCurrentUser(c)
+	var flaggedMap map[int]bool
+	userID := 0
 	if currentUser != nil {
 		newAdButton = ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
+		userID = currentUser.ID
+		flaggedMap = make(map[int]bool)
+		flaggedIDs, _ := ad.GetFlaggedAdIDsByUser(currentUser.ID)
+		for _, fid := range flaggedIDs {
+			flaggedMap[fid] = true
+		}
 	} else {
 		newAdButton = ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
+		flaggedMap = make(map[int]bool)
 	}
 
-	// For the initial search, we render the whole container.
-	render(c, ui.SearchResultsContainer(newAdButton, ui.SearchSchema(query), adsMap, loc, view, userPrompt))
+	render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(query), ads, flaggedMap, userID, loc, view, userPrompt))
 
 	// Add the loader if there are more results
 	if nextCursor != nil {
@@ -138,9 +148,19 @@ func HandleSearchPage(c *fiber.Ctx) error {
 
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
 
-	// For subsequent loads, we just render the new ad cards, and the next loader
+	currentUser, _ := GetCurrentUser(c)
+	userID := 0
+	flaggedMap := make(map[int]bool)
+	if currentUser != nil {
+		userID = currentUser.ID
+		flaggedIDs, _ := ad.GetFlaggedAdIDsByUser(currentUser.ID)
+		for _, fid := range flaggedIDs {
+			flaggedMap[fid] = true
+		}
+	}
+
 	for _, ad := range ads {
-		render(c, ui.AdCard(ad, loc))
+		render(c, ui.AdCardWithFlag(ad, loc, flaggedMap[ad.ID], userID))
 	}
 
 	if nextCursor != nil {
@@ -346,8 +366,21 @@ func TreeView(c *fiber.Ctx) error {
 	}
 
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
+
+	// Get current user and flagged ads
+	currentUser, _ := GetCurrentUser(c)
+	userID := 0
+	flaggedMap := make(map[int]bool)
+	if currentUser != nil {
+		userID = currentUser.ID
+		flaggedIDs, _ := ad.GetFlaggedAdIDsByUser(currentUser.ID)
+		for _, fid := range flaggedIDs {
+			flaggedMap[fid] = true
+		}
+	}
+
 	for _, ad := range ads {
-		childNodes = append(childNodes, ui.AdCard(ad, loc))
+		childNodes = append(childNodes, ui.AdCardWithFlag(ad, loc, flaggedMap[ad.ID], userID))
 	}
 
 	// Get children for the next level, filtered by structured query
@@ -451,18 +484,21 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 	}
 
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
-	adsMap := make(map[int]ad.Ad)
-	for _, ad := range ads {
-		adsMap[ad.ID] = ad
-	}
 
 	var newAdButton g.Node
 	currentUser, _ := GetCurrentUser(c)
+	userID := 0
+	flaggedMap := make(map[int]bool)
 	if currentUser != nil {
 		newAdButton = ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
+		userID = currentUser.ID
+		flaggedIDs, _ := ad.GetFlaggedAdIDsByUser(currentUser.ID)
+		for _, fid := range flaggedIDs {
+			flaggedMap[fid] = true
+		}
 	} else {
 		newAdButton = ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
 	}
 
-	return render(c, ui.SearchResultsContainer(newAdButton, ui.SearchSchema(query), adsMap, loc, view, userPrompt))
+	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(query), ads, flaggedMap, userID, loc, view, userPrompt))
 }

@@ -123,6 +123,13 @@ func main() {
 	app.Post("/api/update-ad", handlers.AuthRequired, handlers.HandleUpdateAdSubmission)
 	app.Delete("/delete-ad/:id", handlers.AuthRequired, handlers.HandleDeleteAd)
 
+	// Flag/unflag ad endpoints
+	app.Post("/api/flag-ad/:id", handlers.AuthRequired, handlers.HandleFlagAd)
+	app.Delete("/api/flag-ad/:id", handlers.AuthRequired, handlers.HandleUnflagAd)
+
+	// Settings flagged ads section
+	app.Get("/settings/flagged-ads", handlers.AuthRequired, handlers.HandleFlaggedAds)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
