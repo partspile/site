@@ -688,12 +688,11 @@ func GetAllDeadAds() ([]Ad, error) {
 		if err != nil {
 			return nil, err
 		}
-		// For dead ads, we'll fetch the basic info and the deletion date.
-		// Vehicle info like make, model, etc., is not directly available in AdDead
-		// and is not required for this admin view.
 		if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
 			ad.DeletionDate = &parsedTime
 		}
+		// Populate vehicle info for each dead ad
+		ad.Make, ad.Years, ad.Models, ad.Engines = getDeadAdVehicleData(ad.ID)
 		ads = append(ads, ad)
 	}
 	return ads, nil
