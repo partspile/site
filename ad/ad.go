@@ -894,36 +894,6 @@ func DeleteAdsByUserID(userID int) error {
 	return tx.Commit()
 }
 
-// GetAdsByMakeModel returns all ads for a given make and model
-func GetAdsByMakeModel(make, model string) ([]Ad, error) {
-	// ... existing code ...
-	return nil, nil
-}
-
-// GetAdsBySubCategory returns all ads for a given subcategory
-func GetAdsBySubCategory(subCategoryID int) ([]Ad, error) {
-	// ... existing code ...
-	return nil, nil
-}
-
-// GetAdsByMakeModelYear returns all ads for a given make, model, and year
-func GetAdsByMakeModelYear(make, model, year string) ([]Ad, error) {
-	// ... existing code ...
-	return nil, nil
-}
-
-// GetAdsByMakeModelYearEngine returns all ads for a given make, model, year, and engine
-func GetAdsByMakeModelYearEngine(make, model, year, engine string) ([]Ad, error) {
-	// ... existing code ...
-	return nil, nil
-}
-
-// GetAdsByMakeModelYearEngineSubCategory returns all ads for a given make, model, year, engine, and subcategory
-func GetAdsByMakeModelYearEngineSubCategory(make, model, year, engine string, subCategoryID int) ([]Ad, error) {
-	// ... existing code ...
-	return nil, nil
-}
-
 func ResurrectAd(adID int) error {
 	tx, err := db.Begin()
 	if err != nil {
