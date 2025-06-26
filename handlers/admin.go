@@ -127,63 +127,47 @@ func HandleAdminTransactions(c *fiber.Ctx) error {
 	return adminHandler[user.Transaction](c, "transactions", user.GetAllTransactions, nil, adminTransactionsSectionWrapper)
 }
 
-func HandleAdminExportUsers(c *fiber.Ctx) error {
+// Generic export handler for entities with status (e.g., users, ads)
+func exportWithStatus[T any](c *fiber.Ctx, getActive func() ([]T, error), getDead func() ([]T, error), baseFilename string) error {
 	status := c.Query("status")
-	var users []user.User
+	var data []T
 	var err error
-
+	filename := baseFilename + ".json"
 	if status == "dead" {
-		users, err = user.GetAllDeadUsers()
+		data, err = getDead()
+		filename = "dead_" + baseFilename + ".json"
 	} else {
-		users, err = user.GetAllUsers()
+		data, err = getActive()
 	}
-
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
+	c.Set("Content-Type", "application/json")
+	c.Set("Content-Disposition", "attachment; filename="+filename)
+	return c.JSON(data)
+}
 
-	filename := "users.json"
-	if status == "dead" {
-		filename = "dead_users.json"
+// Generic export handler for entities without status (e.g., transactions)
+func exportSimple[T any](c *fiber.Ctx, getData func() ([]T, error), filename string) error {
+	data, err := getData()
+	if err != nil {
+		return fiber.ErrInternalServerError
 	}
 	c.Set("Content-Type", "application/json")
 	c.Set("Content-Disposition", "attachment; filename="+filename)
-	return c.JSON(users)
+	return c.JSON(data)
+}
+
+func HandleAdminExportUsers(c *fiber.Ctx) error {
+	return exportWithStatus[user.User](c, user.GetAllUsers, user.GetAllDeadUsers, "users")
 }
 
 func HandleAdminExportAds(c *fiber.Ctx) error {
-	status := c.Query("status")
-	var ads []ad.Ad
-	var err error
-
-	if status == "dead" {
-		ads, err = ad.GetAllDeadAds()
-	} else {
-		ads, err = ad.GetAllAds()
-	}
-
-	if err != nil {
-		return fiber.ErrInternalServerError
-	}
-
-	filename := "ads.json"
-	if status == "dead" {
-		filename = "dead_ads.json"
-	}
-	c.Set("Content-Type", "application/json")
-	c.Set("Content-Disposition", "attachment; filename="+filename)
-	return c.JSON(ads)
+	return exportWithStatus[ad.Ad](c, ad.GetAllAds, ad.GetAllDeadAds, "ads")
 }
 
 func HandleAdminExportTransactions(c *fiber.Ctx) error {
-	transactions, err := user.GetAllTransactions()
-	if err != nil {
-		return fiber.ErrInternalServerError
-	}
-
-	c.Set("Content-Type", "application/json")
-	c.Set("Content-Disposition", "attachment; filename=transactions.json")
-	return c.JSON(transactions)
+	return exportSimple[user.Transaction](c, user.GetAllTransactions, "transactions.json")
 }
 
 func HandleAdminMakes(c *fiber.Ctx) error {
