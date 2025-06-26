@@ -121,10 +121,6 @@ func GetArchivedUser(id int) (User, bool) {
 }
 
 // UpdateTokenBalance updates a user's token balance
-func UpdateTokenBalance(userID int, newBalance float64) error {
-	_, err := db.Exec(`UPDATE User SET token_balance = ? WHERE id = ?`, newBalance, userID)
-	return err
-}
 
 // GetUserByName retrieves a user by name (username)
 func GetUserByName(name string) (User, error) {

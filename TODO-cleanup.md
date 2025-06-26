@@ -57,18 +57,18 @@ This document contains specific recommendations for cleaning up the codebase bas
   - Rename `AdDead` table → `ArchivedAd`
   - Update all related functions and variables
 
-### 7. Remove Unused Functions
+### 7. Remove Unused Functions ✅ COMPLETED
 - **File**: `ad/ad.go`
-  - `CloseDB()` (lines 610-615)
-  - `GetAdsByUserID()` (lines 703-737)
-  - `CreateAd()` (lines 765-791)
-  - `GetFilteredAdsPage()` (lines 345-369)
-  - `anyStringInSlice()` (lines 598-607)
+  - `CloseDB()` (lines 610-615) ✅ REMOVED
+  - `GetAdsByUserID()` (lines 703-737) ✅ REMOVED
+  - `CreateAd()` (lines 765-791) ✅ REMOVED
+  - `GetFilteredAdsPage()` (lines 345-369) ✅ REMOVED
+  - `anyStringInSlice()` (lines 598-607) ✅ REMOVED (kept duplicate in handlers/handlers.go)
 - **File**: `part/part.go`
-  - `GetSubCategoriesForCategory()` (lines 66-88)
+  - `GetSubCategoriesForCategory()` (lines 66-88) ✅ REMOVED
 - **File**: `user/user.go`
-  - `UpdateTokenBalance()` (lines 124-127)
-- **Action**: Remove all unused functions listed above
+  - `UpdateTokenBalance()` (lines 124-127) ✅ REMOVED
+- **Action**: Remove all unused functions listed above ✅ COMPLETED
 
 ### 8. Remove Unused Struct Fields
 - **File**: `ad/ad.go`

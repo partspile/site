@@ -293,79 +293,53 @@ func GetNextAdID() int {
 	return seq + 1
 }
 
-// GetAdsPage returns a slice of ads for cursor-based pagination
+// GetAdsPage returns a page of ads for cursor-based pagination
 func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
-	query := `
+	rows, err := db.Query(`
 		SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
-		       psc.name as subcategory
+		       psc.name as subcategory,
+		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_flagged
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
-	`
-	args := []interface{}{}
-	if cursorID > 0 {
-		query += " WHERE a.id < ?"
-		args = append(args, cursorID)
-	}
-	query += " ORDER BY a.id DESC LIMIT ?"
-	args = append(args, limit+1) // Fetch one extra to check for more
-
-	rows, err := db.Query(query, args...)
+		LEFT JOIN FlaggedAd fa ON a.id = fa.ad_id
+		WHERE a.id < ?
+		ORDER BY a.created_at DESC, a.id DESC
+		LIMIT ?
+	`, cursorID, limit+1)
 	if err != nil {
-		fmt.Printf("Error querying ads: %v\n", err)
 		return nil, false
 	}
 	defer rows.Close()
 
-	ads := []Ad{}
+	var ads []Ad
 	for rows.Next() {
 		var ad Ad
+		var subcatID sql.NullInt64
 		var subcategory sql.NullString
+		var isFlagged int
 		if err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt,
-			&ad.SubCategoryID, &subcategory); err != nil {
-			fmt.Printf("Error scanning ad: %v\n", err)
+			&subcatID, &subcategory, &isFlagged); err != nil {
 			continue
 		}
-
+		if subcatID.Valid {
+			intVal := int(subcatID.Int64)
+			ad.SubCategoryID = &intVal
+		}
 		if subcategory.Valid {
 			ad.SubCategory = subcategory.String
 		}
-
-		// Get vehicle data
+		ad.Flagged = isFlagged == 1
+		// Get vehicle data for this ad
 		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
 		ads = append(ads, ad)
 	}
 
-	hasMore := false
-	if len(ads) > limit {
-		hasMore = true
+	hasMore := len(ads) > limit
+	if hasMore {
 		ads = ads[:limit]
 	}
-	return ads, hasMore
-}
 
-// GetFilteredAdsPage returns a slice of filtered ads for cursor-based pagination
-// filtered: the filtered ads, already sorted by CreatedAt DESC, ID DESC
-// cursorID, cursorCreatedAt: the last seen ad's ID and CreatedAt
-// limit: number of ads to return
-// Returns: page of ads, hasMore
-func GetFilteredAdsPage(filtered []Ad, cursorID int, cursorCreatedAt time.Time, limit int) ([]Ad, bool) {
-	start := 0
-	if !cursorCreatedAt.IsZero() || cursorID > 0 {
-		for i, ad := range filtered {
-			if ad.CreatedAt.Before(cursorCreatedAt) ||
-				(ad.CreatedAt.Equal(cursorCreatedAt) && ad.ID < cursorID) {
-				start = i
-				break
-			}
-		}
-	}
-	end := start + limit
-	if end > len(filtered) {
-		end = len(filtered)
-	}
-	page := filtered[start:end]
-	hasMore := end < len(filtered)
-	return page, hasMore
+	return ads, hasMore
 }
 
 // GetFilteredAdsPageDB returns a page of filtered ads directly from the database
@@ -594,26 +568,6 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 	return ads, hasMore, nil
 }
 
-// Helper function for case-insensitive string slice comparison
-func anyStringInSlice(a, b []string) bool {
-	for _, s := range a {
-		for _, t := range b {
-			if strings.EqualFold(s, t) {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-// CloseDB closes the database connection
-func CloseDB() error {
-	if db != nil {
-		return db.Close()
-	}
-	return nil
-}
-
 // GetAllAds returns all ads in the system
 func GetAllAds() ([]Ad, error) {
 	rows, err := db.Query(`
@@ -698,43 +652,6 @@ func GetAllArchivedAds() ([]Ad, error) {
 	return ads, nil
 }
 
-// GetAdsByUserID returns all ads for a given user
-func GetAdsByUserID(userID int) ([]Ad, error) {
-	rows, err := db.Query(`
-		SELECT a.id, a.user_id, a.title, a.description, a.price, a.created_at,
-		       ac.year, ac.make, ac.model, ac.category, ac.subcategory
-		FROM Ad a
-		LEFT JOIN AdCar ac ON a.id = ac.ad_id
-		WHERE a.user_id = ?
-		ORDER BY a.created_at DESC`, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var ads []Ad
-	for rows.Next() {
-		var ad Ad
-		var createdAt string
-		var year, make, model, category, subcategory sql.NullString
-		err := rows.Scan(&ad.ID, &ad.UserID, &ad.Title, &ad.Description, &ad.Price,
-			&createdAt, &year, &make, &model, &category, &subcategory)
-		if err != nil {
-			return nil, err
-		}
-		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-		if year.Valid {
-			ad.Year = year.String
-			ad.Make = make.String
-			ad.Models = []string{model.String}
-			ad.Category = category.String
-			ad.SubCategory = subcategory.String
-		}
-		ads = append(ads, ad)
-	}
-	return ads, nil
-}
-
 // GetArchivedAd retrieves an archived ad by ID
 func GetArchivedAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
@@ -759,34 +676,6 @@ func GetArchivedAd(id int) (Ad, bool) {
 	ad.Make, ad.Years, ad.Models, ad.Engines = getArchivedAdVehicleData(id)
 
 	return ad, true
-}
-
-// CreateAd creates a new ad
-func CreateAd(ad Ad) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	res, err := tx.Exec(`INSERT INTO Ad (user_id, title, description, price) VALUES (?, ?, ?, ?)`,
-		ad.UserID, ad.Title, ad.Description, ad.Price)
-	if err != nil {
-		return err
-	}
-
-	id, _ := res.LastInsertId()
-	ad.ID = int(id)
-
-	if ad.Year != "" {
-		_, err = tx.Exec(`INSERT INTO AdCar (ad_id, year, make, model, category, subcategory) VALUES (?, ?, ?, ?, ?, ?)`,
-			ad.ID, ad.Year, ad.Make, ad.Models[0], ad.Category, ad.SubCategory)
-		if err != nil {
-			return err
-		}
-	}
-
-	return tx.Commit()
 }
 
 // UpdateAd updates an existing ad
