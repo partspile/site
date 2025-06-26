@@ -74,7 +74,7 @@ func HandleViewAd(c *fiber.Ctx) error {
 		return fiber.ErrBadRequest
 	}
 
-	// Get ad from either active or dead tables
+	// Get ad from either active or archived tables
 	adObj, _, ok := ad.GetAdByID(adID)
 	if !ok {
 		return fiber.ErrNotFound
@@ -162,27 +162,6 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	return render(c, ui.SuccessMessage("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
 }
 
-func HandleDeleteAd(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
-
-	adID, err := c.ParamsInt("id")
-	if err != nil {
-		return fiber.ErrBadRequest
-	}
-
-	existingAd, ok := ad.GetAd(adID)
-	if !ok {
-		return fiber.ErrNotFound
-	}
-	if existingAd.UserID != currentUser.ID {
-		return fiber.ErrForbidden
-	}
-
-	ad.DeleteAd(adID)
-
-	return render(c, ui.SuccessMessage("Ad deleted successfully", "/"))
-}
-
 // Handler to flag an ad
 func HandleFlagAd(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
@@ -223,4 +202,15 @@ func HandleFlaggedAds(c *fiber.Ctx) error {
 		return fiber.ErrInternalServerError
 	}
 	return render(c, ui.FlaggedAdsSection(currentUser, ads))
+}
+
+func HandleArchiveAd(c *fiber.Ctx) error {
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return c.Status(400).SendString("Invalid ad ID")
+	}
+	if err := ad.ArchiveAd(adID); err != nil {
+		return c.Status(500).SendString("Failed to archive ad")
+	}
+	return c.SendStatus(204)
 }

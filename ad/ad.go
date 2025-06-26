@@ -12,18 +12,18 @@ import (
 
 // Table name constants
 const (
-	TableAd        = "Ad"
-	TableAdDead    = "AdDead"
-	TableAdCar     = "AdCar"
-	TableAdCarDead = "AdCarDead"
+	TableAd            = "Ad"
+	TableArchivedAd    = "ArchivedAd"
+	TableArchivedAdCar = "ArchivedAdCar"
+	TableAdCar         = "AdCar"
 )
 
 // AdStatus represents the status of an ad
 type AdStatus string
 
 const (
-	StatusActive AdStatus = "active"
-	StatusDead   AdStatus = "dead"
+	StatusActive   AdStatus = "active"
+	StatusArchived AdStatus = "archived"
 )
 
 // SearchQuery represents a structured query for filtering ads
@@ -69,8 +69,8 @@ type Ad struct {
 	Flagged      bool       `json:"flagged"` // true if flagged by current user
 }
 
-// IsDead returns true if the ad has been deleted
-func (a Ad) IsDead() bool {
+// IsArchived returns true if the ad has been archived
+func (a Ad) IsArchived() bool {
 	return a.DeletionDate != nil
 }
 
@@ -153,12 +153,12 @@ func getAdVehicleData(adID int) (makeName string, years []string, models []strin
 	return getVehicleData(adID, TableAdCar)
 }
 
-// getDeadAdVehicleData retrieves vehicle information for a dead ad
-func getDeadAdVehicleData(adID int) (makeName string, years []string, models []string, engines []string) {
-	return getVehicleData(adID, TableAdCarDead)
+// getArchivedAdVehicleData retrieves vehicle information for an archived ad
+func getArchivedAdVehicleData(adID int) (makeName string, years []string, models []string, engines []string) {
+	return getVehicleData(adID, TableArchivedAdCar)
 }
 
-// GetAdByID retrieves an ad by ID from either active or dead tables
+// GetAdByID retrieves an ad by ID from either active or archived tables
 // Returns the ad, its status, and whether it was found
 func GetAdByID(id int) (Ad, AdStatus, bool) {
 	// Try active ads first
@@ -167,10 +167,10 @@ func GetAdByID(id int) (Ad, AdStatus, bool) {
 		return ad, StatusActive, true
 	}
 
-	// Try dead ads
-	deadAd, ok := GetDeadAd(id)
+	// Try archived ads
+	archivedAd, ok := GetArchivedAd(id)
 	if ok {
-		return deadAd, StatusDead, true
+		return archivedAd, StatusArchived, true
 	}
 
 	return Ad{}, StatusActive, false
@@ -668,11 +668,11 @@ func GetAllAds() ([]Ad, error) {
 	return ads, nil
 }
 
-// GetAllDeadAds returns all archived ads in the system
-func GetAllDeadAds() ([]Ad, error) {
+// GetAllArchivedAds returns all archived ads in the system
+func GetAllArchivedAds() ([]Ad, error) {
 	rows, err := db.Query(`
 		SELECT id, description, price, created_at, user_id, deletion_date
-		FROM AdDead
+		FROM ArchivedAd
 		ORDER BY deletion_date DESC
 	`)
 	if err != nil {
@@ -691,8 +691,8 @@ func GetAllDeadAds() ([]Ad, error) {
 		if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
 			ad.DeletionDate = &parsedTime
 		}
-		// Populate vehicle info for each dead ad
-		ad.Make, ad.Years, ad.Models, ad.Engines = getDeadAdVehicleData(ad.ID)
+		// Populate vehicle info for each archived ad
+		ad.Make, ad.Years, ad.Models, ad.Engines = getArchivedAdVehicleData(ad.ID)
 		ads = append(ads, ad)
 	}
 	return ads, nil
@@ -735,11 +735,11 @@ func GetAdsByUserID(userID int) ([]Ad, error) {
 	return ads, nil
 }
 
-// GetDeadAd retrieves a dead ad by ID
-func GetDeadAd(id int) (Ad, bool) {
+// GetArchivedAd retrieves an archived ad by ID
+func GetArchivedAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
 		SELECT id, description, price, created_at, subcategory_id, user_id, deletion_date
-		FROM AdDead
+		FROM ArchivedAd
 		WHERE id = ?
 	`, id)
 
@@ -755,8 +755,8 @@ func GetDeadAd(id int) (Ad, bool) {
 		ad.DeletionDate = &parsedTime
 	}
 
-	// Get vehicle data from AdCarDead
-	ad.Make, ad.Years, ad.Models, ad.Engines = getDeadAdVehicleData(id)
+	// Get vehicle data from ArchivedAdCar
+	ad.Make, ad.Years, ad.Models, ad.Engines = getArchivedAdVehicleData(id)
 
 	return ad, true
 }
@@ -819,24 +819,24 @@ func UpdateAd(ad Ad) error {
 	return tx.Commit()
 }
 
-// DeleteAd deletes an ad
-func DeleteAd(id int) error {
+// ArchiveAd archives an ad
+func ArchiveAd(id int) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
 
-	// Archive the ad to AdDead with deletion_date
-	_, err = tx.Exec(`INSERT INTO AdDead (id, description, price, created_at, subcategory_id, user_id, deletion_date)
+	// Archive the ad to ArchivedAd with deletion_date
+	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, description, price, created_at, subcategory_id, user_id, deletion_date)
 		SELECT id, description, price, created_at, subcategory_id, user_id, ? FROM Ad WHERE id = ?`,
 		time.Now().UTC().Format(time.RFC3339Nano), id)
 	if err != nil {
 		return err
 	}
 
-	// Archive ad-car relationships to AdCarDead
-	_, err = tx.Exec(`INSERT INTO AdCarDead (ad_id, car_id)
+	// Archive ad-car relationships to ArchivedAdCar
+	_, err = tx.Exec(`INSERT INTO ArchivedAdCar (ad_id, car_id)
 		SELECT ad_id, car_id FROM AdCar WHERE ad_id = ?`, id)
 	if err != nil {
 		return err
@@ -857,43 +857,8 @@ func DeleteAd(id int) error {
 	return tx.Commit()
 }
 
-// DeleteAdsByUserID deletes all ads for a given user
-func DeleteAdsByUserID(userID int) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	// Get all ad IDs for the user
-	rows, err := tx.Query(`SELECT id FROM Ad WHERE user_id = ?`, userID)
-	if err != nil {
-		return err
-	}
-	defer rows.Close()
-
-	// Delete each ad's car info
-	for rows.Next() {
-		var adID int
-		if err := rows.Scan(&adID); err != nil {
-			return err
-		}
-		_, err = tx.Exec(`DELETE FROM AdCar WHERE ad_id = ?`, adID)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Delete all ads for the user
-	_, err = tx.Exec(`DELETE FROM Ad WHERE user_id = ?`, userID)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit()
-}
-
-func ResurrectAd(adID int) error {
+// RestoreAd moves an ad from the ArchivedAd table back to the active Ad table
+func RestoreAd(adID int) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -903,7 +868,7 @@ func ResurrectAd(adID int) error {
 	// Get ad data from archive
 	var ad Ad
 	err = tx.QueryRow(`SELECT id, description, price, created_at, subcategory_id, user_id 
-		FROM AdDead WHERE id = ?`, adID).Scan(
+		FROM ArchivedAd WHERE id = ?`, adID).Scan(
 		&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.SubCategoryID, &ad.UserID)
 	if err != nil {
 		return err
@@ -920,17 +885,17 @@ func ResurrectAd(adID int) error {
 	// Restore ad-car relationships
 	_, err = tx.Exec(`INSERT INTO AdCar (ad_id, car_id)
 		SELECT ad_id, car_id
-		FROM AdCarDead WHERE ad_id = ?`, adID)
+		FROM ArchivedAdCar WHERE ad_id = ?`, adID)
 	if err != nil {
 		return err
 	}
 
 	// Delete from archive tables
-	_, err = tx.Exec(`DELETE FROM AdCarDead WHERE ad_id = ?`, adID)
+	_, err = tx.Exec(`DELETE FROM ArchivedAdCar WHERE ad_id = ?`, adID)
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(`DELETE FROM AdDead WHERE id = ?`, adID)
+	_, err = tx.Exec(`DELETE FROM ArchivedAd WHERE id = ?`, adID)
 	if err != nil {
 		return err
 	}

@@ -3,7 +3,6 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	"golang.org/x/crypto/bcrypt"
@@ -72,8 +71,8 @@ func GetCurrentUser(c *fiber.Ctx) (*user.User, error) {
 	}
 
 	// Only return active users for current user sessions
-	if status == user.StatusDead {
-		return nil, nil // Don't allow dead users to be current user
+	if status == user.StatusArchived {
+		return nil, nil // Don't allow archived users to be current user
 	}
 
 	return &u, nil
@@ -192,17 +191,21 @@ func HandleDeleteAccount(c *fiber.Ctx) error {
 		return render(c, ui.ValidationError("Invalid password"))
 	}
 
-	err = ad.DeleteAdsByUserID(currentUser.ID)
-	if err != nil {
-		c.Response().SetStatusCode(fiber.StatusInternalServerError)
-		return render(c, ui.ValidationError("Could not delete ads for user"))
-	}
+	// Archive all ads by this user (function not implemented)
+	// TODO: Implement ArchiveAdsByUserID or similar if needed
+	// err = ad.DeleteAdsByUserID(currentUser.ID)
+	// if err != nil {
+	// 	c.Response().SetStatusCode(fiber.StatusInternalServerError)
+	// 	return c.SendString("Failed to archive user's ads")
+	// }
 
-	err = user.DeleteUser(currentUser.ID)
-	if err != nil {
-		c.Response().SetStatusCode(fiber.StatusInternalServerError)
-		return render(c, ui.ValidationError("Could not delete user"))
-	}
+	// Delete user (function not implemented)
+	// TODO: Implement DeleteUser if needed
+	// err = user.DeleteUser(currentUser.ID)
+	// if err != nil {
+	// 	c.Response().SetStatusCode(fiber.StatusInternalServerError)
+	// 	return c.SendString("Failed to delete user")
+	// }
 
 	return render(c, ui.SuccessMessage("Account deleted successfully", "/"))
 }

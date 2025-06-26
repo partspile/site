@@ -139,11 +139,11 @@ func AdminUserTable(users []user.User, status string) g.Node {
 						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%v", u.IsAdmin)),
 						Td(Class("border border-gray-300 px-4 py-2"),
 							func() g.Node {
-								if status == "dead" {
+								if status == "archived" {
 									return Button(
-										g.Text("Resurrect"),
+										g.Text("Restore"),
 										Class("px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"),
-										hx.Post(fmt.Sprintf("/api/admin/users/resurrect/%d", u.ID)),
+										hx.Post(fmt.Sprintf("/api/admin/users/restore/%d", u.ID)),
 										hx.Target("#adminUserTable"),
 										hx.Swap("outerHTML"),
 									)
@@ -163,12 +163,12 @@ func AdminUserTable(users []user.User, status string) g.Node {
 										),
 									),
 									Button(
-										g.Text("Kill"),
+										g.Text("Archive"),
 										Class("px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"),
-										hx.Delete(fmt.Sprintf("/api/admin/users/kill/%d", u.ID)),
+										hx.Delete(fmt.Sprintf("/api/admin/users/archive/%d", u.ID)),
 										hx.Target("#adminUserTable"),
 										hx.Swap("outerHTML"),
-										hx.Confirm("Are you sure you want to kill this user? This will also remove all of their ads."),
+										hx.Confirm("Are you sure you want to archive this user? This will also remove all of their ads."),
 									),
 								)
 							}(),
@@ -219,14 +219,14 @@ func AdminAdTable(ads []ad.Ad, status string) g.Node {
 						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("$%.2f", a.Price)),
 						Td(Class("border border-gray-300 px-4 py-2"),
 							func() g.Node {
-								if status == "dead" {
+								if status == "archived" {
 									return Div(
 										Class("flex space-x-2"),
 										StyledLink("View", fmt.Sprintf("/ad/%d", a.ID), ButtonPrimary),
 										Button(
-											g.Text("Resurrect"),
+											g.Text("Restore"),
 											Class("px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"),
-											hx.Post(fmt.Sprintf("/api/admin/ads/resurrect/%d", a.ID)),
+											hx.Post(fmt.Sprintf("/api/admin/ads/restore/%d", a.ID)),
 											hx.Target("#adminAdTable"),
 											hx.Swap("outerHTML"),
 										),
@@ -236,12 +236,12 @@ func AdminAdTable(ads []ad.Ad, status string) g.Node {
 									Class("flex space-x-2"),
 									StyledLink("View", fmt.Sprintf("/ad/%d", a.ID), ButtonPrimary),
 									Button(
-										g.Text("Kill"),
+										g.Text("Archive"),
 										Class("px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"),
-										hx.Delete(fmt.Sprintf("/api/admin/ads/kill/%d", a.ID)),
+										hx.Delete(fmt.Sprintf("/api/admin/ads/archive/%d", a.ID)),
 										hx.Target("#adminAdTable"),
 										hx.Swap("outerHTML"),
-										hx.Confirm("Are you sure you want to kill this ad?"),
+										hx.Confirm("Are you sure you want to archive this ad?"),
 									),
 								)
 							}(),
@@ -260,17 +260,17 @@ func AdminStatusSelector(page, currentStatus string) g.Node {
 			Href(fmt.Sprintf("/admin/%s", page)),
 			g.Text("Active"),
 			func() g.Node {
-				if currentStatus != "dead" {
+				if currentStatus != "archived" {
 					return Class("px-4 py-2 bg-blue-500 text-white rounded-l")
 				}
 				return Class("px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-l")
 			}(),
 		),
 		A(
-			Href(fmt.Sprintf("/admin/%s?status=dead", page)),
-			g.Text("Dead"),
+			Href(fmt.Sprintf("/admin/%s?status=archived", page)),
+			g.Text("Archived"),
 			func() g.Node {
-				if currentStatus == "dead" {
+				if currentStatus == "archived" {
 					return Class("px-4 py-2 bg-blue-500 text-white rounded-r")
 				}
 				return Class("px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-r")

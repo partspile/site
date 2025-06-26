@@ -210,7 +210,7 @@ func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad, flagged bool) 
 	}
 	// Action buttons: flag, edit, delete
 	actionButtons := []g.Node{flagBtn}
-	isDeadAd := adObj.IsDead()
+	isArchivedAd := adObj.IsArchived()
 	if userID > 0 {
 		if flagged {
 			flagBtn = Button(
@@ -236,17 +236,17 @@ func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad, flagged bool) 
 			)
 		}
 		actionButtons[0] = flagBtn
-		if currentUser.ID == adObj.UserID && !isDeadAd {
+		if currentUser.ID == adObj.UserID && !isArchivedAd {
 			editButton := StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", adObj.ID), ButtonPrimary)
 			deleteButton := DeleteButton(adObj.ID)
 			actionButtons = append(actionButtons, editButton, deleteButton)
 		}
 	}
 	statusIndicator := g.Node(nil)
-	if isDeadAd {
+	if isArchivedAd {
 		statusIndicator = Div(
 			Class("bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded mb-4"),
-			g.Text("DEAD - This ad has been deleted"),
+			g.Text("ARCHIVED - This ad has been archived"),
 		)
 	}
 	return Page(

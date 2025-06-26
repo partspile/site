@@ -14,12 +14,12 @@ import (
 
 // adminHandler is a generic function that handles admin section pages
 // T is the entity type (e.g., user.User, ad.Ad, etc.)
-// getActiveData and getDeadData are functions that retrieve active and dead data respectively
+// getActiveData and getArchivedData are functions that retrieve active and archived data respectively
 // sectionComponent is a function that renders the UI section for the entity
-// If getDeadData is nil, the entity doesn't support status filtering
+// If getArchivedData is nil, the entity doesn't support status filtering
 func adminHandler[T any](c *fiber.Ctx, sectionName string,
 	getActiveData func() ([]T, error),
-	getDeadData func() ([]T, error), // can be nil for no-status entities
+	getArchivedData func() ([]T, error), // can be nil for no-status entities
 	sectionComponent func([]T, string) g.Node) error {
 	currentUser := c.Locals("user").(*user.User)
 	status := c.Query("status")
@@ -27,10 +27,10 @@ func adminHandler[T any](c *fiber.Ctx, sectionName string,
 	var data []T
 	var err error
 
-	if getDeadData != nil {
+	if getArchivedData != nil {
 		// Entity supports status filtering
-		if status == "dead" {
-			data, err = getDeadData()
+		if status == "archived" {
+			data, err = getArchivedData()
 		} else {
 			data, err = getActiveData()
 		}
@@ -97,7 +97,7 @@ func HandleAdminDashboard(c *fiber.Ctx) error {
 }
 
 func HandleAdminUsers(c *fiber.Ctx) error {
-	return adminHandler[user.User](c, "users", user.GetAllUsers, user.GetAllDeadUsers, ui.AdminUsersSection)
+	return adminHandler[user.User](c, "users", user.GetAllUsers, user.GetAllArchivedUsers, ui.AdminUsersSection)
 }
 
 func HandleSetAdmin(c *fiber.Ctx) error {
@@ -120,7 +120,7 @@ func HandleSetAdmin(c *fiber.Ctx) error {
 }
 
 func HandleAdminAds(c *fiber.Ctx) error {
-	return adminHandler[ad.Ad](c, "ads", ad.GetAllAds, ad.GetAllDeadAds, ui.AdminAdsSection)
+	return adminHandler[ad.Ad](c, "ads", ad.GetAllAds, ad.GetAllArchivedAds, ui.AdminAdsSection)
 }
 
 func HandleAdminTransactions(c *fiber.Ctx) error {
@@ -128,14 +128,14 @@ func HandleAdminTransactions(c *fiber.Ctx) error {
 }
 
 // Generic export handler for entities with status (e.g., users, ads)
-func exportWithStatus[T any](c *fiber.Ctx, getActive func() ([]T, error), getDead func() ([]T, error), baseFilename string) error {
+func exportWithStatus[T any](c *fiber.Ctx, getActive func() ([]T, error), getArchived func() ([]T, error), baseFilename string) error {
 	status := c.Query("status")
 	var data []T
 	var err error
 	filename := baseFilename + ".json"
-	if status == "dead" {
-		data, err = getDead()
-		filename = "dead_" + baseFilename + ".json"
+	if status == "archived" {
+		data, err = getArchived()
+		filename = "archived_" + baseFilename + ".json"
 	} else {
 		data, err = getActive()
 	}
@@ -159,11 +159,11 @@ func exportSimple[T any](c *fiber.Ctx, getData func() ([]T, error), filename str
 }
 
 func HandleAdminExportUsers(c *fiber.Ctx) error {
-	return exportWithStatus[user.User](c, user.GetAllUsers, user.GetAllDeadUsers, "users")
+	return exportWithStatus[user.User](c, user.GetAllUsers, user.GetAllArchivedUsers, "users")
 }
 
 func HandleAdminExportAds(c *fiber.Ctx) error {
-	return exportWithStatus[ad.Ad](c, ad.GetAllAds, ad.GetAllDeadAds, "ads")
+	return exportWithStatus[ad.Ad](c, ad.GetAllAds, ad.GetAllArchivedAds, "ads")
 }
 
 func HandleAdminExportTransactions(c *fiber.Ctx) error {
@@ -190,13 +190,14 @@ func HandleAdminPartSubCategories(c *fiber.Ctx) error {
 	return adminHandler[part.SubCategory](c, "part-sub-categories", part.GetAllSubCategories, nil, adminPartSubCategoriesSectionWrapper)
 }
 
-func HandleKillUser(c *fiber.Ctx) error {
+// Archive/Restore handlers
+func HandleArchiveUser(c *fiber.Ctx) error {
 	userID, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
 
-	if err := user.DeleteUser(userID); err != nil {
+	if err := user.ArchiveUser(userID); err != nil {
 		return fiber.ErrInternalServerError
 	}
 
@@ -208,56 +209,38 @@ func HandleKillUser(c *fiber.Ctx) error {
 	return render(c, ui.AdminUserTable(users, "active"))
 }
 
-func HandleResurrectUser(c *fiber.Ctx) error {
+func HandleRestoreUser(c *fiber.Ctx) error {
 	userID, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
 
-	if err := user.ResurrectUser(userID); err != nil {
+	if err := user.RestoreUser(userID); err != nil {
 		return fiber.ErrInternalServerError
 	}
 
-	users, err := user.GetAllDeadUsers()
+	users, err := user.GetAllArchivedUsers()
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
 
-	return render(c, ui.AdminUserTable(users, "dead"))
+	return render(c, ui.AdminUserTable(users, "archived"))
 }
 
-func HandleKillAd(c *fiber.Ctx) error {
+func HandleRestoreAd(c *fiber.Ctx) error {
 	adID, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
 
-	if err := ad.DeleteAd(adID); err != nil {
+	if err := ad.RestoreAd(adID); err != nil {
 		return fiber.ErrInternalServerError
 	}
 
-	ads, err := ad.GetAllAds()
+	ads, err := ad.GetAllArchivedAds()
 	if err != nil {
 		return fiber.ErrInternalServerError
 	}
 
-	return render(c, ui.AdminAdTable(ads, "active"))
-}
-
-func HandleResurrectAd(c *fiber.Ctx) error {
-	adID, err := c.ParamsInt("id")
-	if err != nil {
-		return fiber.ErrBadRequest
-	}
-
-	if err := ad.ResurrectAd(adID); err != nil {
-		return fiber.ErrInternalServerError
-	}
-
-	ads, err := ad.GetAllDeadAds()
-	if err != nil {
-		return fiber.ErrInternalServerError
-	}
-
-	return render(c, ui.AdminAdTable(ads, "dead"))
+	return render(c, ui.AdminAdTable(ads, "archived"))
 }

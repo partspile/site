@@ -7,16 +7,16 @@ import (
 
 // Table name constants
 const (
-	TableUser     = "User"
-	TableUserDead = "UserDead"
+	TableUser         = "User"
+	TableArchivedUser = "ArchivedUser"
 )
 
 // UserStatus represents the status of a user
 type UserStatus string
 
 const (
-	StatusActive UserStatus = "active"
-	StatusDead   UserStatus = "dead"
+	StatusActive   UserStatus = "active"
+	StatusArchived UserStatus = "archived"
 )
 
 type User struct {
@@ -30,8 +30,8 @@ type User struct {
 	DeletionDate *time.Time `json:"deletion_date,omitempty"`
 }
 
-// IsDead returns true if the user has been deleted
-func (u User) IsDead() bool {
+// IsArchived returns true if the user has been archived
+func (u User) IsArchived() bool {
 	return u.DeletionDate != nil
 }
 
@@ -51,7 +51,7 @@ func CreateUser(name, phone, passwordHash string) (int, error) {
 	return int(id), nil
 }
 
-// GetUserByID retrieves a user by ID from either active or dead tables
+// GetUserByID retrieves a user by ID from either active or archived tables
 // Returns the user, its status, and whether it was found
 func GetUserByID(id int) (User, UserStatus, bool) {
 	// Try active users first
@@ -60,10 +60,10 @@ func GetUserByID(id int) (User, UserStatus, bool) {
 		return user, StatusActive, true
 	}
 
-	// Try dead users
-	deadUser, ok := GetDeadUser(id)
+	// Try archived users
+	archivedUser, ok := GetArchivedUser(id)
 	if ok {
-		return deadUser, StatusDead, true
+		return archivedUser, StatusArchived, true
 	}
 
 	return User{}, StatusActive, false
@@ -99,9 +99,9 @@ func GetUser(id int) (User, error) {
 	return u, nil
 }
 
-// GetDeadUser retrieves a dead user by ID
-func GetDeadUser(id int) (User, bool) {
-	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin, deletion_date FROM UserDead WHERE id = ?`, id)
+// GetArchivedUser retrieves an archived user by ID
+func GetArchivedUser(id int) (User, bool) {
+	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin, deletion_date FROM ArchivedUser WHERE id = ?`, id)
 	var u User
 	var createdAt, deletionDate string
 	var isAdmin int
@@ -151,8 +151,8 @@ func UpdateUserPassword(userID int, newHash string) (int, error) {
 	return int(n), err
 }
 
-// DeleteUser archives a user and all their ads instead of deleting them
-func DeleteUser(userID int) error {
+// ArchiveUser archives a user and all their ads instead of deleting them
+func ArchiveUser(userID int) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -171,7 +171,7 @@ func DeleteUser(userID int) error {
 
 	// Archive user with deletion_date
 	deletionDate := time.Now().UTC().Format(time.RFC3339Nano)
-	_, err = tx.Exec(`INSERT INTO UserDead (id, name, phone, token_balance, password_hash, created_at, deletion_date)
+	_, err = tx.Exec(`INSERT INTO ArchivedUser (id, name, phone, token_balance, password_hash, created_at, deletion_date)
 		VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		user.ID, user.Name, user.Phone, user.TokenBalance,
 		user.PasswordHash, user.CreatedAt, deletionDate)
@@ -180,7 +180,7 @@ func DeleteUser(userID int) error {
 	}
 
 	// Archive all ads by this user
-	_, err = tx.Exec(`INSERT INTO AdDead (id, description, price, created_at, subcategory_id, user_id, deletion_date)
+	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, description, price, created_at, subcategory_id, user_id, deletion_date)
 		SELECT id, description, price, created_at, subcategory_id, user_id, ?
 		FROM Ad WHERE user_id = ?`, deletionDate, userID)
 	if err != nil {
@@ -188,7 +188,7 @@ func DeleteUser(userID int) error {
 	}
 
 	// Archive all ad-car relationships for this user's ads
-	_, err = tx.Exec(`INSERT INTO AdCarDead (ad_id, car_id)
+	_, err = tx.Exec(`INSERT INTO ArchivedAdCar (ad_id, car_id)
 		SELECT ac.ad_id, ac.car_id
 		FROM AdCar ac
 		JOIN Ad a ON a.id = ac.ad_id
@@ -227,8 +227,8 @@ func DeleteUser(userID int) error {
 	return tx.Commit()
 }
 
-// ResurrectUser moves a user from the UserDead table back to the active User table
-func ResurrectUser(userID int) error {
+// RestoreUser moves a user from the ArchivedUser table back to the active User table
+func RestoreUser(userID int) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -238,7 +238,7 @@ func ResurrectUser(userID int) error {
 	// Get user data from archive
 	var user User
 	err = tx.QueryRow(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin 
-		FROM UserDead WHERE id = ?`, userID).Scan(
+		FROM ArchivedUser WHERE id = ?`, userID).Scan(
 		&user.ID, &user.Name, &user.Phone, &user.TokenBalance,
 		&user.PasswordHash, &user.CreatedAt, &user.IsAdmin)
 	if err != nil {
@@ -257,16 +257,16 @@ func ResurrectUser(userID int) error {
 	// Restore all ads by this user
 	_, err = tx.Exec(`INSERT INTO Ad (id, description, price, created_at, subcategory_id, user_id)
 		SELECT id, description, price, created_at, subcategory_id, user_id
-		FROM AdDead WHERE user_id = ?`, userID)
+		FROM ArchivedAd WHERE user_id = ?`, userID)
 	if err != nil {
 		return err
 	}
 
 	// Restore all ad-car relationships for this user's ads
 	_, err = tx.Exec(`INSERT INTO AdCar (ad_id, car_id)
-		SELECT acd.ad_id, acd.car_id
-		FROM AdCarDead acd
-		JOIN AdDead ad ON ad.id = acd.ad_id
+		SELECT aac.ad_id, aac.car_id
+		FROM ArchivedAdCar aac
+		JOIN ArchivedAd ad ON ad.id = aac.ad_id
 		WHERE ad.user_id = ?`, userID)
 	if err != nil {
 		return err
@@ -281,16 +281,12 @@ func ResurrectUser(userID int) error {
 	}
 
 	// Delete from archive tables
-	_, err = tx.Exec(`DELETE FROM AdCarDead WHERE ad_id IN (
-		SELECT id FROM AdDead WHERE user_id = ?)`, userID)
+	_, err = tx.Exec(`DELETE FROM ArchivedAdCar WHERE ad_id IN (
+		SELECT id FROM ArchivedAd WHERE user_id = ?)`, userID)
 	if err != nil {
 		return err
 	}
-	_, err = tx.Exec(`DELETE FROM AdDead WHERE user_id = ?`, userID)
-	if err != nil {
-		return err
-	}
-	_, err = tx.Exec(`DELETE FROM UserDead WHERE id = ?`, userID)
+	_, err = tx.Exec(`DELETE FROM ArchivedAd WHERE user_id = ?`, userID)
 	if err != nil {
 		return err
 	}
@@ -298,23 +294,9 @@ func ResurrectUser(userID int) error {
 	return tx.Commit()
 }
 
-// SetAdmin sets or removes admin privileges for a user
-func SetAdmin(userID int, isAdmin bool) error {
-	_, err := db.Exec(`UPDATE User SET is_admin = ? WHERE id = ?`,
-		map[bool]int{false: 0, true: 1}[isAdmin], userID)
-	return err
-}
-
-// getUsersFromTable retrieves users from the specified table
-func getUsersFromTable(tableName string) ([]User, error) {
-	var query string
-	if tableName == TableUserDead {
-		query = `SELECT id, name, phone, token_balance, password_hash, created_at, is_admin, deletion_date FROM ` + tableName
-	} else {
-		query = `SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM ` + tableName
-	}
-
-	rows, err := db.Query(query)
+// GetAllUsers returns all users in the system
+func GetAllUsers() ([]User, error) {
+	rows, err := db.Query(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM User`)
 	if err != nil {
 		return nil, err
 	}
@@ -325,40 +307,42 @@ func getUsersFromTable(tableName string) ([]User, error) {
 		var u User
 		var createdAt string
 		var isAdmin int
-
-		if tableName == TableUserDead {
-			var deletionDate string
-			err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin, &deletionDate)
-			if err != nil {
-				return nil, err
-			}
-			// Parse deletion date
-			if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
-				u.DeletionDate = &parsedTime
-			}
-		} else {
-			err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin)
-			if err != nil {
-				return nil, err
-			}
+		err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin)
+		if err != nil {
+			return nil, err
 		}
-
 		u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		u.IsAdmin = isAdmin == 1
-
 		users = append(users, u)
 	}
 	return users, nil
 }
 
-// GetAllUsers returns all users in the system
-func GetAllUsers() ([]User, error) {
-	return getUsersFromTable(TableUser)
-}
+// GetAllArchivedUsers returns all archived users
+func GetAllArchivedUsers() ([]User, error) {
+	rows, err := db.Query(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin, deletion_date FROM ArchivedUser`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-// GetAllDeadUsers returns all archived users
-func GetAllDeadUsers() ([]User, error) {
-	return getUsersFromTable(TableUserDead)
+	var users []User
+	for rows.Next() {
+		var u User
+		var createdAt, deletionDate string
+		var isAdmin int
+		err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin, &deletionDate)
+		if err != nil {
+			return nil, err
+		}
+		u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+		u.IsAdmin = isAdmin == 1
+		if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
+			u.DeletionDate = &parsedTime
+		}
+		users = append(users, u)
+	}
+	return users, nil
 }
 
 // Transaction represents a token transaction
@@ -390,4 +374,11 @@ func GetAllTransactions() ([]Transaction, error) {
 		transactions = append(transactions, t)
 	}
 	return transactions, nil
+}
+
+// SetAdmin sets or removes admin privileges for a user
+func SetAdmin(userID int, isAdmin bool) error {
+	_, err := db.Exec(`UPDATE User SET is_admin = ? WHERE id = ?`,
+		map[bool]int{false: 0, true: 1}[isAdmin], userID)
+	return err
 }

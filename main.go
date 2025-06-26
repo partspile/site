@@ -100,10 +100,10 @@ func main() {
 
 	// Other Admin routes
 	app.Post("/api/admin/users/set-admin", handlers.AdminRequired, handlers.HandleSetAdmin)
-	app.Delete("/api/admin/users/kill/:id", handlers.AdminRequired, handlers.HandleKillUser)
-	app.Post("/api/admin/users/resurrect/:id", handlers.AdminRequired, handlers.HandleResurrectUser)
-	app.Delete("/api/admin/ads/kill/:id", handlers.AdminRequired, handlers.HandleKillAd)
-	app.Post("/api/admin/ads/resurrect/:id", handlers.AdminRequired, handlers.HandleResurrectAd)
+	app.Delete("/api/admin/users/archive/:id", handlers.AdminRequired, handlers.HandleArchiveUser)
+	app.Post("/api/admin/users/restore/:id", handlers.AdminRequired, handlers.HandleRestoreUser)
+	app.Delete("/api/admin/ads/archive/:id", handlers.AdminRequired, handlers.HandleArchiveAd)
+	app.Post("/api/admin/ads/restore/:id", handlers.AdminRequired, handlers.HandleRestoreAd)
 	app.Get("/api/admin/export/users", handlers.AdminRequired, handlers.HandleAdminExportUsers)
 	app.Get("/api/admin/export/ads", handlers.AdminRequired, handlers.HandleAdminExportAds)
 	app.Get("/api/admin/export/transactions", handlers.AdminRequired, handlers.HandleAdminExportTransactions)
@@ -121,7 +121,7 @@ func main() {
 	app.Get("/api/engines", handlers.HandleEngines)
 	app.Post("/api/new-ad", handlers.AuthRequired, handlers.HandleNewAdSubmission)
 	app.Post("/api/update-ad", handlers.AuthRequired, handlers.HandleUpdateAdSubmission)
-	app.Delete("/delete-ad/:id", handlers.AuthRequired, handlers.HandleDeleteAd)
+	app.Delete("/delete-ad/:id", handlers.AuthRequired, handlers.HandleArchiveAd)
 
 	// Flag/unflag ad endpoints
 	app.Post("/api/flag-ad/:id", handlers.AuthRequired, handlers.HandleFlagAd)
