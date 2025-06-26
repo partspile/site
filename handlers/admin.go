@@ -12,6 +12,73 @@ import (
 	g "maragu.dev/gomponents"
 )
 
+// adminHandler is a generic function that handles admin section pages
+// T is the entity type (e.g., user.User, ad.Ad, etc.)
+// getActiveData and getDeadData are functions that retrieve active and dead data respectively
+// sectionComponent is a function that renders the UI section for the entity
+// If getDeadData is nil, the entity doesn't support status filtering
+func adminHandler[T any](c *fiber.Ctx, sectionName string,
+	getActiveData func() ([]T, error),
+	getDeadData func() ([]T, error), // can be nil for no-status entities
+	sectionComponent func([]T, string) g.Node) error {
+	currentUser := c.Locals("user").(*user.User)
+	status := c.Query("status")
+
+	var data []T
+	var err error
+
+	if getDeadData != nil {
+		// Entity supports status filtering
+		if status == "dead" {
+			data, err = getDeadData()
+		} else {
+			data, err = getActiveData()
+		}
+	} else {
+		// Entity doesn't support status filtering
+		data, err = getActiveData()
+	}
+
+	if err != nil {
+		return fiber.ErrInternalServerError
+	}
+
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), sectionName, sectionComponent(data, status)))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), sectionName, sectionComponent(data, status))},
+	))
+}
+
+// Wrapper functions for UI components that don't take a status parameter
+func adminTransactionsSectionWrapper(transactions []user.Transaction, status string) g.Node {
+	return ui.AdminTransactionsSection(transactions)
+}
+
+func adminMakesSectionWrapper(makes []vehicle.Make, status string) g.Node {
+	return ui.AdminMakesSection(makes)
+}
+
+func adminModelsSectionWrapper(models []vehicle.Model, status string) g.Node {
+	return ui.AdminModelsSection(models)
+}
+
+func adminYearsSectionWrapper(years []vehicle.Year, status string) g.Node {
+	return ui.AdminYearsSection(years)
+}
+
+func adminPartCategoriesSectionWrapper(categories []part.Category, status string) g.Node {
+	return ui.AdminPartCategoriesSection(categories)
+}
+
+func adminPartSubCategoriesSectionWrapper(subCategories []part.SubCategory, status string) g.Node {
+	return ui.AdminPartSubCategoriesSection(subCategories)
+}
+
 func HandleAdminDashboard(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
 	users, err := user.GetAllUsers()
@@ -30,27 +97,7 @@ func HandleAdminDashboard(c *fiber.Ctx) error {
 }
 
 func HandleAdminUsers(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
-	status := c.Query("status")
-	var users []user.User
-	var err error
-	if status == "dead" {
-		users, err = user.GetAllDeadUsers()
-	} else {
-		users, err = user.GetAllUsers()
-	}
-	if err != nil {
-		return fiber.ErrInternalServerError
-	}
-	if c.Get("HX-Request") != "" {
-		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "users", ui.AdminUsersSection(users, status)))
-	}
-	return render(c, ui.Page(
-		"Admin Dashboard",
-		currentUser,
-		c.Path(),
-		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "users", ui.AdminUsersSection(users, status))},
-	))
+	return adminHandler[user.User](c, "users", user.GetAllUsers, user.GetAllDeadUsers, ui.AdminUsersSection)
 }
 
 func HandleSetAdmin(c *fiber.Ctx) error {
@@ -73,44 +120,11 @@ func HandleSetAdmin(c *fiber.Ctx) error {
 }
 
 func HandleAdminAds(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
-	status := c.Query("status")
-	var ads []ad.Ad
-	var err error
-	if status == "dead" {
-		ads, err = ad.GetAllDeadAds()
-	} else {
-		ads, err = ad.GetAllAds()
-	}
-	if err != nil {
-		return fiber.ErrInternalServerError
-	}
-	if c.Get("HX-Request") != "" {
-		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "ads", ui.AdminAdsSection(ads, status)))
-	}
-	return render(c, ui.Page(
-		"Admin Dashboard",
-		currentUser,
-		c.Path(),
-		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "ads", ui.AdminAdsSection(ads, status))},
-	))
+	return adminHandler[ad.Ad](c, "ads", ad.GetAllAds, ad.GetAllDeadAds, ui.AdminAdsSection)
 }
 
 func HandleAdminTransactions(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
-	transactions, err := user.GetAllTransactions()
-	if err != nil {
-		return fiber.ErrInternalServerError
-	}
-	if c.Get("HX-Request") != "" {
-		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "transactions", ui.AdminTransactionsSection(transactions)))
-	}
-	return render(c, ui.Page(
-		"Admin Dashboard",
-		currentUser,
-		c.Path(),
-		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "transactions", ui.AdminTransactionsSection(transactions))},
-	))
+	return adminHandler[user.Transaction](c, "transactions", user.GetAllTransactions, nil, adminTransactionsSectionWrapper)
 }
 
 func HandleAdminExportUsers(c *fiber.Ctx) error {
@@ -173,88 +187,23 @@ func HandleAdminExportTransactions(c *fiber.Ctx) error {
 }
 
 func HandleAdminMakes(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
-	makes, err := vehicle.GetAllMakes()
-	if err != nil {
-		return fiber.ErrInternalServerError
-	}
-	if c.Get("HX-Request") != "" {
-		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "makes", ui.AdminMakesSection(makes)))
-	}
-	return render(c, ui.Page(
-		"Admin Dashboard",
-		currentUser,
-		c.Path(),
-		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "makes", ui.AdminMakesSection(makes))},
-	))
+	return adminHandler[vehicle.Make](c, "makes", vehicle.GetAllMakes, nil, adminMakesSectionWrapper)
 }
 
 func HandleAdminModels(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
-	models, err := vehicle.GetAllModelsWithID()
-	if err != nil {
-		return fiber.ErrInternalServerError
-	}
-	if c.Get("HX-Request") != "" {
-		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "models", ui.AdminModelsSection(models)))
-	}
-	return render(c, ui.Page(
-		"Admin Dashboard",
-		currentUser,
-		c.Path(),
-		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "models", ui.AdminModelsSection(models))},
-	))
+	return adminHandler[vehicle.Model](c, "models", vehicle.GetAllModelsWithID, nil, adminModelsSectionWrapper)
 }
 
 func HandleAdminYears(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
-	years, err := vehicle.GetAllYears()
-	if err != nil {
-		return fiber.ErrInternalServerError
-	}
-	if c.Get("HX-Request") != "" {
-		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "years", ui.AdminYearsSection(years)))
-	}
-	return render(c, ui.Page(
-		"Admin Dashboard",
-		currentUser,
-		c.Path(),
-		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "years", ui.AdminYearsSection(years))},
-	))
+	return adminHandler[vehicle.Year](c, "years", vehicle.GetAllYears, nil, adminYearsSectionWrapper)
 }
 
 func HandleAdminPartCategories(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
-	categories, err := part.GetAllCategories()
-	if err != nil {
-		return fiber.ErrInternalServerError
-	}
-	if c.Get("HX-Request") != "" {
-		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "part-categories", ui.AdminPartCategoriesSection(categories)))
-	}
-	return render(c, ui.Page(
-		"Admin Dashboard",
-		currentUser,
-		c.Path(),
-		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "part-categories", ui.AdminPartCategoriesSection(categories))},
-	))
+	return adminHandler[part.Category](c, "part-categories", part.GetAllCategories, nil, adminPartCategoriesSectionWrapper)
 }
 
 func HandleAdminPartSubCategories(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
-	subCategories, err := part.GetAllSubCategories()
-	if err != nil {
-		return fiber.ErrInternalServerError
-	}
-	if c.Get("HX-Request") != "" {
-		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "part-sub-categories", ui.AdminPartSubCategoriesSection(subCategories)))
-	}
-	return render(c, ui.Page(
-		"Admin Dashboard",
-		currentUser,
-		c.Path(),
-		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "part-sub-categories", ui.AdminPartSubCategoriesSection(subCategories))},
-	))
+	return adminHandler[part.SubCategory](c, "part-sub-categories", part.GetAllSubCategories, nil, adminPartSubCategoriesSectionWrapper)
 }
 
 func HandleKillUser(c *fiber.Ctx) error {

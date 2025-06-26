@@ -42,7 +42,6 @@ func AdminSectionPage(currentUser *user.User, path, activeSection string, conten
 				}
 				return Button(
 					Class("px-4 py-1 rounded "+colorClass),
-					Name("admin-section-btn"),
 					ID("btn-"+s.Name),
 					hx.Get("/admin/"+s.Name),
 					hx.Target("#admin-section"),
