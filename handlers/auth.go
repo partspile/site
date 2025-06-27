@@ -56,22 +56,22 @@ func GetCurrentUser(c *fiber.Ctx) (*user.User, error) {
 	store := c.Locals("session_store").(*session.Store)
 	sess, err := store.Get(c)
 	if err != nil {
-		return nil, fmt.Errorf("session error: %w", err)
+		return nil, fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("session error: %v", err))
 	}
 
 	userID, ok := sess.Get("userID").(int)
 	if !ok || userID == 0 {
-		return nil, fmt.Errorf("no user ID in session")
+		return nil, fiber.NewError(fiber.StatusUnauthorized, "no user ID in session")
 	}
 
 	u, status, found := user.GetUserByID(userID)
 	if !found {
-		return nil, fmt.Errorf("user not found")
+		return nil, fiber.NewError(fiber.StatusUnauthorized, "user not found")
 	}
 
 	// Only return active users for current user sessions
 	if status == user.StatusArchived {
-		return nil, fmt.Errorf("user is archived")
+		return nil, fiber.NewError(fiber.StatusForbidden, "user is archived")
 	}
 
 	return &u, nil
