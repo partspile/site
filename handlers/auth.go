@@ -14,14 +14,11 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 
 	u, err := user.GetUserByName(name)
 	if err != nil {
-		c.Response().SetStatusCode(fiber.StatusUnauthorized)
-		return render(c, ui.ValidationError("Invalid username or password"))
+		return ValidationErrorResponseWithStatus(c, "Invalid username or password", fiber.StatusUnauthorized)
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password))
-	if err != nil {
-		c.Response().SetStatusCode(fiber.StatusUnauthorized)
-		return render(c, ui.ValidationError("Invalid username or password"))
+	if err := VerifyPassword(u.PasswordHash, password); err != nil {
+		return ValidationErrorResponseWithStatus(c, "Invalid username or password", fiber.StatusUnauthorized)
 	}
 
 	store := c.Locals("session_store").(*session.Store)
@@ -128,8 +125,8 @@ func HandleRegisterSubmission(c *fiber.Ctx) error {
 	password := c.FormValue("password")
 	password2 := c.FormValue("password2")
 
-	if password != password2 {
-		return render(c, ui.ValidationError("Passwords do not match"))
+	if err := ValidatePasswordConfirmation(password, password2); err != nil {
+		return ValidationErrorResponse(c, err.Error())
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -138,7 +135,7 @@ func HandleRegisterSubmission(c *fiber.Ctx) error {
 	}
 
 	if _, err := user.CreateUser(name, phone, string(hashedPassword)); err != nil {
-		return render(c, ui.ValidationError("User already exists or another error occurred."))
+		return ValidationErrorResponse(c, "User already exists or another error occurred.")
 	}
 
 	return render(c, ui.SuccessMessage("Registration successful", "/login"))
@@ -154,15 +151,14 @@ func HandleChangePassword(c *fiber.Ctx) error {
 	newPassword := c.FormValue("newPassword")
 	confirmNewPassword := c.FormValue("confirmNewPassword")
 
-	if newPassword != confirmNewPassword {
-		return render(c, ui.ValidationError("New passwords do not match"))
+	if err := ValidatePasswordConfirmation(newPassword, confirmNewPassword); err != nil {
+		return ValidationErrorResponse(c, "New passwords do not match")
 	}
 
 	currentUser := c.Locals("user").(*user.User)
 
-	err := bcrypt.CompareHashAndPassword([]byte(currentUser.PasswordHash), []byte(currentPassword))
-	if err != nil {
-		return render(c, ui.ValidationError("Invalid current password"))
+	if err := VerifyPassword(currentUser.PasswordHash, currentPassword); err != nil {
+		return ValidationErrorResponse(c, "Invalid current password")
 	}
 
 	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
@@ -171,7 +167,7 @@ func HandleChangePassword(c *fiber.Ctx) error {
 	}
 
 	if _, err := user.UpdateUserPassword(currentUser.ID, string(newHash)); err != nil {
-		return render(c, ui.ValidationError("Failed to update password"))
+		return ValidationErrorResponse(c, "Failed to update password")
 	}
 	return render(c, ui.SuccessMessage("Password changed successfully", ""))
 }
@@ -181,14 +177,11 @@ func HandleDeleteAccount(c *fiber.Ctx) error {
 
 	currentUser := c.Locals("user").(*user.User)
 	if currentUser == nil {
-		c.Response().SetStatusCode(fiber.StatusUnauthorized)
-		return render(c, ui.ValidationError("You must be logged in to delete your account"))
+		return ValidationErrorResponseWithStatus(c, "You must be logged in to delete your account", fiber.StatusUnauthorized)
 	}
 
-	err := bcrypt.CompareHashAndPassword([]byte(currentUser.PasswordHash), []byte(password))
-	if err != nil {
-		c.Response().SetStatusCode(fiber.StatusUnauthorized)
-		return render(c, ui.ValidationError("Invalid password"))
+	if err := VerifyPassword(currentUser.PasswordHash, password); err != nil {
+		return ValidationErrorResponseWithStatus(c, "Invalid password", fiber.StatusUnauthorized)
 	}
 
 	// Archive all ads by this user (function not implemented)

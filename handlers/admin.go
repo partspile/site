@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"strconv"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/part"
@@ -97,13 +95,13 @@ func HandleAdminDashboard(c *fiber.Ctx) error {
 }
 
 func HandleAdminUsers(c *fiber.Ctx) error {
-	return adminHandler[user.User](c, "users", user.GetAllUsers, user.GetAllArchivedUsers, ui.AdminUsersSection)
+	return adminHandler(c, "users", user.GetAllUsers, user.GetAllArchivedUsers, ui.AdminUsersSection)
 }
 
 func HandleSetAdmin(c *fiber.Ctx) error {
-	userID, err := strconv.Atoi(c.FormValue("user_id"))
+	userID, err := ParseFormInt(c, "user_id")
 	if err != nil {
-		return fiber.ErrBadRequest
+		return err
 	}
 	isAdmin := c.FormValue("is_admin") == "true"
 
@@ -120,11 +118,11 @@ func HandleSetAdmin(c *fiber.Ctx) error {
 }
 
 func HandleAdminAds(c *fiber.Ctx) error {
-	return adminHandler[ad.Ad](c, "ads", ad.GetAllAds, ad.GetAllArchivedAds, ui.AdminAdsSection)
+	return adminHandler(c, "ads", ad.GetAllAds, ad.GetAllArchivedAds, ui.AdminAdsSection)
 }
 
 func HandleAdminTransactions(c *fiber.Ctx) error {
-	return adminHandler[user.Transaction](c, "transactions", user.GetAllTransactions, nil, adminTransactionsSectionWrapper)
+	return adminHandler(c, "transactions", user.GetAllTransactions, nil, adminTransactionsSectionWrapper)
 }
 
 // Generic export handler for entities with status (e.g., users, ads)
@@ -159,42 +157,42 @@ func exportSimple[T any](c *fiber.Ctx, getData func() ([]T, error), filename str
 }
 
 func HandleAdminExportUsers(c *fiber.Ctx) error {
-	return exportWithStatus[user.User](c, user.GetAllUsers, user.GetAllArchivedUsers, "users")
+	return exportWithStatus(c, user.GetAllUsers, user.GetAllArchivedUsers, "users")
 }
 
 func HandleAdminExportAds(c *fiber.Ctx) error {
-	return exportWithStatus[ad.Ad](c, ad.GetAllAds, ad.GetAllArchivedAds, "ads")
+	return exportWithStatus(c, ad.GetAllAds, ad.GetAllArchivedAds, "ads")
 }
 
 func HandleAdminExportTransactions(c *fiber.Ctx) error {
-	return exportSimple[user.Transaction](c, user.GetAllTransactions, "transactions.json")
+	return exportSimple(c, user.GetAllTransactions, "transactions.json")
 }
 
 func HandleAdminMakes(c *fiber.Ctx) error {
-	return adminHandler[vehicle.Make](c, "makes", vehicle.GetAllMakes, nil, adminMakesSectionWrapper)
+	return adminHandler(c, "makes", vehicle.GetAllMakes, nil, adminMakesSectionWrapper)
 }
 
 func HandleAdminModels(c *fiber.Ctx) error {
-	return adminHandler[vehicle.Model](c, "models", vehicle.GetAllModelsWithID, nil, adminModelsSectionWrapper)
+	return adminHandler(c, "models", vehicle.GetAllModelsWithID, nil, adminModelsSectionWrapper)
 }
 
 func HandleAdminYears(c *fiber.Ctx) error {
-	return adminHandler[vehicle.Year](c, "years", vehicle.GetAllYears, nil, adminYearsSectionWrapper)
+	return adminHandler(c, "years", vehicle.GetAllYears, nil, adminYearsSectionWrapper)
 }
 
 func HandleAdminPartCategories(c *fiber.Ctx) error {
-	return adminHandler[part.Category](c, "part-categories", part.GetAllCategories, nil, adminPartCategoriesSectionWrapper)
+	return adminHandler(c, "part-categories", part.GetAllCategories, nil, adminPartCategoriesSectionWrapper)
 }
 
 func HandleAdminPartSubCategories(c *fiber.Ctx) error {
-	return adminHandler[part.SubCategory](c, "part-sub-categories", part.GetAllSubCategories, nil, adminPartSubCategoriesSectionWrapper)
+	return adminHandler(c, "part-sub-categories", part.GetAllSubCategories, nil, adminPartSubCategoriesSectionWrapper)
 }
 
 // Archive/Restore handlers
 func HandleArchiveUser(c *fiber.Ctx) error {
-	userID, err := c.ParamsInt("id")
+	userID, err := ParseIntParam(c, "id")
 	if err != nil {
-		return fiber.ErrBadRequest
+		return err
 	}
 
 	if err := user.ArchiveUser(userID); err != nil {
@@ -210,9 +208,9 @@ func HandleArchiveUser(c *fiber.Ctx) error {
 }
 
 func HandleRestoreUser(c *fiber.Ctx) error {
-	userID, err := c.ParamsInt("id")
+	userID, err := ParseIntParam(c, "id")
 	if err != nil {
-		return fiber.ErrBadRequest
+		return err
 	}
 
 	if err := user.RestoreUser(userID); err != nil {
@@ -228,9 +226,9 @@ func HandleRestoreUser(c *fiber.Ctx) error {
 }
 
 func HandleRestoreAd(c *fiber.Ctx) error {
-	adID, err := c.ParamsInt("id")
+	adID, err := ParseIntParam(c, "id")
 	if err != nil {
-		return fiber.ErrBadRequest
+		return err
 	}
 
 	if err := ad.RestoreAd(adID); err != nil {

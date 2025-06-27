@@ -21,35 +21,26 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
 
 	// Validate make selection first
-	if c.FormValue("make") == "" {
-		return render(c, ui.ValidationError("Please select a make first"))
-	}
-
-	form, err := c.MultipartForm()
+	make, err := ValidateRequired(c, "make", "Make")
 	if err != nil {
-		return render(c, ui.ValidationError(err.Error()))
+		return err
 	}
 
-	// Validate required selections
-	if len(form.Value["years"]) == 0 {
-		return render(c, ui.ValidationError("Please select at least one year"))
+	form, err := ParseMultipartForm(c)
+	if err != nil {
+		return err
 	}
 
-	if len(form.Value["models"]) == 0 {
-		return render(c, ui.ValidationError("Please select at least one model"))
+	// Validate required selections using utility function
+	years, models, engines, err := ValidateAdFormAndReturn(form)
+	if err != nil {
+		return ValidationErrorResponse(c, err.Error())
 	}
 
-	if len(form.Value["engines"]) == 0 {
-		return render(c, ui.ValidationError("Please select at least one engine size"))
+	price, err := ParseFormFloat(c, "price")
+	if err != nil {
+		price = 0.0 // Default to 0 if parsing fails
 	}
-
-	price := 0.0
-	fmt.Sscanf(c.FormValue("price"), "%f", &price)
-
-	make := c.FormValue("make")
-	years := form.Value["years"]
-	models := form.Value["models"]
-	engines := form.Value["engines"]
 	description := c.FormValue("description")
 
 	newAd := ad.Ad{
@@ -102,8 +93,8 @@ func HandleEditAd(c *fiber.Ctx) error {
 		return fiber.ErrNotFound
 	}
 
-	if ad.UserID != currentUser.ID {
-		return fiber.ErrForbidden
+	if err := ValidateOwnership(ad.UserID, currentUser.ID); err != nil {
+		return err
 	}
 
 	// Prepare make options
@@ -123,35 +114,39 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 
 	adID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
-		return fiber.ErrBadRequest
+		return err
 	}
 
 	existingAd, ok := ad.GetAd(adID)
 	if !ok || existingAd.ID == 0 {
 		return fiber.ErrNotFound
 	}
-	if existingAd.UserID != currentUser.ID {
-		return fiber.ErrForbidden
+	
+	if err := ValidateOwnership(existingAd.UserID, currentUser.ID); err != nil {
+		return err
 	}
 
-	form, err := c.MultipartForm()
+	form, err := ParseMultipartForm(c)
 	if err != nil {
-		return render(c, ui.ValidationError(err.Error()))
+		return err
 	}
 
-	if len(form.Value["years"]) == 0 || len(form.Value["models"]) == 0 || len(form.Value["engines"]) == 0 {
-		return render(c, ui.ValidationError("Please make sure you have selected a year, model, and engine"))
+	years, models, engines, err := ValidateAdFormAndReturn(form)
+	if err != nil {
+		return ValidationErrorResponse(c, err.Error())
 	}
 
-	price := 0.0
-	fmt.Sscanf(c.FormValue("price"), "%f", &price)
+	price, err := ParseFormFloat(c, "price")
+	if err != nil {
+		price = 0.0 // Default to 0 if parsing fails
+	}
 
 	updatedAd := ad.Ad{
 		ID:          adID,
 		Make:        c.FormValue("make"),
-		Years:       form.Value["years"],
-		Models:      form.Value["models"],
-		Engines:     form.Value["engines"],
+		Years:       years,
+		Models:      models,
+		Engines:     engines,
 		Description: c.FormValue("description"),
 		Price:       price,
 		UserID:      currentUser.ID,
@@ -165,9 +160,9 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 // Handler to flag an ad
 func HandleFlagAd(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
-	adID, err := c.ParamsInt("id")
+	adID, err := ParseIntParam(c, "id")
 	if err != nil {
-		return fiber.ErrBadRequest
+		return err
 	}
 	if err := ad.FlagAd(currentUser.ID, adID); err != nil {
 		return fiber.ErrInternalServerError
@@ -179,9 +174,9 @@ func HandleFlagAd(c *fiber.Ctx) error {
 // Handler to unflag an ad
 func HandleUnflagAd(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
-	adID, err := c.ParamsInt("id")
+	adID, err := ParseIntParam(c, "id")
 	if err != nil {
-		return fiber.ErrBadRequest
+		return err
 	}
 	if err := ad.UnflagAd(currentUser.ID, adID); err != nil {
 		return fiber.ErrInternalServerError
