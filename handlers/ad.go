@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,7 +21,6 @@ func HandleNewAd(c *fiber.Ctx) error {
 func HandleNewAdSubmission(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
 
-	// Validate make selection first
 	make, err := ValidateRequired(c, "make", "Make")
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
@@ -31,17 +31,30 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, err.Error())
 	}
 
-	// Validate required selections using utility function
 	years, models, engines, err := ValidateAdFormAndReturn(form)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
 
-	price, err := ParseFormFloat(c, "price")
+	description, err := ValidateRequired(c, "description", "Description")
 	if err != nil {
-		price = 0.0 // Default to 0 if parsing fails
+		return ValidationErrorResponse(c, err.Error())
 	}
-	description := c.FormValue("description")
+
+	priceStr, err := ValidateRequired(c, "price", "Price")
+	if err != nil {
+		return ValidationErrorResponse(c, err.Error())
+	}
+	price, err := strconv.ParseFloat(priceStr, 64)
+	if err != nil {
+		return ValidationErrorResponse(c, "Price must be a valid number")
+	}
+	if price < 0 {
+		return ValidationErrorResponse(c, "Price cannot be negative")
+	}
+	if !regexp.MustCompile(`^\d+(\.\d{1,2})?$`).MatchString(priceStr) {
+		return ValidationErrorResponse(c, "Price must have at most two decimal places")
+	}
 
 	newAd := ad.Ad{
 		ID:          ad.GetNextAdID(),
@@ -136,9 +149,24 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, err.Error())
 	}
 
-	price, err := ParseFormFloat(c, "price")
+	priceStr, err := ValidateRequired(c, "price", "Price")
 	if err != nil {
-		price = 0.0 // Default to 0 if parsing fails
+		return ValidationErrorResponse(c, err.Error())
+	}
+	price, err := strconv.ParseFloat(priceStr, 64)
+	if err != nil {
+		return ValidationErrorResponse(c, "Price must be a valid number")
+	}
+	if price < 0 {
+		return ValidationErrorResponse(c, "Price cannot be negative")
+	}
+	if !regexp.MustCompile(`^\d+(\.\d{1,2})?$`).MatchString(priceStr) {
+		return ValidationErrorResponse(c, "Price must have at most two decimal places")
+	}
+
+	description, err := ValidateRequired(c, "description", "Description")
+	if err != nil {
+		return ValidationErrorResponse(c, err.Error())
 	}
 
 	updatedAd := ad.Ad{
@@ -147,7 +175,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		Years:       years,
 		Models:      models,
 		Engines:     engines,
-		Description: c.FormValue("description"),
+		Description: description,
 		Price:       price,
 		UserID:      currentUser.ID,
 	}

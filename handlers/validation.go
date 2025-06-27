@@ -46,15 +46,6 @@ func ParseFormInt(c *fiber.Ctx, fieldName string) (int, error) {
 	return value, nil
 }
 
-// ParseFormFloat parses a form value as a float64 with consistent error handling
-func ParseFormFloat(c *fiber.Ctx, fieldName string) (float64, error) {
-	value, err := strconv.ParseFloat(c.FormValue(fieldName), 64)
-	if err != nil {
-		return 0, fiber.ErrBadRequest
-	}
-	return value, nil
-}
-
 // ValidatePasswordConfirmation validates that password and confirmation match
 func ValidatePasswordConfirmation(password, confirmation string) error {
 	if password != confirmation {
