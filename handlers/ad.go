@@ -235,5 +235,5 @@ func HandleArchiveAd(c *fiber.Ctx) error {
 	if err := ad.ArchiveAd(adID); err != nil {
 		return c.Status(500).SendString("Failed to archive ad")
 	}
-	return c.SendStatus(204)
+	return render(c, ui.SuccessMessage("Ad archived successfully", "/"))
 }
