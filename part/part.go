@@ -63,7 +63,6 @@ func GetAllSubCategories() ([]SubCategory, error) {
 	return subCategories, nil
 }
 
-
 func GetMakes(query string) ([]string, error) {
 	// If there's a search query, filter makes based on matching ads
 	if query != "" {
@@ -119,6 +118,7 @@ func GetMakes(query string) ([]string, error) {
 }
 
 func GetYearsForMake(makeName string, query string) ([]string, error) {
+	makeName, _ = url.QueryUnescape(makeName)
 	// If there's a search query, filter years based on matching ads
 	if query != "" {
 		rows, err := db.Query(`
@@ -174,6 +174,8 @@ func GetYearsForMake(makeName string, query string) ([]string, error) {
 }
 
 func GetModelsForMakeYear(makeName, year, query string) ([]string, error) {
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
 	// If there's a search query, filter models based on matching ads
 	if query != "" {
 		rows, err := db.Query(`
@@ -231,6 +233,9 @@ func GetModelsForMakeYear(makeName, year, query string) ([]string, error) {
 }
 
 func GetEnginesForMakeYearModel(makeName, year, model, query string) ([]string, error) {
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
+	model, _ = url.QueryUnescape(model)
 	// If there's a search query, filter engines based on matching ads
 	if query != "" {
 		rows, err := db.Query(`
@@ -290,6 +295,10 @@ func GetEnginesForMakeYearModel(makeName, year, model, query string) ([]string, 
 }
 
 func GetCategoriesForMakeYearModelEngine(makeName, year, model, engine, query string) ([]string, error) {
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
+	model, _ = url.QueryUnescape(model)
+	engine, _ = url.QueryUnescape(engine)
 	// If there's a search query, filter categories based on matching ads
 	if query != "" {
 		rows, err := db.Query(`
@@ -354,6 +363,11 @@ func GetCategoriesForMakeYearModelEngine(makeName, year, model, engine, query st
 }
 
 func GetSubCategoriesForMakeYearModelEngineCategory(makeName, year, model, engine, category, query string) ([]string, error) {
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
+	model, _ = url.QueryUnescape(model)
+	engine, _ = url.QueryUnescape(engine)
+	category, _ = url.QueryUnescape(category)
 	// If there's a search query, filter subcategories based on matching ads
 	if query != "" {
 		rows, err := db.Query(`
