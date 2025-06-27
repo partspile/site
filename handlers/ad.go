@@ -23,12 +23,12 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	// Validate make selection first
 	make, err := ValidateRequired(c, "make", "Make")
 	if err != nil {
-		return err
+		return ValidationErrorResponse(c, err.Error())
 	}
 
-	form, err := ParseMultipartForm(c)
+	form, err := c.MultipartForm()
 	if err != nil {
-		return err
+		return ValidationErrorResponse(c, err.Error())
 	}
 
 	// Validate required selections using utility function
@@ -121,14 +121,14 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	if !ok || existingAd.ID == 0 {
 		return fiber.ErrNotFound
 	}
-	
+
 	if err := ValidateOwnership(existingAd.UserID, currentUser.ID); err != nil {
 		return err
 	}
 
-	form, err := ParseMultipartForm(c)
+	form, err := c.MultipartForm()
 	if err != nil {
-		return err
+		return ValidationErrorResponse(c, err.Error())
 	}
 
 	years, models, engines, err := ValidateAdFormAndReturn(form)

@@ -14,10 +14,7 @@ import (
 func ValidateRequired(c *fiber.Ctx, fieldName, displayName string) (string, error) {
 	value := c.FormValue(fieldName)
 	if value == "" {
-		if fieldName == "make" {
-			return "", render(c, ui.ValidationError("Please select a make"))
-		}
-		return "", render(c, ui.ValidationError(fmt.Sprintf("%s is required", displayName)))
+		return "", fmt.Errorf("%s is required", displayName)
 	}
 	return value, nil
 }
@@ -69,15 +66,6 @@ func ValidatePasswordConfirmation(password, confirmation string) error {
 // VerifyPassword verifies a password against a bcrypt hash
 func VerifyPassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-}
-
-// ParseMultipartForm parses a multipart form with consistent error handling
-func ParseMultipartForm(c *fiber.Ctx) (*multipart.Form, error) {
-	form, err := c.MultipartForm()
-	if err != nil {
-		return nil, render(c, ui.ValidationError(err.Error()))
-	}
-	return form, nil
 }
 
 // ValidateOwnership checks if the current user owns the resource
