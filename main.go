@@ -79,7 +79,7 @@ func main() {
 
 	// Ad management (API)
 	api.Post("/new-ad", handlers.AuthRequired, handlers.HandleNewAdSubmission)
-	api.Post("/update-ad", handlers.AuthRequired, handlers.HandleUpdateAdSubmission)
+	api.Post("/update-ad/:id", handlers.AuthRequired, handlers.HandleUpdateAdSubmission)
 	api.Post("/flag-ad/:id", handlers.AuthRequired, handlers.HandleFlagAd)
 	api.Delete("/flag-ad/:id", handlers.AuthRequired, handlers.HandleUnflagAd)
 	api.Get("/makes", handlers.HandleMakes)

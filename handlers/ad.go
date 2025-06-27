@@ -82,7 +82,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	println("HandleUpdateAdSubmission")
 	currentUser := c.Locals("user").(*user.User)
 
-	adID, err := strconv.Atoi(c.Query("id"))
+	adID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
@@ -113,7 +113,7 @@ func HandleFlagAd(c *fiber.Ctx) error {
 		return err
 	}
 	if err := ad.FlagAd(currentUser.ID, adID); err != nil {
-		return fiber.ErrInternalServerError
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to flag ad")
 	}
 	// Return the flagged button HTML for HTMX swap
 	return render(c, ui.FlagButton(true, adID))
@@ -127,7 +127,7 @@ func HandleUnflagAd(c *fiber.Ctx) error {
 		return err
 	}
 	if err := ad.UnflagAd(currentUser.ID, adID); err != nil {
-		return fiber.ErrInternalServerError
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to unflag ad")
 	}
 	// Return the unflagged button HTML for HTMX swap
 	return render(c, ui.FlagButton(false, adID))
@@ -138,11 +138,11 @@ func HandleFlaggedAds(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
 	adIDs, err := ad.GetFlaggedAdIDsByUser(currentUser.ID)
 	if err != nil {
-		return fiber.ErrInternalServerError
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get flagged ad IDs")
 	}
 	ads, err := ad.GetAdsByIDs(adIDs)
 	if err != nil {
-		return fiber.ErrInternalServerError
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get flagged ads")
 	}
 	return render(c, ui.FlaggedAdsSection(currentUser, ads))
 }
@@ -150,10 +150,10 @@ func HandleFlaggedAds(c *fiber.Ctx) error {
 func HandleArchiveAd(c *fiber.Ctx) error {
 	adID, err := c.ParamsInt("id")
 	if err != nil {
-		return c.Status(400).SendString("Invalid ad ID")
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 	if err := ad.ArchiveAd(adID); err != nil {
-		return c.Status(500).SendString("Failed to archive ad")
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to archive ad")
 	}
 	return render(c, ui.SuccessMessage("Ad archived successfully", "/"))
 }
