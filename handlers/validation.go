@@ -3,9 +3,11 @@ package handlers
 import (
 	"fmt"
 	"mime/multipart"
+	"regexp"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/ui"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -32,7 +34,7 @@ func ValidateRequiredMultipart(form *multipart.Form, fieldName, displayName stri
 func ParseIntParam(c *fiber.Ctx, paramName string) (int, error) {
 	value, err := c.ParamsInt(paramName)
 	if err != nil {
-		return 0, fiber.ErrBadRequest
+		return 0, fiber.NewError(fiber.StatusBadRequest, "Invalid parameter: "+paramName)
 	}
 	return value, nil
 }
@@ -41,7 +43,7 @@ func ParseIntParam(c *fiber.Ctx, paramName string) (int, error) {
 func ParseFormInt(c *fiber.Ctx, fieldName string) (int, error) {
 	value, err := strconv.Atoi(c.FormValue(fieldName))
 	if err != nil {
-		return 0, fiber.ErrBadRequest
+		return 0, fiber.NewError(fiber.StatusBadRequest, "Invalid integer value for field: "+fieldName)
 	}
 	return value, nil
 }
@@ -62,7 +64,7 @@ func VerifyPassword(hashedPassword, password string) error {
 // ValidateOwnership checks if the current user owns the resource
 func ValidateOwnership(resourceUserID, currentUserID int) error {
 	if resourceUserID != currentUserID {
-		return fiber.ErrForbidden
+		return fiber.NewError(fiber.StatusForbidden, "You do not have permission to edit this ad")
 	}
 	return nil
 }
@@ -110,4 +112,63 @@ func ValidateAdFormAndReturn(form *multipart.Form) (years, models, engines []str
 	}
 
 	return years, models, engines, nil
+}
+
+// ValidateAndParsePrice validates the price field and returns the parsed float64 value or an error
+func ValidateAndParsePrice(c *fiber.Ctx) (float64, error) {
+	priceStr, err := ValidateRequired(c, "price", "Price")
+	if err != nil {
+		return 0, err
+	}
+	price, err := strconv.ParseFloat(priceStr, 64)
+	if err != nil {
+		return 0, fmt.Errorf("Price must be a valid number")
+	}
+	if price < 0 {
+		return 0, fmt.Errorf("Price cannot be negative")
+	}
+	if !regexp.MustCompile(`^\d+(\.\d{1,2})?$`).MatchString(priceStr) {
+		return 0, fmt.Errorf("Price must have at most two decimal places")
+	}
+	return price, nil
+}
+
+// BuildAdFromForm validates and constructs an ad.Ad from the form data
+func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, error) {
+	make, err := ValidateRequired(c, "make", "Make")
+	if err != nil {
+		return ad.Ad{}, err
+	}
+	form, err := c.MultipartForm()
+	if err != nil {
+		return ad.Ad{}, err
+	}
+	years, models, engines, err := ValidateAdFormAndReturn(form)
+	if err != nil {
+		return ad.Ad{}, err
+	}
+	description, err := ValidateRequired(c, "description", "Description")
+	if err != nil {
+		return ad.Ad{}, err
+	}
+	price, err := ValidateAndParsePrice(c)
+	if err != nil {
+		return ad.Ad{}, err
+	}
+	id := 0
+	if len(adID) > 0 {
+		id = adID[0]
+	} else {
+		id = ad.GetNextAdID()
+	}
+	return ad.Ad{
+		ID:          id,
+		Make:        make,
+		Years:       years,
+		Models:      models,
+		Engines:     engines,
+		Description: description,
+		Price:       price,
+		UserID:      userID,
+	}, nil
 }

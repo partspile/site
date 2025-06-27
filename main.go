@@ -55,38 +55,39 @@ func main() {
 	// Add logger middleware
 	app.Use(logger.New())
 
-	// Handle Chrome DevTools requests
+	// Static files and utility
+	app.Static("/", "./static")
 	app.Get("/.well-known/appspecific/com.chrome.devtools.json", func(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusNoContent)
 	})
 
-	// Static file handler
-	app.Static("/", "./static")
-
 	// Main pages
 	app.Get("/", handlers.HandleHome)
-	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd)
-	app.Get("/edit-ad/:id", handlers.AuthRequired, handlers.HandleEditAd)
-	app.Get("/ad/:id", handlers.OptionalAuth, handlers.HandleViewAd)
 	app.Get("/search", handlers.HandleSearch)
 	app.Get("/search-page", handlers.HandleSearchPage)
 	app.Get("/tree", handlers.TreeView)
 	app.Get("/tree/*", handlers.TreeView)
 	app.Get("/tree-collapsed/*", handlers.HandleTreeCollapse)
 
-	// User registration/authentication
-	app.Get("/register", handlers.HandleRegister)
-	app.Post("/api/register", handlers.HandleRegisterSubmission)
-	app.Get("/login", handlers.HandleLogin)
-	app.Post("/api/login", handlers.HandleLoginSubmission)
-	app.Post("/logout", handlers.HandleLogout)
+	// Ad management
+	app.Get("/ad/:id", handlers.OptionalAuth, handlers.HandleViewAd)
+	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd)
+	app.Get("/edit-ad/:id", handlers.AuthRequired, handlers.HandleEditAd)
 
-	// User settings
-	app.Get("/settings", handlers.AuthRequired, handlers.HandleSettings)
-	app.Post("/api/change-password", handlers.AuthRequired, handlers.HandleChangePassword)
-	app.Post("/api/delete-account", handlers.AuthRequired, handlers.HandleDeleteAccount)
+	// API group
+	api := app.Group("/api")
 
-	// Admin routes
+	// Ad management (API)
+	api.Post("/new-ad", handlers.AuthRequired, handlers.HandleNewAdSubmission)
+	api.Post("/update-ad", handlers.AuthRequired, handlers.HandleUpdateAdSubmission)
+	api.Post("/flag-ad/:id", handlers.AuthRequired, handlers.HandleFlagAd)
+	api.Delete("/flag-ad/:id", handlers.AuthRequired, handlers.HandleUnflagAd)
+	api.Get("/makes", handlers.HandleMakes)
+	api.Get("/years", handlers.HandleYears)
+	api.Get("/models", handlers.HandleModels)
+	api.Get("/engines", handlers.HandleEngines)
+
+	// Admin dashboard and management
 	admin := app.Group("/admin", handlers.AdminRequired)
 	admin.Get("/", handlers.HandleAdminDashboard)
 	admin.Get("/users", handlers.HandleAdminUsers)
@@ -98,37 +99,35 @@ func main() {
 	admin.Get("/part-categories", handlers.HandleAdminPartCategories)
 	admin.Get("/part-sub-categories", handlers.HandleAdminPartSubCategories)
 
-	// Other Admin routes
-	app.Post("/api/admin/users/set-admin", handlers.AdminRequired, handlers.HandleSetAdmin)
-	app.Delete("/api/admin/users/archive/:id", handlers.AdminRequired, handlers.HandleArchiveUser)
-	app.Post("/api/admin/users/restore/:id", handlers.AdminRequired, handlers.HandleRestoreUser)
-	app.Delete("/api/admin/ads/archive/:id", handlers.AdminRequired, handlers.HandleArchiveAd)
-	app.Post("/api/admin/ads/restore/:id", handlers.AdminRequired, handlers.HandleRestoreAd)
-	app.Get("/api/admin/export/users", handlers.AdminRequired, handlers.HandleAdminExportUsers)
-	app.Get("/api/admin/export/ads", handlers.AdminRequired, handlers.HandleAdminExportAds)
-	app.Get("/api/admin/export/transactions", handlers.AdminRequired, handlers.HandleAdminExportTransactions)
+	// Admin API group
+	adminAPI := api.Group("/admin", handlers.AdminRequired)
+	adminAPI.Post("/users/set-admin", handlers.HandleSetAdmin)
+	adminAPI.Delete("/users/archive/:id", handlers.HandleArchiveUser)
+	adminAPI.Post("/users/restore/:id", handlers.HandleRestoreUser)
+	adminAPI.Delete("/ads/archive/:id", handlers.HandleArchiveAd)
+	adminAPI.Post("/ads/restore/:id", handlers.HandleRestoreAd)
+	adminAPI.Get("/export/users", handlers.HandleAdminExportUsers)
+	adminAPI.Get("/export/ads", handlers.HandleAdminExportAds)
+	adminAPI.Get("/export/transactions", handlers.HandleAdminExportTransactions)
 
-	// View routes (for HTMX and direct navigation)
+	// User registration/authentication
+	app.Get("/register", handlers.HandleRegister)
+	api.Post("/register", handlers.HandleRegisterSubmission)
+	app.Get("/login", handlers.HandleLogin)
+	api.Post("/login", handlers.HandleLoginSubmission)
+	app.Post("/logout", handlers.HandleLogout)
+
+	// User settings
+	app.Get("/settings", handlers.AuthRequired, handlers.HandleSettings)
+	api.Post("/change-password", handlers.AuthRequired, handlers.HandleChangePassword)
+	api.Post("/delete-account", handlers.AuthRequired, handlers.HandleDeleteAccount)
+	app.Get("/settings/flagged-ads", handlers.AuthRequired, handlers.HandleFlaggedAds)
+
+	// Views for HTMX/direct navigation
 	app.Get("/view/list", handlers.HandleListView)
 	app.Get("/view/tree", handlers.HandleTreeViewContent)
 	app.Post("/view/list", handlers.HandleListView)
 	app.Post("/view/tree", handlers.HandleTreeViewContent)
-
-	// API endpoints
-	app.Get("/api/makes", handlers.HandleMakes)
-	app.Get("/api/years", handlers.HandleYears)
-	app.Get("/api/models", handlers.HandleModels)
-	app.Get("/api/engines", handlers.HandleEngines)
-	app.Post("/api/new-ad", handlers.AuthRequired, handlers.HandleNewAdSubmission)
-	app.Post("/api/update-ad", handlers.AuthRequired, handlers.HandleUpdateAdSubmission)
-	app.Delete("/delete-ad/:id", handlers.AuthRequired, handlers.HandleArchiveAd)
-
-	// Flag/unflag ad endpoints
-	app.Post("/api/flag-ad/:id", handlers.AuthRequired, handlers.HandleFlagAd)
-	app.Delete("/api/flag-ad/:id", handlers.AuthRequired, handlers.HandleUnflagAd)
-
-	// Settings flagged ads section
-	app.Get("/settings/flagged-ads", handlers.AuthRequired, handlers.HandleFlaggedAds)
 
 	port := os.Getenv("PORT")
 	if port == "" {

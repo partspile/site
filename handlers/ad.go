@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"regexp"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,67 +20,24 @@ func HandleNewAd(c *fiber.Ctx) error {
 func HandleNewAdSubmission(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
 
-	make, err := ValidateRequired(c, "make", "Make")
+	newAd, err := BuildAdFromForm(c, currentUser.ID)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
-
-	form, err := c.MultipartForm()
-	if err != nil {
-		return ValidationErrorResponse(c, err.Error())
-	}
-
-	years, models, engines, err := ValidateAdFormAndReturn(form)
-	if err != nil {
-		return ValidationErrorResponse(c, err.Error())
-	}
-
-	description, err := ValidateRequired(c, "description", "Description")
-	if err != nil {
-		return ValidationErrorResponse(c, err.Error())
-	}
-
-	priceStr, err := ValidateRequired(c, "price", "Price")
-	if err != nil {
-		return ValidationErrorResponse(c, err.Error())
-	}
-	price, err := strconv.ParseFloat(priceStr, 64)
-	if err != nil {
-		return ValidationErrorResponse(c, "Price must be a valid number")
-	}
-	if price < 0 {
-		return ValidationErrorResponse(c, "Price cannot be negative")
-	}
-	if !regexp.MustCompile(`^\d+(\.\d{1,2})?$`).MatchString(priceStr) {
-		return ValidationErrorResponse(c, "Price must have at most two decimal places")
-	}
-
-	newAd := ad.Ad{
-		ID:          ad.GetNextAdID(),
-		Make:        make,
-		Years:       years,
-		Models:      models,
-		Engines:     engines,
-		Description: description,
-		Price:       price,
-		UserID:      currentUser.ID,
-	}
-
 	ad.AddAd(newAd)
-
 	return render(c, ui.SuccessMessage("Ad created successfully", "/"))
 }
 
 func HandleViewAd(c *fiber.Ctx) error {
 	adID, err := c.ParamsInt("id")
 	if err != nil {
-		return fiber.ErrBadRequest
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
 	// Get ad from either active or archived tables
 	adObj, _, ok := ad.GetAdByID(adID)
 	if !ok {
-		return fiber.ErrNotFound
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
 	currentUser, _ := c.Locals("user").(*user.User)
@@ -98,12 +54,12 @@ func HandleEditAd(c *fiber.Ctx) error {
 
 	adID, err := c.ParamsInt("id")
 	if err != nil {
-		return fiber.ErrBadRequest
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
 	ad, ok := ad.GetAd(adID)
-	if !ok || ad.ID == 0 {
-		return fiber.ErrNotFound
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
 	if err := ValidateOwnership(ad.UserID, currentUser.ID); err != nil {
@@ -123,65 +79,29 @@ func HandleEditAd(c *fiber.Ctx) error {
 }
 
 func HandleUpdateAdSubmission(c *fiber.Ctx) error {
+	println("HandleUpdateAdSubmission")
 	currentUser := c.Locals("user").(*user.User)
 
 	adID, err := strconv.Atoi(c.Query("id"))
 	if err != nil {
-		return err
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
 	existingAd, ok := ad.GetAd(adID)
-	if !ok || existingAd.ID == 0 {
-		return fiber.ErrNotFound
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
 	if err := ValidateOwnership(existingAd.UserID, currentUser.ID); err != nil {
 		return err
 	}
 
-	form, err := c.MultipartForm()
+	updatedAd, err := BuildAdFromForm(c, currentUser.ID, adID)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
-	}
-
-	years, models, engines, err := ValidateAdFormAndReturn(form)
-	if err != nil {
-		return ValidationErrorResponse(c, err.Error())
-	}
-
-	priceStr, err := ValidateRequired(c, "price", "Price")
-	if err != nil {
-		return ValidationErrorResponse(c, err.Error())
-	}
-	price, err := strconv.ParseFloat(priceStr, 64)
-	if err != nil {
-		return ValidationErrorResponse(c, "Price must be a valid number")
-	}
-	if price < 0 {
-		return ValidationErrorResponse(c, "Price cannot be negative")
-	}
-	if !regexp.MustCompile(`^\d+(\.\d{1,2})?$`).MatchString(priceStr) {
-		return ValidationErrorResponse(c, "Price must have at most two decimal places")
-	}
-
-	description, err := ValidateRequired(c, "description", "Description")
-	if err != nil {
-		return ValidationErrorResponse(c, err.Error())
-	}
-
-	updatedAd := ad.Ad{
-		ID:          adID,
-		Make:        c.FormValue("make"),
-		Years:       years,
-		Models:      models,
-		Engines:     engines,
-		Description: description,
-		Price:       price,
-		UserID:      currentUser.ID,
 	}
 
 	ad.UpdateAd(updatedAd)
-
 	return render(c, ui.SuccessMessage("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
 }
 
