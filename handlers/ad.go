@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
@@ -29,9 +28,9 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 }
 
 func HandleViewAd(c *fiber.Ctx) error {
-	adID, err := c.ParamsInt("id")
+	adID, err := ParseIntParam(c, "id")
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+		return err
 	}
 
 	// Get ad from either active or archived tables
@@ -52,9 +51,9 @@ func HandleViewAd(c *fiber.Ctx) error {
 func HandleEditAd(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
 
-	adID, err := c.ParamsInt("id")
+	adID, err := ParseIntParam(c, "id")
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+		return err
 	}
 
 	ad, ok := ad.GetAd(adID)
@@ -82,7 +81,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	println("HandleUpdateAdSubmission")
 	currentUser := c.Locals("user").(*user.User)
 
-	adID, err := strconv.Atoi(c.Params("id"))
+	adID, err := ParseIntParam(c, "id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
@@ -148,9 +147,9 @@ func HandleFlaggedAds(c *fiber.Ctx) error {
 }
 
 func HandleArchiveAd(c *fiber.Ctx) error {
-	adID, err := c.ParamsInt("id")
+	adID, err := ParseIntParam(c, "id")
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+		return err
 	}
 	if err := ad.ArchiveAd(adID); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to archive ad")

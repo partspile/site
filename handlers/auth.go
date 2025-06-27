@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/parts-pile/site/ui"
@@ -54,22 +56,22 @@ func GetCurrentUser(c *fiber.Ctx) (*user.User, error) {
 	store := c.Locals("session_store").(*session.Store)
 	sess, err := store.Get(c)
 	if err != nil {
-		return nil, err // No session
+		return nil, fmt.Errorf("session error: %w", err)
 	}
 
 	userID, ok := sess.Get("userID").(int)
 	if !ok || userID == 0 {
-		return nil, nil // No user ID in session
+		return nil, fmt.Errorf("no user ID in session")
 	}
 
 	u, status, found := user.GetUserByID(userID)
 	if !found {
-		return nil, nil // User not found
+		return nil, fmt.Errorf("user not found")
 	}
 
 	// Only return active users for current user sessions
 	if status == user.StatusArchived {
-		return nil, nil // Don't allow archived users to be current user
+		return nil, fmt.Errorf("user is archived")
 	}
 
 	return &u, nil
@@ -78,7 +80,7 @@ func GetCurrentUser(c *fiber.Ctx) (*user.User, error) {
 // AuthRequired is a middleware that requires a user to be logged in.
 func AuthRequired(c *fiber.Ctx) error {
 	user, err := GetCurrentUser(c)
-	if err != nil || user == nil {
+	if err != nil {
 		// You might want to redirect to login page
 		return c.Redirect("/login", fiber.StatusSeeOther)
 	}
@@ -92,7 +94,7 @@ func AuthRequired(c *fiber.Ctx) error {
 // OptionalAuth is a middleware that checks for a user but does not require one.
 func OptionalAuth(c *fiber.Ctx) error {
 	user, err := GetCurrentUser(c)
-	if err == nil && user != nil {
+	if err == nil {
 		c.Locals("user", user)
 	}
 	return c.Next()
@@ -101,7 +103,7 @@ func OptionalAuth(c *fiber.Ctx) error {
 // AdminRequired is a middleware that requires a user to be an admin.
 func AdminRequired(c *fiber.Ctx) error {
 	user, err := GetCurrentUser(c)
-	if err != nil || user == nil {
+	if err != nil {
 		return c.Redirect("/login", fiber.StatusSeeOther)
 	}
 
