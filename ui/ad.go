@@ -97,7 +97,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int)
 		Class("block border p-4 mb-4 rounded hover:bg-gray-50 relative"),
 		Div(
 			Class("flex items-center justify-between relative z-10"),
-			H3(Class("text-xl font-bold"), g.Text(ad.Make)),
+			H3(Class("text-xl font-bold"), g.Text(ad.Title)),
 			Div(
 				Class("flex flex-row items-center gap-2"),
 				bookmarkBtn,
@@ -157,7 +157,7 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int) g.Node {
 		Class("border p-4 mb-4 rounded bg-white shadow-lg relative"),
 		Div(
 			Class("flex items-center justify-between relative z-10"),
-			H2(Class("text-2xl font-bold"), g.Text(ad.Make)),
+			H2(Class("text-2xl font-bold"), g.Text(ad.Title)),
 			Div(
 				Class("flex flex-row items-center gap-2"),
 				bookmarkBtn,
@@ -230,6 +230,15 @@ func NewAdPage(currentUser *user.User, path string, makes []string) g.Node {
 				Class("space-y-6"),
 				EncType("multipart/form-data"),
 				ValidationErrorContainer(),
+				FormGroup("Title", "title",
+					Input(
+						Type("text"),
+						ID("title"),
+						Name("title"),
+						Class("w-full p-2 border rounded"),
+						Required(),
+					),
+				),
 				FormGroup("Make", "make",
 					Select(
 						ID("make"),
@@ -340,7 +349,7 @@ func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad, bookmarked boo
 		[]g.Node{
 			Div(
 				Class("flex items-center justify-between mb-4"),
-				H2(Class("text-2xl font-bold"), g.Text(adObj.Make)),
+				H2(Class("text-2xl font-bold"), g.Text(adObj.Title)),
 				Div(
 					append([]g.Node{Class("flex items-center gap-2")}, actionButtons...)...,
 				),
@@ -448,6 +457,15 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 				Class("space-y-6"),
 				EncType("multipart/form-data"),
 				ValidationErrorContainer(),
+				FormGroup("Title", "title",
+					Input(
+						Type("text"),
+						ID("title"),
+						Name("title"),
+						Class("w-full p-2 border rounded"),
+						Required(),
+					),
+				),
 				FormGroup("Make", "make",
 					Select(
 						ID("make"),

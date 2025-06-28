@@ -135,6 +135,10 @@ func ValidateAndParsePrice(c *fiber.Ctx) (float64, error) {
 
 // BuildAdFromForm validates and constructs an ad.Ad from the form data
 func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, error) {
+	title, err := ValidateRequired(c, "title", "Title")
+	if err != nil {
+		return ad.Ad{}, err
+	}
 	make, err := ValidateRequired(c, "make", "Make")
 	if err != nil {
 		return ad.Ad{}, err
@@ -163,6 +167,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, error) {
 	}
 	return ad.Ad{
 		ID:          id,
+		Title:       title,
 		Make:        make,
 		Years:       years,
 		Models:      models,

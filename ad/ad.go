@@ -179,7 +179,7 @@ func GetAdByID(id int) (Ad, AdStatus, bool) {
 
 func GetAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
-		SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
+		SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
 		       a.user_id, psc.name as subcategory, a.click_count
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
@@ -188,7 +188,7 @@ func GetAd(id int) (Ad, bool) {
 
 	var ad Ad
 	var subcategory sql.NullString
-	if err := row.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt,
+	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
 		&ad.SubCategoryID, &ad.UserID, &subcategory, &ad.ClickCount); err != nil {
 		fmt.Println("DEBUG GetAd scan error:", err)
 		return Ad{}, false
@@ -214,8 +214,8 @@ func AddAd(ad Ad) int {
 	defer tx.Rollback()
 
 	createdAt := time.Now().UTC().Format(time.RFC3339)
-	res, err := tx.Exec("INSERT INTO Ad (description, price, created_at, subcategory_id, user_id) VALUES (?, ?, ?, ?, ?)",
-		ad.Description, ad.Price, createdAt, ad.SubCategoryID, ad.UserID)
+	res, err := tx.Exec("INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id) VALUES (?, ?, ?, ?, ?, ?)",
+		ad.Title, ad.Description, ad.Price, createdAt, ad.SubCategoryID, ad.UserID)
 	if err != nil {
 		return 0
 	}
@@ -300,7 +300,7 @@ func GetNextAdID() int {
 // GetAdsPage returns a page of ads for cursor-based pagination
 func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 	rows, err := db.Query(`
-		SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
+		SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
 		       psc.name as subcategory, a.click_count,
 		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 		FROM Ad a
@@ -321,7 +321,7 @@ func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 		var subcatID sql.NullInt64
 		var subcategory sql.NullString
 		var isBookmarked int
-		if err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt,
+		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
 			&subcatID, &subcategory, &ad.ClickCount, &isBookmarked); err != nil {
 			continue
 		}
@@ -357,7 +357,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 	if hasVehicleFilters {
 		// Use JOIN-based query when we have vehicle filters
 		sqlQuery = `
-			SELECT DISTINCT a.id, a.description, a.price, a.created_at, a.subcategory_id,
+			SELECT DISTINCT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
 			       psc.name as subcategory, a.click_count,
 			       m.name as make_name, y.year, mo.name as model_name, e.name as engine_name,
 			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
@@ -409,7 +409,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 	} else {
 		// Use simple query when no vehicle filters - this includes ALL ads
 		sqlQuery = `
-			SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
+			SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
 			       psc.name as subcategory, a.click_count,
 			       NULL as make_name, NULL as year, NULL as model_name, NULL as engine_name,
 			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
@@ -453,6 +453,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 	for rows.Next() {
 		var (
 			id           int
+			title        string
 			description  string
 			price        float64
 			createdAt    time.Time
@@ -466,7 +467,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			isBookmarked int
 		)
 
-		if err := rows.Scan(&id, &description, &price, &createdAt,
+		if err := rows.Scan(&id, &title, &description, &price, &createdAt,
 			&subcatID, &subcategory, &clickCount, &makeName, &year, &modelName, &engineName, &isBookmarked); err != nil {
 			continue
 		}
@@ -476,6 +477,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 		if !exists {
 			ad = &Ad{
 				ID:          id,
+				Title:       title,
 				Description: description,
 				Price:       price,
 				CreatedAt:   createdAt,
@@ -578,7 +580,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 func GetAllAds() ([]Ad, error) {
 	rows, err := db.Query(`
 		SELECT
-			a.id, a.description, a.price, a.created_at, a.user_id,
+			a.id, a.title, a.description, a.price, a.created_at, a.user_id,
 			GROUP_CONCAT(DISTINCT m.name) as make,
 			GROUP_CONCAT(DISTINCT y.year) as years,
 			GROUP_CONCAT(DISTINCT mo.name) as models,
@@ -603,7 +605,7 @@ func GetAllAds() ([]Ad, error) {
 		var ad Ad
 		var make, years, models, engines sql.NullString
 		if err := rows.Scan(
-			&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID,
+			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID,
 			&make, &years, &models, &engines,
 		); err != nil {
 			return nil, err
@@ -692,8 +694,8 @@ func UpdateAd(ad Ad) error {
 	}
 	defer tx.Rollback()
 
-	_, err = tx.Exec("UPDATE Ad SET description = ?, price = ?, subcategory_id = ? WHERE id = ?",
-		ad.Description, ad.Price, ad.SubCategoryID, ad.ID)
+	_, err = tx.Exec("UPDATE Ad SET title = ?, description = ?, price = ?, subcategory_id = ? WHERE id = ?",
+		ad.Title, ad.Description, ad.Price, ad.SubCategoryID, ad.ID)
 	if err != nil {
 		return err
 	}
@@ -853,7 +855,7 @@ func GetAdsByIDs(ids []int) ([]Ad, error) {
 		placeholders[i] = "?"
 		args[i] = id
 	}
-	query := `SELECT id, description, price, created_at, subcategory_id, user_id FROM Ad WHERE id IN (` + strings.Join(placeholders, ",") + `)`
+	query := `SELECT id, title, description, price, created_at, subcategory_id, user_id FROM Ad WHERE id IN (` + strings.Join(placeholders, ",") + `)`
 	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -862,7 +864,7 @@ func GetAdsByIDs(ids []int) ([]Ad, error) {
 	adMap := make(map[int]Ad)
 	for rows.Next() {
 		var ad Ad
-		if err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.SubCategoryID, &ad.UserID); err != nil {
+		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.SubCategoryID, &ad.UserID); err != nil {
 			continue
 		}
 		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
