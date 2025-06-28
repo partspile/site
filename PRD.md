@@ -52,6 +52,23 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - User's token balance is shown in the navigation bar on all pages, and is clickable for exchange and transaction history.
 - UI elements that require authentication (such as "New Ad", "Edit Ad", or "Delete Ad" buttons) are shown in a disabled state or with limited interactivity for unauthenticated users, providing clear feedback that login is required to access these features.
 
+### 3.6a In-Place Ad Card Expand/Collapse (SPA-like UX)
+- Users can expand an ad card in-place to view ad details without leaving the list or tree view.
+- Clicking "Expand" on an ad card loads the ad detail view in-place using htmx, replacing the card with the detail partial.
+- The detail view includes a "Collapse" button to return to the original card view in-place.
+- No full page reload or navigation is required; browser back/forward preserves the previous state.
+- This is implemented using htmx and Gomponents, with no custom JavaScript.
+- New endpoints:
+  - `GET /ad/card/:id` — Returns the ad card partial for in-place collapse.
+  - `GET /ad/detail/:id` — Returns the ad detail partial for in-place expand.
+- This provides a seamless, SPA-like user experience while maintaining server-side rendering and progressive enhancement.
+
+### 3.6b Ad Click Count Tracking
+- Each ad tracks the number of times it has been viewed (clicked) by users.
+- The click count is displayed on the ad card and detail views in the UI.
+- Clicks are incremented in the database each time an ad is viewed.
+- (If implemented) User-specific click tracking is also supported, allowing for analytics on unique user engagement.
+
 ### 3.7 Ad Cost, Token Economy, and Incentives
 - Posting an ad incurs a cost, which can be positive (user pays) or negative (user receives payout).
 - Cost is determined by:
