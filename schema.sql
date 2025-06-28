@@ -61,6 +61,7 @@ CREATE TABLE Ad (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     subcategory_id INTEGER,
     user_id INTEGER NOT NULL,
+    click_count INTEGER DEFAULT 0,
     FOREIGN KEY (subcategory_id) REFERENCES PartSubCategory(id),
     FOREIGN KEY (user_id) REFERENCES User(id)
 );
@@ -172,4 +173,12 @@ CREATE INDEX idx_ad_created_at_id ON Ad(created_at, id);
 CREATE INDEX idx_adcar_ad_id ON AdCar(ad_id);
 CREATE INDEX idx_adcar_car_id ON AdCar(car_id);
 CREATE INDEX idx_partcategory_name ON PartCategory(name);
-CREATE INDEX idx_partsubcategory_category_name ON PartSubCategory(category_id, name); 
+CREATE INDEX idx_partsubcategory_category_name ON PartSubCategory(category_id, name);
+
+-- Create AdClick table for per-user ad click tracking
+CREATE TABLE IF NOT EXISTS AdClick (
+    ad_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    click_count INTEGER DEFAULT 0,
+    PRIMARY KEY (ad_id, user_id)
+); 

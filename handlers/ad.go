@@ -28,9 +28,17 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 }
 
 func HandleViewAd(c *fiber.Ctx) error {
-	adID, err := ParseIntParam(c, "id")
+	adID, err := c.ParamsInt("id")
 	if err != nil {
-		return err
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+
+	// Increment global click count
+	_ = ad.IncrementAdClick(adID)
+
+	currentUser, _ := GetCurrentUser(c)
+	if currentUser != nil {
+		_ = ad.IncrementAdClickForUser(adID, currentUser.ID)
 	}
 
 	// Get ad from either active or archived tables
@@ -39,7 +47,6 @@ func HandleViewAd(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	currentUser, _ := c.Locals("user").(*user.User)
 	flagged := false
 	if currentUser != nil {
 		flagged, _ = ad.IsAdFlaggedByUser(currentUser.ID, adID)

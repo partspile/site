@@ -89,6 +89,7 @@ func AdCardWithFlag(ad ad.Ad, loc *time.Location, flagged bool, userID int) g.No
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", sortedYears))),
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", sortedModels))),
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Engines: %v", ad.Engines))),
+		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Clicks: %d", ad.ClickCount))),
 		P(Class("mt-2"), g.Text(ad.Description)),
 		P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
 		P(

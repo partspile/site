@@ -67,6 +67,7 @@ type Ad struct {
 	SubCategory  string     `json:"subcategory,omitempty"`
 	DeletionDate *time.Time `json:"deletion_date,omitempty"`
 	Flagged      bool       `json:"flagged"` // true if flagged by current user
+	ClickCount   int        `json:"click_count"`
 }
 
 // IsArchived returns true if the ad has been archived
@@ -179,7 +180,7 @@ func GetAdByID(id int) (Ad, AdStatus, bool) {
 func GetAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
 		SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
-		       a.user_id, psc.name as subcategory
+		       a.user_id, psc.name as subcategory, a.click_count
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 		WHERE a.id = ?
@@ -188,9 +189,12 @@ func GetAd(id int) (Ad, bool) {
 	var ad Ad
 	var subcategory sql.NullString
 	if err := row.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt,
-		&ad.SubCategoryID, &ad.UserID, &subcategory); err != nil {
+		&ad.SubCategoryID, &ad.UserID, &subcategory, &ad.ClickCount); err != nil {
+		fmt.Println("DEBUG GetAd scan error:", err)
 		return Ad{}, false
 	}
+
+	fmt.Printf("DEBUG GetAd: id=%d, click_count=%d\n", ad.ID, ad.ClickCount)
 
 	if subcategory.Valid {
 		ad.SubCategory = subcategory.String
@@ -297,7 +301,7 @@ func GetNextAdID() int {
 func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 	rows, err := db.Query(`
 		SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
-		       psc.name as subcategory,
+		       psc.name as subcategory, a.click_count,
 		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_flagged
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
@@ -318,7 +322,7 @@ func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 		var subcategory sql.NullString
 		var isFlagged int
 		if err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt,
-			&subcatID, &subcategory, &isFlagged); err != nil {
+			&subcatID, &subcategory, &ad.ClickCount, &isFlagged); err != nil {
 			continue
 		}
 		if subcatID.Valid {
@@ -354,7 +358,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 		// Use JOIN-based query when we have vehicle filters
 		sqlQuery = `
 			SELECT DISTINCT a.id, a.description, a.price, a.created_at, a.subcategory_id,
-			       psc.name as subcategory,
+			       psc.name as subcategory, a.click_count,
 			       m.name as make_name, y.year, mo.name as model_name, e.name as engine_name,
 			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_flagged
 			FROM Ad a
@@ -406,7 +410,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 		// Use simple query when no vehicle filters - this includes ALL ads
 		sqlQuery = `
 			SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
-			       psc.name as subcategory,
+			       psc.name as subcategory, a.click_count,
 			       NULL as make_name, NULL as year, NULL as model_name, NULL as engine_name,
 			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_flagged
 			FROM Ad a
@@ -454,6 +458,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			createdAt   time.Time
 			subcatID    sql.NullInt64
 			subcategory sql.NullString
+			clickCount  int
 			makeName    sql.NullString
 			year        sql.NullInt64
 			modelName   sql.NullString
@@ -462,7 +467,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 		)
 
 		if err := rows.Scan(&id, &description, &price, &createdAt,
-			&subcatID, &subcategory, &makeName, &year, &modelName, &engineName, &isFlagged); err != nil {
+			&subcatID, &subcategory, &clickCount, &makeName, &year, &modelName, &engineName, &isFlagged); err != nil {
 			continue
 		}
 
@@ -474,6 +479,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 				Description: description,
 				Price:       price,
 				CreatedAt:   createdAt,
+				ClickCount:  clickCount,
 			}
 			if subcatID.Valid {
 				intVal := int(subcatID.Int64)
@@ -870,4 +876,46 @@ func GetAdsByIDs(ids []int) ([]Ad, error) {
 		}
 	}
 	return ads, nil
+}
+
+// IncrementAdClick increments the global click count for an ad
+func IncrementAdClick(adID int) error {
+	res, err := db.Exec("UPDATE Ad SET click_count = click_count + 1 WHERE id = ?", adID)
+	if err != nil {
+		fmt.Println("DEBUG IncrementAdClick error:", err)
+		return err
+	}
+	n, _ := res.RowsAffected()
+	fmt.Println("DEBUG IncrementAdClick rows affected:", n)
+	return nil
+}
+
+// IncrementAdClickForUser increments the click count for an ad for a specific user
+func IncrementAdClickForUser(adID int, userID int) error {
+	_, err := db.Exec(`INSERT INTO AdClick (ad_id, user_id, click_count) VALUES (?, ?, 1)
+		ON CONFLICT(ad_id, user_id) DO UPDATE SET click_count = click_count + 1`, adID, userID)
+	return err
+}
+
+// GetAdClickCount returns the global click count for an ad
+func GetAdClickCount(adID int) (int, error) {
+	var count int
+	err := db.QueryRow("SELECT click_count FROM Ad WHERE id = ?", adID).Scan(&count)
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// GetAdClickCountForUser returns the click count for an ad for a specific user
+func GetAdClickCountForUser(adID int, userID int) (int, error) {
+	var count int
+	err := db.QueryRow("SELECT click_count FROM AdClick WHERE ad_id = ? AND user_id = ?", adID, userID).Scan(&count)
+	if err == sql.ErrNoRows {
+		return 0, nil
+	}
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
