@@ -80,53 +80,56 @@ func SearchResultsContainer(newAdButton g.Node, filters SearchSchema, ads map[in
 			Class("flex flex-wrap gap-4 mb-4"),
 			SearchFilters(filters),
 		),
-
-		// View toggle buttons
 		ViewToggleButtons(view),
-
-		// View Wrapper
 		Div(
 			ID("view-wrapper"),
 			func() g.Node {
-				structuredQueryJSON, _ := json.Marshal(filters)
-				if view == "tree" {
+				switch view {
+				case "tree":
 					return TreeViewWithQuery(query, string(structuredQueryJSON))
+				case "grid":
+					return GridView(ads, loc)
+				case "map":
+					return MapView(ads, loc)
+				default:
+					return ListView(ads, loc)
 				}
-				return ListView(ads, loc)
 			}(),
 		),
 	)
 }
 
 func ViewToggleButtons(activeView string) g.Node {
-	listClass := "px-2 py-1 rounded text-sm"
-	treeClass := "px-2 py-1 rounded text-sm"
-	if activeView == "list" {
-		listClass += " bg-blue-500 text-white"
-		treeClass += " bg-gray-200"
-	} else {
-		listClass += " bg-gray-200"
-		treeClass += " bg-blue-500 text-white"
+	icon := func(name, alt string) g.Node {
+		return Img(
+			Src(name+".svg"),
+			Alt(alt),
+			Class("w-6 h-6 inline align-middle"),
+		)
 	}
-
+	button := func(view, alt string) g.Node {
+		active := activeView == view
+		cls := "p-2 rounded-full border-2 "
+		if active {
+			cls += "border-blue-500 bg-blue-100"
+		} else {
+			cls += "border-transparent hover:bg-gray-100"
+		}
+		return Button(
+			Class(cls),
+			hx.Post("/view/"+view),
+			hx.Target("#searchResults"),
+			hx.Indicator("#searchWaiting"),
+			hx.Include("[name='q'],[name='structured_query'],[name='view']"),
+			icon(view, alt),
+		)
+	}
 	return Div(
 		Class("flex justify-end gap-2 my-4"),
-		Button(
-			Class(listClass),
-			hx.Post("/view/list"),
-			hx.Target("#searchResults"),
-			hx.Indicator("#searchWaiting"),
-			hx.Include("[name='q'],[name='structured_query'],[name='view']"),
-			g.Text("List View"),
-		),
-		Button(
-			Class(treeClass),
-			hx.Post("/view/tree"),
-			hx.Target("#searchResults"),
-			hx.Indicator("#searchWaiting"),
-			hx.Include("[name='q'],[name='structured_query'],[name='view']"),
-			g.Text("Tree View"),
-		),
+		button("list", "List View"),
+		button("tree", "Tree View"),
+		button("grid", "Grid View"),
+		button("map", "Map View"),
 	)
 }
 
@@ -211,8 +214,11 @@ func SearchWidget(newAdButton g.Node, view string, query string) g.Node {
 }
 
 func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, ads []ad.Ad, _ interface{}, userID int, loc *time.Location, view string, query string) g.Node {
-	// Marshal the structured query as JSON for the hidden input
 	structuredQueryJSON, _ := json.Marshal(filters)
+	adsMap := make(map[int]ad.Ad, len(ads))
+	for _, ad := range ads {
+		adsMap[ad.ID] = ad
+	}
 	return Div(
 		ID("searchResults"),
 		SearchWidget(newAdButton, view, query),
@@ -230,11 +236,16 @@ func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, a
 		Div(
 			ID("view-wrapper"),
 			func() g.Node {
-				structuredQueryJSON, _ := json.Marshal(filters)
-				if view == "tree" {
+				switch view {
+				case "tree":
 					return TreeViewWithQuery(query, string(structuredQueryJSON))
+				case "grid":
+					return GridView(adsMap, loc)
+				case "map":
+					return MapView(adsMap, loc)
+				default:
+					return ListViewWithFlags(ads, userID, loc)
 				}
-				return ListViewWithFlags(ads, userID, loc)
 			}(),
 		),
 	)
@@ -255,4 +266,22 @@ func BuildAdListNodesWithBookmarks(ads []ad.Ad, userID int, loc *time.Location) 
 		nodes = append(nodes, AdCardExpandable(ad, loc, ad.Bookmarked, userID))
 	}
 	return nodes
+}
+
+func GridView(ads map[int]ad.Ad, loc *time.Location) g.Node {
+	adNodes := BuildAdListNodes(ads, loc)
+	return Div(
+		ID("grid-view"),
+		Class("grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"),
+		g.Group(adNodes),
+	)
+}
+
+func MapView(ads map[int]ad.Ad, loc *time.Location) g.Node {
+	// Placeholder: show a message or static image
+	return Div(
+		ID("map-view"),
+		Class("flex items-center justify-center h-64 bg-gray-100 rounded"),
+		g.Text("Map view coming soon!"),
+	)
 }
