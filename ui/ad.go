@@ -41,8 +41,8 @@ func FlagIcon(flagged bool) g.Node {
 	return g.Raw(`<svg xmlns="http://www.w3.org/2000/svg" class="inline w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6.75 3.75v16.5m0-16.5h10.5a.75.75 0 0 1 .67 1.08l-2.1 4.2a.75.75 0 0 0 0 .67l2.1 4.2a.75.75 0 0 1-.67 1.08H6.75"/></svg>`)
 }
 
-// AdCard now takes a flagged parameter
-func AdCardWithFlag(ad ad.Ad, loc *time.Location, flagged bool, userID int) g.Node {
+// AdCardExpandable renders an ad card with an Expand button for htmx in-place expansion
+func AdCardExpandable(ad ad.Ad, loc *time.Location, flagged bool, userID int) g.Node {
 	sortedYears := append([]string{}, ad.Years...)
 	sort.Strings(sortedYears)
 	sortedModels := append([]string{}, ad.Models...)
@@ -75,12 +75,8 @@ func AdCardWithFlag(ad ad.Ad, loc *time.Location, flagged bool, userID int) g.No
 		}
 	}
 	return Div(
+		ID(fmt.Sprintf("ad-%d", ad.ID)),
 		Class("block border p-4 mb-4 rounded hover:bg-gray-50 relative"),
-		A(
-			Href(fmt.Sprintf("/ad/%d", ad.ID)),
-			Class("absolute inset-0 z-0"),
-			g.Attr("aria-label", "View ad details"),
-		),
 		Div(
 			Class("flex items-center justify-between relative z-10"),
 			H3(Class("text-xl font-bold"), g.Text(ad.Make)),
@@ -96,7 +92,68 @@ func AdCardWithFlag(ad ad.Ad, loc *time.Location, flagged bool, userID int) g.No
 			Class("text-xs text-gray-400 mt-4"),
 			g.Text(fmt.Sprintf("ID: %d • Posted: %s", ad.ID, posted)),
 		),
+		Button(
+			Type("button"),
+			Class("mt-4 text-blue-500 hover:underline"),
+			hx.Get(fmt.Sprintf("/ad/detail/%d", ad.ID)),
+			hx.Target(fmt.Sprintf("#ad-%d", ad.ID)),
+			hx.Swap("outerHTML"),
+			g.Text("Expand"),
+		),
 	)
+}
+
+// AdDetailPartial renders the ad detail view with a Collapse button for htmx in-place collapse
+func AdDetailPartial(ad ad.Ad, flagged bool, userID int) g.Node {
+	flagBtn := g.Node(nil)
+	if userID > 0 {
+		if flagged {
+			flagBtn = Button(
+				Type("button"),
+				Class("ml-2 focus:outline-none"),
+				hx.Delete(fmt.Sprintf("/api/flag-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#flag-btn-%d", ad.ID)),
+				hx.Swap("outerHTML"),
+				ID(fmt.Sprintf("flag-btn-%d", ad.ID)),
+				g.Attr("onclick", "event.stopPropagation()"),
+				FlagIcon(true),
+			)
+		} else {
+			flagBtn = Button(
+				Type("button"),
+				Class("ml-2 focus:outline-none"),
+				hx.Post(fmt.Sprintf("/api/flag-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#flag-btn-%d", ad.ID)),
+				hx.Swap("outerHTML"),
+				ID(fmt.Sprintf("#flag-btn-%d", ad.ID)),
+				g.Attr("onclick", "event.stopPropagation()"),
+				FlagIcon(false),
+			)
+		}
+	}
+	return Div(
+		ID(fmt.Sprintf("ad-%d", ad.ID)),
+		Class("border p-4 mb-4 rounded bg-white shadow-lg relative"),
+		Div(
+			Class("flex items-center justify-between relative z-10"),
+			H2(Class("text-2xl font-bold"), g.Text(ad.Make)),
+			flagBtn,
+		),
+		AdDetails(ad),
+		Button(
+			Type("button"),
+			Class("mt-4 text-blue-500 hover:underline"),
+			hx.Get(fmt.Sprintf("/ad/card/%d", ad.ID)),
+			hx.Target(fmt.Sprintf("#ad-%d", ad.ID)),
+			hx.Swap("outerHTML"),
+			g.Text("Collapse"),
+		),
+	)
+}
+
+// Update AdCardWithFlag to use AdCardExpandable for in-place expand/collapse
+func AdCardWithFlag(ad ad.Ad, loc *time.Location, flagged bool, userID int) g.Node {
+	return AdCardExpandable(ad, loc, flagged, userID)
 }
 
 func AdListContainer(children ...g.Node) g.Node {

@@ -252,7 +252,7 @@ func ListViewWithFlags(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 func BuildAdListNodesWithFlags(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
 	nodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
-		nodes = append(nodes, AdCardWithFlag(ad, loc, ad.Flagged, userID))
+		nodes = append(nodes, AdCardExpandable(ad, loc, ad.Flagged, userID))
 	}
 	return nodes
 }

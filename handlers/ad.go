@@ -163,3 +163,44 @@ func HandleArchiveAd(c *fiber.Ctx) error {
 	}
 	return render(c, ui.SuccessMessage("Ad archived successfully", "/"))
 }
+
+// Handler for ad card partial (collapse)
+func HandleAdCardPartial(c *fiber.Ctx) error {
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+	adObj, _, ok := ad.GetAdByID(adID)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+	currentUser, _ := GetCurrentUser(c)
+	flagged := false
+	userID := 0
+	if currentUser != nil {
+		flagged, _ = ad.IsAdFlaggedByUser(currentUser.ID, adID)
+		userID = currentUser.ID
+	}
+	loc := c.Context().Time().Location()
+	return render(c, ui.AdCardExpandable(adObj, loc, flagged, userID))
+}
+
+// Handler for ad detail partial (expand)
+func HandleAdDetailPartial(c *fiber.Ctx) error {
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+	adObj, _, ok := ad.GetAdByID(adID)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+	currentUser, _ := GetCurrentUser(c)
+	flagged := false
+	userID := 0
+	if currentUser != nil {
+		flagged, _ = ad.IsAdFlaggedByUser(currentUser.ID, adID)
+		userID = currentUser.ID
+	}
+	return render(c, ui.AdDetailPartial(adObj, flagged, userID))
+}

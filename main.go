@@ -69,6 +69,10 @@ func main() {
 	app.Get("/tree/*", handlers.TreeView)
 	app.Get("/tree-collapsed/*", handlers.HandleTreeCollapse)
 
+	// Ad in-place expand/collapse partials for htmx
+	app.Get("/ad/card/:id", handlers.HandleAdCardPartial)
+	app.Get("/ad/detail/:id", handlers.HandleAdDetailPartial)
+
 	// Ad management
 	app.Get("/ad/:id", handlers.OptionalAuth, handlers.HandleViewAd)
 	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd)
