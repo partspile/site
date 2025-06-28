@@ -44,6 +44,21 @@ func BookmarkIcon(bookmarked bool) g.Node {
 	)
 }
 
+// Add ExpandCollapseIcon for expand/collapse SVGs
+func ExpandCollapseIcon(expand bool) g.Node {
+	icon := "expand.svg"
+	alt := "Expand"
+	if !expand {
+		icon = "collapse.svg"
+		alt = "Collapse"
+	}
+	return Img(
+		Src(icon),
+		Class("inline w-6 h-6 align-middle cursor-pointer"),
+		Alt(alt),
+	)
+}
+
 // AdCardExpandable renders an ad card with an Expand button for htmx in-place expansion
 func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int) g.Node {
 	sortedYears := append([]string{}, ad.Years...)
@@ -83,7 +98,18 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int)
 		Div(
 			Class("flex items-center justify-between relative z-10"),
 			H3(Class("text-xl font-bold"), g.Text(ad.Make)),
-			bookmarkBtn,
+			Div(
+				Class("flex flex-row items-center gap-2"),
+				bookmarkBtn,
+				Button(
+					Type("button"),
+					Class("focus:outline-none p-0 m-0 bg-transparent border-none"),
+					hx.Get(fmt.Sprintf("/ad/detail/%d", ad.ID)),
+					hx.Target(fmt.Sprintf("#ad-%d", ad.ID)),
+					hx.Swap("outerHTML"),
+					ExpandCollapseIcon(true),
+				),
+			),
 		),
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", sortedYears))),
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", sortedModels))),
@@ -94,14 +120,6 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int)
 		P(
 			Class("text-xs text-gray-400 mt-4"),
 			g.Text(fmt.Sprintf("ID: %d • Posted: %s", ad.ID, posted)),
-		),
-		Button(
-			Type("button"),
-			Class("mt-4 text-blue-500 hover:underline"),
-			hx.Get(fmt.Sprintf("/ad/detail/%d", ad.ID)),
-			hx.Target(fmt.Sprintf("#ad-%d", ad.ID)),
-			hx.Swap("outerHTML"),
-			g.Text("Expand"),
 		),
 	)
 }
@@ -128,7 +146,7 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int) g.Node {
 				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
 				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
 				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
+				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
 				g.Attr("onclick", "event.stopPropagation()"),
 				BookmarkIcon(false),
 			)
@@ -140,17 +158,20 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int) g.Node {
 		Div(
 			Class("flex items-center justify-between relative z-10"),
 			H2(Class("text-2xl font-bold"), g.Text(ad.Make)),
-			bookmarkBtn,
+			Div(
+				Class("flex flex-row items-center gap-2"),
+				bookmarkBtn,
+				Button(
+					Type("button"),
+					Class("focus:outline-none p-0 m-0 bg-transparent border-none"),
+					hx.Get(fmt.Sprintf("/ad/card/%d", ad.ID)),
+					hx.Target(fmt.Sprintf("#ad-%d", ad.ID)),
+					hx.Swap("outerHTML"),
+					ExpandCollapseIcon(false),
+				),
+			),
 		),
 		AdDetails(ad),
-		Button(
-			Type("button"),
-			Class("mt-4 text-blue-500 hover:underline"),
-			hx.Get(fmt.Sprintf("/ad/card/%d", ad.ID)),
-			hx.Target(fmt.Sprintf("#ad-%d", ad.ID)),
-			hx.Swap("outerHTML"),
-			g.Text("Collapse"),
-		),
 	)
 }
 
