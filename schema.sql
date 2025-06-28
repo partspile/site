@@ -75,17 +75,17 @@ CREATE TABLE AdCar (
     PRIMARY KEY (ad_id, car_id)
 );
 
--- FlaggedAd table for user-ad bookmarks
-CREATE TABLE FlaggedAd (
+-- BookmarkedAd table for user-ad bookmarks
+CREATE TABLE BookmarkedAd (
     user_id INTEGER NOT NULL,
     ad_id INTEGER NOT NULL,
-    flagged_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    bookmarked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, ad_id),
     FOREIGN KEY (user_id) REFERENCES User(id),
     FOREIGN KEY (ad_id) REFERENCES Ad(id)
 );
-CREATE INDEX idx_flaggedad_user_id ON FlaggedAd(user_id);
-CREATE INDEX idx_flaggedad_ad_id ON FlaggedAd(ad_id);
+CREATE INDEX idx_bookmarkedad_user_id ON BookmarkedAd(user_id);
+CREATE INDEX idx_bookmarkedad_ad_id ON BookmarkedAd(ad_id);
 
 -- User table
 CREATE TABLE User (

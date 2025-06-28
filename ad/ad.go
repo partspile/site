@@ -66,7 +66,7 @@ type Ad struct {
 	Category     string     `json:"category,omitempty"`
 	SubCategory  string     `json:"subcategory,omitempty"`
 	DeletionDate *time.Time `json:"deletion_date,omitempty"`
-	Flagged      bool       `json:"flagged"` // true if flagged by current user
+	Bookmarked   bool       `json:"bookmarked"` // true if bookmarked by current user
 	ClickCount   int        `json:"click_count"`
 }
 
@@ -302,10 +302,10 @@ func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 	rows, err := db.Query(`
 		SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
 		       psc.name as subcategory, a.click_count,
-		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_flagged
+		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
-		LEFT JOIN FlaggedAd fa ON a.id = fa.ad_id
+		LEFT JOIN BookmarkedAd fa ON a.id = fa.ad_id
 		WHERE a.id < ?
 		ORDER BY a.created_at DESC, a.id DESC
 		LIMIT ?
@@ -320,9 +320,9 @@ func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 		var ad Ad
 		var subcatID sql.NullInt64
 		var subcategory sql.NullString
-		var isFlagged int
+		var isBookmarked int
 		if err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt,
-			&subcatID, &subcategory, &ad.ClickCount, &isFlagged); err != nil {
+			&subcatID, &subcategory, &ad.ClickCount, &isBookmarked); err != nil {
 			continue
 		}
 		if subcatID.Valid {
@@ -332,7 +332,7 @@ func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 		if subcategory.Valid {
 			ad.SubCategory = subcategory.String
 		}
-		ad.Flagged = isFlagged == 1
+		ad.Bookmarked = isBookmarked == 1
 		// Get vehicle data for this ad
 		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
 		ads = append(ads, ad)
@@ -360,7 +360,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			SELECT DISTINCT a.id, a.description, a.price, a.created_at, a.subcategory_id,
 			       psc.name as subcategory, a.click_count,
 			       m.name as make_name, y.year, mo.name as model_name, e.name as engine_name,
-			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_flagged
+			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 			JOIN AdCar ac ON a.id = ac.ad_id
@@ -369,7 +369,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			JOIN Year y ON c.year_id = y.id
 			JOIN Model mo ON c.model_id = mo.id
 			JOIN Engine e ON c.engine_id = e.id
-			LEFT JOIN FlaggedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
+			LEFT JOIN BookmarkedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
 			WHERE 1=1
 		`
 		args = append(args, userID)
@@ -412,10 +412,10 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
 			       psc.name as subcategory, a.click_count,
 			       NULL as make_name, NULL as year, NULL as model_name, NULL as engine_name,
-			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_flagged
+			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
-			LEFT JOIN FlaggedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
+			LEFT JOIN BookmarkedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
 			WHERE 1=1
 		`
 		args = append(args, userID)
@@ -452,22 +452,22 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 
 	for rows.Next() {
 		var (
-			id          int
-			description string
-			price       float64
-			createdAt   time.Time
-			subcatID    sql.NullInt64
-			subcategory sql.NullString
-			clickCount  int
-			makeName    sql.NullString
-			year        sql.NullInt64
-			modelName   sql.NullString
-			engineName  sql.NullString
-			isFlagged   int
+			id           int
+			description  string
+			price        float64
+			createdAt    time.Time
+			subcatID     sql.NullInt64
+			subcategory  sql.NullString
+			clickCount   int
+			makeName     sql.NullString
+			year         sql.NullInt64
+			modelName    sql.NullString
+			engineName   sql.NullString
+			isBookmarked int
 		)
 
 		if err := rows.Scan(&id, &description, &price, &createdAt,
-			&subcatID, &subcategory, &clickCount, &makeName, &year, &modelName, &engineName, &isFlagged); err != nil {
+			&subcatID, &subcategory, &clickCount, &makeName, &year, &modelName, &engineName, &isBookmarked); err != nil {
 			continue
 		}
 
@@ -511,7 +511,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			engineSet[id][engineName.String] = true
 		}
 
-		ad.Flagged = isFlagged == 1
+		ad.Bookmarked = isBookmarked == 1
 	}
 
 	// Convert map to sorted slice
@@ -798,23 +798,23 @@ func RestoreAd(adID int) error {
 	return tx.Commit()
 }
 
-// Flag/unflag and flagged ads logic
+// Bookmark/unbookmark and bookmarked ads logic
 
-// FlagAd flags an ad for a user
-func FlagAd(userID, adID int) error {
-	_, err := db.Exec(`INSERT OR IGNORE INTO FlaggedAd (user_id, ad_id) VALUES (?, ?)`, userID, adID)
+// BookmarkAd bookmarks an ad for a user
+func BookmarkAd(userID, adID int) error {
+	_, err := db.Exec(`INSERT OR IGNORE INTO BookmarkedAd (user_id, ad_id) VALUES (?, ?)`, userID, adID)
 	return err
 }
 
-// UnflagAd removes a flag for an ad by a user
-func UnflagAd(userID, adID int) error {
-	_, err := db.Exec(`DELETE FROM FlaggedAd WHERE user_id = ? AND ad_id = ?`, userID, adID)
+// UnbookmarkAd removes a bookmark for an ad by a user
+func UnbookmarkAd(userID, adID int) error {
+	_, err := db.Exec(`DELETE FROM BookmarkedAd WHERE user_id = ? AND ad_id = ?`, userID, adID)
 	return err
 }
 
-// IsAdFlaggedByUser checks if a user has flagged an ad
-func IsAdFlaggedByUser(userID, adID int) (bool, error) {
-	row := db.QueryRow(`SELECT 1 FROM FlaggedAd WHERE user_id = ? AND ad_id = ?`, userID, adID)
+// IsAdBookmarkedByUser checks if a user has bookmarked an ad
+func IsAdBookmarkedByUser(userID, adID int) (bool, error) {
+	row := db.QueryRow(`SELECT 1 FROM BookmarkedAd WHERE user_id = ? AND ad_id = ?`, userID, adID)
 	var exists int
 	err := row.Scan(&exists)
 	if err == sql.ErrNoRows {
@@ -823,9 +823,9 @@ func IsAdFlaggedByUser(userID, adID int) (bool, error) {
 	return err == nil, err
 }
 
-// GetFlaggedAdIDsByUser returns a list of ad IDs flagged by the user
-func GetFlaggedAdIDsByUser(userID int) ([]int, error) {
-	rows, err := db.Query(`SELECT ad_id FROM FlaggedAd WHERE user_id = ? ORDER BY flagged_at DESC`, userID)
+// GetBookmarkedAdIDsByUser returns a list of ad IDs bookmarked by the user
+func GetBookmarkedAdIDsByUser(userID int) ([]int, error) {
+	rows, err := db.Query(`SELECT ad_id FROM BookmarkedAd WHERE user_id = ? ORDER BY bookmarked_at DESC`, userID)
 	if err != nil {
 		return nil, err
 	}

@@ -47,12 +47,12 @@ func HandleViewAd(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	flagged := false
+	bookmarked := false
 	if currentUser != nil {
-		flagged, _ = ad.IsAdFlaggedByUser(currentUser.ID, adID)
+		bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
 	}
 
-	return render(c, ui.ViewAdPage(currentUser, c.Path(), adObj, flagged))
+	return render(c, ui.ViewAdPage(currentUser, c.Path(), adObj, bookmarked))
 }
 
 func HandleEditAd(c *fiber.Ctx) error {
@@ -111,46 +111,46 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	return render(c, ui.SuccessMessage("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
 }
 
-// Handler to flag an ad
-func HandleFlagAd(c *fiber.Ctx) error {
+// Handler to bookmark an ad
+func HandleBookmarkAd(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
 	adID, err := ParseIntParam(c, "id")
 	if err != nil {
 		return err
 	}
-	if err := ad.FlagAd(currentUser.ID, adID); err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to flag ad")
+	if err := ad.BookmarkAd(currentUser.ID, adID); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to bookmark ad")
 	}
-	// Return the flagged button HTML for HTMX swap
-	return render(c, ui.FlagButton(true, adID))
+	// Return the bookmarked button HTML for HTMX swap
+	return render(c, ui.BookmarkButton(true, adID))
 }
 
-// Handler to unflag an ad
-func HandleUnflagAd(c *fiber.Ctx) error {
+// Handler to unbookmark an ad
+func HandleUnbookmarkAd(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
 	adID, err := ParseIntParam(c, "id")
 	if err != nil {
 		return err
 	}
-	if err := ad.UnflagAd(currentUser.ID, adID); err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to unflag ad")
+	if err := ad.UnbookmarkAd(currentUser.ID, adID); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to unbookmark ad")
 	}
-	// Return the unflagged button HTML for HTMX swap
-	return render(c, ui.FlagButton(false, adID))
+	// Return the unbookmarked button HTML for HTMX swap
+	return render(c, ui.BookmarkButton(false, adID))
 }
 
-// Handler to get flagged ads for the current user (for settings page)
-func HandleFlaggedAds(c *fiber.Ctx) error {
+// Handler to get bookmarked ads for the current user (for settings page)
+func HandleBookmarkedAds(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
-	adIDs, err := ad.GetFlaggedAdIDsByUser(currentUser.ID)
+	adIDs, err := ad.GetBookmarkedAdIDsByUser(currentUser.ID)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get flagged ad IDs")
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ad IDs")
 	}
 	ads, err := ad.GetAdsByIDs(adIDs)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get flagged ads")
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ads")
 	}
-	return render(c, ui.FlaggedAdsSection(currentUser, ads))
+	return render(c, ui.BookmarkedAdsSection(currentUser, ads))
 }
 
 func HandleArchiveAd(c *fiber.Ctx) error {
@@ -175,14 +175,14 @@ func HandleAdCardPartial(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 	currentUser, _ := GetCurrentUser(c)
-	flagged := false
+	bookmarked := false
 	userID := 0
 	if currentUser != nil {
-		flagged, _ = ad.IsAdFlaggedByUser(currentUser.ID, adID)
+		bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
 		userID = currentUser.ID
 	}
 	loc := c.Context().Time().Location()
-	return render(c, ui.AdCardExpandable(adObj, loc, flagged, userID))
+	return render(c, ui.AdCardExpandable(adObj, loc, bookmarked, userID))
 }
 
 // Handler for ad detail partial (expand)
@@ -196,11 +196,11 @@ func HandleAdDetailPartial(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 	currentUser, _ := GetCurrentUser(c)
-	flagged := false
+	bookmarked := false
 	userID := 0
 	if currentUser != nil {
-		flagged, _ = ad.IsAdFlaggedByUser(currentUser.ID, adID)
+		bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
 		userID = currentUser.ID
 	}
-	return render(c, ui.AdDetailPartial(adObj, flagged, userID))
+	return render(c, ui.AdDetailPartial(adObj, bookmarked, userID))
 }

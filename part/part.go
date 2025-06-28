@@ -563,7 +563,7 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 		SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
 		       a.user_id, psc.name as subcategory, pc.name as category,
 		       m.name, y.year, mo.name, e.name,
-		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_flagged
+		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
@@ -573,7 +573,7 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 		JOIN Year y ON c.year_id = y.id
 		JOIN Model mo ON c.model_id = mo.id
 		JOIN Engine e ON c.engine_id = e.id
-		LEFT JOIN FlaggedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
+		LEFT JOIN BookmarkedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
 	`
 	var args []interface{}
 	args = append(args, userID)
@@ -650,8 +650,8 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 		var adObj ad.Ad
 		var subcategory, category, makeName, modelName, engineName sql.NullString
 		var year sql.NullInt64
-		var isFlagged int
-		if err := rows.Scan(&adID, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName, &isFlagged); err != nil {
+		var isBookmarked int
+		if err := rows.Scan(&adID, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName, &isBookmarked); err != nil {
 			return nil, err
 		}
 		adObj.ID = adID
@@ -673,7 +673,7 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 		if engineName.Valid {
 			adObj.Engines = []string{engineName.String}
 		}
-		adObj.Flagged = isFlagged == 1
+		adObj.Bookmarked = isBookmarked == 1
 		// Populate all years, models, engines for the ad
 		fullAd, ok := ad.GetAd(adID)
 		if ok {

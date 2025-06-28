@@ -63,12 +63,12 @@ func UserNav(currentUser *user.User, currentPath string) g.Node {
 	)
 }
 
-func FlaggedAdsSection(currentUser *user.User, ads []ad.Ad) g.Node {
+func BookmarkedAdsSection(currentUser *user.User, ads []ad.Ad) g.Node {
 	return Div(
 		Class("mt-8"),
-		SectionHeader("Flagged Ads", "Ads you have flagged for later."),
+		SectionHeader("Bookmarked Ads", "Ads you have bookmarked for later."),
 		g.If(len(ads) == 0,
-			P(Class("text-gray-500"), g.Text("No flagged ads yet.")),
+			P(Class("text-gray-500"), g.Text("No bookmarked ads yet.")),
 		),
 		g.If(len(ads) > 0,
 			Div(
@@ -79,7 +79,7 @@ func FlaggedAdsSection(currentUser *user.User, ads []ad.Ad) g.Node {
 	)
 }
 
-func BuildAdListNodesFromSlice(currentUser *user.User, ads []ad.Ad, flagged bool) []g.Node {
+func BuildAdListNodesFromSlice(currentUser *user.User, ads []ad.Ad, bookmarked bool) []g.Node {
 	adMap := make(map[int]ad.Ad, len(ads))
 	for _, ad := range ads {
 		adMap[ad.ID] = ad
@@ -89,10 +89,10 @@ func BuildAdListNodesFromSlice(currentUser *user.User, ads []ad.Ad, flagged bool
 	if currentUser != nil {
 		userID = currentUser.ID
 	}
-	// Always flagged for flagged ads section
+	// Always bookmarked for bookmarked ads section
 	nodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
-		nodes = append(nodes, AdCardWithFlag(ad, loc, flagged, userID))
+		nodes = append(nodes, AdCardWithBookmark(ad, loc, bookmarked, userID))
 	}
 	return nodes
 }
@@ -108,13 +108,13 @@ func SettingsPage(currentUser *user.User, currentPath string) g.Node {
 			Div(
 				Class("flex space-x-4 mb-6"),
 				A(Href("/settings"), Class("px-4 py-2 rounded "+sectionTabClass(currentPath, "/settings")), g.Text("General")),
-				A(Href("/settings/flagged-ads"), hx.Get("/settings/flagged-ads"), hx.Target("#settings-section"), hx.PushURL("/settings/flagged-ads"), Class("px-4 py-2 rounded "+sectionTabClass(currentPath, "/settings/flagged-ads")), g.Text("Flagged Ads")),
+				A(Href("/settings/bookmarked-ads"), hx.Get("/settings/bookmarked-ads"), hx.Target("#settings-section"), hx.PushURL("/settings/bookmarked-ads"), Class("px-4 py-2 rounded "+sectionTabClass(currentPath, "/settings/bookmarked-ads")), g.Text("Bookmarked Ads")),
 			),
 			Div(ID("settings-section"),
-				g.If(currentPath == "/settings/flagged-ads",
-					Div(g.Text("Loading flagged ads...")), // Will be replaced by HTMX
+				g.If(currentPath == "/settings/bookmarked-ads",
+					Div(g.Text("Loading bookmarked ads...")), // Will be replaced by HTMX
 				),
-				g.If(currentPath != "/settings/flagged-ads",
+				g.If(currentPath != "/settings/bookmarked-ads",
 					ContentContainer(
 						SectionHeader("Change Password", ""),
 						FormContainer("changePasswordForm",

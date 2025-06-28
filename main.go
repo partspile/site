@@ -84,8 +84,8 @@ func main() {
 	// Ad management (API)
 	api.Post("/new-ad", handlers.AuthRequired, handlers.HandleNewAdSubmission)
 	api.Post("/update-ad/:id", handlers.AuthRequired, handlers.HandleUpdateAdSubmission)
-	api.Post("/flag-ad/:id", handlers.AuthRequired, handlers.HandleFlagAd)
-	api.Delete("/flag-ad/:id", handlers.AuthRequired, handlers.HandleUnflagAd)
+	api.Post("/bookmark-ad/:id", handlers.AuthRequired, handlers.HandleBookmarkAd)
+	api.Delete("/bookmark-ad/:id", handlers.AuthRequired, handlers.HandleUnbookmarkAd)
 	api.Get("/makes", handlers.HandleMakes)
 	api.Get("/years", handlers.HandleYears)
 	api.Get("/models", handlers.HandleModels)
@@ -125,7 +125,7 @@ func main() {
 	app.Get("/settings", handlers.AuthRequired, handlers.HandleSettings)
 	api.Post("/change-password", handlers.AuthRequired, handlers.HandleChangePassword)
 	api.Post("/delete-account", handlers.AuthRequired, handlers.HandleDeleteAccount)
-	app.Get("/settings/flagged-ads", handlers.AuthRequired, handlers.HandleFlaggedAds)
+	app.Get("/settings/bookmarked-ads", handlers.AuthRequired, handlers.HandleBookmarkedAds)
 
 	// Views for HTMX/direct navigation
 	app.Get("/view/list", handlers.HandleListView)

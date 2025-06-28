@@ -31,46 +31,49 @@ func AdDetails(ad ad.Ad) g.Node {
 	)
 }
 
-// Add a flag icon SVG component
-func FlagIcon(flagged bool) g.Node {
-	if flagged {
-		// Heroicons filled flag, green
-		return g.Raw(`<svg xmlns="http://www.w3.org/2000/svg" class="inline w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 24 24"><path d="M6.75 3.75v16.5m0-16.5h10.5a.75.75 0 0 1 .67 1.08l-2.1 4.2a.75.75 0 0 0 0 .67l2.1 4.2a.75.75 0 0 1-.67 1.08H6.75"/></svg>`)
+// Add a bookmark icon SVG component
+func BookmarkIcon(bookmarked bool) g.Node {
+	icon := "bookmark-false.svg"
+	if bookmarked {
+		icon = "bookmark-true.svg"
 	}
-	// Heroicons outline flag, gray
-	return g.Raw(`<svg xmlns="http://www.w3.org/2000/svg" class="inline w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6.75 3.75v16.5m0-16.5h10.5a.75.75 0 0 1 .67 1.08l-2.1 4.2a.75.75 0 0 0 0 .67l2.1 4.2a.75.75 0 0 1-.67 1.08H6.75"/></svg>`)
+	return Img(
+		Src(icon),
+		Class("inline w-6 h-6 align-middle"),
+		Alt("Bookmark"),
+	)
 }
 
 // AdCardExpandable renders an ad card with an Expand button for htmx in-place expansion
-func AdCardExpandable(ad ad.Ad, loc *time.Location, flagged bool, userID int) g.Node {
+func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int) g.Node {
 	sortedYears := append([]string{}, ad.Years...)
 	sort.Strings(sortedYears)
 	sortedModels := append([]string{}, ad.Models...)
 	sort.Strings(sortedModels)
 	posted := ad.CreatedAt.In(loc).Format("Jan 2, 2006 3:04:05 PM MST")
-	flagBtn := g.Node(nil)
+	bookmarkBtn := g.Node(nil)
 	if userID > 0 {
-		if flagged {
-			flagBtn = Button(
+		if bookmarked {
+			bookmarkBtn = Button(
 				Type("button"),
 				Class("ml-2 focus:outline-none"),
-				hx.Delete(fmt.Sprintf("/api/flag-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#flag-btn-%d", ad.ID)),
+				hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
 				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("flag-btn-%d", ad.ID)),
+				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
 				g.Attr("onclick", "event.stopPropagation()"),
-				FlagIcon(true),
+				BookmarkIcon(true),
 			)
 		} else {
-			flagBtn = Button(
+			bookmarkBtn = Button(
 				Type("button"),
 				Class("ml-2 focus:outline-none"),
-				hx.Post(fmt.Sprintf("/api/flag-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#flag-btn-%d", ad.ID)),
+				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
 				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("flag-btn-%d", ad.ID)),
+				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
 				g.Attr("onclick", "event.stopPropagation()"),
-				FlagIcon(false),
+				BookmarkIcon(false),
 			)
 		}
 	}
@@ -80,7 +83,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, flagged bool, userID int) g.
 		Div(
 			Class("flex items-center justify-between relative z-10"),
 			H3(Class("text-xl font-bold"), g.Text(ad.Make)),
-			flagBtn,
+			bookmarkBtn,
 		),
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", sortedYears))),
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", sortedModels))),
@@ -104,30 +107,30 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, flagged bool, userID int) g.
 }
 
 // AdDetailPartial renders the ad detail view with a Collapse button for htmx in-place collapse
-func AdDetailPartial(ad ad.Ad, flagged bool, userID int) g.Node {
-	flagBtn := g.Node(nil)
+func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int) g.Node {
+	bookmarkBtn := g.Node(nil)
 	if userID > 0 {
-		if flagged {
-			flagBtn = Button(
+		if bookmarked {
+			bookmarkBtn = Button(
 				Type("button"),
 				Class("ml-2 focus:outline-none"),
-				hx.Delete(fmt.Sprintf("/api/flag-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#flag-btn-%d", ad.ID)),
+				hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
 				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("flag-btn-%d", ad.ID)),
+				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
 				g.Attr("onclick", "event.stopPropagation()"),
-				FlagIcon(true),
+				BookmarkIcon(true),
 			)
 		} else {
-			flagBtn = Button(
+			bookmarkBtn = Button(
 				Type("button"),
 				Class("ml-2 focus:outline-none"),
-				hx.Post(fmt.Sprintf("/api/flag-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#flag-btn-%d", ad.ID)),
+				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
 				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("#flag-btn-%d", ad.ID)),
+				ID(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
 				g.Attr("onclick", "event.stopPropagation()"),
-				FlagIcon(false),
+				BookmarkIcon(false),
 			)
 		}
 	}
@@ -137,7 +140,7 @@ func AdDetailPartial(ad ad.Ad, flagged bool, userID int) g.Node {
 		Div(
 			Class("flex items-center justify-between relative z-10"),
 			H2(Class("text-2xl font-bold"), g.Text(ad.Make)),
-			flagBtn,
+			bookmarkBtn,
 		),
 		AdDetails(ad),
 		Button(
@@ -151,9 +154,9 @@ func AdDetailPartial(ad ad.Ad, flagged bool, userID int) g.Node {
 	)
 }
 
-// Update AdCardWithFlag to use AdCardExpandable for in-place expand/collapse
-func AdCardWithFlag(ad ad.Ad, loc *time.Location, flagged bool, userID int) g.Node {
-	return AdCardExpandable(ad, loc, flagged, userID)
+// Update AdCardWithBookmark to use AdCardExpandable for in-place expand/collapse
+func AdCardWithBookmark(ad ad.Ad, loc *time.Location, bookmarked bool, userID int) g.Node {
+	return AdCardExpandable(ad, loc, bookmarked, userID)
 }
 
 func AdListContainer(children ...g.Node) g.Node {
@@ -262,40 +265,40 @@ func NewAdPage(currentUser *user.User, path string, makes []string) g.Node {
 	)
 }
 
-func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad, flagged bool) g.Node {
-	flagBtn := g.Node(nil)
+func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad, bookmarked bool) g.Node {
+	bookmarkBtn := g.Node(nil)
 	userID := 0
 	if currentUser != nil {
 		userID = currentUser.ID
 	}
-	// Action buttons: flag, edit, delete
-	actionButtons := []g.Node{flagBtn}
+	// Action buttons: bookmark, edit, delete
+	actionButtons := []g.Node{bookmarkBtn}
 	isArchivedAd := adObj.IsArchived()
 	if userID > 0 {
-		if flagged {
-			flagBtn = Button(
+		if bookmarked {
+			bookmarkBtn = Button(
 				Type("button"),
 				Class("ml-2 focus:outline-none"),
-				hx.Delete(fmt.Sprintf("/api/flag-ad/%d", adObj.ID)),
-				hx.Target(fmt.Sprintf("#flag-btn-%d", adObj.ID)),
+				hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", adObj.ID)),
+				hx.Target(fmt.Sprintf("#bookmark-btn-%d", adObj.ID)),
 				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("flag-btn-%d", adObj.ID)),
+				ID(fmt.Sprintf("bookmark-btn-%d", adObj.ID)),
 				g.Attr("onclick", "event.stopPropagation()"),
-				FlagIcon(true),
+				BookmarkIcon(true),
 			)
 		} else {
-			flagBtn = Button(
+			bookmarkBtn = Button(
 				Type("button"),
 				Class("ml-2 focus:outline-none"),
-				hx.Post(fmt.Sprintf("/api/flag-ad/%d", adObj.ID)),
-				hx.Target(fmt.Sprintf("#flag-btn-%d", adObj.ID)),
+				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", adObj.ID)),
+				hx.Target(fmt.Sprintf("#bookmark-btn-%d", adObj.ID)),
 				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("flag-btn-%d", adObj.ID)),
+				ID(fmt.Sprintf("bookmark-btn-%d", adObj.ID)),
 				g.Attr("onclick", "event.stopPropagation()"),
-				FlagIcon(false),
+				BookmarkIcon(false),
 			)
 		}
-		actionButtons[0] = flagBtn
+		actionButtons[0] = bookmarkBtn
 		if currentUser.ID == adObj.UserID && !isArchivedAd {
 			editButton := StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", adObj.ID), ButtonPrimary)
 			deleteButton := DeleteButton(adObj.ID)
@@ -475,31 +478,31 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 
 // For compatibility, keep the original AdCard
 func AdCard(ad ad.Ad, loc *time.Location) g.Node {
-	return AdCardWithFlag(ad, loc, false, 0)
+	return AdCardWithBookmark(ad, loc, false, 0)
 }
 
-// FlagButton returns the flag toggle button for HTMX swaps
-func FlagButton(flagged bool, adID int) g.Node {
-	if flagged {
+// BookmarkButton returns the bookmark toggle button for HTMX swaps
+func BookmarkButton(bookmarked bool, adID int) g.Node {
+	if bookmarked {
 		return Button(
 			Type("button"),
 			Class("ml-2 focus:outline-none"),
-			hx.Delete(fmt.Sprintf("/api/flag-ad/%d", adID)),
-			hx.Target(fmt.Sprintf("#flag-btn-%d", adID)),
+			hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", adID)),
+			hx.Target(fmt.Sprintf("#bookmark-btn-%d", adID)),
 			hx.Swap("outerHTML"),
-			ID(fmt.Sprintf("flag-btn-%d", adID)),
+			ID(fmt.Sprintf("bookmark-btn-%d", adID)),
 			g.Attr("onclick", "event.stopPropagation()"),
-			FlagIcon(true),
+			BookmarkIcon(true),
 		)
 	}
 	return Button(
 		Type("button"),
 		Class("ml-2 focus:outline-none"),
-		hx.Post(fmt.Sprintf("/api/flag-ad/%d", adID)),
-		hx.Target(fmt.Sprintf("#flag-btn-%d", adID)),
+		hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", adID)),
+		hx.Target(fmt.Sprintf("#bookmark-btn-%d", adID)),
 		hx.Swap("outerHTML"),
-		ID(fmt.Sprintf("flag-btn-%d", adID)),
+		ID(fmt.Sprintf("bookmark-btn-%d", adID)),
 		g.Attr("onclick", "event.stopPropagation()"),
-		FlagIcon(false),
+		BookmarkIcon(false),
 	)
 }

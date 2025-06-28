@@ -143,7 +143,7 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
 
 	for _, ad := range ads {
-		render(c, ui.AdCardWithFlag(ad, loc, ad.Flagged, userID))
+		render(c, ui.AdCardWithBookmark(ad, loc, ad.Bookmarked, userID))
 	}
 
 	if nextCursor != nil {
@@ -351,7 +351,7 @@ func TreeView(c *fiber.Ctx) error {
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
 
 	for _, ad := range ads {
-		childNodes = append(childNodes, ui.AdCardWithFlag(ad, loc, ad.Flagged, userID))
+		childNodes = append(childNodes, ui.AdCardWithBookmark(ad, loc, ad.Bookmarked, userID))
 	}
 
 	// Get children for the next level, filtered by structured query
