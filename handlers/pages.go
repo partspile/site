@@ -7,8 +7,9 @@ import (
 )
 
 func HandleHome(c *fiber.Ctx) error {
-	currentUser, _ := GetCurrentUser(c) // this might return an error, but we ignore it, same as original.
-	return render(c, ui.HomePage(currentUser, c.Path()))
+	currentUser, _ := GetCurrentUser(c)    // this might return an error, but we ignore it, same as original.
+	view := c.Cookies("last_view", "list") // default to list
+	return render(c, ui.HomePage(currentUser, c.Path(), view))
 }
 
 func HandleSettings(c *fiber.Ctx) error {

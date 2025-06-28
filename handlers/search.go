@@ -469,5 +469,18 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 		newAdButton = ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
 	}
 
-	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(query), ads, nil, userID, loc, view, userPrompt))
+	selectedView := c.FormValue("selected_view")
+	if selectedView == "" {
+		selectedView = view
+	}
+	// Set the cookie for 30 days
+	c.Cookie(&fiber.Cookie{
+		Name:     "last_view",
+		Value:    selectedView,
+		Expires:  time.Now().Add(30 * 24 * time.Hour),
+		HTTPOnly: false,
+		Path:     "/",
+	})
+
+	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(query), ads, nil, userID, loc, selectedView, userPrompt))
 }

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -121,6 +122,7 @@ func ViewToggleButtons(activeView string) g.Node {
 			hx.Target("#searchResults"),
 			hx.Indicator("#searchWaiting"),
 			hx.Include("[name='q'],[name='structured_query'],[name='view']"),
+			hx.Vals(fmt.Sprintf(`{"selected_view":"%s"}`, view)),
 			icon(view, alt),
 		)
 	}
@@ -164,11 +166,11 @@ func TreeViewWithStructuredQuery(query, structuredQuery string) g.Node {
 	return TreeViewWithQuery(query, structuredQuery)
 }
 
-func InitialSearchResults() g.Node {
+func InitialSearchResults(view string) g.Node {
 	return Div(
 		ID("searchResults"),
 		Div(
-			hx.Get("/search?q="),
+			hx.Get("/search?q=&view="+view),
 			hx.Trigger("load"),
 			hx.Target("this"),
 			hx.Swap("outerHTML"),

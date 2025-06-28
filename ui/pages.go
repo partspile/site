@@ -7,13 +7,13 @@ import (
 	"github.com/parts-pile/site/user"
 )
 
-func HomePage(currentUser *user.User, path string) g.Node {
+func HomePage(currentUser *user.User, path string, view string) g.Node {
 	return Page(
 		"Parts Pile - Auto Parts and Sales",
 		currentUser,
 		path,
 		[]g.Node{
-			InitialSearchResults(),
+			InitialSearchResults(view),
 		},
 	)
 }
