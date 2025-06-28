@@ -484,3 +484,11 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 
 	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(query), ads, nil, userID, loc, selectedView, userPrompt))
 }
+
+func HandleGridView(c *fiber.Ctx) error {
+	return handleViewSwitch(c, "grid")
+}
+
+func HandleMapView(c *fiber.Ctx) error {
+	return handleViewSwitch(c, "map")
+}

@@ -271,7 +271,15 @@ func BuildAdListNodesWithBookmarks(ads []ad.Ad, userID int, loc *time.Location) 
 }
 
 func GridView(ads map[int]ad.Ad, loc *time.Location) g.Node {
-	adNodes := BuildAdListNodes(ads, loc)
+	adNodes := make([]g.Node, 0, len(ads))
+	for _, ad := range ads {
+		adNodes = append(adNodes,
+			Div(
+				Class("flex flex-col items-stretch justify-between bg-white rounded shadow p-4 aspect-square overflow-hidden"),
+				AdCardExpandable(ad, loc, ad.Bookmarked, 0), // userID 0 disables bookmark button
+			),
+		)
+	}
 	return Div(
 		ID("grid-view"),
 		Class("grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"),
