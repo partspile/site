@@ -44,8 +44,26 @@ func BookmarkIcon(bookmarked bool) g.Node {
 	)
 }
 
+// AdGridWrapper wraps ad content in a grid item wrapper for grid view, applying col-span-full if expanded
+func AdGridWrapper(ad ad.Ad, content g.Node, expanded bool) g.Node {
+	className := "grid-item-wrapper"
+	if expanded {
+		className += " col-span-full"
+	}
+	return Div(
+		ID(fmt.Sprintf("ad-grid-wrap-%d", ad.ID)),
+		Class(className),
+		content,
+	)
+}
+
 // AdCardExpandable renders an ad card with a clickable area for details and a bookmark button
-func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int) g.Node {
+func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int, view ...string) g.Node {
+	isGrid := len(view) > 0 && view[0] == "grid"
+	htmxTarget := fmt.Sprintf("#ad-%d", ad.ID)
+	if isGrid {
+		htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", ad.ID)
+	}
 	sortedYears := append([]string{}, ad.Years...)
 	sort.Strings(sortedYears)
 	sortedModels := append([]string{}, ad.Models...)
@@ -77,10 +95,18 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int)
 			)
 		}
 	}
-	return Div(
+	card := Div(
 		ID(fmt.Sprintf("ad-%d", ad.ID)),
-		Class("block border p-4 mb-4 rounded hover:bg-gray-50 relative cursor-pointer group"),
-		g.Attr("onclick", fmt.Sprintf("window.location='/ad/%d'", ad.ID)),
+		Class("block border p-4 mb-4 rounded hover:bg-gray-50 relative cursor-pointer group bg-white"),
+		hx.Get(fmt.Sprintf("/ad/detail/%d?view=%s", ad.ID, func() string {
+			if isGrid {
+				return "grid"
+			} else {
+				return "list"
+			}
+		}())),
+		hx.Target(htmxTarget),
+		hx.Swap("outerHTML"),
 		Div(
 			Class("flex items-center justify-between relative z-10"),
 			H3(Class("text-xl font-bold"), g.Text(ad.Title)),
@@ -100,10 +126,19 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int)
 			g.Text(fmt.Sprintf("ID: %d • Posted: %s", ad.ID, posted)),
 		),
 	)
+	if isGrid {
+		return AdGridWrapper(ad, card, false)
+	}
+	return card
 }
 
-// AdDetailPartial renders the ad detail view (no collapse button)
-func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int) g.Node {
+// AdDetailPartial renders the ad detail view (with collapse button)
+func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.Node {
+	isGrid := len(view) > 0 && view[0] == "grid"
+	htmxTarget := fmt.Sprintf("#ad-%d", ad.ID)
+	if isGrid {
+		htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", ad.ID)
+	}
 	bookmarkBtn := g.Node(nil)
 	if userID > 0 {
 		if bookmarked {
@@ -130,7 +165,7 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int) g.Node {
 			)
 		}
 	}
-	return Div(
+	detail := Div(
 		ID(fmt.Sprintf("ad-%d", ad.ID)),
 		Class("border p-4 mb-4 rounded bg-white shadow-lg relative"),
 		Div(
@@ -139,10 +174,28 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int) g.Node {
 			Div(
 				Class("flex flex-row items-center gap-2"),
 				bookmarkBtn,
+				Button(
+					Type("button"),
+					Class("ml-2 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none z-20"),
+					hx.Get(fmt.Sprintf("/ad/card/%d?view=%s", ad.ID, func() string {
+						if isGrid {
+							return "grid"
+						} else {
+							return "list"
+						}
+					}())),
+					hx.Target(htmxTarget),
+					hx.Swap("outerHTML"),
+					g.Text("×"),
+				),
 			),
 		),
 		AdDetails(ad),
 	)
+	if isGrid {
+		return AdGridWrapper(ad, detail, true)
+	}
+	return detail
 }
 
 // Update AdCardWithBookmark to use AdCardExpandable for in-place expand/collapse

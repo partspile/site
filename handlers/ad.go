@@ -204,7 +204,8 @@ func HandleAdCardPartial(c *fiber.Ctx) error {
 		userID = currentUser.ID
 	}
 	loc := c.Context().Time().Location()
-	return render(c, ui.AdCardExpandable(adObj, loc, bookmarked, userID))
+	view := c.Query("view", "list")
+	return render(c, ui.AdCardExpandable(adObj, loc, bookmarked, userID, view))
 }
 
 // Handler for ad detail partial (expand)
@@ -224,6 +225,6 @@ func HandleAdDetailPartial(c *fiber.Ctx) error {
 		bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
 		userID = currentUser.ID
 	}
-	loc := c.Context().Time().Location()
-	return render(c, ui.AdCardExpandable(adObj, loc, bookmarked, userID))
+	view := c.Query("view", "list")
+	return render(c, ui.AdDetailPartial(adObj, bookmarked, userID, view))
 }

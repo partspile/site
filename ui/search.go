@@ -139,7 +139,7 @@ func ListView(ads map[int]ad.Ad, loc *time.Location) g.Node {
 	return Div(
 		ID("list-view"),
 		AdListContainer(
-			g.Group(BuildAdListNodes(ads, loc)),
+			g.Group(BuildAdListNodesWithView(ads, loc, "list")),
 		),
 	)
 }
@@ -270,6 +270,14 @@ func BuildAdListNodesWithBookmarks(ads []ad.Ad, userID int, loc *time.Location) 
 	return nodes
 }
 
+func BuildAdListNodesWithView(ads map[int]ad.Ad, loc *time.Location, view string) []g.Node {
+	nodes := make([]g.Node, 0, len(ads))
+	for _, ad := range ads {
+		nodes = append(nodes, AdCardExpandable(ad, loc, ad.Bookmarked, 0, view))
+	}
+	return nodes
+}
+
 func GridView(ads map[int]ad.Ad, loc *time.Location, userID ...int) g.Node {
 	adNodes := make([]g.Node, 0, len(ads))
 	uid := 0
@@ -278,10 +286,7 @@ func GridView(ads map[int]ad.Ad, loc *time.Location, userID ...int) g.Node {
 	}
 	for _, ad := range ads {
 		adNodes = append(adNodes,
-			Div(
-				Class("flex flex-col items-stretch justify-between bg-white rounded shadow p-4 aspect-square overflow-hidden"),
-				AdCardExpandable(ad, loc, ad.Bookmarked, uid),
-			),
+			AdCardExpandable(ad, loc, ad.Bookmarked, uid, "grid"),
 		)
 	}
 	return Div(
