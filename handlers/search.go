@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/part"
+	"github.com/parts-pile/site/search"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vehicle"
 	g "maragu.dev/gomponents"
@@ -81,10 +83,17 @@ func HandleSearch(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
 	}
 
+	var nullableUserID sql.NullInt64
+	var userID int
 	currentUser, _ := CurrentUser(c)
-	userID := 0
 	if currentUser != nil {
+		nullableUserID = sql.NullInt64{Int64: int64(currentUser.ID), Valid: true}
 		userID = currentUser.ID
+	}
+
+	// Save the user's search query
+	if userPrompt != "" {
+		_ = search.SaveUserSearch(nullableUserID, userPrompt)
 	}
 
 	ads, nextCursor, err := GetNextPage(query, nil, 10, userID)

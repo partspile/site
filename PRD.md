@@ -218,6 +218,7 @@ The platform is built with the following technologies:
 - **AdCar**: ad_id, car_id
 - **User**: id, name, phone, token_balance, password_hash, created_at
 - **TokenTransaction**: id, user_id, type, amount, related_user_id, ad_id, created_at, description, user_deleted
+- **UserSearch**: id, user_id (nullable), query_string, created_at
 - **PayoutFund**: id, balance, updated_at
 
 ### Archive Tables

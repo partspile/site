@@ -185,4 +185,15 @@ CREATE TABLE IF NOT EXISTS UserAdClick (
     PRIMARY KEY (ad_id, user_id),
     FOREIGN KEY (ad_id) REFERENCES Ad(id),
     FOREIGN KEY (user_id) REFERENCES User(id)
-); 
+);
+
+-- Create UserSearch table for user search history
+CREATE TABLE IF NOT EXISTS UserSearch (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    query_string TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(id)
+);
+CREATE INDEX idx_usersearch_user_id ON UserSearch(user_id);
+CREATE INDEX idx_usersearch_created_at ON UserSearch(created_at);

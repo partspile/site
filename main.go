@@ -14,6 +14,7 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/handlers"
 	"github.com/parts-pile/site/part"
+	"github.com/parts-pile/site/search"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vehicle"
@@ -34,6 +35,9 @@ func main() {
 
 	// Initialize user package with the same DB
 	user.InitDB(ad.DB)
+
+	// Initialize search package with the same DB
+	search.InitDB(ad.DB)
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: customErrorHandler,
