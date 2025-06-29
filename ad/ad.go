@@ -633,7 +633,7 @@ func GetAllAds() ([]Ad, error) {
 // GetAllArchivedAds returns all archived ads in the system
 func GetAllArchivedAds() ([]Ad, error) {
 	rows, err := db.Query(`
-		SELECT id, description, price, created_at, user_id, deletion_date
+		SELECT id, title, description, price, created_at, user_id, deletion_date
 		FROM ArchivedAd
 		ORDER BY deletion_date DESC
 	`)
@@ -646,7 +646,7 @@ func GetAllArchivedAds() ([]Ad, error) {
 	for rows.Next() {
 		var ad Ad
 		var deletionDate string
-		err := rows.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &deletionDate)
+		err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &deletionDate)
 		if err != nil {
 			return nil, err
 		}
@@ -663,14 +663,14 @@ func GetAllArchivedAds() ([]Ad, error) {
 // GetArchivedAd retrieves an archived ad by ID
 func GetArchivedAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
-		SELECT id, description, price, created_at, subcategory_id, user_id, deletion_date
+		SELECT id, title, description, price, created_at, subcategory_id, user_id, deletion_date
 		FROM ArchivedAd
 		WHERE id = ?
 	`, id)
 
 	var ad Ad
 	var deletionDate string
-	if err := row.Scan(&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt,
+	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
 		&ad.SubCategoryID, &ad.UserID, &deletionDate); err != nil {
 		return Ad{}, false
 	}
@@ -724,9 +724,9 @@ func ArchiveAd(id int) error {
 	}
 	defer tx.Rollback()
 
-	// Archive the ad to ArchivedAd with deletion_date
-	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, description, price, created_at, subcategory_id, user_id, deletion_date)
-		SELECT id, description, price, created_at, subcategory_id, user_id, ? FROM Ad WHERE id = ?`,
+	// Archive the ad to ArchivedAd with deletion_date and title
+	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, title, description, price, created_at, subcategory_id, user_id, deletion_date)
+		SELECT id, title, description, price, created_at, subcategory_id, user_id, ? FROM Ad WHERE id = ?`,
 		time.Now().UTC().Format(time.RFC3339Nano), id)
 	if err != nil {
 		return err
