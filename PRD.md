@@ -64,10 +64,10 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - This provides a seamless, SPA-like user experience while maintaining server-side rendering and progressive enhancement.
 
 ### 3.6b Ad Click Count Tracking
-- Each ad tracks the number of times it has been viewed (clicked) by users.
-- The click count is displayed on the ad card and detail views in the UI.
+- Each ad tracks the number of times it has been viewed (clicked) by users, and the date/time of the last click.
+- The click count and last clicked date/time are displayed on the ad card and detail views in the UI.
 - Clicks are incremented in the database each time an ad is viewed.
-- (If implemented) User-specific click tracking is also supported, allowing for analytics on unique user engagement.
+- User-specific click tracking is also supported, allowing for analytics on unique user engagement, including the date/time of the last click by that user.
 
 ### 3.7 Ad Cost, Token Economy, and Incentives
 - Posting an ad incurs a cost, which can be positive (user pays) or negative (user receives payout).

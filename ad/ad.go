@@ -58,16 +58,17 @@ type Ad struct {
 	SubCategoryID *int      `json:"subcategory_id,omitempty"`
 	UserID        int       `json:"user_id"`
 	// Runtime fields populated via joins
-	Year         string     `json:"year,omitempty"`
-	Make         string     `json:"make"`
-	Years        []string   `json:"years"`
-	Models       []string   `json:"models"`
-	Engines      []string   `json:"engines"`
-	Category     string     `json:"category,omitempty"`
-	SubCategory  string     `json:"subcategory,omitempty"`
-	DeletionDate *time.Time `json:"deletion_date,omitempty"`
-	Bookmarked   bool       `json:"bookmarked"` // true if bookmarked by current user
-	ClickCount   int        `json:"click_count"`
+	Year          string     `json:"year,omitempty"`
+	Make          string     `json:"make"`
+	Years         []string   `json:"years"`
+	Models        []string   `json:"models"`
+	Engines       []string   `json:"engines"`
+	Category      string     `json:"category,omitempty"`
+	SubCategory   string     `json:"subcategory,omitempty"`
+	DeletionDate  *time.Time `json:"deletion_date,omitempty"`
+	Bookmarked    bool       `json:"bookmarked"` // true if bookmarked by current user
+	ClickCount    int        `json:"click_count"`
+	LastClickedAt *time.Time `json:"last_clicked_at,omitempty"`
 }
 
 // IsArchived returns true if the ad has been archived
@@ -180,7 +181,7 @@ func GetAdByID(id int) (Ad, AdStatus, bool) {
 func GetAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
 		SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-		       a.user_id, psc.name as subcategory, a.click_count
+		       a.user_id, psc.name as subcategory, a.click_count, a.last_clicked_at
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 		WHERE a.id = ?
@@ -188,8 +189,9 @@ func GetAd(id int) (Ad, bool) {
 
 	var ad Ad
 	var subcategory sql.NullString
+	var lastClickedAt sql.NullTime
 	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
-		&ad.SubCategoryID, &ad.UserID, &subcategory, &ad.ClickCount); err != nil {
+		&ad.SubCategoryID, &ad.UserID, &subcategory, &ad.ClickCount, &lastClickedAt); err != nil {
 		fmt.Println("DEBUG GetAd scan error:", err)
 		return Ad{}, false
 	}
@@ -198,6 +200,10 @@ func GetAd(id int) (Ad, bool) {
 
 	if subcategory.Valid {
 		ad.SubCategory = subcategory.String
+	}
+
+	if lastClickedAt.Valid {
+		ad.LastClickedAt = &lastClickedAt.Time
 	}
 
 	// Get vehicle data
@@ -301,7 +307,7 @@ func GetNextAdID() int {
 func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 	rows, err := db.Query(`
 		SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-		       psc.name as subcategory, a.click_count,
+		       psc.name as subcategory, a.click_count, a.last_clicked_at,
 		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
@@ -320,9 +326,10 @@ func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 		var ad Ad
 		var subcatID sql.NullInt64
 		var subcategory sql.NullString
+		var lastClickedAt sql.NullTime
 		var isBookmarked int
 		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
-			&subcatID, &subcategory, &ad.ClickCount, &isBookmarked); err != nil {
+			&subcatID, &subcategory, &ad.ClickCount, &lastClickedAt, &isBookmarked); err != nil {
 			continue
 		}
 		if subcatID.Valid {
@@ -331,6 +338,9 @@ func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 		}
 		if subcategory.Valid {
 			ad.SubCategory = subcategory.String
+		}
+		if lastClickedAt.Valid {
+			ad.LastClickedAt = &lastClickedAt.Time
 		}
 		ad.Bookmarked = isBookmarked == 1
 		// Get vehicle data for this ad
@@ -358,7 +368,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 		// Use JOIN-based query when we have vehicle filters
 		sqlQuery = `
 			SELECT DISTINCT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-			       psc.name as subcategory, a.click_count,
+			       psc.name as subcategory, a.click_count, a.last_clicked_at,
 			       m.name as make_name, y.year, mo.name as model_name, e.name as engine_name,
 			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 			FROM Ad a
@@ -410,7 +420,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 		// Use simple query when no vehicle filters - this includes ALL ads
 		sqlQuery = `
 			SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-			       psc.name as subcategory, a.click_count,
+			       psc.name as subcategory, a.click_count, a.last_clicked_at,
 			       NULL as make_name, NULL as year, NULL as model_name, NULL as engine_name,
 			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 			FROM Ad a
@@ -460,6 +470,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			subcatID     sql.NullInt64
 			subcategory  sql.NullString
 			clickCount   int
+			lastClickedAt sql.NullTime
 			makeName     sql.NullString
 			year         sql.NullInt64
 			modelName    sql.NullString
@@ -468,7 +479,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 		)
 
 		if err := rows.Scan(&id, &title, &description, &price, &createdAt,
-			&subcatID, &subcategory, &clickCount, &makeName, &year, &modelName, &engineName, &isBookmarked); err != nil {
+			&subcatID, &subcategory, &clickCount, &lastClickedAt, &makeName, &year, &modelName, &engineName, &isBookmarked); err != nil {
 			continue
 		}
 
@@ -482,6 +493,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 				Price:       price,
 				CreatedAt:   createdAt,
 				ClickCount:  clickCount,
+				LastClickedAt: &lastClickedAt.Time,
 			}
 			if subcatID.Valid {
 				intVal := int(subcatID.Int64)
@@ -882,7 +894,7 @@ func GetAdsByIDs(ids []int) ([]Ad, error) {
 
 // IncrementAdClick increments the global click count for an ad
 func IncrementAdClick(adID int) error {
-	res, err := db.Exec("UPDATE Ad SET click_count = click_count + 1 WHERE id = ?", adID)
+	res, err := db.Exec("UPDATE Ad SET click_count = click_count + 1, last_clicked_at = ? WHERE id = ?", time.Now().UTC(), adID)
 	if err != nil {
 		fmt.Println("DEBUG IncrementAdClick error:", err)
 		return err
@@ -894,8 +906,8 @@ func IncrementAdClick(adID int) error {
 
 // IncrementAdClickForUser increments the click count for an ad for a specific user
 func IncrementAdClickForUser(adID int, userID int) error {
-	_, err := db.Exec(`INSERT INTO AdClick (ad_id, user_id, click_count) VALUES (?, ?, 1)
-		ON CONFLICT(ad_id, user_id) DO UPDATE SET click_count = click_count + 1`, adID, userID)
+	_, err := db.Exec(`INSERT INTO UserAdClick (ad_id, user_id, click_count, last_clicked_at) VALUES (?, ?, 1, ?)
+		ON CONFLICT(ad_id, user_id) DO UPDATE SET click_count = click_count + 1, last_clicked_at = ?`, adID, userID, time.Now().UTC(), time.Now().UTC())
 	return err
 }
 
@@ -912,7 +924,7 @@ func GetAdClickCount(adID int) (int, error) {
 // GetAdClickCountForUser returns the click count for an ad for a specific user
 func GetAdClickCountForUser(adID int, userID int) (int, error) {
 	var count int
-	err := db.QueryRow("SELECT click_count FROM AdClick WHERE ad_id = ? AND user_id = ?", adID, userID).Scan(&count)
+	err := db.QueryRow("SELECT click_count FROM UserAdClick WHERE ad_id = ? AND user_id = ?", adID, userID).Scan(&count)
 	if err == sql.ErrNoRows {
 		return 0, nil
 	}

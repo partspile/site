@@ -38,13 +38,7 @@ func HandleViewAd(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	// Increment global click count
-	_ = ad.IncrementAdClick(adID)
-
 	currentUser, _ := GetCurrentUser(c)
-	if currentUser != nil {
-		_ = ad.IncrementAdClickForUser(adID, currentUser.ID)
-	}
 
 	// Get ad from either active or archived tables
 	adObj, _, ok := ad.GetAdByID(adID)
@@ -224,11 +218,19 @@ func HandleAdDetailPartial(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
+
+	// Increment global click count
+	_ = ad.IncrementAdClick(adID)
+
+	currentUser, _ := GetCurrentUser(c)
+	if currentUser != nil {
+		_ = ad.IncrementAdClickForUser(adID, currentUser.ID)
+	}
+
 	adObj, _, ok := ad.GetAdByID(adID)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	currentUser, _ := CurrentUser(c)
 	bookmarked := false
 	userID := 0
 	if currentUser != nil {
