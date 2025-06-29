@@ -3,6 +3,7 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -279,12 +280,23 @@ func BuildAdListNodesWithView(ads map[int]ad.Ad, loc *time.Location, view string
 }
 
 func GridView(ads map[int]ad.Ad, loc *time.Location, userID ...int) g.Node {
-	adNodes := make([]g.Node, 0, len(ads))
+	adSlice := make([]ad.Ad, 0, len(ads))
+	for _, ad := range ads {
+		adSlice = append(adSlice, ad)
+	}
+	// Sort by CreatedAt DESC, ID DESC (same as list view)
+	sort.Slice(adSlice, func(i, j int) bool {
+		if adSlice[i].CreatedAt.Equal(adSlice[j].CreatedAt) {
+			return adSlice[i].ID > adSlice[j].ID
+		}
+		return adSlice[i].CreatedAt.After(adSlice[j].CreatedAt)
+	})
+	adNodes := make([]g.Node, 0, len(adSlice))
 	uid := 0
 	if len(userID) > 0 {
 		uid = userID[0]
 	}
-	for _, ad := range ads {
+	for _, ad := range adSlice {
 		adNodes = append(adNodes,
 			AdCardExpandable(ad, loc, ad.Bookmarked, uid, "grid"),
 		)

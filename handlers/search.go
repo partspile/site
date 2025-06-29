@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -325,6 +326,14 @@ func TreeView(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+
+	// Sort ads by CreatedAt DESC, ID DESC (same as list/grid view)
+	sort.Slice(ads, func(i, j int) bool {
+		if ads[i].CreatedAt.Equal(ads[j].CreatedAt) {
+			return ads[i].ID > ads[j].ID
+		}
+		return ads[i].CreatedAt.After(ads[j].CreatedAt)
+	})
 
 	// At the root, only show a blank tree if there are no children (makes with ads)
 	if level == 0 {
