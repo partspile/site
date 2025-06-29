@@ -80,19 +80,14 @@ func BookmarkedAdsSection(currentUser *user.User, ads []ad.Ad) g.Node {
 }
 
 func BuildAdListNodesFromSlice(currentUser *user.User, ads []ad.Ad, bookmarked bool) []g.Node {
-	adMap := make(map[int]ad.Ad, len(ads))
-	for _, ad := range ads {
-		adMap[ad.ID] = ad
-	}
 	loc := time.Local
 	userID := 0
 	if currentUser != nil {
 		userID = currentUser.ID
 	}
-	// Always bookmarked for bookmarked ads section
 	nodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
-		nodes = append(nodes, AdCardWithBookmark(ad, loc, bookmarked, userID))
+		nodes = append(nodes, AdCardExpandable(ad, loc, bookmarked, userID))
 	}
 	return nodes
 }

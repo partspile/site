@@ -242,7 +242,7 @@ func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, a
 				case "tree":
 					return TreeViewWithQuery(query, string(structuredQueryJSON))
 				case "grid":
-					return GridView(adsMap, loc)
+					return GridView(adsMap, loc, userID)
 				case "map":
 					return MapView(adsMap, loc)
 				default:
@@ -270,13 +270,17 @@ func BuildAdListNodesWithBookmarks(ads []ad.Ad, userID int, loc *time.Location) 
 	return nodes
 }
 
-func GridView(ads map[int]ad.Ad, loc *time.Location) g.Node {
+func GridView(ads map[int]ad.Ad, loc *time.Location, userID ...int) g.Node {
 	adNodes := make([]g.Node, 0, len(ads))
+	uid := 0
+	if len(userID) > 0 {
+		uid = userID[0]
+	}
 	for _, ad := range ads {
 		adNodes = append(adNodes,
 			Div(
 				Class("flex flex-col items-stretch justify-between bg-white rounded shadow p-4 aspect-square overflow-hidden"),
-				AdCardExpandable(ad, loc, ad.Bookmarked, 0), // userID 0 disables bookmark button
+				AdCardExpandable(ad, loc, ad.Bookmarked, uid),
 			),
 		)
 	}

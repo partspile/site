@@ -168,6 +168,12 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
     - View token transaction history, including deleted users
   - Admin access is restricted by role-based authentication
 
+### 3.13 Ad Card UX (2024-06-xx)
+- All ad card views (list, grid, tree, bookmarks, etc.) show a bookmark icon on each card.
+- The bookmark icon is always visible and is the only clickable area that does not navigate to the ad detail page.
+- Clicking anywhere else on the ad card navigates to the ad detail page (`/ad/{id}`).
+- There are no expand/collapse icons or in-place expansion; ad details are shown on a separate page.
+
 ---
 
 ## 4. Technology Stack

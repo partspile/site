@@ -74,4 +74,7 @@
 - [x] Review all code for incomplete, stub, or placeholder logic
 
 ## Miscellaneous
-- [x] Quieted server logs by handling Chrome DevTools requests for `/.well-known/appspecific/com.chrome.devtools.json`. 
+- [x] Quieted server logs by handling Chrome DevTools requests for `/.well-known/appspecific/com.chrome.devtools.json`.
+- [x] Remove expand/collapse icons and in-place ad detail expansion from ad cards
+- [x] Ad cards now only have a bookmark icon (always visible and clickable)
+- [x] Clicking anywhere else on the ad card navigates to the ad detail page 
