@@ -228,3 +228,29 @@ func HandleAdDetailPartial(c *fiber.Ctx) error {
 	view := c.Query("view", "list")
 	return render(c, ui.AdDetailPartial(adObj, bookmarked, userID, view))
 }
+
+// Add this handler for deleting an ad
+func HandleDeleteAd(c *fiber.Ctx) error {
+	adID, err := ParseIntParam(c, "id")
+	if err != nil {
+		return err
+	}
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
+	adObj, ok := ad.GetAd(adID)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+	if adObj.UserID != currentUser.ID {
+		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
+	}
+	if err := ad.ArchiveAd(adID); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to delete ad")
+	}
+	if c.Get("HX-Request") != "" {
+		return c.SendStatus(fiber.StatusNoContent) // 204, so htmx removes the card
+	}
+	return render(c, ui.SuccessMessage("Ad deleted successfully", "/"))
+}
