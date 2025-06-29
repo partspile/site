@@ -4,6 +4,7 @@
 - [x] Implement create, edit, and delete for ads (CRUD)
 - [x] Ensure each ad includes description, price, vehicle fitment (make, year(s), model(s), engine(s)), part category, and subcategory
 - [x] Timestamp ads
+- [x] Ad editing is now inline via the ad detail view, with an edit icon for owners only. No standalone edit page.
 
 ## 2. Vehicle Data Integration
 - [x] Maintain comprehensive, normalized vehicle database (make, year, model, engine)

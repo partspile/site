@@ -121,6 +121,16 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	}
 
 	ad.UpdateAd(updatedAd)
+
+	if c.Get("HX-Request") != "" {
+		// For htmx, return the updated detail partial
+		bookmarked := false
+		if currentUser != nil {
+			bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
+		}
+		view := c.Query("view", "list")
+		return render(c, ui.AdDetailPartial(updatedAd, bookmarked, currentUser.ID, view))
+	}
 	return render(c, ui.SuccessMessage("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
 }
 
@@ -253,4 +263,34 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusNoContent) // 204, so htmx removes the card
 	}
 	return render(c, ui.SuccessMessage("Ad deleted successfully", "/"))
+}
+
+// Handler for ad edit partial (inline edit)
+func HandleEditAdPartial(c *fiber.Ctx) error {
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+	adObj, ok := ad.GetAd(adID)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
+	if adObj.UserID != currentUser.ID {
+		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
+	}
+	makes := vehicle.GetMakes()
+	years := vehicle.GetYears(adObj.Make)
+	modelAvailability := vehicle.GetModelsWithAvailability(adObj.Make, adObj.Years)
+	engineAvailability := vehicle.GetEnginesWithAvailability(adObj.Make, adObj.Years, adObj.Models)
+	view := c.Query("view", "list")
+	cancelTarget := fmt.Sprintf("/ad/detail/%d?view=%s", adObj.ID, view)
+	htmxTarget := fmt.Sprintf("#ad-%d", adObj.ID)
+	if view == "grid" {
+		htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", adObj.ID)
+	}
+	return render(c, ui.AdEditPartial(adObj, makes, years, modelAvailability, engineAvailability, cancelTarget, htmxTarget, view))
 }

@@ -72,6 +72,7 @@ func main() {
 	// Ad in-place expand/collapse partials for htmx
 	app.Get("/ad/card/:id", handlers.HandleAdCardPartial)
 	app.Get("/ad/detail/:id", handlers.HandleAdDetailPartial)
+	app.Get("/ad/edit-partial/:id", handlers.AuthRequired, handlers.HandleEditAdPartial)
 
 	// Ad management
 	app.Get("/ad/:id", handlers.OptionalAuth, handlers.HandleViewAd)

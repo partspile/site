@@ -132,6 +132,169 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 	return card
 }
 
+// AdEditPartial renders the ad edit form for inline editing
+func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engineAvailability map[string]bool, cancelTarget, htmxTarget string, view ...string) g.Node {
+	isGrid := len(view) > 0 && view[0] == "grid"
+	editForm := Div(
+		ID(fmt.Sprintf("ad-%d", adObj.ID)),
+		Class("border p-4 mb-4 rounded bg-white shadow-lg relative"),
+		Form(
+			ID("editAdForm"),
+			Class("space-y-6"),
+			EncType("multipart/form-data"),
+			ValidationErrorContainer(),
+			FormGroup("Title", "title",
+				Input(
+					Type("text"),
+					ID("title"),
+					Name("title"),
+					Class("w-full p-2 border rounded"),
+					Required(),
+					Value(adObj.Title),
+				),
+			),
+			FormGroup("Make", "make",
+				Select(
+					ID("make"),
+					Name("make"),
+					Class("w-full p-2 border rounded"),
+					hx.Trigger("change"),
+					hx.Get("/api/years"),
+					hx.Target("#yearsDiv"),
+					hx.Include("this"),
+					g.Attr("onchange", "document.getElementById('modelsDiv').innerHTML = ''; document.getElementById('enginesDiv').innerHTML = '';"),
+					Option(Value(""), g.Text("Select a make")),
+					g.Group(func() []g.Node {
+						makeOptions := []g.Node{}
+						for _, makeName := range makes {
+							attrs := []g.Node{Value(makeName)}
+							if makeName == adObj.Make {
+								attrs = append(attrs, Selected())
+							}
+							attrs = append(attrs, g.Text(makeName))
+							makeOptions = append(makeOptions, Option(attrs...))
+						}
+						return makeOptions
+					}()),
+				),
+			),
+			FormGroup("Years", "years", Div(ID("yearsDiv"), GridContainer(5, func() []g.Node {
+				yearCheckboxes := []g.Node{}
+				for _, year := range years {
+					isChecked := false
+					for _, adYear := range adObj.Years {
+						if year == adYear {
+							isChecked = true
+							break
+						}
+					}
+					yearCheckboxes = append(yearCheckboxes,
+						Checkbox("years", year, year, isChecked, false,
+							hx.Trigger("change"),
+							hx.Get("/api/models"),
+							hx.Target("#modelsDiv"),
+							hx.Include("[name='make'],[name='years']:checked"),
+						),
+					)
+				}
+				return yearCheckboxes
+			}()...))),
+			FormGroup("Models", "models", Div(ID("modelsDiv"), GridContainer(5, func() []g.Node {
+				modelCheckboxes := []g.Node{}
+				models := make([]string, 0, len(modelAvailability))
+				for m := range modelAvailability {
+					models = append(models, m)
+				}
+				sort.Strings(models)
+				for _, modelName := range models {
+					isAvailable := modelAvailability[modelName]
+					isChecked := false
+					for _, adModel := range adObj.Models {
+						if modelName == adModel {
+							isChecked = true
+							break
+						}
+					}
+					modelCheckboxes = append(modelCheckboxes,
+						Checkbox("models", modelName, modelName, isChecked, !isAvailable,
+							hx.Trigger("change"),
+							hx.Get("/api/engines"),
+							hx.Target("#enginesDiv"),
+							hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
+						),
+					)
+				}
+				return modelCheckboxes
+			}()...))),
+			FormGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer(5, func() []g.Node {
+				engineCheckboxes := []g.Node{}
+				engines := make([]string, 0, len(engineAvailability))
+				for e := range engineAvailability {
+					engines = append(engines, e)
+				}
+				sort.Strings(engines)
+				for _, engineName := range engines {
+					isAvailable := engineAvailability[engineName]
+					isChecked := false
+					for _, adEngine := range adObj.Engines {
+						if engineName == adEngine {
+							isChecked = true
+							break
+						}
+					}
+					engineCheckboxes = append(engineCheckboxes,
+						Checkbox("engines", engineName, engineName, isChecked, !isAvailable),
+					)
+				}
+				return engineCheckboxes
+			}()...))),
+			FormGroup("Description", "description",
+				Textarea(
+					ID("description"),
+					Name("description"),
+					Class("w-full p-2 border rounded"),
+					Rows("4"),
+					g.Text(adObj.Description),
+				),
+			),
+			FormGroup("Price", "price",
+				Input(
+					Type("number"),
+					ID("price"),
+					Name("price"),
+					Class("w-full p-2 border rounded"),
+					Step("0.01"),
+					Min("0"),
+					Value(fmt.Sprintf("%.2f", adObj.Price)),
+				),
+			),
+			Div(
+				Class("flex flex-row gap-2 justify-end"),
+				Button(
+					Type("button"),
+					Class("text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none z-20"),
+					hx.Get(cancelTarget),
+					hx.Target(htmxTarget),
+					hx.Swap("outerHTML"),
+					g.Text("×"),
+				),
+				StyledButton("Save", ButtonPrimary,
+					Type("submit"),
+					hx.Post(fmt.Sprintf("/api/update-ad/%d", adObj.ID)),
+					hx.Encoding("multipart/form-data"),
+					hx.Target(htmxTarget),
+					hx.Swap("outerHTML"),
+				),
+			),
+			ResultContainer(),
+		),
+	)
+	if isGrid {
+		return AdGridWrapper(adObj, editForm, true)
+	}
+	return editForm
+}
+
 // AdDetailPartial renders the ad detail view (with collapse button)
 func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.Node {
 	isGrid := len(view) > 0 && view[0] == "grid"
@@ -167,17 +330,37 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 	}
 	// Delete icon button (only for ad owner)
 	deleteBtn := g.Node(nil)
+	editBtn := g.Node(nil)
 	if userID == ad.UserID {
 		deleteBtn = Button(
 			Type("button"),
 			Class("ml-2 focus:outline-none z-20"),
 			hx.Delete(fmt.Sprintf("/delete-ad/%d", ad.ID)),
-			hx.Target("#result"),
+			hx.Target(htmxTarget),
+			hx.Swap("delete"),
 			hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
 			Img(
 				Src("/trashcan.svg"),
 				Alt("Delete"),
 				Class("w-6 h-6 inline align-middle text-red-500 hover:text-red-700"),
+			),
+		)
+		editBtn = Button(
+			Type("button"),
+			Class("ml-2 focus:outline-none z-20"),
+			hx.Get(fmt.Sprintf("/ad/edit-partial/%d?view=%s", ad.ID, func() string {
+				if isGrid {
+					return "grid"
+				} else {
+					return "list"
+				}
+			}())),
+			hx.Target(htmxTarget),
+			hx.Swap("outerHTML"),
+			Img(
+				Src("/edit.svg"),
+				Alt("Edit"),
+				Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
 			),
 		)
 	}
@@ -191,6 +374,7 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 				Class("flex flex-row items-center gap-2"),
 				bookmarkBtn,
 				deleteBtn,
+				editBtn,
 				Button(
 					Type("button"),
 					Class("ml-2 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none z-20"),
@@ -341,7 +525,7 @@ func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad, bookmarked boo
 	if currentUser != nil {
 		userID = currentUser.ID
 	}
-	// Action buttons: bookmark, edit, delete
+	// Action buttons: bookmark, delete (edit removed)
 	actionButtons := []g.Node{bookmarkBtn}
 	isArchivedAd := adObj.IsArchived()
 	if userID > 0 {
@@ -370,9 +554,8 @@ func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad, bookmarked boo
 		}
 		actionButtons[0] = bookmarkBtn
 		if currentUser.ID == adObj.UserID && !isArchivedAd {
-			editButton := StyledLink("Edit Ad", fmt.Sprintf("/edit-ad/%d", adObj.ID), ButtonPrimary)
 			deleteButton := DeleteButton(adObj.ID)
-			actionButtons = append(actionButtons, editButton, deleteButton)
+			actionButtons = append(actionButtons, deleteButton)
 		}
 	}
 	statusIndicator := g.Node(nil)
@@ -529,7 +712,6 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 						Name("description"),
 						Class("w-full p-2 border rounded"),
 						Rows("4"),
-						g.Text(currentAd.Description),
 					),
 				),
 				FormGroup("Price", "price",

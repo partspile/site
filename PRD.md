@@ -174,6 +174,13 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - Clicking anywhere else on the ad card navigates to the ad detail page (`/ad/{id}`).
 - There are no expand/collapse icons or in-place expansion; ad details are shown on a separate page.
 
+### 3.14 Ad Editing
+- Ad editing is now performed inline within the ad detail view.
+- The edit icon (using /edit.svg) appears on the ad detail view only for the ad owner when logged in.
+- Clicking the edit icon swaps the ad detail for an inline edit form.
+- The edit form has an 'X' button to cancel (return to detail view) and a Save button to save changes and return to detail view.
+- There is no longer a standalone edit page or edit link.
+
 ---
 
 ## 4. Technology Stack
