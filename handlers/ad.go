@@ -6,18 +6,23 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/ui"
-	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vehicle"
 )
 
 func HandleNewAd(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
 	makes := vehicle.GetMakes()
 	return render(c, ui.NewAdPage(currentUser, c.Path(), makes))
 }
 
 func HandleNewAdSubmission(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
 
 	newAd, err := BuildAdFromForm(c, currentUser.ID)
 	if err != nil {
@@ -56,37 +61,44 @@ func HandleViewAd(c *fiber.Ctx) error {
 }
 
 func HandleEditAd(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
 
 	adID, err := ParseIntParam(c, "id")
 	if err != nil {
 		return err
 	}
 
-	ad, ok := ad.GetAd(adID)
+	adObj, ok := ad.GetAd(adID)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	if err := ValidateOwnership(ad.UserID, currentUser.ID); err != nil {
+	_, err = RequireOwnership(c, adObj.UserID)
+	if err != nil {
 		return err
 	}
 
 	// Prepare make options
 	makes := vehicle.GetMakes()
 	// Prepare year checkboxes
-	years := vehicle.GetYears(ad.Make)
+	years := vehicle.GetYears(adObj.Make)
 	// Prepare model checkboxes
-	modelAvailability := vehicle.GetModelsWithAvailability(ad.Make, ad.Years)
+	modelAvailability := vehicle.GetModelsWithAvailability(adObj.Make, adObj.Years)
 	// Prepare engine checkboxes
-	engineAvailability := vehicle.GetEnginesWithAvailability(ad.Make, ad.Years, ad.Models)
+	engineAvailability := vehicle.GetEnginesWithAvailability(adObj.Make, adObj.Years, adObj.Models)
 
-	return render(c, ui.EditAdPage(currentUser, c.Path(), ad, makes, years, modelAvailability, engineAvailability))
+	return render(c, ui.EditAdPage(currentUser, c.Path(), adObj, makes, years, modelAvailability, engineAvailability))
 }
 
 func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	println("HandleUpdateAdSubmission")
-	currentUser := c.Locals("user").(*user.User)
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
 
 	adID, err := ParseIntParam(c, "id")
 	if err != nil {
@@ -98,7 +110,8 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	if err := ValidateOwnership(existingAd.UserID, currentUser.ID); err != nil {
+	_, err = RequireOwnership(c, existingAd.UserID)
+	if err != nil {
 		return err
 	}
 
@@ -113,7 +126,10 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 
 // Handler to bookmark an ad
 func HandleBookmarkAd(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
 	adID, err := ParseIntParam(c, "id")
 	if err != nil {
 		return err
@@ -127,7 +143,10 @@ func HandleBookmarkAd(c *fiber.Ctx) error {
 
 // Handler to unbookmark an ad
 func HandleUnbookmarkAd(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
 	adID, err := ParseIntParam(c, "id")
 	if err != nil {
 		return err
@@ -141,7 +160,10 @@ func HandleUnbookmarkAd(c *fiber.Ctx) error {
 
 // Handler to get bookmarked ads for the current user (for settings page)
 func HandleBookmarkedAds(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
 	adIDs, err := ad.GetBookmarkedAdIDsByUser(currentUser.ID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ad IDs")
@@ -174,7 +196,7 @@ func HandleAdCardPartial(c *fiber.Ctx) error {
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	currentUser, _ := GetCurrentUser(c)
+	currentUser, _ := CurrentUser(c)
 	bookmarked := false
 	userID := 0
 	if currentUser != nil {
@@ -195,12 +217,13 @@ func HandleAdDetailPartial(c *fiber.Ctx) error {
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	currentUser, _ := GetCurrentUser(c)
+	currentUser, _ := CurrentUser(c)
 	bookmarked := false
 	userID := 0
 	if currentUser != nil {
 		bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
 		userID = currentUser.ID
 	}
-	return render(c, ui.AdDetailPartial(adObj, bookmarked, userID))
+	loc := c.Context().Time().Location()
+	return render(c, ui.AdCardExpandable(adObj, loc, bookmarked, userID))
 }

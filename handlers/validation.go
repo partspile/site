@@ -61,14 +61,6 @@ func VerifyPassword(hashedPassword, password string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
-// ValidateOwnership checks if the current user owns the resource
-func ValidateOwnership(resourceUserID, currentUserID int) error {
-	if resourceUserID != currentUserID {
-		return fiber.NewError(fiber.StatusForbidden, "You do not have permission to edit this ad")
-	}
-	return nil
-}
-
 // ValidationErrorResponse returns a validation error response
 func ValidationErrorResponse(c *fiber.Ctx, message string) error {
 	return render(c, ui.ValidationError(message))

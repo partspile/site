@@ -204,3 +204,37 @@ func HandleDeleteAccount(c *fiber.Ctx) error {
 
 	return render(c, ui.SuccessMessage("Account deleted successfully", "/"))
 }
+
+// CurrentUser extracts the user from context, or falls back to session if not present.
+func CurrentUser(c *fiber.Ctx) (*user.User, error) {
+	u, ok := c.Locals("user").(*user.User)
+	if ok && u != nil {
+		return u, nil
+	}
+	// Fallback to session-based extraction
+	return GetCurrentUser(c)
+}
+
+// RequireAdmin extracts the user from context and checks admin status.
+func RequireAdmin(c *fiber.Ctx) (*user.User, error) {
+	u, err := CurrentUser(c)
+	if err != nil {
+		return nil, err
+	}
+	if !u.IsAdmin {
+		return nil, fiber.NewError(fiber.StatusForbidden, "admin access required")
+	}
+	return u, nil
+}
+
+// RequireOwnership checks if the current user owns the resource.
+func RequireOwnership(c *fiber.Ctx, resourceUserID int) (*user.User, error) {
+	u, err := CurrentUser(c)
+	if err != nil {
+		return nil, err
+	}
+	if u.ID != resourceUserID {
+		return nil, fiber.NewError(fiber.StatusForbidden, "not resource owner")
+	}
+	return u, nil
+}

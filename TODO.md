@@ -77,4 +77,9 @@
 - [x] Quieted server logs by handling Chrome DevTools requests for `/.well-known/appspecific/com.chrome.devtools.json`.
 - [x] Remove expand/collapse icons and in-place ad detail expansion from ad cards
 - [x] Ad cards now only have a bookmark icon (always visible and clickable)
-- [x] Clicking anywhere else on the ad card navigates to the ad detail page 
+- [x] Clicking anywhere else on the ad card navigates to the ad detail page
+
+### 17. Create Authentication Utilities ✅ COMPLETED
+- **Issue**: Repeated user extraction and permission checking patterns
+- **Action**: Centralized user context handling and permission checks
+- **Implementation**: Added `CurrentUser`, `RequireAdmin`, and `RequireOwnership` helpers to `handlers/auth.go`. All handlers now use these utilities for extracting the current user, checking admin status, and verifying resource ownership. Removed the old `ValidateOwnership` function and updated all usages 

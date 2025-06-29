@@ -19,25 +19,28 @@ func adminHandler[T any](c *fiber.Ctx, sectionName string,
 	getActiveData func() ([]T, error),
 	getArchivedData func() ([]T, error), // can be nil for no-status entities
 	sectionComponent func([]T, string) g.Node) error {
-	currentUser := c.Locals("user").(*user.User)
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
 	status := c.Query("status")
 
 	var data []T
-	var err error
+	var err2 error
 
 	if getArchivedData != nil {
 		// Entity supports status filtering
 		if status == "archived" {
-			data, err = getArchivedData()
+			data, err2 = getArchivedData()
 		} else {
-			data, err = getActiveData()
+			data, err2 = getActiveData()
 		}
 	} else {
 		// Entity doesn't support status filtering
-		data, err = getActiveData()
+		data, err2 = getActiveData()
 	}
 
-	if err != nil {
+	if err2 != nil {
 		return fiber.ErrInternalServerError
 	}
 
@@ -78,7 +81,10 @@ func adminPartSubCategoriesSectionWrapper(subCategories []part.SubCategory, stat
 }
 
 func HandleAdminDashboard(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
 	users, err := user.GetAllUsers()
 	if err != nil {
 		return fiber.ErrInternalServerError

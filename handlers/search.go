@@ -80,7 +80,7 @@ func HandleSearch(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
 	}
 
-	currentUser, _ := GetCurrentUser(c)
+	currentUser, _ := CurrentUser(c)
 	userID := 0
 	if currentUser != nil {
 		userID = currentUser.ID
@@ -129,7 +129,7 @@ func HandleSearchPage(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid cursor")
 	}
 
-	currentUser, _ := GetCurrentUser(c)
+	currentUser, _ := CurrentUser(c)
 	userID := 0
 	if currentUser != nil {
 		userID = currentUser.ID
@@ -316,7 +316,7 @@ func TreeView(c *fiber.Ctx) error {
 	var err error
 
 	// Get ads for the current node (filtered by structured query)
-	currentUser, _ := GetCurrentUser(c)
+	currentUser, _ := CurrentUser(c)
 	userID := 0
 	if currentUser != nil {
 		userID = currentUser.ID
@@ -429,6 +429,11 @@ func HandleTreeViewContent(c *fiber.Ctx) error {
 
 // handleViewSwitch is a unified handler for switching between list and tree views
 func handleViewSwitch(c *fiber.Ctx, view string) error {
+	currentUser, _ := CurrentUser(c)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
 	userPrompt := c.Query("q")
 	if userPrompt == "" {
 		userPrompt = c.FormValue("q")
@@ -447,12 +452,6 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
 		}
-	}
-
-	currentUser, _ := GetCurrentUser(c)
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
 	}
 
 	ads, _, err := GetNextPage(query, nil, 10, userID)
