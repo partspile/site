@@ -165,6 +165,22 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 			)
 		}
 	}
+	// Delete icon button (only for ad owner)
+	deleteBtn := g.Node(nil)
+	if userID == ad.UserID {
+		deleteBtn = Button(
+			Type("button"),
+			Class("ml-2 focus:outline-none z-20"),
+			hx.Delete(fmt.Sprintf("/delete-ad/%d", ad.ID)),
+			hx.Target("#result"),
+			hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
+			Img(
+				Src("/trashcan.svg"),
+				Alt("Delete"),
+				Class("w-6 h-6 inline align-middle text-red-500 hover:text-red-700"),
+			),
+		)
+	}
 	detail := Div(
 		ID(fmt.Sprintf("ad-%d", ad.ID)),
 		Class("border p-4 mb-4 rounded bg-white shadow-lg relative"),
@@ -174,6 +190,7 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 			Div(
 				Class("flex flex-row items-center gap-2"),
 				bookmarkBtn,
+				deleteBtn,
 				Button(
 					Type("button"),
 					Class("ml-2 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none z-20"),
