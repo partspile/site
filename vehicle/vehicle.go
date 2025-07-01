@@ -22,6 +22,12 @@ type Year struct {
 	Year int
 }
 
+// ParentCompany represents a parent company of a make
+type ParentCompany struct {
+	ID   int
+	Name string
+}
+
 var db *sql.DB
 var (
 	makesCache          []string
@@ -303,4 +309,32 @@ func GetYearRange() []string {
 	}
 	yearRangeCache = years
 	return years
+}
+
+// GetAllParentCompanies returns all parent companies in the system
+func GetAllParentCompanies() ([]ParentCompany, error) {
+	rows, err := db.Query("SELECT id, name FROM ParentCompany ORDER BY name")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var pcs []ParentCompany
+	for rows.Next() {
+		var pc ParentCompany
+		if err := rows.Scan(&pc.ID, &pc.Name); err != nil {
+			return nil, err
+		}
+		pcs = append(pcs, pc)
+	}
+	return pcs, nil
+}
+
+// AddParentCompany inserts a new parent company
+func AddParentCompany(name string) (int, error) {
+	res, err := db.Exec("INSERT INTO ParentCompany (name) VALUES (?)", name)
+	if err != nil {
+		return 0, err
+	}
+	id, err := res.LastInsertId()
+	return int(id), err
 }

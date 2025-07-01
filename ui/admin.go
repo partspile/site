@@ -27,6 +27,7 @@ func AdminSectionPage(currentUser *user.User, path, activeSection string, conten
 		{"years", "Years"},
 		{"part-categories", "Part Categories"},
 		{"part-sub-categories", "Part Sub-Categories"},
+		{"parent-companies", "Parent Companies"},
 	}
 	return Div(
 		ID("admin-section"),
@@ -502,6 +503,40 @@ func AdminPartSubCategoriesSection(subCategories []part.SubCategory) g.Node {
 						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", sc.ID)),
 						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", sc.CategoryID)),
 						Td(Class("border border-gray-300 px-4 py-2"), g.Text(sc.Name)),
+					)
+				})),
+			),
+		),
+	)
+}
+
+func AdminParentCompanies(currentUser *user.User, path string, pcs []vehicle.ParentCompany) g.Node {
+	return Page(
+		"Admin - Parent Companies",
+		currentUser,
+		path,
+		[]g.Node{
+			AdminParentCompaniesSection(pcs),
+		},
+	)
+}
+
+func AdminParentCompaniesSection(pcs []vehicle.ParentCompany) g.Node {
+	return Div(
+		H1(g.Text("Parent Company Management")),
+		Table(
+			Class("min-w-full border border-gray-300 bg-white shadow-sm"),
+			THead(
+				Tr(Class("bg-gray-200"),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Name")),
+				),
+			),
+			TBody(
+				g.Group(g.Map(pcs, func(pc vehicle.ParentCompany) g.Node {
+					return Tr(Class("hover:bg-gray-50"),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", pc.ID)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(pc.Name)),
 					)
 				})),
 			),

@@ -80,6 +80,10 @@ func adminPartSubCategoriesSectionWrapper(subCategories []part.SubCategory, stat
 	return ui.AdminPartSubCategoriesSection(subCategories)
 }
 
+func adminParentCompaniesSectionWrapper(pcs []vehicle.ParentCompany, status string) g.Node {
+	return ui.AdminParentCompaniesSection(pcs)
+}
+
 func HandleAdminDashboard(c *fiber.Ctx) error {
 	currentUser, err := CurrentUser(c)
 	if err != nil {
@@ -247,4 +251,8 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 	}
 
 	return render(c, ui.AdminAdTable(ads, "archived"))
+}
+
+func HandleAdminParentCompanies(c *fiber.Ctx) error {
+	return adminHandler(c, "parent-companies", vehicle.GetAllParentCompanies, nil, adminParentCompaniesSectionWrapper)
 }
