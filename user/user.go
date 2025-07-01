@@ -176,8 +176,8 @@ func ArchiveUser(userID int) error {
 	}
 
 	// Archive all ads by this user
-	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, description, price, created_at, subcategory_id, user_id, deletion_date)
-		SELECT id, description, price, created_at, subcategory_id, user_id, ?
+	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, title, description, price, created_at, subcategory_id, user_id, deletion_date)
+		SELECT id, title, description, price, created_at, subcategory_id, user_id, ?
 		FROM Ad WHERE user_id = ?`, deletionDate, userID)
 	if err != nil {
 		return err

@@ -34,7 +34,6 @@ func AdminSectionPage(currentUser *user.User, path, activeSection string, conten
 		ID("admin-section"),
 		Class("my-8"),
 		H1(g.Text("Admin Dashboard")),
-		P(g.Text("Welcome to the admin dashboard.")),
 		Div(
 			Class("flex flex-wrap gap-2 mb-6"),
 			g.Group(g.Map(sections, func(s struct{ Name, Label string }) g.Node {
