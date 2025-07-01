@@ -28,6 +28,7 @@ func AdminSectionPage(currentUser *user.User, path, activeSection string, conten
 		{"part-categories", "Part Categories"},
 		{"part-sub-categories", "Part Sub-Categories"},
 		{"parent-companies", "Parent Companies"},
+		{"make-parent-companies", "Make-Parent Companies"},
 	}
 	return Div(
 		ID("admin-section"),
@@ -530,6 +531,7 @@ func AdminParentCompaniesSection(pcs []vehicle.ParentCompany) g.Node {
 				Tr(Class("bg-gray-200"),
 					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
 					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Name")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Country")),
 				),
 			),
 			TBody(
@@ -537,6 +539,30 @@ func AdminParentCompaniesSection(pcs []vehicle.ParentCompany) g.Node {
 					return Tr(Class("hover:bg-gray-50"),
 						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", pc.ID)),
 						Td(Class("border border-gray-300 px-4 py-2"), g.Text(pc.Name)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(pc.Country)),
+					)
+				})),
+			),
+		),
+	)
+}
+
+func AdminMakeParentCompaniesSection(rows []struct{ Make, ParentCompany string }) g.Node {
+	return Div(
+		H1(g.Text("Make-Parent Company Relationships")),
+		Table(
+			Class("min-w-full border border-gray-300 bg-white shadow-sm"),
+			THead(
+				Tr(Class("bg-gray-200"),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Make")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Parent Company")),
+				),
+			),
+			TBody(
+				g.Group(g.Map(rows, func(row struct{ Make, ParentCompany string }) g.Node {
+					return Tr(Class("hover:bg-gray-50"),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(row.Make)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(row.ParentCompany)),
 					)
 				})),
 			),

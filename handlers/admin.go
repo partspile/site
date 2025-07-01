@@ -256,3 +256,32 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 func HandleAdminParentCompanies(c *fiber.Ctx) error {
 	return adminHandler(c, "parent-companies", vehicle.GetAllParentCompanies, nil, adminParentCompaniesSectionWrapper)
 }
+
+func HandleAdminMakeParentCompanies(c *fiber.Ctx) error {
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
+	db := vehicle.GetDB()
+	rows, err := db.Query(`
+		SELECT Make.name, ParentCompany.name
+		FROM MakeParentCompany
+		JOIN Make ON MakeParentCompany.make_id = Make.id
+		JOIN ParentCompany ON MakeParentCompany.parent_company_id = ParentCompany.id
+		ORDER BY Make.name, ParentCompany.name
+	`)
+	if err != nil {
+		return c.Status(500).SendString("DB error")
+	}
+	defer rows.Close()
+	var data []struct{ Make, ParentCompany string }
+	for rows.Next() {
+		var make, parent string
+		if err := rows.Scan(&make, &parent); err != nil {
+			return c.Status(500).SendString("Scan error")
+		}
+		data = append(data, struct{ Make, ParentCompany string }{make, parent})
+	}
+	c.Type("html")
+	return ui.AdminSectionPage(currentUser, c.Path(), "make-parent-companies", ui.AdminMakeParentCompaniesSection(data)).Render(c.Context().Response.BodyWriter())
+}

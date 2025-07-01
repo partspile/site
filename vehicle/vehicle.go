@@ -24,8 +24,9 @@ type Year struct {
 
 // ParentCompany represents a parent company of a make
 type ParentCompany struct {
-	ID   int
-	Name string
+	ID      int
+	Name    string
+	Country string
 }
 
 var db *sql.DB
@@ -313,7 +314,7 @@ func GetYearRange() []string {
 
 // GetAllParentCompanies returns all parent companies in the system
 func GetAllParentCompanies() ([]ParentCompany, error) {
-	rows, err := db.Query("SELECT id, name FROM ParentCompany ORDER BY name")
+	rows, err := db.Query("SELECT id, name, country FROM ParentCompany ORDER BY name")
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +322,7 @@ func GetAllParentCompanies() ([]ParentCompany, error) {
 	var pcs []ParentCompany
 	for rows.Next() {
 		var pc ParentCompany
-		if err := rows.Scan(&pc.ID, &pc.Name); err != nil {
+		if err := rows.Scan(&pc.ID, &pc.Name, &pc.Country); err != nil {
 			return nil, err
 		}
 		pcs = append(pcs, pc)
@@ -330,11 +331,21 @@ func GetAllParentCompanies() ([]ParentCompany, error) {
 }
 
 // AddParentCompany inserts a new parent company
-func AddParentCompany(name string) (int, error) {
-	res, err := db.Exec("INSERT INTO ParentCompany (name) VALUES (?)", name)
+func AddParentCompany(name, country string) (int, error) {
+	res, err := db.Exec("INSERT INTO ParentCompany (name, country) VALUES (?, ?)", name, country)
 	if err != nil {
 		return 0, err
 	}
 	id, err := res.LastInsertId()
 	return int(id), err
+}
+
+// UpdateParentCompanyCountry updates the country for a parent company
+func UpdateParentCompanyCountry(id int, country string) error {
+	_, err := db.Exec("UPDATE ParentCompany SET country = ? WHERE id = ?", country, id)
+	return err
+}
+
+func GetDB() *sql.DB {
+	return db
 }

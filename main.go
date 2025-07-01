@@ -108,6 +108,7 @@ func main() {
 	admin.Get("/part-categories", handlers.HandleAdminPartCategories)
 	admin.Get("/part-sub-categories", handlers.HandleAdminPartSubCategories)
 	admin.Get("/parent-companies", handlers.HandleAdminParentCompanies)
+	admin.Get("/make-parent-companies", handlers.HandleAdminMakeParentCompanies)
 
 	// Admin API group
 	adminAPI := api.Group("/admin", handlers.AdminRequired)
