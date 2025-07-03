@@ -248,6 +248,16 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 				}
 				return engineCheckboxes
 			}()...))),
+			FormGroup("Images", "images",
+				Input(
+					Type("file"),
+					ID("images"),
+					Name("images"),
+					Class("w-full p-2 border rounded"),
+					g.Attr("accept", ".webp"),
+					g.Attr("multiple", ""),
+				),
+			),
 			FormGroup("Description", "description",
 				Textarea(
 					ID("description"),
@@ -489,6 +499,16 @@ func NewAdPage(currentUser *user.User, path string, makes []string) g.Node {
 					ID("enginesDiv"),
 					Class("space-y-2"),
 				),
+				FormGroup("Images", "images",
+					Input(
+						Type("file"),
+						ID("images"),
+						Name("images"),
+						Class("w-full p-2 border rounded"),
+						g.Attr("accept", ".webp"),
+						g.Attr("multiple", ""),
+					),
+				),
 				FormGroup("Description", "description",
 					Textarea(
 						ID("description"),
@@ -706,6 +726,16 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 				FormGroup("Years", "years", Div(ID("yearsDiv"), GridContainer(5, yearCheckboxes...))),
 				FormGroup("Models", "models", Div(ID("modelsDiv"), GridContainer(5, modelCheckboxes...))),
 				FormGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer(5, engineCheckboxes...))),
+				FormGroup("Images", "images",
+					Input(
+						Type("file"),
+						ID("images"),
+						Name("images"),
+						Class("w-full p-2 border rounded"),
+						g.Attr("accept", ".webp"),
+						g.Attr("multiple", ""),
+					),
+				),
 				FormGroup("Description", "description",
 					Textarea(
 						ID("description"),

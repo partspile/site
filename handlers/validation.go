@@ -126,30 +126,30 @@ func ValidateAndParsePrice(c *fiber.Ctx) (float64, error) {
 }
 
 // BuildAdFromForm validates and constructs an ad.Ad from the form data
-func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, error) {
+func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, []*multipart.FileHeader, error) {
 	title, err := ValidateRequired(c, "title", "Title")
 	if err != nil {
-		return ad.Ad{}, err
+		return ad.Ad{}, nil, err
 	}
 	make, err := ValidateRequired(c, "make", "Make")
 	if err != nil {
-		return ad.Ad{}, err
+		return ad.Ad{}, nil, err
 	}
 	form, err := c.MultipartForm()
 	if err != nil {
-		return ad.Ad{}, err
+		return ad.Ad{}, nil, err
 	}
 	years, models, engines, err := ValidateAdFormAndReturn(form)
 	if err != nil {
-		return ad.Ad{}, err
+		return ad.Ad{}, nil, err
 	}
 	description, err := ValidateRequired(c, "description", "Description")
 	if err != nil {
-		return ad.Ad{}, err
+		return ad.Ad{}, nil, err
 	}
 	price, err := ValidateAndParsePrice(c)
 	if err != nil {
-		return ad.Ad{}, err
+		return ad.Ad{}, nil, err
 	}
 	id := 0
 	if len(adID) > 0 {
@@ -157,6 +157,8 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, error) {
 	} else {
 		id = ad.GetNextAdID()
 	}
+	// Extract image files
+	imageFiles := form.File["images"]
 	return ad.Ad{
 		ID:          id,
 		Title:       title,
@@ -167,5 +169,5 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, error) {
 		Description: description,
 		Price:       price,
 		UserID:      userID,
-	}, nil
+	}, imageFiles, nil
 }

@@ -3,10 +3,17 @@ package handlers
 import (
 	"fmt"
 
+	"mime/multipart"
+
+	"log"
+	"os"
+	"path/filepath"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vehicle"
+	"gopkg.in/kothar/go-backblaze.v0"
 )
 
 func HandleNewAd(c *fiber.Ctx) error {
@@ -24,11 +31,12 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 		return err
 	}
 
-	newAd, err := BuildAdFromForm(c, currentUser.ID)
+	newAd, imageFiles, err := BuildAdFromForm(c, currentUser.ID)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
 	ad.AddAd(newAd)
+	uploadAdImagesToB2(newAd.ID, imageFiles)
 	return render(c, ui.SuccessMessage("Ad created successfully", "/"))
 }
 
@@ -109,12 +117,13 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		return err
 	}
 
-	updatedAd, err := BuildAdFromForm(c, currentUser.ID, adID)
+	updatedAd, imageFiles, err := BuildAdFromForm(c, currentUser.ID, adID)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
 
 	ad.UpdateAd(updatedAd)
+	uploadAdImagesToB2(updatedAd.ID, imageFiles)
 
 	if c.Get("HX-Request") != "" {
 		// For htmx, return the updated detail partial
@@ -295,4 +304,46 @@ func HandleEditAdPartial(c *fiber.Ctx) error {
 		htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", adObj.ID)
 	}
 	return render(c, ui.AdEditPartial(adObj, makes, years, modelAvailability, engineAvailability, cancelTarget, htmxTarget, view))
+}
+
+// uploadAdImagesToB2 is a stub for now
+func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
+	accountID := os.Getenv("BACKBLAZE_KEY_ID")
+	appKey := os.Getenv("BACKBLAZE_APP_KEY")
+	if accountID == "" || appKey == "" {
+		log.Println("B2 credentials not set in env vars")
+		return
+	}
+	b2, err := backblaze.NewB2(backblaze.Credentials{
+		AccountID:      accountID,
+		ApplicationKey: appKey,
+	})
+	if err != nil {
+		log.Println("B2 auth error:", err)
+		return
+	}
+	bucket, err := b2.Bucket("parts-pile")
+	if err != nil {
+		log.Println("B2 bucket error:", err)
+		return
+	}
+	for i, fileHeader := range files {
+		if filepath.Ext(fileHeader.Filename) != ".webp" {
+			continue
+		}
+		file, err := fileHeader.Open()
+		if err != nil {
+			log.Println("B2 open file error:", err)
+			continue
+		}
+		defer file.Close()
+		b2Path := filepath.Join(
+			fmt.Sprintf("%d", adID),
+			fmt.Sprintf("%d.webp", i+1),
+		)
+		_, err = bucket.UploadTypedFile(b2Path, "image/webp", nil, file)
+		if err != nil {
+			log.Println("B2 upload error for", b2Path, ":", err)
+		}
+	}
 }
