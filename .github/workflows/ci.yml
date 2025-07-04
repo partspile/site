@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  test:
+    name: Run Integration Tests with Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the repository code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Extract Go version from go.mod
+      - name: Extract Go Version
+        id: go-version
+        run: |
+          GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
+          echo "version=$GO_VERSION" >> $GITHUB_OUTPUT
+
+      # Set up Go using the extracted version
+      - name: Set Up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ steps.go-version.outputs.version }}
+
+      # Run integration tests with coverage
+      - name: Run Integration Tests
+        run: |
+          go test ./...
