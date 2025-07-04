@@ -5,7 +5,9 @@ go 1.24.1
 require (
 	github.com/gofiber/fiber/v2 v2.52.8
 	github.com/mattn/go-sqlite3 v1.14.28
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	golang.org/x/crypto v0.39.0
+	gopkg.in/kothar/go-backblaze.v0 v0.0.0-20210124194846-35409b867216
 	maragu.dev/gomponents v1.1.0
 	maragu.dev/gomponents-htmx v0.6.1
 )
@@ -27,5 +29,4 @@ require (
 	github.com/valyala/fasthttp v1.51.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
-	gopkg.in/kothar/go-backblaze.v0 v0.0.0-20210124194846-35409b867216 // indirect
 )

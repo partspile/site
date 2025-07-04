@@ -10,6 +10,7 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/user"
 )
 
@@ -95,6 +96,9 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 			)
 		}
 	}
+	// In AdCardExpandable, show the first image
+	firstImageURL := AdImageURLs(ad.ID, 1)[0]
+	imageNode := AdImageWithFallback(firstImageURL, ad.Title)
 	card := Div(
 		ID(fmt.Sprintf("ad-%d", ad.ID)),
 		Class("block border p-4 mb-4 rounded hover:bg-gray-50 relative cursor-pointer group bg-white"),
@@ -112,6 +116,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 			H3(Class("text-xl font-bold"), g.Text(ad.Title)),
 			Div(
 				Class("flex flex-row items-center gap-2"),
+				imageNode,
 				bookmarkBtn,
 			),
 		),
@@ -374,6 +379,18 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 			),
 		)
 	}
+	// In AdDetailPartial, show all images as a gallery
+	imageURLs := AdImageURLs(ad.ID, 10)
+	gallery := Div(
+		Class("flex flex-row gap-2 overflow-x-auto mt-4 mb-4"),
+		g.Group(func() []g.Node {
+			nodes := []g.Node{}
+			for i, url := range imageURLs {
+				nodes = append(nodes, AdImageWithFallback(url, fmt.Sprintf("Image %d", i+1)))
+			}
+			return nodes
+		}()),
+	)
 	detail := Div(
 		ID(fmt.Sprintf("ad-%d", ad.ID)),
 		Class("border p-4 mb-4 rounded bg-white shadow-lg relative"),
@@ -401,6 +418,7 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 				),
 			),
 		),
+		gallery,
 		AdDetails(ad),
 	)
 	if isGrid {
@@ -795,5 +813,34 @@ func BookmarkButton(bookmarked bool, adID int) g.Node {
 		ID(fmt.Sprintf("bookmark-btn-%d", adID)),
 		g.Attr("onclick", "event.stopPropagation()"),
 		BookmarkIcon(false),
+	)
+}
+
+// Helper to generate signed B2 image URLs for an ad
+func AdImageURLs(adID int, max int) []string {
+	prefix := fmt.Sprintf("%d/", adID)
+	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
+	urls := []string{}
+	if err != nil || token == "" {
+		for i := 1; i <= max; i++ {
+			urls = append(urls, "/static/no-image.svg")
+		}
+		return urls
+	}
+	for i := 1; i <= max; i++ {
+		urls = append(urls, fmt.Sprintf(
+			"https://f004.backblazeb2.com/file/parts-pile/%d/%d.webp?Authorization=%s",
+			adID, i, token,
+		))
+	}
+	return urls
+}
+
+// Helper to render an image with fallback (no onerror)
+func AdImageWithFallback(src, alt string) g.Node {
+	return Img(
+		Src(src),
+		Alt(alt),
+		Class("object-cover w-full h-48 rounded"),
 	)
 }

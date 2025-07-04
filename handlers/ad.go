@@ -9,8 +9,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"net/http"
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vehicle"
 	"gopkg.in/kothar/go-backblaze.v0"
@@ -308,15 +312,17 @@ func HandleEditAdPartial(c *fiber.Ctx) error {
 
 // uploadAdImagesToB2 is a stub for now
 func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
-	accountID := os.Getenv("BACKBLAZE_KEY_ID")
+	accountID := os.Getenv("BACKBLAZE_MASTER_KEY_ID")
+	keyID := os.Getenv("BACKBLAZE_KEY_ID")
 	appKey := os.Getenv("BACKBLAZE_APP_KEY")
-	if accountID == "" || appKey == "" {
+	if accountID == "" || appKey == "" || keyID == "" {
 		log.Println("B2 credentials not set in env vars")
 		return
 	}
 	b2, err := backblaze.NewB2(backblaze.Credentials{
 		AccountID:      accountID,
 		ApplicationKey: appKey,
+		KeyID:          keyID,
 	})
 	if err != nil {
 		log.Println("B2 auth error:", err)
@@ -346,4 +352,21 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 			log.Println("B2 upload error for", b2Path, ":", err)
 		}
 	}
+}
+
+// Handler to get a signed B2 download URL for all images under an ad (prefix)
+func HandleAdImageSignedURL(c *fiber.Ctx) error {
+	adID := c.Params("adID")
+	if adID == "" {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "adID required"})
+	}
+	token, err := b2util.GetB2DownloadTokenForPrefixCached(adID + "/")
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{
+		"prefix":  "/" + adID + "/",
+		"token":   token,
+		"expires": time.Now().Unix() + 3600,
+	})
 }
