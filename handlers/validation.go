@@ -143,6 +143,11 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, []*multipart
 	if err != nil {
 		return ad.Ad{}, nil, err
 	}
+	// Extract image files
+	imageFiles := form.File["images"]
+	if len(imageFiles) == 0 {
+		return ad.Ad{}, nil, fmt.Errorf("At least one image (.webp) is required.")
+	}
 	description, err := ValidateRequired(c, "description", "Description")
 	if err != nil {
 		return ad.Ad{}, nil, err
@@ -157,8 +162,6 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, []*multipart
 	} else {
 		id = ad.GetNextAdID()
 	}
-	// Extract image files
-	imageFiles := form.File["images"]
 	return ad.Ad{
 		ID:          id,
 		Title:       title,
