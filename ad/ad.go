@@ -57,6 +57,7 @@ type Ad struct {
 	CreatedAt     time.Time `json:"created_at"`
 	SubCategoryID *int      `json:"subcategory_id,omitempty"`
 	UserID        int       `json:"user_id"`
+	Location      *string   `json:"location,omitempty"`
 	// Runtime fields populated via joins
 	Year          string     `json:"year,omitempty"`
 	Make          string     `json:"make"`
@@ -181,7 +182,7 @@ func GetAdByID(id int) (Ad, AdStatus, bool) {
 func GetAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
 		SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-		       a.user_id, psc.name as subcategory, a.click_count, a.last_clicked_at
+		       a.user_id, psc.name as subcategory, a.click_count, a.last_clicked_at, a.location
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 		WHERE a.id = ?
@@ -190,8 +191,9 @@ func GetAd(id int) (Ad, bool) {
 	var ad Ad
 	var subcategory sql.NullString
 	var lastClickedAt sql.NullTime
+	var location sql.NullString
 	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
-		&ad.SubCategoryID, &ad.UserID, &subcategory, &ad.ClickCount, &lastClickedAt); err != nil {
+		&ad.SubCategoryID, &ad.UserID, &subcategory, &ad.ClickCount, &lastClickedAt, &location); err != nil {
 		fmt.Println("DEBUG GetAd scan error:", err)
 		return Ad{}, false
 	}
@@ -204,6 +206,10 @@ func GetAd(id int) (Ad, bool) {
 
 	if lastClickedAt.Valid {
 		ad.LastClickedAt = &lastClickedAt.Time
+	}
+
+	if location.Valid {
+		ad.Location = &location.String
 	}
 
 	// Get vehicle data
@@ -220,8 +226,8 @@ func AddAd(ad Ad) int {
 	defer tx.Rollback()
 
 	createdAt := time.Now().UTC().Format(time.RFC3339)
-	res, err := tx.Exec("INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id) VALUES (?, ?, ?, ?, ?, ?)",
-		ad.Title, ad.Description, ad.Price, createdAt, ad.SubCategoryID, ad.UserID)
+	res, err := tx.Exec("INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		ad.Title, ad.Description, ad.Price, createdAt, ad.SubCategoryID, ad.UserID, ad.Location)
 	if err != nil {
 		return 0
 	}
@@ -462,20 +468,20 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 
 	for rows.Next() {
 		var (
-			id           int
-			title        string
-			description  string
-			price        float64
-			createdAt    time.Time
-			subcatID     sql.NullInt64
-			subcategory  sql.NullString
-			clickCount   int
+			id            int
+			title         string
+			description   string
+			price         float64
+			createdAt     time.Time
+			subcatID      sql.NullInt64
+			subcategory   sql.NullString
+			clickCount    int
 			lastClickedAt sql.NullTime
-			makeName     sql.NullString
-			year         sql.NullInt64
-			modelName    sql.NullString
-			engineName   sql.NullString
-			isBookmarked int
+			makeName      sql.NullString
+			year          sql.NullInt64
+			modelName     sql.NullString
+			engineName    sql.NullString
+			isBookmarked  int
 		)
 
 		if err := rows.Scan(&id, &title, &description, &price, &createdAt,
@@ -487,12 +493,12 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 		ad, exists := adMap[id]
 		if !exists {
 			ad = &Ad{
-				ID:          id,
-				Title:       title,
-				Description: description,
-				Price:       price,
-				CreatedAt:   createdAt,
-				ClickCount:  clickCount,
+				ID:            id,
+				Title:         title,
+				Description:   description,
+				Price:         price,
+				CreatedAt:     createdAt,
+				ClickCount:    clickCount,
 				LastClickedAt: &lastClickedAt.Time,
 			}
 			if subcatID.Valid {
@@ -592,7 +598,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 func GetAllAds() ([]Ad, error) {
 	rows, err := db.Query(`
 		SELECT
-			a.id, a.title, a.description, a.price, a.created_at, a.user_id,
+			a.id, a.title, a.description, a.price, a.created_at, a.user_id, a.location,
 			GROUP_CONCAT(DISTINCT m.name) as make,
 			GROUP_CONCAT(DISTINCT y.year) as years,
 			GROUP_CONCAT(DISTINCT mo.name) as models,
@@ -616,13 +622,17 @@ func GetAllAds() ([]Ad, error) {
 	for rows.Next() {
 		var ad Ad
 		var make, years, models, engines sql.NullString
+		var location sql.NullString
 		if err := rows.Scan(
-			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID,
+			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &location,
 			&make, &years, &models, &engines,
 		); err != nil {
 			return nil, err
 		}
 
+		if location.Valid {
+			ad.Location = &location.String
+		}
 		if make.Valid {
 			ad.Make = make.String
 		}
@@ -645,7 +655,7 @@ func GetAllAds() ([]Ad, error) {
 // GetAllArchivedAds returns all archived ads in the system
 func GetAllArchivedAds() ([]Ad, error) {
 	rows, err := db.Query(`
-		SELECT id, title, description, price, created_at, user_id, deletion_date
+		SELECT id, title, description, price, created_at, user_id, deletion_date, location
 		FROM ArchivedAd
 		ORDER BY deletion_date DESC
 	`)
@@ -658,12 +668,16 @@ func GetAllArchivedAds() ([]Ad, error) {
 	for rows.Next() {
 		var ad Ad
 		var deletionDate string
-		err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &deletionDate)
+		var location sql.NullString
+		err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &deletionDate, &location)
 		if err != nil {
 			return nil, err
 		}
 		if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
 			ad.DeletionDate = &parsedTime
+		}
+		if location.Valid {
+			ad.Location = &location.String
 		}
 		// Populate vehicle info for each archived ad
 		ad.Make, ad.Years, ad.Models, ad.Engines = getArchivedAdVehicleData(ad.ID)
@@ -675,21 +689,25 @@ func GetAllArchivedAds() ([]Ad, error) {
 // GetArchivedAd retrieves an archived ad by ID
 func GetArchivedAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
-		SELECT id, title, description, price, created_at, subcategory_id, user_id, deletion_date
+		SELECT id, title, description, price, created_at, subcategory_id, user_id, deletion_date, location
 		FROM ArchivedAd
 		WHERE id = ?
 	`, id)
 
 	var ad Ad
 	var deletionDate string
+	var location sql.NullString
 	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
-		&ad.SubCategoryID, &ad.UserID, &deletionDate); err != nil {
+		&ad.SubCategoryID, &ad.UserID, &deletionDate, &location); err != nil {
 		return Ad{}, false
 	}
 
 	// Parse deletion date
 	if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
 		ad.DeletionDate = &parsedTime
+	}
+	if location.Valid {
+		ad.Location = &location.String
 	}
 
 	// Get vehicle data from ArchivedAdCar
@@ -706,8 +724,8 @@ func UpdateAd(ad Ad) error {
 	}
 	defer tx.Rollback()
 
-	_, err = tx.Exec("UPDATE Ad SET title = ?, description = ?, price = ?, subcategory_id = ? WHERE id = ?",
-		ad.Title, ad.Description, ad.Price, ad.SubCategoryID, ad.ID)
+	_, err = tx.Exec("UPDATE Ad SET title = ?, description = ?, price = ?, subcategory_id = ?, location = ? WHERE id = ?",
+		ad.Title, ad.Description, ad.Price, ad.SubCategoryID, ad.Location, ad.ID)
 	if err != nil {
 		return err
 	}
@@ -736,9 +754,9 @@ func ArchiveAd(id int) error {
 	}
 	defer tx.Rollback()
 
-	// Archive the ad to ArchivedAd with deletion_date and title
-	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, title, description, price, created_at, subcategory_id, user_id, deletion_date)
-		SELECT id, title, description, price, created_at, subcategory_id, user_id, ? FROM Ad WHERE id = ?`,
+	// Archive the ad to ArchivedAd with deletion_date, title, and location
+	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, title, description, price, created_at, subcategory_id, user_id, deletion_date, location)
+		SELECT id, title, description, price, created_at, subcategory_id, user_id, ?, location FROM Ad WHERE id = ?`,
 		time.Now().UTC().Format(time.RFC3339Nano), id)
 	if err != nil {
 		return err
@@ -776,17 +794,21 @@ func RestoreAd(adID int) error {
 
 	// Get ad data from archive
 	var ad Ad
-	err = tx.QueryRow(`SELECT id, description, price, created_at, subcategory_id, user_id 
+	var location sql.NullString
+	err = tx.QueryRow(`SELECT id, description, price, created_at, subcategory_id, user_id, location 
 		FROM ArchivedAd WHERE id = ?`, adID).Scan(
-		&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.SubCategoryID, &ad.UserID)
+		&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.SubCategoryID, &ad.UserID, &location)
 	if err != nil {
 		return err
 	}
+	if location.Valid {
+		ad.Location = &location.String
+	}
 
 	// Restore ad
-	_, err = tx.Exec(`INSERT INTO Ad (id, description, price, created_at, subcategory_id, user_id)
-		VALUES (?, ?, ?, ?, ?, ?)`,
-		ad.ID, ad.Description, ad.Price, ad.CreatedAt, ad.SubCategoryID, ad.UserID)
+	_, err = tx.Exec(`INSERT INTO Ad (id, description, price, created_at, subcategory_id, user_id, location)
+		VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		ad.ID, ad.Description, ad.Price, ad.CreatedAt, ad.SubCategoryID, ad.UserID, ad.Location)
 	if err != nil {
 		return err
 	}

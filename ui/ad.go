@@ -23,12 +23,17 @@ func AdDetails(ad ad.Ad) g.Node {
 	sort.Strings(sortedYears)
 	sort.Strings(sortedModels)
 	sort.Strings(sortedEngines)
-	return GridContainer(1,
-		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", sortedYears))),
-		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", sortedModels))),
-		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Engines: %v", sortedEngines))),
+
+	var locationNode g.Node = nil
+	if ad.Location != nil && *ad.Location != "" {
+		locationNode = P(Class("text-gray-600"), g.Text(fmt.Sprintf("Location: %s", *ad.Location)))
+	}
+
+	return Div(
+		Class("mb-4"),
 		P(Class("mt-4"), g.Text(ad.Description)),
 		P(Class("text-2xl font-bold mt-4"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
+		locationNode,
 	)
 }
 
@@ -69,6 +74,8 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 	sort.Strings(sortedYears)
 	sortedModels := append([]string{}, ad.Models...)
 	sort.Strings(sortedModels)
+	sortedEngines := append([]string{}, ad.Engines...)
+	sort.Strings(sortedEngines)
 	posted := ad.CreatedAt.In(loc).Format("Jan 2, 2006 3:04:05 PM MST")
 	bookmarkBtn := g.Node(nil)
 	if userID > 0 {
@@ -122,7 +129,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 		),
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", sortedYears))),
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", sortedModels))),
-		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Engines: %v", ad.Engines))),
+		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Engines: %v", sortedEngines))),
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Clicks: %d", ad.ClickCount))),
 		P(Class("mt-2"), g.Text(ad.Description)),
 		P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
@@ -281,6 +288,21 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 					Step("0.01"),
 					Min("0"),
 					Value(fmt.Sprintf("%.2f", adObj.Price)),
+				),
+			),
+			FormGroup("Location", "location",
+				Input(
+					Type("text"),
+					ID("location"),
+					Name("location"),
+					Class("w-full p-2 border rounded"),
+					Placeholder("(Optional)"),
+					Value(func() string {
+						if adObj.Location != nil {
+							return *adObj.Location
+						}
+						return ""
+					}()),
 				),
 			),
 			Div(
@@ -545,6 +567,15 @@ func NewAdPage(currentUser *user.User, path string, makes []string) g.Node {
 						Min("0"),
 					),
 				),
+				FormGroup("Location", "location",
+					Input(
+						Type("text"),
+						ID("location"),
+						Name("location"),
+						Class("w-full p-2 border rounded"),
+						Placeholder("(Optional)"),
+					),
+				),
 				StyledButton("Submit", ButtonPrimary,
 					Type("submit"),
 					hx.Post("/api/new-ad"),
@@ -773,6 +804,21 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 						Value(fmt.Sprintf("%.2f", currentAd.Price)),
 					),
 				),
+				FormGroup("Location (Zipcode)", "location",
+					Input(
+						Type("text"),
+						ID("location"),
+						Name("location"),
+						Class("w-full p-2 border rounded"),
+						Placeholder("Optional zipcode, e.g. 90210"),
+						Value(func() string {
+							if currentAd.Location != nil {
+								return *currentAd.Location
+							}
+							return ""
+						}()),
+					),
+				),
 				StyledButton("Submit", ButtonPrimary,
 					Type("submit"),
 					hx.Post(fmt.Sprintf("/api/update-ad/%d", currentAd.ID)),
@@ -823,7 +869,7 @@ func AdImageURLs(adID int, max int) []string {
 	urls := []string{}
 	if err != nil || token == "" {
 		for i := 1; i <= max; i++ {
-			urls = append(urls, "/static/no-image.svg")
+			urls = append(urls, "/no-image.svg")
 		}
 		return urls
 	}

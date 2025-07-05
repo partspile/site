@@ -5,6 +5,9 @@
 - [x] Ensure each ad includes description, price, vehicle fitment (make, year(s), model(s), engine(s)), part category, and subcategory
 - [x] Timestamp ads
 - [x] Ad editing is now inline via the ad detail view, with an edit icon for owners only. No standalone edit page.
+- [x] Add optional location field to Ad and ArchivedAd tables in schema
+- [x] Add Location field to Ad struct and update all relevant Go code
+- [x] Update ad creation/edit forms and details UI to support/display location
 
 ## 2. Vehicle Data Integration
 - [x] Maintain comprehensive, normalized vehicle database (make, year, model, engine)

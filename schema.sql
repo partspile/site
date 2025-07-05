@@ -63,6 +63,7 @@ CREATE TABLE Ad (
     user_id INTEGER NOT NULL,
     click_count INTEGER DEFAULT 0,
     last_clicked_at DATETIME,
+    location TEXT,
     FOREIGN KEY (subcategory_id) REFERENCES PartSubCategory(id),
     FOREIGN KEY (user_id) REFERENCES User(id)
 );
@@ -145,6 +146,7 @@ CREATE TABLE ArchivedAd (
     subcategory_id INTEGER,
     user_id INTEGER NOT NULL,  -- Reference to ArchivedUser.id
     deletion_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+    location TEXT,
     FOREIGN KEY (subcategory_id) REFERENCES PartSubCategory(id),
     FOREIGN KEY (user_id) REFERENCES ArchivedUser(id)
 );

@@ -55,8 +55,8 @@ jobs:
             ${{ github.repository }}
             ghcr.io/${{ github.repository }}
           labels: |
-            org.opencontainers.image.title=Merliot Private Device Hub
-            org.opencontainers.image.description=Merliot is a private device hub, written in Go, TinyGo, and htmx.
+            org.opencontainers.image.title=Parts Pile Site
+            org.opencontainers.image.description=Parts Pile Site
 
       - name: Build and push Docker images
         uses: docker/build-push-action@v5

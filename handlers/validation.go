@@ -156,6 +156,11 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, []*multipart
 	if err != nil {
 		return ad.Ad{}, nil, err
 	}
+	location := c.FormValue("location")
+	var locationPtr *string
+	if location != "" {
+		locationPtr = &location
+	}
 	id := 0
 	if len(adID) > 0 {
 		id = adID[0]
@@ -172,5 +177,6 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, []*multipart
 		Description: description,
 		Price:       price,
 		UserID:      userID,
+		Location:    locationPtr,
 	}, imageFiles, nil
 }

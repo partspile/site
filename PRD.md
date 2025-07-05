@@ -181,6 +181,9 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - The edit form has an 'X' button to cancel (return to detail view) and a Save button to save changes and return to detail view.
 - There is no longer a standalone edit page or edit link.
 
+### 3.15 Ad Location
+- Each ad now has an optional location field to track where parts are located. This field is stored in the database and can be set or edited by the user. If present, it is displayed on the ad details page.
+
 ---
 
 ## 4. Technology Stack
