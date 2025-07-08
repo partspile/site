@@ -158,7 +158,10 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 		Form(
 			ID("editAdForm"),
 			Class("space-y-6"),
-			EncType("multipart/form-data"),
+			hx.Post(fmt.Sprintf("/api/update-ad/%d", adObj.ID)),
+			hx.Encoding("multipart/form-data"),
+			hx.Target(htmxTarget),
+			hx.Swap("outerHTML"),
 			ValidationErrorContainer(),
 			FormGroup("Title", "title",
 				Input(
@@ -326,8 +329,8 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 						ID("images"),
 						Name("images"),
 						Class("w-full p-2 border rounded"),
-						g.Attr("accept", ".webp"),
-						g.Attr("multiple", ""),
+						g.Attr("accept", "image/*"),
+						g.Attr("multiple"),
 					),
 					Div(ID("image-preview")),
 				),
@@ -379,13 +382,8 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 				),
 				StyledButton("Save", ButtonPrimary,
 					Type("submit"),
-					hx.Post(fmt.Sprintf("/api/update-ad/%d", adObj.ID)),
-					hx.Encoding("multipart/form-data"),
-					hx.Target(htmxTarget),
-					hx.Swap("outerHTML"),
 				),
 			),
-			ResultContainer(),
 		),
 	)
 	if isGrid {
@@ -564,7 +562,9 @@ func NewAdPage(currentUser *user.User, path string, makes []string) g.Node {
 			Form(
 				ID("newAdForm"),
 				Class("space-y-6"),
-				EncType("multipart/form-data"),
+				hx.Post("/api/new-ad"),
+				hx.Encoding("multipart/form-data"),
+				hx.Target("#result"),
 				ValidationErrorContainer(),
 				FormGroup("Title", "title",
 					Input(
@@ -608,8 +608,8 @@ func NewAdPage(currentUser *user.User, path string, makes []string) g.Node {
 							ID("images"),
 							Name("images"),
 							Class("w-full p-2 border rounded"),
-							g.Attr("accept", ".webp"),
-							g.Attr("multiple", ""),
+							g.Attr("accept", "image/*"),
+							g.Attr("multiple"),
 						),
 						Div(ID("image-preview")),
 					),
@@ -643,11 +643,7 @@ func NewAdPage(currentUser *user.User, path string, makes []string) g.Node {
 				),
 				StyledButton("Submit", ButtonPrimary,
 					Type("submit"),
-					hx.Post("/api/new-ad"),
-					hx.Encoding("multipart/form-data"),
-					hx.Target("#result"),
 				),
-				ResultContainer(),
 				g.Raw(`<script src="/image-preview.js" defer></script>`),
 			),
 		},
@@ -803,6 +799,9 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 		)
 	}
 
+	// Define htmxTarget for this form
+	htmxTarget := fmt.Sprintf("#ad-%d", currentAd.ID)
+
 	return Page(
 		"Edit Ad - Parts Pile",
 		currentUser,
@@ -812,7 +811,10 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 			Form(
 				ID("editAdForm"),
 				Class("space-y-6"),
-				EncType("multipart/form-data"),
+				hx.Post(fmt.Sprintf("/api/update-ad/%d", currentAd.ID)),
+				hx.Encoding("multipart/form-data"),
+				hx.Target(htmxTarget),
+				hx.Swap("outerHTML"),
 				ValidationErrorContainer(),
 				FormGroup("Title", "title",
 					Input(
@@ -901,8 +903,8 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 							ID("images"),
 							Name("images"),
 							Class("w-full p-2 border rounded"),
-							g.Attr("accept", ".webp"),
-							g.Attr("multiple", ""),
+							g.Attr("accept", "image/*"),
+							g.Attr("multiple"),
 						),
 						Div(ID("image-preview")),
 					),
@@ -943,11 +945,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 				),
 				StyledButton("Submit", ButtonPrimary,
 					Type("submit"),
-					hx.Post(fmt.Sprintf("/api/update-ad/%d", currentAd.ID)),
-					hx.Encoding("multipart/form-data"),
-					hx.Target("#result"),
 				),
-				ResultContainer(),
 				g.Raw(`<script src="/image-preview.js" defer></script>`),
 				g.Raw(`<script src="/static/image-edit.js" defer></script>`),
 			),

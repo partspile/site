@@ -12,6 +12,13 @@ import (
 	"net/http"
 	"time"
 
+	"bytes"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+
+	"github.com/chai2010/webp"
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
@@ -339,20 +346,36 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 		return
 	}
 	for i, fileHeader := range files {
-		if filepath.Ext(fileHeader.Filename) != ".webp" {
-			continue
-		}
 		file, err := fileHeader.Open()
 		if err != nil {
 			log.Println("B2 open file error:", err)
 			continue
 		}
-		defer file.Close()
+		// Read the file into memory
+		var buf bytes.Buffer
+		if _, err := buf.ReadFrom(file); err != nil {
+			log.Println("Read file error:", err)
+			file.Close()
+			continue
+		}
+		file.Close()
+		// Decode any image format
+		img, _, err := image.Decode(bytes.NewReader(buf.Bytes()))
+		if err != nil {
+			log.Println("Decode image error:", err)
+			continue
+		}
+		// Encode as webp
+		var webpBuf bytes.Buffer
+		if err := webp.Encode(&webpBuf, img, &webp.Options{Lossless: true}); err != nil {
+			log.Println("WebP encode error:", err)
+			continue
+		}
 		b2Path := filepath.Join(
 			fmt.Sprintf("%d", adID),
 			fmt.Sprintf("%d.webp", i+1),
 		)
-		_, err = bucket.UploadTypedFile(b2Path, "image/webp", nil, file)
+		_, err = bucket.UploadTypedFile(b2Path, "image/webp", nil, bytes.NewReader(webpBuf.Bytes()))
 		if err != nil {
 			log.Println("B2 upload error for", b2Path, ":", err)
 		}

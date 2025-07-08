@@ -41,6 +41,7 @@ func main() {
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: customErrorHandler,
+		BodyLimit:    20 * 1024 * 1024, // 20 MB
 	})
 
 	// Add session middleware
