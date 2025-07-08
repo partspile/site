@@ -3,10 +3,12 @@ module github.com/parts-pile/site
 go 1.24.1
 
 require (
+	github.com/chai2010/webp v1.4.0
 	github.com/gofiber/fiber/v2 v2.52.8
 	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	golang.org/x/crypto v0.39.0
+	golang.org/x/image v0.28.0
 	gopkg.in/kothar/go-backblaze.v0 v0.0.0-20210124194846-35409b867216
 	maragu.dev/gomponents v1.1.0
 	maragu.dev/gomponents-htmx v0.6.1
@@ -14,7 +16,6 @@ require (
 
 require (
 	github.com/andybalholm/brotli v1.1.0 // indirect
-	github.com/chai2010/webp v1.4.0 // indirect
 	github.com/golang/glog v1.2.5 // indirect
 	github.com/google/readahead v0.0.0-20161222183148-eaceba169032 // indirect
 	github.com/google/uuid v1.6.0 // indirect

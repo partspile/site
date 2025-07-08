@@ -24,6 +24,7 @@ import (
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vehicle"
+	"golang.org/x/image/draw"
 	"gopkg.in/kothar/go-backblaze.v0"
 )
 
@@ -345,13 +346,23 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 		log.Println("B2 bucket error:", err)
 		return
 	}
+
+	sizes := []struct {
+		Width   int
+		Suffix  string
+		Quality float32
+	}{
+		{160, "160w", 60},
+		{480, "480w", 70},
+		{1200, "1200w", 80},
+	}
+
 	for i, fileHeader := range files {
 		file, err := fileHeader.Open()
 		if err != nil {
 			log.Println("B2 open file error:", err)
 			continue
 		}
-		// Read the file into memory
 		var buf bytes.Buffer
 		if _, err := buf.ReadFrom(file); err != nil {
 			log.Println("Read file error:", err)
@@ -359,25 +370,31 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 			continue
 		}
 		file.Close()
-		// Decode any image format
 		img, _, err := image.Decode(bytes.NewReader(buf.Bytes()))
 		if err != nil {
 			log.Println("Decode image error:", err)
 			continue
 		}
-		// Encode as webp
-		var webpBuf bytes.Buffer
-		if err := webp.Encode(&webpBuf, img, &webp.Options{Lossless: true}); err != nil {
-			log.Println("WebP encode error:", err)
-			continue
-		}
-		b2Path := filepath.Join(
-			fmt.Sprintf("%d", adID),
-			fmt.Sprintf("%d.webp", i+1),
-		)
-		_, err = bucket.UploadTypedFile(b2Path, "image/webp", nil, bytes.NewReader(webpBuf.Bytes()))
-		if err != nil {
-			log.Println("B2 upload error for", b2Path, ":", err)
+		bounds := img.Bounds()
+		for _, sz := range sizes {
+			w := sz.Width
+			h := bounds.Dy() * w / bounds.Dx()
+			dst := image.NewRGBA(image.Rect(0, 0, w, h))
+			draw.CatmullRom.Scale(dst, dst.Bounds(), img, bounds, draw.Over, nil)
+			var webpBuf bytes.Buffer
+			opt := &webp.Options{Lossless: false, Quality: sz.Quality}
+			if err := webp.Encode(&webpBuf, dst, opt); err != nil {
+				log.Println("WebP encode error:", err)
+				continue
+			}
+			b2Path := filepath.Join(
+				fmt.Sprintf("%d", adID),
+				fmt.Sprintf("%d-%s.webp", i+1, sz.Suffix),
+			)
+			_, err = bucket.UploadTypedFile(b2Path, "image/webp", nil, bytes.NewReader(webpBuf.Bytes()))
+			if err != nil {
+				log.Println("B2 upload error for", b2Path, ":", err)
+			}
 		}
 	}
 }

@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -104,13 +105,11 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 		}
 	}
 	// In AdCardExpandable, show the first image
-	imageURLs := AdImageURLs(ad.ID, ad.ImageOrder)
-	fmt.Printf("[DEBUG] AdCardExpandable: ad ID=%d ImageOrder=%v imageURLs=%v\n", ad.ID, ad.ImageOrder, imageURLs)
-	firstImageURL := "/no-image.svg"
-	if len(imageURLs) > 0 {
-		firstImageURL = imageURLs[0]
+	firstIdx := 1
+	if len(ad.ImageOrder) > 0 {
+		firstIdx = ad.ImageOrder[0]
 	}
-	imageNode := AdImageWithFallback(firstImageURL, ad.Title)
+	imageNode := AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title)
 	card := Div(
 		ID(fmt.Sprintf("ad-%d", ad.ID)),
 		Class("block border p-4 mb-4 rounded hover:bg-gray-50 relative cursor-pointer group bg-white"),
@@ -276,22 +275,16 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 						Class("flex flex-row gap-2 mb-2"),
 						g.Group(func() []g.Node {
 							imageNodes := []g.Node{}
-							imageURLs := AdImageURLs(adObj.ID, adObj.ImageOrder)
-							for i, url := range imageURLs {
+							for i, idx := range adObj.ImageOrder {
 								imageNodes = append(imageNodes,
 									Div(
 										Class("relative group"),
-										g.Attr("data-image-idx", fmt.Sprintf("%d", adObj.ImageOrder[i])),
-										Img(
-											Src(url),
-											Alt(fmt.Sprintf("Image %d", i+1)),
-											Class("object-cover w-24 h-24 rounded border cursor-move"),
-											g.Attr("draggable", "true"),
-										),
+										g.Attr("data-image-idx", fmt.Sprintf("%d", idx)),
+										AdImageWithFallbackSrcSet(adObj.ID, idx, fmt.Sprintf("Image %d", i+1)),
 										Button(
 											Type("button"),
 											Class("absolute top-0 right-0 bg-white bg-opacity-80 rounded-full p-1 text-red-600 hover:text-red-800 z-10 delete-image-btn"),
-											g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", adObj.ImageOrder[i])),
+											g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", idx)),
 											Img(Src("/trashcan.svg"), Alt("Delete"), Class("w-4 h-4")),
 										),
 									),
@@ -462,13 +455,12 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 		)
 	}
 	// In AdDetailPartial, update the gallery logic:
-	imageURLs := AdImageURLs(ad.ID, ad.ImageOrder)
 	gallery := Div(
 		Class("flex flex-row gap-2 overflow-x-auto mt-4 mb-4"),
 		g.Group(func() []g.Node {
 			nodes := []g.Node{}
-			for i, url := range imageURLs {
-				nodes = append(nodes, AdImageWithFallback(url, fmt.Sprintf("Image %d", i+1)))
+			for i, idx := range ad.ImageOrder {
+				nodes = append(nodes, AdImageWithFallbackSrcSet(ad.ID, idx, fmt.Sprintf("Image %d", i+1)))
 			}
 			return nodes
 		}()),
@@ -1001,11 +993,30 @@ func AdImageURLs(adID int, order []int) []string {
 	return urls
 }
 
-// Helper to render an image with fallback (no onerror)
-func AdImageWithFallback(src, alt string) g.Node {
+// Helper to generate signed B2 image URLs for an ad and all sizes
+func AdImageSrcSet(adID int, idx int) (src, srcset string) {
+	prefix := fmt.Sprintf("%d/", adID)
+	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
+	if err != nil || token == "" {
+		return "/no-image.svg", ""
+	}
+	base := fmt.Sprintf("https://f004.backblazeb2.com/file/parts-pile/%d/%d", adID, idx)
+	src160 := fmt.Sprintf("%s-160w.webp?Authorization=%s 160w", base, token)
+	src480 := fmt.Sprintf("%s-480w.webp?Authorization=%s 480w", base, token)
+	src1200 := fmt.Sprintf("%s-1200w.webp?Authorization=%s 1200w", base, token)
+	srcset = strings.Join([]string{src160, src480, src1200}, ", ")
+	src = fmt.Sprintf("%s-480w.webp?Authorization=%s", base, token) // default
+	return src, srcset
+}
+
+// Helper to render an image with srcset and fallback
+func AdImageWithFallbackSrcSet(adID int, idx int, alt string) g.Node {
+	src, srcset := AdImageSrcSet(adID, idx)
 	return Img(
 		Src(src),
 		Alt(alt),
+		g.Attr("srcset", srcset),
+		g.Attr("sizes", "(max-width: 600px) 160px, (max-width: 900px) 480px, 1200px"),
 		Class("object-cover w-full h-48 rounded"),
 	)
 }
