@@ -5,6 +5,7 @@ import (
 	"mime/multipart"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
@@ -126,35 +127,33 @@ func ValidateAndParsePrice(c *fiber.Ctx) (float64, error) {
 }
 
 // BuildAdFromForm validates and constructs an ad.Ad from the form data
-func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, []*multipart.FileHeader, error) {
+func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, []*multipart.FileHeader, []int, error) {
 	title, err := ValidateRequired(c, "title", "Title")
 	if err != nil {
-		return ad.Ad{}, nil, err
+		return ad.Ad{}, nil, nil, err
 	}
 	make, err := ValidateRequired(c, "make", "Make")
 	if err != nil {
-		return ad.Ad{}, nil, err
+		return ad.Ad{}, nil, nil, err
 	}
 	form, err := c.MultipartForm()
 	if err != nil {
-		return ad.Ad{}, nil, err
+		return ad.Ad{}, nil, nil, err
 	}
 	years, models, engines, err := ValidateAdFormAndReturn(form)
 	if err != nil {
-		return ad.Ad{}, nil, err
+		return ad.Ad{}, nil, nil, err
 	}
 	// Extract image files
 	imageFiles := form.File["images"]
-	if len(imageFiles) == 0 {
-		return ad.Ad{}, nil, fmt.Errorf("At least one image (.webp) is required.")
-	}
+	// Don't require at least one image for edit
 	description, err := ValidateRequired(c, "description", "Description")
 	if err != nil {
-		return ad.Ad{}, nil, err
+		return ad.Ad{}, nil, nil, err
 	}
 	price, err := ValidateAndParsePrice(c)
 	if err != nil {
-		return ad.Ad{}, nil, err
+		return ad.Ad{}, nil, nil, err
 	}
 	location := c.FormValue("location")
 	var locationPtr *string
@@ -167,6 +166,25 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, []*multipart
 	} else {
 		id = ad.GetNextAdID()
 	}
+	imageOrderStr := c.FormValue("image_order")
+	imageOrder := []int{}
+	if imageOrderStr != "" {
+		for _, s := range strings.Split(imageOrderStr, ",") {
+			if n, err := strconv.Atoi(strings.TrimSpace(s)); err == nil {
+				imageOrder = append(imageOrder, n)
+			}
+		}
+	}
+	// Parse deleted images
+	deletedImagesStr := c.FormValue("deleted_images")
+	deletedImages := []int{}
+	if deletedImagesStr != "" {
+		for _, s := range strings.Split(deletedImagesStr, ",") {
+			if n, err := strconv.Atoi(strings.TrimSpace(s)); err == nil {
+				deletedImages = append(deletedImages, n)
+			}
+		}
+	}
 	return ad.Ad{
 		ID:          id,
 		Title:       title,
@@ -178,5 +196,6 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, []*multipart
 		Price:       price,
 		UserID:      userID,
 		Location:    locationPtr,
-	}, imageFiles, nil
+		ImageOrder:  imageOrder,
+	}, imageFiles, deletedImages, nil
 }

@@ -104,7 +104,12 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 		}
 	}
 	// In AdCardExpandable, show the first image
-	firstImageURL := AdImageURLs(ad.ID, 1)[0]
+	imageURLs := AdImageURLs(ad.ID, ad.ImageOrder)
+	fmt.Printf("[DEBUG] AdCardExpandable: ad ID=%d ImageOrder=%v imageURLs=%v\n", ad.ID, ad.ImageOrder, imageURLs)
+	firstImageURL := "/no-image.svg"
+	if len(imageURLs) > 0 {
+		firstImageURL = imageURLs[0]
+	}
 	imageNode := AdImageWithFallback(firstImageURL, ad.Title)
 	card := Div(
 		ID(fmt.Sprintf("ad-%d", ad.ID)),
@@ -261,13 +266,70 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 				return engineCheckboxes
 			}()...))),
 			FormGroup("Images", "images",
-				Input(
-					Type("file"),
-					ID("images"),
-					Name("images"),
-					Class("w-full p-2 border rounded"),
-					g.Attr("accept", ".webp"),
-					g.Attr("multiple", ""),
+				Div(
+					// New: Image gallery for existing images
+					Div(
+						ID("image-gallery"),
+						Class("flex flex-row gap-2 mb-2"),
+						g.Group(func() []g.Node {
+							imageNodes := []g.Node{}
+							imageURLs := AdImageURLs(adObj.ID, adObj.ImageOrder)
+							for i, url := range imageURLs {
+								imageNodes = append(imageNodes,
+									Div(
+										Class("relative group"),
+										g.Attr("data-image-idx", fmt.Sprintf("%d", adObj.ImageOrder[i])),
+										Img(
+											Src(url),
+											Alt(fmt.Sprintf("Image %d", i+1)),
+											Class("object-cover w-24 h-24 rounded border cursor-move"),
+											g.Attr("draggable", "true"),
+										),
+										Button(
+											Type("button"),
+											Class("absolute top-0 right-0 bg-white bg-opacity-80 rounded-full p-1 text-red-600 hover:text-red-800 z-10 delete-image-btn"),
+											g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", adObj.ImageOrder[i])),
+											Img(Src("/trashcan.svg"), Alt("Delete"), Class("w-4 h-4")),
+										),
+									),
+								)
+							}
+							return imageNodes
+						}()),
+					),
+					// Hidden input for image order (comma-separated indices)
+					Input(
+						Type("hidden"),
+						ID("image_order"),
+						Name("image_order"),
+						Value(func() string {
+							order := ""
+							for i, idx := range adObj.ImageOrder {
+								if i > 0 {
+									order += ","
+								}
+								order += fmt.Sprintf("%d", idx)
+							}
+							return order
+						}()),
+					),
+					// Hidden input for deleted images (comma-separated indices)
+					Input(
+						Type("hidden"),
+						ID("deleted_images"),
+						Name("deleted_images"),
+						Value(""),
+					),
+					// File input for adding new images
+					Input(
+						Type("file"),
+						ID("images"),
+						Name("images"),
+						Class("w-full p-2 border rounded"),
+						g.Attr("accept", ".webp"),
+						g.Attr("multiple", ""),
+					),
+					Div(ID("image-preview")),
 				),
 			),
 			FormGroup("Description", "description",
@@ -401,8 +463,8 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 			),
 		)
 	}
-	// In AdDetailPartial, show all images as a gallery
-	imageURLs := AdImageURLs(ad.ID, 10)
+	// In AdDetailPartial, update the gallery logic:
+	imageURLs := AdImageURLs(ad.ID, ad.ImageOrder)
 	gallery := Div(
 		Class("flex flex-row gap-2 overflow-x-auto mt-4 mb-4"),
 		g.Group(func() []g.Node {
@@ -540,13 +602,16 @@ func NewAdPage(currentUser *user.User, path string, makes []string) g.Node {
 					Class("space-y-2"),
 				),
 				FormGroup("Images", "images",
-					Input(
-						Type("file"),
-						ID("images"),
-						Name("images"),
-						Class("w-full p-2 border rounded"),
-						g.Attr("accept", ".webp"),
-						g.Attr("multiple", ""),
+					Div(
+						Input(
+							Type("file"),
+							ID("images"),
+							Name("images"),
+							Class("w-full p-2 border rounded"),
+							g.Attr("accept", ".webp"),
+							g.Attr("multiple", ""),
+						),
+						Div(ID("image-preview")),
 					),
 				),
 				FormGroup("Description", "description",
@@ -583,6 +648,7 @@ func NewAdPage(currentUser *user.User, path string, makes []string) g.Node {
 					hx.Target("#result"),
 				),
 				ResultContainer(),
+				g.Raw(`<script src="/image-preview.js" defer></script>`),
 			),
 		},
 	)
@@ -643,16 +709,15 @@ func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad, bookmarked boo
 				Class("flex items-center justify-between mb-4"),
 				H2(Class("text-2xl font-bold"), g.Text(adObj.Title)),
 				Div(
-					append([]g.Node{Class("flex items-center gap-2")}, actionButtons...)...,
+					append([]g.Node{Class("flex flex-row items-center gap-2")}, actionButtons...)...,
 				),
 			),
 			statusIndicator,
 			AdDetails(adObj),
-
-			// Add action buttons at the bottom
 			ActionButtons(
 				BackToListingsButton(),
 			),
+			g.Raw(`<script src="/image-preview.js" defer></script>`),
 		},
 	)
 }
@@ -776,13 +841,70 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 				FormGroup("Models", "models", Div(ID("modelsDiv"), GridContainer(5, modelCheckboxes...))),
 				FormGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer(5, engineCheckboxes...))),
 				FormGroup("Images", "images",
-					Input(
-						Type("file"),
-						ID("images"),
-						Name("images"),
-						Class("w-full p-2 border rounded"),
-						g.Attr("accept", ".webp"),
-						g.Attr("multiple", ""),
+					Div(
+						// New: Image gallery for existing images
+						Div(
+							ID("image-gallery"),
+							Class("flex flex-row gap-2 mb-2"),
+							g.Group(func() []g.Node {
+								imageNodes := []g.Node{}
+								imageURLs := AdImageURLs(currentAd.ID, currentAd.ImageOrder)
+								for i, url := range imageURLs {
+									imageNodes = append(imageNodes,
+										Div(
+											Class("relative group"),
+											g.Attr("data-image-idx", fmt.Sprintf("%d", currentAd.ImageOrder[i])),
+											Img(
+												Src(url),
+												Alt(fmt.Sprintf("Image %d", i+1)),
+												Class("object-cover w-24 h-24 rounded border cursor-move"),
+												g.Attr("draggable", "true"),
+											),
+											Button(
+												Type("button"),
+												Class("absolute top-0 right-0 bg-white bg-opacity-80 rounded-full p-1 text-red-600 hover:text-red-800 z-10 delete-image-btn"),
+												g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", currentAd.ImageOrder[i])),
+												Img(Src("/trashcan.svg"), Alt("Delete"), Class("w-4 h-4")),
+											),
+										),
+									)
+								}
+								return imageNodes
+							}()),
+						),
+						// Hidden input for image order (comma-separated indices)
+						Input(
+							Type("hidden"),
+							ID("image_order"),
+							Name("image_order"),
+							Value(func() string {
+								order := ""
+								for i, idx := range currentAd.ImageOrder {
+									if i > 0 {
+										order += ","
+									}
+									order += fmt.Sprintf("%d", idx)
+								}
+								return order
+							}()),
+						),
+						// Hidden input for deleted images (comma-separated indices)
+						Input(
+							Type("hidden"),
+							ID("deleted_images"),
+							Name("deleted_images"),
+							Value(""),
+						),
+						// File input for adding new images
+						Input(
+							Type("file"),
+							ID("images"),
+							Name("images"),
+							Class("w-full p-2 border rounded"),
+							g.Attr("accept", ".webp"),
+							g.Attr("multiple", ""),
+						),
+						Div(ID("image-preview")),
 					),
 				),
 				FormGroup("Description", "description",
@@ -826,6 +948,8 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 					hx.Target("#result"),
 				),
 				ResultContainer(),
+				g.Raw(`<script src="/image-preview.js" defer></script>`),
+				g.Raw(`<script src="/static/image-edit.js" defer></script>`),
 			),
 		},
 	)
@@ -863,20 +987,17 @@ func BookmarkButton(bookmarked bool, adID int) g.Node {
 }
 
 // Helper to generate signed B2 image URLs for an ad
-func AdImageURLs(adID int, max int) []string {
+func AdImageURLs(adID int, order []int) []string {
 	prefix := fmt.Sprintf("%d/", adID)
 	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
 	urls := []string{}
 	if err != nil || token == "" {
-		for i := 1; i <= max; i++ {
-			urls = append(urls, "/no-image.svg")
-		}
 		return urls
 	}
-	for i := 1; i <= max; i++ {
+	for _, idx := range order {
 		urls = append(urls, fmt.Sprintf(
 			"https://f004.backblazeb2.com/file/parts-pile/%d/%d.webp?Authorization=%s",
-			adID, i, token,
+			adID, idx, token,
 		))
 	}
 	return urls

@@ -35,11 +35,12 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 		return err
 	}
 
-	newAd, imageFiles, err := BuildAdFromForm(c, currentUser.ID)
+	newAd, imageFiles, _, err := BuildAdFromForm(c, currentUser.ID)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
 	ad.AddAd(newAd)
+	fmt.Printf("[DEBUG] Created ad ID=%d with ImageOrder=%v\n", newAd.ID, newAd.ImageOrder)
 	uploadAdImagesToB2(newAd.ID, imageFiles)
 	return render(c, ui.SuccessMessage("Ad created successfully", "/"))
 }
@@ -121,12 +122,16 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		return err
 	}
 
-	updatedAd, imageFiles, err := BuildAdFromForm(c, currentUser.ID, adID)
+	updatedAd, imageFiles, deletedImages, err := BuildAdFromForm(c, currentUser.ID, adID)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
 
 	ad.UpdateAd(updatedAd)
+	// Delete images from B2 if needed
+	if len(deletedImages) > 0 {
+		deleteAdImagesFromB2(updatedAd.ID, deletedImages)
+	}
 	uploadAdImagesToB2(updatedAd.ID, imageFiles)
 
 	if c.Get("HX-Request") != "" {
@@ -369,4 +374,46 @@ func HandleAdImageSignedURL(c *fiber.Ctx) error {
 		"token":   token,
 		"expires": time.Now().Unix() + 3600,
 	})
+}
+
+func deleteAdImagesFromB2(adID int, indices []int) {
+	accountID := os.Getenv("BACKBLAZE_MASTER_KEY_ID")
+	keyID := os.Getenv("BACKBLAZE_KEY_ID")
+	appKey := os.Getenv("BACKBLAZE_APP_KEY")
+	if accountID == "" || appKey == "" || keyID == "" {
+		log.Println("B2 credentials not set in env vars")
+		return
+	}
+	b2, err := backblaze.NewB2(backblaze.Credentials{
+		AccountID:      accountID,
+		ApplicationKey: appKey,
+		KeyID:          keyID,
+	})
+	if err != nil {
+		log.Println("B2 auth error:", err)
+		return
+	}
+	bucket, err := b2.Bucket("parts-pile")
+	if err != nil {
+		log.Println("B2 bucket error:", err)
+		return
+	}
+	for _, idx := range indices {
+		b2Path := filepath.Join(
+			fmt.Sprintf("%d", adID),
+			fmt.Sprintf("%d.webp", idx),
+		)
+		// List file versions for this file name
+		resp, err := bucket.ListFileVersions(b2Path, "", 10)
+		if err != nil {
+			log.Println("B2 list file versions error for", b2Path, ":", err)
+			continue
+		}
+		for _, file := range resp.Files {
+			_, err := bucket.DeleteFileVersion(file.Name, file.ID)
+			if err != nil {
+				log.Println("B2 delete error for", b2Path, file.ID, ":", err)
+			}
+		}
+	}
 }
