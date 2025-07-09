@@ -59,7 +59,7 @@ type Ad struct {
 	CreatedAt     time.Time `json:"created_at"`
 	SubCategoryID *int      `json:"subcategory_id,omitempty"`
 	UserID        int       `json:"user_id"`
-	Location      *string   `json:"location,omitempty"`
+	LocationID    int       `json:"location_id"`
 	// Runtime fields populated via joins
 	Year          string     `json:"year,omitempty"`
 	Make          string     `json:"make"`
@@ -185,7 +185,7 @@ func GetAdByID(id int) (Ad, AdStatus, bool) {
 func GetAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
 		SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-		       a.user_id, psc.name as subcategory, a.click_count, a.last_clicked_at, a.location, a.image_order
+		       a.user_id, psc.name as subcategory, a.click_count, a.last_clicked_at, a.location_id, a.image_order
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 		WHERE a.id = ?
@@ -194,10 +194,10 @@ func GetAd(id int) (Ad, bool) {
 	var ad Ad
 	var subcategory sql.NullString
 	var lastClickedAt sql.NullTime
-	var location sql.NullString
+	var locationID sql.NullInt64
 	var imageOrder sql.NullString
 	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
-		&ad.SubCategoryID, &ad.UserID, &subcategory, &ad.ClickCount, &lastClickedAt, &location, &imageOrder); err != nil {
+		&ad.SubCategoryID, &ad.UserID, &subcategory, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder); err != nil {
 		fmt.Println("DEBUG GetAd scan error:", err)
 		return Ad{}, false
 	}
@@ -212,8 +212,8 @@ func GetAd(id int) (Ad, bool) {
 		ad.LastClickedAt = &lastClickedAt.Time
 	}
 
-	if location.Valid {
-		ad.Location = &location.String
+	if locationID.Valid {
+		ad.LocationID = int(locationID.Int64)
 	}
 
 	if imageOrder.Valid {
@@ -235,8 +235,8 @@ func AddAd(ad Ad) int {
 
 	createdAt := time.Now().UTC().Format(time.RFC3339)
 	imgOrderJSON, _ := json.Marshal(ad.ImageOrder)
-	res, err := tx.Exec("INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location, image_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		ad.Title, ad.Description, ad.Price, createdAt, ad.SubCategoryID, ad.UserID, ad.Location, string(imgOrderJSON))
+	res, err := tx.Exec("INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		ad.Title, ad.Description, ad.Price, createdAt, ad.SubCategoryID, ad.UserID, ad.LocationID, string(imgOrderJSON))
 	if err != nil {
 		return 0
 	}
@@ -617,7 +617,7 @@ func GetAllAds() ([]Ad, error) {
 	fmt.Printf("[DEBUG] GetAllAds: opening DB at ./project.db\n")
 	rows, err := db.Query(`
 		SELECT
-			a.id, a.title, a.description, a.price, a.created_at, a.user_id, a.location,
+			a.id, a.title, a.description, a.price, a.created_at, a.user_id, a.location_id,
 			GROUP_CONCAT(DISTINCT m.name) as make,
 			GROUP_CONCAT(DISTINCT y.year) as years,
 			GROUP_CONCAT(DISTINCT mo.name) as models,
@@ -642,17 +642,17 @@ func GetAllAds() ([]Ad, error) {
 	for rows.Next() {
 		var ad Ad
 		var make, years, models, engines sql.NullString
-		var location sql.NullString
+		var locationID sql.NullInt64
 		var imageOrder sql.NullString
 		if err := rows.Scan(
-			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &location,
+			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &locationID,
 			&make, &years, &models, &engines, &imageOrder,
 		); err != nil {
 			return nil, err
 		}
 
-		if location.Valid {
-			ad.Location = &location.String
+		if locationID.Valid {
+			ad.LocationID = int(locationID.Int64)
 		}
 		if make.Valid {
 			ad.Make = make.String
@@ -683,7 +683,7 @@ func GetAllAds() ([]Ad, error) {
 // GetAllArchivedAds returns all archived ads in the system
 func GetAllArchivedAds() ([]Ad, error) {
 	rows, err := db.Query(`
-		SELECT id, title, description, price, created_at, user_id, deletion_date, location, image_order
+		SELECT id, title, description, price, created_at, user_id, deletion_date, location_id, image_order
 		FROM ArchivedAd
 		ORDER BY deletion_date DESC
 	`)
@@ -696,17 +696,17 @@ func GetAllArchivedAds() ([]Ad, error) {
 	for rows.Next() {
 		var ad Ad
 		var deletionDate string
-		var location sql.NullString
+		var locationID sql.NullInt64
 		var imageOrder sql.NullString
-		err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &deletionDate, &location, &imageOrder)
+		err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &deletionDate, &locationID, &imageOrder)
 		if err != nil {
 			return nil, err
 		}
 		if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
 			ad.DeletionDate = &parsedTime
 		}
-		if location.Valid {
-			ad.Location = &location.String
+		if locationID.Valid {
+			ad.LocationID = int(locationID.Int64)
 		}
 		if imageOrder.Valid {
 			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
@@ -726,17 +726,17 @@ func GetAllArchivedAds() ([]Ad, error) {
 // GetArchivedAd retrieves an archived ad by ID
 func GetArchivedAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
-		SELECT id, title, description, price, created_at, subcategory_id, user_id, deletion_date, location, image_order
+		SELECT id, title, description, price, created_at, subcategory_id, user_id, deletion_date, location_id, image_order
 		FROM ArchivedAd
 		WHERE id = ?
 	`, id)
 
 	var ad Ad
 	var deletionDate string
-	var location sql.NullString
+	var locationID sql.NullInt64
 	var imageOrder sql.NullString
 	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
-		&ad.SubCategoryID, &ad.UserID, &deletionDate, &location, &imageOrder); err != nil {
+		&ad.SubCategoryID, &ad.UserID, &deletionDate, &locationID, &imageOrder); err != nil {
 		return Ad{}, false
 	}
 
@@ -744,8 +744,8 @@ func GetArchivedAd(id int) (Ad, bool) {
 	if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
 		ad.DeletionDate = &parsedTime
 	}
-	if location.Valid {
-		ad.Location = &location.String
+	if locationID.Valid {
+		ad.LocationID = int(locationID.Int64)
 	}
 
 	if imageOrder.Valid {
@@ -767,8 +767,8 @@ func UpdateAd(ad Ad) error {
 	defer tx.Rollback()
 
 	imgOrderJSON, _ := json.Marshal(ad.ImageOrder)
-	_, err = tx.Exec("UPDATE Ad SET title = ?, description = ?, price = ?, subcategory_id = ?, location = ?, image_order = ? WHERE id = ?",
-		ad.Title, ad.Description, ad.Price, ad.SubCategoryID, ad.Location, string(imgOrderJSON), ad.ID)
+	_, err = tx.Exec("UPDATE Ad SET title = ?, description = ?, price = ?, subcategory_id = ?, location_id = ?, image_order = ? WHERE id = ?",
+		ad.Title, ad.Description, ad.Price, ad.SubCategoryID, ad.LocationID, string(imgOrderJSON), ad.ID)
 	if err != nil {
 		return err
 	}
@@ -801,8 +801,8 @@ func ArchiveAd(id int) error {
 	_ = tx.QueryRow("SELECT image_order FROM Ad WHERE id = ?", id).Scan(&imageOrder)
 
 	// Archive the ad to ArchivedAd with deletion_date, title, and location
-	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, title, description, price, created_at, subcategory_id, user_id, deletion_date, location, image_order)
-		SELECT id, title, description, price, created_at, subcategory_id, user_id, ?, location, ? FROM Ad WHERE id = ?`,
+	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, title, description, price, created_at, subcategory_id, user_id, deletion_date, location_id, image_order)
+		SELECT id, title, description, price, created_at, subcategory_id, user_id, ?, location_id, ? FROM Ad WHERE id = ?`,
 		time.Now().UTC().Format(time.RFC3339Nano), imageOrder.String, id)
 	if err != nil {
 		return err
@@ -840,21 +840,21 @@ func RestoreAd(adID int) error {
 
 	// Get ad data from archive
 	var ad Ad
-	var location sql.NullString
-	err = tx.QueryRow(`SELECT id, description, price, created_at, subcategory_id, user_id, location, image_order 
+	var locationID sql.NullInt64
+	err = tx.QueryRow(`SELECT id, description, price, created_at, subcategory_id, user_id, location_id, image_order 
 		FROM ArchivedAd WHERE id = ?`, adID).Scan(
-		&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.SubCategoryID, &ad.UserID, &location, &ad.ImageOrder)
+		&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.SubCategoryID, &ad.UserID, &locationID, &ad.ImageOrder)
 	if err != nil {
 		return err
 	}
-	if location.Valid {
-		ad.Location = &location.String
+	if locationID.Valid {
+		ad.LocationID = int(locationID.Int64)
 	}
 
 	// Restore ad
-	_, err = tx.Exec(`INSERT INTO Ad (id, description, price, created_at, subcategory_id, user_id, location, image_order)
+	_, err = tx.Exec(`INSERT INTO Ad (id, description, price, created_at, subcategory_id, user_id, location_id, image_order)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		ad.ID, ad.Description, ad.Price, ad.CreatedAt, ad.SubCategoryID, ad.UserID, ad.Location, ad.ImageOrder)
+		ad.ID, ad.Description, ad.Price, ad.CreatedAt, ad.SubCategoryID, ad.UserID, ad.LocationID, ad.ImageOrder)
 	if err != nil {
 		return err
 	}
@@ -1000,4 +1000,14 @@ func GetAdClickCountForUser(adID int, userID int) (int, error) {
 		return 0, err
 	}
 	return count, nil
+}
+
+// GetLocationByID fetches a Location by its ID
+func GetLocationByID(id int) (city, country, raw string, err error) {
+	if id == 0 {
+		return "", "", "", nil
+	}
+	row := db.QueryRow("SELECT city, country, raw_text FROM Location WHERE id = ?", id)
+	err = row.Scan(&city, &country, &raw)
+	return
 }

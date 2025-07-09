@@ -56,15 +56,16 @@ CREATE TABLE PartSubCategory (
 -- Ad table
 CREATE TABLE Ad (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT,
     description TEXT,
     price REAL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     subcategory_id INTEGER,
     user_id INTEGER NOT NULL,
+    image_order TEXT,
+    location_id INTEGER REFERENCES Location(id),
     click_count INTEGER DEFAULT 0,
     last_clicked_at DATETIME,
-    location TEXT,
-    image_order TEXT,
     FOREIGN KEY (subcategory_id) REFERENCES PartSubCategory(id),
     FOREIGN KEY (user_id) REFERENCES User(id)
 );
@@ -140,15 +141,18 @@ CREATE TABLE ArchivedUser (
 
 -- ArchivedAd table - archived ads
 CREATE TABLE ArchivedAd (
-    id INTEGER PRIMARY KEY,  -- Same ID as original ad
+    id INTEGER PRIMARY KEY,
+    title TEXT DEFAULT 'Untitled',
     description TEXT,
     price REAL,
     created_at DATETIME,
     subcategory_id INTEGER,
-    user_id INTEGER NOT NULL,  -- Reference to ArchivedUser.id
+    user_id INTEGER NOT NULL,
     deletion_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    location TEXT,
     image_order TEXT,
+    location_id INTEGER REFERENCES Location(id),
+    click_count INTEGER DEFAULT 0,
+    last_clicked_at TEXT,
     FOREIGN KEY (subcategory_id) REFERENCES PartSubCategory(id),
     FOREIGN KEY (user_id) REFERENCES ArchivedUser(id)
 );
@@ -201,3 +205,13 @@ CREATE TABLE IF NOT EXISTS UserSearch (
 );
 CREATE INDEX idx_usersearch_user_id ON UserSearch(user_id);
 CREATE INDEX idx_usersearch_created_at ON UserSearch(created_at);
+
+-- Location table
+CREATE TABLE IF NOT EXISTS Location (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    raw_text TEXT UNIQUE NOT NULL,
+    city TEXT,
+    state TEXT,
+    county TEXT,
+    country TEXT
+);

@@ -15,25 +15,50 @@ import (
 	"github.com/parts-pile/site/user"
 )
 
+// Helper to get display location string for an ad
+func getDisplayLocation(adObj ad.Ad) string {
+	city, country, _, err := ad.GetLocationByID(adObj.LocationID)
+	if err != nil {
+		return ""
+	}
+	if city != "" && country != "" {
+		return city + ", " + country
+	}
+	if country != "" {
+		return country
+	}
+	return ""
+}
+
+// Helper to get raw location input for an ad
+func getRawLocation(adObj ad.Ad) string {
+	_, _, raw, err := ad.GetLocationByID(adObj.LocationID)
+	if err != nil {
+		return ""
+	}
+	return raw
+}
+
 // ---- Ad Components ----
 
-func AdDetails(ad ad.Ad) g.Node {
-	sortedYears := append([]string{}, ad.Years...)
-	sortedModels := append([]string{}, ad.Models...)
-	sortedEngines := append([]string{}, ad.Engines...)
+func AdDetails(adObj ad.Ad) g.Node {
+	sortedYears := append([]string{}, adObj.Years...)
+	sortedModels := append([]string{}, adObj.Models...)
+	sortedEngines := append([]string{}, adObj.Engines...)
 	sort.Strings(sortedYears)
 	sort.Strings(sortedModels)
 	sort.Strings(sortedEngines)
 
+	locationStr := getDisplayLocation(adObj)
 	var locationNode g.Node = nil
-	if ad.Location != nil && *ad.Location != "" {
-		locationNode = P(Class("text-gray-600"), g.Text(fmt.Sprintf("Location: %s", *ad.Location)))
+	if locationStr != "" {
+		locationNode = P(Class("text-gray-600"), g.Text("Location: "+locationStr))
 	}
 
 	return Div(
 		Class("mb-4"),
-		P(Class("mt-4"), g.Text(ad.Description)),
-		P(Class("text-2xl font-bold mt-4"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
+		P(Class("mt-4"), g.Text(adObj.Description)),
+		P(Class("text-2xl font-bold mt-4"), g.Text(fmt.Sprintf("$%.2f", adObj.Price))),
 		locationNode,
 	)
 }
@@ -129,10 +154,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 	)
 	if isGrid {
 		// Minimal grid card: image, price badge, title, location, time
-		location := ""
-		if ad.Location != nil && *ad.Location != "" {
-			location = *ad.Location
-		}
+		location := getDisplayLocation(ad)
 		bookmarkBtnGrid := g.Node(nil)
 		if userID > 0 {
 			bookmarkBtnGrid = Button(
@@ -413,12 +435,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 					Name("location"),
 					Class("w-full p-2 border rounded"),
 					Placeholder("(Optional)"),
-					Value(func() string {
-						if adObj.Location != nil {
-							return *adObj.Location
-						}
-						return ""
-					}()),
+					Value(getRawLocation(adObj)),
 				),
 			),
 			Div(
@@ -528,10 +545,7 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 			days := int(ago.Hours()) / 24
 			agoStr = fmt.Sprintf("%d days ago", days)
 		}
-		location := ""
-		if ad.Location != nil && *ad.Location != "" {
-			location = *ad.Location
-		}
+		location := getDisplayLocation(ad)
 		// Carousel main image area (HTMX target is the child, not the container)
 		mainImageArea := Div(
 			Class("relative w-full aspect-square bg-gray-100 overflow-hidden rounded-t-lg flex items-center justify-center"),
@@ -1068,12 +1082,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 						Name("location"),
 						Class("w-full p-2 border rounded"),
 						Placeholder("Optional zipcode, e.g. 90210"),
-						Value(func() string {
-							if currentAd.Location != nil {
-								return *currentAd.Location
-							}
-							return ""
-						}()),
+						Value(getRawLocation(currentAd)),
 					),
 				),
 				StyledButton("Submit", ButtonPrimary,

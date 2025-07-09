@@ -18,10 +18,14 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
+	"database/sql"
+	"encoding/json"
+
 	"github.com/chai2010/webp"
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
+	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vehicle"
 	"golang.org/x/image/draw"
@@ -39,13 +43,56 @@ func HandleNewAd(c *fiber.Ctx) error {
 	return render(c, ui.NewAdPage(currentUser, c.Path(), makes))
 }
 
+// Helper to resolve location using Grok and upsert into Location table
+func resolveAndStoreLocation(raw string) (int, error) {
+	if raw == "" {
+		return 0, nil
+	}
+	systemPrompt := `You are a location resolver for an auto parts website. Given a user input (which may be a city, zip code, or country), return a JSON object with the best guess for city, county, and country. If a field is unknown, leave it blank. Example input: "97333" -> {"city": "Corvallis", "county": "Benton", "country": "USA"}`
+	resp, err := grok.CallGrok(systemPrompt, raw)
+	if err != nil {
+		return 0, err
+	}
+	var loc struct {
+		City    string `json:"city"`
+		County  string `json:"county"`
+		Country string `json:"country"`
+	}
+	err = json.Unmarshal([]byte(resp), &loc)
+	if err != nil {
+		return 0, err
+	}
+	// Upsert into Location table
+	db := ad.DB
+	var id int
+	err = db.QueryRow("SELECT id FROM Location WHERE raw_text = ?", raw).Scan(&id)
+	if err == sql.ErrNoRows {
+		res, err := db.Exec("INSERT INTO Location (raw_text, city, county, country) VALUES (?, ?, ?, ?)", raw, loc.City, loc.County, loc.Country)
+		if err != nil {
+			return 0, err
+		}
+		lastID, _ := res.LastInsertId()
+		id = int(lastID)
+	} else if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
 func HandleNewAdSubmission(c *fiber.Ctx) error {
 	currentUser, err := CurrentUser(c)
 	if err != nil {
 		return err
 	}
 
-	newAd, imageFiles, _, err := BuildAdFromForm(c, currentUser.ID)
+	// Resolve and store location first
+	locationRaw := c.FormValue("location")
+	locID, err := resolveAndStoreLocation(locationRaw)
+	if err != nil {
+		return ValidationErrorResponse(c, "Could not resolve location.")
+	}
+
+	newAd, imageFiles, _, err := BuildAdFromForm(c, currentUser.ID, locID)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
@@ -132,11 +179,17 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		return err
 	}
 
-	updatedAd, imageFiles, deletedImages, err := BuildAdFromForm(c, currentUser.ID, adID)
+	// Resolve and store location first
+	locationRaw := c.FormValue("location")
+	locID, err := resolveAndStoreLocation(locationRaw)
+	if err != nil {
+		return ValidationErrorResponse(c, "Could not resolve location.")
+	}
+
+	updatedAd, imageFiles, deletedImages, err := BuildAdFromForm(c, currentUser.ID, locID, adID)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
-
 	ad.UpdateAd(updatedAd)
 	// Delete images from B2 if needed
 	if len(deletedImages) > 0 {

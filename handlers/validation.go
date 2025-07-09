@@ -127,7 +127,8 @@ func ValidateAndParsePrice(c *fiber.Ctx) (float64, error) {
 }
 
 // BuildAdFromForm validates and constructs an ad.Ad from the form data
-func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, []*multipart.FileHeader, []int, error) {
+// Now expects locationID to be passed in (resolved by handler)
+func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.Ad, []*multipart.FileHeader, []int, error) {
 	title, err := ValidateRequired(c, "title", "Title")
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
@@ -154,11 +155,6 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, []*multipart
 	price, err := ValidateAndParsePrice(c)
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
-	}
-	location := c.FormValue("location")
-	var locationPtr *string
-	if location != "" {
-		locationPtr = &location
 	}
 	id := 0
 	if len(adID) > 0 {
@@ -195,7 +191,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.Ad, []*multipart
 		Description: description,
 		Price:       price,
 		UserID:      userID,
-		Location:    locationPtr,
+		LocationID:  locationID,
 		ImageOrder:  imageOrder,
 	}, imageFiles, deletedImages, nil
 }
