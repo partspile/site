@@ -532,14 +532,17 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 		if ad.Location != nil && *ad.Location != "" {
 			location = *ad.Location
 		}
-		// Carousel main image area (HTMX target)
+		// Carousel main image area (HTMX target is the child, not the container)
 		mainImageArea := Div(
-			ID(fmt.Sprintf("ad-carousel-main-%d", ad.ID)),
-			Class("relative w-full h-64 bg-gray-100 overflow-hidden rounded-t-lg"),
-			g.Attr("hx-get", fmt.Sprintf("/ad/image/%d/%d", ad.ID, firstIdx)),
-			g.Attr("hx-trigger", "load"),
-			g.Attr("hx-target", fmt.Sprintf("#ad-carousel-main-%d", ad.ID)),
-			g.Attr("hx-swap", "outerHTML"),
+			Class("relative w-full aspect-square bg-gray-100 overflow-hidden rounded-t-lg flex items-center justify-center"),
+			Div(
+				ID(fmt.Sprintf("ad-carousel-img-%d", ad.ID)),
+				AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title),
+				Div(
+					Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
+					g.Text(fmt.Sprintf("$%.0f", ad.Price)),
+				),
+			),
 		)
 		// Carousel thumbnails
 		thumbnails := Div(
@@ -551,8 +554,8 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 						Type("button"),
 						Class("border rounded w-16 h-16 overflow-hidden p-0 focus:outline-none"),
 						g.Attr("hx-get", fmt.Sprintf("/ad/image/%d/%d", ad.ID, idx)),
-						g.Attr("hx-target", fmt.Sprintf("#ad-carousel-main-%d", ad.ID)),
-						g.Attr("hx-swap", "outerHTML"),
+						g.Attr("hx-target", fmt.Sprintf("#ad-carousel-img-%d", ad.ID)),
+						g.Attr("hx-swap", "innerHTML"),
 						AdImageWithFallbackSrcSet(ad.ID, idx, fmt.Sprintf("Image %d", i+1)),
 					))
 				}
@@ -587,8 +590,8 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 						),
 					),
 				),
-				Div(Class("text-base mt-2"), g.Text(ad.Description)),
 			),
+			Div(Class("text-base mt-2"), g.Text(ad.Description)),
 		), true)
 	}
 
@@ -1155,6 +1158,6 @@ func AdImageWithFallbackSrcSet(adID int, idx int, alt string) g.Node {
 		Alt(alt),
 		g.Attr("srcset", srcset),
 		g.Attr("sizes", "(max-width: 600px) 160px, (max-width: 900px) 480px, 1200px"),
-		Class("object-cover w-full h-48"),
+		Class("object-contain w-full aspect-square bg-gray-100"),
 	)
 }

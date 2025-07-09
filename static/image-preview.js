@@ -65,8 +65,8 @@
     let draggingIdx = null;
 
     function updateOrderInput() {
-      // Store the order as 1-based indices (for B2 naming)
-      const order = files.map(f => f._origIdx + 1);
+      // Store the order as contiguous 1-based indices
+      const order = files.map((_, i) => i + 1);
       orderInput.value = order.join(',');
     }
 
