@@ -546,7 +546,7 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 		)
 		// Carousel thumbnails
 		thumbnails := Div(
-			Class("flex flex-row gap-2 mt-2 px-4"),
+			Class("flex flex-row gap-2 mt-2 px-4 justify-center"),
 			g.Group(func() []g.Node {
 				nodes := []g.Node{}
 				for i, idx := range ad.ImageOrder {
