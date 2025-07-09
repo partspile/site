@@ -71,13 +71,23 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 	if isGrid {
 		htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", ad.ID)
 	}
+	posted := ad.CreatedAt.In(loc)
+	ago := time.Since(posted)
+	var agoStr string
+	if ago < time.Hour {
+		agoStr = fmt.Sprintf("%d min ago", int(ago.Minutes()))
+	} else if ago < 24*time.Hour {
+		agoStr = fmt.Sprintf("%d hr ago", int(ago.Hours()))
+	} else {
+		days := int(ago.Hours()) / 24
+		agoStr = fmt.Sprintf("%d days ago", days)
+	}
 	sortedYears := append([]string{}, ad.Years...)
 	sort.Strings(sortedYears)
 	sortedModels := append([]string{}, ad.Models...)
 	sort.Strings(sortedModels)
 	sortedEngines := append([]string{}, ad.Engines...)
 	sort.Strings(sortedEngines)
-	posted := ad.CreatedAt.In(loc).Format("Jan 2, 2006 3:04:05 PM MST")
 	bookmarkBtn := g.Node(nil)
 	if userID > 0 {
 		if bookmarked {
@@ -109,7 +119,55 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 	if len(ad.ImageOrder) > 0 {
 		firstIdx = ad.ImageOrder[0]
 	}
-	imageNode := AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title)
+	imageNode := Div(
+		Class("relative w-full h-48 bg-gray-100 overflow-hidden"),
+		AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title),
+		Div(
+			Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
+			g.Text(fmt.Sprintf("$%.0f", ad.Price)),
+		),
+	)
+	if isGrid {
+		// Minimal grid card: image, price badge, title, location, time
+		location := ""
+		if ad.Location != nil && *ad.Location != "" {
+			location = *ad.Location
+		}
+		bookmarkBtnGrid := g.Node(nil)
+		if userID > 0 {
+			bookmarkBtnGrid = Button(
+				Type("button"),
+				Class("focus:outline-none mr-1 align-middle"),
+				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
+				hx.Swap("outerHTML"),
+				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
+				g.Attr("onclick", "event.stopPropagation()"),
+				BookmarkIcon(bookmarked),
+			)
+		}
+		return AdGridWrapper(ad, Div(
+			Class("border rounded-lg shadow-sm bg-white flex flex-col cursor-pointer hover:shadow-md transition-shadow"),
+			hx.Get(fmt.Sprintf("/ad/detail/%d?view=grid", ad.ID)),
+			hx.Target(htmxTarget),
+			hx.Swap("outerHTML"),
+			Div(
+				Class("rounded-t-lg overflow-hidden"),
+				imageNode,
+			),
+			Div(
+				Class("p-2 flex flex-col gap-1"),
+				Div(Class("font-semibold text-base truncate"), g.Text(ad.Title)),
+				Div(
+					Class("flex flex-row items-center gap-1 text-xs text-gray-500"),
+					bookmarkBtnGrid,
+					Div(Class("text-gray-400"), g.Text(agoStr)),
+					Div(Class("flex-grow")),
+					g.If(location != "", Div(Class("text-xs text-gray-500"), g.Text(location))),
+				),
+			),
+		), false)
+	}
 	card := Div(
 		ID(fmt.Sprintf("ad-%d", ad.ID)),
 		Class("block border p-4 mb-4 rounded hover:bg-gray-50 relative cursor-pointer group bg-white"),
@@ -139,7 +197,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 		P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
 		P(
 			Class("text-xs text-gray-400 mt-4"),
-			g.Text(fmt.Sprintf("ID: %d • Posted: %s", ad.ID, posted)),
+			g.Text(fmt.Sprintf("ID: %d • Posted: %s", ad.ID, posted.Format("Jan 2, 2006 3:04:05 PM MST"))),
 		),
 	)
 	if isGrid {
@@ -1017,6 +1075,6 @@ func AdImageWithFallbackSrcSet(adID int, idx int, alt string) g.Node {
 		Alt(alt),
 		g.Attr("srcset", srcset),
 		g.Attr("sizes", "(max-width: 600px) 160px, (max-width: 900px) 480px, 1200px"),
-		Class("object-cover w-full h-48 rounded"),
+		Class("object-cover w-full h-48"),
 	)
 }

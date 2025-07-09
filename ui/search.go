@@ -303,7 +303,7 @@ func GridView(ads map[int]ad.Ad, loc *time.Location, userID ...int) g.Node {
 	}
 	return Div(
 		ID("grid-view"),
-		Class("grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"),
+		Class("grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"),
 		g.Group(adNodes),
 	)
 }
