@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	"golang.org/x/crypto/bcrypt"
@@ -129,6 +130,32 @@ func HandleRegisterSubmission(c *fiber.Ctx) error {
 
 	if err := ValidatePasswordConfirmation(password, password2); err != nil {
 		return ValidationErrorResponse(c, err.Error())
+	}
+
+	// GROK username screening
+	systemPrompt := `You are an expert parts technician. Your job is to screen potential user names for the parts-pile web site.
+Reject user names that the general public would find offensive.
+Car-guy humor, double entendres, and puns are allowed unless they are widely considered offensive or hateful.
+Examples of acceptable usernames:
+- rusty nuts
+- lugnut
+- fast wrench
+- shift happens
+
+Examples of unacceptable usernames:
+- racial slurs
+- hate speech
+- explicit sexual content
+
+If the user name is acceptable, return only: OK
+If the user name is unacceptable, return a short, direct error message (1-2 sentences), and do not mention yourself, AI, or Grok in the response.
+Only reject names that are truly offensive to a general audience.`
+	resp, err := grok.CallGrok(systemPrompt, name)
+	if err != nil {
+		return ValidationErrorResponse(c, "Could not validate username. Please try again later.")
+	}
+	if resp != "OK" {
+		return ValidationErrorResponse(c, resp)
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
