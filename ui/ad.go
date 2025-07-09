@@ -476,7 +476,6 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 			)
 		}
 	}
-	// Delete icon button (only for ad owner)
 	deleteBtn := g.Node(nil)
 	editBtn := g.Node(nil)
 	if userID == ad.UserID {
@@ -512,6 +511,87 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 			),
 		)
 	}
+
+	if isGrid {
+		// Use tile view layout for expanded grid view
+		firstIdx := 1
+		if len(ad.ImageOrder) > 0 {
+			firstIdx = ad.ImageOrder[0]
+		}
+		ago := time.Since(ad.CreatedAt)
+		var agoStr string
+		if ago < time.Hour {
+			agoStr = fmt.Sprintf("%d min ago", int(ago.Minutes()))
+		} else if ago < 24*time.Hour {
+			agoStr = fmt.Sprintf("%d hr ago", int(ago.Hours()))
+		} else {
+			days := int(ago.Hours()) / 24
+			agoStr = fmt.Sprintf("%d days ago", days)
+		}
+		location := ""
+		if ad.Location != nil && *ad.Location != "" {
+			location = *ad.Location
+		}
+		// Carousel main image area (HTMX target)
+		mainImageArea := Div(
+			ID(fmt.Sprintf("ad-carousel-main-%d", ad.ID)),
+			Class("relative w-full h-64 bg-gray-100 overflow-hidden rounded-t-lg"),
+			g.Attr("hx-get", fmt.Sprintf("/ad/image/%d/%d", ad.ID, firstIdx)),
+			g.Attr("hx-trigger", "load"),
+			g.Attr("hx-target", fmt.Sprintf("#ad-carousel-main-%d", ad.ID)),
+			g.Attr("hx-swap", "outerHTML"),
+		)
+		// Carousel thumbnails
+		thumbnails := Div(
+			Class("flex flex-row gap-2 mt-2 px-4"),
+			g.Group(func() []g.Node {
+				nodes := []g.Node{}
+				for i, idx := range ad.ImageOrder {
+					nodes = append(nodes, Button(
+						Type("button"),
+						Class("border rounded w-16 h-16 overflow-hidden p-0 focus:outline-none"),
+						g.Attr("hx-get", fmt.Sprintf("/ad/image/%d/%d", ad.ID, idx)),
+						g.Attr("hx-target", fmt.Sprintf("#ad-carousel-main-%d", ad.ID)),
+						g.Attr("hx-swap", "outerHTML"),
+						AdImageWithFallbackSrcSet(ad.ID, idx, fmt.Sprintf("Image %d", i+1)),
+					))
+				}
+				return nodes
+			}()),
+		)
+		return AdGridWrapper(ad, Div(
+			Class("border rounded-lg shadow-lg bg-white flex flex-col"),
+			mainImageArea,
+			thumbnails,
+			Div(
+				Class("p-4 flex flex-col gap-2"),
+				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
+				Div(
+					Class("flex flex-row items-center text-xs text-gray-500"),
+					Div(Class("flex flex-row items-center gap-2"),
+						Div(Class("text-gray-400"), g.Text(agoStr)),
+						g.If(location != "", Div(Class("text-xs text-gray-500"), g.Text(location))),
+					),
+					Div(Class("flex-grow")),
+					Div(Class("flex flex-row items-center gap-2 ml-auto"),
+						bookmarkBtn,
+						editBtn,
+						deleteBtn,
+						Button(
+							Type("button"),
+							Class("ml-2 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none z-20"),
+							hx.Get(fmt.Sprintf("/ad/card/%d?view=grid", ad.ID)),
+							hx.Target(htmxTarget),
+							hx.Swap("outerHTML"),
+							g.Text("×"),
+						),
+					),
+				),
+				Div(Class("text-base mt-2"), g.Text(ad.Description)),
+			),
+		), true)
+	}
+
 	// In AdDetailPartial, update the gallery logic:
 	gallery := Div(
 		Class("flex flex-row gap-2 overflow-x-auto mt-4 mb-4"),

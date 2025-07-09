@@ -26,6 +26,8 @@ import (
 	"github.com/parts-pile/site/vehicle"
 	"golang.org/x/image/draw"
 	"gopkg.in/kothar/go-backblaze.v0"
+	g "maragu.dev/gomponents"
+	. "maragu.dev/gomponents/html"
 )
 
 func HandleNewAd(c *fiber.Ctx) error {
@@ -456,4 +458,33 @@ func deleteAdImagesFromB2(adID int, indices []int) {
 			}
 		}
 	}
+}
+
+// Handler for HTMX image carousel partial (single image)
+func HandleAdImagePartial(c *fiber.Ctx) error {
+	adID, err := c.ParamsInt("adID")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+	idx, err := c.ParamsInt("idx")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid image index")
+	}
+	adObj, _, ok := ad.GetAdByID(adID)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+	// Render the main image with price badge overlay
+	mainImage := ui.AdImageWithFallbackSrcSet(adObj.ID, idx, adObj.Title)
+	priceBadge := Div(
+		Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
+		g.Textf("$%.0f", adObj.Price),
+	)
+	container := Div(
+		ID(fmt.Sprintf("ad-carousel-main-%d", adObj.ID)),
+		Class("relative w-full h-64 bg-gray-100 overflow-hidden rounded-t-lg"),
+		mainImage,
+		priceBadge,
+	)
+	return render(c, container)
 }

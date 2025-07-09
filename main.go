@@ -78,6 +78,7 @@ func main() {
 	app.Get("/ad/card/:id", handlers.HandleAdCardPartial)
 	app.Get("/ad/detail/:id", handlers.HandleAdDetailPartial)
 	app.Get("/ad/edit-partial/:id", handlers.AuthRequired, handlers.HandleEditAdPartial)
+	app.Get("/ad/image/:adID/:idx", handlers.HandleAdImagePartial)
 
 	// Ad management
 	app.Get("/ad/:id", handlers.OptionalAuth, handlers.HandleViewAd)
