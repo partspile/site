@@ -93,10 +93,9 @@ func AdDetails(adObj ad.Ad) g.Node {
 	locationStr, flagNode := getDisplayLocationAndFlag(adObj)
 	var locationNode g.Node = nil
 	if locationStr != "" || flagNode != nil {
-		locationNode = P(Class("text-gray-600"), g.Text("Location: "+locationStr))
-		if flagNode != nil {
-			locationNode = Div(locationNode, flagNode)
-		}
+		locationNode = P(Class("text-gray-600"),
+			Span(Class("inline-flex items-center gap-1"), flagNode, g.Text(locationStr)),
+		)
 	}
 
 	return Div(
@@ -197,7 +196,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 		),
 	)
 	if isGrid {
-		// Minimal grid card: image, price badge, title, location, time
+		// Minimal grid card: image, price badge, title/bookmark, age/location
 		locationStr, flagNode := getDisplayLocationAndFlag(ad)
 		bookmarkBtnGrid := g.Node(nil)
 		if userID > 0 {
@@ -223,14 +222,20 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 			),
 			Div(
 				Class("p-2 flex flex-col gap-1"),
-				Div(Class("font-semibold text-base truncate"), g.Text(ad.Title)),
+				// Title and bookmark row
 				Div(
-					Class("flex flex-row items-center gap-1 text-xs text-gray-500"),
+					Class("flex flex-row items-center justify-between"),
+					Div(Class("font-semibold text-base truncate"), g.Text(ad.Title)),
 					bookmarkBtnGrid,
+				),
+				// Age and location row
+				Div(
+					Class("flex flex-row items-center justify-between text-xs text-gray-500"),
 					Div(Class("text-gray-400"), g.Text(agoStr)),
-					Div(Class("flex-grow")),
-					g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
-					flagNode,
+					Div(Class("flex flex-row items-center gap-1"),
+						flagNode,
+						g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
+					),
 				),
 			),
 		), false)
@@ -632,8 +637,7 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 					Class("flex flex-row items-center text-xs text-gray-500"),
 					Div(Class("flex flex-row items-center gap-2"),
 						Div(Class("text-gray-400"), g.Text(agoStr)),
-						g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
-						flagNode,
+						g.If(locationStr != "" || flagNode != nil, Div(Class("flex flex-row items-center gap-1"), flagNode, g.Text(locationStr+""))),
 					),
 					Div(Class("flex-grow")),
 					Div(Class("flex flex-row items-center gap-2 ml-auto"),
