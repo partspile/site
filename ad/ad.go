@@ -60,6 +60,9 @@ type Ad struct {
 	SubCategoryID *int      `json:"subcategory_id,omitempty"`
 	UserID        int       `json:"user_id"`
 	LocationID    int       `json:"location_id"`
+	City          string    `json:"city,omitempty"`
+	AdminArea     string    `json:"admin_area,omitempty"`
+	Country       string    `json:"country,omitempty"`
 	// Runtime fields populated via joins
 	Year          string     `json:"year,omitempty"`
 	Make          string     `json:"make"`
@@ -185,9 +188,11 @@ func GetAdByID(id int) (Ad, AdStatus, bool) {
 func GetAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
 		SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-		       a.user_id, psc.name as subcategory, a.click_count, a.last_clicked_at, a.location_id, a.image_order
+		       a.user_id, psc.name as subcategory, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+		       l.city, l.admin_area, l.country
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		LEFT JOIN Location l ON a.location_id = l.id
 		WHERE a.id = ?
 	`, id)
 
@@ -196,8 +201,10 @@ func GetAd(id int) (Ad, bool) {
 	var lastClickedAt sql.NullTime
 	var locationID sql.NullInt64
 	var imageOrder sql.NullString
+	var city, adminArea, country sql.NullString
 	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
-		&ad.SubCategoryID, &ad.UserID, &subcategory, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder); err != nil {
+		&ad.SubCategoryID, &ad.UserID, &subcategory, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
+		&city, &adminArea, &country); err != nil {
 		fmt.Println("DEBUG GetAd scan error:", err)
 		return Ad{}, false
 	}
@@ -218,6 +225,15 @@ func GetAd(id int) (Ad, bool) {
 
 	if imageOrder.Valid {
 		_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
+	}
+	if city.Valid {
+		ad.City = city.String
+	}
+	if adminArea.Valid {
+		ad.AdminArea = adminArea.String
+	}
+	if country.Valid {
+		ad.Country = country.String
 	}
 
 	// Get vehicle data
@@ -386,7 +402,8 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			       psc.name as subcategory, a.click_count, a.last_clicked_at,
 			       m.name as make_name, y.year, mo.name as model_name, e.name as engine_name,
 			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
-			       a.image_order
+			       a.image_order,
+			       l.city, l.admin_area, l.country
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 			JOIN AdCar ac ON a.id = ac.ad_id
@@ -396,6 +413,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			JOIN Model mo ON c.model_id = mo.id
 			JOIN Engine e ON c.engine_id = e.id
 			LEFT JOIN BookmarkedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
+			LEFT JOIN Location l ON a.location_id = l.id
 			WHERE 1=1
 		`
 		args = append(args, userID)
@@ -439,10 +457,12 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			       psc.name as subcategory, a.click_count, a.last_clicked_at,
 			       NULL as make_name, NULL as year, NULL as model_name, NULL as engine_name,
 			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
-			       a.image_order
+			       a.image_order,
+			       l.city, l.admin_area, l.country
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 			LEFT JOIN BookmarkedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
+			LEFT JOIN Location l ON a.location_id = l.id
 			WHERE 1=1
 		`
 		args = append(args, userID)
@@ -494,10 +514,14 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			engineName    sql.NullString
 			isBookmarked  int
 			imageOrder    sql.NullString
+			city          sql.NullString
+			adminArea     sql.NullString
+			country       sql.NullString
 		)
 
 		if err := rows.Scan(&id, &title, &description, &price, &createdAt,
-			&subcatID, &subcategory, &clickCount, &lastClickedAt, &makeName, &year, &modelName, &engineName, &isBookmarked, &imageOrder); err != nil {
+			&subcatID, &subcategory, &clickCount, &lastClickedAt, &makeName, &year, &modelName, &engineName, &isBookmarked, &imageOrder,
+			&city, &adminArea, &country); err != nil {
 			continue
 		}
 
@@ -547,6 +571,15 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 		}
 
 		ad.Bookmarked = isBookmarked == 1
+		if city.Valid {
+			ad.City = city.String
+		}
+		if adminArea.Valid {
+			ad.AdminArea = adminArea.String
+		}
+		if country.Valid {
+			ad.Country = country.String
+		}
 	}
 
 	// Convert map to sorted slice
@@ -622,7 +655,8 @@ func GetAllAds() ([]Ad, error) {
 			GROUP_CONCAT(DISTINCT y.year) as years,
 			GROUP_CONCAT(DISTINCT mo.name) as models,
 			GROUP_CONCAT(DISTINCT e.name) as engines,
-			a.image_order
+			a.image_order,
+			l.city, l.admin_area, l.country
 		FROM Ad a
 		LEFT JOIN AdCar ac ON a.id = ac.ad_id
 		LEFT JOIN Car c ON ac.car_id = c.id
@@ -630,6 +664,7 @@ func GetAllAds() ([]Ad, error) {
 		LEFT JOIN Year y ON c.year_id = y.id
 		LEFT JOIN Model mo ON c.model_id = mo.id
 		LEFT JOIN Engine e ON c.engine_id = e.id
+		LEFT JOIN Location l ON a.location_id = l.id
 		GROUP BY a.id
 		ORDER BY a.created_at DESC
 	`)
@@ -644,9 +679,11 @@ func GetAllAds() ([]Ad, error) {
 		var make, years, models, engines sql.NullString
 		var locationID sql.NullInt64
 		var imageOrder sql.NullString
+		var city, adminArea, country sql.NullString
 		if err := rows.Scan(
 			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &locationID,
 			&make, &years, &models, &engines, &imageOrder,
+			&city, &adminArea, &country,
 		); err != nil {
 			return nil, err
 		}
@@ -668,6 +705,15 @@ func GetAllAds() ([]Ad, error) {
 		}
 		if imageOrder.Valid {
 			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
+		}
+		if city.Valid {
+			ad.City = city.String
+		}
+		if adminArea.Valid {
+			ad.AdminArea = adminArea.String
+		}
+		if country.Valid {
+			ad.Country = country.String
 		}
 
 		ads = append(ads, ad)

@@ -67,8 +67,8 @@ func formatLocationDisplay(city, adminArea, country string) (string, g.Node) {
 
 // Helper to get display location string and flag for an ad
 func getDisplayLocationAndFlag(adObj ad.Ad) (string, g.Node) {
-	city, adminArea, country, _, _ := ad.GetLocationByID(adObj.LocationID)
-	return formatLocationDisplay(city, adminArea, country)
+	// Use the fields directly from adObj instead of DB lookup
+	return formatLocationDisplay(adObj.City, adObj.AdminArea, adObj.Country)
 }
 
 // Helper to get raw location input for an ad

@@ -49,7 +49,17 @@ func resolveAndStoreLocation(raw string) (int, error) {
 		return 0, nil
 	}
 	// Update Grok prompt
-	systemPrompt := `You are a location resolver for an auto parts website. Given a user input (which may be a address, city, zip code, or country), return a JSON object with the best guess for city, admin_area (state, province, or region), and country. The country field must be a 2-letter ISO country code (e.g., "US" for United States, "CA" for Canada, "GB" for United Kingdom). For US and Canada, the admin_area field must be the official 2-letter code (e.g., "OR" for Oregon, "NY" for New York, "BC" for British Columbia, "ON" for Ontario). For all other countries, use the full name for admin_area. If a field is unknown, leave it blank. Example input: "97333" -> {"city": "Corvallis", "admin_area": "OR", "country": "US"}`
+	systemPrompt := `You are a location resolver for an auto parts website.
+Given a user input (which may be a address, city, zip code, or country),
+return a JSON object with the best guess for city, admin_area (state,
+province, or region), and country. The country field must be a 2-letter
+ISO country code (e.g., "US" for United States, "CA" for Canada, "GB"
+for United Kingdom). For US and Canada, the admin_area field must be the
+official 2-letter code (e.g., "OR" for Oregon, "NY" for New York, "BC"
+for British Columbia, "ON" for Ontario). For all other countries, use
+the full name for admin_area. If a field is unknown, leave it blank.
+Example input: "97333" -> {"city": "Corvallis", "admin_area": "OR",
+"country": "US"}`
 	resp, err := grok.CallGrok(systemPrompt, raw)
 	if err != nil {
 		return 0, err
