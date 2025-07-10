@@ -68,7 +68,7 @@ type Ad struct {
 	Engines       []string   `json:"engines"`
 	Category      string     `json:"category,omitempty"`
 	SubCategory   string     `json:"subcategory,omitempty"`
-	DeletionDate  *time.Time `json:"deletion_date,omitempty"`
+	DeletedAt     *time.Time `json:"deleted_at,omitempty"`
 	Bookmarked    bool       `json:"bookmarked"` // true if bookmarked by current user
 	ClickCount    int        `json:"click_count"`
 	LastClickedAt *time.Time `json:"last_clicked_at,omitempty"`
@@ -77,7 +77,7 @@ type Ad struct {
 
 // IsArchived returns true if the ad has been archived
 func (a Ad) IsArchived() bool {
-	return a.DeletionDate != nil
+	return a.DeletedAt != nil
 }
 
 var db *sql.DB
@@ -683,9 +683,9 @@ func GetAllAds() ([]Ad, error) {
 // GetAllArchivedAds returns all archived ads in the system
 func GetAllArchivedAds() ([]Ad, error) {
 	rows, err := db.Query(`
-		SELECT id, title, description, price, created_at, user_id, deletion_date, location_id, image_order
+		SELECT id, title, description, price, created_at, user_id, deleted_at, location_id, image_order
 		FROM ArchivedAd
-		ORDER BY deletion_date DESC
+		ORDER BY deleted_at DESC
 	`)
 	if err != nil {
 		return nil, err
@@ -695,15 +695,15 @@ func GetAllArchivedAds() ([]Ad, error) {
 	var ads []Ad
 	for rows.Next() {
 		var ad Ad
-		var deletionDate string
+		var deletedAt string
 		var locationID sql.NullInt64
 		var imageOrder sql.NullString
-		err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &deletionDate, &locationID, &imageOrder)
+		err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &deletedAt, &locationID, &imageOrder)
 		if err != nil {
 			return nil, err
 		}
-		if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
-			ad.DeletionDate = &parsedTime
+		if parsedTime, err := time.Parse(time.RFC3339Nano, deletedAt); err == nil {
+			ad.DeletedAt = &parsedTime
 		}
 		if locationID.Valid {
 			ad.LocationID = int(locationID.Int64)
@@ -726,23 +726,23 @@ func GetAllArchivedAds() ([]Ad, error) {
 // GetArchivedAd retrieves an archived ad by ID
 func GetArchivedAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
-		SELECT id, title, description, price, created_at, subcategory_id, user_id, deletion_date, location_id, image_order
+		SELECT id, title, description, price, created_at, subcategory_id, user_id, deleted_at, location_id, image_order
 		FROM ArchivedAd
 		WHERE id = ?
 	`, id)
 
 	var ad Ad
-	var deletionDate string
+	var deletedAt string
 	var locationID sql.NullInt64
 	var imageOrder sql.NullString
 	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
-		&ad.SubCategoryID, &ad.UserID, &deletionDate, &locationID, &imageOrder); err != nil {
+		&ad.SubCategoryID, &ad.UserID, &deletedAt, &locationID, &imageOrder); err != nil {
 		return Ad{}, false
 	}
 
-	// Parse deletion date
-	if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
-		ad.DeletionDate = &parsedTime
+	// Parse deleted_at
+	if parsedTime, err := time.Parse(time.RFC3339Nano, deletedAt); err == nil {
+		ad.DeletedAt = &parsedTime
 	}
 	if locationID.Valid {
 		ad.LocationID = int(locationID.Int64)
@@ -800,8 +800,8 @@ func ArchiveAd(id int) error {
 	var imageOrder sql.NullString
 	_ = tx.QueryRow("SELECT image_order FROM Ad WHERE id = ?", id).Scan(&imageOrder)
 
-	// Archive the ad to ArchivedAd with deletion_date, title, and location
-	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, title, description, price, created_at, subcategory_id, user_id, deletion_date, location_id, image_order)
+	// Archive the ad to ArchivedAd with deleted_at, title, and location
+	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, title, description, price, created_at, subcategory_id, user_id, deleted_at, location_id, image_order)
 		SELECT id, title, description, price, created_at, subcategory_id, user_id, ?, location_id, ? FROM Ad WHERE id = ?`,
 		time.Now().UTC().Format(time.RFC3339Nano), imageOrder.String, id)
 	if err != nil {
@@ -809,8 +809,8 @@ func ArchiveAd(id int) error {
 	}
 
 	// Archive ad-car relationships to ArchivedAdCar
-	_, err = tx.Exec(`INSERT INTO ArchivedAdCar (ad_id, car_id)
-		SELECT ad_id, car_id FROM AdCar WHERE ad_id = ?`, id)
+	_, err = tx.Exec(`INSERT INTO ArchivedAdCar (ad_id, car_id, deleted_at)
+		SELECT ad_id, car_id, ? FROM AdCar WHERE ad_id = ?`, time.Now().UTC().Format(time.RFC3339Nano), id)
 	if err != nil {
 		return err
 	}

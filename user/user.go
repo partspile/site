@@ -27,12 +27,12 @@ type User struct {
 	PasswordHash string
 	CreatedAt    time.Time
 	IsAdmin      bool
-	DeletionDate *time.Time `json:"deletion_date,omitempty"`
+	DeletedAt    *time.Time `json:"deleted_at,omitempty"`
 }
 
 // IsArchived returns true if the user has been archived
 func (u User) IsArchived() bool {
-	return u.DeletionDate != nil
+	return u.DeletedAt != nil
 }
 
 var db *sql.DB
@@ -114,7 +114,7 @@ func GetArchivedUser(id int) (User, bool) {
 
 	// Parse deletion date
 	if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
-		u.DeletionDate = &parsedTime
+		u.DeletedAt = &parsedTime
 	}
 
 	return u, true
@@ -176,7 +176,7 @@ func ArchiveUser(userID int) error {
 	}
 
 	// Archive all ads by this user
-	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, title, description, price, created_at, subcategory_id, user_id, deletion_date)
+	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, title, description, price, created_at, subcategory_id, user_id, deleted_at)
 		SELECT id, title, description, price, created_at, subcategory_id, user_id, ?
 		FROM Ad WHERE user_id = ?`, deletionDate, userID)
 	if err != nil {
@@ -184,11 +184,11 @@ func ArchiveUser(userID int) error {
 	}
 
 	// Archive all ad-car relationships for this user's ads
-	_, err = tx.Exec(`INSERT INTO ArchivedAdCar (ad_id, car_id)
-		SELECT ac.ad_id, ac.car_id
+	_, err = tx.Exec(`INSERT INTO ArchivedAdCar (ad_id, car_id, deleted_at)
+		SELECT ac.ad_id, ac.car_id, ?
 		FROM AdCar ac
 		JOIN Ad a ON a.id = ac.ad_id
-		WHERE a.user_id = ?`, userID)
+		WHERE a.user_id = ?`, deletionDate, userID)
 	if err != nil {
 		return err
 	}
@@ -334,7 +334,7 @@ func GetAllArchivedUsers() ([]User, error) {
 		u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		u.IsAdmin = isAdmin == 1
 		if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
-			u.DeletionDate = &parsedTime
+			u.DeletedAt = &parsedTime
 		}
 		users = append(users, u)
 	}
