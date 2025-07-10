@@ -48,15 +48,16 @@ func resolveAndStoreLocation(raw string) (int, error) {
 	if raw == "" {
 		return 0, nil
 	}
-	systemPrompt := `You are a location resolver for an auto parts website. Given a user input (which may be a city, zip code, or country), return a JSON object with the best guess for city, county, and country. If a field is unknown, leave it blank. Example input: "97333" -> {"city": "Corvallis", "county": "Benton", "country": "USA"}`
+	// Update Grok prompt
+	systemPrompt := `You are a location resolver for an auto parts website. Given a user input (which may be a address, city, zip code, or country), return a JSON object with the best guess for city, admin_area (state, province, or region), and country. The country field must be a 2-letter ISO country code (e.g., "US" for United States, "CA" for Canada, "GB" for United Kingdom). For US and Canada, the admin_area field must be the official 2-letter code (e.g., "OR" for Oregon, "NY" for New York, "BC" for British Columbia, "ON" for Ontario). For all other countries, use the full name for admin_area. If a field is unknown, leave it blank. Example input: "97333" -> {"city": "Corvallis", "admin_area": "OR", "country": "US"}`
 	resp, err := grok.CallGrok(systemPrompt, raw)
 	if err != nil {
 		return 0, err
 	}
 	var loc struct {
-		City    string `json:"city"`
-		County  string `json:"county"`
-		Country string `json:"country"`
+		City      string `json:"city"`
+		AdminArea string `json:"admin_area"`
+		Country   string `json:"country"`
 	}
 	err = json.Unmarshal([]byte(resp), &loc)
 	if err != nil {
@@ -67,7 +68,7 @@ func resolveAndStoreLocation(raw string) (int, error) {
 	var id int
 	err = db.QueryRow("SELECT id FROM Location WHERE raw_text = ?", raw).Scan(&id)
 	if err == sql.ErrNoRows {
-		res, err := db.Exec("INSERT INTO Location (raw_text, city, county, country) VALUES (?, ?, ?, ?)", raw, loc.City, loc.County, loc.Country)
+		res, err := db.Exec("INSERT INTO Location (raw_text, city, admin_area, country) VALUES (?, ?, ?, ?)", raw, loc.City, loc.AdminArea, loc.Country)
 		if err != nil {
 			return 0, err
 		}

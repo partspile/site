@@ -1003,11 +1003,11 @@ func GetAdClickCountForUser(adID int, userID int) (int, error) {
 }
 
 // GetLocationByID fetches a Location by its ID
-func GetLocationByID(id int) (city, country, raw string, err error) {
+func GetLocationByID(id int) (city, adminArea, country, raw string, err error) {
 	if id == 0 {
-		return "", "", "", nil
+		return "", "", "", "", nil
 	}
-	row := db.QueryRow("SELECT city, country, raw_text FROM Location WHERE id = ?", id)
-	err = row.Scan(&city, &country, &raw)
+	row := db.QueryRow("SELECT city, admin_area, country, raw_text FROM Location WHERE id = ?", id)
+	err = row.Scan(&city, &adminArea, &country, &raw)
 	return
 }

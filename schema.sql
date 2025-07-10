@@ -70,8 +70,7 @@ CREATE TABLE Location (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     raw_text TEXT UNIQUE NOT NULL,
     city TEXT,
-    state TEXT,
-    county TEXT,
+    admin_area TEXT,
     country TEXT
 );
 

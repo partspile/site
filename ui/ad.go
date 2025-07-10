@@ -15,24 +15,65 @@ import (
 	"github.com/parts-pile/site/user"
 )
 
-// Helper to get display location string for an ad
-func getDisplayLocation(adObj ad.Ad) string {
-	city, country, _, err := ad.GetLocationByID(adObj.LocationID)
-	if err != nil {
+// Returns the Unicode flag for a given country code (e.g., "US" -> 🇺🇸)
+func countryFlag(country string) string {
+	if len(country) != 2 {
 		return ""
 	}
-	if city != "" && country != "" {
-		return city + ", " + country
+	code := strings.ToUpper(country)
+	return string(rune(int32(code[0])-'A'+0x1F1E6)) + string(rune(int32(code[1])-'A'+0x1F1E6))
+}
+
+// Returns the display string and flag for a location, per the table
+func formatLocationDisplay(city, adminArea, country string) (string, g.Node) {
+	city = strings.TrimSpace(city)
+	adminArea = strings.TrimSpace(adminArea)
+	country = strings.TrimSpace(country)
+
+	flag := countryFlag(country)
+	var flagNode g.Node
+	if flag != "" {
+		flagNode = Span(Style("font-size: 1.5em; vertical-align: middle;"), g.Text(flag))
+	} else {
+		flagNode = nil
 	}
-	if country != "" {
-		return country
+
+	if city == "" && adminArea == "" && country == "" {
+		return "", nil
 	}
-	return ""
+	if city == "" && adminArea == "" && country != "" {
+		return "", flagNode
+	}
+	if city == "" && adminArea != "" && country == "" {
+		return adminArea, nil
+	}
+	if city == "" && adminArea != "" && country != "" {
+		return adminArea, flagNode
+	}
+	if city != "" && adminArea == "" && country == "" {
+		return city, nil
+	}
+	if city != "" && adminArea == "" && country != "" {
+		return city, flagNode
+	}
+	if city != "" && adminArea != "" && country == "" {
+		return city + ", " + adminArea, nil
+	}
+	if city != "" && adminArea != "" && country != "" {
+		return city + ", " + adminArea, flagNode
+	}
+	return "", nil
+}
+
+// Helper to get display location string and flag for an ad
+func getDisplayLocationAndFlag(adObj ad.Ad) (string, g.Node) {
+	city, adminArea, country, _, _ := ad.GetLocationByID(adObj.LocationID)
+	return formatLocationDisplay(city, adminArea, country)
 }
 
 // Helper to get raw location input for an ad
 func getRawLocation(adObj ad.Ad) string {
-	_, _, raw, err := ad.GetLocationByID(adObj.LocationID)
+	_, _, _, raw, err := ad.GetLocationByID(adObj.LocationID)
 	if err != nil {
 		return ""
 	}
@@ -49,10 +90,13 @@ func AdDetails(adObj ad.Ad) g.Node {
 	sort.Strings(sortedModels)
 	sort.Strings(sortedEngines)
 
-	locationStr := getDisplayLocation(adObj)
+	locationStr, flagNode := getDisplayLocationAndFlag(adObj)
 	var locationNode g.Node = nil
-	if locationStr != "" {
+	if locationStr != "" || flagNode != nil {
 		locationNode = P(Class("text-gray-600"), g.Text("Location: "+locationStr))
+		if flagNode != nil {
+			locationNode = Div(locationNode, flagNode)
+		}
 	}
 
 	return Div(
@@ -154,7 +198,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 	)
 	if isGrid {
 		// Minimal grid card: image, price badge, title, location, time
-		location := getDisplayLocation(ad)
+		locationStr, flagNode := getDisplayLocationAndFlag(ad)
 		bookmarkBtnGrid := g.Node(nil)
 		if userID > 0 {
 			bookmarkBtnGrid = Button(
@@ -185,7 +229,8 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 					bookmarkBtnGrid,
 					Div(Class("text-gray-400"), g.Text(agoStr)),
 					Div(Class("flex-grow")),
-					g.If(location != "", Div(Class("text-xs text-gray-500"), g.Text(location))),
+					g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
+					flagNode,
 				),
 			),
 		), false)
@@ -545,7 +590,7 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 			days := int(ago.Hours()) / 24
 			agoStr = fmt.Sprintf("%d days ago", days)
 		}
-		location := getDisplayLocation(ad)
+		locationStr, flagNode := getDisplayLocationAndFlag(ad)
 		// Carousel main image area (HTMX target is the child, not the container)
 		mainImageArea := Div(
 			Class("relative w-full aspect-square bg-gray-100 overflow-hidden rounded-t-lg flex items-center justify-center"),
@@ -587,7 +632,8 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 					Class("flex flex-row items-center text-xs text-gray-500"),
 					Div(Class("flex flex-row items-center gap-2"),
 						Div(Class("text-gray-400"), g.Text(agoStr)),
-						g.If(location != "", Div(Class("text-xs text-gray-500"), g.Text(location))),
+						g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
+						flagNode,
 					),
 					Div(Class("flex-grow")),
 					Div(Class("flex flex-row items-center gap-2 ml-auto"),
