@@ -10,6 +10,7 @@ import (
 	"os/exec"
 
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type MakeYearModel map[string]map[string]map[string][]string
@@ -109,6 +110,35 @@ func main() {
 			} else if err != nil {
 				log.Printf("PartSubCategory lookup error: %v", err)
 			}
+		}
+	}
+
+	// Import user.json
+	userFile := "cmd/rebuild_db/user.json"
+	userData, err := ioutil.ReadFile(userFile)
+	if err != nil {
+		log.Fatalf("Failed to read user.json: %v", err)
+	}
+	type UserImport struct {
+		Name     string `json:"name"`
+		Password string `json:"password"`
+		Phone    string `json:"phone"`
+	}
+	var users []UserImport
+	if err := json.Unmarshal(userData, &users); err != nil {
+		log.Fatalf("Failed to parse user.json: %v", err)
+	}
+	for _, u := range users {
+		hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+		if err != nil {
+			log.Printf("Failed to hash password for user %s: %v", u.Name, err)
+			continue
+		}
+		_, err = db.Exec(`INSERT INTO User (name, phone, password_hash) VALUES (?, ?, ?)`, u.Name, u.Phone, string(hash))
+		if err != nil {
+			log.Printf("Failed to insert user %s: %v", u.Name, err)
+		} else {
+			fmt.Printf("Inserted user: %s\n", u.Name)
 		}
 	}
 

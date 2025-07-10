@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -125,6 +127,20 @@ func HandleRegister(c *fiber.Ctx) error {
 func HandleRegisterSubmission(c *fiber.Ctx) error {
 	name := c.FormValue("name")
 	phone := c.FormValue("phone")
+	phone = strings.TrimSpace(phone)
+	if strings.HasPrefix(phone, "+") {
+		matched, _ := regexp.MatchString(`^\+[1-9][0-9]{7,14}$`, phone)
+		if !matched {
+			return ValidationErrorResponse(c, "Phone must be in international format, e.g. +12025550123")
+		}
+	} else {
+		digits := regexp.MustCompile(`\D`).ReplaceAllString(phone, "")
+		if len(digits) == 10 {
+			phone = "+1" + digits
+		} else {
+			return ValidationErrorResponse(c, "US/Canada numbers must have 10 digits")
+		}
+	}
 	password := c.FormValue("password")
 	password2 := c.FormValue("password2")
 

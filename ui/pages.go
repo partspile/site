@@ -3,6 +3,7 @@ package ui
 import (
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
+	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/user"
 )
@@ -31,7 +32,19 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 						TextInput("name", "name", ""),
 					),
 					FormGroup("Phone Number", "phone",
-						TextInput("phone", "phone", ""),
+						Div(
+							Input(
+								Type("text"),
+								ID("phone"),
+								Name("phone"),
+								Class("w-full p-2 border rounded"),
+								g.Attr("placeholder", "+12025550123 or 202-555-0123"),
+							),
+							Span(
+								Class("text-xs text-gray-500 mt-1"),
+								g.Text("Enter your phone in international format (e.g. +12025550123) or US/Canada format (e.g. 503-523-8780)."),
+							),
+						),
 					),
 					FormGroup("Password", "password",
 						PasswordInput("password", "password"),
