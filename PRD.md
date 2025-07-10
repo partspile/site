@@ -337,4 +337,14 @@ flowchart TD
   F --> L
 ```
 
---- 
+---
+
+## Database Rebuild Command
+
+A new command in `cmd/rebuild_db/` will:
+- Delete any existing `project.db`.
+- Create a new `project.db` using the schema in `schema.sql`.
+- Import vehicle data from `make-year-model.json`.
+- Import part category/subcategory data from `part.json` (now located in `cmd/rebuild_db/`).
+
+This command ensures the database is always rebuilt from a clean slate and is idempotent. 

@@ -4596,6 +4596,294 @@
     }
   },
   "AUDI": {
+    "1969": {
+      "100": [
+        "1.8L L4"
+      ],
+      "SUPER 90": [
+        "1.8L L4"
+      ]
+    },
+    "1970": {
+      "100": [
+        "1.8L L4"
+      ],
+      "SUPER 90": [
+        "1.8L L4"
+      ]
+    },
+    "1971": {
+      "100": [
+        "1.8L L4"
+      ],
+      "SUPER 90": [
+        "1.8L L4"
+      ]
+    },
+    "1972": {
+      "100": [
+        "1.9L L4"
+      ],
+      "SUPER 90": [
+        "1.8L L4"
+      ]
+    },
+    "1973": {
+      "100": [
+        "1.9L L4"
+      ],
+      "FOX": [
+        "1.5L L4"
+      ]
+    },
+    "1974": {
+      "100": [
+        "1.9L L4"
+      ],
+      "FOX": [
+        "1.5L L4"
+      ]
+    },
+    "1975": {
+      "100": [
+        "1.9L L4"
+      ],
+      "FOX": [
+        "1.6L L4"
+      ]
+    },
+    "1976": {
+      "100": [
+        "1.9L L4"
+      ],
+      "FOX": [
+        "1.6L L4"
+      ]
+    },
+    "1977": {
+      "100": [
+        "1.9L L4"
+      ],
+      "FOX": [
+        "1.6L L4"
+      ]
+    },
+    "1978": {
+      "5000": [
+        "2.0L L5 DIESEL",
+        "2.2L L5"
+      ],
+      "FOX": [
+        "1.6L L4"
+      ]
+    },
+    "1979": {
+      "5000": [
+        "2.0L L5 DIESEL",
+        "2.2L L5"
+      ],
+      "FOX": [
+        "1.6L L4"
+      ]
+    },
+    "1980": {
+      "4000": [
+        "1.6L L4",
+        "1.6L L4 DIESEL",
+        "2.2L L5"
+      ],
+      "5000": [
+        "2.0L L5 DIESEL",
+        "2.2L L5",
+        "2.2L L5 Turbocharged"
+      ]
+    },
+    "1981": {
+      "4000": [
+        "1.6L L4 DIESEL",
+        "1.7L L4",
+        "2.2L L5"
+      ],
+      "5000": [
+        "2.0L L5 DIESEL",
+        "2.2L L5",
+        "2.2L L5 Turbocharged"
+      ],
+      "COUPE": [
+        "2.2L L5"
+      ]
+    },
+    "1982": {
+      "4000": [
+        "1.6L L4 DIESEL",
+        "1.6L L4 DIESEL Turbocharged",
+        "1.7L L4",
+        "2.2L L5"
+      ],
+      "5000": [
+        "2.0L L5 DIESEL Turbocharged",
+        "2.2L L5",
+        "2.2L L5 Turbocharged"
+      ],
+      "COUPE": [
+        "2.2L L5"
+      ]
+    },
+    "1983": {
+      "4000": [
+        "1.6L L4 DIESEL",
+        "1.6L L4 DIESEL Turbocharged",
+        "1.7L L4",
+        "2.2L L5"
+      ],
+      "5000": [
+        "2.0L L5 DIESEL",
+        "2.0L L5 DIESEL Turbocharged",
+        "2.2L L5",
+        "2.2L L5 Turbocharged"
+      ],
+      "COUPE": [
+        "2.2L L5"
+      ],
+      "QUATTRO": [
+        "2.2L L5 Turbocharged"
+      ]
+    },
+    "1984": {
+      "4000": [
+        "1.6L L4 DIESEL",
+        "1.6L L4 DIESEL Turbocharged",
+        "1.8L L4",
+        "2.2L L5"
+      ],
+      "5000": [
+        "2.0L L5 DIESEL",
+        "2.0L L5 DIESEL Turbocharged",
+        "2.2L L5",
+        "2.2L L5 Turbocharged"
+      ],
+      "COUPE": [
+        "2.2L L5"
+      ],
+      "QUATTRO": [
+        "2.2L L5 Turbocharged"
+      ]
+    },
+    "1985": {
+      "4000": [
+        "1.6L L4 DIESEL",
+        "1.6L L4 DIESEL Turbocharged",
+        "1.8L L4",
+        "2.2L L5"
+      ],
+      "5000": [
+        "2.0L L5 DIESEL",
+        "2.0L L5 DIESEL Turbocharged",
+        "2.2L L5",
+        "2.2L L5 Turbocharged"
+      ],
+      "COUPE": [
+        "2.2L L5"
+      ],
+      "QUATTRO": [
+        "2.2L L5 Turbocharged"
+      ]
+    },
+    "1986": {
+      "4000": [
+        "1.6L L4 DIESEL",
+        "1.6L L4 DIESEL Turbocharged",
+        "1.8L L4",
+        "2.2L L5"
+      ],
+      "5000": [
+        "2.0L L5 DIESEL",
+        "2.2L L5",
+        "2.2L L5 Turbocharged"
+      ],
+      "COUPE": [
+        "2.2L L5"
+      ],
+      "QUATTRO": [
+        "2.2L L5 Turbocharged"
+      ]
+    },
+    "1987": {
+      "4000": [
+        "1.8L L4",
+        "2.2L L5",
+        "2.3L L5"
+      ],
+      "5000": [
+        "2.0L L5 DIESEL",
+        "2.2L L5",
+        "2.2L L5 Turbocharged",
+        "2.3L L5"
+      ],
+      "COUPE": [
+        "2.2L L5",
+        "2.3L L5"
+      ]
+    },
+    "1988": {
+      "4000": [
+        "2.3L L5"
+      ],
+      "5000": [
+        "2.0L L5 DIESEL",
+        "2.2L L5",
+        "2.2L L5 Turbocharged",
+        "2.3L L5"
+      ],
+      "80": [
+        "2.0L L4",
+        "2.3L L5"
+      ],
+      "90": [
+        "2.0L L4",
+        "2.3L L5"
+      ]
+    },
+    "1989": {
+      "100": [
+        "2.3L L5"
+      ],
+      "200": [
+        "2.2L L5 Turbocharged"
+      ],
+      "4000": [
+        "2.3L L5"
+      ],
+      "80": [
+        "2.0L L4",
+        "2.3L L5"
+      ],
+      "90": [
+        "2.3L L5"
+      ]
+    },
+    "1990": {
+      "100": [
+        "2.3L L5"
+      ],
+      "200": [
+        "2.2L L5 Turbocharged"
+      ],
+      "80": [
+        "2.0L L4",
+        "2.3L L5"
+      ],
+      "90": [
+        "2.3L L5 DOHC",
+        "2.3L L5 SOHC"
+      ],
+      "COUPE": [
+        "2.3L L5"
+      ],
+      "V8": [
+        "3.6L V8"
+      ]
+    },
     "1991": {
       "100": [
         "2.3L L5"
@@ -6521,6 +6809,405 @@
       ],
       "SQ8": [
         "4.0L V8 Turbocharged"
+      ]
+    }
+  },
+  "AUSTIN": {
+    "1948": {
+      "A125": [
+        "4.0L 244cid L6"
+      ],
+      "A40": [
+        "1.2L 73cid L4"
+      ]
+    },
+    "1949": {
+      "A125": [
+        "4.0L 244cid L6"
+      ],
+      "A40": [
+        "1.2L 73cid L4"
+      ],
+      "A70": [
+        "2.2L 134cid L4"
+      ],
+      "A90": [
+        "2.7L 162cid L4"
+      ]
+    },
+    "1950": {
+      "ATLANTIC": [
+        "2.7L L4"
+      ],
+      "COUNTRYMAN": [
+        "1.2L L4"
+      ],
+      "DEVON": [
+        "1.2L L4"
+      ],
+      "HEREFORD": [
+        "2.2L L4"
+      ],
+      "SHEERLINE": [
+        "4.0L L6"
+      ]
+    },
+    "1951": {
+      "ATLANTIC": [
+        "2.7L L4"
+      ],
+      "COUNTRYMAN": [
+        "1.2L L4"
+      ],
+      "DEVON": [
+        "1.2L L4"
+      ],
+      "HEREFORD": [
+        "2.2L L4"
+      ],
+      "SHEERLINE": [
+        "4.0L L6"
+      ],
+      "SPORTS": [
+        "1.2L L4"
+      ]
+    },
+    "1952": {
+      "A125": [
+        "4.0L L6"
+      ],
+      "ATLANTIC": [
+        "2.7L L4"
+      ],
+      "COUNTRYMAN": [
+        "1.2L L4"
+      ],
+      "SEVEN": [
+        "803cc L4"
+      ],
+      "SHEERLINE": [
+        "4.0L L6"
+      ],
+      "SOMERSET": [
+        "1.2L L4"
+      ],
+      "SPORTS": [
+        "1.2L L4"
+      ]
+    },
+    "1953": {
+      "A125": [
+        "4.0L L6"
+      ],
+      "SEVEN": [
+        "803cc L4"
+      ],
+      "SOMERSET": [
+        "1.2L L4"
+      ],
+      "SPORTS": [
+        "1.2L L4"
+      ]
+    },
+    "1954": {
+      "A125": [
+        "4.0L L6"
+      ],
+      "COUNTRYMAN": [
+        "1.2L L4"
+      ]
+    },
+    "1955": {
+      "A30": [
+        "803cc L4"
+      ],
+      "A40": [
+        "1.2L L4"
+      ],
+      "A90": [
+        "2.6L L6"
+      ],
+      "CAMBRIDGE": [
+        "1.5L L4"
+      ],
+      "WESTMINSTER": [
+        "2.6L L6"
+      ]
+    },
+    "1956": {
+      "A30": [
+        "803cc L4"
+      ],
+      "A35": [
+        "948cc L4"
+      ],
+      "A40": [
+        "1.2L L4"
+      ],
+      "A90": [
+        "2.6L L6"
+      ],
+      "CAMBRIDGE": [
+        "1.5L L4"
+      ],
+      "WESTMINSTER": [
+        "2.6L L6"
+      ]
+    },
+    "1957": {
+      "A30": [
+        "948cc L4"
+      ],
+      "A35": [
+        "948cc L4"
+      ],
+      "A40": [
+        "1.2L L4"
+      ],
+      "CAMBRIDGE": [
+        "1.5L L4"
+      ],
+      "WESTMINSTER": [
+        "2.6L L6"
+      ]
+    },
+    "1958": {
+      "A30": [
+        "948cc L4"
+      ],
+      "A35": [
+        "948cc L4"
+      ],
+      "A40": [
+        "948cc L4"
+      ],
+      "CAMBRIDGE": [
+        "1.5L L4"
+      ]
+    },
+    "1959": {
+      "A30": [
+        "948cc L4"
+      ],
+      "A35": [
+        "948cc L4"
+      ],
+      "A40": [
+        "948cc L4"
+      ],
+      "CAMBRIDGE": [
+        "1.5L L4"
+      ],
+      "MINI": [
+        "848cc L4"
+      ]
+    },
+    "1960": {
+      "A30": [
+        "948cc L4"
+      ],
+      "A40": [
+        "948cc L4"
+      ],
+      "CAMBRIDGE": [
+        "1.5L L4"
+      ],
+      "MINI": [
+        "848cc L4"
+      ],
+      "WESTMINSTER": [
+        "2.9L L6"
+      ]
+    },
+    "1961": {
+      "A30": [
+        "948cc L4"
+      ],
+      "A40": [
+        "948cc L4"
+      ],
+      "CAMBRIDGE": [
+        "1.5L L4"
+      ],
+      "MINI": [
+        "848cc L4"
+      ],
+      "MINI 850": [
+        "848cc L4"
+      ],
+      "MINI COOPER": [
+        "997cc L4"
+      ],
+      "WESTMINSTER": [
+        "2.9L L6"
+      ]
+    },
+    "1962": {
+      "A30": [
+        "948cc L4"
+      ],
+      "A40": [
+        "948cc L4"
+      ],
+      "A60": [
+        "1.6L L4"
+      ],
+      "CAMBRIDGE": [
+        "1.6L L4"
+      ],
+      "MINI": [
+        "848cc L4"
+      ],
+      "MINI 850": [
+        "848cc L4"
+      ],
+      "MINI COOPER": [
+        "998cc L4"
+      ]
+    },
+    "1963": {
+      "A60": [
+        "1.6L L4"
+      ],
+      "CAMBRIDGE": [
+        "1.6L L4"
+      ],
+      "MINI": [
+        "848cc L4"
+      ],
+      "MINI 850": [
+        "848cc L4"
+      ],
+      "MINI COOPER": [
+        "1.1L L4",
+        "998cc L4"
+      ],
+      "PRINCESS": [
+        "3.9L L6"
+      ]
+    },
+    "1964": {
+      "A60": [
+        "1.6L L4"
+      ],
+      "CAMBRIDGE": [
+        "1.6L L4"
+      ],
+      "MINI": [
+        "848cc L4"
+      ],
+      "MINI 850": [
+        "848cc L4"
+      ],
+      "MINI COOPER": [
+        "1.1L L4",
+        "1.3L L4",
+        "970cc L4",
+        "998cc L4"
+      ],
+      "MINI MOKE": [
+        "848cc L4"
+      ],
+      "PRINCESS": [
+        "3.9L L6"
+      ]
+    },
+    "1965": {
+      "MINI": [
+        "848cc L4"
+      ],
+      "MINI 850": [
+        "848cc L4"
+      ],
+      "MINI COOPER": [
+        "1.3L L4",
+        "970cc L4",
+        "998cc L4"
+      ],
+      "MINI MOKE": [
+        "848cc L4"
+      ],
+      "PRINCESS": [
+        "3.9L L6"
+      ]
+    },
+    "1966": {
+      "MINI": [
+        "848cc L4"
+      ],
+      "MINI 850": [
+        "848cc L4"
+      ],
+      "MINI COOPER": [
+        "1.3L L4",
+        "970cc L4",
+        "997cc L4"
+      ],
+      "MINI MOKE": [
+        "848cc L4"
+      ],
+      "PRINCESS": [
+        "3.9L L6"
+      ]
+    },
+    "1967": {
+      "MINI 850": [
+        "848cc L4"
+      ],
+      "MINI COOPER": [
+        "1.3L L4",
+        "970cc L4",
+        "997cc L4"
+      ]
+    },
+    "1968": {
+      "AMERICA": [
+        "1.3L L4"
+      ],
+      "MINI COOPER": [
+        "1.3L L4",
+        "970cc L4",
+        "997cc L4"
+      ]
+    },
+    "1969": {
+      "AMERICA": [
+        "1.3L L4"
+      ],
+      "MINI COOPER": [
+        "1.3L L4",
+        "970cc L4",
+        "997cc L4"
+      ]
+    },
+    "1970": {
+      "AMERICA": [
+        "1.3L L4"
+      ]
+    },
+    "1971": {
+      "AMERICA": [
+        "1.3L L4"
+      ]
+    },
+    "1972": {
+      "AMERICA": [
+        "1.3L L4"
+      ]
+    },
+    "1973": {
+      "MARINA": [
+        "1.8L L4"
+      ]
+    },
+    "1974": {
+      "MARINA": [
+        "1.8L L4"
+      ]
+    },
+    "1975": {
+      "MARINA": [
+        "1.8L L4"
       ]
     }
   }

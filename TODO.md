@@ -87,3 +87,7 @@
 - **Issue**: Repeated user extraction and permission checking patterns
 - **Action**: Centralized user context handling and permission checks
 - **Implementation**: Added `CurrentUser`, `RequireAdmin`, and `RequireOwnership` helpers to `handlers/auth.go`. All handlers now use these utilities for extracting the current user, checking admin status, and verifying resource ownership. Removed the old `ValidateOwnership` function and updated all usages 
+- Remove old `cmd/import_make_year_model` command and replace with `cmd/rebuild_db`.
+- Move `part.json` into `cmd/rebuild_db/`.
+- New `rebuild_db` command deletes old `project.db`, creates new from `schema.sql`, and imports both `make-year-model.json` and `part.json`.
+- Update documentation to reflect new workflow. 

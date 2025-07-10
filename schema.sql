@@ -48,8 +48,6 @@ CREATE TABLE Car (
     UNIQUE (make_id, year_id, model_id, engine_id)
 );
 CREATE INDEX idx_car_make_year_model_engine ON Car(make_id, year_id, model_id, engine_id);
-CREATE INDEX idx_adcar_car_id ON AdCar(car_id);
-CREATE INDEX idx_adcar_ad_id ON AdCar(ad_id);
 
 -- Part tables
 CREATE TABLE PartCategory (
@@ -144,6 +142,8 @@ CREATE TABLE AdCar (
     FOREIGN KEY (car_id) REFERENCES Car(id),
     PRIMARY KEY (ad_id, car_id)
 );
+CREATE INDEX idx_adcar_car_id ON AdCar(car_id);
+CREATE INDEX idx_adcar_ad_id ON AdCar(ad_id);
 
 CREATE TABLE ArchivedAdCar (
     ad_id INTEGER NOT NULL,

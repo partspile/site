@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -14,9 +15,34 @@ import (
 type MakeYearModel map[string]map[string]map[string][]string
 
 func main() {
-	jsonFile := "make-year-model.json"
+	jsonFile := "cmd/rebuild_db/make-year-model.json"
+	partFile := "cmd/rebuild_db/part.json"
 	dbFile := "project.db"
+	schemaFile := "schema.sql"
 
+	// Remove old DB if exists
+	if _, err := os.Stat(dbFile); err == nil {
+		if err := os.Remove(dbFile); err != nil {
+			log.Fatalf("Failed to remove old DB: %v", err)
+		}
+	}
+
+	// Create new DB from schema.sql
+	cmd := exec.Command("sqlite3", dbFile, fmt.Sprintf(".read %s", schemaFile))
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		log.Fatalf("Failed to create DB from schema.sql: %v", err)
+	}
+
+	// Open DB
+	db, err := sql.Open("sqlite3", dbFile)
+	if err != nil {
+		log.Fatalf("Failed to open DB: %v", err)
+	}
+	defer db.Close()
+
+	// Import make-year-model.json
 	f, err := os.Open(jsonFile)
 	if err != nil {
 		log.Fatalf("Failed to open JSON: %v", err)
@@ -30,12 +56,6 @@ func main() {
 	if err := json.Unmarshal(data, &mym); err != nil {
 		log.Fatalf("Failed to parse JSON: %v", err)
 	}
-	db, err := sql.Open("sqlite3", dbFile)
-	if err != nil {
-		log.Fatalf("Failed to open DB: %v", err)
-	}
-	defer db.Close()
-
 	for make, years := range mym {
 		makeID := getOrInsert(db, "Make", "name", make)
 		for year, models := range years {
@@ -65,7 +85,34 @@ func main() {
 			}
 		}
 	}
-	fmt.Println("Import complete.")
+
+	// Import part.json
+	partData, err := ioutil.ReadFile(partFile)
+	if err != nil {
+		log.Fatalf("Failed to read part.json: %v", err)
+	}
+	var partMap map[string][]string
+	if err := json.Unmarshal(partData, &partMap); err != nil {
+		log.Fatalf("Failed to parse part.json: %v", err)
+	}
+	for cat, subcats := range partMap {
+		catID := getOrInsert(db, "PartCategory", "name", cat)
+		for _, subcat := range subcats {
+			// Insert subcategory if not exists
+			var subcatID int
+			err := db.QueryRow(`SELECT id FROM PartSubCategory WHERE category_id=? AND name=?`, catID, subcat).Scan(&subcatID)
+			if err == sql.ErrNoRows {
+				_, err := db.Exec(`INSERT INTO PartSubCategory (category_id, name) VALUES (?, ?)`, catID, subcat)
+				if err != nil {
+					log.Printf("Failed to insert PartSubCategory: %v", err)
+				}
+			} else if err != nil {
+				log.Printf("PartSubCategory lookup error: %v", err)
+			}
+		}
+	}
+
+	fmt.Println("Database rebuild and import complete.")
 }
 
 func getOrInsert(db *sql.DB, table, col, val string) int {
