@@ -17,11 +17,11 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 
 	u, err := user.GetUserByName(name)
 	if err != nil {
-		return ValidationErrorResponseWithStatus(c, "Invalid username or password", fiber.StatusUnauthorized)
+		return ValidationErrorResponse(c, "Invalid username or password")
 	}
 
 	if err := VerifyPassword(u.PasswordHash, password); err != nil {
-		return ValidationErrorResponseWithStatus(c, "Invalid username or password", fiber.StatusUnauthorized)
+		return ValidationErrorResponse(c, "Invalid username or password")
 	}
 
 	store := c.Locals("session_store").(*session.Store)
