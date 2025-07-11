@@ -626,13 +626,22 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 				return nodes
 			}()),
 		)
+		closeBtn := Button(
+			Type("button"),
+			Class("absolute -top-4 -right-4 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
+			hx.Get(fmt.Sprintf("/ad/card/%d?view=grid", ad.ID)),
+			hx.Target(htmxTarget),
+			hx.Swap("outerHTML"),
+			g.Text("×"),
+		)
 		return AdGridWrapper(ad, Div(
-			Class("border rounded-lg shadow-lg bg-white flex flex-col"),
+			Class("border rounded-lg shadow-lg bg-white flex flex-col relative"),
+			closeBtn,
 			mainImageArea,
 			thumbnails,
 			Div(
 				Class("p-4 flex flex-col gap-2"),
-				// Title and buttons row
+				// Title and buttons row (remove close button from here)
 				Div(
 					Class("flex flex-row items-center justify-between mb-2"),
 					Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
@@ -640,14 +649,6 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 						bookmarkBtn,
 						editBtn,
 						deleteBtn,
-						Button(
-							Type("button"),
-							Class("ml-2 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none z-20"),
-							hx.Get(fmt.Sprintf("/ad/card/%d?view=grid", ad.ID)),
-							hx.Target(htmxTarget),
-							hx.Swap("outerHTML"),
-							g.Text("×"),
-						),
 					),
 				),
 				// Age and location row
