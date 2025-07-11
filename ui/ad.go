@@ -632,15 +632,11 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 			thumbnails,
 			Div(
 				Class("p-4 flex flex-col gap-2"),
-				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
+				// Title and buttons row
 				Div(
-					Class("flex flex-row items-center text-xs text-gray-500"),
-					Div(Class("flex flex-row items-center gap-2"),
-						Div(Class("text-gray-400"), g.Text(agoStr)),
-						g.If(locationStr != "" || flagNode != nil, Div(Class("flex flex-row items-center gap-1"), flagNode, g.Text(locationStr+""))),
-					),
-					Div(Class("flex-grow")),
-					Div(Class("flex flex-row items-center gap-2 ml-auto"),
+					Class("flex flex-row items-center justify-between mb-2"),
+					Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
+					Div(Class("flex flex-row items-center gap-2 ml-2"),
 						bookmarkBtn,
 						editBtn,
 						deleteBtn,
@@ -654,8 +650,18 @@ func AdDetailPartial(ad ad.Ad, bookmarked bool, userID int, view ...string) g.No
 						),
 					),
 				),
+				// Age and location row
+				Div(
+					Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
+					Div(Class("text-gray-400"), g.Text(agoStr)),
+					Div(Class("flex flex-row items-center gap-1"),
+						flagNode,
+						g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
+					),
+				),
+				// Description
+				Div(Class("text-base mt-2"), g.Text(ad.Description)),
 			),
-			Div(Class("text-base mt-2"), g.Text(ad.Description)),
 		), true)
 	}
 
