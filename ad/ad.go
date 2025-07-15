@@ -1048,6 +1048,24 @@ func GetAdClickCountForUser(adID int, userID int) (int, error) {
 	return count, nil
 }
 
+// GetRecentlyClickedAdIDsByUser returns ad IDs the user has clicked, most recent first.
+func GetRecentlyClickedAdIDsByUser(userID, limit int) ([]int, error) {
+	rows, err := db.Query(`SELECT ad_id FROM UserAdClick WHERE user_id = ? ORDER BY last_clicked_at DESC LIMIT ?`, userID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var adIDs []int
+	for rows.Next() {
+		var adID int
+		if err := rows.Scan(&adID); err != nil {
+			continue
+		}
+		adIDs = append(adIDs, adID)
+	}
+	return adIDs, nil
+}
+
 // GetLocationByID fetches a Location by its ID
 func GetLocationByID(id int) (city, adminArea, country, raw string, err error) {
 	if id == 0 {

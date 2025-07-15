@@ -207,3 +207,11 @@ CREATE TABLE PayoutFund (
     balance REAL NOT NULL,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- User embedding table for personalized vector search
+CREATE TABLE UserEmbedding (
+    user_id INTEGER PRIMARY KEY,
+    embedding BLOB NOT NULL,
+    updated_at DATETIME NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES User(id)
+);

@@ -3,7 +3,10 @@ package vector
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
+
+	"database/sql"
 
 	pinecone "github.com/pinecone-io/go-pinecone/v4/pinecone"
 	genai "google.golang.org/genai"
@@ -24,19 +27,27 @@ var (
 	pineconeIndex  *pinecone.IndexConnection
 )
 
+var db *sql.DB
+
+// InitDB sets the database connection for the vector package
+func InitDB(database *sql.DB) {
+	db = database
+}
+
 // InitGeminiClient initializes the Gemini embedding client
 func InitGeminiClient(apiKey string) error {
 	if apiKey == "" {
-		apiKey = os.Getenv("GENAI_API_KEY")
+		apiKey = os.Getenv("GEMINI_API_KEY")
 	}
 	if apiKey == "" {
 		return fmt.Errorf("missing Gemini API key")
 	}
-	// TODO: Use correct genai.NewClient option for API key
-	// geminiClient, err := genai.NewClient(context.Background(), option.WithAPIKey(apiKey))
-	// if err != nil {
-	// 	return err
-	// }
+	// The client gets the API key from the environment variable `GEMINI_API_KEY`
+	client, err := genai.NewClient(context.Background(), nil)
+	if err != nil {
+		return err
+	}
+	geminiClient = client
 	return nil
 }
 
@@ -84,8 +95,9 @@ func EmbedText(text string) ([]float32, error) {
 	if geminiClient == nil {
 		return nil, fmt.Errorf("Gemini client not initialized")
 	}
+	log.Printf("[embedding] Calculating embedding vector for text: %.80q", text)
 	ctx := context.Background()
-	resp, err := geminiClient.Models.EmbedContent(ctx, "gemini-embedding-001", genai.Text(text), nil)
+	resp, err := geminiClient.Models.EmbedContent(ctx, "embedding-001", genai.Text(text), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Gemini embedding API error: %w", err)
 	}
@@ -159,6 +171,54 @@ func QuerySimilarAds(embedding []float32, topK int, cursor string) ([]AdResult, 
 
 // AggregateEmbeddings computes a weighted mean of multiple embeddings
 func AggregateEmbeddings(vectors [][]float32, weights []float32) []float32 {
-	// TODO: Implement weighted mean aggregation
+	if len(vectors) == 0 || len(weights) == 0 || len(vectors) != len(weights) {
+		return nil
+	}
+	vecLen := len(vectors[0])
+	result := make([]float32, vecLen)
+	var totalWeight float32
+	for i, vec := range vectors {
+		if len(vec) != vecLen {
+			// Skip vectors of mismatched length
+			continue
+		}
+		w := weights[i]
+		totalWeight += w
+		for j := 0; j < vecLen; j++ {
+			result[j] += vec[j] * w
+		}
+	}
+	if totalWeight == 0 {
+		return nil
+	}
+	for j := 0; j < vecLen; j++ {
+		result[j] /= totalWeight
+	}
+	return result
+}
+
+// ListGeminiModels lists all available Gemini models with full struct details
+func ListGeminiModels() error {
+	if geminiClient == nil {
+		return fmt.Errorf("Gemini client not initialized")
+	}
+	ctx := context.Background()
+	it, err := geminiClient.Models.List(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("error listing models: %w", err)
+	}
+	fmt.Println("Available Gemini models:")
+	for {
+		page, err := it.Next(ctx)
+		if err != nil {
+			if err.Error() == "no more items in iterator" {
+				break
+			}
+			return fmt.Errorf("error iterating models: %w", err)
+		}
+		for _, model := range page.Items {
+			fmt.Printf("%+v\n", model)
+		}
+	}
 	return nil
 }

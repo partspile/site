@@ -17,6 +17,7 @@ import (
 	"github.com/parts-pile/site/search"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
+	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/vehicle"
 )
 
@@ -25,6 +26,9 @@ func main() {
 	if err := ad.InitDB("project.db"); err != nil {
 		log.Fatalf("error initializing project database: %v", err)
 	}
+
+	// Initialize vector package with the same DB (for user embeddings)
+	vector.InitDB(ad.DB)
 
 	// Initialize vehicle package with the same DB
 	// (ensures vehicle uses project.db)
@@ -38,6 +42,16 @@ func main() {
 
 	// Initialize search package with the same DB
 	search.InitDB(ad.DB)
+
+	// Initialize Gemini client
+	if err := vector.InitGeminiClient(""); err != nil {
+		log.Fatalf("Failed to initialize Gemini client: %v", err)
+	}
+
+	// Initialize Pinecone client
+	if err := vector.InitPineconeClient("", ""); err != nil {
+		log.Fatalf("Failed to initialize Pinecone client: %v", err)
+	}
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: customErrorHandler,

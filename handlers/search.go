@@ -5,9 +5,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"sort"
 	"strings"
 	"time"
+
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
@@ -15,6 +18,7 @@ import (
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/search"
 	"github.com/parts-pile/site/ui"
+	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/vehicle"
 	g "maragu.dev/gomponents"
 )
@@ -71,6 +75,25 @@ type SearchQuery = ad.SearchQuery
 
 type SearchCursor = ad.SearchCursor
 
+// Helper to fetch ads by Pinecone result IDs
+func fetchAdsByIDs(ids []string) ([]ad.Ad, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	ads := make([]ad.Ad, 0, len(ids))
+	for _, idStr := range ids {
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			continue
+		}
+		adObj, _, ok := ad.GetAdByID(id)
+		if ok {
+			ads = append(ads, adObj)
+		}
+	}
+	return ads, nil
+}
+
 func HandleSearch(c *fiber.Ctx) error {
 	userPrompt := c.Query("q")
 	view := c.FormValue("view")
@@ -78,27 +101,73 @@ func HandleSearch(c *fiber.Ctx) error {
 		view = "list"
 	}
 
-	query, err := ParseSearchQuery(userPrompt)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
-	}
+	var ads []ad.Ad
+	var nextCursor string
+	var usedVectorSearch bool
 
-	var nullableUserID sql.NullInt64
-	var userID int
 	currentUser, _ := CurrentUser(c)
+	userID := 0
 	if currentUser != nil {
-		nullableUserID = sql.NullInt64{Int64: int64(currentUser.ID), Valid: true}
 		userID = currentUser.ID
 	}
 
-	// Save the user's search query
 	if userPrompt != "" {
-		_ = search.SaveUserSearch(nullableUserID, userPrompt)
+		// Embedding-based search for q != ""
+		embedding, err := vector.EmbedText(userPrompt)
+		if err == nil {
+			results, cursor, err := vector.QuerySimilarAds(embedding, 10, "")
+			if err == nil {
+				log.Printf("[search] Embedding-based search (query embedding) used in HandleSearch with q='%s'", userPrompt)
+				ids := make([]string, len(results))
+				for i, r := range results {
+					ids[i] = r.ID
+				}
+				ads, _ = fetchAdsByIDs(ids)
+				nextCursor = cursor
+				usedVectorSearch = true
+			}
+		}
+		// Save the user's search query
+		_ = search.SaveUserSearch(sql.NullInt64{Int64: int64(userID), Valid: userID != 0}, userPrompt)
+		if userID != 0 && userPrompt != "" {
+			go vector.GetUserPersonalizedEmbedding(userID, true)
+		}
 	}
 
-	ads, nextCursor, err := GetNextPage(query, nil, 10, userID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Could not get ads")
+	if !usedVectorSearch {
+		if userPrompt == "" && userID != 0 {
+			// Personalized feed for logged-in user
+			embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
+			if err == nil && embedding != nil {
+				results, cursor, err := vector.QuerySimilarAds(embedding, 10, "")
+				if err == nil {
+					log.Printf("[search] Embedding-based search (user embedding) used in HandleSearch for userID=%d", userID)
+					ids := make([]string, len(results))
+					for i, r := range results {
+						ids[i] = r.ID
+					}
+					ads, _ = fetchAdsByIDs(ids)
+					nextCursor = cursor
+					usedVectorSearch = true
+				}
+			}
+			if err != nil {
+				log.Printf("[embedding] User embedding error for userID=%d: %v", userID, err)
+			}
+		}
+	}
+
+	if !usedVectorSearch {
+		log.Printf("[search] Fallback to SQL-based search in HandleSearch (q='%s', userID=%d)", userPrompt, userID)
+		// Fallback to old SQL-based logic
+		query, err := ParseSearchQuery(userPrompt)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
+		}
+		ads, _, err = GetNextPage(query, nil, 10, userID)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Could not get ads")
+		}
 	}
 
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
@@ -110,14 +179,10 @@ func HandleSearch(c *fiber.Ctx) error {
 		newAdButton = ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
 	}
 
-	render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(query), ads, nil, userID, loc, view, userPrompt))
+	render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, userID, loc, view, userPrompt))
 
-	// Add the loader if there are more results
-	if nextCursor != nil {
-		nextCursorStr := EncodeCursor(*nextCursor)
-		loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s",
-			htmlEscape(userPrompt),
-			htmlEscape(nextCursorStr))
+	if nextCursor != "" {
+		loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s", htmlEscape(userPrompt), htmlEscape(nextCursor))
 		loaderHTML := fmt.Sprintf(`<div id="loader" hx-get="%s" hx-trigger="revealed" hx-swap="outerHTML">Loading more...</div>`, loaderURL)
 		fmt.Fprint(c.Response().BodyWriter(), loaderHTML)
 	}
@@ -129,25 +194,67 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	userPrompt := c.Query("q")
 	cursorStr := c.Query("cursor")
 
-	if cursorStr == "" {
-		// This page should not be called without a cursor.
-		return nil
-	}
-
-	cursor, err := DecodeCursor(cursorStr)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid cursor")
-	}
-
 	currentUser, _ := CurrentUser(c)
 	userID := 0
 	if currentUser != nil {
 		userID = currentUser.ID
 	}
 
-	ads, nextCursor, err := GetNextPage(cursor.Query, &cursor, 10, userID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Could not get ads")
+	var ads []ad.Ad
+	var nextCursor string
+	var usedVectorSearch bool
+
+	if userPrompt != "" {
+		embedding, err := vector.EmbedText(userPrompt)
+		if err == nil {
+			results, cursor, err := vector.QuerySimilarAds(embedding, 10, cursorStr)
+			if err == nil {
+				log.Printf("[search] Embedding-based search (query embedding) used in HandleSearchPage with q='%s'", userPrompt)
+				ids := make([]string, len(results))
+				for i, r := range results {
+					ids[i] = r.ID
+				}
+				ads, _ = fetchAdsByIDs(ids)
+				nextCursor = cursor
+				usedVectorSearch = true
+			}
+		}
+	}
+
+	if !usedVectorSearch {
+		if userPrompt == "" && userID != 0 {
+			// Personalized feed for logged-in user
+			embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
+			if err == nil && embedding != nil {
+				results, cursor, err := vector.QuerySimilarAds(embedding, 10, cursorStr)
+				if err == nil {
+					log.Printf("[search] Embedding-based search (user embedding) used in HandleSearchPage for userID=%d", userID)
+					ids := make([]string, len(results))
+					for i, r := range results {
+						ids[i] = r.ID
+					}
+					ads, _ = fetchAdsByIDs(ids)
+					nextCursor = cursor
+					usedVectorSearch = true
+				}
+			}
+			if err != nil {
+				log.Printf("[embedding] User embedding error for userID=%d: %v", userID, err)
+			}
+		}
+	}
+
+	if !usedVectorSearch {
+		log.Printf("[search] Fallback to SQL-based search in HandleSearchPage (q='%s', userID=%d)", userPrompt, userID)
+		// Fallback to old SQL-based logic
+		cursor, err := DecodeCursor(cursorStr)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, "Invalid cursor")
+		}
+		ads, _, err = GetNextPage(cursor.Query, &cursor, 10, userID)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Could not get ads")
+		}
 	}
 
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
@@ -156,11 +263,8 @@ func HandleSearchPage(c *fiber.Ctx) error {
 		render(c, ui.AdCardExpandable(ad, loc, ad.Bookmarked, userID))
 	}
 
-	if nextCursor != nil {
-		nextCursorStr := EncodeCursor(*nextCursor)
-		loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s",
-			htmlEscape(userPrompt),
-			htmlEscape(nextCursorStr))
+	if nextCursor != "" {
+		loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s", htmlEscape(userPrompt), htmlEscape(nextCursor))
 		loaderHTML := fmt.Sprintf(`<div id="loader" hx-get="%s" hx-trigger="revealed" hx-swap="outerHTML">Loading more...</div>`, loaderURL)
 		fmt.Fprint(c.Response().BodyWriter(), loaderHTML)
 	}
@@ -458,23 +562,63 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 	}
 	structuredQuery := c.FormValue("structured_query")
 
-	var query SearchQuery
-	if structuredQuery != "" {
-		err := json.Unmarshal([]byte(structuredQuery), &query)
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Invalid structured_query")
-		}
-	} else {
-		var err error
-		query, err = ParseSearchQuery(userPrompt)
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
+	var ads []ad.Ad
+	var usedVectorSearch bool
+	var err error
+
+	if userPrompt != "" {
+		embedding, err := vector.EmbedText(userPrompt)
+		if err == nil {
+			results, _, err := vector.QuerySimilarAds(embedding, 10, "")
+			if err == nil {
+				log.Printf("[search] Embedding-based search (query embedding) used for view '%s' with q='%s'", view, userPrompt)
+				ids := make([]string, len(results))
+				for i, r := range results {
+					ids[i] = r.ID
+				}
+				ads, _ = fetchAdsByIDs(ids)
+				usedVectorSearch = true
+			}
 		}
 	}
-
-	ads, _, err := GetNextPage(query, nil, 10, userID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Could not get ads")
+	if !usedVectorSearch {
+		if userPrompt == "" && userID != 0 {
+			embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
+			if err == nil && embedding != nil {
+				results, _, err := vector.QuerySimilarAds(embedding, 10, "")
+				if err == nil {
+					log.Printf("[search] Embedding-based search (user embedding) used for view '%s' for userID=%d", view, userID)
+					ids := make([]string, len(results))
+					for i, r := range results {
+						ids[i] = r.ID
+					}
+					ads, _ = fetchAdsByIDs(ids)
+					usedVectorSearch = true
+				}
+			}
+			if err != nil {
+				log.Printf("[embedding] User embedding error for userID=%d: %v", userID, err)
+			}
+		}
+	}
+	if !usedVectorSearch {
+		log.Printf("[search] Fallback to SQL-based search for view '%s' (q='%s', userID=%d)", view, userPrompt, userID)
+		var query SearchQuery
+		if structuredQuery != "" {
+			err := json.Unmarshal([]byte(structuredQuery), &query)
+			if err != nil {
+				return fiber.NewError(fiber.StatusBadRequest, "Invalid structured_query")
+			}
+		} else {
+			query, err = ParseSearchQuery(userPrompt)
+			if err != nil {
+				return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
+			}
+		}
+		ads, _, err = GetNextPage(query, nil, 10, userID)
+		if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Could not get ads")
+		}
 	}
 
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
@@ -490,7 +634,6 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 	if selectedView == "" {
 		selectedView = view
 	}
-	// Set the cookie for 30 days
 	c.Cookie(&fiber.Cookie{
 		Name:     "last_view",
 		Value:    selectedView,
@@ -499,7 +642,7 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 		Path:     "/",
 	})
 
-	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(query), ads, nil, userID, loc, selectedView, userPrompt))
+	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, userID, loc, selectedView, userPrompt))
 }
 
 func HandleGridView(c *fiber.Ctx) error {

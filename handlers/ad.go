@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"net/http"
+	"strings"
 	"time"
 
 	"bytes"
@@ -27,6 +28,7 @@ import (
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/ui"
+	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/vehicle"
 	"golang.org/x/image/draw"
 	"gopkg.in/kothar/go-backblaze.v0"
@@ -110,6 +112,23 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	ad.AddAd(newAd)
 	fmt.Printf("[DEBUG] Created ad ID=%d with ImageOrder=%v\n", newAd.ID, newAd.ImageOrder)
 	uploadAdImagesToB2(newAd.ID, imageFiles)
+
+	// --- VECTOR EMBEDDING GENERATION (ASYNC) ---
+	go func(adObj ad.Ad) {
+		prompt := buildAdEmbeddingPrompt(adObj)
+		embedding, err := vector.EmbedText(prompt)
+		if err != nil {
+			log.Printf("[embedding] failed to generate embedding for ad %d: %v", adObj.ID, err)
+			return
+		}
+		meta := buildAdEmbeddingMetadata(adObj)
+		err = vector.UpsertAdEmbedding(adObj.ID, embedding, meta)
+		if err != nil {
+			log.Printf("[embedding] failed to upsert embedding for ad %d: %v", adObj.ID, err)
+		}
+	}(newAd)
+	// --- END VECTOR EMBEDDING ---
+
 	return render(c, ui.SuccessMessage("Ad created successfully", "/"))
 }
 
@@ -207,6 +226,22 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		deleteAdImagesFromB2(updatedAd.ID, deletedImages)
 	}
 	uploadAdImagesToB2(updatedAd.ID, imageFiles)
+
+	// --- VECTOR EMBEDDING GENERATION (ASYNC) ---
+	go func(adObj ad.Ad) {
+		prompt := buildAdEmbeddingPrompt(adObj)
+		embedding, err := vector.EmbedText(prompt)
+		if err != nil {
+			log.Printf("[embedding] failed to generate embedding for ad %d: %v", adObj.ID, err)
+			return
+		}
+		meta := buildAdEmbeddingMetadata(adObj)
+		err = vector.UpsertAdEmbedding(adObj.ID, embedding, meta)
+		if err != nil {
+			log.Printf("[embedding] failed to upsert embedding for ad %d: %v", adObj.ID, err)
+		}
+	}(updatedAd)
+	// --- END VECTOR EMBEDDING ---
 
 	if c.Get("HX-Request") != "" {
 		// For htmx, return the updated detail partial
@@ -546,3 +581,39 @@ func HandleAdImagePartial(c *fiber.Ctx) error {
 	)
 	return render(c, g.Group([]g.Node{mainImage, priceBadge}))
 }
+
+// --- VECTOR EMBEDDING HELPERS ---
+func buildAdEmbeddingPrompt(adObj ad.Ad) string {
+	return fmt.Sprintf(`Encode the following ad for semantic search. Focus on what the part is, what vehicles it fits, and any relevant details for a buyer. Return only the embedding vector.\n\nTitle: %s\nDescription: %s\nMake: %s\nYears: %s\nModels: %s\nEngines: %s\nCategory: %s\nSubCategory: %s\nLocation: %s, %s, %s`,
+		adObj.Title,
+		adObj.Description,
+		adObj.Make,
+		strings.Join(adObj.Years, ", "),
+		strings.Join(adObj.Models, ", "),
+		strings.Join(adObj.Engines, ", "),
+		adObj.Category,
+		adObj.SubCategory,
+		adObj.City,
+		adObj.AdminArea,
+		adObj.Country,
+	)
+}
+
+func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
+	return map[string]interface{}{
+		"ad_id":       adObj.ID,
+		"created_at":  adObj.CreatedAt,
+		"click_count": adObj.ClickCount,
+		"make":        adObj.Make,
+		"years":       adObj.Years,
+		"models":      adObj.Models,
+		"engines":     adObj.Engines,
+		"category":    adObj.Category,
+		"subcategory": adObj.SubCategory,
+		"city":        adObj.City,
+		"admin_area":  adObj.AdminArea,
+		"country":     adObj.Country,
+	}
+}
+
+// --- END VECTOR EMBEDDING HELPERS ---
