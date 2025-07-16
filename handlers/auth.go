@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 
@@ -17,27 +18,34 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 	name := c.FormValue("name")
 	password := c.FormValue("password")
 
+	log.Printf("[AUTH] Login attempt: name=%s", name)
+
 	u, err := user.GetUserByName(name)
 	if err != nil {
+		log.Printf("[AUTH] Login failed: user not found: %s", name)
 		return ValidationErrorResponse(c, "Invalid username or password")
 	}
 
 	if err := VerifyPassword(u.PasswordHash, password); err != nil {
+		log.Printf("[AUTH] Login failed: bad password for user=%s", name)
 		return ValidationErrorResponse(c, "Invalid username or password")
 	}
 
 	store := c.Locals("session_store").(*session.Store)
 	sess, err := store.Get(c)
 	if err != nil {
+		log.Printf("[AUTH] Login failed: session store error: %v", err)
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to log you in.")
 	}
 
 	sess.Set("userID", u.ID)
 
 	if err := sess.Save(); err != nil {
+		log.Printf("[AUTH] Login failed: session save error: %v", err)
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to save session.")
 	}
 
+	log.Printf("[AUTH] Login successful: userID=%d, name=%s", u.ID, name)
 	return render(c, ui.SuccessMessage("Login successful", "/"))
 }
 
@@ -59,24 +67,29 @@ func GetCurrentUser(c *fiber.Ctx) (*user.User, error) {
 	store := c.Locals("session_store").(*session.Store)
 	sess, err := store.Get(c)
 	if err != nil {
+		log.Printf("[AUTH] GetCurrentUser: session error: %v", err)
 		return nil, fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("session error: %v", err))
 	}
 
 	userID, ok := sess.Get("userID").(int)
 	if !ok || userID == 0 {
+		log.Printf("[AUTH] GetCurrentUser: no user ID in session")
 		return nil, fiber.NewError(fiber.StatusUnauthorized, "no user ID in session")
 	}
 
 	u, status, found := user.GetUserByID(userID)
 	if !found {
+		log.Printf("[AUTH] GetCurrentUser: user not found for userID=%d", userID)
 		return nil, fiber.NewError(fiber.StatusUnauthorized, "user not found")
 	}
 
 	// Only return active users for current user sessions
 	if status == user.StatusArchived {
+		log.Printf("[AUTH] GetCurrentUser: user archived userID=%d", userID)
 		return nil, fiber.NewError(fiber.StatusForbidden, "user is archived")
 	}
 
+	log.Printf("[AUTH] GetCurrentUser: userID=%d found and active", userID)
 	return &u, nil
 }
 

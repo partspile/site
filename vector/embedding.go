@@ -196,29 +196,3 @@ func AggregateEmbeddings(vectors [][]float32, weights []float32) []float32 {
 	}
 	return result
 }
-
-// ListGeminiModels lists all available Gemini models with full struct details
-func ListGeminiModels() error {
-	if geminiClient == nil {
-		return fmt.Errorf("Gemini client not initialized")
-	}
-	ctx := context.Background()
-	it, err := geminiClient.Models.List(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("error listing models: %w", err)
-	}
-	fmt.Println("Available Gemini models:")
-	for {
-		page, err := it.Next(ctx)
-		if err != nil {
-			if err.Error() == "no more items in iterator" {
-				break
-			}
-			return fmt.Errorf("error iterating models: %w", err)
-		}
-		for _, model := range page.Items {
-			fmt.Printf("%+v\n", model)
-		}
-	}
-	return nil
-}
