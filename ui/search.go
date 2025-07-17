@@ -3,7 +3,6 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -63,41 +62,6 @@ func SearchFilters(filters SearchSchema) g.Node {
 	return Div(
 		Class("flex flex-wrap gap-4 mt-2"),
 		g.Group(checkboxes),
-	)
-}
-
-func SearchResultsContainer(newAdButton g.Node, filters SearchSchema, ads map[int]ad.Ad, loc *time.Location, view string, query string) g.Node {
-	// Marshal the structured query as JSON for the hidden input
-	structuredQueryJSON, _ := json.Marshal(filters)
-	return Div(
-		ID("searchResults"),
-		SearchWidget(newAdButton, view, query),
-		Input(
-			Type("hidden"),
-			Name("structured_query"),
-			Value(string(structuredQueryJSON)),
-		),
-		Div(
-			ID("searchFilters"),
-			Class("flex flex-wrap gap-4 mb-4"),
-			SearchFilters(filters),
-		),
-		ViewToggleButtons(view),
-		Div(
-			ID("view-wrapper"),
-			func() g.Node {
-				switch view {
-				case "tree":
-					return TreeViewWithQuery(query, string(structuredQueryJSON))
-				case "grid":
-					return GridView(ads, loc)
-				case "map":
-					return MapView(ads, loc)
-				default:
-					return ListView(ads, loc)
-				}
-			}(),
-		),
 	)
 }
 
@@ -243,7 +207,7 @@ func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, a
 				case "tree":
 					return TreeViewWithQuery(query, string(structuredQueryJSON))
 				case "grid":
-					return GridView(adsMap, loc, userID)
+					return GridView(ads, loc, userID)
 				case "map":
 					return MapView(adsMap, loc)
 				default:
@@ -279,24 +243,14 @@ func BuildAdListNodesWithView(ads map[int]ad.Ad, loc *time.Location, view string
 	return nodes
 }
 
-func GridView(ads map[int]ad.Ad, loc *time.Location, userID ...int) g.Node {
-	adSlice := make([]ad.Ad, 0, len(ads))
-	for _, ad := range ads {
-		adSlice = append(adSlice, ad)
-	}
-	// Sort by CreatedAt DESC, ID DESC (same as list view)
-	sort.Slice(adSlice, func(i, j int) bool {
-		if adSlice[i].CreatedAt.Equal(adSlice[j].CreatedAt) {
-			return adSlice[i].ID > adSlice[j].ID
-		}
-		return adSlice[i].CreatedAt.After(adSlice[j].CreatedAt)
-	})
-	adNodes := make([]g.Node, 0, len(adSlice))
+func GridView(ads []ad.Ad, loc *time.Location, userID ...int) g.Node {
+	// Preserve original order from backend (Pinecone order)
+	adNodes := make([]g.Node, 0, len(ads))
 	uid := 0
 	if len(userID) > 0 {
 		uid = userID[0]
 	}
-	for _, ad := range adSlice {
+	for _, ad := range ads {
 		adNodes = append(adNodes,
 			AdCardExpandable(ad, loc, ad.Bookmarked, uid, "grid"),
 		)

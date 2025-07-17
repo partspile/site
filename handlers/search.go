@@ -75,6 +75,14 @@ type SearchQuery = ad.SearchQuery
 
 type SearchCursor = ad.SearchCursor
 
+// Helper function for min
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // Helper to fetch ads by Pinecone result IDs
 func fetchAdsByIDs(ids []string) ([]ad.Ad, error) {
 	if len(ids) == 0 {
@@ -91,7 +99,120 @@ func fetchAdsByIDs(ids []string) ([]ad.Ad, error) {
 			ads = append(ads, adObj)
 		}
 	}
+	log.Printf("[fetchAdsByIDs] Returning ads in order: %v", func() []int {
+		result := make([]int, len(ads))
+		for i, ad := range ads {
+			result[i] = ad.ID
+		}
+		return result
+	}())
 	return ads, nil
+}
+
+// Run embedding-based search and fetch ads
+func runEmbeddingSearch(embedding []float32, cursor string) ([]ad.Ad, string, error) {
+	results, nextCursor, err := vector.QuerySimilarAds(embedding, 10, cursor)
+	if err != nil {
+		return nil, "", err
+	}
+	log.Printf("[runEmbeddingSearch] Pinecone returned %d results", len(results))
+	ids := make([]string, len(results))
+	for i, r := range results {
+		ids[i] = r.ID
+	}
+	log.Printf("[runEmbeddingSearch] Pinecone result IDs: %v", ids)
+	ads, _ := fetchAdsByIDs(ids)
+	log.Printf("[runEmbeddingSearch] DB fetch returned %d ads", len(ads))
+	return ads, nextCursor, nil
+}
+
+// Try embedding-based search with user prompt
+func tryQueryEmbedding(userPrompt, cursor string) ([]ad.Ad, string, error) {
+	embedding, err := vector.EmbedText(userPrompt)
+	if err != nil {
+		return nil, "", err
+	}
+	return runEmbeddingSearch(embedding, cursor)
+}
+
+// Try embedding-based search with user embedding
+func tryUserEmbedding(userID int, cursor string) ([]ad.Ad, string, error) {
+	embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
+	if err != nil || embedding == nil {
+		return nil, "", err
+	}
+	return runEmbeddingSearch(embedding, cursor)
+}
+
+// Search strategy for both HandleSearch and HandleSearchPage
+func performSearch(userPrompt string, userID int, cursor *SearchCursor, cursorStr string) ([]ad.Ad, string, error) {
+	log.Printf("[performSearch] userPrompt='%s', userID=%d, cursorStr='%s'", userPrompt, userID, cursorStr)
+	if userPrompt != "" {
+		ads, nextCursor, _ := tryQueryEmbedding(userPrompt, cursorStr)
+		log.Printf("[performSearch] tryQueryEmbedding: found %d ads", len(ads))
+		if len(ads) > 0 {
+			return ads, nextCursor, nil
+		}
+	}
+	if userPrompt == "" && userID != 0 {
+		ads, nextCursor, _ := tryUserEmbedding(userID, cursorStr)
+		log.Printf("[performSearch] tryUserEmbedding: found %d ads", len(ads))
+		if len(ads) > 0 {
+			return ads, nextCursor, nil
+		}
+	}
+	if userPrompt == "" && userID == 0 {
+		emb, err := vector.GetSiteLevelVector()
+		log.Printf("[performSearch] GetSiteLevelVector returned emb=%v, err=%v", emb != nil, err)
+		if err == nil && emb != nil {
+			log.Printf("[performSearch] site-level vector length: %d", len(emb))
+			if len(emb) > 0 {
+				log.Printf("[performSearch] site-level vector first 5 values: %v", emb[:min(5, len(emb))])
+			}
+			log.Printf("[performSearch] About to call runEmbeddingSearch with site-level vector")
+			ads, nextCursor, _ := runEmbeddingSearch(emb, cursorStr)
+			log.Printf("[performSearch] site-level vector: found %d ads", len(ads))
+			if len(ads) > 0 {
+				return ads, nextCursor, nil
+			}
+		} else {
+			log.Printf("[performSearch] site-level vector error: %v", err)
+		}
+	}
+	log.Printf("[performSearch] No ads found for given parameters.")
+	return nil, "", nil
+}
+
+// Render loader if there are more results
+func renderLoaderIfNeeded(c *fiber.Ctx, userPrompt, nextCursor string) {
+	if nextCursor != "" {
+		loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s", htmlEscape(userPrompt), htmlEscape(nextCursor))
+		render(c, ui.LoaderDiv(loaderURL))
+	}
+}
+
+// Get user ID from context
+func getUserID(c *fiber.Ctx) int {
+	currentUser, _ := CurrentUser(c)
+	if currentUser != nil {
+		return currentUser.ID
+	}
+	return 0
+}
+
+// Get location from context
+func getLocation(c *fiber.Ctx) *time.Location {
+	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
+	return loc
+}
+
+// Render new ad button based on user login
+func renderNewAdButton(c *fiber.Ctx) g.Node {
+	currentUser, _ := CurrentUser(c)
+	if currentUser != nil {
+		return ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
+	}
+	return ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
 }
 
 func HandleSearch(c *fiber.Ctx) error {
@@ -101,91 +222,31 @@ func HandleSearch(c *fiber.Ctx) error {
 		view = "list"
 	}
 
-	var ads []ad.Ad
-	var nextCursor string
-	var usedVectorSearch bool
+	userID := getUserID(c)
+	log.Printf("[HandleSearch] userPrompt='%s', userID=%d", userPrompt, userID)
+	ads, nextCursor, err := performSearch(userPrompt, userID, nil, "")
+	if err != nil {
+		return err
+	}
+	log.Printf("[HandleSearch] ads returned: %d", len(ads))
+	log.Printf("[HandleSearch] Final ad order: %v", func() []int {
+		result := make([]int, len(ads))
+		for i, ad := range ads {
+			result[i] = ad.ID
+		}
+		return result
+	}())
 
-	currentUser, _ := CurrentUser(c)
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
+	_ = search.SaveUserSearch(sql.NullInt64{Int64: int64(userID), Valid: userID != 0}, userPrompt)
+	if userID != 0 && userPrompt != "" {
+		go vector.GetUserPersonalizedEmbedding(userID, true)
 	}
 
-	if userPrompt != "" {
-		// Embedding-based search for q != ""
-		embedding, err := vector.EmbedText(userPrompt)
-		if err == nil {
-			results, cursor, err := vector.QuerySimilarAds(embedding, 10, "")
-			if err == nil {
-				log.Printf("[search] Embedding-based search (query embedding) used in HandleSearch with q='%s'", userPrompt)
-				ids := make([]string, len(results))
-				for i, r := range results {
-					ids[i] = r.ID
-				}
-				ads, _ = fetchAdsByIDs(ids)
-				nextCursor = cursor
-				usedVectorSearch = true
-			}
-		}
-		// Save the user's search query
-		_ = search.SaveUserSearch(sql.NullInt64{Int64: int64(userID), Valid: userID != 0}, userPrompt)
-		if userID != 0 && userPrompt != "" {
-			go vector.GetUserPersonalizedEmbedding(userID, true)
-		}
-	}
-
-	if !usedVectorSearch {
-		if userPrompt == "" && userID != 0 {
-			// Personalized feed for logged-in user
-			embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
-			if err == nil && embedding != nil {
-				results, cursor, err := vector.QuerySimilarAds(embedding, 10, "")
-				if err == nil {
-					log.Printf("[search] Embedding-based search (user embedding) used in HandleSearch for userID=%d", userID)
-					ids := make([]string, len(results))
-					for i, r := range results {
-						ids[i] = r.ID
-					}
-					ads, _ = fetchAdsByIDs(ids)
-					nextCursor = cursor
-					usedVectorSearch = true
-				}
-			}
-			if err != nil {
-				log.Printf("[embedding] User embedding error for userID=%d: %v", userID, err)
-			}
-		}
-	}
-
-	if !usedVectorSearch {
-		log.Printf("[search] Fallback to SQL-based search in HandleSearch (q='%s', userID=%d)", userPrompt, userID)
-		// Fallback to old SQL-based logic
-		query, err := ParseSearchQuery(userPrompt)
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
-		}
-		ads, _, err = GetNextPage(query, nil, 10, userID)
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "Could not get ads")
-		}
-	}
-
-	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
-
-	var newAdButton g.Node
-	if currentUser != nil {
-		newAdButton = ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
-	} else {
-		newAdButton = ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
-	}
+	loc := getLocation(c)
+	newAdButton := renderNewAdButton(c)
 
 	render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, userID, loc, view, userPrompt))
-
-	if nextCursor != "" {
-		loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s", htmlEscape(userPrompt), htmlEscape(nextCursor))
-		loaderHTML := fmt.Sprintf(`<div id="loader" hx-get="%s" hx-trigger="revealed" hx-swap="outerHTML">Loading more...</div>`, loaderURL)
-		fmt.Fprint(c.Response().BodyWriter(), loaderHTML)
-	}
+	renderLoaderIfNeeded(c, userPrompt, nextCursor)
 	return nil
 }
 
@@ -194,80 +255,26 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	userPrompt := c.Query("q")
 	cursorStr := c.Query("cursor")
 
-	currentUser, _ := CurrentUser(c)
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
-
-	var ads []ad.Ad
-	var nextCursor string
-	var usedVectorSearch bool
-
-	if userPrompt != "" {
-		embedding, err := vector.EmbedText(userPrompt)
-		if err == nil {
-			results, cursor, err := vector.QuerySimilarAds(embedding, 10, cursorStr)
-			if err == nil {
-				log.Printf("[search] Embedding-based search (query embedding) used in HandleSearchPage with q='%s'", userPrompt)
-				ids := make([]string, len(results))
-				for i, r := range results {
-					ids[i] = r.ID
-				}
-				ads, _ = fetchAdsByIDs(ids)
-				nextCursor = cursor
-				usedVectorSearch = true
-			}
+	userID := getUserID(c)
+	var cursor *SearchCursor
+	if cursorStr != "" {
+		curs, err2 := DecodeCursor(cursorStr)
+		if err2 == nil {
+			cursor = &curs
 		}
 	}
 
-	if !usedVectorSearch {
-		if userPrompt == "" && userID != 0 {
-			// Personalized feed for logged-in user
-			embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
-			if err == nil && embedding != nil {
-				results, cursor, err := vector.QuerySimilarAds(embedding, 10, cursorStr)
-				if err == nil {
-					log.Printf("[search] Embedding-based search (user embedding) used in HandleSearchPage for userID=%d", userID)
-					ids := make([]string, len(results))
-					for i, r := range results {
-						ids[i] = r.ID
-					}
-					ads, _ = fetchAdsByIDs(ids)
-					nextCursor = cursor
-					usedVectorSearch = true
-				}
-			}
-			if err != nil {
-				log.Printf("[embedding] User embedding error for userID=%d: %v", userID, err)
-			}
-		}
+	ads, nextCursor, err := performSearch(userPrompt, userID, cursor, cursorStr)
+	if err != nil {
+		return err
 	}
 
-	if !usedVectorSearch {
-		log.Printf("[search] Fallback to SQL-based search in HandleSearchPage (q='%s', userID=%d)", userPrompt, userID)
-		// Fallback to old SQL-based logic
-		cursor, err := DecodeCursor(cursorStr)
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Invalid cursor")
-		}
-		ads, _, err = GetNextPage(cursor.Query, &cursor, 10, userID)
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "Could not get ads")
-		}
-	}
-
-	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
-
+	loc := getLocation(c)
 	for _, ad := range ads {
 		render(c, ui.AdCardExpandable(ad, loc, ad.Bookmarked, userID))
 	}
 
-	if nextCursor != "" {
-		loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s", htmlEscape(userPrompt), htmlEscape(nextCursor))
-		loaderHTML := fmt.Sprintf(`<div id="loader" hx-get="%s" hx-trigger="revealed" hx-swap="outerHTML">Loading more...</div>`, loaderURL)
-		fmt.Fprint(c.Response().BodyWriter(), loaderHTML)
-	}
+	renderLoaderIfNeeded(c, userPrompt, nextCursor)
 	return nil
 }
 

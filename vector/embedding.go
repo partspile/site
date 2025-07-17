@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"database/sql"
 
+	"github.com/parts-pile/site/ad"
 	pinecone "github.com/pinecone-io/go-pinecone/v4/pinecone"
 	genai "google.golang.org/genai"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -195,4 +197,77 @@ func AggregateEmbeddings(vectors [][]float32, weights []float32) []float32 {
 		result[j] /= totalWeight
 	}
 	return result
+}
+
+// Site-level vector for anonymous default feed
+var (
+	siteLevelVector         []float32
+	siteLevelVectorLastCalc time.Time
+	siteLevelVectorTTL      = 10 * time.Minute
+)
+
+// GetSiteLevelVector returns the cached site-level vector, recalculating if needed
+func GetSiteLevelVector() ([]float32, error) {
+	if siteLevelVector != nil && time.Since(siteLevelVectorLastCalc) < siteLevelVectorTTL {
+		return siteLevelVector, nil
+	}
+	vec, err := CalculateSiteLevelVector()
+	if err != nil {
+		return nil, err
+	}
+	siteLevelVector = vec
+	siteLevelVectorLastCalc = time.Now()
+	return vec, nil
+}
+
+// CalculateSiteLevelVector averages the embeddings of the most popular ads
+func CalculateSiteLevelVector() ([]float32, error) {
+	ads := ad.GetMostPopularAds(50)
+	log.Printf("[site-level] Calculating site-level vector from %d popular ads", len(ads))
+	var vectors [][]float32
+	var missingIDs []int
+	for _, adObj := range ads {
+		emb, err := GetAdEmbedding(adObj.ID)
+		if err != nil || emb == nil {
+			missingIDs = append(missingIDs, adObj.ID)
+			continue
+		}
+		vectors = append(vectors, emb)
+	}
+	log.Printf("[site-level] Found embeddings for %d ads, missing for %d ads", len(vectors), len(missingIDs))
+	if len(missingIDs) > 0 {
+		log.Printf("[site-level] Missing embeddings for ad IDs: %v", missingIDs)
+	}
+	if len(vectors) == 0 {
+		return nil, fmt.Errorf("no embeddings found for popular ads")
+	}
+	// Use unweighted mean for now
+	weights := make([]float32, len(vectors))
+	for i := range weights {
+		weights[i] = 1.0
+	}
+	result := AggregateEmbeddings(vectors, weights)
+	log.Printf("[site-level] AggregateEmbeddings returned result=%v (length=%d)", result != nil, len(result))
+	if result == nil {
+		return nil, fmt.Errorf("AggregateEmbeddings returned nil")
+	}
+	return result, nil
+}
+
+// GetAdEmbedding retrieves the embedding for a given ad ID from Pinecone
+func GetAdEmbedding(adID int) ([]float32, error) {
+	if pineconeIndex == nil {
+		return nil, fmt.Errorf("Pinecone index not initialized")
+	}
+	vectorID := fmt.Sprintf("%d", adID)
+	ctx := context.Background()
+	resp, err := pineconeIndex.FetchVectors(ctx, []string{vectorID})
+	if err != nil {
+		return nil, err
+	}
+	v, ok := resp.Vectors[vectorID]
+	if !ok || v == nil || v.Values == nil {
+		return nil, fmt.Errorf("no embedding found for ad %d", adID)
+	}
+	return *v.Values, nil
 }

@@ -154,3 +154,14 @@ func ErrorPage(code int, message string) g.Node {
 		},
 	)
 }
+
+// LoaderDiv renders the loader for infinite scroll (htmx revealed)
+func LoaderDiv(url string) g.Node {
+	return Div(
+		ID("loader"),
+		g.Attr("hx-get", url),
+		g.Attr("hx-trigger", "revealed"),
+		g.Attr("hx-swap", "outerHTML"),
+		g.Text("Loading more..."),
+	)
+}

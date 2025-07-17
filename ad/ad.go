@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"sort"
 	"strings"
@@ -1074,4 +1075,84 @@ func GetLocationByID(id int) (city, adminArea, country, raw string, err error) {
 	row := db.QueryRow("SELECT city, admin_area, country, raw_text FROM Location WHERE id = ?", id)
 	err = row.Scan(&city, &adminArea, &country, &raw)
 	return
+}
+
+// GetMostPopularAds returns the top n ads by popularity using SQL
+func GetMostPopularAds(n int) []Ad {
+	log.Printf("[GetMostPopularAds] Querying for top %d popular ads", n)
+	query := `
+		SELECT 
+			a.id, a.title, a.description, a.price, a.created_at, 
+			a.subcategory_id, a.user_id, a.location_id, a.click_count,
+			a.last_clicked_at, a.image_order,
+			psc.name as subcategory,
+			l.city, l.admin_area, l.country
+		FROM Ad a
+		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		LEFT JOIN Location l ON a.location_id = l.id
+		ORDER BY (
+			a.click_count * 2 + 
+			COALESCE((SELECT COUNT(*) FROM BookmarkedAd ba WHERE ba.ad_id = a.id), 0) * 3 + 
+			100.0 / (julianday('now') - julianday(a.created_at))
+		) DESC
+		LIMIT ?
+	`
+
+	rows, err := db.Query(query, n)
+	if err != nil {
+		log.Printf("[GetMostPopularAds] SQL error: %v", err)
+		return nil
+	}
+	defer rows.Close()
+
+	var ads []Ad
+	rowCount := 0
+	for rows.Next() {
+		rowCount++
+		var ad Ad
+		var subcategory sql.NullString
+		var lastClickedAt sql.NullTime
+		var locationID sql.NullInt64
+		var imageOrder sql.NullString
+		var city, adminArea, country sql.NullString
+
+		err := rows.Scan(
+			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
+			&ad.SubCategoryID, &ad.UserID, &locationID, &ad.ClickCount,
+			&lastClickedAt, &imageOrder, &subcategory,
+			&city, &adminArea, &country,
+		)
+		if err != nil {
+			log.Printf("[GetMostPopularAds] Row scan error: %v", err)
+			continue
+		}
+
+		if subcategory.Valid {
+			ad.SubCategory = subcategory.String
+		}
+		if lastClickedAt.Valid {
+			ad.LastClickedAt = &lastClickedAt.Time
+		}
+		if locationID.Valid {
+			ad.LocationID = int(locationID.Int64)
+		}
+		if imageOrder.Valid {
+			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
+		}
+		if city.Valid {
+			ad.City = city.String
+		}
+		if adminArea.Valid {
+			ad.AdminArea = adminArea.String
+		}
+		if country.Valid {
+			ad.Country = country.String
+		}
+
+		// Get vehicle data
+		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
+		ads = append(ads, ad)
+	}
+	log.Printf("[GetMostPopularAds] Found %d ads from SQL query", rowCount)
+	return ads
 }
