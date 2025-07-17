@@ -6813,6 +6813,64 @@
     }
   },
   "AUSTIN": {
+    "1930": {
+      "BANTAM": [
+        "46cid L4"
+      ]
+    },
+    "1931": {
+      "BANTAM": [
+        "46cid L4"
+      ]
+    },
+    "1932": {
+      "BANTAM": [
+        "46cid L4"
+      ]
+    },
+    "1933": {
+      "BANTAM": [
+        "46cid L4"
+      ]
+    },
+    "1934": {
+      "BANTAM": [
+        "46cid L4"
+      ]
+    },
+    "1935": {
+      "BANTAM": [
+        "46cid L4"
+      ]
+    },
+    "1936": {
+      "BANTAM": [
+        "46cid L4"
+      ]
+    },
+    "1937": {
+      "BANTAM": [
+        "46cid L4"
+      ]
+    },
+    "1938": {
+      "BANTAM": [
+        "46cid L4"
+      ]
+    },
+    "1941": {
+      "BANTAM": [
+        "50cid L4"
+      ]
+    },
+    "1947": {
+      "A125": [
+        "4.0L 244cid L6"
+      ],
+      "A40": [
+        "1.2L 73cid L4"
+      ]
+    },
     "1948": {
       "A125": [
         "4.0L 244cid L6"
@@ -7208,6 +7266,9553 @@
     "1975": {
       "MARINA": [
         "1.8L L4"
+      ]
+    }
+  },
+  "AUSTIN-HEALEY": {
+    "1953": {
+      "100": [
+        "2.2L L4",
+        "2.7L L4"
+      ]
+    },
+    "1954": {
+      "100": [
+        "2.2L L4",
+        "2.7L L4"
+      ]
+    },
+    "1955": {
+      "100": [
+        "2.7L L4"
+      ]
+    },
+    "1956": {
+      "100": [
+        "2.7L L4"
+      ],
+      "100-6": [
+        "2.6L L6"
+      ]
+    },
+    "1957": {
+      "100": [
+        "2.6L L4"
+      ],
+      "100-6": [
+        "2.6L L6"
+      ]
+    },
+    "1958": {
+      "100-6": [
+        "2.6L L6"
+      ],
+      "SPRITE": [
+        "948cc L4"
+      ]
+    },
+    "1959": {
+      "100-6": [
+        "2.6L L6"
+      ],
+      "3000": [
+        "2.9L L6"
+      ],
+      "SPRITE": [
+        "948cc L4"
+      ]
+    },
+    "1960": {
+      "100-6": [
+        "2.6L L6"
+      ],
+      "3000": [
+        "2.9L L6"
+      ],
+      "SPRITE": [
+        "948cc L4"
+      ]
+    },
+    "1961": {
+      "3000": [
+        "2.9L L6"
+      ],
+      "SPRITE": [
+        "948cc L4"
+      ]
+    },
+    "1962": {
+      "3000": [
+        "2.9L L6"
+      ],
+      "SPRITE": [
+        "1.1L L4",
+        "1000cc L4"
+      ]
+    },
+    "1963": {
+      "3000": [
+        "2.9L L6"
+      ],
+      "SPRITE": [
+        "1.1L L4"
+      ]
+    },
+    "1964": {
+      "3000": [
+        "2.9L L6"
+      ],
+      "SPRITE": [
+        "1.1L L4"
+      ]
+    },
+    "1965": {
+      "3000": [
+        "2.9L L6"
+      ],
+      "SPRITE": [
+        "1.1L L4"
+      ]
+    },
+    "1966": {
+      "3000": [
+        "2.9L L6"
+      ],
+      "SPRITE": [
+        "1.1L L4",
+        "1.3L L4"
+      ]
+    },
+    "1967": {
+      "3000": [
+        "2.9L L6"
+      ],
+      "SPRITE": [
+        "1.1L L4",
+        "1.3L L4"
+      ]
+    },
+    "1968": {
+      "SPRITE": [
+        "1.3L L4"
+      ]
+    },
+    "1969": {
+      "SPRITE": [
+        "1.3L L4",
+        "1.8L L4",
+        "3.0L L6"
+      ]
+    },
+    "1970": {
+      "SPRITE": [
+        "1.3L L4",
+        "1.8L L4",
+        "3.0L L6"
+      ]
+    }
+  },
+  "AVANTI": {
+    "1965": {
+      "II": [
+        "5.3L 327cid V8"
+      ]
+    },
+    "1966": {
+      "II": [
+        "5.3L 327cid V8"
+      ]
+    },
+    "1967": {
+      "II": [
+        "5.3L 327cid V8"
+      ]
+    },
+    "1968": {
+      "II": [
+        "5.3L 327cid V8"
+      ]
+    },
+    "1969": {
+      "II": [
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ]
+    },
+    "1970": {
+      "II": [
+        "5.7L 350cid V8"
+      ]
+    },
+    "1971": {
+      "II": [
+        "5.7L 350cid V8"
+      ]
+    },
+    "1972": {
+      "II": [
+        "5.7L 350cid V8"
+      ]
+    },
+    "1973": {
+      "II": [
+        "6.6L 400cid V8"
+      ]
+    },
+    "1974": {
+      "II": [
+        "6.6L 400cid V8"
+      ]
+    },
+    "1975": {
+      "II": [
+        "6.6L 400cid V8"
+      ]
+    },
+    "1976": {
+      "II": [
+        "6.6L 400cid V8"
+      ]
+    },
+    "1977": {
+      "II": [
+        "5.7L 350cid V8"
+      ]
+    },
+    "1978": {
+      "II": [
+        "5.7L 350cid V8"
+      ]
+    },
+    "1979": {
+      "II": [
+        "5.7L 350cid V8"
+      ]
+    },
+    "1980": {
+      "II": [
+        "5.7L 350cid V8"
+      ]
+    },
+    "1981": {
+      "II": [
+        "5.0L 305cid V8"
+      ]
+    },
+    "1982": {
+      "II": [
+        "5.0L 305cid V8"
+      ]
+    },
+    "1983": {
+      "II": [
+        "5.0L 305cid V8"
+      ]
+    },
+    "1984": {
+      "II": [
+        "5.0L 305cid V8"
+      ]
+    },
+    "1985": {
+      "II": [
+        "5.0L 305cid V8"
+      ]
+    },
+    "1987": {
+      "II": [
+        "5.0L 305cid V8"
+      ]
+    },
+    "1988": {
+      "II": [
+        "5.0L 305cid V8"
+      ]
+    },
+    "1989": {
+      "II": [
+        "5.0L 305cid V8"
+      ]
+    },
+    "1990": {
+      "II": [
+        "5.0L 305cid V8"
+      ]
+    },
+    "1991": {
+      "II": [
+        "5.0L V8"
+      ]
+    },
+    "2001": {
+      "II": [
+        "5.7L V8"
+      ]
+    },
+    "2002": {
+      "II": [
+        "5.7L V8"
+      ]
+    },
+    "2003": {
+      "II": [
+        "5.7L V8"
+      ]
+    },
+    "2004": {
+      "II": [
+        "5.7L V8"
+      ]
+    },
+    "2005": {
+      "AVANTI": [
+        "4.6L V8"
+      ]
+    },
+    "2006": {
+      "AVANTI": [
+        "4.6L V8"
+      ]
+    },
+    "2007": {
+      "AVANTI": [
+        "4.6L V8"
+      ]
+    }
+  },
+  "BAIC": {
+    "2017": {
+      "D20": [
+        "1.5L L4"
+      ],
+      "X25": [
+        "1.5L L4"
+      ]
+    },
+    "2018": {
+      "BJ20": [
+        "1.5L L4 Turbocharged"
+      ],
+      "BJ40": [
+        "2.3L L4 Turbocharged"
+      ],
+      "D20": [
+        "1.5L L4"
+      ],
+      "X25": [
+        "1.5L L4"
+      ],
+      "X65": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2019": {
+      "X25": [
+        "1.5L L4"
+      ],
+      "X35": [
+        "1.5L L4"
+      ],
+      "X65": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2020": {
+      "BJ20": [
+        "1.5L L4 Turbocharged"
+      ],
+      "D20": [
+        "1.5L L4"
+      ],
+      "M50S": [
+        "1.5L L4"
+      ],
+      "X25": [
+        "1.5L L4"
+      ],
+      "X30": [
+        "1.5L L4"
+      ],
+      "X65": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2021": {
+      "M50S": [
+        "1.5L L4"
+      ],
+      "X30": [
+        "1.5L L4"
+      ]
+    },
+    "2022": {
+      "BJ40": [
+        "2.3L L4 Turbocharged"
+      ],
+      "X35": [
+        "1.5L L4"
+      ]
+    },
+    "2023": {
+      "BJ40": [
+        "2.0L L4 Turbocharged",
+        "2.3L L4 Turbocharged"
+      ],
+      "X35": [
+        "1.5L L4"
+      ],
+      "X55": [
+        "1.5L L4 Turbocharged"
+      ]
+    },
+    "2024": {
+      "BJ40": [
+        "2.0L L4 Turbocharged"
+      ],
+      "X35": [
+        "1.5L L4"
+      ],
+      "X55": [
+        "1.5L L4 Turbocharged"
+      ]
+    }
+  },
+  "BENTLEY": {
+    "1921": {
+      "3-LITRE": [
+        "All Engines"
+      ]
+    },
+    "1922": {
+      "3-LITRE": [
+        "All Engines"
+      ]
+    },
+    "1923": {
+      "3-LITRE": [
+        "All Engines"
+      ]
+    },
+    "1924": {
+      "3-LITRE": [
+        "All Engines"
+      ]
+    },
+    "1925": {
+      "3-LITRE": [
+        "All Engines"
+      ]
+    },
+    "1926": {
+      "3-LITRE": [
+        "All Engines"
+      ]
+    },
+    "1927": {
+      "3-LITRE": [
+        "All Engines"
+      ]
+    },
+    "1928": {
+      "3-LITRE": [
+        "All Engines"
+      ]
+    },
+    "1929": {
+      "3-LITRE": [
+        "All Engines"
+      ]
+    },
+    "1937": {
+      "4 1/4-LITRE": [
+        "All Engines"
+      ]
+    },
+    "1938": {
+      "4 1/4-LITRE": [
+        "All Engines"
+      ]
+    },
+    "1939": {
+      "4 1/4-LITRE": [
+        "All Engines"
+      ],
+      "MARK V": [
+        "All Engines"
+      ]
+    },
+    "1940": {
+      "MARK V": [
+        "All Engines"
+      ]
+    },
+    "1941": {
+      "MARK V": [
+        "All Engines"
+      ]
+    },
+    "1946": {
+      "MK VI": [
+        "4.3L 260cid L6"
+      ]
+    },
+    "1947": {
+      "MK VI": [
+        "4.3L 260cid L6"
+      ]
+    },
+    "1948": {
+      "MK VI": [
+        "4.3L 260cid L6"
+      ]
+    },
+    "1949": {
+      "MK VI": [
+        "4.3L 260cid L6"
+      ]
+    },
+    "1950": {
+      "MK VI": [
+        "4.3L L6"
+      ]
+    },
+    "1951": {
+      "MK VI": [
+        "4.3L L6",
+        "4.6L L6"
+      ]
+    },
+    "1952": {
+      "CONTINENTAL": [
+        "4.6L L6",
+        "4.9L L6"
+      ],
+      "MK VI": [
+        "4.6L L6"
+      ],
+      "R SERIES": [
+        "4.6L L6",
+        "4.9L L6"
+      ]
+    },
+    "1953": {
+      "CONTINENTAL": [
+        "4.6L L6",
+        "4.9L L6"
+      ],
+      "MK VI": [
+        "4.6L L6"
+      ],
+      "R SERIES": [
+        "4.6L L6",
+        "4.9L L6"
+      ]
+    },
+    "1954": {
+      "CONTINENTAL": [
+        "4.6L L6",
+        "4.9L L6"
+      ],
+      "MK VI": [
+        "4.6L L6"
+      ],
+      "R SERIES": [
+        "4.6L L6",
+        "4.9L L6"
+      ]
+    },
+    "1955": {
+      "CONTINENTAL": [
+        "4.9L L6"
+      ],
+      "S SERIES": [
+        "4.9L L6"
+      ]
+    },
+    "1956": {
+      "CONTINENTAL": [
+        "4.9L L6"
+      ],
+      "S SERIES": [
+        "4.9L L6"
+      ]
+    },
+    "1957": {
+      "CONTINENTAL": [
+        "4.9L L6"
+      ],
+      "S SERIES": [
+        "4.9L L6"
+      ]
+    },
+    "1958": {
+      "CONTINENTAL": [
+        "4.9L L6"
+      ],
+      "S SERIES": [
+        "4.9L L6"
+      ]
+    },
+    "1959": {
+      "CONTINENTAL": [
+        "6.2L V8"
+      ],
+      "S SERIES": [
+        "6.2L V8"
+      ]
+    },
+    "1960": {
+      "CONTINENTAL": [
+        "6.2L V8"
+      ],
+      "S SERIES": [
+        "6.2L V8"
+      ]
+    },
+    "1961": {
+      "CONTINENTAL": [
+        "6.2L V8"
+      ],
+      "S SERIES": [
+        "6.2L V8"
+      ]
+    },
+    "1962": {
+      "CONTINENTAL": [
+        "6.2L V8"
+      ],
+      "S3 SERIES": [
+        "6.2L V8"
+      ]
+    },
+    "1963": {
+      "CONTINENTAL": [
+        "6.2L V8"
+      ],
+      "S3 SERIES": [
+        "6.2L V8"
+      ]
+    },
+    "1964": {
+      "CONTINENTAL": [
+        "6.2L V8"
+      ],
+      "S3 SERIES": [
+        "6.2L V8"
+      ]
+    },
+    "1965": {
+      "CONTINENTAL": [
+        "6.2L V8"
+      ],
+      "S3 SERIES": [
+        "6.2L V8"
+      ]
+    },
+    "1966": {
+      "T1 SERIES": [
+        "6.2L V8"
+      ]
+    },
+    "1967": {
+      "T1 SERIES": [
+        "6.2L V8"
+      ]
+    },
+    "1968": {
+      "T1 SERIES": [
+        "6.2L V8"
+      ]
+    },
+    "1969": {
+      "T1 SERIES": [
+        "6.2L V8"
+      ]
+    },
+    "1970": {
+      "T1 SERIES": [
+        "6.2L V8",
+        "6.8L V8"
+      ]
+    },
+    "1971": {
+      "CORNICHE": [
+        "6.8L V8"
+      ],
+      "T1 SERIES": [
+        "6.8L V8"
+      ]
+    },
+    "1972": {
+      "CORNICHE": [
+        "6.8L V8"
+      ],
+      "T1 SERIES": [
+        "6.8L V8"
+      ]
+    },
+    "1973": {
+      "CORNICHE": [
+        "6.8L V8"
+      ],
+      "T1 SERIES": [
+        "6.8L V8"
+      ]
+    },
+    "1974": {
+      "CORNICHE": [
+        "6.8L V8"
+      ],
+      "T1 SERIES": [
+        "6.8L V8"
+      ]
+    },
+    "1975": {
+      "CORNICHE": [
+        "6.8L V8"
+      ],
+      "T1 SERIES": [
+        "6.8L V8"
+      ]
+    },
+    "1976": {
+      "CORNICHE": [
+        "6.8L V8"
+      ],
+      "T1 SERIES": [
+        "6.8L V8"
+      ]
+    },
+    "1977": {
+      "CORNICHE": [
+        "6.8L V8"
+      ],
+      "T2 SERIES": [
+        "6.8L V8"
+      ]
+    },
+    "1978": {
+      "CORNICHE": [
+        "6.8L V8"
+      ],
+      "T2 SERIES": [
+        "6.8L V8"
+      ]
+    },
+    "1979": {
+      "CORNICHE": [
+        "6.8L V8"
+      ],
+      "T2 SERIES": [
+        "6.7L V8",
+        "6.8L V8"
+      ]
+    },
+    "1980": {
+      "CORNICHE": [
+        "6.8L V8"
+      ],
+      "T2 SERIES": [
+        "6.7L V8",
+        "6.8L V8"
+      ]
+    },
+    "1981": {
+      "MULSANNE": [
+        "6.8L V8"
+      ]
+    },
+    "1982": {
+      "CORNICHE": [
+        "6.8L V8"
+      ],
+      "MULSANNE": [
+        "6.8L V8",
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "1983": {
+      "CORNICHE": [
+        "6.8L V8"
+      ],
+      "MULSANNE": [
+        "6.8L V8",
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "1984": {
+      "CORNICHE": [
+        "6.7L V8"
+      ],
+      "EIGHT": [
+        "6.8L V8"
+      ],
+      "MULSANNE": [
+        "6.7L V8",
+        "6.7L V8 Turbocharged"
+      ]
+    },
+    "1985": {
+      "CONTINENTAL": [
+        "6.7L V8"
+      ],
+      "MULSANNE": [
+        "6.7L V8"
+      ]
+    },
+    "1986": {
+      "CONTINENTAL": [
+        "6.7L V8"
+      ],
+      "EIGHT": [
+        "6.8L V8"
+      ],
+      "MULSANNE": [
+        "6.7L V8"
+      ]
+    },
+    "1987": {
+      "CONTINENTAL": [
+        "6.7L V8"
+      ],
+      "EIGHT": [
+        "6.7L V8"
+      ],
+      "MULSANNE": [
+        "6.8L V8"
+      ]
+    },
+    "1988": {
+      "CONTINENTAL": [
+        "6.7L V8"
+      ],
+      "EIGHT": [
+        "6.7L V8"
+      ],
+      "MULSANNE": [
+        "6.7L V8"
+      ],
+      "TURBO R": [
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "1989": {
+      "CONTINENTAL": [
+        "6.7L V8"
+      ],
+      "EIGHT": [
+        "6.7L V8"
+      ],
+      "MULSANNE": [
+        "6.7L V8"
+      ],
+      "TURBO R": [
+        "6.7L V8 Turbocharged"
+      ]
+    },
+    "1990": {
+      "CONTINENTAL": [
+        "6.7L V8"
+      ],
+      "EIGHT": [
+        "6.7L V8"
+      ],
+      "MULSANNE": [
+        "6.7L V8"
+      ],
+      "TURBO R": [
+        "6.7L V8 Turbocharged"
+      ]
+    },
+    "1991": {
+      "CONTINENTAL": [
+        "6.7L V8"
+      ],
+      "EIGHT": [
+        "6.7L V8"
+      ],
+      "MULSANNE": [
+        "6.7L V8"
+      ],
+      "TURBO R": [
+        "6.7L V8 Turbocharged"
+      ]
+    },
+    "1992": {
+      "CONTINENTAL": [
+        "6.7L V8",
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "MULSANNE": [
+        "6.7L V8"
+      ],
+      "TURBO R": [
+        "6.7L V8 Turbocharged"
+      ]
+    },
+    "1993": {
+      "BROOKLANDS": [
+        "6.7L V8"
+      ],
+      "CONTINENTAL": [
+        "6.7L V8",
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "TURBO R": [
+        "6.7L V8 Turbocharged"
+      ]
+    },
+    "1994": {
+      "BROOKLANDS": [
+        "6.7L V8"
+      ],
+      "CONTINENTAL": [
+        "6.7L V8",
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "TURBO R": [
+        "6.7L V8 Turbocharged"
+      ]
+    },
+    "1995": {
+      "BROOKLANDS": [
+        "6.7L V8"
+      ],
+      "CONTINENTAL": [
+        "6.7L V8",
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "TURBO R": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "1996": {
+      "AZURE": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "BROOKLANDS": [
+        "6.7L V8"
+      ],
+      "CONTINENTAL": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "TURBO R": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "1997": {
+      "AZURE": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "BROOKLANDS": [
+        "6.8L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.8L V8 Turbocharged"
+      ],
+      "TURBO R": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "1998": {
+      "AZURE": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "BROOKLANDS": [
+        "6.7L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "TURBO R": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "1999": {
+      "ARNAGE": [
+        "4.4L V8 Turbocharged"
+      ],
+      "AZURE": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2000": {
+      "ARNAGE": [
+        "4.4L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "AZURE": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2001": {
+      "ARNAGE": [
+        "4.4L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "AZURE": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2002": {
+      "ARNAGE": [
+        "6.8L V8 Turbocharged"
+      ],
+      "AZURE": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2003": {
+      "ARNAGE": [
+        "6.8L V8 Turbocharged"
+      ],
+      "AZURE": [
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.0L W12 Turbocharged",
+        "6.7L V8 Turbocharged",
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2004": {
+      "ARNAGE": [
+        "6.8L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.0L W12 Turbocharged"
+      ]
+    },
+    "2005": {
+      "ARNAGE": [
+        "6.8L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.0L W12 Turbocharged"
+      ]
+    },
+    "2006": {
+      "ARNAGE": [
+        "6.8L V8 Turbocharged"
+      ],
+      "AZURE": [
+        "6.8L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.0L W12 Turbocharged"
+      ]
+    },
+    "2007": {
+      "ARNAGE": [
+        "6.8L V8 Turbocharged"
+      ],
+      "AZURE": [
+        "6.8L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.0L W12 Turbocharged"
+      ]
+    },
+    "2008": {
+      "ARNAGE": [
+        "6.8L V8 Turbocharged"
+      ],
+      "AZURE": [
+        "6.8L V8 Turbocharged"
+      ],
+      "BROOKLANDS": [
+        "6.8L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.0L W12 Turbocharged"
+      ]
+    },
+    "2009": {
+      "ARNAGE": [
+        "6.8L V8 Turbocharged"
+      ],
+      "AZURE": [
+        "6.8L V8 Turbocharged"
+      ],
+      "BROOKLANDS": [
+        "6.8L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.0L W12 Turbocharged"
+      ]
+    },
+    "2010": {
+      "AZURE": [
+        "6.8L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.0L W12 Turbocharged"
+      ]
+    },
+    "2011": {
+      "CONTINENTAL": [
+        "6.0L W12 Turbocharged"
+      ],
+      "MULSANNE": [
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2012": {
+      "CONTINENTAL": [
+        "6.0L W12 Turbocharged"
+      ],
+      "MULSANNE": [
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2013": {
+      "CONTINENTAL": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "FLYING SPUR": [
+        "6.0L W12 Turbocharged"
+      ],
+      "MULSANNE": [
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2014": {
+      "CONTINENTAL": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "FLYING SPUR": [
+        "6.0L W12 Turbocharged"
+      ],
+      "MULSANNE": [
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2015": {
+      "CONTINENTAL": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "FLYING SPUR": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "MULSANNE": [
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2016": {
+      "CONTINENTAL": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "FLYING SPUR": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "MULSANNE": [
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2017": {
+      "BENTAYGA": [
+        "6.0L W12 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "FLYING SPUR": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "MULSANNE": [
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2018": {
+      "BENTAYGA": [
+        "6.0L W12 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.0L W12 Turbocharged"
+      ],
+      "FLYING SPUR": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "MULSANNE": [
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2019": {
+      "BENTAYGA": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "6.0L W12 Turbocharged"
+      ],
+      "FLYING SPUR": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "MULSANNE": [
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2020": {
+      "BENTAYGA": [
+        "3.0L V6 ELECTRIC/GAS Turbocharged",
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "FLYING SPUR": [
+        "6.0L W12 Turbocharged"
+      ],
+      "MULSANNE": [
+        "6.8L V8 Turbocharged"
+      ]
+    },
+    "2021": {
+      "BENTAYGA": [
+        "3.0L V6 ELECTRIC/GAS Turbocharged",
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "FLYING SPUR": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ]
+    },
+    "2022": {
+      "BENTAYGA": [
+        "3.0L V6 ELECTRIC/GAS Turbocharged",
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "FLYING SPUR": [
+        "2.9L V6 Turbocharged",
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ]
+    },
+    "2023": {
+      "BENTAYGA": [
+        "3.0L V6 ELECTRIC/GAS Turbocharged",
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "FLYING SPUR": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ]
+    },
+    "2024": {
+      "BENTAYGA": [
+        "3.0L V6 ELECTRIC/GAS Turbocharged",
+        "4.0L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ],
+      "FLYING SPUR": [
+        "2.9L V6 ELECTRIC/GAS Turbocharged",
+        "4.0L V8 Turbocharged",
+        "6.0L W12 Turbocharged"
+      ]
+    },
+    "2025": {
+      "BENTAYGA": [
+        "3.0L V6 ELECTRIC/GAS Turbocharged",
+        "4.0L V8 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "4.0L V8 ELECTRIC/GAS Turbocharged"
+      ],
+      "FLYING SPUR": [
+        "4.0L V8 ELECTRIC/GAS Turbocharged"
+      ]
+    }
+  },
+  "BERKELEY": {
+    "1956": {
+      "328": [
+        "322cc L2"
+      ]
+    },
+    "1957": {
+      "328": [
+        "322cc L2"
+      ]
+    },
+    "1958": {
+      "328": [
+        "328cc L2"
+      ],
+      "SPORTS 500": [
+        "492cc L3"
+      ]
+    },
+    "1959": {
+      "328": [
+        "328cc L2"
+      ],
+      "SPORTS 500": [
+        "492cc L3"
+      ]
+    },
+    "1960": {
+      "B105": [
+        "692cc L2"
+      ],
+      "B95": [
+        "692cc L2"
+      ],
+      "QB105": [
+        "692cc L2"
+      ],
+      "QB95": [
+        "692cc L2"
+      ]
+    },
+    "1961": {
+      "B105": [
+        "692cc L2"
+      ],
+      "B95": [
+        "692cc L2"
+      ]
+    }
+  },
+  "BIZZARRINI": {
+    "1965": {
+      "GT AMERICA": [
+        "5.3L V8"
+      ],
+      "GT STRADA 5300": [
+        "5.4L V8"
+      ]
+    },
+    "1966": {
+      "GT AMERICA": [
+        "5.3L V8"
+      ],
+      "GT STRADA 5300": [
+        "5.4L V8"
+      ]
+    },
+    "1967": {
+      "GT AMERICA": [
+        "5.3L V8"
+      ],
+      "GT STRADA 5300": [
+        "5.4L V8"
+      ]
+    },
+    "1968": {
+      "GT AMERICA": [
+        "5.3L V8"
+      ],
+      "GT STRADA 5300": [
+        "5.4L V8"
+      ]
+    },
+    "1969": {
+      "GT AMERICA": [
+        "5.3L V8"
+      ],
+      "GT STRADA 5300": [
+        "5.4L V8"
+      ]
+    }
+  },
+  "BLACKHAWK": {
+    "1929": {
+      "L-6": [
+        "L6"
+      ],
+      "L-8": [
+        "L8"
+      ]
+    },
+    "1930": {
+      "L-6": [
+        "L6"
+      ],
+      "L-8": [
+        "L8"
+      ]
+    }
+  },
+  "BMW": {
+    "1932": {
+      "3/20": [
+        "All Engines"
+      ]
+    },
+    "1933": {
+      "3/20": [
+        "All Engines"
+      ]
+    },
+    "1934": {
+      "3/20": [
+        "All Engines"
+      ],
+      "315": [
+        "All Engines"
+      ]
+    },
+    "1935": {
+      "315": [
+        "All Engines"
+      ]
+    },
+    "1936": {
+      "315": [
+        "All Engines"
+      ]
+    },
+    "1937": {
+      "315": [
+        "All Engines"
+      ],
+      "325": [
+        "All Engines"
+      ],
+      "326": [
+        "All Engines"
+      ],
+      "327": [
+        "All Engines"
+      ],
+      "328": [
+        "All Engines"
+      ]
+    },
+    "1938": {
+      "325": [
+        "All Engines"
+      ],
+      "326": [
+        "All Engines"
+      ],
+      "327": [
+        "All Engines"
+      ],
+      "328": [
+        "All Engines"
+      ]
+    },
+    "1939": {
+      "325": [
+        "All Engines"
+      ],
+      "326": [
+        "All Engines"
+      ],
+      "327": [
+        "All Engines"
+      ],
+      "328": [
+        "All Engines"
+      ],
+      "335": [
+        "All Engines"
+      ]
+    },
+    "1940": {
+      "325": [
+        "All Engines"
+      ],
+      "326": [
+        "All Engines"
+      ],
+      "327": [
+        "All Engines"
+      ],
+      "335": [
+        "All Engines"
+      ]
+    },
+    "1941": {
+      "326": [
+        "All Engines"
+      ],
+      "327": [
+        "All Engines"
+      ]
+    },
+    "1952": {
+      "501": [
+        "2.0L L6"
+      ]
+    },
+    "1953": {
+      "501": [
+        "2.0L L6"
+      ]
+    },
+    "1954": {
+      "501": [
+        "2.0L L6"
+      ],
+      "501A": [
+        "2.0L L6"
+      ],
+      "501B": [
+        "2.0L L6"
+      ],
+      "502": [
+        "2.6L V8"
+      ]
+    },
+    "1955": {
+      "501": [
+        "2.0L L6",
+        "2.1L L6",
+        "2.6L V8"
+      ],
+      "501A": [
+        "2.0L L6"
+      ],
+      "501B": [
+        "2.0L L6"
+      ],
+      "502": [
+        "2.6L V8",
+        "3.2L V8"
+      ],
+      "ISETTA": [
+        "247cc L1"
+      ]
+    },
+    "1956": {
+      "501": [
+        "2.1L L6",
+        "2.6L V8"
+      ],
+      "502": [
+        "2.6L V8",
+        "3.2L V8"
+      ],
+      "503": [
+        "3.2L V8"
+      ],
+      "507": [
+        "3.2L V8"
+      ],
+      "ISETTA": [
+        "247cc L1",
+        "298cc L1"
+      ]
+    },
+    "1957": {
+      "501": [
+        "2.1L L6",
+        "2.6L V8"
+      ],
+      "502": [
+        "2.6L V8",
+        "3.2L V8"
+      ],
+      "503": [
+        "3.2L V8"
+      ],
+      "507": [
+        "3.2L V8"
+      ],
+      "ISETTA": [
+        "298cc L1"
+      ]
+    },
+    "1958": {
+      "501": [
+        "2.1L L6",
+        "2.6L V8"
+      ],
+      "502": [
+        "2.6L V8",
+        "3.2L V8"
+      ],
+      "503": [
+        "3.2L V8"
+      ],
+      "507": [
+        "3.2L V8"
+      ],
+      "ISETTA": [
+        "298cc L1",
+        "582cc H2"
+      ]
+    },
+    "1959": {
+      "501": [
+        "2.6L V8"
+      ],
+      "502": [
+        "2.6L V8",
+        "3.2L V8"
+      ],
+      "503": [
+        "3.2L V8"
+      ],
+      "507": [
+        "3.2L V8"
+      ],
+      "ISETTA": [
+        "298cc L1",
+        "582cc H2",
+        "697cc H2"
+      ]
+    },
+    "1960": {
+      "501": [
+        "2.6L V8"
+      ],
+      "502": [
+        "2.6L V8",
+        "3.2L V8"
+      ],
+      "503": [
+        "3.2L V8"
+      ],
+      "507": [
+        "3.2L V8"
+      ],
+      "ISETTA": [
+        "298cc L1",
+        "582cc H2",
+        "697cc H2"
+      ]
+    },
+    "1961": {
+      "1500": [
+        "1.5L L4"
+      ],
+      "2600": [
+        "2.6L V8"
+      ],
+      "3200": [
+        "3.2L V8"
+      ],
+      "502": [
+        "2.6L V8",
+        "3.2L V8"
+      ],
+      "ISETTA": [
+        "298cc L1",
+        "697cc H2"
+      ]
+    },
+    "1962": {
+      "1500": [
+        "1.5L L4"
+      ],
+      "2600": [
+        "2.6L V8"
+      ],
+      "3200": [
+        "3.2L V8"
+      ],
+      "ISETTA": [
+        "298cc L1",
+        "697cc H2"
+      ]
+    },
+    "1963": {
+      "1500": [
+        "1.5L L4"
+      ],
+      "1800": [
+        "1.8L L4"
+      ],
+      "2600": [
+        "2.6L V8"
+      ],
+      "3200": [
+        "3.2L V8"
+      ],
+      "ISETTA": [
+        "697cc H2"
+      ]
+    },
+    "1964": {
+      "1500": [
+        "1.5L L4"
+      ],
+      "1600": [
+        "1.6L L4"
+      ],
+      "1800": [
+        "1.8L L4"
+      ],
+      "1800TI": [
+        "1.8L L4"
+      ],
+      "3200CS": [
+        "3.2L V8"
+      ],
+      "ISETTA": [
+        "697cc H2"
+      ]
+    },
+    "1965": {
+      "1600": [
+        "1.6L L4"
+      ],
+      "1800": [
+        "1.8L L4"
+      ],
+      "1800TI": [
+        "1.8L L4"
+      ],
+      "2000C": [
+        "2.0L L4"
+      ],
+      "2000CS": [
+        "2.0L L4"
+      ],
+      "3200CS": [
+        "3.2L V8"
+      ],
+      "ISETTA": [
+        "697cc H2"
+      ]
+    },
+    "1966": {
+      "1600": [
+        "1.6L L4"
+      ],
+      "1600-2": [
+        "1.6L L4"
+      ],
+      "1600TI": [
+        "1.6L L4"
+      ],
+      "1800": [
+        "1.8L L4"
+      ],
+      "1800TI": [
+        "1.8L L4"
+      ],
+      "2000": [
+        "2.0L L4"
+      ],
+      "2000C": [
+        "2.0L L4"
+      ],
+      "2000CS": [
+        "2.0L L4"
+      ],
+      "2000TI": [
+        "2.0L L4"
+      ],
+      "2002": [
+        "2.0L L4"
+      ]
+    },
+    "1967": {
+      "1600": [
+        "1.6L L4"
+      ],
+      "1600-2": [
+        "1.6L L4"
+      ],
+      "1600TI": [
+        "1.6L L4"
+      ],
+      "1602": [
+        "1.6L L4"
+      ],
+      "1800": [
+        "1.8L L4"
+      ],
+      "1800TI": [
+        "1.8L L4"
+      ],
+      "2000": [
+        "2.0L L4"
+      ],
+      "2000C": [
+        "2.0L L4"
+      ],
+      "2000CS": [
+        "2.0L L4"
+      ],
+      "2000TI": [
+        "2.0L L4"
+      ],
+      "2002": [
+        "2.0L L4"
+      ]
+    },
+    "1968": {
+      "1600": [
+        "1.6L L4"
+      ],
+      "1600-2": [
+        "1.6L L4"
+      ],
+      "1600TI": [
+        "1.6L L4"
+      ],
+      "1602": [
+        "1.6L L4"
+      ],
+      "1800": [
+        "1.8L L4"
+      ],
+      "2000": [
+        "2.0L L4"
+      ],
+      "2000C": [
+        "2.0L L4"
+      ],
+      "2000CS": [
+        "2.0L L4"
+      ],
+      "2000TI": [
+        "2.0L L4"
+      ],
+      "2000TII": [
+        "2.0L L4"
+      ],
+      "2002": [
+        "2.0L L4"
+      ],
+      "2002TI": [
+        "2.0L L4"
+      ],
+      "2500": [
+        "2.5L L6"
+      ],
+      "2800": [
+        "2.8L L6"
+      ],
+      "2800CS": [
+        "2.8L L6"
+      ]
+    },
+    "1969": {
+      "1600": [
+        "1.6L L4"
+      ],
+      "1600-2": [
+        "1.6L L4"
+      ],
+      "1602": [
+        "1.6L L4"
+      ],
+      "1800": [
+        "1.8L L4"
+      ],
+      "2000": [
+        "2.0L L4"
+      ],
+      "2000C": [
+        "2.0L L4"
+      ],
+      "2000CS": [
+        "2.0L L4"
+      ],
+      "2000TI": [
+        "2.0L L4"
+      ],
+      "2000TII": [
+        "2.0L L4"
+      ],
+      "2002": [
+        "2.0L L4"
+      ],
+      "2002TI": [
+        "2.0L L4"
+      ],
+      "2500": [
+        "2.5L L6"
+      ],
+      "2800": [
+        "2.8L L6"
+      ],
+      "2800CS": [
+        "2.8L L6"
+      ]
+    },
+    "1970": {
+      "1600": [
+        "1.6L L4"
+      ],
+      "1600-2": [
+        "1.6L L4"
+      ],
+      "1602": [
+        "1.6L L4"
+      ],
+      "1800": [
+        "1.8L L4"
+      ],
+      "2000": [
+        "2.0L L4"
+      ],
+      "2000C": [
+        "2.0L L4"
+      ],
+      "2000CS": [
+        "2.0L L4"
+      ],
+      "2000TI": [
+        "2.0L L4"
+      ],
+      "2000TII": [
+        "2.0L L4"
+      ],
+      "2002": [
+        "2.0L L4"
+      ],
+      "2002TI": [
+        "2.0L L4"
+      ],
+      "2500": [
+        "2.5L L6"
+      ],
+      "2800": [
+        "2.8L L6"
+      ],
+      "2800CS": [
+        "2.8L L6"
+      ]
+    },
+    "1971": {
+      "1600": [
+        "1.6L L4"
+      ],
+      "1600-2": [
+        "1.6L L4"
+      ],
+      "1602": [
+        "1.6L L4"
+      ],
+      "1800": [
+        "1.8L L4"
+      ],
+      "1802": [
+        "1.8L L4"
+      ],
+      "2.8 BAVARIA": [
+        "2.8L L6"
+      ],
+      "2000": [
+        "2.0L L4"
+      ],
+      "2000TI": [
+        "2.0L L4"
+      ],
+      "2000TII": [
+        "2.0L L4"
+      ],
+      "2002": [
+        "2.0L L4"
+      ],
+      "2002TI": [
+        "2.0L L4"
+      ],
+      "2002TII": [
+        "2.0L L4"
+      ],
+      "2500": [
+        "2.5L L6"
+      ],
+      "2800": [
+        "2.8L L6"
+      ],
+      "2800CS": [
+        "2.8L L6"
+      ],
+      "3.0CS": [
+        "3.0L L6"
+      ],
+      "3.0CSI": [
+        "3.0L L6"
+      ],
+      "3.0CSL": [
+        "3.0L L6"
+      ],
+      "3.0S": [
+        "3.0L L6"
+      ],
+      "3.0SI": [
+        "3.0L L6"
+      ]
+    },
+    "1972": {
+      "2000": [
+        "2.0L L4"
+      ],
+      "2000TII": [
+        "2.0L L4"
+      ],
+      "2002": [
+        "2.0L L4"
+      ],
+      "2002TII": [
+        "2.0L L4"
+      ],
+      "2800": [
+        "2.8L L6"
+      ],
+      "3.0CS": [
+        "3.0L L6"
+      ],
+      "3.0CSI": [
+        "3.0L L6"
+      ],
+      "3.0S": [
+        "3.0L L6"
+      ],
+      "BAVARIA": [
+        "2.8L L6",
+        "3.0L L6"
+      ]
+    },
+    "1973": {
+      "2002": [
+        "2.0L L4",
+        "2.0L L4 Turbocharged"
+      ],
+      "2002TII": [
+        "2.0L L4"
+      ],
+      "2800": [
+        "2.8L L6"
+      ],
+      "3.0CS": [
+        "3.0L L6"
+      ],
+      "3.0CSI": [
+        "3.0L L6"
+      ],
+      "3.0S": [
+        "3.0L L6"
+      ],
+      "BAVARIA": [
+        "2.8L L6",
+        "3.0L L6"
+      ]
+    },
+    "1974": {
+      "2002": [
+        "2.0L L4",
+        "2.0L L4 Turbocharged"
+      ],
+      "2002TII": [
+        "2.0L L4"
+      ],
+      "2800": [
+        "2.8L L6"
+      ],
+      "3.0CS": [
+        "3.0L L6"
+      ],
+      "3.0CSI": [
+        "3.0L L6"
+      ],
+      "3.0S": [
+        "3.0L L6"
+      ],
+      "BAVARIA": [
+        "2.8L L6",
+        "3.0L L6"
+      ]
+    },
+    "1975": {
+      "2002": [
+        "2.0L L4"
+      ],
+      "3.0SI": [
+        "3.0L L6"
+      ],
+      "530I": [
+        "3.0L L6"
+      ]
+    },
+    "1976": {
+      "2002": [
+        "2.0L L4"
+      ],
+      "3.0SI": [
+        "3.0L L6"
+      ],
+      "530I": [
+        "3.0L L6"
+      ]
+    },
+    "1977": {
+      "320I": [
+        "2.0L L4"
+      ],
+      "530I": [
+        "3.0L L6"
+      ],
+      "630CSI": [
+        "3.0L L6"
+      ]
+    },
+    "1978": {
+      "320I": [
+        "2.0L L4"
+      ],
+      "530I": [
+        "3.0L L6"
+      ],
+      "630CSI": [
+        "3.0L L6"
+      ],
+      "633CSI": [
+        "3.2L L6"
+      ],
+      "733I": [
+        "3.2L L6"
+      ]
+    },
+    "1979": {
+      "320I": [
+        "2.0L L4"
+      ],
+      "528I": [
+        "2.8L L6"
+      ],
+      "633CSI": [
+        "3.2L L6"
+      ],
+      "733I": [
+        "3.2L L6"
+      ]
+    },
+    "1980": {
+      "320I": [
+        "1.8L L4"
+      ],
+      "528I": [
+        "2.8L L6"
+      ],
+      "633CSI": [
+        "3.2L L6"
+      ],
+      "733I": [
+        "3.2L L6"
+      ]
+    },
+    "1981": {
+      "320I": [
+        "1.8L L4"
+      ],
+      "528I": [
+        "2.8L L6"
+      ],
+      "633CSI": [
+        "3.2L L6"
+      ],
+      "733I": [
+        "3.2L L6"
+      ]
+    },
+    "1982": {
+      "320I": [
+        "1.8L L4"
+      ],
+      "528E": [
+        "2.7L L6"
+      ],
+      "633CSI": [
+        "3.2L L6"
+      ],
+      "733I": [
+        "3.2L L6"
+      ]
+    },
+    "1983": {
+      "318I": [
+        "1.8L L4"
+      ],
+      "320I": [
+        "1.8L L4"
+      ],
+      "528E": [
+        "2.7L L6"
+      ],
+      "533I": [
+        "3.2L L6"
+      ],
+      "633CSI": [
+        "3.2L L6"
+      ],
+      "733I": [
+        "3.2L L6"
+      ]
+    },
+    "1984": {
+      "318I": [
+        "1.8L L4"
+      ],
+      "325E": [
+        "2.7L L6"
+      ],
+      "528E": [
+        "2.7L L6"
+      ],
+      "533I": [
+        "3.2L L6"
+      ],
+      "633CSI": [
+        "3.2L L6"
+      ],
+      "733I": [
+        "3.2L L6"
+      ]
+    },
+    "1985": {
+      "318I": [
+        "1.8L L4"
+      ],
+      "325E": [
+        "2.7L L6"
+      ],
+      "524TD": [
+        "2.4L L6 DIESEL Turbocharged"
+      ],
+      "528E": [
+        "2.7L L6"
+      ],
+      "535I": [
+        "3.5L L6"
+      ],
+      "635CSI": [
+        "3.5L L6"
+      ],
+      "735I": [
+        "3.5L L6"
+      ]
+    },
+    "1986": {
+      "325": [
+        "2.7L L6"
+      ],
+      "325E": [
+        "2.7L L6"
+      ],
+      "325ES": [
+        "2.7L L6"
+      ],
+      "524TD": [
+        "2.4L L6 DIESEL Turbocharged"
+      ],
+      "528E": [
+        "2.7L L6"
+      ],
+      "535I": [
+        "3.5L L6"
+      ],
+      "635CSI": [
+        "3.5L L6"
+      ],
+      "735I": [
+        "3.5L L6"
+      ],
+      "L7": [
+        "3.5L L6"
+      ]
+    },
+    "1987": {
+      "325": [
+        "2.7L L6"
+      ],
+      "325E": [
+        "2.7L L6"
+      ],
+      "325ES": [
+        "2.7L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "325IS": [
+        "2.5L L6"
+      ],
+      "528E": [
+        "2.7L L6"
+      ],
+      "535I": [
+        "3.5L L6"
+      ],
+      "635CSI": [
+        "3.5L L6"
+      ],
+      "735I": [
+        "3.5L L6"
+      ],
+      "L6": [
+        "3.5L L6"
+      ],
+      "L7": [
+        "3.5L L6"
+      ],
+      "M5": [
+        "3.5L L6"
+      ],
+      "M6": [
+        "3.5L L6"
+      ]
+    },
+    "1988": {
+      "325": [
+        "2.7L L6"
+      ],
+      "325E": [
+        "2.7L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "325IS": [
+        "2.5L L6"
+      ],
+      "325IX": [
+        "2.5L L6"
+      ],
+      "528E": [
+        "2.7L L6"
+      ],
+      "535I": [
+        "3.5L L6"
+      ],
+      "535IS": [
+        "3.5L L6"
+      ],
+      "635CSI": [
+        "3.5L L6"
+      ],
+      "735I": [
+        "3.5L L6"
+      ],
+      "735IL": [
+        "3.5L L6"
+      ],
+      "750IL": [
+        "5.0L V12"
+      ],
+      "M3": [
+        "2.3L L4"
+      ],
+      "M5": [
+        "3.5L L6"
+      ],
+      "M6": [
+        "3.5L L6"
+      ]
+    },
+    "1989": {
+      "325I": [
+        "2.5L L6"
+      ],
+      "325IS": [
+        "2.5L L6"
+      ],
+      "325IX": [
+        "2.5L L6"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "535I": [
+        "3.5L L6"
+      ],
+      "635CSI": [
+        "3.5L L6"
+      ],
+      "735I": [
+        "3.5L L6"
+      ],
+      "735IL": [
+        "3.5L L6"
+      ],
+      "750IL": [
+        "5.0L V12"
+      ],
+      "M3": [
+        "2.3L L4"
+      ],
+      "M5": [
+        "3.5L L6"
+      ],
+      "M6": [
+        "3.5L L6"
+      ]
+    },
+    "1990": {
+      "325I": [
+        "2.5L L6"
+      ],
+      "325IS": [
+        "2.5L L6"
+      ],
+      "325IX": [
+        "2.5L L6"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "535I": [
+        "3.5L L6"
+      ],
+      "735I": [
+        "3.5L L6"
+      ],
+      "735IL": [
+        "3.5L L6"
+      ],
+      "750IL": [
+        "5.0L V12"
+      ],
+      "M3": [
+        "2.3L L4"
+      ],
+      "M5": [
+        "3.5L L6"
+      ]
+    },
+    "1991": {
+      "318I": [
+        "1.8L L4"
+      ],
+      "318IS": [
+        "1.8L L4"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "325IS": [
+        "2.5L L6"
+      ],
+      "325IX": [
+        "2.5L L6"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "535I": [
+        "3.5L L6"
+      ],
+      "735I": [
+        "3.5L L6"
+      ],
+      "735IL": [
+        "3.5L L6"
+      ],
+      "750IL": [
+        "5.0L V12"
+      ],
+      "850I": [
+        "5.0L V12"
+      ],
+      "M3": [
+        "2.3L L4"
+      ],
+      "M5": [
+        "3.6L L6"
+      ]
+    },
+    "1992": {
+      "318I": [
+        "1.8L L4"
+      ],
+      "318IS": [
+        "1.8L L4"
+      ],
+      "320I": [
+        "2.0L L6"
+      ],
+      "325I": [
+        "2.5L L6 DOHC",
+        "2.5L L6 SOHC"
+      ],
+      "325IS": [
+        "2.5L L6"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "535I": [
+        "3.5L L6"
+      ],
+      "735I": [
+        "3.5L L6"
+      ],
+      "735IL": [
+        "3.5L L6"
+      ],
+      "750IL": [
+        "5.0L V12"
+      ],
+      "850I": [
+        "5.0L V12"
+      ],
+      "M5": [
+        "3.6L L6"
+      ]
+    },
+    "1993": {
+      "318I": [
+        "1.8L L4"
+      ],
+      "318IS": [
+        "1.8L L4"
+      ],
+      "320I": [
+        "2.0L L6"
+      ],
+      "325I": [
+        "2.5L L6 DOHC",
+        "2.5L L6 SOHC"
+      ],
+      "325IS": [
+        "2.5L L6"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "535I": [
+        "3.5L L6"
+      ],
+      "740I": [
+        "4.0L V8"
+      ],
+      "740IL": [
+        "4.0L V8"
+      ],
+      "750IL": [
+        "5.0L V12"
+      ],
+      "8": [
+        "4.0L V8"
+      ],
+      "840I": [
+        "4.0L V8"
+      ],
+      "850CI": [
+        "5.0L V12"
+      ],
+      "M5": [
+        "3.6L L6"
+      ]
+    },
+    "1994": {
+      "318I": [
+        "1.8L L4"
+      ],
+      "318IS": [
+        "1.8L L4"
+      ],
+      "320I": [
+        "2.0L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "325IS": [
+        "2.5L L6"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "530I": [
+        "3.0L V8"
+      ],
+      "540I": [
+        "4.0L V8"
+      ],
+      "740I": [
+        "4.0L V8"
+      ],
+      "740IL": [
+        "4.0L V8"
+      ],
+      "750IL": [
+        "5.0L V12"
+      ],
+      "8": [
+        "4.0L V8"
+      ],
+      "840CI": [
+        "4.0L V8"
+      ],
+      "840I": [
+        "4.0L V8"
+      ],
+      "850CI": [
+        "5.0L V12"
+      ],
+      "850CSI": [
+        "5.6L V12"
+      ],
+      "M3": [
+        "3.0L L6"
+      ]
+    },
+    "1995": {
+      "318I": [
+        "1.8L L4"
+      ],
+      "318IS": [
+        "1.8L L4"
+      ],
+      "318TI": [
+        "1.8L L4"
+      ],
+      "320I": [
+        "2.0L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "325IS": [
+        "2.5L L6"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "530I": [
+        "3.0L V8"
+      ],
+      "540I": [
+        "4.0L V8"
+      ],
+      "740I": [
+        "4.0L V8"
+      ],
+      "740IL": [
+        "4.0L V8"
+      ],
+      "750IL": [
+        "5.0L V12",
+        "5.4L V12"
+      ],
+      "8": [
+        "4.0L V8"
+      ],
+      "840CI": [
+        "4.0L V8"
+      ],
+      "840I": [
+        "4.0L V8"
+      ],
+      "850CI": [
+        "5.4L V12"
+      ],
+      "850CSI": [
+        "5.6L V12"
+      ],
+      "M3": [
+        "3.0L L6"
+      ]
+    },
+    "1996": {
+      "318I": [
+        "1.9L L4"
+      ],
+      "318IS": [
+        "1.9L L4"
+      ],
+      "318TI": [
+        "1.9L L4"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "328I": [
+        "2.8L L6"
+      ],
+      "328IS": [
+        "2.8L L6"
+      ],
+      "528I": [
+        "2.8L L6"
+      ],
+      "740IL": [
+        "4.4L V8"
+      ],
+      "750IL": [
+        "5.4L V12"
+      ],
+      "8": [
+        "4.0L V8"
+      ],
+      "840CI": [
+        "4.4L V8"
+      ],
+      "840I": [
+        "4.0L V8"
+      ],
+      "850CI": [
+        "5.4L V12"
+      ],
+      "M3": [
+        "3.0L L6",
+        "3.2L L6"
+      ],
+      "Z3": [
+        "1.9L L4"
+      ]
+    },
+    "1997": {
+      "318I": [
+        "1.9L L4"
+      ],
+      "318IS": [
+        "1.9L L4"
+      ],
+      "318TI": [
+        "1.9L L4"
+      ],
+      "323I": [
+        "2.5L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "328I": [
+        "2.8L L6"
+      ],
+      "328IS": [
+        "2.8L L6"
+      ],
+      "528I": [
+        "2.8L L6"
+      ],
+      "540I": [
+        "4.4L V8"
+      ],
+      "740I": [
+        "4.4L V8"
+      ],
+      "740IL": [
+        "4.4L V8"
+      ],
+      "750IL": [
+        "5.4L V12"
+      ],
+      "840CI": [
+        "4.4L V8"
+      ],
+      "850CI": [
+        "5.4L V12"
+      ],
+      "M3": [
+        "3.2L L6"
+      ],
+      "Z3": [
+        "1.9L L4",
+        "2.8L L6"
+      ]
+    },
+    "1998": {
+      "318I": [
+        "1.9L L4"
+      ],
+      "318IS": [
+        "1.9L L4"
+      ],
+      "318TI": [
+        "1.9L L4"
+      ],
+      "323I": [
+        "2.5L L6"
+      ],
+      "323IS": [
+        "2.5L L6"
+      ],
+      "328I": [
+        "2.8L L6"
+      ],
+      "328IS": [
+        "2.8L L6"
+      ],
+      "528I": [
+        "2.8L L6"
+      ],
+      "540I": [
+        "4.4L V8"
+      ],
+      "740I": [
+        "4.4L V8"
+      ],
+      "740IL": [
+        "4.4L V8"
+      ],
+      "750IL": [
+        "5.4L V12"
+      ],
+      "850CI": [
+        "5.4L V12"
+      ],
+      "M3": [
+        "3.2L L6"
+      ],
+      "Z3": [
+        "1.9L L4",
+        "2.8L L6",
+        "3.2L L6"
+      ]
+    },
+    "1999": {
+      "318I": [
+        "1.9L L4"
+      ],
+      "318IS": [
+        "1.9L L4"
+      ],
+      "318TI": [
+        "1.9L L4"
+      ],
+      "323I": [
+        "2.5L L6"
+      ],
+      "323IS": [
+        "2.5L L6"
+      ],
+      "323TI": [
+        "2.5L L6"
+      ],
+      "328I": [
+        "2.8L L6"
+      ],
+      "328IS": [
+        "2.8L L6"
+      ],
+      "528I": [
+        "2.8L L6"
+      ],
+      "540I": [
+        "4.4L V8"
+      ],
+      "740I": [
+        "4.4L V8"
+      ],
+      "740IL": [
+        "4.4L V8"
+      ],
+      "750IL": [
+        "5.4L V12"
+      ],
+      "850CI": [
+        "5.4L V12"
+      ],
+      "M3": [
+        "3.2L L6"
+      ],
+      "M5": [
+        "4.9L V8"
+      ],
+      "Z3": [
+        "1.9L L4",
+        "2.5L L6",
+        "2.8L L6",
+        "3.2L L6"
+      ]
+    },
+    "2000": {
+      "323CI": [
+        "2.5L L6"
+      ],
+      "323I": [
+        "2.5L L6"
+      ],
+      "323TI": [
+        "2.5L L6"
+      ],
+      "328CI": [
+        "2.8L L6"
+      ],
+      "328I": [
+        "2.8L L6"
+      ],
+      "528I": [
+        "2.8L L6"
+      ],
+      "540I": [
+        "4.4L V8"
+      ],
+      "740I": [
+        "4.4L V8"
+      ],
+      "740IL": [
+        "4.4L V8"
+      ],
+      "750IL": [
+        "5.4L V12"
+      ],
+      "M5": [
+        "5.0L V8"
+      ],
+      "X5": [
+        "4.4L V8"
+      ],
+      "Z3": [
+        "2.0L L6",
+        "2.5L L6",
+        "2.8L L6",
+        "3.2L L6"
+      ],
+      "Z8": [
+        "5.0L V8"
+      ]
+    },
+    "2001": {
+      "320I": [
+        "2.2L L6"
+      ],
+      "323I": [
+        "2.5L L6"
+      ],
+      "325CI": [
+        "2.5L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "325XI": [
+        "2.5L L6"
+      ],
+      "330CI": [
+        "3.0L L6"
+      ],
+      "330I": [
+        "3.0L L6"
+      ],
+      "330XI": [
+        "3.0L L6"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "530I": [
+        "3.0L L6"
+      ],
+      "540I": [
+        "4.4L V8"
+      ],
+      "740I": [
+        "4.4L V8"
+      ],
+      "740IL": [
+        "4.4L V8"
+      ],
+      "750IL": [
+        "5.4L V12"
+      ],
+      "M3": [
+        "3.2L L6"
+      ],
+      "M5": [
+        "5.0L V8"
+      ],
+      "X5": [
+        "3.0L L6",
+        "4.4L V8"
+      ],
+      "Z3": [
+        "2.2L L6",
+        "2.5L L6",
+        "3.0L L6",
+        "3.2L L6"
+      ],
+      "Z8": [
+        "5.0L V8"
+      ]
+    },
+    "2002": {
+      "320I": [
+        "2.2L L6"
+      ],
+      "325CI": [
+        "2.5L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "325XI": [
+        "2.5L L6"
+      ],
+      "330CI": [
+        "3.0L L6"
+      ],
+      "330I": [
+        "3.0L L6"
+      ],
+      "330XI": [
+        "3.0L L6"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "530I": [
+        "3.0L L6"
+      ],
+      "540I": [
+        "4.4L V8"
+      ],
+      "745I": [
+        "4.4L V8"
+      ],
+      "745LI": [
+        "4.4L V8"
+      ],
+      "M3": [
+        "3.2L L6"
+      ],
+      "M5": [
+        "4.9L V8"
+      ],
+      "X5": [
+        "3.0L L6",
+        "4.4L V8",
+        "4.6L V8"
+      ],
+      "Z3": [
+        "2.2L L6",
+        "2.5L L6",
+        "3.0L L6",
+        "3.2L L6"
+      ],
+      "Z8": [
+        "5.0L V8"
+      ]
+    },
+    "2003": {
+      "320I": [
+        "2.2L L6"
+      ],
+      "325CI": [
+        "2.5L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "325XI": [
+        "2.5L L6"
+      ],
+      "330CI": [
+        "3.0L L6"
+      ],
+      "330I": [
+        "3.0L L6"
+      ],
+      "330XI": [
+        "3.0L L6"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "530I": [
+        "3.0L L6"
+      ],
+      "540I": [
+        "4.4L V8"
+      ],
+      "745I": [
+        "4.4L V8"
+      ],
+      "745LI": [
+        "4.4L V8"
+      ],
+      "760LI": [
+        "6.0L V12"
+      ],
+      "M3": [
+        "3.2L L6"
+      ],
+      "M5": [
+        "4.9L V8"
+      ],
+      "X5": [
+        "3.0L L6",
+        "4.4L V8",
+        "4.6L V8"
+      ],
+      "Z4": [
+        "2.5L L6",
+        "3.0L L6"
+      ],
+      "Z8": [
+        "4.8L V8",
+        "5.0L V8"
+      ]
+    },
+    "2004": {
+      "320I": [
+        "2.2L L6"
+      ],
+      "325CI": [
+        "2.5L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "325XI": [
+        "2.5L L6"
+      ],
+      "330CI": [
+        "3.0L L6"
+      ],
+      "330I": [
+        "3.0L L6"
+      ],
+      "330XI": [
+        "3.0L L6"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "530I": [
+        "3.0L L6"
+      ],
+      "545I": [
+        "4.4L V8"
+      ],
+      "645CI": [
+        "4.4L V8"
+      ],
+      "745I": [
+        "4.4L V8"
+      ],
+      "745LI": [
+        "4.4L V8"
+      ],
+      "760I": [
+        "6.0L V12"
+      ],
+      "760LI": [
+        "6.0L V12"
+      ],
+      "M3": [
+        "3.2L L6"
+      ],
+      "X3": [
+        "2.5L L6",
+        "3.0L L6"
+      ],
+      "X5": [
+        "3.0L L6",
+        "4.4L V8",
+        "4.8L V8"
+      ],
+      "Z4": [
+        "2.5L L6",
+        "3.0L L6"
+      ]
+    },
+    "2005": {
+      "120I": [
+        "2.0L L4"
+      ],
+      "320I": [
+        "2.2L L6"
+      ],
+      "325CI": [
+        "2.5L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "325XI": [
+        "2.5L L6"
+      ],
+      "330CI": [
+        "3.0L L6"
+      ],
+      "330I": [
+        "3.0L L6"
+      ],
+      "330XI": [
+        "3.0L L6"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "530I": [
+        "3.0L L6"
+      ],
+      "545I": [
+        "4.4L V8"
+      ],
+      "645CI": [
+        "4.4L V8"
+      ],
+      "745I": [
+        "4.4L V8"
+      ],
+      "745LI": [
+        "4.4L V8"
+      ],
+      "760I": [
+        "6.0L V12"
+      ],
+      "760LI": [
+        "6.0L V12"
+      ],
+      "M3": [
+        "3.2L L6"
+      ],
+      "M5": [
+        "5.0L V10"
+      ],
+      "X3": [
+        "2.5L L6",
+        "3.0L L6"
+      ],
+      "X5": [
+        "3.0L L6",
+        "4.4L V8",
+        "4.8L V8"
+      ],
+      "Z4": [
+        "2.5L L6",
+        "3.0L L6"
+      ]
+    },
+    "2006": {
+      "120I": [
+        "2.0L L4"
+      ],
+      "130I": [
+        "3.0L L6"
+      ],
+      "323I": [
+        "2.5L L6"
+      ],
+      "325CI": [
+        "2.5L L6"
+      ],
+      "325I": [
+        "2.5L L6",
+        "3.0L L6"
+      ],
+      "325XI": [
+        "3.0L L6"
+      ],
+      "330CI": [
+        "3.0L L6"
+      ],
+      "330I": [
+        "3.0L L6"
+      ],
+      "330XI": [
+        "3.0L L6"
+      ],
+      "525I": [
+        "2.5L L6",
+        "3.0L L6"
+      ],
+      "525XI": [
+        "3.0L L6"
+      ],
+      "530I": [
+        "3.0L L6"
+      ],
+      "530XI": [
+        "3.0L L6"
+      ],
+      "545I": [
+        "4.4L V8"
+      ],
+      "550I": [
+        "4.8L V8"
+      ],
+      "650CI": [
+        "4.8L V8"
+      ],
+      "650I": [
+        "4.8L V8"
+      ],
+      "750I": [
+        "4.8L V8"
+      ],
+      "750LI": [
+        "4.8L V8"
+      ],
+      "760I": [
+        "6.0L V12"
+      ],
+      "760LI": [
+        "6.0L V12"
+      ],
+      "M3": [
+        "3.2L L6"
+      ],
+      "M5": [
+        "5.0L V10"
+      ],
+      "M6": [
+        "5.0L V10"
+      ],
+      "X3": [
+        "2.5L L6",
+        "3.0L L6"
+      ],
+      "X5": [
+        "3.0L L6",
+        "4.4L V8",
+        "4.8L V8"
+      ],
+      "Z4": [
+        "2.5L L6",
+        "3.0L L6",
+        "3.2L L6"
+      ]
+    },
+    "2007": {
+      "120I": [
+        "2.0L L4"
+      ],
+      "130I": [
+        "3.0L L6"
+      ],
+      "323I": [
+        "2.5L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "328I": [
+        "3.0L L6"
+      ],
+      "328XI": [
+        "3.0L L6"
+      ],
+      "330I": [
+        "3.0L L6"
+      ],
+      "335I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "335XI": [
+        "3.0L L6 Turbocharged"
+      ],
+      "525I": [
+        "2.5L L6",
+        "3.0L L6"
+      ],
+      "525XI": [
+        "3.0L L6"
+      ],
+      "530I": [
+        "3.0L L6"
+      ],
+      "530XI": [
+        "3.0L L6"
+      ],
+      "550I": [
+        "4.8L V8"
+      ],
+      "650CI": [
+        "4.8L V8"
+      ],
+      "650I": [
+        "4.8L V8"
+      ],
+      "750I": [
+        "4.8L V8"
+      ],
+      "750LI": [
+        "4.8L V8"
+      ],
+      "760LI": [
+        "6.0L V12"
+      ],
+      "ALPINA B7": [
+        "4.4L V8 Supercharged"
+      ],
+      "M5": [
+        "5.0L V10"
+      ],
+      "M6": [
+        "5.0L V10"
+      ],
+      "X3": [
+        "2.5L L6",
+        "3.0L L6"
+      ],
+      "X5": [
+        "3.0L L6",
+        "4.8L V8"
+      ],
+      "Z4": [
+        "2.5L L6",
+        "3.0L L6",
+        "3.2L L6"
+      ]
+    },
+    "2008": {
+      "120I": [
+        "2.0L L4"
+      ],
+      "125I": [
+        "3.0L L6"
+      ],
+      "128I": [
+        "3.0L L6"
+      ],
+      "130I": [
+        "3.0L L6"
+      ],
+      "135I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "323I": [
+        "2.5L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "328I": [
+        "3.0L L6"
+      ],
+      "328XI": [
+        "3.0L L6"
+      ],
+      "335I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "335XI": [
+        "3.0L L6 Turbocharged"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "528I": [
+        "3.0L L6"
+      ],
+      "528XI": [
+        "3.0L L6"
+      ],
+      "530I": [
+        "3.0L L6"
+      ],
+      "535I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "535XI": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550I": [
+        "4.8L V8"
+      ],
+      "650CI": [
+        "4.8L V8"
+      ],
+      "650I": [
+        "4.8L V8"
+      ],
+      "750I": [
+        "4.8L V8"
+      ],
+      "750LI": [
+        "4.8L V8"
+      ],
+      "760LI": [
+        "6.0L V12"
+      ],
+      "ALPINA B7": [
+        "4.4L V8 Supercharged"
+      ],
+      "M3": [
+        "4.0L V8"
+      ],
+      "M5": [
+        "5.0L V10"
+      ],
+      "M6": [
+        "5.0L V10"
+      ],
+      "X3": [
+        "2.5L L6",
+        "3.0L L6"
+      ],
+      "X5": [
+        "3.0L L6",
+        "4.8L V8"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "Z4": [
+        "2.5L L6",
+        "3.0L L6",
+        "3.2L L6"
+      ]
+    },
+    "2009": {
+      "120I": [
+        "2.0L L4"
+      ],
+      "125I": [
+        "3.0L L6"
+      ],
+      "128I": [
+        "3.0L L6"
+      ],
+      "130I": [
+        "3.0L L6"
+      ],
+      "135I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "323I": [
+        "2.5L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "328I": [
+        "3.0L L6"
+      ],
+      "335D": [
+        "3.0L L6 DIESEL Turbocharged"
+      ],
+      "335I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "528I": [
+        "3.0L L6"
+      ],
+      "530I": [
+        "3.0L L6"
+      ],
+      "535I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550I": [
+        "4.8L V8"
+      ],
+      "650CI": [
+        "4.8L V8"
+      ],
+      "650I": [
+        "4.8L V8"
+      ],
+      "750I": [
+        "4.4L V8 Turbocharged",
+        "4.8L V8"
+      ],
+      "750LI": [
+        "4.4L V8 Turbocharged",
+        "4.8L V8"
+      ],
+      "760LI": [
+        "6.0L V12"
+      ],
+      "M3": [
+        "4.0L V8"
+      ],
+      "M5": [
+        "5.0L V10"
+      ],
+      "M6": [
+        "5.0L V10"
+      ],
+      "X3": [
+        "2.5L L6",
+        "3.0L L6"
+      ],
+      "X5": [
+        "3.0L L6",
+        "3.0L L6 DIESEL Turbocharged",
+        "4.8L V8"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "Z4": [
+        "2.5L L6",
+        "3.0L L6",
+        "3.0L L6 Turbocharged",
+        "3.2L L6"
+      ]
+    },
+    "2010": {
+      "120I": [
+        "2.0L L4"
+      ],
+      "125I": [
+        "3.0L L6"
+      ],
+      "128I": [
+        "3.0L L6"
+      ],
+      "130I": [
+        "3.0L L6"
+      ],
+      "135I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "323I": [
+        "2.5L L6"
+      ],
+      "325I": [
+        "2.5L L6"
+      ],
+      "328I": [
+        "3.0L L6"
+      ],
+      "335D": [
+        "3.0L L6 DIESEL Turbocharged"
+      ],
+      "335I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "525I": [
+        "2.5L L6"
+      ],
+      "528I": [
+        "3.0L L6"
+      ],
+      "530I": [
+        "3.0L L6"
+      ],
+      "535I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "535I GT": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550I": [
+        "4.8L V8"
+      ],
+      "550I GT": [
+        "4.4L V8 Turbocharged"
+      ],
+      "650CI": [
+        "4.8L V8"
+      ],
+      "650I": [
+        "4.8L V8"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "750I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "750LI": [
+        "4.4L V8 Turbocharged"
+      ],
+      "760LI": [
+        "6.0L V12 Turbocharged"
+      ],
+      "M3": [
+        "4.0L V8"
+      ],
+      "M5": [
+        "5.0L V10"
+      ],
+      "M6": [
+        "5.0L V10"
+      ],
+      "X1": [
+        "2.5L L6",
+        "3.0L L6"
+      ],
+      "X3": [
+        "2.5L L6",
+        "3.0L L6"
+      ],
+      "X5": [
+        "3.0L L6",
+        "3.0L L6 DIESEL Turbocharged",
+        "4.4L V8 Turbocharged",
+        "4.8L V8"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 ELECTRIC/GAS Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "Z4": [
+        "2.5L L6",
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2011": {
+      "1 SERIES M": [
+        "3.0L L6 Turbocharged"
+      ],
+      "120I": [
+        "2.0L L4"
+      ],
+      "125I": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4",
+        "3.0L L6"
+      ],
+      "128I": [
+        "3.0L L6"
+      ],
+      "135I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "323I": [
+        "2.5L L6"
+      ],
+      "325I": [
+        "2.5L L6",
+        "3.0L L6 Turbocharged"
+      ],
+      "328I": [
+        "3.0L L6"
+      ],
+      "335D": [
+        "3.0L L6 DIESEL Turbocharged"
+      ],
+      "335I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "335IS": [
+        "3.0L L6 Turbocharged"
+      ],
+      "528I": [
+        "3.0L L6"
+      ],
+      "535I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "535I GT": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "550I GT": [
+        "4.4L V8 Turbocharged"
+      ],
+      "650CI": [
+        "4.8L V8"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "740LI": [
+        "3.0L L6 Turbocharged"
+      ],
+      "750I": [
+        "4.4L V8 ELECTRIC/GAS Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "750LI": [
+        "4.4L V8 ELECTRIC/GAS Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "760LI": [
+        "6.0L V12 Turbocharged"
+      ],
+      "ALPINA B7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA B7L": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M3": [
+        "4.0L V8"
+      ],
+      "M6": [
+        "5.0L V10"
+      ],
+      "X1": [
+        "3.0L L6"
+      ],
+      "X3": [
+        "2.5L L6",
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "3.0L L6",
+        "3.0L L6 DIESEL Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 ELECTRIC/GAS Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "Z4": [
+        "2.5L L6",
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2012": {
+      "118I": [
+        "1.6L L4 Turbocharged"
+      ],
+      "120I": [
+        "2.0L L4"
+      ],
+      "125I": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4",
+        "3.0L L6"
+      ],
+      "128I": [
+        "3.0L L6"
+      ],
+      "135I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "320I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "325I": [
+        "2.0L L4 Turbocharged",
+        "2.5L L6",
+        "3.0L L6 Turbocharged"
+      ],
+      "328I": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ],
+      "335I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "335IS": [
+        "3.0L L6 Turbocharged"
+      ],
+      "528I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "530I": [
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ],
+      "535I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "535I GT": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "550I GT": [
+        "4.4L V8 Turbocharged"
+      ],
+      "640I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "650I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "740LI": [
+        "3.0L L6 Turbocharged"
+      ],
+      "750I": [
+        "4.4L V8 ELECTRIC/GAS Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "750LI": [
+        "4.4L V8 ELECTRIC/GAS Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "760LI": [
+        "6.0L V12 Turbocharged"
+      ],
+      "ACTIVEHYBRID 5": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "ALPINA B7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA B7L": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M3": [
+        "4.0L V8"
+      ],
+      "M5": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M6": [
+        "4.4L V8 Turbocharged"
+      ],
+      "X1": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6"
+      ],
+      "X3": [
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "3.0L L6 DIESEL Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "Z4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2013": {
+      "118I": [
+        "1.6L L4 Turbocharged"
+      ],
+      "125I": [
+        "3.0L L6"
+      ],
+      "128I": [
+        "3.0L L6"
+      ],
+      "135I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "135IS": [
+        "3.0L L6 Turbocharged"
+      ],
+      "320I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "325I": [
+        "2.0L L4 Turbocharged",
+        "2.5L L6",
+        "3.0L L6 Turbocharged"
+      ],
+      "328I": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ],
+      "335I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "335IS": [
+        "3.0L L6 Turbocharged"
+      ],
+      "528I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "530I": [
+        "3.0L L6"
+      ],
+      "535I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "535I GT": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "550I GT": [
+        "4.4L V8 Turbocharged"
+      ],
+      "640I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "650I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "740LI": [
+        "3.0L L6 Turbocharged"
+      ],
+      "750I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "750LI": [
+        "4.4L V8 Turbocharged"
+      ],
+      "760LI": [
+        "6.0L V12 Turbocharged"
+      ],
+      "ACTIVEHYBRID 3": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "ACTIVEHYBRID 5": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "ACTIVEHYBRID 7": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "ALPINA B7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA B7L": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M135I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M3": [
+        "4.0L V8"
+      ],
+      "M5": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M6": [
+        "4.4L V8 Turbocharged"
+      ],
+      "X1": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ],
+      "X3": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "3.0L L6 DIESEL Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "Z4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2014": {
+      "118I": [
+        "1.6L L4 Turbocharged"
+      ],
+      "220I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "228I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "320I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "328D": [
+        "2.0L L4 DIESEL Turbocharged"
+      ],
+      "328I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "335I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "428I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "435I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "520I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "528I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "535D": [
+        "3.0L L6 DIESEL Turbocharged"
+      ],
+      "535I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "640I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "650I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "740LI": [
+        "3.0L L6 Turbocharged"
+      ],
+      "750I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "750LI": [
+        "4.4L V8 Turbocharged"
+      ],
+      "760LI": [
+        "6.0L V12 Turbocharged"
+      ],
+      "ACTIVEHYBRID 3": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "ACTIVEHYBRID 5": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "ACTIVEHYBRID 7": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "ALPINA B7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "I3": [
+        "647cc L2 ELECTRIC",
+        "647cc L2 ELECTRIC/GAS"
+      ],
+      "I8": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged"
+      ],
+      "M135I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M235I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M5": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M6": [
+        "4.4L V8 Turbocharged"
+      ],
+      "X1": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X3": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "3.0L L6 DIESEL Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "Z4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2015": {
+      "118I": [
+        "1.6L L4 Turbocharged"
+      ],
+      "220I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "228I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "320I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "328D": [
+        "2.0L L4 DIESEL Turbocharged"
+      ],
+      "328I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "335I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "428I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "435I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "520I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "528I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "535D": [
+        "3.0L L6 DIESEL Turbocharged"
+      ],
+      "535I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "535I GT": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "550I GT": [
+        "4.4L V8 Turbocharged"
+      ],
+      "640I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "650I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "740LD": [
+        "3.0L L6 DIESEL Turbocharged"
+      ],
+      "740LI": [
+        "3.0L L6 Turbocharged"
+      ],
+      "750I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "750LI": [
+        "4.4L V8 Turbocharged"
+      ],
+      "760LI": [
+        "6.0L V12 Turbocharged"
+      ],
+      "ACTIVEHYBRID 3": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "ACTIVEHYBRID 5": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "ACTIVEHYBRID 7": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "ALPINA B6": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA B7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "I3": [
+        "647cc L2 ELECTRIC",
+        "647cc L2 ELECTRIC/GAS"
+      ],
+      "I8": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged"
+      ],
+      "M135I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M235I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M3": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M4": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M5": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M6": [
+        "4.4L V8 Turbocharged"
+      ],
+      "X1": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X3": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "3.0L L6 DIESEL Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "Z4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2016": {
+      "120I": [
+        "1.6L L4 Turbocharged"
+      ],
+      "220I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "228I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "320I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "328D": [
+        "2.0L L4 DIESEL Turbocharged"
+      ],
+      "328I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "330E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "330I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "335I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "340I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "420I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "428I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "435I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "520I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "528I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "535D": [
+        "3.0L L6 DIESEL Turbocharged"
+      ],
+      "535I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "640I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "650I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "750I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "750LI": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ACTIVEHYBRID 5": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "ALPINA B6": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA B6 GRAN COUPE": [
+        "4.4L V8 Turbocharged"
+      ],
+      "I3": [
+        "647cc L2 ELECTRIC",
+        "647cc L2 ELECTRIC/GAS"
+      ],
+      "I8": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged"
+      ],
+      "M135I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M2": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M235I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M3": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M4": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M5": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M6": [
+        "4.4L V8 Turbocharged"
+      ],
+      "X1": [
+        "2.0L L4 Turbocharged"
+      ],
+      "X3": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 DIESEL Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "Z4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2017": {
+      "120I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "220I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "230I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "320I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "328D": [
+        "2.0L L4 DIESEL Turbocharged"
+      ],
+      "330E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "330I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "340I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "420I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "430I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "440I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "530I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "535I GT": [
+        "3.0L L6 Turbocharged"
+      ],
+      "540I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550I GT": [
+        "4.4L V8 Turbocharged"
+      ],
+      "640I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "650I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "740E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "740LE": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "750I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "750LI": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA B6": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA B7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "I3": [
+        "647cc L2 ELECTRIC",
+        "647cc L2 ELECTRIC/GAS"
+      ],
+      "I8": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged"
+      ],
+      "M140I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M2": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M240I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M3": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M4": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M5": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M6": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M760I": [
+        "6.6L V12 Turbocharged"
+      ],
+      "M760LI": [
+        "6.6L V12 Turbocharged"
+      ],
+      "X1": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X3": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 DIESEL Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ]
+    },
+    "2018": {
+      "118I": [
+        "1.5L L3 Turbocharged"
+      ],
+      "120I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "220I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "230I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "318I": [
+        "1.5L L3 Turbocharged"
+      ],
+      "320I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "328D": [
+        "2.0L L4 DIESEL Turbocharged"
+      ],
+      "330E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "330I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "340I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "420I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "430I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "440I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "520I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "530E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "530I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "540D": [
+        "3.0L L6 DIESEL Turbocharged"
+      ],
+      "540I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "640I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "650I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "740E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "750I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "750LI": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA B6": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA B7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "I3": [
+        "647cc L2 ELECTRIC",
+        "647cc L2 ELECTRIC/GAS"
+      ],
+      "I3S": [
+        "647cc L2 ELECTRIC",
+        "647cc L2 ELECTRIC/GAS"
+      ],
+      "I8": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged"
+      ],
+      "M140I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M2": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M240I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M3": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M4": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M5": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M550I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M6": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M760I": [
+        "6.6L V12 Turbocharged"
+      ],
+      "M760LI": [
+        "6.6L V12 Turbocharged"
+      ],
+      "X1": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X2": [
+        "2.0L L4 Turbocharged"
+      ],
+      "X3": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 DIESEL Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ]
+    },
+    "2019": {
+      "118I": [
+        "1.5L L3 Turbocharged"
+      ],
+      "120I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "220I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "230I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "330I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "340I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "420I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "430I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "440I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "520I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "530E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "530I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "540I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "640I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "650I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "740E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "740I": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "750I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "750LI": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA B6": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA B7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "I3": [
+        "647cc L2 ELECTRIC",
+        "647cc L2 ELECTRIC/GAS"
+      ],
+      "I3S": [
+        "647cc L2 ELECTRIC",
+        "647cc L2 ELECTRIC/GAS"
+      ],
+      "I8": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged"
+      ],
+      "M140I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M2": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M240I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M340I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M4": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M5": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M550I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M6": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M760I": [
+        "6.6L V12 Turbocharged"
+      ],
+      "M760LI": [
+        "6.6L V12 Turbocharged"
+      ],
+      "M850I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "X1": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X2": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X3": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X7": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "Z4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2020": {
+      "118I": [
+        "1.5L L3 Turbocharged"
+      ],
+      "120I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "220I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "228I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "230I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "320I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "330E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "330I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "420I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "430I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "440I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "520I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "530E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "530I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "540I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "745E": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "745LE": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "750I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "750LI": [
+        "4.4L V8 Turbocharged"
+      ],
+      "840I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "ALPINA B7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "I3": [
+        "647cc L2 ELECTRIC",
+        "647cc L2 ELECTRIC/GAS"
+      ],
+      "I3S": [
+        "647cc L2 ELECTRIC",
+        "647cc L2 ELECTRIC/GAS"
+      ],
+      "I8": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged"
+      ],
+      "M135I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "M2": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M235I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "M240I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M340I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M4": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M5": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M550I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M760I": [
+        "6.6L V12 Turbocharged"
+      ],
+      "M760LI": [
+        "6.6L V12 Turbocharged"
+      ],
+      "M8": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M850I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "X1": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X2": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X3": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X7": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "Z4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2021": {
+      "118I": [
+        "1.5L L3 Turbocharged"
+      ],
+      "120I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "220I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "228I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "230I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "320I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "330E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "330I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "420I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "430I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "440I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "530E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "530I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "540I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "745E": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "745LE XDRIVE": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "750I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "750LI": [
+        "4.4L V8 Turbocharged"
+      ],
+      "840I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "ALPINA B7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA XB7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "I3": [
+        "647cc L2 ELECTRIC",
+        "647cc L2 ELECTRIC/GAS"
+      ],
+      "I3S": [
+        "647cc L2 ELECTRIC",
+        "647cc L2 ELECTRIC/GAS"
+      ],
+      "IX3": [
+        "ELECTRIC"
+      ],
+      "M135I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "M2": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M235I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "M240I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M3": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M340I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M4": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M440I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M5": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M550I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M760I": [
+        "6.6L V12 Turbocharged"
+      ],
+      "M760LI XDRIVE": [
+        "6.6L V12 Turbocharged"
+      ],
+      "M8": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M850I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "X1": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X2": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X3": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X7": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "Z4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2022": {
+      "118I": [
+        "1.5L L3 Turbocharged"
+      ],
+      "128TI": [
+        "2.0L L4 Turbocharged"
+      ],
+      "220I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "228I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "230I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "320I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "330E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "330I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "430I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "440I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "530E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "530I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "540I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "745E": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "745LE XDRIVE": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "750I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "750LI": [
+        "4.4L V8 Turbocharged"
+      ],
+      "840I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "ALPINA B7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA B8": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA XB7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "I3S": [
+        "ELECTRIC"
+      ],
+      "I4": [
+        "ELECTRIC"
+      ],
+      "IX": [
+        "ELECTRIC"
+      ],
+      "IX3": [
+        "ELECTRIC"
+      ],
+      "M135I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "M235I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "M240I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M3": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M340I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M4": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M440I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M5": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M550I XDRIVE": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M760I": [
+        "6.6L V12 Turbocharged"
+      ],
+      "M760LI XDRIVE": [
+        "6.6L V12 Turbocharged"
+      ],
+      "M8": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M850I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "X1": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X2": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X3": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X7": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "Z4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2023": {
+      "118I": [
+        "1.5L L3 Turbocharged"
+      ],
+      "128TI": [
+        "2.0L L4 Turbocharged"
+      ],
+      "220I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "228I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "230I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "320I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "330E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "330I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "430I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "440I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "530E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "530I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "540I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "760I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "840I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "ALPINA B8": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA XB7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "I4": [
+        "ELECTRIC"
+      ],
+      "I7": [
+        "ELECTRIC"
+      ],
+      "IX": [
+        "ELECTRIC"
+      ],
+      "M135I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "M2": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M235I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "M240I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M3": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M340I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M4": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M440I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M5": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M550I XDRIVE": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M8": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M850I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "X1": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X2": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X3": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X7": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "XM": [
+        "4.4L V8 ELECTRIC/GAS Turbocharged"
+      ],
+      "Z4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2024": {
+      "118I": [
+        "1.5L L3 Turbocharged"
+      ],
+      "128TI": [
+        "2.0L L4 Turbocharged"
+      ],
+      "220I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "228I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "230I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "320I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "330E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "330I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "430I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "530E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "530I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "540I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "750E": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "760I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "840I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "ALPINA B8": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA XB7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "I4": [
+        "ELECTRIC"
+      ],
+      "I5": [
+        "ELECTRIC"
+      ],
+      "I7": [
+        "ELECTRIC"
+      ],
+      "IX": [
+        "ELECTRIC"
+      ],
+      "IX1": [
+        "ELECTRIC"
+      ],
+      "IX3": [
+        "ELECTRIC"
+      ],
+      "M135I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "M2": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M235I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "M240I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M3": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M340I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M4": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M440I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M8": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M850I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "X1": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged",
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X2": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X3": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X7": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "XM": [
+        "4.4L V8 ELECTRIC/GAS Turbocharged"
+      ],
+      "Z4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2025": {
+      "118I": [
+        "1.5L L3 Turbocharged"
+      ],
+      "218I GRAN COUPE": [
+        "1.5L L3 Turbocharged"
+      ],
+      "220I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "228 XDRIVE GRAN COUPE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "230I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "320I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "330E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "330I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "430I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "530E": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "530I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "540I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550E": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "740I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "750E": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "760I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "840I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "ALPINA B8": [
+        "4.4L V8 Turbocharged"
+      ],
+      "ALPINA XB7": [
+        "4.4L V8 Turbocharged"
+      ],
+      "I4": [
+        "ELECTRIC"
+      ],
+      "I5": [
+        "ELECTRIC"
+      ],
+      "I7": [
+        "ELECTRIC"
+      ],
+      "IX": [
+        "ELECTRIC"
+      ],
+      "M135I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "M2": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M240I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M3": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M340I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M4": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M440I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "M5": [
+        "4.4L V8 ELECTRIC/GAS Turbocharged"
+      ],
+      "M5 TOURING": [
+        "4.4L V8 ELECTRIC/GAS Turbocharged"
+      ],
+      "M8": [
+        "4.4L V8 Turbocharged"
+      ],
+      "M850I": [
+        "4.4L V8 Turbocharged"
+      ],
+      "X1": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged",
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X2": [
+        "1.5L L3 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "X3": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "X5": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X6": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "X7": [
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "XM": [
+        "4.4L V8 ELECTRIC/GAS Turbocharged"
+      ],
+      "Z4": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2026": {
+      "530I": [
+        "2.0L L4 Turbocharged"
+      ],
+      "540I": [
+        "3.0L L6 Turbocharged"
+      ],
+      "550E": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged"
+      ],
+      "M4": [
+        "3.0L L6 Turbocharged"
+      ]
+    }
+  },
+  "BOND": {
+    "1953": {
+      "MARK B": [
+        "197cc L1"
+      ]
+    },
+    "1954": {
+      "MARK B": [
+        "197cc L1"
+      ]
+    },
+    "1955": {
+      "MARK C": [
+        "197cc L1"
+      ]
+    },
+    "1956": {
+      "MARK C": [
+        "197cc L1"
+      ]
+    },
+    "1957": {
+      "MARK D": [
+        "197cc L1"
+      ]
+    },
+    "1958": {
+      "MARK D": [
+        "197cc L1"
+      ]
+    },
+    "1959": {
+      "MARK E": [
+        "197cc L1"
+      ]
+    },
+    "1960": {
+      "MARK E": [
+        "197cc L1"
+      ]
+    }
+  },
+  "BORGWARD": {
+    "1949": {
+      "HANSA 1500": [
+        "1.5L 91cid L4"
+      ],
+      "HANSA 1800": [
+        "1.8L 107cid L4",
+        "1.8L 107cid L4 DIESEL"
+      ],
+      "HANSA 2400": [
+        "2.3L 143cid L6"
+      ]
+    },
+    "1950": {
+      "GOLIATH GP700": [
+        "688cc L2"
+      ],
+      "HANSA 1500": [
+        "1.5L L4"
+      ],
+      "HANSA 1800": [
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "HANSA 2400": [
+        "2.3L L6"
+      ]
+    },
+    "1951": {
+      "GOLIATH GP700": [
+        "688cc L2"
+      ],
+      "HANSA 1500": [
+        "1.5L L4"
+      ],
+      "HANSA 1800": [
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "HANSA 2400": [
+        "2.3L L6"
+      ]
+    },
+    "1952": {
+      "GOLIATH GP700": [
+        "688cc L2"
+      ],
+      "HANSA 1500": [
+        "1.5L L4",
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "HANSA 1800": [
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "HANSA 2400": [
+        "2.3L L6"
+      ]
+    },
+    "1953": {
+      "GOLIATH GP700": [
+        "688cc L2"
+      ],
+      "HANSA 1500": [
+        "1.5L L4",
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "HANSA 1800": [
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "HANSA 2400": [
+        "2.3L L6"
+      ]
+    },
+    "1954": {
+      "GOLIATH GP700": [
+        "688cc L2"
+      ],
+      "HANSA 1500": [
+        "1.5L L4",
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "HANSA 1800": [
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "HANSA 2400": [
+        "2.3L L6"
+      ],
+      "ISABELLA": [
+        "1.5L L4"
+      ]
+    },
+    "1955": {
+      "GOLIATH GP700": [
+        "688cc L2"
+      ],
+      "GOLIATH GP900": [
+        "886cc L2"
+      ],
+      "HANSA 1500": [
+        "1.5L L4",
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "HANSA 1800": [
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "HANSA 2400": [
+        "2.3L L6"
+      ],
+      "ISABELLA": [
+        "1.5L L4"
+      ]
+    },
+    "1956": {
+      "GOLIATH GP700": [
+        "688cc L2"
+      ],
+      "GOLIATH GP900": [
+        "886cc L2"
+      ],
+      "ISABELLA": [
+        "1.5L L4"
+      ],
+      "LLOYD L/600": [
+        "597cc L2"
+      ]
+    },
+    "1957": {
+      "GOLIATH 1100": [
+        "1.1L H4"
+      ],
+      "ISABELLA": [
+        "1.5L L4"
+      ],
+      "LLOYD ALEXANDER": [
+        "597cc L2"
+      ]
+    },
+    "1958": {
+      "GOLIATH 1100": [
+        "1.1L H4"
+      ],
+      "ISABELLA": [
+        "1.5L L4"
+      ],
+      "LLOYD ALEXANDER": [
+        "597cc L2"
+      ]
+    },
+    "1959": {
+      "GOLIATH 1100": [
+        "1.1L H4"
+      ],
+      "ISABELLA": [
+        "1.5L L4"
+      ],
+      "LLOYD ALEXANDER": [
+        "297cc L2"
+      ]
+    },
+    "1960": {
+      "GOLIATH 1100": [
+        "1.1L H4"
+      ],
+      "ISABELLA": [
+        "1.5L L4"
+      ],
+      "LLOYD ALEXANDER": [
+        "297cc L2"
+      ],
+      "LLOYD ARABELLA": [
+        "897cc L4"
+      ]
+    },
+    "1961": {
+      "GOLIATH 1100": [
+        "1.1L H4"
+      ],
+      "HANSA 1100": [
+        "1.1L H4"
+      ],
+      "ISABELLA": [
+        "1.5L L4"
+      ],
+      "LLOYD ALEXANDER": [
+        "297cc L2"
+      ],
+      "LLOYD ARABELLA": [
+        "897cc L4"
+      ]
+    }
+  },
+  "BRICKLIN": {
+    "1974": {
+      "SV-1": [
+        "5.9L 360cid V8"
+      ]
+    },
+    "1975": {
+      "SV-1": [
+        "5.8L 351cid V8"
+      ]
+    },
+    "1976": {
+      "SV-1": [
+        "5.8L 351cid V8"
+      ]
+    }
+  },
+  "BRISTOL": {
+    "1946": {
+      "400": [
+        "2.0L 120cid L6"
+      ]
+    },
+    "1947": {
+      "400": [
+        "2.0L 120cid L6"
+      ]
+    },
+    "1948": {
+      "400": [
+        "2.0L 120cid L6"
+      ]
+    },
+    "1949": {
+      "400": [
+        "2.0L 120cid L6"
+      ],
+      "401": [
+        "2.0L 120cid L6"
+      ],
+      "402": [
+        "2.0L 120cid L6"
+      ]
+    },
+    "1950": {
+      "401": [
+        "2.0L L6"
+      ],
+      "402": [
+        "2.0L L6"
+      ]
+    },
+    "1951": {
+      "401": [
+        "2.0L L6"
+      ],
+      "402": [
+        "2.0L L6"
+      ]
+    },
+    "1952": {
+      "401": [
+        "2.0L L6"
+      ],
+      "402": [
+        "2.0L L6"
+      ]
+    },
+    "1953": {
+      "401": [
+        "2.0L L6"
+      ],
+      "402": [
+        "2.0L L6"
+      ],
+      "403": [
+        "2.0L L6"
+      ],
+      "404": [
+        "2.0L L6"
+      ]
+    },
+    "1954": {
+      "403": [
+        "2.0L L6"
+      ],
+      "404": [
+        "2.0L L6"
+      ],
+      "405": [
+        "2.0L L6"
+      ]
+    },
+    "1955": {
+      "403": [
+        "2.0L L6"
+      ],
+      "404": [
+        "2.0L L6"
+      ],
+      "405": [
+        "2.0L L6"
+      ]
+    },
+    "1956": {
+      "404": [
+        "2.0L L6"
+      ],
+      "405": [
+        "2.0L L6"
+      ]
+    },
+    "1957": {
+      "405": [
+        "2.0L L6"
+      ]
+    },
+    "1958": {
+      "405": [
+        "2.0L L6",
+        "2.2L L6"
+      ],
+      "406": [
+        "2.2L L6"
+      ]
+    },
+    "1959": {
+      "406": [
+        "2.2L L6"
+      ]
+    },
+    "1960": {
+      "406": [
+        "2.2L L6"
+      ]
+    },
+    "1961": {
+      "406": [
+        "2.2L L6"
+      ],
+      "407": [
+        "5.1L V8"
+      ]
+    },
+    "1962": {
+      "407": [
+        "5.1L V8"
+      ]
+    },
+    "1963": {
+      "407": [
+        "5.1L V8"
+      ],
+      "408": [
+        "5.1L V8"
+      ]
+    },
+    "1964": {
+      "408": [
+        "5.1L V8"
+      ]
+    },
+    "1965": {
+      "408": [
+        "5.1L V8",
+        "5.2L V8"
+      ],
+      "409": [
+        "5.2L V8"
+      ]
+    },
+    "1966": {
+      "409": [
+        "5.2L V8"
+      ]
+    },
+    "1967": {
+      "409": [
+        "5.2L V8"
+      ],
+      "410": [
+        "5.2L V8"
+      ]
+    },
+    "1968": {
+      "410": [
+        "5.2L V8"
+      ]
+    },
+    "1969": {
+      "410": [
+        "5.2L V8"
+      ],
+      "411": [
+        "6.3L V8"
+      ]
+    },
+    "1970": {
+      "411": [
+        "6.3L V8"
+      ]
+    },
+    "1971": {
+      "411": [
+        "6.3L V8"
+      ]
+    },
+    "1972": {
+      "411": [
+        "6.3L V8"
+      ]
+    },
+    "1973": {
+      "411": [
+        "6.3L V8"
+      ]
+    },
+    "1974": {
+      "411": [
+        "6.6L V8"
+      ]
+    }
+  },
+  "BUGATTI": {
+    "1927": {
+      "TYPE 44": [
+        "All Engines"
+      ]
+    },
+    "1928": {
+      "TYPE 44": [
+        "All Engines"
+      ]
+    },
+    "1929": {
+      "TYPE 44": [
+        "All Engines"
+      ]
+    },
+    "1930": {
+      "TYPE 44": [
+        "All Engines"
+      ]
+    },
+    "1931": {
+      "TYPE 44": [
+        "All Engines"
+      ]
+    },
+    "1934": {
+      "TYPE 57": [
+        "All Engines"
+      ]
+    },
+    "1935": {
+      "TYPE 57": [
+        "All Engines"
+      ]
+    },
+    "1936": {
+      "TYPE 57": [
+        "All Engines"
+      ]
+    },
+    "1937": {
+      "TYPE 57": [
+        "All Engines"
+      ]
+    },
+    "1938": {
+      "TYPE 57": [
+        "All Engines"
+      ]
+    },
+    "1939": {
+      "TYPE 57": [
+        "All Engines"
+      ]
+    },
+    "1940": {
+      "TYPE 57": [
+        "All Engines"
+      ]
+    },
+    "1949": {
+      "TYPE 101": [
+        "3.3L 199cid L8",
+        "3.3L 199cid L8 Supercharged"
+      ]
+    },
+    "1950": {
+      "TYPE 101": [
+        "3.3L L8",
+        "3.3L L8 Supercharged"
+      ]
+    },
+    "1951": {
+      "TYPE 101": [
+        "3.3L L8",
+        "3.3L L8 Supercharged"
+      ]
+    },
+    "2006": {
+      "VEYRON 16.4": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2007": {
+      "VEYRON 16.4": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2008": {
+      "VEYRON 16.4": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2009": {
+      "VEYRON 16.4": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2010": {
+      "VEYRON 16.4": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2011": {
+      "VEYRON 16.4": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2012": {
+      "VEYRON 16.4": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2013": {
+      "VEYRON 16.4": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2014": {
+      "VEYRON 16.4": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2015": {
+      "VEYRON 16.4": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2018": {
+      "CHIRON": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2020": {
+      "CHIRON": [
+        "8.0L W16 Turbocharged"
+      ],
+      "DIVO": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2021": {
+      "CHIRON": [
+        "8.0L W16 Turbocharged"
+      ],
+      "DIVO": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2022": {
+      "CHIRON": [
+        "8.0L W16 Turbocharged"
+      ],
+      "DIVO": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2023": {
+      "CHIRON": [
+        "8.0L W16 Turbocharged"
+      ]
+    },
+    "2024": {
+      "MISTRAL": [
+        "8.0L W16 Turbocharged"
+      ]
+    }
+  },
+  "BUICK": {
+    "1909": {
+      "MODEL 10": [
+        "165cid L4"
+      ],
+      "MODEL 6A": [
+        "336cid L4"
+      ]
+    },
+    "1910": {
+      "MODEL 10": [
+        "165cid L4"
+      ],
+      "MODEL 16": [
+        "318cid L4"
+      ]
+    },
+    "1913": {
+      "MODEL 31": [
+        "201cid L4"
+      ]
+    },
+    "1924": {
+      "SERIES 24": [
+        "All Engines"
+      ],
+      "SERIES 30": [
+        "4cyl"
+      ],
+      "SERIES 40": [
+        "6cyl"
+      ],
+      "SERIES 50": [
+        "6cyl"
+      ]
+    },
+    "1925": {
+      "SERIES 20": [
+        "191cid L6"
+      ],
+      "SERIES 40": [
+        "255cid L4"
+      ],
+      "SERIES 50": [
+        "255cid L4"
+      ]
+    },
+    "1926": {
+      "MASTER SIX": [
+        "207cid L6"
+      ],
+      "STANDARD SIX": [
+        "274cid L6"
+      ]
+    },
+    "1927": {
+      "SERIES 115": [
+        "L6"
+      ],
+      "SERIES 120": [
+        "L6"
+      ],
+      "SERIES 128": [
+        "L6"
+      ]
+    },
+    "1928": {
+      "SERIES 115": [
+        "L6"
+      ],
+      "SERIES 120": [
+        "L6"
+      ],
+      "SERIES 128": [
+        "L6"
+      ]
+    },
+    "1929": {
+      "SERIES 116": [
+        "239cid L6"
+      ],
+      "SERIES 121": [
+        "310cid L6"
+      ],
+      "SERIES 129": [
+        "310cid L6"
+      ]
+    },
+    "1930": {
+      "SERIES 40": [
+        "4.2L 257cid L6",
+        "4.2L 258cid L6"
+      ],
+      "SERIES 50": [
+        "5.4L 331cid L6"
+      ],
+      "SERIES 60": [
+        "5.4L 331cid L6"
+      ]
+    },
+    "1931": {
+      "SERIES 50": [
+        "3.6L 221cid L8"
+      ],
+      "SERIES 60": [
+        "4.5L 273cid L8"
+      ],
+      "SERIES 80": [
+        "5.6L 345cid L8"
+      ],
+      "SERIES 90": [
+        "5.6L 345cid L8"
+      ]
+    },
+    "1932": {
+      "SERIES 50": [
+        "3.8L 230cid L8"
+      ],
+      "SERIES 60": [
+        "4.5L 273cid L8"
+      ],
+      "SERIES 80": [
+        "5.6L 345cid L8"
+      ],
+      "SERIES 90": [
+        "5.6L 345cid L8"
+      ]
+    },
+    "1933": {
+      "SERIES 50": [
+        "3.8L 230cid L8"
+      ],
+      "SERIES 60": [
+        "4.5L 273cid L8"
+      ],
+      "SERIES 80": [
+        "5.6L 345cid L8"
+      ],
+      "SERIES 90": [
+        "5.6L 345cid L8"
+      ]
+    },
+    "1934": {
+      "SERIES 40": [
+        "3.8L 233cid L8",
+        "4.1L 248cid L8"
+      ],
+      "SERIES 50": [
+        "3.8L 235cid L8"
+      ],
+      "SERIES 60": [
+        "4.6L 278cid L8"
+      ],
+      "SERIES 90": [
+        "5.6L 345cid L8"
+      ]
+    },
+    "1935": {
+      "SERIES 40": [
+        "3.8L 233cid L8",
+        "4.1L 248cid L8"
+      ],
+      "SERIES 50": [
+        "3.8L 235cid L8"
+      ],
+      "SERIES 60": [
+        "4.6L 278cid L8"
+      ],
+      "SERIES 90": [
+        "5.6L 345cid L8"
+      ]
+    },
+    "1936": {
+      "CENTURY SERIES 60": [
+        "5.2L 320cid L8"
+      ],
+      "LIMITED SERIES 90": [
+        "5.2L 320cid L8"
+      ],
+      "ROADMASTER SERIES 80": [
+        "5.2L 320cid L8"
+      ],
+      "SPECIAL 40": [
+        "3.8L 233cid L8",
+        "4.1L 248cid L8"
+      ]
+    },
+    "1937": {
+      "CENTURY SERIES 60": [
+        "5.2L 320cid L8"
+      ],
+      "LIMITED SERIES 90": [
+        "5.2L 320cid L8"
+      ],
+      "ROADMASTER SERIES 80": [
+        "5.2L 320cid L8"
+      ],
+      "SPECIAL 40": [
+        "4.1L 248cid L8"
+      ]
+    },
+    "1938": {
+      "CENTURY SERIES 60": [
+        "5.2L 320cid L8"
+      ],
+      "LIMITED SERIES 90": [
+        "5.2L 320cid L8"
+      ],
+      "ROADMASTER SERIES 80": [
+        "5.2L 320cid L8"
+      ],
+      "SPECIAL 40": [
+        "4.1L 248cid L8"
+      ]
+    },
+    "1939": {
+      "CENTURY SERIES 60": [
+        "5.2L 320cid L8"
+      ],
+      "LIMITED SERIES 90": [
+        "5.2L 320cid L8"
+      ],
+      "ROADMASTER SERIES 80": [
+        "5.2L 320cid L8"
+      ],
+      "SPECIAL 40": [
+        "4.1L 248cid L8"
+      ]
+    },
+    "1940": {
+      "CENTURY SERIES 60": [
+        "5.2L 320cid L8"
+      ],
+      "LIMITED SERIES 80": [
+        "5.2L 320cid L8"
+      ],
+      "LIMITED SERIES 90": [
+        "5.2L 320cid L8"
+      ],
+      "ROADMASTER SERIES 70": [
+        "5.2L 320cid L8"
+      ],
+      "ROADMASTER SERIES 80": [
+        "All Engines"
+      ],
+      "SPECIAL 40": [
+        "4.1L 248cid L8"
+      ],
+      "SUPER SERIES 50": [
+        "4.1L 248cid L8"
+      ]
+    },
+    "1941": {
+      "CENTURY SERIES 60": [
+        "5.2L 320cid L8"
+      ],
+      "LIMITED SERIES 90": [
+        "5.2L 320cid L8"
+      ],
+      "ROADMASTER SERIES 70": [
+        "5.2L 320cid L8"
+      ],
+      "SPECIAL SERIES 40": [
+        "4.1L 248cid L8"
+      ],
+      "SUPER SERIES 50": [
+        "4.1L 248cid L8"
+      ]
+    },
+    "1942": {
+      "CENTURY SERIES 60": [
+        "5.2L 320cid L8"
+      ],
+      "LIMITED SERIES 90": [
+        "5.2L 320cid L8"
+      ],
+      "ROADMASTER SERIES 70": [
+        "5.2L 320cid L8"
+      ],
+      "SPECIAL SERIES 40": [
+        "4.1L 248cid L8"
+      ],
+      "SUPER SERIES 50": [
+        "4.1L 248cid L8"
+      ]
+    },
+    "1946": {
+      "ROADMASTER SERIES 70": [
+        "5.2L 320cid L8"
+      ],
+      "SPECIAL SERIES 40": [
+        "4.1L 248cid L8"
+      ],
+      "SUPER SERIES 50": [
+        "4.1L 248cid L8"
+      ]
+    },
+    "1947": {
+      "ROADMASTER SERIES 70": [
+        "5.2L 320cid L8"
+      ],
+      "SPECIAL SERIES 40": [
+        "4.1L 248cid L8"
+      ],
+      "SUPER SERIES 50": [
+        "4.1L 248cid L8"
+      ]
+    },
+    "1948": {
+      "ROADMASTER SERIES 70": [
+        "5.2L 320cid L8"
+      ],
+      "SPECIAL SERIES 40": [
+        "4.1L 248cid L8"
+      ],
+      "SUPER SERIES 50": [
+        "4.1L 248cid L8"
+      ]
+    },
+    "1949": {
+      "ROADMASTER SERIES 70": [
+        "5.2L 320cid L8"
+      ],
+      "SPECIAL SERIES 40": [
+        "4.1L 248cid L8"
+      ],
+      "SUPER SERIES 50": [
+        "4.1L 248cid L8"
+      ]
+    },
+    "1950": {
+      "ROADMASTER": [
+        "5.2L 320cid L8"
+      ],
+      "SPECIAL": [
+        "4.1L 248cid L8"
+      ],
+      "SUPER": [
+        "4.3L 263cid L8"
+      ]
+    },
+    "1951": {
+      "CENTURY": [
+        "4.3L 263cid L8"
+      ],
+      "ROADMASTER": [
+        "5.2L 320cid L8"
+      ],
+      "SPECIAL": [
+        "4.3L 263cid L8"
+      ],
+      "SUPER": [
+        "4.3L 263cid L8"
+      ]
+    },
+    "1952": {
+      "ROADMASTER": [
+        "5.2L 320cid L8"
+      ],
+      "SPECIAL": [
+        "4.3L 263cid L8"
+      ],
+      "SUPER": [
+        "4.3L 263cid L8"
+      ]
+    },
+    "1953": {
+      "ROADMASTER": [
+        "5.3L 322cid V8"
+      ],
+      "SPECIAL": [
+        "4.3L 263cid L8"
+      ],
+      "SUPER": [
+        "5.3L 322cid V8"
+      ]
+    },
+    "1954": {
+      "CENTURY": [
+        "5.3L 322cid V8"
+      ],
+      "ROADMASTER": [
+        "5.3L 322cid V8"
+      ],
+      "SKYLARK": [
+        "5.3L 322cid V8"
+      ],
+      "SPECIAL": [
+        "4.3L 264cid V8"
+      ],
+      "SUPER": [
+        "5.3L 322cid V8"
+      ]
+    },
+    "1955": {
+      "CENTURY": [
+        "5.3L 322cid V8"
+      ],
+      "ROADMASTER": [
+        "5.3L 322cid V8"
+      ],
+      "SPECIAL": [
+        "4.3L 264cid V8"
+      ],
+      "SUPER": [
+        "5.3L 322cid V8"
+      ]
+    },
+    "1956": {
+      "CENTURY": [
+        "5.3L 322cid V8"
+      ],
+      "ROADMASTER": [
+        "5.3L 322cid V8"
+      ],
+      "SPECIAL": [
+        "5.3L 322cid V8"
+      ],
+      "SUPER": [
+        "5.3L 322cid V8"
+      ]
+    },
+    "1957": {
+      "CENTURY": [
+        "6.0L 364cid V8"
+      ],
+      "ROADMASTER": [
+        "6.0L 364cid V8"
+      ],
+      "SPECIAL": [
+        "6.0L 364cid V8"
+      ],
+      "SUPER": [
+        "6.0L 364cid V8"
+      ]
+    },
+    "1958": {
+      "CENTURY": [
+        "6.0L 364cid V8"
+      ],
+      "LIMITED": [
+        "6.0L 364cid V8"
+      ],
+      "ROADMASTER": [
+        "6.0L 364cid V8"
+      ],
+      "SPECIAL": [
+        "6.0L 364cid V8"
+      ],
+      "SUPER": [
+        "6.0L 364cid V8"
+      ]
+    },
+    "1959": {
+      "ELECTRA": [
+        "6.6L 401cid V8"
+      ],
+      "ESTATE WAGON": [
+        "6.0L 364cid V8",
+        "6.6L 401cid V8"
+      ],
+      "INVICTA": [
+        "6.6L 401cid V8"
+      ],
+      "LESABRE": [
+        "6.0L 364cid V8",
+        "6.6L 401cid V8"
+      ]
+    },
+    "1960": {
+      "ELECTRA": [
+        "6.6L 401cid V8"
+      ],
+      "ESTATE WAGON": [
+        "6.0L 364cid V8",
+        "6.6L 401cid V8"
+      ],
+      "INVICTA": [
+        "6.6L 401cid V8"
+      ],
+      "LESABRE": [
+        "6.0L 364cid V8",
+        "6.6L 401cid V8"
+      ]
+    },
+    "1961": {
+      "ELECTRA": [
+        "6.6L 401cid V8"
+      ],
+      "ESTATE WAGON": [
+        "6.0L 364cid V8",
+        "6.6L 401cid V8"
+      ],
+      "INVICTA": [
+        "6.6L 401cid V8"
+      ],
+      "LESABRE": [
+        "6.0L 364cid V8",
+        "6.6L 401cid V8"
+      ],
+      "SKYLARK": [
+        "3.5L 215cid V8"
+      ],
+      "SPECIAL": [
+        "3.5L 215cid V8"
+      ]
+    },
+    "1962": {
+      "ELECTRA": [
+        "6.6L 401cid V8"
+      ],
+      "ESTATE WAGON": [
+        "6.6L 401cid V8"
+      ],
+      "INVICTA": [
+        "6.6L 401cid V8"
+      ],
+      "LESABRE": [
+        "6.6L 401cid V8"
+      ],
+      "SKYLARK": [
+        "3.2L 198cid V6",
+        "3.5L 215cid V8"
+      ],
+      "SPECIAL": [
+        "3.2L 198cid V6",
+        "3.5L 215cid V8"
+      ],
+      "WILDCAT": [
+        "6.6L 401cid V8"
+      ]
+    },
+    "1963": {
+      "ELECTRA": [
+        "6.6L 401cid V8"
+      ],
+      "ESTATE WAGON": [
+        "6.6L 401cid V8"
+      ],
+      "INVICTA": [
+        "6.6L 401cid V8"
+      ],
+      "LESABRE": [
+        "6.6L 401cid V8"
+      ],
+      "RIVIERA": [
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ],
+      "SKYLARK": [
+        "3.2L 198cid V6",
+        "3.5L 215cid V8"
+      ],
+      "SPECIAL": [
+        "3.2L 198cid V6",
+        "3.5L 215cid V8"
+      ],
+      "WILDCAT": [
+        "6.6L 401cid V8"
+      ]
+    },
+    "1964": {
+      "ELECTRA": [
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ],
+      "ESTATE WAGON": [
+        "4.9L 300cid V8",
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ],
+      "LESABRE": [
+        "4.9L 300cid V8",
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ],
+      "RIVIERA": [
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ],
+      "SKYLARK": [
+        "3.7L 225cid V6",
+        "4.9L 300cid V8"
+      ],
+      "SPECIAL": [
+        "3.7L 225cid V6",
+        "4.9L 300cid V8"
+      ],
+      "SPORTWAGON": [
+        "3.7L 225cid V6",
+        "4.9L 300cid V8"
+      ],
+      "WILDCAT": [
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ]
+    },
+    "1965": {
+      "ELECTRA": [
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ],
+      "GRAN SPORT": [
+        "4.9L 300cid V8",
+        "6.6L 400cid V8",
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ],
+      "LESABRE": [
+        "4.9L 300cid V8"
+      ],
+      "RIVIERA": [
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ],
+      "SKYLARK": [
+        "3.7L 225cid V6",
+        "4.9L 300cid V8",
+        "6.6L 400cid V8",
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ],
+      "SPECIAL": [
+        "3.7L 225cid V6",
+        "4.9L 300cid V8"
+      ],
+      "SPORTWAGON": [
+        "3.7L 225cid V6",
+        "4.9L 300cid V8"
+      ],
+      "WILDCAT": [
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ]
+    },
+    "1966": {
+      "ELECTRA": [
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ],
+      "GRAN SPORT": [
+        "5.6L 340cid V8",
+        "6.6L 400cid V8",
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ],
+      "LESABRE": [
+        "5.6L 340cid V8"
+      ],
+      "RIVIERA": [
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ],
+      "SKYLARK": [
+        "3.7L 225cid V6",
+        "4.9L 300cid V8",
+        "5.6L 340cid V8",
+        "6.6L 400cid V8",
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ],
+      "SPECIAL": [
+        "3.7L 225cid V6",
+        "4.9L 300cid V8",
+        "5.6L 340cid V8"
+      ],
+      "SPORTWAGON": [
+        "3.7L 225cid V6",
+        "5.6L 340cid V8"
+      ],
+      "WILDCAT": [
+        "6.6L 401cid V8",
+        "7.0L 425cid V8"
+      ]
+    },
+    "1967": {
+      "ELECTRA": [
+        "7.0L 430cid V8"
+      ],
+      "GRAN SPORT": [
+        "5.6L 340cid V8",
+        "6.6L 400cid V8"
+      ],
+      "LESABRE": [
+        "5.6L 340cid V8",
+        "7.0L 430cid V8"
+      ],
+      "RIVIERA": [
+        "7.0L 430cid V8"
+      ],
+      "SKYLARK": [
+        "3.7L 225cid V6",
+        "4.9L 300cid V8",
+        "5.6L 340cid V8",
+        "6.6L 400cid V8"
+      ],
+      "SPECIAL": [
+        "3.7L 225cid V6",
+        "4.9L 300cid V8",
+        "5.6L 340cid V8"
+      ],
+      "SPORTWAGON": [
+        "3.7L 225cid V6",
+        "5.6L 340cid V8",
+        "6.6L 400cid V8"
+      ],
+      "WILDCAT": [
+        "7.0L 430cid V8"
+      ]
+    },
+    "1968": {
+      "ELECTRA": [
+        "7.0L 430cid V8"
+      ],
+      "GS 350": [
+        "5.7L 350cid V8"
+      ],
+      "GS 400": [
+        "6.6L 400cid V8"
+      ],
+      "LESABRE": [
+        "5.7L 350cid V8",
+        "7.0L 430cid V8"
+      ],
+      "RIVIERA": [
+        "7.0L 430cid V8"
+      ],
+      "SKYLARK": [
+        "4.1L 250cid L6",
+        "5.7L 350cid V8",
+        "6.6L 400cid V8"
+      ],
+      "SPECIAL": [
+        "4.1L 250cid L6",
+        "5.7L 350cid V8"
+      ],
+      "SPORTWAGON": [
+        "5.7L 350cid V8",
+        "6.6L 400cid V8"
+      ],
+      "WILDCAT": [
+        "7.0L 430cid V8"
+      ]
+    },
+    "1969": {
+      "ELECTRA": [
+        "7.0L 430cid V8"
+      ],
+      "GS 350": [
+        "5.7L 350cid V8"
+      ],
+      "GS 400": [
+        "6.6L 400cid V8"
+      ],
+      "LESABRE": [
+        "5.7L 350cid V8",
+        "7.0L 430cid V8"
+      ],
+      "RIVIERA": [
+        "7.0L 430cid V8"
+      ],
+      "SKYLARK": [
+        "4.1L 250cid L6",
+        "5.7L 350cid V8",
+        "6.6L 400cid V8"
+      ],
+      "SPECIAL": [
+        "4.1L 250cid L6",
+        "5.7L 350cid V8"
+      ],
+      "SPORTWAGON": [
+        "5.7L 350cid V8",
+        "6.6L 400cid V8"
+      ],
+      "WILDCAT": [
+        "7.0L 430cid V8"
+      ]
+    },
+    "1970": {
+      "ELECTRA": [
+        "7.5L 455cid V8"
+      ],
+      "ESTATE WAGON": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "GS": [
+        "5.7L 350cid V8"
+      ],
+      "GS 455": [
+        "7.5L 455cid V8"
+      ],
+      "LESABRE": [
+        "4.1L 250cid L6",
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "RIVIERA": [
+        "7.5L 455cid V8"
+      ],
+      "SKYLARK": [
+        "4.1L 250cid L6",
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "SPORTWAGON": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "WILDCAT": [
+        "7.5L 455cid V8"
+      ]
+    },
+    "1971": {
+      "CENTURION": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "ELECTRA": [
+        "7.5L 455cid V8"
+      ],
+      "ESTATE WAGON": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "GS": [
+        "5.7L 350cid V8"
+      ],
+      "GS 455": [
+        "7.5L 455cid V8"
+      ],
+      "LESABRE": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "RIVIERA": [
+        "7.5L 455cid V8"
+      ],
+      "SKYLARK": [
+        "4.1L 250cid L6",
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "SPORTWAGON": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ]
+    },
+    "1972": {
+      "CENTURION": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "ELECTRA": [
+        "7.5L 455cid V8"
+      ],
+      "ESTATE WAGON": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "GS": [
+        "5.7L 350cid V8"
+      ],
+      "GS 455": [
+        "7.5L 455cid V8"
+      ],
+      "LESABRE": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "RIVIERA": [
+        "7.5L 455cid V8"
+      ],
+      "SKYLARK": [
+        "4.1L 250cid L6",
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "SPORTWAGON": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ]
+    },
+    "1973": {
+      "APOLLO": [
+        "4.1L 250cid L6",
+        "5.7L 350cid V8"
+      ],
+      "CENTURION": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "CENTURY": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "ELECTRA": [
+        "7.5L 455cid V8"
+      ],
+      "ESTATE WAGON": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "LESABRE": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "REGAL": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "RIVIERA": [
+        "7.5L 455cid V8"
+      ]
+    },
+    "1974": {
+      "APOLLO": [
+        "4.1L 250cid L6",
+        "5.7L 350cid V8"
+      ],
+      "CENTURY": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "ELECTRA": [
+        "7.5L 455cid V8"
+      ],
+      "ESTATE WAGON": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "LESABRE": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "REGAL": [
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "RIVIERA": [
+        "7.5L 455cid V8"
+      ]
+    },
+    "1975": {
+      "APOLLO": [
+        "3.8L 231cid V6",
+        "4.1L 250cid L6",
+        "4.3L 260cid V8",
+        "5.7L 350cid V8"
+      ],
+      "CENTURY": [
+        "3.8L 231cid V6",
+        "5.7L 350cid V8"
+      ],
+      "ELECTRA": [
+        "7.5L 455cid V8"
+      ],
+      "ESTATE WAGON": [
+        "7.5L 455cid V8"
+      ],
+      "LESABRE": [
+        "5.7L 350cid V8",
+        "6.6L 400cid V8",
+        "7.5L 455cid V8"
+      ],
+      "REGAL": [
+        "3.8L 231cid V6",
+        "5.7L 350cid V8"
+      ],
+      "RIVIERA": [
+        "7.5L 455cid V8"
+      ],
+      "SKYHAWK": [
+        "3.8L 231cid V6"
+      ],
+      "SKYLARK": [
+        "3.8L 231cid V6",
+        "4.3L 260cid V8",
+        "5.7L 350cid V8"
+      ]
+    },
+    "1976": {
+      "CENTURY": [
+        "3.8L 231cid V6",
+        "5.7L 350cid V8"
+      ],
+      "ELECTRA": [
+        "7.5L 455cid V8"
+      ],
+      "ESTATE WAGON": [
+        "7.5L 455cid V8"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "5.7L 350cid V8",
+        "7.5L 455cid V8"
+      ],
+      "OPEL BY ISUZU": [
+        "1.8L L4"
+      ],
+      "REGAL": [
+        "3.8L 231cid V6",
+        "5.7L 350cid V8"
+      ],
+      "RIVIERA": [
+        "7.5L 455cid V8"
+      ],
+      "SKYHAWK": [
+        "3.8L 231cid V6"
+      ],
+      "SKYLARK": [
+        "3.8L 231cid V6",
+        "4.3L 260cid V8",
+        "5.7L 350cid V8"
+      ]
+    },
+    "1977": {
+      "CENTURY": [
+        "3.8L 231cid V6",
+        "5.0L 305cid V8",
+        "5.7L 350cid V8",
+        "6.6L 403cid V8"
+      ],
+      "ELECTRA": [
+        "5.7L 350cid V8",
+        "6.6L 403cid V8"
+      ],
+      "ESTATE WAGON": [
+        "5.7L 350cid V8",
+        "6.6L 403cid V8"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "4.9L 301cid V8",
+        "5.7L 350cid V8",
+        "6.6L 403cid V8"
+      ],
+      "OPEL BY ISUZU": [
+        "1.8L L4"
+      ],
+      "REGAL": [
+        "3.8L 231cid V6",
+        "5.0L 305cid V8",
+        "5.7L 350cid V8",
+        "6.6L 403cid V8"
+      ],
+      "RIVIERA": [
+        "5.7L 350cid V8",
+        "6.6L 403cid V8"
+      ],
+      "SKYHAWK": [
+        "3.8L 231cid V6"
+      ],
+      "SKYLARK": [
+        "3.8L 231cid V6",
+        "4.9L 301cid V8",
+        "5.0L 305cid V8",
+        "5.7L 350cid V8"
+      ]
+    },
+    "1978": {
+      "CENTURY": [
+        "3.2L 196cid V6",
+        "3.8L 231cid V6",
+        "5.0L 305cid V8",
+        "5.7L 350cid V8"
+      ],
+      "ELECTRA": [
+        "5.7L 350cid V8",
+        "6.6L 403cid V8"
+      ],
+      "ESTATE WAGON": [
+        "5.7L 350cid V8",
+        "6.6L 403cid V8"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "4.9L 301cid V8",
+        "5.0L 305cid V8",
+        "5.7L 350cid V8",
+        "6.6L 403cid V8"
+      ],
+      "OPEL BY ISUZU": [
+        "1.8L L4"
+      ],
+      "REGAL": [
+        "3.2L 196cid V6",
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "5.0L 305cid V8"
+      ],
+      "RIVIERA": [
+        "5.7L 350cid V8",
+        "6.6L 403cid V8"
+      ],
+      "SKYHAWK": [
+        "3.8L 231cid V6"
+      ],
+      "SKYLARK": [
+        "3.8L 231cid V6",
+        "5.0L 305cid V8",
+        "5.7L 350cid V8"
+      ]
+    },
+    "1979": {
+      "CENTURY": [
+        "3.2L 196cid V6",
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "4.9L 301cid V8",
+        "5.0L 305cid V8",
+        "5.7L 350cid V8"
+      ],
+      "ELECTRA": [
+        "5.7L 350cid V8",
+        "6.6L 403cid V8"
+      ],
+      "ESTATE WAGON": [
+        "5.7L 350cid V8",
+        "6.6L 403cid V8"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "4.9L 301cid V8",
+        "5.7L 350cid V8"
+      ],
+      "OPEL BY ISUZU": [
+        "1.8L L4"
+      ],
+      "REGAL": [
+        "3.2L 196cid V6",
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "4.9L 301cid V8",
+        "5.0L 305cid V8",
+        "5.7L 350cid V8"
+      ],
+      "RIVIERA": [
+        "3.8L 231cid V6 Turbocharged",
+        "5.7L 350cid V8"
+      ],
+      "SKYHAWK": [
+        "3.8L 231cid V6"
+      ],
+      "SKYLARK": [
+        "3.8L 231cid V6",
+        "5.0L 305cid V8",
+        "5.7L 350cid V8"
+      ]
+    },
+    "1980": {
+      "CENTURY": [
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "4.3L 265cid V8",
+        "4.9L 301cid V8",
+        "5.0L 305cid V8"
+      ],
+      "ELECTRA": [
+        "4.1L 252cid V6",
+        "4.9L 301cid V8",
+        "5.7L 350cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "ESTATE WAGON": [
+        "4.9L 301cid V8",
+        "5.7L 350cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "4.1L 252cid V6",
+        "4.9L 301cid V8",
+        "5.7L 350cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "REGAL": [
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "4.3L 265cid V8",
+        "4.9L 301cid V8",
+        "5.0L 305cid V8"
+      ],
+      "RIVIERA": [
+        "3.8L 231cid V6 Turbocharged",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "SKYHAWK": [
+        "3.8L 231cid V6"
+      ],
+      "SKYLARK": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6"
+      ]
+    },
+    "1981": {
+      "CENTURY": [
+        "3.8L 231cid V6",
+        "4.3L 265cid V8",
+        "4.4L 267cid V8",
+        "5.0L 305cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "ELECTRA": [
+        "4.1L 252cid V6",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "ESTATE WAGON": [
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "4.1L 252cid V6",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "REGAL": [
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "4.3L 265cid V8",
+        "4.4L 267cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "RIVIERA": [
+        "3.8L 231cid V6 Turbocharged",
+        "4.1L 252cid V6",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "SKYLARK": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6"
+      ]
+    },
+    "1982": {
+      "CENTURY": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6",
+        "3.0L 181cid V6",
+        "4.3L 260cid V6 DIESEL"
+      ],
+      "ELECTRA": [
+        "4.1L 252cid V6",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "ESTATE WAGON": [
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "4.1L 252cid V6",
+        "4.4L 267cid V8",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "REGAL": [
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "4.1L 252cid V6",
+        "4.3L 260cid V6 DIESEL",
+        "4.4L 267cid V8",
+        "5.0L 305cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "RIVIERA": [
+        "3.8L 231cid V6 Turbocharged",
+        "4.1L 252cid V6",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "SKYHAWK": [
+        "1.8L 112cid L4 OHV",
+        "1.8L 112cid L4 SOHC"
+      ],
+      "SKYLARK": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6"
+      ]
+    },
+    "1983": {
+      "CENTURY": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6",
+        "3.0L 181cid V6",
+        "4.3L 260cid V6 DIESEL"
+      ],
+      "ELECTRA": [
+        "4.1L 252cid V6",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "ESTATE WAGON": [
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "4.1L 252cid V6",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "REGAL": [
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "4.1L 252cid V6",
+        "4.3L 260cid V6 DIESEL",
+        "5.0L 305cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "RIVIERA": [
+        "3.8L 231cid V6 Turbocharged",
+        "4.1L 252cid V6",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "SKYHAWK": [
+        "1.8L 112cid L4",
+        "2.0L 122cid L4"
+      ],
+      "SKYLARK": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6"
+      ]
+    },
+    "1984": {
+      "CENTURY": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6",
+        "3.0L 181cid V6",
+        "3.8L 231cid V6",
+        "4.3L 260cid V6 DIESEL"
+      ],
+      "ELECTRA": [
+        "4.1L 252cid V6",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "4.1L 252cid V6",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "REGAL": [
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "4.1L 252cid V6",
+        "4.3L 260cid V6 DIESEL",
+        "5.0L 305cid V8"
+      ],
+      "RIVIERA": [
+        "3.8L 231cid V6 Turbocharged",
+        "4.1L 252cid V6",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "SKYHAWK": [
+        "1.8L 112cid L4",
+        "1.8L 112cid L4 Turbocharged",
+        "2.0L 122cid L4"
+      ],
+      "SKYLARK": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6"
+      ]
+    },
+    "1985": {
+      "CENTURY": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6",
+        "3.0L 181cid V6",
+        "3.8L 231cid V6",
+        "4.3L 260cid V6 DIESEL"
+      ],
+      "ELECTRA": [
+        "3.0L 181cid V6",
+        "3.8L 231cid V6",
+        "4.3L 260cid V6 DIESEL",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "REGAL": [
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "4.3L 260cid V6 DIESEL",
+        "5.0L 305cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "RIVIERA": [
+        "3.8L 231cid V6 Turbocharged",
+        "5.0L 307cid V8",
+        "5.7L 350cid V8 DIESEL"
+      ],
+      "SKYHAWK": [
+        "1.8L 112cid L4",
+        "1.8L 112cid L4 Turbocharged",
+        "2.0L 122cid L4"
+      ],
+      "SKYLARK": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6"
+      ],
+      "SOMERSET REGAL": [
+        "2.5L 151cid L4",
+        "3.0L 181cid V6"
+      ]
+    },
+    "1986": {
+      "CENTURY": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6",
+        "3.8L 231cid V6"
+      ],
+      "ELECTRA": [
+        "3.8L 231cid V6",
+        "5.0L 307cid V8"
+      ],
+      "LESABRE": [
+        "3.0L 181cid V6",
+        "3.8L 231cid V6",
+        "5.0L 307cid V8"
+      ],
+      "REGAL": [
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "5.0L 305cid V8",
+        "5.0L 307cid V8"
+      ],
+      "RIVIERA": [
+        "3.8L 231cid V6"
+      ],
+      "SKYHAWK": [
+        "1.8L 112cid L4",
+        "1.8L 112cid L4 Turbocharged",
+        "2.0L 122cid L4"
+      ],
+      "SKYLARK": [
+        "2.5L 151cid L4",
+        "3.0L 181cid V6"
+      ],
+      "SOMERSET": [
+        "2.5L 151cid L4",
+        "3.0L 181cid V6"
+      ]
+    },
+    "1987": {
+      "CENTURY": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6",
+        "3.8L 231cid V6"
+      ],
+      "ELECTRA": [
+        "3.8L 231cid V6",
+        "5.0L 307cid V8"
+      ],
+      "ESTATE WAGON": [
+        "5.0L 307cid V8"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "5.0L 307cid V8"
+      ],
+      "REGAL": [
+        "3.8L 231cid V6",
+        "3.8L 231cid V6 Turbocharged",
+        "5.0L 305cid V8",
+        "5.0L 307cid V8"
+      ],
+      "RIVIERA": [
+        "3.8L 231cid V6"
+      ],
+      "SKYHAWK": [
+        "2.0L 122cid L4 OHV",
+        "2.0L 122cid L4 SOHC",
+        "2.0L 122cid L4 Turbocharged"
+      ],
+      "SKYLARK": [
+        "2.5L 151cid L4",
+        "3.0L 181cid V6"
+      ],
+      "SOMERSET": [
+        "2.5L 151cid L4",
+        "3.0L 181cid V6"
+      ]
+    },
+    "1988": {
+      "CENTURY": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6",
+        "3.8L 231cid V6"
+      ],
+      "ELECTRA": [
+        "3.8L 231cid V6",
+        "5.0L 307cid V8"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "5.0L 307cid V8"
+      ],
+      "REATTA": [
+        "3.8L 231cid V6"
+      ],
+      "REGAL": [
+        "2.8L 173cid V6"
+      ],
+      "RIVIERA": [
+        "3.8L 231cid V6"
+      ],
+      "SKYHAWK": [
+        "2.0L 122cid L4 OHV",
+        "2.0L 122cid L4 SOHC"
+      ],
+      "SKYLARK": [
+        "2.3L 138cid L4",
+        "2.5L 151cid L4",
+        "3.0L 181cid V6"
+      ]
+    },
+    "1989": {
+      "CENTURY": [
+        "2.5L 151cid L4",
+        "2.8L 173cid V6",
+        "3.1L 189cid V6",
+        "3.3L 204cid V6"
+      ],
+      "ELECTRA": [
+        "3.8L 231cid V6",
+        "5.0L 307cid V8"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "5.0L 307cid V8"
+      ],
+      "REATTA": [
+        "3.8L 231cid V6"
+      ],
+      "REGAL": [
+        "2.8L 173cid V6",
+        "3.1L 189cid V6"
+      ],
+      "RIVIERA": [
+        "3.8L 231cid V6"
+      ],
+      "SKYHAWK": [
+        "2.0L 122cid L4"
+      ],
+      "SKYLARK": [
+        "2.3L 138cid L4",
+        "2.5L 151cid L4",
+        "3.3L 204cid V6"
+      ]
+    },
+    "1990": {
+      "CENTURY": [
+        "2.5L 151cid L4",
+        "3.1L 189cid V6",
+        "3.3L 204cid V6"
+      ],
+      "ELECTRA": [
+        "3.8L 231cid V6",
+        "5.0L 307cid V8"
+      ],
+      "LESABRE": [
+        "3.8L 231cid V6",
+        "5.0L 307cid V8"
+      ],
+      "REATTA": [
+        "3.8L 231cid V6"
+      ],
+      "REGAL": [
+        "3.1L 189cid V6",
+        "3.8L 231cid V6"
+      ],
+      "RIVIERA": [
+        "3.8L 231cid V6"
+      ],
+      "SKYLARK": [
+        "2.3L 138cid L4",
+        "2.5L 151cid L4",
+        "3.3L 204cid V6"
+      ]
+    },
+    "1991": {
+      "CENTURY": [
+        "2.5L L4",
+        "3.1L V6",
+        "3.3L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "REATTA": [
+        "3.8L V6"
+      ],
+      "REGAL": [
+        "3.1L V6",
+        "3.8L V6"
+      ],
+      "RIVIERA": [
+        "3.8L V6"
+      ],
+      "ROADMASTER": [
+        "5.0L V8"
+      ],
+      "SKYLARK": [
+        "2.3L L4",
+        "2.5L L4",
+        "3.3L V6"
+      ]
+    },
+    "1992": {
+      "CENTURY": [
+        "2.5L L4",
+        "3.1L V6",
+        "3.3L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "REGAL": [
+        "3.1L V6",
+        "3.8L V6"
+      ],
+      "RIVIERA": [
+        "3.8L V6"
+      ],
+      "ROADMASTER": [
+        "5.7L V8"
+      ],
+      "SKYLARK": [
+        "2.3L L4",
+        "3.3L V6"
+      ]
+    },
+    "1993": {
+      "CENTURY": [
+        "2.2L L4",
+        "3.1L V6",
+        "3.3L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "REGAL": [
+        "3.1L V6",
+        "3.8L V6"
+      ],
+      "RIVIERA": [
+        "3.8L V6"
+      ],
+      "ROADMASTER": [
+        "5.7L V8"
+      ],
+      "SKYLARK": [
+        "2.3L L4",
+        "3.3L V6"
+      ]
+    },
+    "1994": {
+      "CENTURY": [
+        "2.2L L4",
+        "3.1L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "REGAL": [
+        "3.1L V6",
+        "3.8L V6"
+      ],
+      "ROADMASTER": [
+        "5.7L V8"
+      ],
+      "SKYLARK": [
+        "2.3L L4",
+        "3.1L V6"
+      ]
+    },
+    "1995": {
+      "CENTURY": [
+        "2.2L L4",
+        "3.1L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "REGAL": [
+        "3.1L V6",
+        "3.8L V6"
+      ],
+      "RIVIERA": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "ROADMASTER": [
+        "5.7L V8"
+      ],
+      "SKYLARK": [
+        "2.3L L4",
+        "3.1L V6"
+      ]
+    },
+    "1996": {
+      "CENTURY": [
+        "2.2L L4",
+        "3.1L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "REGAL": [
+        "3.1L V6",
+        "3.8L V6"
+      ],
+      "RIVIERA": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "ROADMASTER": [
+        "5.7L V8"
+      ],
+      "SKYLARK": [
+        "2.4L L4",
+        "3.1L V6"
+      ]
+    },
+    "1997": {
+      "CENTURY": [
+        "3.1L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "REGAL": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "RIVIERA": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "SKYLARK": [
+        "2.4L L4",
+        "3.1L V6"
+      ]
+    },
+    "1998": {
+      "CENTURY": [
+        "3.1L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "REGAL": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "RIVIERA": [
+        "3.8L V6 Supercharged"
+      ],
+      "SKYLARK": [
+        "2.4L L4",
+        "3.1L V6"
+      ]
+    },
+    "1999": {
+      "CENTURY": [
+        "3.1L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "REGAL": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "RIVIERA": [
+        "3.8L V6 Supercharged"
+      ]
+    },
+    "2000": {
+      "CENTURY": [
+        "3.1L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "REGAL": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ]
+    },
+    "2001": {
+      "CENTURY": [
+        "3.1L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "REGAL": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ]
+    },
+    "2002": {
+      "CENTURY": [
+        "3.1L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "REGAL": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "RENDEZVOUS": [
+        "3.4L V6"
+      ]
+    },
+    "2003": {
+      "CENTURY": [
+        "3.1L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "REGAL": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "RENDEZVOUS": [
+        "3.4L V6"
+      ]
+    },
+    "2004": {
+      "CENTURY": [
+        "3.1L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "RAINIER": [
+        "4.2L L6",
+        "5.3L V8"
+      ],
+      "REGAL": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "RENDEZVOUS": [
+        "3.4L V6",
+        "3.6L V6"
+      ]
+    },
+    "2005": {
+      "ALLURE": [
+        "3.6L V6",
+        "3.8L V6"
+      ],
+      "CENTURY": [
+        "3.1L V6"
+      ],
+      "LACROSSE": [
+        "3.6L V6",
+        "3.8L V6"
+      ],
+      "LESABRE": [
+        "3.8L V6"
+      ],
+      "PARK AVENUE": [
+        "3.8L V6",
+        "3.8L V6 Supercharged"
+      ],
+      "RAINIER": [
+        "4.2L L6",
+        "5.3L V8"
+      ],
+      "RENDEZVOUS": [
+        "3.4L V6",
+        "3.6L V6"
+      ],
+      "TERRAZA": [
+        "3.5L V6"
+      ]
+    },
+    "2006": {
+      "ALLURE": [
+        "3.6L V6",
+        "3.8L V6"
+      ],
+      "LACROSSE": [
+        "3.6L V6",
+        "3.8L V6"
+      ],
+      "LUCERNE": [
+        "3.8L V6",
+        "4.6L V8"
+      ],
+      "RAINIER": [
+        "4.2L L6",
+        "5.3L V8"
+      ],
+      "RENDEZVOUS": [
+        "3.5L V6",
+        "3.6L V6"
+      ],
+      "TERRAZA": [
+        "3.5L V6",
+        "3.9L V6"
+      ]
+    },
+    "2007": {
+      "ALLURE": [
+        "3.6L V6",
+        "3.8L V6"
+      ],
+      "LACROSSE": [
+        "3.6L V6",
+        "3.8L V6"
+      ],
+      "LUCERNE": [
+        "3.8L V6",
+        "4.6L V8"
+      ],
+      "RAINIER": [
+        "4.2L L6",
+        "5.3L V8"
+      ],
+      "RENDEZVOUS": [
+        "3.5L V6"
+      ],
+      "TERRAZA": [
+        "3.9L V6"
+      ]
+    },
+    "2008": {
+      "ALLURE": [
+        "3.6L V6",
+        "3.8L V6",
+        "5.3L V8"
+      ],
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "LACROSSE": [
+        "3.6L V6",
+        "3.8L V6",
+        "5.3L V8"
+      ],
+      "LUCERNE": [
+        "3.8L V6",
+        "4.6L V8"
+      ]
+    },
+    "2009": {
+      "ALLURE": [
+        "3.8L V6",
+        "5.3L V8"
+      ],
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "LACROSSE": [
+        "3.8L V6",
+        "5.3L V8"
+      ],
+      "LUCERNE": [
+        "3.9L V6",
+        "4.6L V8"
+      ]
+    },
+    "2010": {
+      "ALLURE": [
+        "3.0L V6",
+        "3.6L V6"
+      ],
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "LACROSSE": [
+        "2.4L L4",
+        "3.0L V6",
+        "3.6L V6"
+      ],
+      "LUCERNE": [
+        "3.9L V6",
+        "4.6L V8"
+      ]
+    },
+    "2011": {
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "LACROSSE": [
+        "2.4L L4",
+        "3.6L V6"
+      ],
+      "LUCERNE": [
+        "3.9L V6",
+        "4.6L V8"
+      ],
+      "REGAL": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ]
+    },
+    "2012": {
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "LACROSSE": [
+        "2.4L L4",
+        "3.6L V6"
+      ],
+      "REGAL": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "VERANO": [
+        "2.4L L4"
+      ]
+    },
+    "2013": {
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "ENCORE": [
+        "1.4L L4 Turbocharged"
+      ],
+      "LACROSSE": [
+        "2.4L L4",
+        "3.6L V6"
+      ],
+      "REGAL": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "VERANO": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ]
+    },
+    "2014": {
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "ENCORE": [
+        "1.4L L4 Turbocharged"
+      ],
+      "LACROSSE": [
+        "2.4L L4",
+        "3.6L V6"
+      ],
+      "REGAL": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "VERANO": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ]
+    },
+    "2015": {
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "ENCORE": [
+        "1.4L L4 Turbocharged"
+      ],
+      "LACROSSE": [
+        "2.4L L4",
+        "3.6L V6"
+      ],
+      "REGAL": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "2.4L L4 ELECTRIC/GAS"
+      ],
+      "VERANO": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ]
+    },
+    "2016": {
+      "CASCADA": [
+        "1.6L L4 Turbocharged"
+      ],
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "ENCORE": [
+        "1.4L L4 Turbocharged"
+      ],
+      "ENVISION": [
+        "2.0L L4 Turbocharged"
+      ],
+      "LACROSSE": [
+        "2.4L L4",
+        "3.6L V6"
+      ],
+      "REGAL": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "2.4L L4 ELECTRIC/GAS"
+      ],
+      "VERANO": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ]
+    },
+    "2017": {
+      "CASCADA": [
+        "1.6L L4 Turbocharged"
+      ],
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "ENCORE": [
+        "1.4L L4 Turbocharged"
+      ],
+      "ENVISION": [
+        "2.0L L4 Turbocharged",
+        "2.5L L4"
+      ],
+      "LACROSSE": [
+        "3.6L V6"
+      ],
+      "REGAL": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "VERANO": [
+        "2.4L L4"
+      ]
+    },
+    "2018": {
+      "CASCADA": [
+        "1.6L L4 Turbocharged"
+      ],
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "ENCORE": [
+        "1.4L L4 Turbocharged"
+      ],
+      "ENVISION": [
+        "2.0L L4 Turbocharged",
+        "2.5L L4"
+      ],
+      "LACROSSE": [
+        "2.5L L4",
+        "3.6L V6"
+      ],
+      "REGAL SPORTBACK": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ],
+      "REGAL TOURX": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2019": {
+      "CASCADA": [
+        "1.6L L4 Turbocharged"
+      ],
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "ENCORE": [
+        "1.4L L4 Turbocharged"
+      ],
+      "ENVISION": [
+        "2.0L L4 Turbocharged",
+        "2.5L L4"
+      ],
+      "LACROSSE": [
+        "2.5L L4",
+        "3.6L V6"
+      ],
+      "REGAL SPORTBACK": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ],
+      "REGAL TOURX": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2020": {
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "ENCORE": [
+        "1.2L L3 Turbocharged",
+        "1.3L L3 Turbocharged",
+        "1.4L L4 Turbocharged"
+      ],
+      "ENVISION": [
+        "2.0L L4 Turbocharged",
+        "2.5L L4"
+      ],
+      "REGAL SPORTBACK": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ],
+      "REGAL TOURX": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2021": {
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "ENCORE": [
+        "1.2L L3 Turbocharged",
+        "1.3L L3 Turbocharged",
+        "1.4L L4 Turbocharged"
+      ],
+      "ENVISION": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2022": {
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "ENCORE": [
+        "1.2L L3 Turbocharged",
+        "1.3L L3 Turbocharged",
+        "1.4L L4 Turbocharged"
+      ],
+      "ENVISION": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2023": {
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "ENCORE": [
+        "1.2L L3 Turbocharged",
+        "1.3L L3 Turbocharged"
+      ],
+      "ENVISION": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2024": {
+      "ENCLAVE": [
+        "3.6L V6"
+      ],
+      "ENCORE": [
+        "1.2L L3 Turbocharged",
+        "1.3L L3 Turbocharged"
+      ],
+      "ENVISION": [
+        "2.0L L4 Turbocharged"
+      ],
+      "ENVISTA": [
+        "1.2L L3 Turbocharged"
+      ]
+    },
+    "2025": {
+      "ENCLAVE": [
+        "2.5L L4 Turbocharged"
+      ],
+      "ENCORE": [
+        "1.2L L3 Turbocharged",
+        "1.3L L3 Turbocharged"
+      ],
+      "ENVISION": [
+        "2.0L L4 Turbocharged"
+      ],
+      "ENVISTA": [
+        "1.2L L3 Turbocharged"
+      ]
+    },
+    "2026": {
+      "ENCORE": [
+        "1.3L L3 Turbocharged"
+      ]
+    }
+  },
+  "BYD": {
+    "2023": {
+      "SONG PLUS": [
+        "1.5L L4 ELECTRIC/GAS"
+      ]
+    },
+    "2024": {
+      "KING": [
+        "1.5L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "SONG PLUS": [
+        "1.5L L4 ELECTRIC/GAS"
+      ]
+    }
+  },
+  "CADILLAC": {
+    "1994": {
+      "DEVILLE": [
+        "4.6L V8",
+        "4.9L V8"
+      ]
+    },
+    "1995": {
+      "DEVILLE": [
+        "4.6L V8",
+        "4.9L V8"
+      ],
+      "ELDORADO": [
+        "4.6L V8"
+      ],
+      "FLEETWOOD": [
+        "5.7L V8"
+      ],
+      "SEVILLE": [
+        "4.6L V8"
+      ]
+    },
+    "1996": {
+      "DEVILLE": [
+        "4.6L V8"
+      ],
+      "ELDORADO": [
+        "4.6L V8"
+      ],
+      "FLEETWOOD": [
+        "5.7L V8"
+      ],
+      "SEVILLE": [
+        "4.6L V8"
+      ]
+    },
+    "1997": {
+      "CATERA": [
+        "3.0L V6"
+      ],
+      "DEVILLE": [
+        "4.6L V8"
+      ],
+      "ELDORADO": [
+        "4.6L V8"
+      ],
+      "SEVILLE": [
+        "4.6L V8"
+      ]
+    },
+    "1998": {
+      "CATERA": [
+        "3.0L V6"
+      ],
+      "DEVILLE": [
+        "4.6L V8"
+      ],
+      "ELDORADO": [
+        "4.6L V8"
+      ],
+      "SEVILLE": [
+        "4.6L V8"
+      ]
+    },
+    "1999": {
+      "CATERA": [
+        "3.0L V6"
+      ],
+      "DEVILLE": [
+        "4.6L V8"
+      ],
+      "ELDORADO": [
+        "4.6L V8"
+      ],
+      "ESCALADE": [
+        "5.7L V8"
+      ],
+      "SEVILLE": [
+        "4.6L V8"
+      ]
+    },
+    "2000": {
+      "CATERA": [
+        "3.0L V6"
+      ],
+      "DEVILLE": [
+        "4.6L V8"
+      ],
+      "ELDORADO": [
+        "4.6L V8"
+      ],
+      "ESCALADE": [
+        "5.7L V8"
+      ],
+      "SEVILLE": [
+        "4.6L V8"
+      ]
+    },
+    "2001": {
+      "CATERA": [
+        "3.0L V6"
+      ],
+      "DEVILLE": [
+        "4.6L V8"
+      ],
+      "ELDORADO": [
+        "4.6L V8"
+      ],
+      "SEVILLE": [
+        "4.6L V8"
+      ]
+    },
+    "2002": {
+      "DEVILLE": [
+        "4.6L V8"
+      ],
+      "ELDORADO": [
+        "4.6L V8"
+      ],
+      "ESCALADE": [
+        "5.3L V8",
+        "6.0L V8"
+      ],
+      "SEVILLE": [
+        "4.6L V8"
+      ]
+    },
+    "2003": {
+      "CTS": [
+        "3.2L V6"
+      ],
+      "DEVILLE": [
+        "4.6L V8"
+      ],
+      "ESCALADE": [
+        "5.3L V8",
+        "6.0L V8"
+      ],
+      "SEVILLE": [
+        "4.6L V8"
+      ]
+    },
+    "2004": {
+      "CTS": [
+        "3.2L V6",
+        "3.6L V6",
+        "5.7L V8"
+      ],
+      "DEVILLE": [
+        "4.6L V8"
+      ],
+      "ESCALADE": [
+        "5.3L V8",
+        "6.0L V8"
+      ],
+      "SEVILLE": [
+        "4.6L V8"
+      ],
+      "SRX": [
+        "3.6L V6",
+        "4.6L V8"
+      ],
+      "XLR": [
+        "4.6L V8"
+      ]
+    },
+    "2005": {
+      "CTS": [
+        "2.8L V6",
+        "3.6L V6",
+        "5.7L V8"
+      ],
+      "DEVILLE": [
+        "4.6L V8"
+      ],
+      "ESCALADE": [
+        "5.3L V8",
+        "6.0L V8"
+      ],
+      "SRX": [
+        "3.6L V6",
+        "4.6L V8"
+      ],
+      "STS": [
+        "3.6L V6",
+        "4.6L V8"
+      ],
+      "XLR": [
+        "4.6L V8"
+      ]
+    },
+    "2006": {
+      "CTS": [
+        "2.8L V6",
+        "3.6L V6",
+        "6.0L V8"
+      ],
+      "DTS": [
+        "4.6L V8"
+      ],
+      "ESCALADE": [
+        "6.0L V8"
+      ],
+      "SRX": [
+        "3.6L V6",
+        "4.6L V8"
+      ],
+      "STS": [
+        "3.6L V6",
+        "4.4L V8 Supercharged",
+        "4.6L V8"
+      ],
+      "XLR": [
+        "4.4L V8 Supercharged",
+        "4.6L V8"
+      ]
+    },
+    "2007": {
+      "BLS": [
+        "2.0L L4 Turbocharged"
+      ],
+      "CTS": [
+        "2.8L V6",
+        "3.6L V6",
+        "6.0L V8"
+      ],
+      "DTS": [
+        "4.6L V8"
+      ],
+      "ESCALADE": [
+        "6.2L V8"
+      ],
+      "SRX": [
+        "3.6L V6",
+        "4.6L V8"
+      ],
+      "STS": [
+        "3.6L V6",
+        "4.4L V8 Supercharged",
+        "4.6L V8"
+      ],
+      "XLR": [
+        "4.4L V8 Supercharged",
+        "4.6L V8"
+      ]
+    },
+    "2008": {
+      "BLS": [
+        "2.0L L4 Turbocharged"
+      ],
+      "CTS": [
+        "3.6L V6"
+      ],
+      "DTS": [
+        "4.6L V8"
+      ],
+      "ESCALADE": [
+        "6.2L V8"
+      ],
+      "SRX": [
+        "3.6L V6",
+        "4.6L V8"
+      ],
+      "STS": [
+        "3.6L V6",
+        "4.4L V8 Supercharged",
+        "4.6L V8"
+      ],
+      "XLR": [
+        "4.4L V8 Supercharged",
+        "4.6L V8"
+      ]
+    },
+    "2009": {
+      "CTS": [
+        "3.6L V6",
+        "6.2L V8 Supercharged"
+      ],
+      "DTS": [
+        "4.6L V8"
+      ],
+      "ESCALADE": [
+        "6.0L V8 ELECTRIC/GAS",
+        "6.2L V8"
+      ],
+      "SRX": [
+        "3.6L V6",
+        "4.6L V8"
+      ],
+      "STS": [
+        "3.6L V6",
+        "4.4L V8 Supercharged",
+        "4.6L V8"
+      ],
+      "XLR": [
+        "4.4L V8 Supercharged",
+        "4.6L V8"
+      ]
+    },
+    "2010": {
+      "CTS": [
+        "3.0L V6",
+        "3.6L V6",
+        "6.2L V8 Supercharged"
+      ],
+      "DTS": [
+        "4.6L V8"
+      ],
+      "ESCALADE": [
+        "6.0L V8 ELECTRIC/GAS",
+        "6.2L V8"
+      ],
+      "SRX": [
+        "2.8L V6 Turbocharged",
+        "3.0L V6"
+      ],
+      "STS": [
+        "3.6L V6",
+        "4.6L V8"
+      ]
+    },
+    "2011": {
+      "CTS": [
+        "3.0L V6",
+        "3.6L V6",
+        "6.2L V8 Supercharged"
+      ],
+      "DTS": [
+        "4.6L V8"
+      ],
+      "ESCALADE": [
+        "6.0L V8 ELECTRIC/GAS",
+        "6.2L V8"
+      ],
+      "SRX": [
+        "2.8L V6 Turbocharged",
+        "3.0L V6"
+      ],
+      "STS": [
+        "3.6L V6"
+      ]
+    },
+    "2012": {
+      "CTS": [
+        "3.0L V6",
+        "3.6L V6",
+        "6.2L V8 Supercharged"
+      ],
+      "ESCALADE": [
+        "6.0L V8 ELECTRIC/GAS",
+        "6.2L V8"
+      ],
+      "SRX": [
+        "3.6L V6"
+      ]
+    },
+    "2013": {
+      "ATS": [
+        "2.0L L4 Turbocharged",
+        "2.5L L4",
+        "3.6L V6"
+      ],
+      "CTS": [
+        "3.0L V6",
+        "3.6L V6",
+        "6.2L V8 Supercharged"
+      ],
+      "ESCALADE": [
+        "6.0L V8 ELECTRIC/GAS",
+        "6.2L V8"
+      ],
+      "SRX": [
+        "3.6L V6"
+      ],
+      "XTS": [
+        "3.6L V6"
+      ]
+    },
+    "2014": {
+      "ATS": [
+        "2.0L L4 Turbocharged",
+        "2.5L L4",
+        "3.6L V6"
+      ],
+      "CTS": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6",
+        "3.6L V6",
+        "3.6L V6 Turbocharged",
+        "6.2L V8 Supercharged"
+      ],
+      "ELR": [
+        "1.4L L4 ELECTRIC/GAS"
+      ],
+      "ESCALADE": [
+        "6.2L V8"
+      ],
+      "SRX": [
+        "3.6L V6"
+      ],
+      "XTS": [
+        "3.6L V6",
+        "3.6L V6 Turbocharged"
+      ]
+    },
+    "2015": {
+      "ATS": [
+        "2.0L L4 Turbocharged",
+        "2.5L L4",
+        "3.6L V6"
+      ],
+      "CTS": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6",
+        "3.6L V6 Turbocharged",
+        "6.2L V8 Supercharged"
+      ],
+      "ESCALADE": [
+        "6.2L V8"
+      ],
+      "SRX": [
+        "3.6L V6"
+      ],
+      "XTS": [
+        "3.6L V6",
+        "3.6L V6 Turbocharged"
+      ]
+    },
+    "2016": {
+      "ATS": [
+        "2.0L L4 Turbocharged",
+        "2.5L L4",
+        "3.6L V6",
+        "3.6L V6 Turbocharged"
+      ],
+      "CT6": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.6L V6"
+      ],
+      "CTS": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6",
+        "3.6L V6 Turbocharged",
+        "6.2L V8 Supercharged"
+      ],
+      "ELR": [
+        "1.4L L4 ELECTRIC/GAS"
+      ],
+      "ESCALADE": [
+        "6.2L V8"
+      ],
+      "SRX": [
+        "3.6L V6"
+      ],
+      "XTS": [
+        "3.6L V6",
+        "3.6L V6 Turbocharged"
+      ]
+    },
+    "2017": {
+      "ATS": [
+        "2.0L L4 Turbocharged",
+        "2.5L L4",
+        "3.6L V6",
+        "3.6L V6 Turbocharged"
+      ],
+      "CT6": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.6L V6"
+      ],
+      "CTS": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6",
+        "3.6L V6 Turbocharged",
+        "6.2L V8 Supercharged"
+      ],
+      "ESCALADE": [
+        "6.2L V8"
+      ],
+      "XT5": [
+        "3.6L V6"
+      ],
+      "XTS": [
+        "3.6L V6",
+        "3.6L V6 Turbocharged"
+      ]
+    },
+    "2018": {
+      "ATS": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6",
+        "3.6L V6 Turbocharged"
+      ],
+      "CT6": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.6L V6"
+      ],
+      "CTS": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6",
+        "3.6L V6 Turbocharged",
+        "6.2L V8 Supercharged"
+      ],
+      "ESCALADE": [
+        "6.2L V8"
+      ],
+      "XT5": [
+        "3.6L V6"
+      ],
+      "XTS": [
+        "3.6L V6",
+        "3.6L V6 Turbocharged"
+      ]
+    },
+    "2019": {
+      "ATS": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6",
+        "3.6L V6 Turbocharged"
+      ],
+      "CT6": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.6L V6",
+        "4.2L V8 Turbocharged"
+      ],
+      "CTS": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6",
+        "3.6L V6 Turbocharged",
+        "6.2L V8 Supercharged"
+      ],
+      "ESCALADE": [
+        "6.2L V8"
+      ],
+      "XT4": [
+        "2.0L L4 Turbocharged"
+      ],
+      "XT5": [
+        "3.6L V6"
+      ],
+      "XTS": [
+        "3.6L V6",
+        "3.6L V6 Turbocharged"
+      ]
+    },
+    "2020": {
+      "CT4": [
+        "2.0L L4 Turbocharged",
+        "2.7L L4 Turbocharged"
+      ],
+      "CT5": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "CT6": [
+        "3.6L V6",
+        "4.2L V8 Turbocharged"
+      ],
+      "ESCALADE": [
+        "6.2L V8"
+      ],
+      "XT4": [
+        "2.0L L4 Turbocharged"
+      ],
+      "XT5": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ],
+      "XT6": [
+        "3.6L V6"
+      ]
+    },
+    "2021": {
+      "CT4": [
+        "2.0L L4 Turbocharged",
+        "2.7L L4 Turbocharged"
+      ],
+      "CT5": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "ESCALADE": [
+        "3.0L L6 DIESEL Turbocharged",
+        "6.2L V8"
+      ],
+      "XT4": [
+        "2.0L L4 Turbocharged"
+      ],
+      "XT5": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ],
+      "XT6": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ]
+    },
+    "2022": {
+      "CT4": [
+        "2.0L L4 Turbocharged",
+        "2.7L L4 Turbocharged",
+        "3.6L V6 Turbocharged"
+      ],
+      "CT5": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "6.2L V8 Supercharged",
+        "6.2L V8 Turbocharged"
+      ],
+      "ESCALADE": [
+        "3.0L L6 DIESEL Turbocharged",
+        "6.2L V8"
+      ],
+      "XT4": [
+        "2.0L L4 Turbocharged"
+      ],
+      "XT5": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ],
+      "XT6": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ]
+    },
+    "2023": {
+      "CT4": [
+        "2.0L L4 Turbocharged",
+        "2.7L L4 Turbocharged",
+        "3.6L V6 Turbocharged"
+      ],
+      "CT5": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "6.2L V8 Supercharged"
+      ],
+      "ESCALADE": [
+        "3.0L L6 DIESEL Turbocharged",
+        "6.2L V8",
+        "6.2L V8 Supercharged"
+      ],
+      "LYRIQ": [
+        "ELECTRIC"
+      ],
+      "XT4": [
+        "2.0L L4 Turbocharged"
+      ],
+      "XT5": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ],
+      "XT6": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ]
+    },
+    "2024": {
+      "CT4": [
+        "2.0L L4 Turbocharged",
+        "2.7L L4 Turbocharged",
+        "3.6L V6 Turbocharged"
+      ],
+      "CT5": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "6.2L V8 Supercharged"
+      ],
+      "ESCALADE": [
+        "3.0L L6 DIESEL Turbocharged",
+        "6.2L V8",
+        "6.2L V8 Supercharged"
+      ],
+      "LYRIQ": [
+        "ELECTRIC"
+      ],
+      "XT4": [
+        "2.0L L4 Turbocharged"
+      ],
+      "XT5": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ],
+      "XT6": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ]
+    },
+    "2025": {
+      "CT4": [
+        "2.0L L4 Turbocharged",
+        "2.7L L4 Turbocharged",
+        "3.6L V6 Turbocharged"
+      ],
+      "CT5": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "6.2L V8 Supercharged"
+      ],
+      "ESCALADE": [
+        "6.2L V8",
+        "6.2L V8 Supercharged",
+        "ELECTRIC"
+      ],
+      "LYRIQ": [
+        "ELECTRIC"
+      ],
+      "OPTIQ": [
+        "ELECTRIC"
+      ],
+      "XT4": [
+        "2.0L L4 Turbocharged"
+      ],
+      "XT5": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ],
+      "XT6": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ]
+    },
+    "2026": {
+      "CT4": [
+        "2.7L L4 Turbocharged",
+        "3.6L V6 Turbocharged"
+      ],
+      "CT5": [
+        "3.0L V6 Turbocharged",
+        "6.2L V8 Supercharged"
+      ],
+      "ESCALADE": [
+        "ELECTRIC"
+      ],
+      "LYRIQ": [
+        "ELECTRIC"
+      ],
+      "VISTIQ": [
+        "ELECTRIC"
       ]
     }
   }
