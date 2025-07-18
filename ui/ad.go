@@ -243,7 +243,12 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 	card := Div(
 		ID(fmt.Sprintf("ad-%d", ad.ID)),
 		Class("block border p-4 mb-4 rounded hover:bg-gray-50 relative cursor-pointer group bg-white"),
-		hx.Get(fmt.Sprintf("/ad/detail/%d?view=list", ad.ID)),
+		hx.Get(fmt.Sprintf("/ad/detail/%d?view=%s", ad.ID, func() string {
+			if len(view) > 0 {
+				return view[0]
+			}
+			return "list"
+		}())),
 		hx.Target(htmxTarget),
 		hx.Swap("outerHTML"),
 		Div(
@@ -1151,49 +1156,86 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 		}()),
 	)
 
-	// Only show close button for grid view
+	// Show close button for grid and list views
 	var closeBtn g.Node
-	if view == "grid" {
+	if view == "grid" || view == "list" {
 		closeBtn = Button(
 			Type("button"),
 			Class("absolute -top-4 -right-4 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
-			hx.Get(fmt.Sprintf("/ad/card/%d?view=grid", ad.ID)),
+			hx.Get(fmt.Sprintf("/ad/card/%d?view=%s", ad.ID, view)),
 			hx.Target(htmxTarget),
 			hx.Swap("outerHTML"),
 			g.Text("×"),
 		)
 	}
 
-	content := Div(
-		Class("border rounded-lg shadow-lg bg-white flex flex-col relative"),
-		closeBtn,
-		mainImageArea,
-		thumbnails,
-		Div(
-			Class("p-4 flex flex-col gap-2"),
-			// Title and buttons row
+	// For grid view, don't add ID to content since wrapper has it
+	// For list view, add ID to content so close button can target it
+	var content g.Node
+	if view == "grid" {
+		content = Div(
+			Class("border rounded-lg shadow-lg bg-white flex flex-col relative"),
+			closeBtn,
+			mainImageArea,
+			thumbnails,
 			Div(
-				Class("flex flex-row items-center justify-between mb-2"),
-				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
-				Div(Class("flex flex-row items-center gap-2 ml-2"),
-					bookmarkBtn,
-					editBtn,
-					deleteBtn,
+				Class("p-4 flex flex-col gap-2"),
+				// Title and buttons row
+				Div(
+					Class("flex flex-row items-center justify-between mb-2"),
+					Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
+					Div(Class("flex flex-row items-center gap-2 ml-2"),
+						bookmarkBtn,
+						editBtn,
+						deleteBtn,
+					),
 				),
+				// Age and location row
+				Div(
+					Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
+					Div(Class("text-gray-400"), g.Text(agoStr)),
+					Div(Class("flex flex-row items-center gap-1"),
+						flagNode,
+						g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
+					),
+				),
+				// Description
+				Div(Class("text-base mt-2"), g.Text(ad.Description)),
 			),
-			// Age and location row
+		)
+	} else {
+		content = Div(
+			ID(fmt.Sprintf("ad-%d", ad.ID)),
+			Class("border rounded-lg shadow-lg bg-white flex flex-col relative"),
+			closeBtn,
+			mainImageArea,
+			thumbnails,
 			Div(
-				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
-				Div(Class("text-gray-400"), g.Text(agoStr)),
-				Div(Class("flex flex-row items-center gap-1"),
-					flagNode,
-					g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
+				Class("p-4 flex flex-col gap-2"),
+				// Title and buttons row
+				Div(
+					Class("flex flex-row items-center justify-between mb-2"),
+					Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
+					Div(Class("flex flex-row items-center gap-2 ml-2"),
+						bookmarkBtn,
+						editBtn,
+						deleteBtn,
+					),
 				),
+				// Age and location row
+				Div(
+					Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
+					Div(Class("text-gray-400"), g.Text(agoStr)),
+					Div(Class("flex flex-row items-center gap-1"),
+						flagNode,
+						g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
+					),
+				),
+				// Description
+				Div(Class("text-base mt-2"), g.Text(ad.Description)),
 			),
-			// Description
-			Div(Class("text-base mt-2"), g.Text(ad.Description)),
-		),
-	)
+		)
+	}
 
 	// Only wrap in AdGridWrapper for grid view
 	if view == "grid" {
