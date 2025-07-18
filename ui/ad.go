@@ -1050,6 +1050,235 @@ func AdCardTreeView(ad ad.Ad, loc *time.Location, bookmarked bool, userID int) g
 	return AdDetailUnified(ad, bookmarked, userID, "tree")
 }
 
+// AdCardCompactTree renders a compact single-line ad card for tree view (collapsed state)
+func AdCardCompactTree(ad ad.Ad, loc *time.Location, bookmarked bool, userID int) g.Node {
+	posted := ad.CreatedAt.In(loc)
+	agoStr := formatAdAge(posted)
+
+	locationStr, flagNode := getDisplayLocationAndFlag(ad)
+
+	// Bookmark button
+	bookmarkBtn := g.Node(nil)
+	if userID > 0 {
+		if bookmarked {
+			bookmarkBtn = Button(
+				Type("button"),
+				Class("focus:outline-none mr-2"),
+				hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
+				hx.Swap("outerHTML"),
+				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
+				g.Attr("onclick", "event.stopPropagation()"),
+				BookmarkIcon(true),
+			)
+		} else {
+			bookmarkBtn = Button(
+				Type("button"),
+				Class("focus:outline-none mr-2"),
+				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
+				hx.Swap("outerHTML"),
+				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
+				g.Attr("onclick", "event.stopPropagation()"),
+				BookmarkIcon(false),
+			)
+		}
+	}
+
+	// Check if ad has images
+	hasImages := len(ad.ImageOrder) > 0
+	picLink := g.Node(nil)
+	if hasImages {
+		picLink = Span(
+			Class("text-orange-500 hover:text-orange-700 cursor-pointer"),
+			g.Text("pic"),
+		)
+	}
+
+	return Div(
+		ID(fmt.Sprintf("ad-tree-%d", ad.ID)),
+		Class("flex items-center py-2 px-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer last:border-b-0"),
+		hx.Get(fmt.Sprintf("/ad/expand-tree/%d", ad.ID)),
+		hx.Target(fmt.Sprintf("#ad-tree-%d", ad.ID)),
+		hx.Swap("outerHTML"),
+		// Bookmark icon
+		bookmarkBtn,
+		// Description (blue text)
+		Div(
+			Class("flex-1 text-blue-600 hover:text-blue-800"),
+			g.Text(ad.Title),
+		),
+		// Location (black text)
+		Div(
+			Class("text-gray-800 mr-4 flex items-center"),
+			flagNode,
+			g.If(locationStr != "" || flagNode != nil, g.Text(locationStr)),
+		),
+		// Time posted (black text)
+		Div(
+			Class("text-gray-800 mr-4"),
+			g.Text(agoStr),
+		),
+		// Price (green text)
+		Div(
+			Class("text-green-600 font-semibold mr-4"),
+			g.Text(fmt.Sprintf("$%.0f", ad.Price)),
+		),
+		// Pic link (orange text)
+		picLink,
+	)
+}
+
+// AdCardExpandedTree renders an expanded ad card for tree view (with close button)
+func AdCardExpandedTree(ad ad.Ad, loc *time.Location, bookmarked bool, userID int) g.Node {
+	// Create the expanded content similar to AdDetailUnified but without close button
+	htmxTarget := fmt.Sprintf("#ad-tree-%d", ad.ID)
+
+	bookmarkBtn := g.Node(nil)
+	if userID > 0 {
+		if bookmarked {
+			bookmarkBtn = Button(
+				Type("button"),
+				Class("ml-2 focus:outline-none z-20"),
+				hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
+				hx.Swap("outerHTML"),
+				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
+				g.Attr("onclick", "event.stopPropagation()"),
+				BookmarkIcon(true),
+			)
+		} else {
+			bookmarkBtn = Button(
+				Type("button"),
+				Class("ml-2 focus:outline-none z-20"),
+				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
+				hx.Swap("outerHTML"),
+				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
+				g.Attr("onclick", "event.stopPropagation()"),
+				BookmarkIcon(false),
+			)
+		}
+	}
+
+	deleteBtn := g.Node(nil)
+	editBtn := g.Node(nil)
+	if userID == ad.UserID {
+		deleteBtn = Button(
+			Type("button"),
+			Class("ml-2 focus:outline-none z-20"),
+			hx.Delete(fmt.Sprintf("/delete-ad/%d", ad.ID)),
+			hx.Target(htmxTarget),
+			hx.Swap("delete"),
+			hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
+			Img(
+				Src("/trashcan.svg"),
+				Alt("Delete"),
+				Class("w-6 h-6 inline align-middle text-red-500 hover:text-red-700"),
+			),
+		)
+		editBtn = Button(
+			Type("button"),
+			Class("ml-2 focus:outline-none z-20"),
+			hx.Get(fmt.Sprintf("/ad/edit-partial/%d?view=tree", ad.ID)),
+			hx.Target(htmxTarget),
+			hx.Swap("outerHTML"),
+			Img(
+				Src("/edit.svg"),
+				Alt("Edit"),
+				Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
+			),
+		)
+	}
+
+	// Use tile view layout for expanded tree view
+	firstIdx := 1
+	if len(ad.ImageOrder) > 0 {
+		firstIdx = ad.ImageOrder[0]
+	}
+	agoStr := formatAdAge(ad.CreatedAt)
+	locationStr, flagNode := getDisplayLocationAndFlag(ad)
+
+	// Carousel main image area
+	mainImageArea := Div(
+		Class("relative w-full aspect-square bg-gray-100 overflow-hidden rounded-t-lg flex items-center justify-center"),
+		Div(
+			ID(fmt.Sprintf("ad-carousel-img-%d", ad.ID)),
+			AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title),
+			Div(
+				Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
+				g.Text(fmt.Sprintf("$%.0f", ad.Price)),
+			),
+		),
+	)
+
+	// Carousel thumbnails
+	thumbnails := Div(
+		Class("flex flex-row gap-2 mt-2 px-4 justify-center"),
+		g.Group(func() []g.Node {
+			nodes := []g.Node{}
+			for i, idx := range ad.ImageOrder {
+				nodes = append(nodes, Button(
+					Type("button"),
+					Class("border rounded w-16 h-16 overflow-hidden p-0 focus:outline-none"),
+					g.Attr("hx-get", fmt.Sprintf("/ad/image/%d/%d", ad.ID, idx)),
+					g.Attr("hx-target", fmt.Sprintf("#ad-carousel-img-%d", ad.ID)),
+					g.Attr("hx-swap", "innerHTML"),
+					AdImageWithFallbackSrcSet(ad.ID, idx, fmt.Sprintf("Image %d", i+1)),
+				))
+			}
+			return nodes
+		}()),
+	)
+
+	// Add close button to collapse back to compact view
+	closeBtn := Button(
+		Type("button"),
+		Class("absolute -top-2 -right-2 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
+		hx.Get(fmt.Sprintf("/ad/collapse-tree/%d", ad.ID)),
+		hx.Target(fmt.Sprintf("#ad-tree-%d", ad.ID)),
+		hx.Swap("outerHTML"),
+		g.Text("×"),
+	)
+
+	content := Div(
+		Class("border rounded-lg shadow-lg bg-white flex flex-col relative"),
+		closeBtn,
+		mainImageArea,
+		thumbnails,
+		Div(
+			Class("p-4 flex flex-col gap-2"),
+			// Title and buttons row
+			Div(
+				Class("flex flex-row items-center justify-between mb-2"),
+				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
+				Div(Class("flex flex-row items-center gap-2 ml-2"),
+					bookmarkBtn,
+					editBtn,
+					deleteBtn,
+				),
+			),
+			// Age and location row
+			Div(
+				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
+				Div(Class("text-gray-400"), g.Text(agoStr)),
+				Div(Class("flex flex-row items-center gap-1"),
+					flagNode,
+					g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
+				),
+			),
+			// Description
+			Div(Class("text-base mt-2"), g.Text(ad.Description)),
+		),
+	)
+
+	return Div(
+		ID(fmt.Sprintf("ad-tree-%d", ad.ID)),
+		Class("relative my-4 mx-2"),
+		content,
+	)
+}
+
 // AdDetailUnified renders the ad detail view for all three views (expanded grid, list, tree)
 // Uses the expanded grid view layout as reference, with close button only for grid view
 func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node {
@@ -1264,7 +1493,7 @@ func AdCardCompactList(ad ad.Ad, loc *time.Location, bookmarked bool, userID int
 				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
 				hx.Swap("outerHTML"),
 				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-				g.Attr("onclick", "event.stopPropagation()"),
+				g.Attr("onclick", "event.stopPropagation(); event.preventDefault();"),
 				BookmarkIcon(true),
 			)
 		} else {
@@ -1275,7 +1504,7 @@ func AdCardCompactList(ad ad.Ad, loc *time.Location, bookmarked bool, userID int
 				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
 				hx.Swap("outerHTML"),
 				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-				g.Attr("onclick", "event.stopPropagation()"),
+				g.Attr("onclick", "event.stopPropagation(); event.preventDefault();"),
 				BookmarkIcon(false),
 			)
 		}

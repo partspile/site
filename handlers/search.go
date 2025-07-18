@@ -84,7 +84,7 @@ func min(a, b int) int {
 }
 
 // Helper to fetch ads by Pinecone result IDs
-func fetchAdsByIDs(ids []string) ([]ad.Ad, error) {
+func fetchAdsByIDs(ids []string, userID int) ([]ad.Ad, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -96,6 +96,10 @@ func fetchAdsByIDs(ids []string) ([]ad.Ad, error) {
 		}
 		adObj, _, ok := ad.GetAdByID(id)
 		if ok {
+			if userID > 0 {
+				bookmarked, _ := ad.IsAdBookmarkedByUser(userID, adObj.ID)
+				adObj.Bookmarked = bookmarked
+			}
 			ads = append(ads, adObj)
 		}
 	}
@@ -110,7 +114,7 @@ func fetchAdsByIDs(ids []string) ([]ad.Ad, error) {
 }
 
 // Run embedding-based search and fetch ads
-func runEmbeddingSearch(embedding []float32, cursor string) ([]ad.Ad, string, error) {
+func runEmbeddingSearch(embedding []float32, cursor string, userID int) ([]ad.Ad, string, error) {
 	results, nextCursor, err := vector.QuerySimilarAds(embedding, 10, cursor)
 	if err != nil {
 		return nil, "", err
@@ -121,19 +125,19 @@ func runEmbeddingSearch(embedding []float32, cursor string) ([]ad.Ad, string, er
 		ids[i] = r.ID
 	}
 	log.Printf("[runEmbeddingSearch] Pinecone result IDs: %v", ids)
-	ads, _ := fetchAdsByIDs(ids)
+	ads, _ := fetchAdsByIDs(ids, userID)
 	log.Printf("[runEmbeddingSearch] DB fetch returned %d ads", len(ads))
 	return ads, nextCursor, nil
 }
 
 // Try embedding-based search with user prompt
-func tryQueryEmbedding(userPrompt, cursor string) ([]ad.Ad, string, error) {
+func tryQueryEmbedding(userPrompt, cursor string, userID int) ([]ad.Ad, string, error) {
 	log.Printf("[search] Generating embedding for user query: %s", userPrompt)
 	embedding, err := vector.EmbedText(userPrompt)
 	if err != nil {
 		return nil, "", err
 	}
-	return runEmbeddingSearch(embedding, cursor)
+	return runEmbeddingSearch(embedding, cursor, userID)
 }
 
 // Try embedding-based search with user embedding
@@ -142,14 +146,14 @@ func tryUserEmbedding(userID int, cursor string) ([]ad.Ad, string, error) {
 	if err != nil || embedding == nil {
 		return nil, "", err
 	}
-	return runEmbeddingSearch(embedding, cursor)
+	return runEmbeddingSearch(embedding, cursor, userID)
 }
 
 // Search strategy for both HandleSearch and HandleSearchPage
 func performSearch(userPrompt string, userID int, cursor *SearchCursor, cursorStr string) ([]ad.Ad, string, error) {
 	log.Printf("[performSearch] userPrompt='%s', userID=%d, cursorStr='%s'", userPrompt, userID, cursorStr)
 	if userPrompt != "" {
-		ads, nextCursor, _ := tryQueryEmbedding(userPrompt, cursorStr)
+		ads, nextCursor, _ := tryQueryEmbedding(userPrompt, cursorStr, userID)
 		log.Printf("[performSearch] tryQueryEmbedding: found %d ads", len(ads))
 		if len(ads) > 0 {
 			return ads, nextCursor, nil
@@ -171,7 +175,7 @@ func performSearch(userPrompt string, userID int, cursor *SearchCursor, cursorSt
 				log.Printf("[performSearch] site-level vector first 5 values: %v", emb[:min(5, len(emb))])
 			}
 			log.Printf("[performSearch] About to call runEmbeddingSearch with site-level vector")
-			ads, nextCursor, _ := runEmbeddingSearch(emb, cursorStr)
+			ads, nextCursor, _ := runEmbeddingSearch(emb, cursorStr, userID)
 			log.Printf("[performSearch] site-level vector: found %d ads", len(ads))
 			if len(ads) > 0 {
 				return ads, nextCursor, nil
@@ -501,7 +505,7 @@ func TreeView(c *fiber.Ctx) error {
 
 	log.Printf("[tree-view] Rendering %d ads for node at level %d", len(ads), level)
 	for _, ad := range ads {
-		childNodes = append(childNodes, ui.AdCardTreeView(ad, loc, ad.Bookmarked, userID))
+		childNodes = append(childNodes, ui.AdCardCompactTree(ad, loc, ad.Bookmarked, userID))
 	}
 
 	// Get children for the next level, filtered by structured query
@@ -605,7 +609,7 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 				for i, r := range results {
 					ids[i] = r.ID
 				}
-				ads, _ = fetchAdsByIDs(ids)
+				ads, _ = fetchAdsByIDs(ids, userID)
 				usedVectorSearch = true
 			}
 		}
@@ -621,7 +625,7 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 					for i, r := range results {
 						ids[i] = r.ID
 					}
-					ads, _ = fetchAdsByIDs(ids)
+					ads, _ = fetchAdsByIDs(ids, userID)
 					usedVectorSearch = true
 				}
 			}
@@ -745,7 +749,7 @@ func getTreeAdsForSearch(userPrompt string, userID int) ([]ad.Ad, error) {
 	}
 
 	log.Printf("[tree-search] Fetching %d ads from DB", len(ids))
-	ads, err := fetchAdsByIDs(ids)
+	ads, err := fetchAdsByIDs(ids, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch ads: %w", err)
 	}

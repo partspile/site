@@ -96,6 +96,8 @@ func main() {
 	app.Get("/ad/detail/:id", handlers.HandleAdDetailPartial)
 	app.Get("/ad/edit-partial/:id", handlers.AuthRequired, handlers.HandleEditAdPartial)
 	app.Get("/ad/image/:adID/:idx", handlers.HandleAdImagePartial)
+	app.Get("/ad/expand-tree/:id", handlers.HandleExpandAdTree)
+	app.Get("/ad/collapse-tree/:id", handlers.HandleCollapseAdTree)
 
 	// Ad management
 	app.Get("/ad/:id", handlers.OptionalAuth, handlers.HandleViewAd)

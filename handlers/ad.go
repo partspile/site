@@ -628,3 +628,59 @@ func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 }
 
 // --- END VECTOR EMBEDDING HELPERS ---
+
+// HandleExpandAdTree expands an ad in tree view from compact to detailed view
+func HandleExpandAdTree(c *fiber.Ctx) error {
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+
+	currentUser, _ := GetCurrentUser(c)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
+
+	// Get ad from either active or archived tables
+	adObj, _, ok := ad.GetAdByID(adID)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+
+	bookmarked := false
+	if currentUser != nil {
+		bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
+	}
+
+	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
+	return render(c, ui.AdCardExpandedTree(adObj, loc, bookmarked, userID))
+}
+
+// HandleCollapseAdTree collapses an ad in tree view from detailed to compact view
+func HandleCollapseAdTree(c *fiber.Ctx) error {
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+
+	currentUser, _ := GetCurrentUser(c)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
+
+	// Get ad from either active or archived tables
+	adObj, _, ok := ad.GetAdByID(adID)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+
+	bookmarked := false
+	if currentUser != nil {
+		bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
+	}
+
+	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
+	return render(c, ui.AdCardCompactTree(adObj, loc, bookmarked, userID))
+}
