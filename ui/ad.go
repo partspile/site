@@ -80,6 +80,17 @@ func getRawLocation(adObj ad.Ad) string {
 	return raw
 }
 
+// Helper to format ad age as Xm, Xh, or Xd
+func formatAdAge(t time.Time) string {
+	d := time.Since(t)
+	if d < time.Hour {
+		return fmt.Sprintf("%dm", int(d.Minutes()))
+	} else if d < 24*time.Hour {
+		return fmt.Sprintf("%dh", int(d.Hours()))
+	}
+	return fmt.Sprintf("%dd", int(d.Hours())/24)
+}
+
 // ---- Ad Components ----
 
 func AdDetails(adObj ad.Ad) g.Node {
@@ -140,16 +151,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 		htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", ad.ID)
 	}
 	posted := ad.CreatedAt.In(loc)
-	ago := time.Since(posted)
-	var agoStr string
-	if ago < time.Hour {
-		agoStr = fmt.Sprintf("%d min ago", int(ago.Minutes()))
-	} else if ago < 24*time.Hour {
-		agoStr = fmt.Sprintf("%d hr ago", int(ago.Hours()))
-	} else {
-		days := int(ago.Hours()) / 24
-		agoStr = fmt.Sprintf("%d days ago", days)
-	}
+	agoStr := formatAdAge(posted)
 	sortedYears := append([]string{}, ad.Years...)
 	sort.Strings(sortedYears)
 	sortedModels := append([]string{}, ad.Models...)
@@ -527,6 +529,15 @@ func AdListContainer(children ...g.Node) g.Node {
 	return Div(
 		ID("adsList"),
 		Class("space-y-4"),
+		g.Group(children),
+	)
+}
+
+// AdCompactListContainer provides a container for the compact list view
+func AdCompactListContainer(children ...g.Node) g.Node {
+	return Div(
+		ID("adsList"),
+		Class("border border-gray-200 rounded-lg bg-white p-4"),
 		g.Group(children),
 	)
 }
@@ -1112,16 +1123,7 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 	if len(ad.ImageOrder) > 0 {
 		firstIdx = ad.ImageOrder[0]
 	}
-	ago := time.Since(ad.CreatedAt)
-	var agoStr string
-	if ago < time.Hour {
-		agoStr = fmt.Sprintf("%d min ago", int(ago.Minutes()))
-	} else if ago < 24*time.Hour {
-		agoStr = fmt.Sprintf("%d hr ago", int(ago.Hours()))
-	} else {
-		days := int(ago.Hours()) / 24
-		agoStr = fmt.Sprintf("%d days ago", days)
-	}
+	agoStr := formatAdAge(ad.CreatedAt)
 	locationStr, flagNode := getDisplayLocationAndFlag(ad)
 
 	// Carousel main image area (HTMX target is the child, not the container)
@@ -1161,7 +1163,7 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 	if view == "grid" || view == "list" {
 		closeBtn = Button(
 			Type("button"),
-			Class("absolute -top-4 -right-4 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
+			Class("absolute -top-2 -right-2 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
 			hx.Get(fmt.Sprintf("/ad/card/%d?view=%s", ad.ID, view)),
 			hx.Target(htmxTarget),
 			hx.Swap("outerHTML"),
@@ -1206,7 +1208,7 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 	} else {
 		content = Div(
 			ID(fmt.Sprintf("ad-%d", ad.ID)),
-			Class("border rounded-lg shadow-lg bg-white flex flex-col relative"),
+			Class("border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2"),
 			closeBtn,
 			mainImageArea,
 			thumbnails,
@@ -1242,4 +1244,83 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 		return AdGridWrapper(ad, content, true)
 	}
 	return content
+}
+
+// AdCardCompactList renders a compact single-line ad card for list view
+func AdCardCompactList(ad ad.Ad, loc *time.Location, bookmarked bool, userID int) g.Node {
+	posted := ad.CreatedAt.In(loc)
+	agoStr := formatAdAge(posted)
+
+	locationStr, flagNode := getDisplayLocationAndFlag(ad)
+
+	// Bookmark button
+	bookmarkBtn := g.Node(nil)
+	if userID > 0 {
+		if bookmarked {
+			bookmarkBtn = Button(
+				Type("button"),
+				Class("focus:outline-none mr-2"),
+				hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
+				hx.Swap("outerHTML"),
+				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
+				g.Attr("onclick", "event.stopPropagation()"),
+				BookmarkIcon(true),
+			)
+		} else {
+			bookmarkBtn = Button(
+				Type("button"),
+				Class("focus:outline-none mr-2"),
+				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
+				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
+				hx.Swap("outerHTML"),
+				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
+				g.Attr("onclick", "event.stopPropagation()"),
+				BookmarkIcon(false),
+			)
+		}
+	}
+
+	// Check if ad has images
+	hasImages := len(ad.ImageOrder) > 0
+	picLink := g.Node(nil)
+	if hasImages {
+		picLink = Span(
+			Class("text-orange-500 hover:text-orange-700 cursor-pointer"),
+			g.Text("pic"),
+		)
+	}
+
+	return Div(
+		ID(fmt.Sprintf("ad-%d", ad.ID)),
+		Class("flex items-center py-2 px-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer last:border-b-0"),
+		hx.Get(fmt.Sprintf("/ad/detail/%d?view=list", ad.ID)),
+		hx.Target(fmt.Sprintf("#ad-%d", ad.ID)),
+		hx.Swap("outerHTML"),
+		// Bookmark icon
+		bookmarkBtn,
+		// Description (blue text)
+		Div(
+			Class("flex-1 text-blue-600 hover:text-blue-800"),
+			g.Text(ad.Title),
+		),
+		// Location (black text)
+		Div(
+			Class("text-gray-800 mr-4 flex items-center"),
+			flagNode,
+			g.If(locationStr != "" || flagNode != nil, g.Text(locationStr)),
+		),
+		// Time posted (black text)
+		Div(
+			Class("text-gray-800 mr-4"),
+			g.Text(agoStr),
+		),
+		// Price (green text)
+		Div(
+			Class("text-green-600 font-semibold mr-4"),
+			g.Text(fmt.Sprintf("$%.0f", ad.Price)),
+		),
+		// Pic link (orange text)
+		picLink,
+	)
 }

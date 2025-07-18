@@ -71,8 +71,7 @@ func BookmarkedAdsSection(currentUser *user.User, ads []ad.Ad) g.Node {
 			P(Class("text-gray-500"), g.Text("No bookmarked ads yet.")),
 		),
 		g.If(len(ads) > 0,
-			Div(
-				Class("space-y-4"),
+			AdCompactListContainer(
 				g.Group(BuildAdListNodesFromSlice(currentUser, ads, true)),
 			),
 		),
@@ -87,7 +86,7 @@ func BuildAdListNodesFromSlice(currentUser *user.User, ads []ad.Ad, bookmarked b
 	}
 	nodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
-		nodes = append(nodes, AdCardExpandable(ad, loc, bookmarked, userID))
+		nodes = append(nodes, AdCardCompactList(ad, loc, bookmarked, userID))
 	}
 	return nodes
 }

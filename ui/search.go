@@ -103,7 +103,7 @@ func ViewToggleButtons(activeView string) g.Node {
 func ListView(ads map[int]ad.Ad, loc *time.Location) g.Node {
 	return Div(
 		ID("list-view"),
-		AdListContainer(
+		AdCompactListContainer(
 			g.Group(BuildAdListNodesWithView(ads, loc, "list")),
 		),
 	)
@@ -221,7 +221,7 @@ func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, a
 func ListViewWithFlags(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 	return Div(
 		ID("list-view"),
-		AdListContainer(
+		AdCompactListContainer(
 			g.Group(BuildAdListNodesWithBookmarks(ads, userID, loc)),
 		),
 	)
@@ -230,7 +230,7 @@ func ListViewWithFlags(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 func BuildAdListNodesWithBookmarks(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
 	nodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
-		nodes = append(nodes, AdCardExpandable(ad, loc, ad.Bookmarked, userID))
+		nodes = append(nodes, AdCardCompactList(ad, loc, ad.Bookmarked, userID))
 	}
 	return nodes
 }
@@ -238,7 +238,11 @@ func BuildAdListNodesWithBookmarks(ads []ad.Ad, userID int, loc *time.Location) 
 func BuildAdListNodesWithView(ads map[int]ad.Ad, loc *time.Location, view string) []g.Node {
 	nodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
-		nodes = append(nodes, AdCardExpandable(ad, loc, ad.Bookmarked, 0, view))
+		if view == "list" {
+			nodes = append(nodes, AdCardCompactList(ad, loc, ad.Bookmarked, 0))
+		} else {
+			nodes = append(nodes, AdCardExpandable(ad, loc, ad.Bookmarked, 0, view))
+		}
 	}
 	return nodes
 }

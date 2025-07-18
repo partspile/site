@@ -342,6 +342,9 @@ func HandleAdCardPartial(c *fiber.Ctx) error {
 	}
 	loc := c.Context().Time().Location()
 	view := c.Query("view", "list")
+	if view == "list" {
+		return render(c, ui.AdCardCompactList(adObj, loc, bookmarked, userID))
+	}
 	return render(c, ui.AdCardExpandable(adObj, loc, bookmarked, userID, view))
 }
 
