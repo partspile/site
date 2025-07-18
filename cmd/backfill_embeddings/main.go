@@ -76,6 +76,7 @@ func main() {
 	failures := 0
 	for i, adObj := range ads {
 		prompt := buildAdEmbeddingPrompt(adObj)
+		log.Printf("[backfill] Generating embedding for ad %d with prompt: %s", adObj.ID, prompt)
 		embedding, err := vector.EmbedText(prompt)
 		if err != nil {
 			log.Printf("[embedding] failed for ad %d: %v", adObj.ID, err)

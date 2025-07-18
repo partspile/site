@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 )
@@ -60,6 +61,8 @@ func CallGrok(systemPrompt, userPrompt string) (string, error) {
 		return "", fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
+	log.Printf("[grok] System prompt: %s", systemPrompt)
+	log.Printf("[grok] User prompt: %s", userPrompt)
 	fmt.Println("REQUEST")
 	fmt.Println(string(data))
 

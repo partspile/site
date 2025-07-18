@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"database/sql"
@@ -97,7 +98,11 @@ func EmbedText(text string) ([]float32, error) {
 	if geminiClient == nil {
 		return nil, fmt.Errorf("Gemini client not initialized")
 	}
+	if strings.TrimSpace(text) == "" {
+		return nil, fmt.Errorf("cannot embed empty text")
+	}
 	log.Printf("[embedding] Calculating embedding vector for text: %.80q", text)
+	log.Printf("[embedding] Full prompt: %s", text)
 	ctx := context.Background()
 	resp, err := geminiClient.Models.EmbedContent(ctx, "embedding-001", genai.Text(text), nil)
 	if err != nil {
@@ -224,14 +229,22 @@ func GetSiteLevelVector() ([]float32, error) {
 func CalculateSiteLevelVector() ([]float32, error) {
 	ads := ad.GetMostPopularAds(50)
 	log.Printf("[site-level] Calculating site-level vector from %d popular ads", len(ads))
+	log.Printf("[site-level] Popular ads being used:")
+	for i, adObj := range ads {
+		log.Printf("[site-level]   %d. Ad %d: %s (clicks: %d)",
+			i+1, adObj.ID, adObj.Title, adObj.ClickCount)
+	}
 	var vectors [][]float32
 	var missingIDs []int
 	for _, adObj := range ads {
+		log.Printf("[site-level] Fetching existing embedding for ad %d (title: %s)", adObj.ID, adObj.Title)
 		emb, err := GetAdEmbedding(adObj.ID)
 		if err != nil || emb == nil {
 			missingIDs = append(missingIDs, adObj.ID)
+			log.Printf("[site-level] Missing embedding for ad %d: %v", adObj.ID, err)
 			continue
 		}
+		log.Printf("[site-level] Found embedding for ad %d (length=%d)", adObj.ID, len(emb))
 		vectors = append(vectors, emb)
 	}
 	log.Printf("[site-level] Found embeddings for %d ads, missing for %d ads", len(vectors), len(missingIDs))
@@ -246,6 +259,7 @@ func CalculateSiteLevelVector() ([]float32, error) {
 	for i := range weights {
 		weights[i] = 1.0
 	}
+	log.Printf("[site-level] Aggregating %d embeddings with equal weights", len(vectors))
 	result := AggregateEmbeddings(vectors, weights)
 	log.Printf("[site-level] AggregateEmbeddings returned result=%v (length=%d)", result != nil, len(result))
 	if result == nil {

@@ -128,6 +128,7 @@ func runEmbeddingSearch(embedding []float32, cursor string) ([]ad.Ad, string, er
 
 // Try embedding-based search with user prompt
 func tryQueryEmbedding(userPrompt, cursor string) ([]ad.Ad, string, error) {
+	log.Printf("[search] Generating embedding for user query: %s", userPrompt)
 	embedding, err := vector.EmbedText(userPrompt)
 	if err != nil {
 		return nil, "", err
@@ -237,9 +238,12 @@ func HandleSearch(c *fiber.Ctx) error {
 		return result
 	}())
 
-	_ = search.SaveUserSearch(sql.NullInt64{Int64: int64(userID), Valid: userID != 0}, userPrompt)
-	if userID != 0 && userPrompt != "" {
-		go vector.GetUserPersonalizedEmbedding(userID, true)
+	if userPrompt != "" {
+		_ = search.SaveUserSearch(sql.NullInt64{Int64: int64(userID), Valid: userID != 0}, userPrompt)
+		if userID != 0 {
+			// Queue user for background embedding update
+			vector.GetEmbeddingQueue().QueueUserForUpdate(userID)
+		}
 	}
 
 	loc := getLocation(c)
@@ -436,13 +440,29 @@ func TreeView(c *fiber.Ctx) error {
 	var childNodes []g.Node
 	var err error
 
-	// Get ads for the current node (filtered by structured query)
+	// Get ads for the current node
 	currentUser, _ := CurrentUser(c)
 	userID := 0
 	if currentUser != nil {
 		userID = currentUser.ID
 	}
-	ads, err := part.GetAdsForNodeStructured(parts, structuredQuery, userID)
+
+	var ads []ad.Ad
+	if q != "" {
+		// Use vector search with threshold-based filtering for search queries
+		log.Printf("[tree-view] Using vector search for query: %s", q)
+		ads, err = getTreeAdsForSearch(q, userID)
+		if err != nil {
+			log.Printf("[tree-view] Vector search failed, falling back to SQL: %v", err)
+			// Fallback to SQL-based filtering
+			ads, err = part.GetAdsForNodeStructured(parts, structuredQuery, userID)
+		}
+	} else {
+		// Use SQL-based filtering for browse mode
+		log.Printf("[tree-view] Using SQL-based filtering for browse mode")
+		ads, err = part.GetAdsForNodeStructured(parts, structuredQuery, userID)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -479,8 +499,9 @@ func TreeView(c *fiber.Ctx) error {
 
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
 
+	log.Printf("[tree-view] Rendering %d ads for node at level %d", len(ads), level)
 	for _, ad := range ads {
-		childNodes = append(childNodes, ui.AdCardExpandable(ad, loc, ad.Bookmarked, userID))
+		childNodes = append(childNodes, ui.AdCardTreeView(ad, loc, ad.Bookmarked, userID))
 	}
 
 	// Get children for the next level, filtered by structured query
@@ -533,12 +554,12 @@ func TreeView(c *fiber.Ctx) error {
 		return err
 	}
 
-	// If there are children, render them; otherwise, render ads at the leaf
+	// Always show ads for the current node, then show children if they exist
 	if len(children) > 0 {
 		for _, child := range children {
 			childNodes = append(childNodes, ui.CollapsedTreeNode(child, "/"+path+"/"+child, q, structuredQueryStr, level+1))
 		}
-	} // else, childNodes already contains the ads
+	}
 
 	if level == 0 {
 		return render(c, g.Group(childNodes))
@@ -574,6 +595,7 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 	var err error
 
 	if userPrompt != "" {
+		log.Printf("[search] Generating embedding for user query in view switch: %s", userPrompt)
 		embedding, err := vector.EmbedText(userPrompt)
 		if err == nil {
 			results, _, err := vector.QuerySimilarAds(embedding, 10, "")
@@ -658,4 +680,76 @@ func HandleGridView(c *fiber.Ctx) error {
 
 func HandleMapView(c *fiber.Ctx) error {
 	return handleViewSwitch(c, "map")
+}
+
+// getTreeAdsForSearch performs vector search with threshold-based filtering for tree view
+func getTreeAdsForSearch(userPrompt string, userID int) ([]ad.Ad, error) {
+	// Generate embedding for search query
+	log.Printf("[tree-search] Generating embedding for tree search query: %s", userPrompt)
+	embedding, err := vector.EmbedText(userPrompt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate embedding: %w", err)
+	}
+
+	// Get more results than needed to filter by threshold
+	const initialK = 200
+	results, _, err := vector.QuerySimilarAds(embedding, initialK, "")
+	if err != nil {
+		return nil, fmt.Errorf("failed to query Pinecone: %w", err)
+	}
+
+	log.Printf("[tree-search] Pinecone returned %d results", len(results))
+
+	// Filter by similarity threshold
+	const (
+		minResultsThreshold = float32(0.7) // High quality threshold
+		fallbackThreshold   = float32(0.5) // Lower threshold if not enough results
+		maxResults          = 100          // Maximum results to show
+		minResults          = 10           // Minimum results before using fallback
+	)
+
+	var filteredResults []vector.AdResult
+	threshold := minResultsThreshold
+
+	// First pass: filter with high threshold
+	for _, result := range results {
+		if result.Score >= threshold {
+			filteredResults = append(filteredResults, result)
+		}
+	}
+
+	log.Printf("[tree-search] High threshold (%.1f) filtered to %d results", threshold, len(filteredResults))
+
+	// Fallback: if not enough results, use lower threshold
+	if len(filteredResults) < minResults && threshold == minResultsThreshold {
+		threshold = fallbackThreshold
+		filteredResults = nil
+		for _, result := range results {
+			if result.Score >= threshold {
+				filteredResults = append(filteredResults, result)
+			}
+		}
+		log.Printf("[tree-search] Fallback threshold (%.1f) filtered to %d results", threshold, len(filteredResults))
+	}
+
+	// Limit to max results
+	if len(filteredResults) > maxResults {
+		filteredResults = filteredResults[:maxResults]
+		log.Printf("[tree-search] Limited to %d results", maxResults)
+	}
+
+	// Fetch ads from DB
+	ids := make([]string, len(filteredResults))
+	for i, r := range filteredResults {
+		ids[i] = r.ID
+	}
+
+	log.Printf("[tree-search] Fetching %d ads from DB", len(ids))
+	ads, err := fetchAdsByIDs(ids)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch ads: %w", err)
+	}
+
+	log.Printf("[tree-search] Successfully fetched %d ads for tree view", len(ads))
+	return ads, nil
 }

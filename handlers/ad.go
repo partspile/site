@@ -116,6 +116,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	// --- VECTOR EMBEDDING GENERATION (ASYNC) ---
 	go func(adObj ad.Ad) {
 		prompt := buildAdEmbeddingPrompt(adObj)
+		log.Printf("[embedding] Generating embedding for ad %d with prompt: %s", adObj.ID, prompt)
 		embedding, err := vector.EmbedText(prompt)
 		if err != nil {
 			log.Printf("[embedding] failed to generate embedding for ad %d: %v", adObj.ID, err)
@@ -230,6 +231,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	// --- VECTOR EMBEDDING GENERATION (ASYNC) ---
 	go func(adObj ad.Ad) {
 		prompt := buildAdEmbeddingPrompt(adObj)
+		log.Printf("[embedding] Generating embedding for ad %d with prompt: %s", adObj.ID, prompt)
 		embedding, err := vector.EmbedText(prompt)
 		if err != nil {
 			log.Printf("[embedding] failed to generate embedding for ad %d: %v", adObj.ID, err)
@@ -268,6 +270,8 @@ func HandleBookmarkAd(c *fiber.Ctx) error {
 	if err := ad.BookmarkAd(currentUser.ID, adID); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to bookmark ad")
 	}
+	// Queue user for background embedding update
+	vector.GetEmbeddingQueue().QueueUserForUpdate(currentUser.ID)
 	// Return the bookmarked button HTML for HTMX swap
 	return render(c, ui.BookmarkButton(true, adID))
 }
@@ -285,6 +289,8 @@ func HandleUnbookmarkAd(c *fiber.Ctx) error {
 	if err := ad.UnbookmarkAd(currentUser.ID, adID); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to unbookmark ad")
 	}
+	// Queue user for background embedding update
+	vector.GetEmbeddingQueue().QueueUserForUpdate(currentUser.ID)
 	// Return the unbookmarked button HTML for HTMX swap
 	return render(c, ui.BookmarkButton(false, adID))
 }
@@ -352,6 +358,8 @@ func HandleAdDetailPartial(c *fiber.Ctx) error {
 	currentUser, _ := GetCurrentUser(c)
 	if currentUser != nil {
 		_ = ad.IncrementAdClickForUser(adID, currentUser.ID)
+		// Queue user for background embedding update
+		vector.GetEmbeddingQueue().QueueUserForUpdate(currentUser.ID)
 	}
 
 	adObj, _, ok := ad.GetAdByID(adID)

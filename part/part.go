@@ -2,6 +2,7 @@ package part
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -560,10 +561,12 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 		}
 	}
 	query := `
-		SELECT a.id, a.description, a.price, a.created_at, a.subcategory_id,
+		SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
 		       a.user_id, psc.name as subcategory, pc.name as category,
 		       m.name, y.year, mo.name, e.name,
-		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
+		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
+		       a.image_order, a.location_id,
+		       l.city, l.admin_area, l.country
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
@@ -574,6 +577,7 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 		JOIN Model mo ON c.model_id = mo.id
 		JOIN Engine e ON c.engine_id = e.id
 		LEFT JOIN BookmarkedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
+		LEFT JOIN Location l ON a.location_id = l.id
 	`
 	var args []interface{}
 	args = append(args, userID)
@@ -651,7 +655,10 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 		var subcategory, category, makeName, modelName, engineName sql.NullString
 		var year sql.NullInt64
 		var isBookmarked int
-		if err := rows.Scan(&adID, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName, &isBookmarked); err != nil {
+		var imageOrder sql.NullString
+		var locationID sql.NullInt64
+		var city, adminArea, country sql.NullString
+		if err := rows.Scan(&adID, &adObj.Title, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName, &isBookmarked, &imageOrder, &locationID, &city, &adminArea, &country); err != nil {
 			return nil, err
 		}
 		adObj.ID = adID
@@ -674,6 +681,26 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 			adObj.Engines = []string{engineName.String}
 		}
 		adObj.Bookmarked = isBookmarked == 1
+
+		// Handle image order
+		if imageOrder.Valid {
+			_ = json.Unmarshal([]byte(imageOrder.String), &adObj.ImageOrder)
+		}
+
+		// Handle location fields
+		if locationID.Valid {
+			adObj.LocationID = int(locationID.Int64)
+		}
+		if city.Valid {
+			adObj.City = city.String
+		}
+		if adminArea.Valid {
+			adObj.AdminArea = adminArea.String
+		}
+		if country.Valid {
+			adObj.Country = country.String
+		}
+
 		// Populate all years, models, engines for the ad
 		fullAd, ok := ad.GetAd(adID)
 		if ok {

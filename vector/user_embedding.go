@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"strings"
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/search"
@@ -129,6 +130,11 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 	}
 	log.Printf("[embedding][debug] userID=%d recent searches: %v (count=%d)", userID, searches, len(searches))
 	for _, s := range searches {
+		if strings.TrimSpace(s.QueryString) == "" {
+			log.Printf("[embedding][debug] Skipping empty search query")
+			continue
+		}
+		log.Printf("[embedding][debug] Generating embedding for user search query: %s", s.QueryString)
 		emb, err := EmbedText(s.QueryString)
 		if err != nil {
 			log.Printf("[embedding][debug] Gemini embedding error for query=%q: %v", s.QueryString, err)
