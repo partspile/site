@@ -14,7 +14,7 @@
     "location": {
       "city": "Munich",
       "admin_area": "Bavaria",
-      "country": "Germany"
+      "country": "DE"
     }
   },
   {
@@ -32,7 +32,7 @@
     "location": {
       "city": "Turin",
       "admin_area": "Piedmont",
-      "country": "Italy"
+      "country": "IT"
     }
   },
   {
@@ -50,7 +50,7 @@
     "location": {
       "city": "Berlin",
       "admin_area": "Berlin",
-      "country": "Germany"
+      "country": "DE"
     }
   },
   {
@@ -68,7 +68,7 @@
     "location": {
       "city": "Milan",
       "admin_area": "Lombardy",
-      "country": "Italy"
+      "country": "IT"
     }
   },
   {
@@ -86,7 +86,7 @@
     "location": {
       "city": "Hamburg",
       "admin_area": "Hamburg",
-      "country": "Germany"
+      "country": "DE"
     }
   },
   {
@@ -104,7 +104,7 @@
     "location": {
       "city": "Rome",
       "admin_area": "Lazio",
-      "country": "Italy"
+      "country": "IT"
     }
   },
   {
@@ -122,7 +122,7 @@
     "location": {
       "city": "Stuttgart",
       "admin_area": "Baden-Württemberg",
-      "country": "Germany"
+      "country": "DE"
     }
   },
   {
@@ -140,7 +140,7 @@
     "location": {
       "city": "Naples",
       "admin_area": "Campania",
-      "country": "Italy"
+      "country": "IT"
     }
   },
   {
@@ -158,7 +158,7 @@
     "location": {
       "city": "Cologne",
       "admin_area": "North Rhine-Westphalia",
-      "country": "Germany"
+      "country": "DE"
     }
   },
   {
@@ -176,7 +176,367 @@
     "location": {
       "city": "Florence",
       "admin_area": "Tuscany",
-      "country": "Italy"
+      "country": "IT"
+    }
+  },
+  {
+    "make": "AUDI",
+    "years": ["1969", "1970"],
+    "models": ["100", "SUPER 90"],
+    "engines": ["1.8L L4"],
+    "title": "Audi 100/Super 90 Fuel Pump",
+    "description": "Electric fuel pump for Audi 100 and Super 90 models. Compatible with 1.8L L4 engine. High-quality replacement part with warranty.",
+    "price": 145.00,
+    "created_at": "2024-03-01T08:20:00Z",
+    "user_id": 3,
+    "category": "Fuel & Air",
+    "subcategory": "",
+    "location": {
+      "city": "Ingolstadt",
+      "admin_area": "Bavaria",
+      "country": "DE"
+    }
+  },
+  {
+    "make": "AUSTIN",
+    "years": ["1930", "1931", "1932"],
+    "models": ["BANTAM"],
+    "engines": ["46cid L4"],
+    "title": "Austin Bantam Carburetor",
+    "description": "Original Austin Bantam carburetor. Fits 1930-1932 models with 46cid L4 engine. Fully restored and tested. Includes mounting hardware.",
+    "price": 320.00,
+    "created_at": "2024-03-05T11:45:00Z",
+    "user_id": 2,
+    "category": "Fuel & Air",
+    "subcategory": "",
+    "location": {
+      "city": "Birmingham",
+      "admin_area": "West Midlands",
+      "country": "GB"
+    }
+  },
+  {
+    "make": "BENTLEY",
+    "years": ["1921", "1922", "1923"],
+    "models": ["3-LITRE"],
+    "engines": ["All Engines"],
+    "title": "Bentley 3-Litre Starter Motor",
+    "description": "Vintage Bentley 3-Litre starter motor. Fits 1921-1923 models. Professionally rebuilt with new brushes and bearings.",
+    "price": 850.00,
+    "created_at": "2024-03-10T14:30:00Z",
+    "user_id": 1,
+    "category": "Electrical",
+    "subcategory": "",
+    "location": {
+      "city": "Crewe",
+      "admin_area": "Cheshire",
+      "country": "GB"
+    }
+  },
+  {
+    "make": "ABARTH",
+    "years": ["1960", "1961", "1962"],
+    "models": ["1600", "1000"],
+    "engines": ["1.6L L4", "982cc L4"],
+    "title": "Abarth 1600/1000 Water Pump",
+    "description": "New water pump for Abarth 1600 and 1000 models. Compatible with 1.6L L4 and 982cc engines. Includes gasket and mounting bolts.",
+    "price": 95.00,
+    "created_at": "2024-03-15T09:15:00Z",
+    "user_id": 4,
+    "category": "Cooling System",
+    "subcategory": "",
+    "location": {
+      "city": "Bologna",
+      "admin_area": "Emilia-Romagna",
+      "country": "IT"
+    }
+  },
+  {
+    "make": "BMW",
+    "years": ["1955", "1956"],
+    "models": ["501", "502"],
+    "engines": ["2.0L L6", "2.6L V8"],
+    "title": "BMW 501/502 Distributor Cap",
+    "description": "Original BMW distributor cap for 501 and 502 models. Fits both 2.0L L6 and 2.6L V8 engines. Excellent condition, no cracks.",
+    "price": 75.50,
+    "created_at": "2024-03-20T16:45:00Z",
+    "user_id": 2,
+    "category": "Electrical",
+    "subcategory": "",
+    "location": {
+      "city": "Dresden",
+      "admin_area": "Saxony",
+      "country": "DE"
+    }
+  },
+  {
+    "make": "AUDI",
+    "years": ["1969", "1970"],
+    "models": ["100"],
+    "engines": ["1.8L L4"],
+    "title": "Audi 100 Brake Caliper Set",
+    "description": "Complete brake caliper set for Audi 100. Fits 1969-1970 models with 1.8L L4 engine. Includes pistons, seals, and mounting hardware.",
+    "price": 280.00,
+    "created_at": "2024-03-25T12:00:00Z",
+    "user_id": 3,
+    "category": "Brakes & Wheel Hub",
+    "subcategory": "",
+    "location": {
+      "city": "Wolfsburg",
+      "admin_area": "Lower Saxony",
+      "country": "DE"
+    }
+  },
+  {
+    "make": "AUSTIN",
+    "years": ["1930", "1931"],
+    "models": ["BANTAM"],
+    "engines": ["46cid L4"],
+    "title": "Austin Bantam Ignition Coil",
+    "description": "Vintage Austin Bantam ignition coil. Fits 1930-1931 models with 46cid L4 engine. Tested and working condition.",
+    "price": 125.00,
+    "created_at": "2024-03-30T10:30:00Z",
+    "user_id": 1,
+    "category": "Electrical",
+    "subcategory": "",
+    "location": {
+      "city": "Manchester",
+      "admin_area": "Greater Manchester",
+      "country": "GB"
+    }
+  },
+  {
+    "make": "BENTLEY",
+    "years": ["1922", "1923"],
+    "models": ["3-LITRE"],
+    "engines": ["All Engines"],
+    "title": "Bentley 3-Litre Radiator",
+    "description": "Original Bentley 3-Litre radiator. Fits 1922-1923 models. Brass construction, excellent condition. Includes mounting brackets.",
+    "price": 1200.00,
+    "created_at": "2024-04-05T13:20:00Z",
+    "user_id": 4,
+    "category": "Cooling System",
+    "subcategory": "",
+    "location": {
+      "city": "Oxford",
+      "admin_area": "Oxfordshire",
+      "country": "GB"
+    }
+  },
+  {
+    "make": "ABARTH",
+    "years": ["1962", "1963"],
+    "models": ["1000", "850"],
+    "engines": ["982cc L4", "847cc L4"],
+    "title": "Abarth 1000/850 Clutch Cable",
+    "description": "New clutch cable for Abarth 1000 and 850 models. Compatible with 982cc and 847cc engines. High-quality steel construction.",
+    "price": 45.00,
+    "created_at": "2024-04-10T15:10:00Z",
+    "user_id": 2,
+    "category": "Drivetrain",
+    "subcategory": "",
+    "location": {
+      "city": "Venice",
+      "admin_area": "Veneto",
+      "country": "IT"
+    }
+  },
+  {
+    "make": "BMW",
+    "years": ["1956", "1957"],
+    "models": ["503", "507"],
+    "engines": ["3.2L V8"],
+    "title": "BMW 503/507 Oil Pump",
+    "description": "Original BMW oil pump for 503 and 507 models. Fits 3.2L V8 engine. Excellent condition, includes gasket and mounting hardware.",
+    "price": 380.00,
+    "created_at": "2024-04-15T11:25:00Z",
+    "user_id": 3,
+    "category": "Engine",
+    "subcategory": "",
+    "location": {
+      "city": "Leipzig",
+      "admin_area": "Saxony",
+      "country": "DE"
+    }
+  },
+  {
+    "make": "AUDI",
+    "years": ["1970"],
+    "models": ["SUPER 90"],
+    "engines": ["1.8L L4"],
+    "title": "Audi Super 90 Transmission Mount",
+    "description": "New transmission mount for Audi Super 90. Fits 1970 models with 1.8L L4 engine. Rubber construction, reduces vibration.",
+    "price": 65.00,
+    "created_at": "2024-04-20T14:40:00Z",
+    "user_id": 1,
+    "category": "Drivetrain",
+    "subcategory": "",
+    "location": {
+      "city": "Frankfurt",
+      "admin_area": "Hesse",
+      "country": "DE"
+    }
+  },
+  {
+    "make": "AUSTIN",
+    "years": ["1932"],
+    "models": ["BANTAM"],
+    "engines": ["46cid L4"],
+    "title": "Austin Bantam Head Gasket Set",
+    "description": "Complete head gasket set for Austin Bantam. Fits 1932 models with 46cid L4 engine. Includes all necessary gaskets and seals.",
+    "price": 85.00,
+    "created_at": "2024-04-25T09:50:00Z",
+    "user_id": 4,
+    "category": "Engine",
+    "subcategory": "",
+    "location": {
+      "city": "Liverpool",
+      "admin_area": "Merseyside",
+      "country": "GB"
+    }
+  },
+  {
+    "make": "BENTLEY",
+    "years": ["1921", "1922"],
+    "models": ["3-LITRE"],
+    "engines": ["All Engines"],
+    "title": "Bentley 3-Litre Fuel Tank",
+    "description": "Original Bentley 3-Litre fuel tank. Fits 1921-1922 models. Brass construction, excellent condition. Includes fuel level sender.",
+    "price": 950.00,
+    "created_at": "2024-05-01T12:15:00Z",
+    "user_id": 2,
+    "category": "Fuel & Air",
+    "subcategory": "",
+    "location": {
+      "city": "Cambridge",
+      "admin_area": "Cambridgeshire",
+      "country": "GB"
+    }
+  },
+  {
+    "make": "ABARTH",
+    "years": ["1965", "1966"],
+    "models": ["1000", "1150"],
+    "engines": ["982cc L4", "1.1L L4"],
+    "title": "Abarth 1000/1150 Exhaust System",
+    "description": "Performance exhaust system for Abarth 1000 and 1150 models. Compatible with 982cc and 1.1L engines. Stainless steel construction.",
+    "price": 420.00,
+    "created_at": "2024-05-05T16:30:00Z",
+    "user_id": 3,
+    "category": "Exhaust & Emission",
+    "subcategory": "",
+    "location": {
+      "city": "Genoa",
+      "admin_area": "Liguria",
+      "country": "IT"
+    }
+  },
+  {
+    "make": "BMW",
+    "years": ["1954", "1955"],
+    "models": ["501", "501A", "501B"],
+    "engines": ["2.0L L6"],
+    "title": "BMW 501 Series Brake Shoes",
+    "description": "New brake shoes for BMW 501 series. Fits 501, 501A, and 501B models with 2.0L L6 engine. High-friction lining material.",
+    "price": 95.00,
+    "created_at": "2024-05-10T10:45:00Z",
+    "user_id": 1,
+    "category": "Brakes & Wheel Hub",
+    "subcategory": "",
+    "location": {
+      "city": "Nuremberg",
+      "admin_area": "Bavaria",
+      "country": "DE"
+    }
+  },
+  {
+    "make": "AUDI",
+    "years": ["1969", "1970"],
+    "models": ["100", "SUPER 90"],
+    "engines": ["1.8L L4"],
+    "title": "Audi 100/Super 90 Thermostat",
+    "description": "New thermostat for Audi 100 and Super 90 models. Compatible with 1.8L L4 engine. Opens at 87°C, includes gasket.",
+    "price": 35.00,
+    "created_at": "2024-05-15T13:55:00Z",
+    "user_id": 4,
+    "category": "Cooling System",
+    "subcategory": "",
+    "location": {
+      "city": "Stuttgart",
+      "admin_area": "Baden-Württemberg",
+      "country": "DE"
+    }
+  },
+  {
+    "make": "AUSTIN",
+    "years": ["1930", "1931", "1932"],
+    "models": ["BANTAM"],
+    "engines": ["46cid L4"],
+    "title": "Austin Bantam Spark Plugs Set",
+    "description": "Set of 4 spark plugs for Austin Bantam. Fits 1930-1932 models with 46cid L4 engine. Correct heat range and gap.",
+    "price": 28.00,
+    "created_at": "2024-05-20T11:20:00Z",
+    "user_id": 2,
+    "category": "Electrical",
+    "subcategory": "",
+    "location": {
+      "city": "Sheffield",
+      "admin_area": "South Yorkshire",
+      "country": "GB"
+    }
+  },
+  {
+    "make": "BENTLEY",
+    "years": ["1923"],
+    "models": ["3-LITRE"],
+    "engines": ["All Engines"],
+    "title": "Bentley 3-Litre Voltage Regulator",
+    "description": "Vintage Bentley 3-Litre voltage regulator. Fits 1923 models. Professionally restored and tested. Maintains proper charging voltage.",
+    "price": 180.00,
+    "created_at": "2024-05-25T14:10:00Z",
+    "user_id": 3,
+    "category": "Electrical",
+    "subcategory": "",
+    "location": {
+      "city": "Bristol",
+      "admin_area": "Bristol",
+      "country": "GB"
+    }
+  },
+  {
+    "make": "ABARTH",
+    "years": ["1967", "1968"],
+    "models": ["1000", "1300"],
+    "engines": ["982cc L4", "1.3L L4"],
+    "title": "Abarth 1000/1300 Air Filter",
+    "description": "High-performance air filter for Abarth 1000 and 1300 models. Compatible with 982cc and 1.3L engines. Washable and reusable.",
+    "price": 55.00,
+    "created_at": "2024-05-30T15:25:00Z",
+    "user_id": 1,
+    "category": "Fuel & Air",
+    "subcategory": "",
+    "location": {
+      "city": "Palermo",
+      "admin_area": "Sicily",
+      "country": "IT"
+    }
+  },
+  {
+    "make": "BMW",
+    "years": ["1955", "1956", "1957"],
+    "models": ["ISETTA"],
+    "engines": ["247cc L1", "298cc L1"],
+    "title": "BMW Isetta Speedometer Cable",
+    "description": "New speedometer cable for BMW Isetta. Fits 1955-1957 models with both 247cc and 298cc engines. Includes mounting clips.",
+    "price": 42.00,
+    "created_at": "2024-06-01T09:35:00Z",
+    "user_id": 4,
+    "category": "Electrical",
+    "subcategory": "",
+    "location": {
+      "city": "Bremen",
+      "admin_area": "Bremen",
+      "country": "DE"
     }
   }
 ] 
