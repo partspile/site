@@ -8,8 +8,9 @@ import (
 )
 
 type Make struct {
-	ID   int
-	Name string
+	ID              int
+	Name            string
+	ParentCompanyID *int
 }
 
 type Model struct {
@@ -63,7 +64,7 @@ func GetMakes() []string {
 }
 
 func GetAllMakes() ([]Make, error) {
-	rows, err := db.Query("SELECT id, name FROM Make ORDER BY name")
+	rows, err := db.Query("SELECT id, name, parent_company_id FROM Make ORDER BY name")
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +72,55 @@ func GetAllMakes() ([]Make, error) {
 	var makes []Make
 	for rows.Next() {
 		var make Make
-		if err := rows.Scan(&make.ID, &make.Name); err != nil {
+		var parentCompanyID sql.NullInt64
+		if err := rows.Scan(&make.ID, &make.Name, &parentCompanyID); err != nil {
 			return nil, err
+		}
+		if parentCompanyID.Valid {
+			id := int(parentCompanyID.Int64)
+			make.ParentCompanyID = &id
+		}
+		makes = append(makes, make)
+	}
+	return makes, nil
+}
+
+// MakeWithParentCompany represents a make with its parent company information
+type MakeWithParentCompany struct {
+	ID                int
+	Name              string
+	ParentCompanyID   *int
+	ParentCompanyName string
+}
+
+// GetAllMakesWithParentCompany returns all makes with their parent company names
+func GetAllMakesWithParentCompany() ([]MakeWithParentCompany, error) {
+	rows, err := db.Query(`
+		SELECT m.id, m.name, m.parent_company_id, pc.name
+		FROM Make m
+		LEFT JOIN ParentCompany pc ON m.parent_company_id = pc.id
+		ORDER BY m.name
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var makes []MakeWithParentCompany
+	for rows.Next() {
+		var make MakeWithParentCompany
+		var parentCompanyID sql.NullInt64
+		var parentCompanyName sql.NullString
+		if err := rows.Scan(&make.ID, &make.Name, &parentCompanyID, &parentCompanyName); err != nil {
+			return nil, err
+		}
+		if parentCompanyID.Valid {
+			id := int(parentCompanyID.Int64)
+			make.ParentCompanyID = &id
+		}
+		if parentCompanyName.Valid {
+			make.ParentCompanyName = parentCompanyName.String
+		} else {
+			make.ParentCompanyName = "Independent"
 		}
 		makes = append(makes, make)
 	}
@@ -344,6 +392,59 @@ func AddParentCompany(name, country string) (int, error) {
 func UpdateParentCompanyCountry(id int, country string) error {
 	_, err := db.Exec("UPDATE ParentCompany SET country = ? WHERE id = ?", country, id)
 	return err
+}
+
+// GetParentCompaniesForMake returns the parent company name for a given make
+func GetParentCompaniesForMake(makeName string) ([]string, error) {
+	rows, err := db.Query(`
+		SELECT pc.name
+		FROM ParentCompany pc
+		JOIN Make m ON pc.id = m.parent_company_id
+		WHERE m.name = ?
+	`, makeName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var parentCompanies []string
+	for rows.Next() {
+		var pcName string
+		if err := rows.Scan(&pcName); err != nil {
+			return nil, err
+		}
+		parentCompanies = append(parentCompanies, pcName)
+	}
+	return parentCompanies, nil
+}
+
+// ParentCompanyInfo represents parent company information with country
+type ParentCompanyInfo struct {
+	Name    string
+	Country string
+}
+
+// GetParentCompanyInfoForMake returns the parent company information for a given make
+func GetParentCompanyInfoForMake(makeName string) (*ParentCompanyInfo, error) {
+	rows, err := db.Query(`
+		SELECT pc.name, pc.country
+		FROM ParentCompany pc
+		JOIN Make m ON pc.id = m.parent_company_id
+		WHERE m.name = ?
+	`, makeName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		var pcInfo ParentCompanyInfo
+		if err := rows.Scan(&pcInfo.Name, &pcInfo.Country); err != nil {
+			return nil, err
+		}
+		return &pcInfo, nil
+	}
+	return nil, nil
 }
 
 func GetDB() *sql.DB {

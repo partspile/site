@@ -21,6 +21,12 @@
 - [x] Implement free-text search parsed by LLM into structured query
 - [x] Support filtering by vehicle, category, subcategory
 - [x] Support pagination (cursor-based)
+- [x] Enhanced vector embeddings with parent company information for better brand clustering
+- [x] Simplified parent company schema: direct relationship between Make and ParentCompany tables
+- [x] Populated parent company data for all 39 makes in the database
+- [x] Updated embedding prompts to include parent company name and country
+- [x] Updated admin interface to display parent company relationships
+- [x] Cleaned up orphaned parent company entries (reduced from 134 to 34 entries)
 
 ## 5. User Management
 - [x] User registration, login, logout
@@ -76,6 +82,15 @@
 - [x] Implement all placeholder UI elements (e.g., search bar placeholder)
 - [x] Ensure all SQL query placeholders are safe and correct
 - [x] Review all code for incomplete, stub, or placeholder logic
+
+## Parent Company System
+- [x] Simplified database schema: removed MakeParentCompany junction table, added parent_company_id to Make table
+- [x] Populated parent company data for all makes with historically significant parent companies
+- [x] Updated vehicle package with GetParentCompanyInfoForMake() function
+- [x] Enhanced embedding prompts to include parent company name and country
+- [x] Updated admin interface to show parent company relationships in Makes section
+- [x] Cleaned up database: removed 107 orphaned parent company entries
+- [x] All 39 makes now have proper parent company relationships (0 independent)
 
 ## Miscellaneous
 - [x] Quieted server logs by handling Chrome DevTools requests for `/.well-known/appspecific/com.chrome.devtools.json`.

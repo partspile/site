@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"database/sql"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/part"
@@ -60,7 +62,7 @@ func adminTransactionsSectionWrapper(transactions []user.Transaction, status str
 	return ui.AdminTransactionsSection(transactions)
 }
 
-func adminMakesSectionWrapper(makes []vehicle.Make, status string) g.Node {
+func adminMakesSectionWrapper(makes []vehicle.MakeWithParentCompany, status string) g.Node {
 	return ui.AdminMakesSection(makes)
 }
 
@@ -179,7 +181,7 @@ func HandleAdminExportTransactions(c *fiber.Ctx) error {
 }
 
 func HandleAdminMakes(c *fiber.Ctx) error {
-	return adminHandler(c, "makes", vehicle.GetAllMakes, nil, adminMakesSectionWrapper)
+	return adminHandler(c, "makes", vehicle.GetAllMakesWithParentCompany, nil, adminMakesSectionWrapper)
 }
 
 func HandleAdminModels(c *fiber.Ctx) error {
@@ -265,10 +267,9 @@ func HandleAdminMakeParentCompanies(c *fiber.Ctx) error {
 	db := vehicle.GetDB()
 	rows, err := db.Query(`
 		SELECT Make.name, ParentCompany.name
-		FROM MakeParentCompany
-		JOIN Make ON MakeParentCompany.make_id = Make.id
-		JOIN ParentCompany ON MakeParentCompany.parent_company_id = ParentCompany.id
-		ORDER BY Make.name, ParentCompany.name
+		FROM Make
+		LEFT JOIN ParentCompany ON Make.parent_company_id = ParentCompany.id
+		ORDER BY Make.name
 	`)
 	if err != nil {
 		return c.Status(500).SendString("DB error")
@@ -276,11 +277,16 @@ func HandleAdminMakeParentCompanies(c *fiber.Ctx) error {
 	defer rows.Close()
 	var data []struct{ Make, ParentCompany string }
 	for rows.Next() {
-		var make, parent string
+		var make string
+		var parent sql.NullString
 		if err := rows.Scan(&make, &parent); err != nil {
 			return c.Status(500).SendString("Scan error")
 		}
-		data = append(data, struct{ Make, ParentCompany string }{make, parent})
+		parentName := "Independent"
+		if parent.Valid {
+			parentName = parent.String
+		}
+		data = append(data, struct{ Make, ParentCompany string }{make, parentName})
 	}
 	c.Type("html")
 	return ui.AdminSectionPage(currentUser, c.Path(), "make-parent-companies", ui.AdminMakeParentCompaniesSection(data)).Render(c.Context().Response.BodyWriter())

@@ -7,13 +7,25 @@ import (
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/vector"
+	"github.com/parts-pile/site/vehicle"
 )
 
 func buildAdEmbeddingPrompt(adObj ad.Ad) string {
-	return fmt.Sprintf(`Encode the following ad for semantic search. Focus on what the part is, what vehicles it fits, and any relevant details for a buyer. Return only the embedding vector.\n\nTitle: %s\nDescription: %s\nMake: %s\nYears: %s\nModels: %s\nEngines: %s\nCategory: %s\nSubCategory: %s\nLocation: %s, %s, %s`,
+	// Get parent company information for the make
+	var parentCompanyStr, parentCompanyCountry string
+	if adObj.Make != "" {
+		if pcInfo, err := vehicle.GetParentCompanyInfoForMake(adObj.Make); err == nil && pcInfo != nil {
+			parentCompanyStr = pcInfo.Name
+			parentCompanyCountry = pcInfo.Country
+		}
+	}
+
+	return fmt.Sprintf(`Encode the following ad for semantic search. Focus on what the part is, what vehicles it fits, and any relevant details for a buyer. Return only the embedding vector.\n\nTitle: %s\nDescription: %s\nMake: %s\nParent Company: %s\nParent Company Country: %s\nYears: %s\nModels: %s\nEngines: %s\nCategory: %s\nSubCategory: %s\nLocation: %s, %s, %s`,
 		adObj.Title,
 		adObj.Description,
 		adObj.Make,
+		parentCompanyStr,
+		parentCompanyCountry,
 		joinStrings(adObj.Years),
 		joinStrings(adObj.Models),
 		joinStrings(adObj.Engines),
@@ -26,19 +38,30 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 }
 
 func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
+	// Get parent company information for the make
+	var parentCompanyName, parentCompanyCountry string
+	if adObj.Make != "" {
+		if pcInfo, err := vehicle.GetParentCompanyInfoForMake(adObj.Make); err == nil && pcInfo != nil {
+			parentCompanyName = pcInfo.Name
+			parentCompanyCountry = pcInfo.Country
+		}
+	}
+
 	return map[string]interface{}{
-		"ad_id":       adObj.ID,
-		"created_at":  adObj.CreatedAt.Format(time.RFC3339),
-		"click_count": adObj.ClickCount,
-		"make":        adObj.Make,
-		"years":       interfaceSlice(adObj.Years),
-		"models":      interfaceSlice(adObj.Models),
-		"engines":     interfaceSlice(adObj.Engines),
-		"category":    adObj.Category,
-		"subcategory": adObj.SubCategory,
-		"city":        adObj.City,
-		"admin_area":  adObj.AdminArea,
-		"country":     adObj.Country,
+		"ad_id":                  adObj.ID,
+		"created_at":             adObj.CreatedAt.Format(time.RFC3339),
+		"click_count":            adObj.ClickCount,
+		"make":                   adObj.Make,
+		"parent_company":         parentCompanyName,
+		"parent_company_country": parentCompanyCountry,
+		"years":                  interfaceSlice(adObj.Years),
+		"models":                 interfaceSlice(adObj.Models),
+		"engines":                interfaceSlice(adObj.Engines),
+		"category":               adObj.Category,
+		"subcategory":            adObj.SubCategory,
+		"city":                   adObj.City,
+		"admin_area":             adObj.AdminArea,
+		"country":                adObj.Country,
 	}
 }
 
@@ -61,6 +84,8 @@ func main() {
 	if err := ad.InitDB("project.db"); err != nil {
 		log.Fatalf("Failed to open DB: %v", err)
 	}
+	// Initialize vehicle package with the same DB connection
+	vehicle.InitDB(ad.DB)
 	// Initialize Gemini and Pinecone clients
 	if err := vector.InitGeminiClient(""); err != nil {
 		log.Fatalf("Failed to init Gemini: %v", err)

@@ -3,7 +3,8 @@
 -- Vehicle tables
 CREATE TABLE Make (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE,
+    parent_company_id INTEGER REFERENCES ParentCompany(id)
 );
 
 CREATE TABLE ParentCompany (
@@ -12,13 +13,14 @@ CREATE TABLE ParentCompany (
     country TEXT
 );
 
-CREATE TABLE MakeParentCompany (
-    make_id INTEGER NOT NULL,
-    parent_company_id INTEGER NOT NULL,
-    PRIMARY KEY (make_id, parent_company_id),
-    FOREIGN KEY (make_id) REFERENCES Make(id),
-    FOREIGN KEY (parent_company_id) REFERENCES ParentCompany(id)
-);
+-- Note: MakeParentCompany table has been removed in favor of direct relationship
+-- CREATE TABLE MakeParentCompany (
+--     make_id INTEGER NOT NULL,
+--     parent_company_id INTEGER NOT NULL,
+--     PRIMARY KEY (make_id, parent_company_id),
+--     FOREIGN KEY (make_id) REFERENCES Make(id),
+--     FOREIGN KEY (parent_company_id) REFERENCES ParentCompany(id)
+-- );
 
 CREATE TABLE Year (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

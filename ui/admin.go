@@ -28,7 +28,6 @@ func AdminSectionPage(currentUser *user.User, path, activeSection string, conten
 		{"part-categories", "Part Categories"},
 		{"part-sub-categories", "Part Sub-Categories"},
 		{"parent-companies", "Parent Companies"},
-		{"make-parent-companies", "Make-Parent Companies"},
 	}
 	return Div(
 		ID("admin-section"),
@@ -338,7 +337,7 @@ func AdminTransactionTable(transactions []user.Transaction) g.Node {
 	)
 }
 
-func AdminMakes(currentUser *user.User, path string, makes []vehicle.Make) g.Node {
+func AdminMakes(currentUser *user.User, path string, makes []vehicle.MakeWithParentCompany) g.Node {
 	return Page(
 		"Admin - Makes",
 		currentUser,
@@ -349,7 +348,7 @@ func AdminMakes(currentUser *user.User, path string, makes []vehicle.Make) g.Nod
 	)
 }
 
-func AdminMakesSection(makes []vehicle.Make) g.Node {
+func AdminMakesSection(makes []vehicle.MakeWithParentCompany) g.Node {
 	return Div(
 		H1(g.Text("Make Management")),
 		Table(
@@ -358,13 +357,15 @@ func AdminMakesSection(makes []vehicle.Make) g.Node {
 				Tr(Class("bg-gray-200"),
 					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("ID")),
 					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Make")),
+					Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Parent Company")),
 				),
 			),
 			TBody(
-				g.Group(g.Map(makes, func(m vehicle.Make) g.Node {
+				g.Group(g.Map(makes, func(m vehicle.MakeWithParentCompany) g.Node {
 					return Tr(Class("hover:bg-gray-50"),
 						Td(Class("border border-gray-300 px-4 py-2"), g.Textf("%d", m.ID)),
 						Td(Class("border border-gray-300 px-4 py-2"), g.Text(m.Name)),
+						Td(Class("border border-gray-300 px-4 py-2"), g.Text(m.ParentCompanyName)),
 					)
 				})),
 			),
