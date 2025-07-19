@@ -3,5 +3,20 @@
     "name": "sfeldma",
     "password": "foo",
     "phone": "+15035238780"
+  },
+  {
+    "name": "john_doe",
+    "password": "foo",
+    "phone": "+15551234567"
+  },
+  {
+    "name": "jane_smith",
+    "password": "foo",
+    "phone": "+15559876543"
+  },
+  {
+    "name": "mike_wilson",
+    "password": "foo",
+    "phone": "+15551112233"
   }
 ] 

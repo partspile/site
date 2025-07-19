@@ -1,0 +1,182 @@
+[
+  {
+    "make": "BMW",
+    "years": ["1955", "1956"],
+    "models": ["501", "502"],
+    "engines": ["2.0L L6", "2.6L V8"],
+    "title": "BMW 501/502 Engine Oil Filter Housing",
+    "description": "Original BMW oil filter housing for 1955-1956 501 and 502 models. Fits both 2.0L L6 and 2.6L V8 engines. Excellent condition, includes mounting bolts.",
+    "price": 125.00,
+    "created_at": "2024-01-15T10:30:00Z",
+    "user_id": 2,
+    "category": "Engine",
+    "subcategory": "",
+    "location": {
+      "city": "Munich",
+      "admin_area": "Bavaria",
+      "country": "Germany"
+    }
+  },
+  {
+    "make": "ABARTH",
+    "years": ["1960", "1961"],
+    "models": ["1600", "850"],
+    "engines": ["1.6L L4", "833cc L4"],
+    "title": "Abarth 1600/850 Carburetor Rebuild Kit",
+    "description": "Complete carburetor rebuild kit for Abarth 1600 and 850 models. Includes gaskets, jets, float, and needle valve. Compatible with 1.6L L4 and 833cc L4 engines.",
+    "price": 89.50,
+    "created_at": "2024-01-20T14:15:00Z",
+    "user_id": 1,
+    "category": "Fuel & Air",
+    "subcategory": "",
+    "location": {
+      "city": "Turin",
+      "admin_area": "Piedmont",
+      "country": "Italy"
+    }
+  },
+  {
+    "make": "BMW",
+    "years": ["1955", "1956", "1957"],
+    "models": ["ISETTA"],
+    "engines": ["247cc L1", "298cc L1"],
+    "title": "BMW Isetta 300 Electrical Wiring Harness",
+    "description": "Complete wiring harness for BMW Isetta 300. Fits 1955-1957 models with both 247cc and 298cc engines. All connectors included, ready to install.",
+    "price": 245.00,
+    "created_at": "2024-01-25T09:45:00Z",
+    "user_id": 3,
+    "category": "Electrical",
+    "subcategory": "",
+    "location": {
+      "city": "Berlin",
+      "admin_area": "Berlin",
+      "country": "Germany"
+    }
+  },
+  {
+    "make": "ABARTH",
+    "years": ["1962", "1963", "1964"],
+    "models": ["1000", "850"],
+    "engines": ["982cc L4", "847cc L4"],
+    "title": "Abarth 1000/850 Brake Master Cylinder",
+    "description": "New brake master cylinder for Abarth 1000 and 850 models. Compatible with 982cc and 847cc engines. Includes reservoir and mounting hardware.",
+    "price": 156.75,
+    "created_at": "2024-01-28T16:20:00Z",
+    "user_id": 4,
+    "category": "Brakes & Wheel Hub",
+    "subcategory": "",
+    "location": {
+      "city": "Milan",
+      "admin_area": "Lombardy",
+      "country": "Italy"
+    }
+  },
+  {
+    "make": "BMW",
+    "years": ["1954", "1955"],
+    "models": ["501", "501A", "501B"],
+    "engines": ["2.0L L6"],
+    "title": "BMW 501 Series Radiator",
+    "description": "Original BMW radiator for 501, 501A, and 501B models. Fits 2.0L L6 engine. Excellent condition, no leaks. Includes mounting brackets.",
+    "price": 320.00,
+    "created_at": "2024-02-01T11:10:00Z",
+    "user_id": 2,
+    "category": "Cooling System",
+    "subcategory": "",
+    "location": {
+      "city": "Hamburg",
+      "admin_area": "Hamburg",
+      "country": "Germany"
+    }
+  },
+  {
+    "make": "ABARTH",
+    "years": ["1965", "1966"],
+    "models": ["1000", "1150"],
+    "engines": ["982cc L4", "1.1L L4"],
+    "title": "Abarth 1000/1150 Alternator",
+    "description": "Rebuilt alternator for Abarth 1000 and 1150 models. Compatible with 982cc and 1.1L engines. 12V output, includes pulley and mounting bracket.",
+    "price": 189.00,
+    "created_at": "2024-02-05T13:30:00Z",
+    "user_id": 1,
+    "category": "Electrical",
+    "subcategory": "Alternator",
+    "location": {
+      "city": "Rome",
+      "admin_area": "Lazio",
+      "country": "Italy"
+    }
+  },
+  {
+    "make": "BMW",
+    "years": ["1956", "1957"],
+    "models": ["503", "507"],
+    "engines": ["3.2L V8"],
+    "title": "BMW 503/507 Exhaust Manifold",
+    "description": "Stainless steel exhaust manifold for BMW 503 and 507 models. Fits 3.2L V8 engine. Performance upgrade, includes gaskets and mounting hardware.",
+    "price": 450.00,
+    "created_at": "2024-02-10T15:45:00Z",
+    "user_id": 3,
+    "category": "Exhaust & Emission",
+    "subcategory": "",
+    "location": {
+      "city": "Stuttgart",
+      "admin_area": "Baden-Württemberg",
+      "country": "Germany"
+    }
+  },
+  {
+    "make": "ABARTH",
+    "years": ["1967", "1968"],
+    "models": ["1000", "1300"],
+    "engines": ["982cc L4", "1.3L L4"],
+    "title": "Abarth 1000/1300 Timing Belt Kit",
+    "description": "Complete timing belt kit for Abarth 1000 and 1300 models. Includes belt, tensioner, and idler pulley. Compatible with 982cc and 1.3L engines.",
+    "price": 78.25,
+    "created_at": "2024-02-15T10:00:00Z",
+    "user_id": 4,
+    "category": "Belt Drive",
+    "subcategory": "Belt",
+    "location": {
+      "city": "Naples",
+      "admin_area": "Campania",
+      "country": "Italy"
+    }
+  },
+  {
+    "make": "BMW",
+    "years": ["1955", "1956"],
+    "models": ["ISETTA"],
+    "engines": ["247cc L1", "298cc L1"],
+    "title": "BMW Isetta Front Door Hinge Set",
+    "description": "Complete front door hinge set for BMW Isetta. Fits both 247cc and 298cc models. Original BMW parts, excellent condition.",
+    "price": 95.50,
+    "created_at": "2024-02-20T12:15:00Z",
+    "user_id": 2,
+    "category": "Body & Lamp Assembly",
+    "subcategory": "",
+    "location": {
+      "city": "Cologne",
+      "admin_area": "North Rhine-Westphalia",
+      "country": "Germany"
+    }
+  },
+  {
+    "make": "ABARTH",
+    "years": ["1966", "1967"],
+    "models": ["2000"],
+    "engines": ["1.9L L4"],
+    "title": "Abarth 2000 Clutch Assembly",
+    "description": "Complete clutch assembly for Abarth 2000 model. Fits 1.9L L4 engine. Includes pressure plate, clutch disc, and release bearing.",
+    "price": 275.00,
+    "created_at": "2024-02-25T14:30:00Z",
+    "user_id": 1,
+    "category": "Drivetrain",
+    "subcategory": "",
+    "location": {
+      "city": "Florence",
+      "admin_area": "Tuscany",
+      "country": "Italy"
+    }
+  }
+] 

@@ -18,6 +18,9 @@ type MakeYearModel map[string]map[string]map[string][]string
 func main() {
 	jsonFile := "cmd/rebuild_db/make-year-model.json"
 	partFile := "cmd/rebuild_db/part.json"
+	parentFile := "cmd/rebuild_db/parent.json"
+	makeParentFile := "cmd/rebuild_db/make-parent.json"
+	adFile := "cmd/rebuild_db/ad.json"
 	dbFile := "project.db"
 	schemaFile := "schema.sql"
 
@@ -43,6 +46,58 @@ func main() {
 	}
 	defer db.Close()
 
+	// Import parent.json
+	parentData, err := ioutil.ReadFile(parentFile)
+	if err != nil {
+		log.Fatalf("Failed to read parent.json: %v", err)
+	}
+	type ParentCompany struct {
+		Name    string `json:"name"`
+		Country string `json:"country"`
+	}
+	var parentCompanies []ParentCompany
+	if err := json.Unmarshal(parentData, &parentCompanies); err != nil {
+		log.Fatalf("Failed to parse parent.json: %v", err)
+	}
+	for _, pc := range parentCompanies {
+		_, err := db.Exec(`INSERT INTO ParentCompany (name, country) VALUES (?, ?)`, pc.Name, pc.Country)
+		if err != nil {
+			log.Printf("Failed to insert ParentCompany %s: %v", pc.Name, err)
+		} else {
+			fmt.Printf("Inserted ParentCompany: %s (%s)\n", pc.Name, pc.Country)
+		}
+	}
+
+	// Import make-parent.json
+	makeParentData, err := ioutil.ReadFile(makeParentFile)
+	if err != nil {
+		log.Fatalf("Failed to read make-parent.json: %v", err)
+	}
+	type MakeParent struct {
+		Make          string `json:"make"`
+		ParentCompany string `json:"parent_company"`
+	}
+	var makeParents []MakeParent
+	if err := json.Unmarshal(makeParentData, &makeParents); err != nil {
+		log.Fatalf("Failed to parse make-parent.json: %v", err)
+	}
+
+	// Create a map of parent company names to IDs for efficient lookup
+	parentCompanyMap := make(map[string]int)
+	rows, err := db.Query(`SELECT id, name FROM ParentCompany`)
+	if err != nil {
+		log.Fatalf("Failed to query ParentCompany: %v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			log.Fatalf("Failed to scan ParentCompany row: %v", err)
+		}
+		parentCompanyMap[name] = id
+	}
+
 	// Import make-year-model.json
 	f, err := os.Open(jsonFile)
 	if err != nil {
@@ -58,7 +113,24 @@ func main() {
 		log.Fatalf("Failed to parse JSON: %v", err)
 	}
 	for make, years := range mym {
-		makeID := getOrInsert(db, "Make", "name", make)
+		// Find parent company ID for this make
+		var parentCompanyID *int
+		for _, mp := range makeParents {
+			if mp.Make == make {
+				if id, exists := parentCompanyMap[mp.ParentCompany]; exists {
+					parentCompanyID = &id
+				}
+				break
+			}
+		}
+
+		// Insert make with parent company relationship
+		var makeID int
+		if parentCompanyID != nil {
+			makeID = getOrInsertWithParent(db, "Make", "name", make, *parentCompanyID)
+		} else {
+			makeID = getOrInsert(db, "Make", "name", make)
+		}
 		for year, models := range years {
 			yearID := getOrInsert(db, "Year", "year", year)
 			for model, engines := range models {
@@ -142,6 +214,214 @@ func main() {
 		}
 	}
 
+	// Import ad.json
+	adData, err := ioutil.ReadFile(adFile)
+	if err != nil {
+		log.Fatalf("Failed to read ad.json: %v", err)
+	}
+	type AdImport struct {
+		Make        string   `json:"make"`
+		Years       []string `json:"years"`
+		Models      []string `json:"models"`
+		Engines     []string `json:"engines"`
+		Title       string   `json:"title"`
+		Description string   `json:"description"`
+		Price       float64  `json:"price"`
+		CreatedAt   string   `json:"created_at"`
+		UserID      int      `json:"user_id"`
+		Category    string   `json:"category"`
+		Subcategory string   `json:"subcategory"`
+		Location    struct {
+			City      string `json:"city"`
+			AdminArea string `json:"admin_area"`
+			Country   string `json:"country"`
+		} `json:"location"`
+	}
+	var ads []AdImport
+	if err := json.Unmarshal(adData, &ads); err != nil {
+		log.Fatalf("Failed to parse ad.json: %v", err)
+	}
+
+	// Create maps for efficient lookups
+	makeMap := make(map[string]int)
+	yearMap := make(map[string]int)
+	modelMap := make(map[string]int)
+	engineMap := make(map[string]int)
+	userMap := make(map[int]int)
+	categoryMap := make(map[string]int)
+	subcategoryMap := make(map[string]int)
+
+	// Declare variables for database queries
+	var makeRows, yearRows, modelRows, engineRows, userRows, categoryRows, subcategoryRows *sql.Rows
+
+	// Populate maps
+	makeRows, err = db.Query(`SELECT id, name FROM Make`)
+	if err != nil {
+		log.Fatalf("Failed to query Make: %v", err)
+	}
+	defer makeRows.Close()
+	for makeRows.Next() {
+		var id int
+		var name string
+		if err := makeRows.Scan(&id, &name); err != nil {
+			log.Fatalf("Failed to scan Make row: %v", err)
+		}
+		makeMap[name] = id
+	}
+
+	yearRows, err = db.Query(`SELECT id, year FROM Year`)
+	if err != nil {
+		log.Fatalf("Failed to query Year: %v", err)
+	}
+	defer yearRows.Close()
+	for yearRows.Next() {
+		var id int
+		var year string
+		if err := yearRows.Scan(&id, &year); err != nil {
+			log.Fatalf("Failed to scan Year row: %v", err)
+		}
+		yearMap[year] = id
+	}
+
+	modelRows, err = db.Query(`SELECT id, name FROM Model`)
+	if err != nil {
+		log.Fatalf("Failed to query Model: %v", err)
+	}
+	defer modelRows.Close()
+	for modelRows.Next() {
+		var id int
+		var name string
+		if err := modelRows.Scan(&id, &name); err != nil {
+			log.Fatalf("Failed to scan Model row: %v", err)
+		}
+		modelMap[name] = id
+	}
+
+	engineRows, err = db.Query(`SELECT id, name FROM Engine`)
+	if err != nil {
+		log.Fatalf("Failed to query Engine: %v", err)
+	}
+	defer engineRows.Close()
+	for engineRows.Next() {
+		var id int
+		var name string
+		if err := engineRows.Scan(&id, &name); err != nil {
+			log.Fatalf("Failed to scan Engine row: %v", err)
+		}
+		engineMap[name] = id
+	}
+
+	userRows, err = db.Query(`SELECT id FROM User`)
+	if err != nil {
+		log.Fatalf("Failed to query User: %v", err)
+	}
+	defer userRows.Close()
+	for userRows.Next() {
+		var id int
+		if err := userRows.Scan(&id); err != nil {
+			log.Fatalf("Failed to scan User row: %v", err)
+		}
+		userMap[id] = id
+	}
+
+	categoryRows, err = db.Query(`SELECT id, name FROM PartCategory`)
+	if err != nil {
+		log.Fatalf("Failed to query PartCategory: %v", err)
+	}
+	defer categoryRows.Close()
+	for categoryRows.Next() {
+		var id int
+		var name string
+		if err := categoryRows.Scan(&id, &name); err != nil {
+			log.Fatalf("Failed to scan PartCategory row: %v", err)
+		}
+		categoryMap[name] = id
+	}
+
+	subcategoryRows, err = db.Query(`SELECT id, name FROM PartSubCategory`)
+	if err != nil {
+		log.Fatalf("Failed to query PartSubCategory: %v", err)
+	}
+	defer subcategoryRows.Close()
+	for subcategoryRows.Next() {
+		var id int
+		var name string
+		if err := subcategoryRows.Scan(&id, &name); err != nil {
+			log.Fatalf("Failed to scan PartSubCategory row: %v", err)
+		}
+		subcategoryMap[name] = id
+	}
+
+	// Process ads
+	for _, ad := range ads {
+		// Insert or get location
+		locationKey := fmt.Sprintf("%s, %s, %s", ad.Location.City, ad.Location.AdminArea, ad.Location.Country)
+		var locationID int
+		err := db.QueryRow(`SELECT id FROM Location WHERE raw_text=?`, locationKey).Scan(&locationID)
+		if err == sql.ErrNoRows {
+			res, err := db.Exec(`INSERT INTO Location (raw_text, city, admin_area, country) VALUES (?, ?, ?, ?)`,
+				locationKey, ad.Location.City, ad.Location.AdminArea, ad.Location.Country)
+			if err != nil {
+				log.Printf("Failed to insert Location: %v", err)
+				continue
+			}
+			id64, _ := res.LastInsertId()
+			locationID = int(id64)
+		} else if err != nil {
+			log.Printf("Location lookup error: %v", err)
+			continue
+		}
+
+		// Get subcategory ID if specified
+		var subcategoryID *int
+		if ad.Subcategory != "" {
+			if id, exists := subcategoryMap[ad.Subcategory]; exists {
+				subcategoryID = &id
+			}
+		}
+
+		// Insert ad
+		res, err := db.Exec(`INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryID, ad.UserID, locationID)
+		if err != nil {
+			log.Printf("Failed to insert Ad: %v", err)
+			continue
+		}
+		adID, _ := res.LastInsertId()
+
+		// Create AdCar relationships for all combinations
+		for _, year := range ad.Years {
+			for _, model := range ad.Models {
+				for _, engine := range ad.Engines {
+					// Get car ID
+					var carID int
+					makeID := makeMap[ad.Make]
+					yearID := yearMap[year]
+					modelID := modelMap[model]
+					engineID := engineMap[engine]
+
+					err := db.QueryRow(`SELECT id FROM Car WHERE make_id=? AND year_id=? AND model_id=? AND engine_id=?`,
+						makeID, yearID, modelID, engineID).Scan(&carID)
+					if err == sql.ErrNoRows {
+						// Car doesn't exist, skip this combination
+						continue
+					} else if err != nil {
+						log.Printf("Car lookup error: %v", err)
+						continue
+					}
+
+					// Insert AdCar relationship
+					_, err = db.Exec(`INSERT INTO AdCar (ad_id, car_id) VALUES (?, ?)`, adID, carID)
+					if err != nil {
+						log.Printf("Failed to insert AdCar: %v", err)
+					}
+				}
+			}
+		}
+
+		fmt.Printf("Inserted ad: %s\n", ad.Title)
+	}
+
 	fmt.Println("Database rebuild and import complete.")
 }
 
@@ -150,6 +430,22 @@ func getOrInsert(db *sql.DB, table, col, val string) int {
 	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=?", table, col), val).Scan(&id)
 	if err == sql.ErrNoRows {
 		res, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s) VALUES (?)", table, col), val)
+		if err != nil {
+			log.Fatalf("Failed to insert into %s: %v", table, err)
+		}
+		id64, _ := res.LastInsertId()
+		return int(id64)
+	} else if err != nil {
+		log.Fatalf("Failed to lookup %s: %v", table, err)
+	}
+	return id
+}
+
+func getOrInsertWithParent(db *sql.DB, table, col, val string, parentID int) int {
+	var id int
+	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=?", table, col), val).Scan(&id)
+	if err == sql.ErrNoRows {
+		res, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s, parent_company_id) VALUES (?, ?)", table, col), val, parentID)
 		if err != nil {
 			log.Fatalf("Failed to insert into %s: %v", table, err)
 		}
