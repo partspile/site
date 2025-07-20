@@ -115,18 +115,23 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 
 	// --- VECTOR EMBEDDING GENERATION (ASYNC) ---
 	go func(adObj ad.Ad) {
+		log.Printf("[embedding] Starting async embedding generation for ad %d", adObj.ID)
 		prompt := buildAdEmbeddingPrompt(adObj)
-		log.Printf("[embedding] Generating embedding for ad %d with prompt: %s", adObj.ID, prompt)
+		log.Printf("[embedding] Generated prompt for ad %d: %.100q...", adObj.ID, prompt)
 		embedding, err := vector.EmbedText(prompt)
 		if err != nil {
 			log.Printf("[embedding] failed to generate embedding for ad %d: %v", adObj.ID, err)
 			return
 		}
+		log.Printf("[embedding] Successfully generated embedding for ad %d (length=%d)", adObj.ID, len(embedding))
 		meta := buildAdEmbeddingMetadata(adObj)
+		log.Printf("[embedding] Generated metadata for ad %d: %+v", adObj.ID, meta)
 		err = vector.UpsertAdEmbedding(adObj.ID, embedding, meta)
 		if err != nil {
 			log.Printf("[embedding] failed to upsert embedding for ad %d: %v", adObj.ID, err)
+			return
 		}
+		log.Printf("[embedding] Successfully upserted embedding for ad %d to Pinecone", adObj.ID)
 	}(newAd)
 	// --- END VECTOR EMBEDDING ---
 
@@ -230,18 +235,23 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 
 	// --- VECTOR EMBEDDING GENERATION (ASYNC) ---
 	go func(adObj ad.Ad) {
+		log.Printf("[embedding] Starting async embedding generation for updated ad %d", adObj.ID)
 		prompt := buildAdEmbeddingPrompt(adObj)
-		log.Printf("[embedding] Generating embedding for ad %d with prompt: %s", adObj.ID, prompt)
+		log.Printf("[embedding] Generated prompt for updated ad %d: %.100q...", adObj.ID, prompt)
 		embedding, err := vector.EmbedText(prompt)
 		if err != nil {
-			log.Printf("[embedding] failed to generate embedding for ad %d: %v", adObj.ID, err)
+			log.Printf("[embedding] failed to generate embedding for updated ad %d: %v", adObj.ID, err)
 			return
 		}
+		log.Printf("[embedding] Successfully generated embedding for updated ad %d (length=%d)", adObj.ID, len(embedding))
 		meta := buildAdEmbeddingMetadata(adObj)
+		log.Printf("[embedding] Generated metadata for updated ad %d: %+v", adObj.ID, meta)
 		err = vector.UpsertAdEmbedding(adObj.ID, embedding, meta)
 		if err != nil {
-			log.Printf("[embedding] failed to upsert embedding for ad %d: %v", adObj.ID, err)
+			log.Printf("[embedding] failed to upsert embedding for updated ad %d: %v", adObj.ID, err)
+			return
 		}
+		log.Printf("[embedding] Successfully upserted embedding for updated ad %d to Pinecone", adObj.ID)
 	}(updatedAd)
 	// --- END VECTOR EMBEDDING ---
 
@@ -631,16 +641,30 @@ func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 		}
 	}
 
+	// Convert string slices to interface slices for proper JSON serialization
+	yearsInterface := make([]interface{}, len(adObj.Years))
+	for i, year := range adObj.Years {
+		yearsInterface[i] = year
+	}
+	modelsInterface := make([]interface{}, len(adObj.Models))
+	for i, model := range adObj.Models {
+		modelsInterface[i] = model
+	}
+	enginesInterface := make([]interface{}, len(adObj.Engines))
+	for i, engine := range adObj.Engines {
+		enginesInterface[i] = engine
+	}
+
 	return map[string]interface{}{
 		"ad_id":                  adObj.ID,
-		"created_at":             adObj.CreatedAt,
+		"created_at":             adObj.CreatedAt.Format(time.RFC3339),
 		"click_count":            adObj.ClickCount,
 		"make":                   adObj.Make,
 		"parent_company":         parentCompanyName,
 		"parent_company_country": parentCompanyCountry,
-		"years":                  adObj.Years,
-		"models":                 adObj.Models,
-		"engines":                adObj.Engines,
+		"years":                  yearsInterface,
+		"models":                 modelsInterface,
+		"engines":                enginesInterface,
 		"category":               adObj.Category,
 		"subcategory":            adObj.SubCategory,
 		"city":                   adObj.City,

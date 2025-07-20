@@ -120,6 +120,8 @@ func UpsertAdEmbedding(adID int, embedding []float32, metadata map[string]interf
 		return fmt.Errorf("Pinecone index not initialized")
 	}
 	vectorID := fmt.Sprintf("%d", adID)
+	log.Printf("[pinecone] Upserting vector for ad %d with ID %s", adID, vectorID)
+
 	var metaStruct *structpb.Struct
 	if metadata != nil {
 		var err error
@@ -127,18 +129,25 @@ func UpsertAdEmbedding(adID int, embedding []float32, metadata map[string]interf
 		if err != nil {
 			return fmt.Errorf("failed to convert metadata: %w", err)
 		}
+		log.Printf("[pinecone] Metadata converted successfully for ad %d", adID)
 	}
+
 	// TODO: Confirm if Values should be []float32 or *[]float32 for Pinecone.Vector
 	vector := &pinecone.Vector{
 		Id:       vectorID,
 		Values:   &embedding,
 		Metadata: metaStruct,
 	}
+	log.Printf("[pinecone] Created vector object for ad %d with embedding length %d", adID, len(embedding))
+
 	ctx := context.Background()
-	_, err := pineconeIndex.UpsertVectors(ctx, []*pinecone.Vector{vector})
+	resp, err := pineconeIndex.UpsertVectors(ctx, []*pinecone.Vector{vector})
 	if err != nil {
 		return fmt.Errorf("failed to upsert vector: %w", err)
 	}
+
+	log.Printf("[pinecone] Upsert response for ad %d: %+v", adID, resp)
+	log.Printf("[pinecone] Successfully upserted vector for ad %d", adID)
 	return nil
 }
 
@@ -274,14 +283,38 @@ func GetAdEmbedding(adID int) ([]float32, error) {
 		return nil, fmt.Errorf("Pinecone index not initialized")
 	}
 	vectorID := fmt.Sprintf("%d", adID)
+	log.Printf("[pinecone] Fetching vector for ad %d with ID %s", adID, vectorID)
+
 	ctx := context.Background()
 	resp, err := pineconeIndex.FetchVectors(ctx, []string{vectorID})
 	if err != nil {
+		log.Printf("[pinecone] Fetch error for ad %d: %v", adID, err)
 		return nil, err
 	}
+
+	log.Printf("[pinecone] Fetch response for ad %d: %+v", adID, resp)
+	log.Printf("[pinecone] Available vectors in response: %v", func() []string {
+		keys := make([]string, 0, len(resp.Vectors))
+		for k := range resp.Vectors {
+			keys = append(keys, k)
+		}
+		return keys
+	}())
+
 	v, ok := resp.Vectors[vectorID]
-	if !ok || v == nil || v.Values == nil {
+	if !ok {
+		log.Printf("[pinecone] Vector ID %s not found in response for ad %d", vectorID, adID)
 		return nil, fmt.Errorf("no embedding found for ad %d", adID)
 	}
+	if v == nil {
+		log.Printf("[pinecone] Vector object is nil for ad %d", adID)
+		return nil, fmt.Errorf("no embedding found for ad %d", adID)
+	}
+	if v.Values == nil {
+		log.Printf("[pinecone] Vector values are nil for ad %d", adID)
+		return nil, fmt.Errorf("no embedding found for ad %d", adID)
+	}
+
+	log.Printf("[pinecone] Successfully retrieved vector for ad %d with length %d", adID, len(*v.Values))
 	return *v.Values, nil
 }
