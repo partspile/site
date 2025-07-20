@@ -80,7 +80,7 @@ func getRawLocation(adObj ad.Ad) string {
 	return raw
 }
 
-// Helper to format ad age as Xm, Xh, or Xd
+// Helper to format ad age as Xm, Xh, Xd, Xmo, or Xy Xmo
 func formatAdAge(t time.Time) string {
 	d := time.Since(t)
 	if d < time.Hour {
@@ -88,7 +88,65 @@ func formatAdAge(t time.Time) string {
 	} else if d < 24*time.Hour {
 		return fmt.Sprintf("%dh", int(d.Hours()))
 	}
-	return fmt.Sprintf("%dd", int(d.Hours())/24)
+
+	days := int(d.Hours() / 24)
+	if days <= 31 {
+		return fmt.Sprintf("%dd", days)
+	}
+
+	// Calculate months and years
+	now := time.Now()
+	years := now.Year() - t.Year()
+	months := int(now.Month()) - int(t.Month())
+
+	// Adjust for day of month
+	if now.Day() < t.Day() {
+		months--
+	}
+
+	// Adjust years if months went negative
+	if months < 0 {
+		years--
+		months += 12
+	}
+
+	if years > 0 {
+		if months > 0 {
+			return fmt.Sprintf("%dy %dmo", years, months)
+		}
+		return fmt.Sprintf("%dy", years)
+	}
+
+	return fmt.Sprintf("%dmo", months)
+}
+
+// Helper function to return flag icon and country text in a div with text-xs
+func LocationDisplayWithFlag(adObj ad.Ad) g.Node {
+	locationStr, flagNode := getDisplayLocationAndFlag(adObj)
+	if locationStr == "" && flagNode == nil {
+		return nil
+	}
+
+	// Create smaller flag icon (same size as grid view)
+	var smallFlagNode g.Node
+	if flagNode != nil {
+		smallFlagNode = Span(Style("font-size: 1em; vertical-align: middle;"), g.Text(countryFlag(adObj.Country)))
+	}
+
+	return Div(
+		Class("text-xs text-gray-500 flex items-center gap-1"),
+		smallFlagNode,
+		g.If(locationStr != "" || smallFlagNode != nil, g.Text(locationStr)),
+	)
+}
+
+// Helper function to return age div with text-xs
+func AgeDisplay(posted time.Time) g.Node {
+	agoStr := formatAdAge(posted)
+	return Div(
+		Class("text-xs text-gray-400"),
+		g.Text(agoStr),
+	)
 }
 
 // ---- Ad Components ----
@@ -1053,9 +1111,6 @@ func AdCardTreeView(ad ad.Ad, loc *time.Location, bookmarked bool, userID int) g
 // AdCardCompactTree renders a compact single-line ad card for tree view (collapsed state)
 func AdCardCompactTree(ad ad.Ad, loc *time.Location, bookmarked bool, userID int) g.Node {
 	posted := ad.CreatedAt.In(loc)
-	agoStr := formatAdAge(posted)
-
-	locationStr, flagNode := getDisplayLocationAndFlag(ad)
 
 	// Bookmark button
 	bookmarkBtn := g.Node(nil)
@@ -1108,16 +1163,15 @@ func AdCardCompactTree(ad ad.Ad, loc *time.Location, bookmarked bool, userID int
 			Class("flex-1 text-blue-600 hover:text-blue-800"),
 			g.Text(ad.Title),
 		),
-		// Location (black text)
+		// Location with flag (using new helper function)
 		Div(
-			Class("text-gray-800 mr-4 flex items-center"),
-			flagNode,
-			g.If(locationStr != "" || flagNode != nil, g.Text(locationStr)),
+			Class("mr-4"),
+			LocationDisplayWithFlag(ad),
 		),
-		// Time posted (black text)
+		// Time posted (using new helper function)
 		Div(
-			Class("text-gray-800 mr-4"),
-			g.Text(agoStr),
+			Class("mr-4"),
+			AgeDisplay(posted),
 		),
 		// Price (green text)
 		Div(
@@ -1478,9 +1532,6 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 // AdCardCompactList renders a compact single-line ad card for list view
 func AdCardCompactList(ad ad.Ad, loc *time.Location, bookmarked bool, userID int) g.Node {
 	posted := ad.CreatedAt.In(loc)
-	agoStr := formatAdAge(posted)
-
-	locationStr, flagNode := getDisplayLocationAndFlag(ad)
 
 	// Bookmark button
 	bookmarkBtn := g.Node(nil)
@@ -1533,16 +1584,15 @@ func AdCardCompactList(ad ad.Ad, loc *time.Location, bookmarked bool, userID int
 			Class("flex-1 text-blue-600 hover:text-blue-800"),
 			g.Text(ad.Title),
 		),
-		// Location (black text)
+		// Location with flag (using new helper function)
 		Div(
-			Class("text-gray-800 mr-4 flex items-center"),
-			flagNode,
-			g.If(locationStr != "" || flagNode != nil, g.Text(locationStr)),
+			Class("mr-4"),
+			LocationDisplayWithFlag(ad),
 		),
-		// Time posted (black text)
+		// Time posted (using new helper function)
 		Div(
-			Class("text-gray-800 mr-4"),
-			g.Text(agoStr),
+			Class("mr-4"),
+			AgeDisplay(posted),
 		),
 		// Price (green text)
 		Div(
