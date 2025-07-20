@@ -6,16 +6,24 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"os/exec"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/vector"
+	"github.com/parts-pile/site/vehicle"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type MakeYearModel map[string]map[string]map[string][]string
 
 func main() {
+	// Seed random number generator
+	rand.Seed(time.Now().UnixNano())
+
 	jsonFile := "cmd/rebuild_db/make-year-model.json"
 	partFile := "cmd/rebuild_db/part.json"
 	parentFile := "cmd/rebuild_db/parent.json"
@@ -45,6 +53,12 @@ func main() {
 		log.Fatalf("Failed to open DB: %v", err)
 	}
 	defer db.Close()
+
+	// Initialize packages that need the DB
+	if err := ad.InitDB(dbFile); err != nil {
+		log.Fatalf("Failed to initialize ad package: %v", err)
+	}
+	vehicle.InitDB(ad.DB)
 
 	// Import parent.json
 	parentData, err := ioutil.ReadFile(parentFile)
@@ -380,14 +394,33 @@ func main() {
 			}
 		}
 
-		// Insert ad
-		res, err := db.Exec(`INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryID, ad.UserID, locationID)
+		// Generate between 1 and 5 images per ad
+		numImages := 1 + rand.Intn(5) // 1 to 5 images
+
+		// Create image_order as JSON array of integers starting from 1
+		imageOrderIndices := make([]int, numImages)
+		for i := 0; i < numImages; i++ {
+			imageOrderIndices[i] = i + 1
+		}
+		imageOrderJSON, err := json.Marshal(imageOrderIndices)
+		if err != nil {
+			log.Printf("Failed to marshal image_order for ad: %v", err)
+			continue
+		}
+
+		// Insert ad with image_order
+		res, err := db.Exec(`INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+			ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryID, ad.UserID, locationID, string(imageOrderJSON))
 		if err != nil {
 			log.Printf("Failed to insert Ad: %v", err)
 			continue
 		}
 		adID, _ := res.LastInsertId()
+
+		// Generate and upload images for this ad
+		if err := uploadAdImagesToB2(int(adID), numImages, ad.Title); err != nil {
+			log.Printf("Failed to upload images for ad %d: %v", adID, err)
+		}
 
 		// Create AdCar relationships for all combinations
 		for _, year := range ad.Years {
@@ -423,6 +456,49 @@ func main() {
 	}
 
 	fmt.Println("Database rebuild and import complete.")
+
+	// Initialize vector embedding services
+	fmt.Println("Initializing vector embedding services...")
+	if err := vector.InitGeminiClient(""); err != nil {
+		log.Printf("Failed to init Gemini: %v", err)
+	} else {
+		if err := vector.InitPineconeClient("", ""); err != nil {
+			log.Printf("Failed to init Pinecone: %v", err)
+		} else {
+			// Generate embeddings for all ads
+			fmt.Println("Generating embeddings for all ads...")
+			ads, err := ad.GetAllAds()
+			if err != nil {
+				log.Printf("Failed to get ads for embedding: %v", err)
+			} else {
+				fmt.Printf("Found %d ads to generate embeddings for\n", len(ads))
+				failures := 0
+				for i, adObj := range ads {
+					prompt := buildAdEmbeddingPrompt(adObj)
+					log.Printf("[embedding] Generating embedding for ad %d", adObj.ID)
+					embedding, err := vector.EmbedText(prompt)
+					if err != nil {
+						log.Printf("[embedding] failed for ad %d: %v", adObj.ID, err)
+						failures++
+						continue
+					}
+					meta := buildAdEmbeddingMetadata(adObj)
+					err = vector.UpsertAdEmbedding(adObj.ID, embedding, meta)
+					if err != nil {
+						log.Printf("[pinecone] upsert failed for ad %d: %v", adObj.ID, err)
+						failures++
+						continue
+					}
+					if (i+1)%10 == 0 || i == len(ads)-1 {
+						fmt.Printf("%d/%d ads processed for embeddings\n", i+1, len(ads))
+					}
+					// Sleep to avoid rate limits
+					time.Sleep(100 * time.Millisecond)
+				}
+				fmt.Printf("Embedding generation complete. %d ads processed, %d failures.\n", len(ads), failures)
+			}
+		}
+	}
 }
 
 func getOrInsert(db *sql.DB, table, col, val string) int {
@@ -455,4 +531,77 @@ func getOrInsertWithParent(db *sql.DB, table, col, val string, parentID int) int
 		log.Fatalf("Failed to lookup %s: %v", table, err)
 	}
 	return id
+}
+
+// buildAdEmbeddingPrompt creates a prompt for generating embeddings
+func buildAdEmbeddingPrompt(adObj ad.Ad) string {
+	// Get parent company information for the make
+	var parentCompanyStr, parentCompanyCountry string
+	if adObj.Make != "" {
+		if pcInfo, err := vehicle.GetParentCompanyInfoForMake(adObj.Make); err == nil && pcInfo != nil {
+			parentCompanyStr = pcInfo.Name
+			parentCompanyCountry = pcInfo.Country
+		}
+	}
+
+	return fmt.Sprintf(`Encode the following ad for semantic search. Focus on what the part is, what vehicles it fits, and any relevant details for a buyer. Return only the embedding vector.\n\nTitle: %s\nDescription: %s\nMake: %s\nParent Company: %s\nParent Company Country: %s\nYears: %s\nModels: %s\nEngines: %s\nCategory: %s\nSubCategory: %s\nLocation: %s, %s, %s`,
+		adObj.Title,
+		adObj.Description,
+		adObj.Make,
+		parentCompanyStr,
+		parentCompanyCountry,
+		joinStrings(adObj.Years),
+		joinStrings(adObj.Models),
+		joinStrings(adObj.Engines),
+		adObj.Category,
+		adObj.SubCategory,
+		adObj.City,
+		adObj.AdminArea,
+		adObj.Country,
+	)
+}
+
+// buildAdEmbeddingMetadata creates metadata for embeddings
+func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
+	// Get parent company information for the make
+	var parentCompanyName, parentCompanyCountry string
+	if adObj.Make != "" {
+		if pcInfo, err := vehicle.GetParentCompanyInfoForMake(adObj.Make); err == nil && pcInfo != nil {
+			parentCompanyName = pcInfo.Name
+			parentCompanyCountry = pcInfo.Country
+		}
+	}
+
+	return map[string]interface{}{
+		"ad_id":                  adObj.ID,
+		"created_at":             adObj.CreatedAt.Format(time.RFC3339),
+		"click_count":            adObj.ClickCount,
+		"make":                   adObj.Make,
+		"parent_company":         parentCompanyName,
+		"parent_company_country": parentCompanyCountry,
+		"years":                  interfaceSlice(adObj.Years),
+		"models":                 interfaceSlice(adObj.Models),
+		"engines":                interfaceSlice(adObj.Engines),
+		"category":               adObj.Category,
+		"subcategory":            adObj.SubCategory,
+		"city":                   adObj.City,
+		"admin_area":             adObj.AdminArea,
+		"country":                adObj.Country,
+	}
+}
+
+// Helper functions for embedding generation
+func interfaceSlice(ss []string) []interface{} {
+	out := make([]interface{}, len(ss))
+	for i, s := range ss {
+		out[i] = s
+	}
+	return out
+}
+
+func joinStrings(ss []string) string {
+	if len(ss) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%s", ss)
 }
