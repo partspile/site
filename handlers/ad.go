@@ -585,7 +585,7 @@ func HandleAdImagePartial(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 	// Render only the image and price badge (no container)
-	mainImage := ui.AdImageWithFallbackSrcSet(adObj.ID, idx, adObj.Title)
+	mainImage := ui.AdImageWithFallbackSrcSet(adObj.ID, idx, adObj.Title, "carousel")
 	priceBadge := Div(
 		Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
 		g.Textf("$%.0f", adObj.Price),

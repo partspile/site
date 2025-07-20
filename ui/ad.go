@@ -249,7 +249,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 	}
 	imageNode := Div(
 		Class("relative w-full h-48 bg-gray-100 overflow-hidden"),
-		AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title),
+		AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title, "grid"),
 		Div(
 			Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
 			g.Text(fmt.Sprintf("$%.0f", ad.Price)),
@@ -469,7 +469,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 									Div(
 										Class("relative group"),
 										g.Attr("data-image-idx", fmt.Sprintf("%d", idx)),
-										AdImageWithFallbackSrcSet(adObj.ID, idx, fmt.Sprintf("Image %d", i+1)),
+										AdImageWithFallbackSrcSet(adObj.ID, idx, fmt.Sprintf("Image %d", i+1), "grid"),
 										Button(
 											Type("button"),
 											Class("absolute top-0 right-0 bg-white bg-opacity-80 rounded-full p-1 text-red-600 hover:text-red-800 z-10 delete-image-btn"),
@@ -1066,8 +1066,9 @@ func AdImageURLs(adID int, order []int) []string {
 		return urls
 	}
 	for _, idx := range order {
+		// Use 160w size for gallery thumbnails
 		urls = append(urls, fmt.Sprintf(
-			"https://f004.backblazeb2.com/file/parts-pile/%d/%d.webp?Authorization=%s",
+			"https://f004.backblazeb2.com/file/parts-pile/%d/%d-160w.webp?Authorization=%s",
 			adID, idx, token,
 		))
 	}
@@ -1075,7 +1076,7 @@ func AdImageURLs(adID int, order []int) []string {
 }
 
 // Helper to generate signed B2 image URLs for an ad and all sizes
-func AdImageSrcSet(adID int, idx int) (src, srcset string) {
+func AdImageSrcSet(adID int, idx int, context string) (src, srcset string) {
 	prefix := fmt.Sprintf("%d/", adID)
 	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
 	if err != nil || token == "" {
@@ -1086,18 +1087,43 @@ func AdImageSrcSet(adID int, idx int) (src, srcset string) {
 	src480 := fmt.Sprintf("%s-480w.webp?Authorization=%s 480w", base, token)
 	src1200 := fmt.Sprintf("%s-1200w.webp?Authorization=%s 1200w", base, token)
 	srcset = strings.Join([]string{src160, src480, src1200}, ", ")
-	src = fmt.Sprintf("%s-480w.webp?Authorization=%s", base, token) // default
+
+	// Choose default src based on context
+	switch context {
+	case "thumbnail":
+		src = fmt.Sprintf("%s-160w.webp?Authorization=%s", base, token)
+	case "grid":
+		src = fmt.Sprintf("%s-480w.webp?Authorization=%s", base, token)
+	case "carousel":
+		src = fmt.Sprintf("%s-1200w.webp?Authorization=%s", base, token)
+	default:
+		src = fmt.Sprintf("%s-480w.webp?Authorization=%s", base, token) // default
+	}
 	return src, srcset
 }
 
 // Helper to render an image with srcset and fallback
-func AdImageWithFallbackSrcSet(adID int, idx int, alt string) g.Node {
-	src, srcset := AdImageSrcSet(adID, idx)
+func AdImageWithFallbackSrcSet(adID int, idx int, alt string, context string) g.Node {
+	src, srcset := AdImageSrcSet(adID, idx, context)
+
+	// Set appropriate sizes attribute based on context
+	var sizes string
+	switch context {
+	case "thumbnail":
+		sizes = "64px"
+	case "grid":
+		sizes = "(max-width: 640px) 160px, (max-width: 768px) 200px, (max-width: 1024px) 240px, 300px"
+	case "carousel":
+		sizes = "(max-width: 640px) 300px, (max-width: 768px) 400px, (max-width: 1024px) 500px, 600px"
+	default:
+		sizes = "(max-width: 600px) 160px, (max-width: 900px) 480px, 1200px"
+	}
+
 	return Img(
 		Src(src),
 		Alt(alt),
 		g.Attr("srcset", srcset),
-		g.Attr("sizes", "(max-width: 600px) 160px, (max-width: 900px) 480px, 1200px"),
+		g.Attr("sizes", sizes),
 		Class("object-contain w-full aspect-square bg-gray-100"),
 	)
 }
@@ -1258,7 +1284,7 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, bookmarked bool, userID in
 		Class("relative w-full aspect-square bg-gray-100 overflow-hidden rounded-t-lg flex items-center justify-center"),
 		Div(
 			ID(fmt.Sprintf("ad-carousel-img-%d", ad.ID)),
-			AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title),
+			AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title, "carousel"),
 			Div(
 				Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
 				g.Text(fmt.Sprintf("$%.0f", ad.Price)),
@@ -1278,7 +1304,7 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, bookmarked bool, userID in
 					g.Attr("hx-get", fmt.Sprintf("/ad/image/%d/%d", ad.ID, idx)),
 					g.Attr("hx-target", fmt.Sprintf("#ad-carousel-img-%d", ad.ID)),
 					g.Attr("hx-swap", "innerHTML"),
-					AdImageWithFallbackSrcSet(ad.ID, idx, fmt.Sprintf("Image %d", i+1)),
+					AdImageWithFallbackSrcSet(ad.ID, idx, fmt.Sprintf("Image %d", i+1), "thumbnail"),
 				))
 			}
 			return nodes
@@ -1414,7 +1440,7 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 		Class("relative w-full aspect-square bg-gray-100 overflow-hidden rounded-t-lg flex items-center justify-center"),
 		Div(
 			ID(fmt.Sprintf("ad-carousel-img-%d", ad.ID)),
-			AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title),
+			AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title, "carousel"),
 			Div(
 				Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
 				g.Text(fmt.Sprintf("$%.0f", ad.Price)),
@@ -1434,7 +1460,7 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 					g.Attr("hx-get", fmt.Sprintf("/ad/image/%d/%d", ad.ID, idx)),
 					g.Attr("hx-target", fmt.Sprintf("#ad-carousel-img-%d", ad.ID)),
 					g.Attr("hx-swap", "innerHTML"),
-					AdImageWithFallbackSrcSet(ad.ID, idx, fmt.Sprintf("Image %d", i+1)),
+					AdImageWithFallbackSrcSet(ad.ID, idx, fmt.Sprintf("Image %d", i+1), "thumbnail"),
 				))
 			}
 			return nodes
