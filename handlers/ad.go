@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 
 	"net/http"
-	"strings"
 	"time"
 
 	"bytes"
@@ -620,9 +619,9 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 		adObj.Make,
 		parentCompanyStr,
 		parentCompanyCountry,
-		strings.Join(adObj.Years, ", "),
-		strings.Join(adObj.Models, ", "),
-		strings.Join(adObj.Engines, ", "),
+		joinStrings(adObj.Years),
+		joinStrings(adObj.Models),
+		joinStrings(adObj.Engines),
 		adObj.Category,
 		adObj.SubCategory,
 		adObj.City,
@@ -641,20 +640,6 @@ func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 		}
 	}
 
-	// Convert string slices to interface slices for proper JSON serialization
-	yearsInterface := make([]interface{}, len(adObj.Years))
-	for i, year := range adObj.Years {
-		yearsInterface[i] = year
-	}
-	modelsInterface := make([]interface{}, len(adObj.Models))
-	for i, model := range adObj.Models {
-		modelsInterface[i] = model
-	}
-	enginesInterface := make([]interface{}, len(adObj.Engines))
-	for i, engine := range adObj.Engines {
-		enginesInterface[i] = engine
-	}
-
 	return map[string]interface{}{
 		"ad_id":                  adObj.ID,
 		"created_at":             adObj.CreatedAt.Format(time.RFC3339),
@@ -662,15 +647,31 @@ func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 		"make":                   adObj.Make,
 		"parent_company":         parentCompanyName,
 		"parent_company_country": parentCompanyCountry,
-		"years":                  yearsInterface,
-		"models":                 modelsInterface,
-		"engines":                enginesInterface,
+		"years":                  interfaceSlice(adObj.Years),
+		"models":                 interfaceSlice(adObj.Models),
+		"engines":                interfaceSlice(adObj.Engines),
 		"category":               adObj.Category,
 		"subcategory":            adObj.SubCategory,
 		"city":                   adObj.City,
 		"admin_area":             adObj.AdminArea,
 		"country":                adObj.Country,
 	}
+}
+
+// Helper functions for embedding generation
+func interfaceSlice(ss []string) []interface{} {
+	out := make([]interface{}, len(ss))
+	for i, s := range ss {
+		out[i] = s
+	}
+	return out
+}
+
+func joinStrings(ss []string) string {
+	if len(ss) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%s", ss)
 }
 
 // --- END VECTOR EMBEDDING HELPERS ---
