@@ -157,13 +157,17 @@ func ArchiveUser(userID int) error {
 
 	// Get user data before archiving
 	var user User
+	var createdAt string
 	err = tx.QueryRow(`SELECT id, name, phone, token_balance, password_hash, created_at 
 		FROM User WHERE id = ?`, userID).Scan(
 		&user.ID, &user.Name, &user.Phone, &user.TokenBalance,
-		&user.PasswordHash, &user.CreatedAt)
+		&user.PasswordHash, &createdAt)
 	if err != nil {
 		return err
 	}
+
+	// Parse the created_at string into time.Time
+	user.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 
 	// Archive user with deletion_date
 	deletionDate := time.Now().UTC().Format(time.RFC3339Nano)
@@ -233,13 +237,17 @@ func RestoreUser(userID int) error {
 
 	// Get user data from archive
 	var user User
+	var createdAt string
 	err = tx.QueryRow(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin 
 		FROM ArchivedUser WHERE id = ?`, userID).Scan(
 		&user.ID, &user.Name, &user.Phone, &user.TokenBalance,
-		&user.PasswordHash, &user.CreatedAt, &user.IsAdmin)
+		&user.PasswordHash, &createdAt, &user.IsAdmin)
 	if err != nil {
 		return err
 	}
+
+	// Parse the created_at string into time.Time
+	user.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 
 	// Restore user
 	_, err = tx.Exec(`INSERT INTO User (id, name, phone, token_balance, password_hash, created_at, is_admin)

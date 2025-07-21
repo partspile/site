@@ -99,6 +99,12 @@ func InitDB(path string) error {
 	return nil
 }
 
+// SetDBForTesting sets the database connection for testing
+func SetDBForTesting(database *sql.DB) {
+	db = database
+	DB = database
+}
+
 // getVehicleData retrieves vehicle information for an ad from the specified table
 func getVehicleData(adID int, adCarTable string) (makeName string, years []string, models []string, engines []string) {
 	query := fmt.Sprintf(`
@@ -203,12 +209,16 @@ func GetAd(id int) (Ad, bool) {
 	var locationID sql.NullInt64
 	var imageOrder sql.NullString
 	var city, adminArea, country sql.NullString
-	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
+	var createdAt string
+	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
 		&ad.SubCategoryID, &ad.UserID, &subcategory, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
 		&city, &adminArea, &country); err != nil {
 		fmt.Println("DEBUG GetAd scan error:", err)
 		return Ad{}, false
 	}
+
+	// Parse the created_at string into time.Time
+	ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 
 	fmt.Printf("DEBUG GetAd: id=%d, click_count=%d\n", ad.ID, ad.ClickCount)
 
@@ -360,10 +370,14 @@ func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 		var subcategory sql.NullString
 		var lastClickedAt sql.NullTime
 		var isBookmarked int
-		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
+		var createdAt string
+		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
 			&subcatID, &subcategory, &ad.ClickCount, &lastClickedAt, &isBookmarked); err != nil {
 			continue
 		}
+
+		// Parse the created_at string into time.Time
+		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		if subcatID.Valid {
 			intVal := int(subcatID.Int64)
 			ad.SubCategoryID = &intVal
@@ -681,13 +695,17 @@ func GetAllAds() ([]Ad, error) {
 		var locationID sql.NullInt64
 		var imageOrder sql.NullString
 		var city, adminArea, country sql.NullString
+		var createdAt string
 		if err := rows.Scan(
-			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &locationID,
+			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt, &ad.UserID, &locationID,
 			&make, &years, &models, &engines, &imageOrder,
 			&city, &adminArea, &country,
 		); err != nil {
 			return nil, err
 		}
+
+		// Parse the created_at string into time.Time
+		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 
 		if locationID.Valid {
 			ad.LocationID = int(locationID.Int64)
@@ -745,10 +763,14 @@ func GetAllArchivedAds() ([]Ad, error) {
 		var deletedAt string
 		var locationID sql.NullInt64
 		var imageOrder sql.NullString
-		err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.UserID, &deletedAt, &locationID, &imageOrder)
+		var createdAt string
+		err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt, &ad.UserID, &deletedAt, &locationID, &imageOrder)
 		if err != nil {
 			return nil, err
 		}
+
+		// Parse the created_at string into time.Time
+		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		if parsedTime, err := time.Parse(time.RFC3339Nano, deletedAt); err == nil {
 			ad.DeletedAt = &parsedTime
 		}
@@ -782,10 +804,14 @@ func GetArchivedAd(id int) (Ad, bool) {
 	var deletedAt string
 	var locationID sql.NullInt64
 	var imageOrder sql.NullString
-	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
+	var createdAt string
+	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
 		&ad.SubCategoryID, &ad.UserID, &deletedAt, &locationID, &imageOrder); err != nil {
 		return Ad{}, false
 	}
+
+	// Parse the created_at string into time.Time
+	ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 
 	// Parse deleted_at
 	if parsedTime, err := time.Parse(time.RFC3339Nano, deletedAt); err == nil {
@@ -991,9 +1017,13 @@ func GetAdsByIDs(ids []int) ([]Ad, error) {
 	adMap := make(map[int]Ad)
 	for rows.Next() {
 		var ad Ad
-		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.SubCategoryID, &ad.UserID); err != nil {
+		var createdAt string
+		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt, &ad.SubCategoryID, &ad.UserID); err != nil {
 			continue
 		}
+
+		// Parse the created_at string into time.Time
+		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
 		adMap[ad.ID] = ad
 	}
