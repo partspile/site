@@ -108,12 +108,19 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
-	ad.AddAd(newAd)
-	fmt.Printf("[DEBUG] Created ad ID=%d with ImageOrder=%v\n", newAd.ID, newAd.ImageOrder)
-	uploadAdImagesToB2(newAd.ID, imageFiles)
+	adID := ad.AddAd(newAd)
+	fmt.Printf("[DEBUG] Created ad ID=%d with ImageOrder=%v\n", adID, newAd.ImageOrder)
+	uploadAdImagesToB2(adID, imageFiles)
 
 	// --- VECTOR EMBEDDING GENERATION (ASYNC) ---
-	go func(adObj ad.Ad) {
+	go func(adID int) {
+		// Fetch the newly created ad from database to get proper timestamp
+		adObj, ok := ad.GetAd(adID)
+		if !ok {
+			log.Printf("[embedding] Failed to fetch ad %d from database", adID)
+			return
+		}
+
 		log.Printf("[embedding] Starting async embedding generation for ad %d", adObj.ID)
 		prompt := buildAdEmbeddingPrompt(adObj)
 		log.Printf("[embedding] Generated prompt for ad %d: %.100q...", adObj.ID, prompt)
@@ -131,7 +138,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 			return
 		}
 		log.Printf("[embedding] Successfully upserted embedding for ad %d to Pinecone", adObj.ID)
-	}(newAd)
+	}(adID)
 	// --- END VECTOR EMBEDDING ---
 
 	return render(c, ui.SuccessMessage("Ad created successfully", "/"))
@@ -233,7 +240,14 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	uploadAdImagesToB2(updatedAd.ID, imageFiles)
 
 	// --- VECTOR EMBEDDING GENERATION (ASYNC) ---
-	go func(adObj ad.Ad) {
+	go func(adID int) {
+		// Fetch the updated ad from database to get proper timestamp
+		adObj, ok := ad.GetAd(adID)
+		if !ok {
+			log.Printf("[embedding] Failed to fetch updated ad %d from database", adID)
+			return
+		}
+
 		log.Printf("[embedding] Starting async embedding generation for updated ad %d", adObj.ID)
 		prompt := buildAdEmbeddingPrompt(adObj)
 		log.Printf("[embedding] Generated prompt for updated ad %d: %.100q...", adObj.ID, prompt)
@@ -251,7 +265,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 			return
 		}
 		log.Printf("[embedding] Successfully upserted embedding for updated ad %d to Pinecone", adObj.ID)
-	}(updatedAd)
+	}(adID)
 	// --- END VECTOR EMBEDDING ---
 
 	if c.Get("HX-Request") != "" {
@@ -631,30 +645,9 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 }
 
 func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
-	// Get parent company information for the make
-	var parentCompanyName, parentCompanyCountry string
-	if adObj.Make != "" {
-		if pcInfo, err := vehicle.GetParentCompanyInfoForMake(adObj.Make); err == nil && pcInfo != nil {
-			parentCompanyName = pcInfo.Name
-			parentCompanyCountry = pcInfo.Country
-		}
-	}
-
 	return map[string]interface{}{
-		"ad_id":                  adObj.ID,
-		"created_at":             adObj.CreatedAt.Format(time.RFC3339),
-		"click_count":            adObj.ClickCount,
-		"make":                   adObj.Make,
-		"parent_company":         parentCompanyName,
-		"parent_company_country": parentCompanyCountry,
-		"years":                  interfaceSlice(adObj.Years),
-		"models":                 interfaceSlice(adObj.Models),
-		"engines":                interfaceSlice(adObj.Engines),
-		"category":               adObj.Category,
-		"subcategory":            adObj.SubCategory,
-		"city":                   adObj.City,
-		"admin_area":             adObj.AdminArea,
-		"country":                adObj.Country,
+		"created_at":  adObj.CreatedAt.Format(time.RFC3339),
+		"click_count": adObj.ClickCount,
 	}
 }
 

@@ -563,30 +563,9 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 
 // buildAdEmbeddingMetadata creates metadata for embeddings
 func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
-	// Get parent company information for the make
-	var parentCompanyName, parentCompanyCountry string
-	if adObj.Make != "" {
-		if pcInfo, err := vehicle.GetParentCompanyInfoForMake(adObj.Make); err == nil && pcInfo != nil {
-			parentCompanyName = pcInfo.Name
-			parentCompanyCountry = pcInfo.Country
-		}
-	}
-
 	return map[string]interface{}{
-		"ad_id":                  adObj.ID,
-		"created_at":             adObj.CreatedAt.Format(time.RFC3339),
-		"click_count":            adObj.ClickCount,
-		"make":                   adObj.Make,
-		"parent_company":         parentCompanyName,
-		"parent_company_country": parentCompanyCountry,
-		"years":                  interfaceSlice(adObj.Years),
-		"models":                 interfaceSlice(adObj.Models),
-		"engines":                interfaceSlice(adObj.Engines),
-		"category":               adObj.Category,
-		"subcategory":            adObj.SubCategory,
-		"city":                   adObj.City,
-		"admin_area":             adObj.AdminArea,
-		"country":                adObj.Country,
+		"created_at":  adObj.CreatedAt.Format(time.RFC3339),
+		"click_count": adObj.ClickCount,
 	}
 }
 
