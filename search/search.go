@@ -4,8 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"time"
-
-	)
+)
 
 var db *sql.DB
 
@@ -19,10 +18,10 @@ func InitDB(database *sql.DB) {
 
 // UserSearch represents a user's search query
 type UserSearch struct {
-	ID         int            `json:"id"`
-	UserID     sql.NullInt64  `json:"user_id"`
+	ID          int           `json:"id"`
+	UserID      sql.NullInt64 `json:"user_id"`
 	QueryString string        `json:"query_string"`
-	CreatedAt  time.Time      `json:"created_at"`
+	CreatedAt   time.Time     `json:"created_at"`
 }
 
 // SaveUserSearch saves a user's search query to the database
@@ -47,11 +46,13 @@ func GetRecentUserSearches(userID int, limit int) ([]UserSearch, error) {
 	for rows.Next() {
 		var s UserSearch
 		var userID sql.NullInt64
-		if err := rows.Scan(&s.ID, &userID, &s.QueryString, &s.CreatedAt); err != nil {
+		var createdAt string
+		if err := rows.Scan(&s.ID, &userID, &s.QueryString, &createdAt); err != nil {
 			log.Printf("Error scanning user search: %v", err)
 			continue
 		}
 		s.UserID = userID
+		s.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		searches = append(searches, s)
 	}
 	return searches, nil
@@ -78,16 +79,25 @@ func DeleteAllUserSearches(userID int) error {
 }
 
 // GetTopSearches returns the most frequent search queries across all users
-func GetTopSearches(limit int) ([]struct { QueryString string; Count int }, error) {
+func GetTopSearches(limit int) ([]struct {
+	QueryString string
+	Count       int
+}, error) {
 	rows, err := db.Query("SELECT query_string, COUNT(*) as count FROM UserSearch GROUP BY query_string ORDER BY count DESC LIMIT ?", limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var topSearches []struct { QueryString string; Count int }
+	var topSearches []struct {
+		QueryString string
+		Count       int
+	}
 	for rows.Next() {
-		var s struct { QueryString string; Count int }
+		var s struct {
+			QueryString string
+			Count       int
+		}
 		if err := rows.Scan(&s.QueryString, &s.Count); err != nil {
 			log.Printf("Error scanning top search: %v", err)
 			continue
