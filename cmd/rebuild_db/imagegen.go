@@ -9,12 +9,12 @@ import (
 	"image/png"
 	"log"
 	"math/rand"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/chai2010/webp"
+	"github.com/parts-pile/site/config"
 	xdraw "golang.org/x/image/draw"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/basicfont"
@@ -104,9 +104,9 @@ func addText(img *image.RGBA, text string, textColor color.Color, x, y int) {
 
 // uploadAdImagesToB2 uploads generated images for an ad to B2
 func uploadAdImagesToB2(adID int, numImages int, title string) error {
-	accountID := os.Getenv("BACKBLAZE_MASTER_KEY_ID")
-	keyID := os.Getenv("BACKBLAZE_KEY_ID")
-	appKey := os.Getenv("BACKBLAZE_APP_KEY")
+	accountID := config.BackblazeMasterKeyID
+	keyID := config.BackblazeKeyID
+	appKey := config.BackblazeAppKey
 	if accountID == "" || appKey == "" || keyID == "" {
 		log.Println("B2 credentials not set in env vars")
 		return fmt.Errorf("B2 credentials not set")

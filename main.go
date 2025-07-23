@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -12,6 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/handlers"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/search"
@@ -23,7 +23,7 @@ import (
 
 func main() {
 	// Initialize ads/project database
-	if err := ad.InitDB("project.db"); err != nil {
+	if err := ad.InitDB(config.DatabaseURL); err != nil {
 		log.Fatalf("error initializing project database: %v", err)
 	}
 
@@ -166,13 +166,8 @@ func main() {
 	app.Post("/view/grid", handlers.HandleGridView)
 	app.Post("/view/map", handlers.HandleMapView)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8000"
-	}
-
-	fmt.Printf("Starting server on port %s...\n", port)
-	log.Fatal(app.Listen(":" + port))
+	fmt.Printf("Starting server on port %s...\n", config.Port)
+	log.Fatal(app.Listen(":" + config.Port))
 }
 
 func customErrorHandler(ctx *fiber.Ctx, err error) error {

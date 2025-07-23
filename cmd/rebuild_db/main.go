@@ -13,6 +13,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/vehicle"
 	"golang.org/x/crypto/bcrypt"
@@ -29,7 +30,7 @@ func main() {
 	parentFile := "cmd/rebuild_db/parent.json"
 	makeParentFile := "cmd/rebuild_db/make-parent.json"
 	adFile := "cmd/rebuild_db/ad.json"
-	dbFile := "project.db"
+	dbFile := config.DatabaseURL
 	schemaFile := "schema.sql"
 
 	// Remove old DB if exists

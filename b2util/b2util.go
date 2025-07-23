@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/parts-pile/site/config"
 	"github.com/patrickmn/go-cache"
@@ -28,10 +27,10 @@ func GetB2DownloadTokenForPrefixCached(prefix string) (string, error) {
 
 // getB2DownloadTokenForPrefix returns a B2 download authorization token for a given ad directory prefix (e.g., "22/")
 func getB2DownloadTokenForPrefix(prefix string) (string, error) {
-	accountID := os.Getenv("BACKBLAZE_MASTER_KEY_ID")
-	keyID := os.Getenv("BACKBLAZE_KEY_ID")
-	appKey := os.Getenv("BACKBLAZE_APP_KEY")
-	bucketID := os.Getenv("B2_BUCKET_ID")
+	accountID := config.BackblazeMasterKeyID
+	keyID := config.BackblazeKeyID
+	appKey := config.BackblazeAppKey
+	bucketID := config.B2BucketID
 	if accountID == "" || appKey == "" || keyID == "" || bucketID == "" {
 		return "", fmt.Errorf("B2 credentials not set")
 	}

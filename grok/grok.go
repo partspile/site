@@ -7,7 +7,8 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
+
+	"github.com/parts-pile/site/config"
 )
 
 const (
@@ -36,7 +37,7 @@ type GrokResponse struct {
 
 // CallGrok sends prompts to the Grok API and returns the response string
 func CallGrok(systemPrompt, userPrompt string) (string, error) {
-	apiKey := os.Getenv("GROK_API_KEY")
+	apiKey := config.GrokAPIKey
 	if apiKey == "" {
 		return "", fmt.Errorf("GROK_API_KEY environment variable not set")
 	}

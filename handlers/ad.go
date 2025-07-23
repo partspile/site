@@ -6,7 +6,6 @@ import (
 	"mime/multipart"
 
 	"log"
-	"os"
 	"path/filepath"
 
 	"net/http"
@@ -25,6 +24,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -460,9 +460,9 @@ func HandleEditAdPartial(c *fiber.Ctx) error {
 
 // uploadAdImagesToB2 is a stub for now
 func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
-	accountID := os.Getenv("BACKBLAZE_MASTER_KEY_ID")
-	keyID := os.Getenv("BACKBLAZE_KEY_ID")
-	appKey := os.Getenv("BACKBLAZE_APP_KEY")
+	accountID := config.BackblazeMasterKeyID
+	keyID := config.BackblazeKeyID
+	appKey := config.BackblazeAppKey
 	if accountID == "" || appKey == "" || keyID == "" {
 		log.Println("B2 credentials not set in env vars")
 		return
@@ -552,9 +552,9 @@ func HandleAdImageSignedURL(c *fiber.Ctx) error {
 }
 
 func deleteAdImagesFromB2(adID int, indices []int) {
-	accountID := os.Getenv("BACKBLAZE_MASTER_KEY_ID")
-	keyID := os.Getenv("BACKBLAZE_KEY_ID")
-	appKey := os.Getenv("BACKBLAZE_APP_KEY")
+	accountID := config.BackblazeMasterKeyID
+	keyID := config.BackblazeKeyID
+	appKey := config.BackblazeAppKey
 	if accountID == "" || appKey == "" || keyID == "" {
 		log.Println("B2 credentials not set in env vars")
 		return

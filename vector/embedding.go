@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 	"time"
 
 	"database/sql"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/config"
 	pinecone "github.com/pinecone-io/go-pinecone/v4/pinecone"
 	genai "google.golang.org/genai"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -40,7 +40,7 @@ func InitDB(database *sql.DB) {
 // InitGeminiClient initializes the Gemini embedding client
 func InitGeminiClient(apiKey string) error {
 	if apiKey == "" {
-		apiKey = os.Getenv("GEMINI_API_KEY")
+		apiKey = config.GeminiAPIKey
 	}
 	if apiKey == "" {
 		return fmt.Errorf("missing Gemini API key")
@@ -57,13 +57,13 @@ func InitGeminiClient(apiKey string) error {
 // InitPineconeClient initializes the Pinecone client and index
 func InitPineconeClient(apiKey, indexName string) error {
 	if apiKey == "" {
-		apiKey = os.Getenv("PINECONE_API_KEY")
+		apiKey = config.PineconeAPIKey
 	}
 	if apiKey == "" {
 		return fmt.Errorf("missing Pinecone API key")
 	}
 	if indexName == "" {
-		indexName = os.Getenv("PINECONE_INDEX")
+		indexName = config.PineconeIndex
 	}
 	if indexName == "" {
 		return fmt.Errorf("missing Pinecone index name")
