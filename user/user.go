@@ -1,8 +1,9 @@
 package user
 
 import (
-	"database/sql"
 	"time"
+
+	"github.com/parts-pile/site/db"
 )
 
 // Table name constants
@@ -33,12 +34,6 @@ type User struct {
 // IsArchived returns true if the user has been archived
 func (u User) IsArchived() bool {
 	return u.DeletedAt != nil
-}
-
-var db *sql.DB
-
-func InitDB(database *sql.DB) {
-	db = database
 }
 
 // CreateUser inserts a new user into the database

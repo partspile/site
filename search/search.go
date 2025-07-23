@@ -4,17 +4,9 @@ import (
 	"database/sql"
 	"log"
 	"time"
+
+	"github.com/parts-pile/site/db"
 )
-
-var db *sql.DB
-
-// Exported for use by other packages
-var DB *sql.DB
-
-func InitDB(database *sql.DB) {
-	db = database
-	DB = database
-}
 
 // UserSearch represents a user's search query
 type UserSearch struct {

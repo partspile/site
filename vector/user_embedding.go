@@ -10,14 +10,12 @@ import (
 	"strings"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/search"
 )
 
 // LoadUserEmbeddingFromDB loads the user's embedding from the UserEmbedding table.
 func LoadUserEmbeddingFromDB(userID int) ([]float32, error) {
-	if db == nil {
-		return nil, fmt.Errorf("DB not initialized")
-	}
 	row := db.QueryRow(`SELECT embedding FROM UserEmbedding WHERE user_id = ?`, userID)
 	var blob []byte
 	err := row.Scan(&blob)
@@ -39,9 +37,6 @@ func LoadUserEmbeddingFromDB(userID int) ([]float32, error) {
 
 // SaveUserEmbeddingToDB upserts the user's embedding into the UserEmbedding table.
 func SaveUserEmbeddingToDB(userID int, embedding []float32) error {
-	if db == nil {
-		return fmt.Errorf("DB not initialized")
-	}
 	if len(embedding) == 0 {
 		return fmt.Errorf("embedding is empty")
 	}

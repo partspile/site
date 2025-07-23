@@ -11,6 +11,7 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/parts-pile/site/db"
 )
 
 // Table name constants
@@ -82,27 +83,6 @@ type Ad struct {
 // IsArchived returns true if the ad has been archived
 func (a Ad) IsArchived() bool {
 	return a.DeletedAt != nil
-}
-
-var db *sql.DB
-
-// Exported for use by other packages
-var DB *sql.DB
-
-func InitDB(path string) error {
-	var err error
-	db, err = sql.Open("sqlite3", path)
-	if err != nil {
-		return err
-	}
-	DB = db
-	return nil
-}
-
-// SetDBForTesting sets the database connection for testing
-func SetDBForTesting(database *sql.DB) {
-	db = database
-	DB = database
 }
 
 // getVehicleData retrieves vehicle information for an ad from the specified table

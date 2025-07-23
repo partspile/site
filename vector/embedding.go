@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"database/sql"
-
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	pinecone "github.com/pinecone-io/go-pinecone/v4/pinecone"
@@ -29,13 +27,6 @@ var (
 	pineconeClient *pinecone.Client
 	pineconeIndex  *pinecone.IndexConnection
 )
-
-var db *sql.DB
-
-// InitDB sets the database connection for the vector package
-func InitDB(database *sql.DB) {
-	db = database
-}
 
 // InitGeminiClient initializes the Gemini embedding client
 func InitGeminiClient(apiKey string) error {

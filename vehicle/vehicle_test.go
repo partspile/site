@@ -4,16 +4,17 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/parts-pile/site/db"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGetAllMakes(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	expectedMakes := []Make{
 		{ID: 1, Name: "BMW", ParentCompanyID: nil},
@@ -40,11 +41,11 @@ func TestGetAllMakes(t *testing.T) {
 }
 
 func TestGetAllMakes_WithParentCompany(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	parentCompanyID := 1
 	expectedMakes := []Make{
@@ -71,11 +72,11 @@ func TestGetAllMakes_WithParentCompany(t *testing.T) {
 }
 
 func TestGetAllYears(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	expectedYears := []Year{
 		{ID: 1, Year: 2020},
@@ -102,11 +103,11 @@ func TestGetAllYears(t *testing.T) {
 }
 
 func TestGetAllModels(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	expectedModels := []Model{
 		{ID: 1, Name: "3 Series"},
@@ -133,11 +134,11 @@ func TestGetAllModels(t *testing.T) {
 }
 
 func TestGetAllEngineSizes(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	expectedEngines := []string{"2.0L", "2.5L", "3.0L"}
 
@@ -164,11 +165,11 @@ func TestGetYearRange(t *testing.T) {
 }
 
 func TestGetAllParentCompanies(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	expectedCompanies := []ParentCompany{
 		{ID: 1, Name: "BMW Group", Country: "Germany"},
@@ -196,11 +197,11 @@ func TestGetAllParentCompanies(t *testing.T) {
 }
 
 func TestAddParentCompany(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	name := "Test Company"
 	country := "Test Country"
@@ -217,11 +218,11 @@ func TestAddParentCompany(t *testing.T) {
 }
 
 func TestUpdateParentCompanyCountry(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	id := 1
 	country := "New Country"

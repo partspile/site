@@ -6,16 +6,17 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/parts-pile/site/db"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSaveUserSearch(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	userID := sql.NullInt64{Int64: 1, Valid: true}
 	queryString := "test search"
@@ -31,11 +32,11 @@ func TestSaveUserSearch(t *testing.T) {
 }
 
 func TestSaveUserSearch_Anonymous(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	userID := sql.NullInt64{Valid: false}
 	queryString := "anonymous search"
@@ -51,30 +52,27 @@ func TestSaveUserSearch_Anonymous(t *testing.T) {
 }
 
 func TestGetRecentUserSearches(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
-
-	userID := 1
-	limit := 5
+	db.SetForTesting(mockDB)
 
 	expectedSearches := []UserSearch{
-		{ID: 1, UserID: sql.NullInt64{Int64: 1, Valid: true}, QueryString: "search 1", CreatedAt: time.Now()},
-		{ID: 2, UserID: sql.NullInt64{Int64: 1, Valid: true}, QueryString: "search 2", CreatedAt: time.Now()},
+		{ID: 1, UserID: sql.NullInt64{Int64: 1, Valid: true}, QueryString: "test search 1", CreatedAt: time.Now()},
+		{ID: 2, UserID: sql.NullInt64{Int64: 1, Valid: true}, QueryString: "test search 2", CreatedAt: time.Now()},
 	}
 
 	rows := sqlmock.NewRows([]string{"id", "user_id", "query_string", "created_at"})
 	for _, search := range expectedSearches {
-		rows.AddRow(search.ID, search.UserID, search.QueryString, search.CreatedAt.Format(time.RFC3339Nano))
+		rows.AddRow(search.ID, search.UserID.Int64, search.QueryString, search.CreatedAt.Format(time.RFC3339Nano))
 	}
 
 	mock.ExpectQuery("SELECT id, user_id, query_string, created_at FROM UserSearch WHERE user_id = \\? ORDER BY created_at DESC LIMIT \\?").
-		WithArgs(userID, limit).
+		WithArgs(1, 10).
 		WillReturnRows(rows)
 
-	searches, err := GetRecentUserSearches(userID, limit)
+	searches, err := GetRecentUserSearches(1, 10)
 
 	assert.NoError(t, err)
 	assert.Len(t, searches, 2)
@@ -84,11 +82,11 @@ func TestGetRecentUserSearches(t *testing.T) {
 }
 
 func TestGetRecentUserSearches_Empty(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	userID := 1
 	limit := 5
@@ -105,50 +103,45 @@ func TestGetRecentUserSearches_Empty(t *testing.T) {
 }
 
 func TestDeleteUserSearch(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
-
-	searchID := 1
-	userID := 1
+	db.SetForTesting(mockDB)
 
 	mock.ExpectExec("DELETE FROM UserSearch WHERE id = \\? AND user_id = \\?").
-		WithArgs(searchID, userID).
-		WillReturnResult(sqlmock.NewResult(0, 1))
+		WithArgs(1, 1).
+		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	err = DeleteUserSearch(searchID, userID)
+	err = DeleteUserSearch(1, 1)
 
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestDeleteAllUserSearches(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
-
-	userID := 1
+	db.SetForTesting(mockDB)
 
 	mock.ExpectExec("DELETE FROM UserSearch WHERE user_id = \\?").
-		WithArgs(userID).
-		WillReturnResult(sqlmock.NewResult(0, 3))
+		WithArgs(1).
+		WillReturnResult(sqlmock.NewResult(1, 2))
 
-	err = DeleteAllUserSearches(userID)
+	err = DeleteAllUserSearches(1)
 
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestGetTopSearches(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	limit := 10
 
@@ -182,11 +175,11 @@ func TestGetTopSearches(t *testing.T) {
 }
 
 func TestGetTopSearches_Empty(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	limit := 10
 

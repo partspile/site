@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/parts-pile/site/db"
 )
 
 type Make struct {
@@ -30,7 +32,6 @@ type ParentCompany struct {
 	Country string
 }
 
-var db *sql.DB
 var (
 	makesCache          []string
 	yearsCache          = make(map[string][]string)
@@ -38,11 +39,6 @@ var (
 	allEngineSizesCache []string
 	yearRangeCache      []string
 )
-
-// InitDB sets the database connection for the vehicle package
-func InitDB(database *sql.DB) {
-	db = database
-}
 
 func GetMakes() []string {
 	if makesCache != nil {
@@ -445,8 +441,4 @@ func GetParentCompanyInfoForMake(makeName string) (*ParentCompanyInfo, error) {
 		return &pcInfo, nil
 	}
 	return nil, nil
-}
-
-func GetDB() *sql.DB {
-	return db
 }

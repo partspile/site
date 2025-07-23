@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/parts-pile/site/db"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -44,11 +45,11 @@ func TestUser_IsArchived(t *testing.T) {
 }
 
 func TestCreateUser(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	mock.ExpectExec("INSERT INTO User").
 		WithArgs("testuser", "1234567890", "hashedpassword").
@@ -62,11 +63,11 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestGetUserByID(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	// Test active user
 	mock.ExpectQuery("SELECT.*FROM User WHERE id = ?").
@@ -84,11 +85,11 @@ func TestGetUserByID(t *testing.T) {
 }
 
 func TestGetUserByPhone(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	expectedTime := time.Now()
 	mock.ExpectQuery("SELECT.*FROM User WHERE phone = ?").
@@ -107,11 +108,11 @@ func TestGetUserByPhone(t *testing.T) {
 }
 
 func TestGetUser(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	expectedTime := time.Now()
 	mock.ExpectQuery("SELECT.*FROM User WHERE id = ?").
@@ -129,11 +130,11 @@ func TestGetUser(t *testing.T) {
 }
 
 func TestGetUserByName(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	expectedTime := time.Now()
 	mock.ExpectQuery("SELECT.*FROM User WHERE name = ?").
@@ -150,11 +151,11 @@ func TestGetUserByName(t *testing.T) {
 }
 
 func TestUpdateUserPassword(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	mock.ExpectExec("UPDATE User SET password_hash = \\? WHERE id = \\?").
 		WithArgs("newhashedpassword", 1).
@@ -168,11 +169,11 @@ func TestUpdateUserPassword(t *testing.T) {
 }
 
 func TestArchiveUser(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	// Mock the transaction
 	mock.ExpectBegin()
@@ -227,11 +228,11 @@ func TestArchiveUser(t *testing.T) {
 }
 
 func TestGetAllUsers(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	expectedTime := time.Now()
 	mock.ExpectQuery("SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM User").
@@ -252,11 +253,11 @@ func TestGetAllUsers(t *testing.T) {
 }
 
 func TestSetAdmin(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	mock.ExpectExec("UPDATE User SET is_admin = \\? WHERE id = \\?").
 		WithArgs(1, 1).

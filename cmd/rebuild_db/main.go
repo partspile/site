@@ -14,6 +14,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/vehicle"
 	"golang.org/x/crypto/bcrypt"
@@ -48,18 +49,17 @@ func main() {
 		log.Fatalf("Failed to create DB from schema.sql: %v", err)
 	}
 
-	// Open DB
-	db, err := sql.Open("sqlite3", dbFile)
+	// Initialize database
+	if err := db.Init(dbFile); err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+
+	// Open DB for direct access
+	database, err := sql.Open("sqlite3", dbFile)
 	if err != nil {
 		log.Fatalf("Failed to open DB: %v", err)
 	}
-	defer db.Close()
-
-	// Initialize packages that need the DB
-	if err := ad.InitDB(dbFile); err != nil {
-		log.Fatalf("Failed to initialize ad package: %v", err)
-	}
-	vehicle.InitDB(ad.DB)
+	defer database.Close()
 
 	// Import parent.json
 	parentData, err := ioutil.ReadFile(parentFile)
@@ -75,7 +75,7 @@ func main() {
 		log.Fatalf("Failed to parse parent.json: %v", err)
 	}
 	for _, pc := range parentCompanies {
-		_, err := db.Exec(`INSERT INTO ParentCompany (name, country) VALUES (?, ?)`, pc.Name, pc.Country)
+		_, err := database.Exec(`INSERT INTO ParentCompany (name, country) VALUES (?, ?)`, pc.Name, pc.Country)
 		if err != nil {
 			log.Printf("Failed to insert ParentCompany %s: %v", pc.Name, err)
 		} else {
@@ -99,7 +99,7 @@ func main() {
 
 	// Create a map of parent company names to IDs for efficient lookup
 	parentCompanyMap := make(map[string]int)
-	rows, err := db.Query(`SELECT id, name FROM ParentCompany`)
+	rows, err := database.Query(`SELECT id, name FROM ParentCompany`)
 	if err != nil {
 		log.Fatalf("Failed to query ParentCompany: %v", err)
 	}
@@ -142,21 +142,21 @@ func main() {
 		// Insert make with parent company relationship
 		var makeID int
 		if parentCompanyID != nil {
-			makeID = getOrInsertWithParent(db, "Make", "name", make, *parentCompanyID)
+			makeID = getOrInsertWithParent(database, "Make", "name", make, *parentCompanyID)
 		} else {
-			makeID = getOrInsert(db, "Make", "name", make)
+			makeID = getOrInsert(database, "Make", "name", make)
 		}
 		for year, models := range years {
-			yearID := getOrInsert(db, "Year", "year", year)
+			yearID := getOrInsert(database, "Year", "year", year)
 			for model, engines := range models {
-				modelID := getOrInsert(db, "Model", "name", model)
+				modelID := getOrInsert(database, "Model", "name", model)
 				for _, engine := range engines {
-					engineID := getOrInsert(db, "Engine", "name", engine)
+					engineID := getOrInsert(database, "Engine", "name", engine)
 					// Insert Car if not exists
 					var carID int
-					err := db.QueryRow(`SELECT id FROM Car WHERE make_id=? AND year_id=? AND model_id=? AND engine_id=?`, makeID, yearID, modelID, engineID).Scan(&carID)
+					err := database.QueryRow(`SELECT id FROM Car WHERE make_id=? AND year_id=? AND model_id=? AND engine_id=?`, makeID, yearID, modelID, engineID).Scan(&carID)
 					if err == sql.ErrNoRows {
-						res, err := db.Exec(`INSERT INTO Car (make_id, year_id, model_id, engine_id) VALUES (?, ?, ?, ?)`, makeID, yearID, modelID, engineID)
+						res, err := database.Exec(`INSERT INTO Car (make_id, year_id, model_id, engine_id) VALUES (?, ?, ?, ?)`, makeID, yearID, modelID, engineID)
 						if err != nil {
 							log.Printf("Failed to insert Car: %v", err)
 							continue
@@ -184,13 +184,13 @@ func main() {
 		log.Fatalf("Failed to parse part.json: %v", err)
 	}
 	for cat, subcats := range partMap {
-		catID := getOrInsert(db, "PartCategory", "name", cat)
+		catID := getOrInsert(database, "PartCategory", "name", cat)
 		for _, subcat := range subcats {
 			// Insert subcategory if not exists
 			var subcatID int
-			err := db.QueryRow(`SELECT id FROM PartSubCategory WHERE category_id=? AND name=?`, catID, subcat).Scan(&subcatID)
+			err := database.QueryRow(`SELECT id FROM PartSubCategory WHERE category_id=? AND name=?`, catID, subcat).Scan(&subcatID)
 			if err == sql.ErrNoRows {
-				_, err := db.Exec(`INSERT INTO PartSubCategory (category_id, name) VALUES (?, ?)`, catID, subcat)
+				_, err := database.Exec(`INSERT INTO PartSubCategory (category_id, name) VALUES (?, ?)`, catID, subcat)
 				if err != nil {
 					log.Printf("Failed to insert PartSubCategory: %v", err)
 				}
@@ -221,7 +221,7 @@ func main() {
 			log.Printf("Failed to hash password for user %s: %v", u.Name, err)
 			continue
 		}
-		_, err = db.Exec(`INSERT INTO User (name, phone, password_hash) VALUES (?, ?, ?)`, u.Name, u.Phone, string(hash))
+		_, err = database.Exec(`INSERT INTO User (name, phone, password_hash) VALUES (?, ?, ?)`, u.Name, u.Phone, string(hash))
 		if err != nil {
 			log.Printf("Failed to insert user %s: %v", u.Name, err)
 		} else {
@@ -270,7 +270,7 @@ func main() {
 	var makeRows, yearRows, modelRows, engineRows, userRows, categoryRows, subcategoryRows *sql.Rows
 
 	// Populate maps
-	makeRows, err = db.Query(`SELECT id, name FROM Make`)
+	makeRows, err = database.Query(`SELECT id, name FROM Make`)
 	if err != nil {
 		log.Fatalf("Failed to query Make: %v", err)
 	}
@@ -284,7 +284,7 @@ func main() {
 		makeMap[name] = id
 	}
 
-	yearRows, err = db.Query(`SELECT id, year FROM Year`)
+	yearRows, err = database.Query(`SELECT id, year FROM Year`)
 	if err != nil {
 		log.Fatalf("Failed to query Year: %v", err)
 	}
@@ -298,7 +298,7 @@ func main() {
 		yearMap[year] = id
 	}
 
-	modelRows, err = db.Query(`SELECT id, name FROM Model`)
+	modelRows, err = database.Query(`SELECT id, name FROM Model`)
 	if err != nil {
 		log.Fatalf("Failed to query Model: %v", err)
 	}
@@ -312,7 +312,7 @@ func main() {
 		modelMap[name] = id
 	}
 
-	engineRows, err = db.Query(`SELECT id, name FROM Engine`)
+	engineRows, err = database.Query(`SELECT id, name FROM Engine`)
 	if err != nil {
 		log.Fatalf("Failed to query Engine: %v", err)
 	}
@@ -326,7 +326,7 @@ func main() {
 		engineMap[name] = id
 	}
 
-	userRows, err = db.Query(`SELECT id FROM User`)
+	userRows, err = database.Query(`SELECT id FROM User`)
 	if err != nil {
 		log.Fatalf("Failed to query User: %v", err)
 	}
@@ -339,7 +339,7 @@ func main() {
 		userMap[id] = id
 	}
 
-	categoryRows, err = db.Query(`SELECT id, name FROM PartCategory`)
+	categoryRows, err = database.Query(`SELECT id, name FROM PartCategory`)
 	if err != nil {
 		log.Fatalf("Failed to query PartCategory: %v", err)
 	}
@@ -353,7 +353,7 @@ func main() {
 		categoryMap[name] = id
 	}
 
-	subcategoryRows, err = db.Query(`SELECT id, name FROM PartSubCategory`)
+	subcategoryRows, err = database.Query(`SELECT id, name FROM PartSubCategory`)
 	if err != nil {
 		log.Fatalf("Failed to query PartSubCategory: %v", err)
 	}
@@ -372,9 +372,9 @@ func main() {
 		// Insert or get location
 		locationKey := fmt.Sprintf("%s, %s, %s", ad.Location.City, ad.Location.AdminArea, ad.Location.Country)
 		var locationID int
-		err := db.QueryRow(`SELECT id FROM Location WHERE raw_text=?`, locationKey).Scan(&locationID)
+		err := database.QueryRow(`SELECT id FROM Location WHERE raw_text=?`, locationKey).Scan(&locationID)
 		if err == sql.ErrNoRows {
-			res, err := db.Exec(`INSERT INTO Location (raw_text, city, admin_area, country) VALUES (?, ?, ?, ?)`,
+			res, err := database.Exec(`INSERT INTO Location (raw_text, city, admin_area, country) VALUES (?, ?, ?, ?)`,
 				locationKey, ad.Location.City, ad.Location.AdminArea, ad.Location.Country)
 			if err != nil {
 				log.Printf("Failed to insert Location: %v", err)
@@ -410,7 +410,7 @@ func main() {
 		}
 
 		// Insert ad with image_order
-		res, err := db.Exec(`INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		res, err := database.Exec(`INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 			ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryID, ad.UserID, locationID, string(imageOrderJSON))
 		if err != nil {
 			log.Printf("Failed to insert Ad: %v", err)
@@ -434,7 +434,7 @@ func main() {
 					modelID := modelMap[model]
 					engineID := engineMap[engine]
 
-					err := db.QueryRow(`SELECT id FROM Car WHERE make_id=? AND year_id=? AND model_id=? AND engine_id=?`,
+					err := database.QueryRow(`SELECT id FROM Car WHERE make_id=? AND year_id=? AND model_id=? AND engine_id=?`,
 						makeID, yearID, modelID, engineID).Scan(&carID)
 					if err == sql.ErrNoRows {
 						// Car doesn't exist, skip this combination
@@ -445,7 +445,7 @@ func main() {
 					}
 
 					// Insert AdCar relationship
-					_, err = db.Exec(`INSERT INTO AdCar (ad_id, car_id) VALUES (?, ?)`, adID, carID)
+					_, err = database.Exec(`INSERT INTO AdCar (ad_id, car_id) VALUES (?, ?)`, adID, carID)
 					if err != nil {
 						log.Printf("Failed to insert AdCar: %v", err)
 					}

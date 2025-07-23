@@ -25,6 +25,7 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -75,7 +76,6 @@ Example input: "97333" -> {"city": "Corvallis", "admin_area": "OR",
 		return 0, err
 	}
 	// Upsert into Location table
-	db := ad.DB
 	var id int
 	err = db.QueryRow("SELECT id FROM Location WHERE raw_text = ?", raw).Scan(&id)
 	if err == sql.ErrNoRows {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
@@ -264,7 +265,6 @@ func HandleAdminMakeParentCompanies(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	db := vehicle.GetDB()
 	rows, err := db.Query(`
 		SELECT Make.name, ParentCompany.name
 		FROM Make

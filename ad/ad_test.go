@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/parts-pile/site/db"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -119,12 +120,11 @@ func TestAd_IsArchived(t *testing.T) {
 }
 
 func TestGetAdByID(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	// Set the global db variable for testing
-	SetDBForTesting(db)
+	db.SetForTesting(mockDB)
 	mock.ExpectQuery("SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id, a.user_id, psc.name as subcategory, a.click_count, a.last_clicked_at, a.location_id, a.image_order, l.city, l.admin_area, l.country FROM Ad a LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id LEFT JOIN Location l ON a.location_id = l.id WHERE a.id = \\?").
 		WithArgs(1).
 		WillReturnRows(sqlmock.NewRows([]string{
@@ -143,12 +143,12 @@ func TestGetAdByID(t *testing.T) {
 }
 
 func TestGetAd(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
 	// Set the global db variable for testing
-	SetDBForTesting(db)
+	db.SetForTesting(mockDB)
 
 	mock.ExpectQuery("SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id, a.user_id, psc.name as subcategory, a.click_count, a.last_clicked_at, a.location_id, a.image_order, l.city, l.admin_area, l.country FROM Ad a LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id LEFT JOIN Location l ON a.location_id = l.id WHERE a.id = \\?").
 		WithArgs(1).
@@ -173,12 +173,12 @@ func TestAddAd(t *testing.T) {
 }
 
 func TestGetNextAdID(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
 	// Set the global db variable for testing
-	SetDBForTesting(db)
+	db.SetForTesting(mockDB)
 
 	mock.ExpectQuery("SELECT seq FROM sqlite_sequence WHERE name='Ad'").
 		WillReturnRows(sqlmock.NewRows([]string{"seq"}).AddRow(100))
@@ -202,12 +202,12 @@ func TestGetAllAds(t *testing.T) {
 }
 
 func TestBookmarkAd(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
 	// Set the global db variable for testing
-	SetDBForTesting(db)
+	db.SetForTesting(mockDB)
 
 	mock.ExpectExec("INSERT OR IGNORE INTO BookmarkedAd \\(user_id, ad_id\\) VALUES \\(\\?, \\?\\)").
 		WithArgs(1, 1).
@@ -220,12 +220,12 @@ func TestBookmarkAd(t *testing.T) {
 }
 
 func TestUnbookmarkAd(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
 	// Set the global db variable for testing
-	SetDBForTesting(db)
+	db.SetForTesting(mockDB)
 
 	mock.ExpectExec("DELETE FROM BookmarkedAd WHERE user_id = \\? AND ad_id = \\?").
 		WithArgs(1, 1).
@@ -238,12 +238,12 @@ func TestUnbookmarkAd(t *testing.T) {
 }
 
 func TestIsAdBookmarkedByUser(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
 	// Set the global db variable for testing
-	SetDBForTesting(db)
+	db.SetForTesting(mockDB)
 
 	mock.ExpectQuery("SELECT 1 FROM BookmarkedAd WHERE user_id = \\? AND ad_id = \\?").
 		WithArgs(1, 1).
@@ -257,12 +257,12 @@ func TestIsAdBookmarkedByUser(t *testing.T) {
 }
 
 func TestIncrementAdClick(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
 	// Set the global db variable for testing
-	SetDBForTesting(db)
+	db.SetForTesting(mockDB)
 
 	mock.ExpectExec("UPDATE Ad SET click_count = click_count \\+ 1, last_clicked_at = \\? WHERE id = \\?").
 		WithArgs(sqlmock.AnyArg(), 1).
@@ -275,12 +275,12 @@ func TestIncrementAdClick(t *testing.T) {
 }
 
 func TestGetAdClickCount(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
 	// Set the global db variable for testing
-	SetDBForTesting(db)
+	db.SetForTesting(mockDB)
 
 	mock.ExpectQuery("SELECT click_count FROM Ad WHERE id = \\?").
 		WithArgs(1).

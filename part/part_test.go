@@ -4,16 +4,17 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/parts-pile/site/db"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGetAllCategories(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	expectedCategories := []Category{
 		{ID: 1, Name: "Engine"},
@@ -40,11 +41,11 @@ func TestGetAllCategories(t *testing.T) {
 }
 
 func TestGetAllSubCategories(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	expectedSubCategories := []SubCategory{
 		{ID: 1, CategoryID: 1, Name: "Engine Block"},
@@ -72,11 +73,11 @@ func TestGetAllSubCategories(t *testing.T) {
 }
 
 func TestGetMakes_WithQuery(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	query := "engine"
 	expectedMakes := []string{"BMW", "Mercedes", "Toyota"}
@@ -101,11 +102,11 @@ func TestGetMakes_WithQuery(t *testing.T) {
 }
 
 func TestGetMakes_WithoutQuery(t *testing.T) {
-	db, mock, err := sqlmock.New()
+	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
-	defer db.Close()
+	defer mockDB.Close()
 
-	InitDB(db)
+	db.SetForTesting(mockDB)
 
 	expectedMakes := []string{"BMW", "Mercedes", "Toyota"}
 

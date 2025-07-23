@@ -10,38 +10,18 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/session"
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/handlers"
-	"github.com/parts-pile/site/part"
-	"github.com/parts-pile/site/search"
 	"github.com/parts-pile/site/ui"
-	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vector"
-	"github.com/parts-pile/site/vehicle"
 )
 
 func main() {
-	// Initialize ads/project database
-	if err := ad.InitDB(config.DatabaseURL); err != nil {
-		log.Fatalf("error initializing project database: %v", err)
+	// Initialize database
+	if err := db.Init(config.DatabaseURL); err != nil {
+		log.Fatalf("error initializing database: %v", err)
 	}
-
-	// Initialize vector package with the same DB (for user embeddings)
-	vector.InitDB(ad.DB)
-
-	// Initialize vehicle package with the same DB
-	// (ensures vehicle uses project.db)
-	vehicle.InitDB(ad.DB)
-
-	// Initialize part package with the same DB
-	part.InitDB(ad.DB)
-
-	// Initialize user package with the same DB
-	user.InitDB(ad.DB)
-
-	// Initialize search package with the same DB
-	search.InitDB(ad.DB)
 
 	// Initialize Gemini client
 	if err := vector.InitGeminiClient(""); err != nil {

@@ -8,14 +8,8 @@ import (
 	"strings"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/db"
 )
-
-var db *sql.DB
-
-// InitDB sets the database connection for the part package
-func InitDB(database *sql.DB) {
-	db = database
-}
 
 type Category struct {
 	ID   int
