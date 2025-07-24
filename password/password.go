@@ -15,11 +15,20 @@ const (
 	KeyLen  = 32
 )
 
+// generateSaltBytes generates a random 16-byte salt
+func generateSaltBytes() ([]byte, error) {
+	saltBytes := make([]byte, 16)
+	if _, err := rand.Read(saltBytes); err != nil {
+		return nil, err
+	}
+	return saltBytes, nil
+}
+
 // HashPassword hashes a password with a new random salt using Argon2id
 func HashPassword(password string) (hash, salt string, err error) {
 	// Generate a random salt
-	saltBytes := make([]byte, 16)
-	if _, err := rand.Read(saltBytes); err != nil {
+	saltBytes, err := generateSaltBytes()
+	if err != nil {
 		return "", "", err
 	}
 
@@ -50,8 +59,8 @@ func VerifyPassword(password, hash, salt string) bool {
 
 // GenerateSalt generates a new random salt
 func GenerateSalt() (string, error) {
-	saltBytes := make([]byte, 16)
-	if _, err := rand.Read(saltBytes); err != nil {
+	saltBytes, err := generateSaltBytes()
+	if err != nil {
 		return "", err
 	}
 	return base64.RawStdEncoding.EncodeToString(saltBytes), nil

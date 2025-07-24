@@ -165,6 +165,20 @@ func HandleRegisterSubmission(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, err.Error())
 	}
 
+	// Validate password strength
+	if err := password.ValidatePasswordStrength(userPassword); err != nil {
+		return ValidationErrorResponse(c, err.Error())
+	}
+
+	// Check for existing username and phone before GROK screening
+	if _, err := user.GetUserByName(name); err == nil {
+		return ValidationErrorResponse(c, "Username already exists. Please choose a different username.")
+	}
+
+	if _, err := user.GetUserByPhone(phone); err == nil {
+		return ValidationErrorResponse(c, "Phone number is already registered. Please use a different phone number.")
+	}
+
 	// GROK username screening
 	systemPrompt := `You are an expert parts technician. Your job is to screen potential user names for the parts-pile web site.
 Reject user names that the general public would find offensive.
@@ -195,8 +209,10 @@ Only reject names that are truly offensive to a general audience.`
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Server error, unable to create your account.")
 	}
-	if _, err := user.CreateUser(name, phone, hash, salt, "argon2id"); err != nil {
-		return ValidationErrorResponse(c, "User already exists or another error occurred.")
+	_, err = user.CreateUser(name, phone, hash, salt, "argon2id")
+	if err != nil {
+		// This should rarely happen since we checked above, but handle any other database errors
+		return ValidationErrorResponse(c, "Unable to create account. Please try again.")
 	}
 
 	return render(c, ui.SuccessMessage("Registration successful", "/login"))
@@ -214,6 +230,11 @@ func HandleChangePassword(c *fiber.Ctx) error {
 
 	if err := password.ValidatePasswordConfirmation(newPassword, confirmNewPassword); err != nil {
 		return ValidationErrorResponse(c, "New passwords do not match")
+	}
+
+	// Validate new password strength
+	if err := password.ValidatePasswordStrength(newPassword); err != nil {
+		return ValidationErrorResponse(c, err.Error())
 	}
 
 	currentUser := c.Locals("user").(*user.User)

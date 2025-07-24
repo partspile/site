@@ -123,6 +123,13 @@ func TestValidatePasswordStrength(t *testing.T) {
 		t.Error("Short password should error")
 	}
 
+	// Test very short password "foo"
+	if err := ValidatePasswordStrength("foo"); err == nil {
+		t.Error("Password 'foo' should be rejected (too short, no numbers)")
+	} else {
+		t.Logf("Password 'foo' correctly rejected: %v", err)
+	}
+
 	// Test password without letters
 	if err := ValidatePasswordStrength("12345678"); err == nil {
 		t.Error("Password without letters should error")
