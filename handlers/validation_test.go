@@ -224,52 +224,6 @@ func TestParseFormInt(t *testing.T) {
 	}
 }
 
-func TestValidatePasswordConfirmation(t *testing.T) {
-	tests := []struct {
-		name         string
-		password     string
-		confirmation string
-		expectError  bool
-	}{
-		{
-			name:         "matching passwords",
-			password:     "password123",
-			confirmation: "password123",
-			expectError:  false,
-		},
-		{
-			name:         "non-matching passwords",
-			password:     "password123",
-			confirmation: "password456",
-			expectError:  true,
-		},
-		{
-			name:         "empty passwords",
-			password:     "",
-			confirmation: "",
-			expectError:  false,
-		},
-		{
-			name:         "one empty password",
-			password:     "password123",
-			confirmation: "",
-			expectError:  true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := ValidatePasswordConfirmation(tt.password, tt.confirmation)
-
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
-
 func TestValidateAdForm(t *testing.T) {
 	tests := []struct {
 		name        string

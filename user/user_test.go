@@ -72,8 +72,8 @@ func TestGetUserByID(t *testing.T) {
 	// Test active user
 	mock.ExpectQuery("SELECT.*FROM User WHERE id = ?").
 		WithArgs(1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "token_balance", "password_hash", "created_at", "is_admin"}).
-			AddRow(1, "testuser", "1234567890", 0.0, "hashedpassword", time.Now().Format(time.RFC3339Nano), 0))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "token_balance", "password_hash", "password_salt", "password_algo", "created_at", "is_admin"}).
+			AddRow(1, "testuser", "1234567890", 0.0, "hashedpassword", "salt", "argon2id", time.Now().Format(time.RFC3339Nano), 0))
 
 	user, status, found := GetUserByID(1)
 
@@ -117,8 +117,8 @@ func TestGetUser(t *testing.T) {
 	expectedTime := time.Now()
 	mock.ExpectQuery("SELECT.*FROM User WHERE id = ?").
 		WithArgs(1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "token_balance", "password_hash", "created_at", "is_admin"}).
-			AddRow(1, "testuser", "1234567890", 0.0, "hashedpassword", expectedTime.Format(time.RFC3339Nano), 1))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "token_balance", "password_hash", "password_salt", "password_algo", "created_at", "is_admin"}).
+			AddRow(1, "testuser", "1234567890", 0.0, "hashedpassword", "salt", "argon2id", expectedTime.Format(time.RFC3339Nano), 1))
 
 	user, err := GetUser(1)
 
@@ -139,8 +139,8 @@ func TestGetUserByName(t *testing.T) {
 	expectedTime := time.Now()
 	mock.ExpectQuery("SELECT.*FROM User WHERE name = ?").
 		WithArgs("testuser").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "token_balance", "password_hash", "created_at", "is_admin"}).
-			AddRow(1, "testuser", "1234567890", 0.0, "hashedpassword", expectedTime.Format(time.RFC3339Nano), 0))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "token_balance", "password_hash", "password_salt", "password_algo", "created_at", "is_admin"}).
+			AddRow(1, "testuser", "1234567890", 0.0, "hashedpassword", "salt", "argon2id", expectedTime.Format(time.RFC3339Nano), 0))
 
 	user, err := GetUserByName("testuser")
 
