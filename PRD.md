@@ -137,7 +137,7 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 
 - **Security:**
   - Passwords are never stored in plain text.
-  - Passwords are hashed using bcrypt before being stored in the database.
+  - Passwords are hashed using Argon2id with a unique salt before being stored in the database.
   - Session management is handled via an HTTP-only cookie that stores the user's `user_id` upon successful login. This cookie is used to authenticate the user for subsequent requests.
   - Phone numbers are not displayed publicly.
   - Session cookies are HTTP-only to prevent access from client-side scripts.

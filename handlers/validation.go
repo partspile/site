@@ -3,14 +3,12 @@ package handlers
 import (
 	"fmt"
 	"mime/multipart"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/ui"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // ValidateRequired validates that a required form field is not empty
@@ -47,19 +45,6 @@ func ParseFormInt(c *fiber.Ctx, fieldName string) (int, error) {
 		return 0, fiber.NewError(fiber.StatusBadRequest, "Invalid integer value for field: "+fieldName)
 	}
 	return value, nil
-}
-
-// ValidatePasswordConfirmation validates that password and confirmation match
-func ValidatePasswordConfirmation(password, confirmation string) error {
-	if password != confirmation {
-		return fmt.Errorf("Passwords do not match")
-	}
-	return nil
-}
-
-// VerifyPassword verifies a password against a bcrypt hash
-func VerifyPassword(hashedPassword, password string) error {
-	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
 // ValidationErrorResponse returns a validation error response
@@ -107,27 +92,26 @@ func ValidateAdFormAndReturn(form *multipart.Form) (years, models, engines []str
 	return years, models, engines, nil
 }
 
-// ValidateAndParsePrice validates the price field and returns the parsed float64 value or an error
+// ValidateAndParsePrice validates and parses a price field
 func ValidateAndParsePrice(c *fiber.Ctx) (float64, error) {
-	priceStr, err := ValidateRequired(c, "price", "Price")
-	if err != nil {
-		return 0, err
+	priceStr := c.FormValue("price")
+	if priceStr == "" {
+		return 0, fmt.Errorf("Price is required")
 	}
+
 	price, err := strconv.ParseFloat(priceStr, 64)
 	if err != nil {
-		return 0, fmt.Errorf("Price must be a valid number")
+		return 0, fmt.Errorf("Invalid price format")
 	}
+
 	if price < 0 {
 		return 0, fmt.Errorf("Price cannot be negative")
 	}
-	if !regexp.MustCompile(`^\d+(\.\d{1,2})?$`).MatchString(priceStr) {
-		return 0, fmt.Errorf("Price must have at most two decimal places")
-	}
+
 	return price, nil
 }
 
-// BuildAdFromForm validates and constructs an ad.Ad from the form data
-// Now expects locationID to be passed in (resolved by handler)
+// BuildAdFromForm builds an Ad struct from form data
 func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.Ad, []*multipart.FileHeader, []int, error) {
 	title, err := ValidateRequired(c, "title", "Title")
 	if err != nil {

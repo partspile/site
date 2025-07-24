@@ -26,6 +26,8 @@ type User struct {
 	Phone        string
 	TokenBalance float64
 	PasswordHash string
+	PasswordSalt string
+	PasswordAlgo string
 	CreatedAt    time.Time
 	IsAdmin      bool
 	DeletedAt    *time.Time `json:"deleted_at,omitempty"`
@@ -37,8 +39,8 @@ func (u User) IsArchived() bool {
 }
 
 // CreateUser inserts a new user into the database
-func CreateUser(name, phone, passwordHash string) (int, error) {
-	res, err := db.Exec(`INSERT INTO User (name, phone, password_hash) VALUES (?, ?, ?)`, name, phone, passwordHash)
+func CreateUser(name, phone, passwordHash, passwordSalt, passwordAlgo string) (int, error) {
+	res, err := db.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo) VALUES (?, ?, ?, ?, ?)`, name, phone, passwordHash, passwordSalt, passwordAlgo)
 	if err != nil {
 		return 0, err
 	}
@@ -81,11 +83,11 @@ func GetUserByPhone(phone string) (User, error) {
 
 // GetUser retrieves a user by ID (active users only)
 func GetUser(id int) (User, error) {
-	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM User WHERE id = ?`, id)
+	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, created_at, is_admin FROM User WHERE id = ?`, id)
 	var u User
 	var createdAt string
 	var isAdmin int
-	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin)
+	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &createdAt, &isAdmin)
 	if err != nil {
 		return User{}, err
 	}
@@ -119,11 +121,11 @@ func GetArchivedUser(id int) (User, bool) {
 
 // GetUserByName retrieves a user by name (username)
 func GetUserByName(name string) (User, error) {
-	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM User WHERE name = ?`, name)
+	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, created_at, is_admin FROM User WHERE name = ?`, name)
 	var u User
 	var createdAt string
 	var isAdmin int
-	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin)
+	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &createdAt, &isAdmin)
 	if err != nil {
 		return User{}, err
 	}
@@ -132,9 +134,9 @@ func GetUserByName(name string) (User, error) {
 	return u, nil
 }
 
-// UpdateUserPassword updates a user's password hash
-func UpdateUserPassword(userID int, newHash string) (int, error) {
-	res, err := db.Exec(`UPDATE User SET password_hash = ? WHERE id = ?`, newHash, userID)
+// UpdateUserPassword updates a user's password hash, salt, and algo
+func UpdateUserPassword(userID int, newHash, newSalt, newAlgo string) (int, error) {
+	res, err := db.Exec(`UPDATE User SET password_hash = ?, password_salt = ?, password_algo = ? WHERE id = ?`, newHash, newSalt, newAlgo, userID)
 	if err != nil {
 		return 0, err
 	}

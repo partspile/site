@@ -83,6 +83,8 @@ CREATE TABLE User (
     phone TEXT NOT NULL UNIQUE,
     token_balance REAL NOT NULL DEFAULT 0.0,
     password_hash TEXT NOT NULL,
+    password_salt TEXT NOT NULL,
+    password_algo TEXT NOT NULL DEFAULT 'argon2id',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_admin INTEGER NOT NULL DEFAULT 0
 );
@@ -93,6 +95,8 @@ CREATE TABLE ArchivedUser (
     phone TEXT NOT NULL,
     token_balance REAL NOT NULL,
     password_hash TEXT NOT NULL,
+    password_salt TEXT NOT NULL,
+    password_algo TEXT NOT NULL DEFAULT 'argon2id',
     created_at DATETIME,
     deletion_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_admin INTEGER NOT NULL DEFAULT 0

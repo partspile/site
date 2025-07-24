@@ -52,10 +52,10 @@ func TestCreateUser(t *testing.T) {
 	db.SetForTesting(mockDB)
 
 	mock.ExpectExec("INSERT INTO User").
-		WithArgs("testuser", "1234567890", "hashedpassword").
+		WithArgs("testuser", "1234567890", "hashedpassword", "somesalt", "argon2id").
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	userID, err := CreateUser("testuser", "1234567890", "hashedpassword")
+	userID, err := CreateUser("testuser", "1234567890", "hashedpassword", "somesalt", "argon2id")
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, userID)
@@ -157,11 +157,11 @@ func TestUpdateUserPassword(t *testing.T) {
 
 	db.SetForTesting(mockDB)
 
-	mock.ExpectExec("UPDATE User SET password_hash = \\? WHERE id = \\?").
-		WithArgs("newhashedpassword", 1).
+	mock.ExpectExec("UPDATE User SET password_hash = \\?, password_salt = \\?, password_algo = \\? WHERE id = \\?").
+		WithArgs("newhashedpassword", "newsalt", "argon2id", 1).
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
-	rowsAffected, err := UpdateUserPassword(1, "newhashedpassword")
+	rowsAffected, err := UpdateUserPassword(1, "newhashedpassword", "newsalt", "argon2id")
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, rowsAffected)

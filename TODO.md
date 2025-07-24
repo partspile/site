@@ -29,8 +29,8 @@
 - [x] Cleaned up orphaned parent company entries (reduced from 134 to 34 entries)
 
 ## 5. User Management
-- [x] User registration, login, logout
-- [x] User authentication for ad creation/edit/delete
+- [x] User registration, login, logout (Argon2id password hashing with unique salt)
+- [x] User authentication for ad creation/edit/delete (Argon2id only)
 - [x] User settings page (change password, delete account)
 
 ## 6. Token Economy (Partial)

@@ -9,15 +9,16 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/vehicle"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type MakeYearModel map[string]map[string]map[string][]string
@@ -34,11 +35,18 @@ func main() {
 	dbFile := config.DatabaseURL
 	schemaFile := "schema.sql"
 
+	dbFileOnDisk := dbFile
+	if strings.HasPrefix(dbFileOnDisk, "file:") {
+		dbFileOnDisk = strings.TrimPrefix(dbFileOnDisk, "file:")
+	}
 	// Remove old DB if exists
-	if _, err := os.Stat(dbFile); err == nil {
-		if err := os.Remove(dbFile); err != nil {
+	if _, err := os.Stat(dbFileOnDisk); err == nil {
+		log.Printf("Removing existing database file: %s", dbFileOnDisk)
+		if err := os.Remove(dbFileOnDisk); err != nil {
 			log.Fatalf("Failed to remove old DB: %v", err)
 		}
+	} else {
+		log.Printf("No existing database file to remove: %s", dbFileOnDisk)
 	}
 
 	// Create new DB from schema.sql
@@ -216,12 +224,12 @@ func main() {
 		log.Fatalf("Failed to parse user.json: %v", err)
 	}
 	for _, u := range users {
-		hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+		hash, salt, err := password.HashPassword(u.Password)
 		if err != nil {
 			log.Printf("Failed to hash password for user %s: %v", u.Name, err)
 			continue
 		}
-		_, err = database.Exec(`INSERT INTO User (name, phone, password_hash) VALUES (?, ?, ?)`, u.Name, u.Phone, string(hash))
+		_, err = database.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo) VALUES (?, ?, ?, ?, ?)`, u.Name, u.Phone, hash, salt, "argon2id")
 		if err != nil {
 			log.Printf("Failed to insert user %s: %v", u.Name, err)
 		} else {

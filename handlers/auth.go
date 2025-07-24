@@ -9,14 +9,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/parts-pile/site/grok"
+	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func HandleLoginSubmission(c *fiber.Ctx) error {
 	name := c.FormValue("name")
-	password := c.FormValue("password")
+	userPassword := c.FormValue("password")
 
 	log.Printf("[AUTH] Login attempt: name=%s", name)
 
@@ -26,7 +26,7 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, "Invalid username or password")
 	}
 
-	if err := VerifyPassword(u.PasswordHash, password); err != nil {
+	if !password.VerifyPassword(userPassword, u.PasswordHash, u.PasswordSalt) {
 		log.Printf("[AUTH] Login failed: bad password for user=%s", name)
 		return ValidationErrorResponse(c, "Invalid username or password")
 	}
@@ -49,15 +49,19 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 	return render(c, ui.SuccessMessage("Login successful", "/"))
 }
 
-func HandleLogout(c *fiber.Ctx) error {
+// logoutUser destroys the user's session
+func logoutUser(c *fiber.Ctx) error {
 	store := c.Locals("session_store").(*session.Store)
 	sess, err := store.Get(c)
 	if err != nil {
-		// can't get session, maybe it's already gone. redirect anyway.
-		return c.Redirect("/", fiber.StatusSeeOther)
+		// Session might already be gone, that's okay
+		return nil
 	}
+	return sess.Destroy()
+}
 
-	if err := sess.Destroy(); err != nil {
+func HandleLogout(c *fiber.Ctx) error {
+	if err := logoutUser(c); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to log you out.")
 	}
 	return render(c, ui.SuccessMessage("You have been logged out", "/"))
@@ -154,10 +158,10 @@ func HandleRegisterSubmission(c *fiber.Ctx) error {
 			return ValidationErrorResponse(c, "US/Canada numbers must have 10 digits")
 		}
 	}
-	password := c.FormValue("password")
+	userPassword := c.FormValue("password")
 	password2 := c.FormValue("password2")
 
-	if err := ValidatePasswordConfirmation(password, password2); err != nil {
+	if err := password.ValidatePasswordConfirmation(userPassword, password2); err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
 
@@ -187,12 +191,11 @@ Only reject names that are truly offensive to a general audience.`
 		return ValidationErrorResponse(c, resp)
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hash, salt, err := password.HashPassword(userPassword)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Server error, unable to create your account.")
 	}
-
-	if _, err := user.CreateUser(name, phone, string(hashedPassword)); err != nil {
+	if _, err := user.CreateUser(name, phone, hash, salt, "argon2id"); err != nil {
 		return ValidationErrorResponse(c, "User already exists or another error occurred.")
 	}
 
@@ -205,40 +208,39 @@ func HandleLogin(c *fiber.Ctx) error {
 }
 
 func HandleChangePassword(c *fiber.Ctx) error {
-	currentPassword := c.FormValue("currentPassword")
+	currentUserPassword := c.FormValue("currentPassword")
 	newPassword := c.FormValue("newPassword")
 	confirmNewPassword := c.FormValue("confirmNewPassword")
 
-	if err := ValidatePasswordConfirmation(newPassword, confirmNewPassword); err != nil {
+	if err := password.ValidatePasswordConfirmation(newPassword, confirmNewPassword); err != nil {
 		return ValidationErrorResponse(c, "New passwords do not match")
 	}
 
 	currentUser := c.Locals("user").(*user.User)
-
-	if err := VerifyPassword(currentUser.PasswordHash, currentPassword); err != nil {
+	if !password.VerifyPassword(currentUserPassword, currentUser.PasswordHash, currentUser.PasswordSalt) {
 		return ValidationErrorResponse(c, "Invalid current password")
 	}
-
-	newHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	newHash, newSalt, err := password.HashPassword(newPassword)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Server error, unable to update password.")
 	}
-
-	if _, err := user.UpdateUserPassword(currentUser.ID, string(newHash)); err != nil {
+	if _, err := user.UpdateUserPassword(currentUser.ID, newHash, newSalt, "argon2id"); err != nil {
 		return ValidationErrorResponse(c, "Failed to update password")
 	}
-	return render(c, ui.SuccessMessage("Password changed successfully", ""))
+	// Log out the user after password change
+	logoutUser(c)
+	return render(c, ui.SuccessMessage("Password changed successfully. Please log in with your new password.", "/login"))
 }
 
 func HandleDeleteAccount(c *fiber.Ctx) error {
-	password := c.FormValue("password")
+	userPassword := c.FormValue("password")
 
 	currentUser := c.Locals("user").(*user.User)
 	if currentUser == nil {
 		return ValidationErrorResponseWithStatus(c, "You must be logged in to delete your account", fiber.StatusUnauthorized)
 	}
 
-	if err := VerifyPassword(currentUser.PasswordHash, password); err != nil {
+	if !password.VerifyPassword(userPassword, currentUser.PasswordHash, currentUser.PasswordSalt) {
 		return ValidationErrorResponseWithStatus(c, "Invalid password", fiber.StatusUnauthorized)
 	}
 
