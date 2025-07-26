@@ -13,12 +13,9 @@ import (
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/password"
-	"github.com/parts-pile/site/vector"
-	"github.com/parts-pile/site/vehicle"
 )
 
 type MakeYearModel map[string]map[string]map[string][]string
@@ -417,8 +414,8 @@ func main() {
 			continue
 		}
 
-		// Insert ad with image_order
-		res, err := database.Exec(`INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		// Insert ad with image_order and has_vector (initially 0)
+		res, err := database.Exec(`INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_order, has_vector) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
 			ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryID, ad.UserID, locationID, string(imageOrderJSON))
 		if err != nil {
 			log.Printf("Failed to insert Ad: %v", err)
@@ -465,49 +462,7 @@ func main() {
 	}
 
 	fmt.Println("Database rebuild and import complete.")
-
-	// Initialize vector embedding services
-	fmt.Println("Initializing vector embedding services...")
-	if err := vector.InitGeminiClient(""); err != nil {
-		log.Printf("Failed to init Gemini: %v", err)
-	} else {
-		if err := vector.InitPineconeClient("", ""); err != nil {
-			log.Printf("Failed to init Pinecone: %v", err)
-		} else {
-			// Generate embeddings for all ads
-			fmt.Println("Generating embeddings for all ads...")
-			ads, err := ad.GetAllAds()
-			if err != nil {
-				log.Printf("Failed to get ads for embedding: %v", err)
-			} else {
-				fmt.Printf("Found %d ads to generate embeddings for\n", len(ads))
-				failures := 0
-				for i, adObj := range ads {
-					prompt := buildAdEmbeddingPrompt(adObj)
-					log.Printf("[embedding] Generating embedding for ad %d", adObj.ID)
-					embedding, err := vector.EmbedText(prompt)
-					if err != nil {
-						log.Printf("[embedding] failed for ad %d: %v", adObj.ID, err)
-						failures++
-						continue
-					}
-					meta := buildAdEmbeddingMetadata(adObj)
-					err = vector.UpsertAdEmbedding(adObj.ID, embedding, meta)
-					if err != nil {
-						log.Printf("[pinecone] upsert failed for ad %d: %v", adObj.ID, err)
-						failures++
-						continue
-					}
-					if (i+1)%10 == 0 || i == len(ads)-1 {
-						fmt.Printf("%d/%d ads processed for embeddings\n", i+1, len(ads))
-					}
-					// Sleep to avoid rate limits
-					time.Sleep(100 * time.Millisecond)
-				}
-				fmt.Printf("Embedding generation complete. %d ads processed, %d failures.\n", len(ads), failures)
-			}
-		}
-	}
+	fmt.Println("Vector embeddings will be processed by the main application background processor.")
 }
 
 func getOrInsert(db *sql.DB, table, col, val string) int {
@@ -540,56 +495,4 @@ func getOrInsertWithParent(db *sql.DB, table, col, val string, parentID int) int
 		log.Fatalf("Failed to lookup %s: %v", table, err)
 	}
 	return id
-}
-
-// buildAdEmbeddingPrompt creates a prompt for generating embeddings
-func buildAdEmbeddingPrompt(adObj ad.Ad) string {
-	// Get parent company information for the make
-	var parentCompanyStr, parentCompanyCountry string
-	if adObj.Make != "" {
-		if pcInfo, err := vehicle.GetParentCompanyInfoForMake(adObj.Make); err == nil && pcInfo != nil {
-			parentCompanyStr = pcInfo.Name
-			parentCompanyCountry = pcInfo.Country
-		}
-	}
-
-	return fmt.Sprintf(`Encode the following ad for semantic search. Focus on what the part is, what vehicles it fits, and any relevant details for a buyer. Return only the embedding vector.\n\nTitle: %s\nDescription: %s\nMake: %s\nParent Company: %s\nParent Company Country: %s\nYears: %s\nModels: %s\nEngines: %s\nCategory: %s\nSubCategory: %s\nLocation: %s, %s, %s`,
-		adObj.Title,
-		adObj.Description,
-		adObj.Make,
-		parentCompanyStr,
-		parentCompanyCountry,
-		joinStrings(adObj.Years),
-		joinStrings(adObj.Models),
-		joinStrings(adObj.Engines),
-		adObj.Category,
-		adObj.SubCategory,
-		adObj.City,
-		adObj.AdminArea,
-		adObj.Country,
-	)
-}
-
-// buildAdEmbeddingMetadata creates metadata for embeddings
-func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
-	return map[string]interface{}{
-		"created_at":  adObj.CreatedAt.Format(time.RFC3339),
-		"click_count": adObj.ClickCount,
-	}
-}
-
-// Helper functions for embedding generation
-func interfaceSlice(ss []string) []interface{} {
-	out := make([]interface{}, len(ss))
-	for i, s := range ss {
-		out[i] = s
-	}
-	return out
-}
-
-func joinStrings(ss []string) string {
-	if len(ss) == 0 {
-		return ""
-	}
-	return fmt.Sprintf("%s", ss)
 }

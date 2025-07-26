@@ -116,6 +116,7 @@ CREATE TABLE Ad (
     location_id INTEGER REFERENCES Location(id),
     click_count INTEGER DEFAULT 0,
     last_clicked_at DATETIME,
+    has_vector INTEGER DEFAULT 0,
     FOREIGN KEY (subcategory_id) REFERENCES PartSubCategory(id),
     FOREIGN KEY (user_id) REFERENCES User(id)
 );

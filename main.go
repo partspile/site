@@ -36,6 +36,9 @@ func main() {
 	// Start background user embedding processor
 	vector.GetEmbeddingQueue().StartBackgroundProcessor()
 
+	// Start background vector processor for ads
+	vector.StartBackgroundVectorProcessor()
+
 	app := fiber.New(fiber.Config{
 		ErrorHandler: customErrorHandler,
 		BodyLimit:    20 * 1024 * 1024, // 20 MB

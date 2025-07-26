@@ -98,6 +98,19 @@
 - [x] Ad cards now only have a bookmark icon (always visible and clickable)
 - [x] Clicking anywhere else on the ad card navigates to the ad detail page
 
+## Vector Database Background Processing
+- [x] Moved vector database building from rebuild_db command to main app background process
+- [x] Added has_vector column to Ad table to track vector status in database
+- [x] Added GetAdsWithoutVectors() function to ad package (uses database field)
+- [x] Added MarkAdAsHavingVector() function to ad package
+- [x] Added BuildAdEmbedding() function to vector package
+- [x] Added StartBackgroundVectorProcessor() function that runs in background goroutine
+- [x] Background processor checks for ads without vectors every 5-15 minutes (adaptive)
+- [x] Processor builds embeddings for ads and stores them in Pinecone
+- [x] Includes rate limiting (100ms sleep between ads) to avoid API limits
+- [x] Optimized to use database field instead of expensive Pinecone API calls
+- [x] Removed vector processing from rebuild_db command (main app handles it)
+
 ### 17. Create Authentication Utilities ✅ COMPLETED
 - **Issue**: Repeated user extraction and permission checking patterns
 - **Action**: Centralized user context handling and permission checks

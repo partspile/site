@@ -78,6 +78,7 @@ type Ad struct {
 	ClickCount    int        `json:"click_count"`
 	LastClickedAt *time.Time `json:"last_clicked_at,omitempty"`
 	ImageOrder    []int      `json:"image_order"`
+	HasVector     bool       `json:"has_vector"`
 }
 
 // IsArchived returns true if the ad has been archived
@@ -1165,4 +1166,95 @@ func GetMostPopularAds(n int) []Ad {
 	}
 	log.Printf("[GetMostPopularAds] Found %d ads from SQL query", rowCount)
 	return ads
+}
+
+// GetAdsWithoutVectors returns ads that don't have vector embeddings
+func GetAdsWithoutVectors() ([]Ad, error) {
+	log.Printf("[GetAdsWithoutVectors] Querying for ads without vectors")
+	query := `
+		SELECT 
+			a.id, a.title, a.description, a.price, a.created_at, 
+			a.subcategory_id, a.user_id, a.location_id, a.click_count,
+			a.last_clicked_at, a.image_order, a.has_vector,
+			psc.name as subcategory,
+			l.city, l.admin_area, l.country
+		FROM Ad a
+		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		LEFT JOIN Location l ON a.location_id = l.id
+		WHERE a.has_vector = 0
+		ORDER BY a.created_at DESC
+		LIMIT 50
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		log.Printf("[GetAdsWithoutVectors] SQL error: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ads []Ad
+	rowCount := 0
+	for rows.Next() {
+		rowCount++
+		var ad Ad
+		var subcategory sql.NullString
+		var lastClickedAt sql.NullTime
+		var locationID sql.NullInt64
+		var imageOrder sql.NullString
+		var city, adminArea, country sql.NullString
+		var hasVector int
+
+		err := rows.Scan(
+			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
+			&ad.SubCategoryID, &ad.UserID, &locationID, &ad.ClickCount,
+			&lastClickedAt, &imageOrder, &hasVector, &subcategory,
+			&city, &adminArea, &country,
+		)
+		if err != nil {
+			log.Printf("[GetAdsWithoutVectors] Row scan error: %v", err)
+			continue
+		}
+
+		ad.HasVector = hasVector == 1
+
+		if subcategory.Valid {
+			ad.SubCategory = subcategory.String
+		}
+		if lastClickedAt.Valid {
+			ad.LastClickedAt = &lastClickedAt.Time
+		}
+		if locationID.Valid {
+			ad.LocationID = int(locationID.Int64)
+		}
+		if imageOrder.Valid {
+			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
+		}
+		if city.Valid {
+			ad.City = city.String
+		}
+		if adminArea.Valid {
+			ad.AdminArea = adminArea.String
+		}
+		if country.Valid {
+			ad.Country = country.String
+		}
+
+		// Get vehicle data
+		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
+		ads = append(ads, ad)
+	}
+	log.Printf("[GetAdsWithoutVectors] Found %d ads without vectors from SQL query", rowCount)
+	return ads, nil
+}
+
+// MarkAdAsHavingVector marks an ad as having a vector embedding
+func MarkAdAsHavingVector(adID int) error {
+	_, err := db.Exec("UPDATE Ad SET has_vector = 1 WHERE id = ?", adID)
+	if err != nil {
+		log.Printf("[MarkAdAsHavingVector] Failed to mark ad %d as having vector: %v", adID, err)
+		return err
+	}
+	log.Printf("[MarkAdAsHavingVector] Successfully marked ad %d as having vector", adID)
+	return nil
 }

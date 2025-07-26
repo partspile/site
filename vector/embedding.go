@@ -9,6 +9,7 @@ import (
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/vehicle"
 	pinecone "github.com/pinecone-io/go-pinecone/v4/pinecone"
 	genai "google.golang.org/genai"
 	"google.golang.org/protobuf/types/known/structpb"
@@ -308,4 +309,133 @@ func GetAdEmbedding(adID int) ([]float32, error) {
 
 	log.Printf("[pinecone] Successfully retrieved vector for ad %d with length %d", adID, len(*v.Values))
 	return *v.Values, nil
+}
+
+// BuildAdEmbedding builds and stores an embedding for a single ad
+func BuildAdEmbedding(adObj ad.Ad) error {
+	log.Printf("[BuildAdEmbedding] Building embedding for ad %d: %s", adObj.ID, adObj.Title)
+
+	// Build the prompt for embedding
+	prompt := buildAdEmbeddingPrompt(adObj)
+
+	// Generate embedding
+	embedding, err := EmbedText(prompt)
+	if err != nil {
+		log.Printf("[BuildAdEmbedding] Failed to generate embedding for ad %d: %v", adObj.ID, err)
+		return err
+	}
+
+	// Build metadata
+	meta := buildAdEmbeddingMetadata(adObj)
+
+	// Store in Pinecone
+	err = UpsertAdEmbedding(adObj.ID, embedding, meta)
+	if err != nil {
+		log.Printf("[BuildAdEmbedding] Failed to store embedding for ad %d: %v", adObj.ID, err)
+		return err
+	}
+
+	// Mark ad as having vector in database
+	err = ad.MarkAdAsHavingVector(adObj.ID)
+	if err != nil {
+		log.Printf("[BuildAdEmbedding] Failed to mark ad %d as having vector: %v", adObj.ID, err)
+		return err
+	}
+
+	log.Printf("[BuildAdEmbedding] Successfully built and stored embedding for ad %d", adObj.ID)
+	return nil
+}
+
+// buildAdEmbeddingPrompt creates a prompt for generating embeddings
+func buildAdEmbeddingPrompt(adObj ad.Ad) string {
+	// Get parent company information for the make
+	var parentCompanyStr, parentCompanyCountry string
+	if adObj.Make != "" {
+		if pcInfo, err := vehicle.GetParentCompanyInfoForMake(adObj.Make); err == nil && pcInfo != nil {
+			parentCompanyStr = pcInfo.Name
+			parentCompanyCountry = pcInfo.Country
+		}
+	}
+
+	return fmt.Sprintf(`Encode the following ad for semantic search. Focus on what the part is, what vehicles it fits, and any relevant details for a buyer. Return only the embedding vector.\n\nTitle: %s\nDescription: %s\nMake: %s\nParent Company: %s\nParent Company Country: %s\nYears: %s\nModels: %s\nEngines: %s\nCategory: %s\nSubCategory: %s\nLocation: %s, %s, %s`,
+		adObj.Title,
+		adObj.Description,
+		adObj.Make,
+		parentCompanyStr,
+		parentCompanyCountry,
+		joinStrings(adObj.Years),
+		joinStrings(adObj.Models),
+		joinStrings(adObj.Engines),
+		adObj.Category,
+		adObj.SubCategory,
+		adObj.City,
+		adObj.AdminArea,
+		adObj.Country,
+	)
+}
+
+// buildAdEmbeddingMetadata creates metadata for embeddings
+func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
+	return map[string]interface{}{
+		"created_at":  adObj.CreatedAt.Format(time.RFC3339),
+		"click_count": adObj.ClickCount,
+	}
+}
+
+// Helper function for embedding generation
+func joinStrings(ss []string) string {
+	if len(ss) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%s", ss)
+}
+
+// StartBackgroundVectorProcessor starts a background goroutine that processes ads without vectors
+func StartBackgroundVectorProcessor() {
+	go func() {
+		log.Printf("[BackgroundVectorProcessor] Starting background vector processor")
+		for {
+			// Get ads without vectors (database already filters them)
+			ads, err := ad.GetAdsWithoutVectors()
+			if err != nil {
+				log.Printf("[BackgroundVectorProcessor] Failed to get ads: %v", err)
+				time.Sleep(30 * time.Second)
+				continue
+			}
+
+			if len(ads) == 0 {
+				log.Printf("[BackgroundVectorProcessor] No ads without vectors to process, sleeping for 15 minutes")
+				time.Sleep(15 * time.Minute)
+				continue
+			}
+
+			log.Printf("[BackgroundVectorProcessor] Found %d ads without vectors to process", len(ads))
+
+			// Process each ad
+			processed := 0
+			for i, adObj := range ads {
+				log.Printf("[BackgroundVectorProcessor] Processing ad %d/%d: %s", i+1, len(ads), adObj.Title)
+
+				// Build embedding
+				err := BuildAdEmbedding(adObj)
+				if err != nil {
+					log.Printf("[BackgroundVectorProcessor] Failed to build embedding for ad %d: %v", adObj.ID, err)
+					continue
+				}
+
+				processed++
+
+				// Sleep to avoid rate limits
+				time.Sleep(100 * time.Millisecond)
+			}
+
+			if processed > 0 {
+				log.Printf("[BackgroundVectorProcessor] Processed %d ads, sleeping for 5 minutes", processed)
+				time.Sleep(5 * time.Minute)
+			} else {
+				log.Printf("[BackgroundVectorProcessor] No ads needed processing, sleeping for 15 minutes")
+				time.Sleep(15 * time.Minute)
+			}
+		}
+	}()
 }
