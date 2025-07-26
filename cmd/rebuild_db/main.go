@@ -496,3 +496,19 @@ func getOrInsertWithParent(db *sql.DB, table, col, val string, parentID int) int
 	}
 	return id
 }
+
+// Helper functions for embedding generation
+func interfaceSlice(ss []string) []interface{} {
+	out := make([]interface{}, len(ss))
+	for i, s := range ss {
+		out[i] = s
+	}
+	return out
+}
+
+func joinStrings(ss []string) string {
+	if len(ss) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("%s", ss)
+}
