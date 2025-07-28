@@ -66,6 +66,20 @@ func main() {
 	}
 	defer database.Close()
 
+	// Enable WAL mode and other optimizations for bulk operations
+	if _, err := database.Exec("PRAGMA journal_mode=WAL"); err != nil {
+		log.Printf("Warning: Failed to enable WAL mode: %v", err)
+	}
+	if _, err := database.Exec("PRAGMA synchronous=NORMAL"); err != nil {
+		log.Printf("Warning: Failed to set synchronous mode: %v", err)
+	}
+	if _, err := database.Exec("PRAGMA cache_size=10000"); err != nil {
+		log.Printf("Warning: Failed to set cache size: %v", err)
+	}
+	if _, err := database.Exec("PRAGMA temp_store=MEMORY"); err != nil {
+		log.Printf("Warning: Failed to set temp store: %v", err)
+	}
+
 	// Import parent.json
 	parentData, err := ioutil.ReadFile(parentFile)
 	if err != nil {
@@ -118,7 +132,7 @@ func main() {
 		parentCompanyMap[name] = id
 	}
 
-	// Import make-year-model.json
+	// Import make-year-model.json with optimized Car insertion
 	f, err := os.Open(jsonFile)
 	if err != nil {
 		log.Fatalf("Failed to open JSON: %v", err)
@@ -132,6 +146,78 @@ func main() {
 	if err := json.Unmarshal(data, &mym); err != nil {
 		log.Fatalf("Failed to parse JSON: %v", err)
 	}
+
+	// Create maps for efficient lookups
+	makeMap := make(map[string]int)
+	yearMap := make(map[string]int)
+	modelMap := make(map[string]int)
+	engineMap := make(map[string]int)
+
+	// Pre-populate all makes, years, models, and engines
+	fmt.Println("Pre-populating lookup maps...")
+
+	// Get all makes
+	makeRows, err := database.Query(`SELECT id, name FROM Make`)
+	if err != nil {
+		log.Fatalf("Failed to query Make: %v", err)
+	}
+	defer makeRows.Close()
+	for makeRows.Next() {
+		var id int
+		var name string
+		if err := makeRows.Scan(&id, &name); err != nil {
+			log.Fatalf("Failed to scan Make row: %v", err)
+		}
+		makeMap[name] = id
+	}
+
+	// Get all years
+	yearRows, err := database.Query(`SELECT id, year FROM Year`)
+	if err != nil {
+		log.Fatalf("Failed to query Year: %v", err)
+	}
+	defer yearRows.Close()
+	for yearRows.Next() {
+		var id int
+		var year string
+		if err := yearRows.Scan(&id, &year); err != nil {
+			log.Fatalf("Failed to scan Year row: %v", err)
+		}
+		yearMap[year] = id
+	}
+
+	// Get all models
+	modelRows, err := database.Query(`SELECT id, name FROM Model`)
+	if err != nil {
+		log.Fatalf("Failed to query Model: %v", err)
+	}
+	defer modelRows.Close()
+	for modelRows.Next() {
+		var id int
+		var name string
+		if err := modelRows.Scan(&id, &name); err != nil {
+			log.Fatalf("Failed to scan Model row: %v", err)
+		}
+		modelMap[name] = id
+	}
+
+	// Get all engines
+	engineRows, err := database.Query(`SELECT id, name FROM Engine`)
+	if err != nil {
+		log.Fatalf("Failed to query Engine: %v", err)
+	}
+	defer engineRows.Close()
+	for engineRows.Next() {
+		var id int
+		var name string
+		if err := engineRows.Scan(&id, &name); err != nil {
+			log.Fatalf("Failed to scan Engine row: %v", err)
+		}
+		engineMap[name] = id
+	}
+
+	// First pass: Insert all makes, years, models, and engines
+	fmt.Println("Inserting makes, years, models, and engines...")
 	for make, years := range mym {
 		// Find parent company ID for this make
 		var parentCompanyID *int
@@ -151,33 +237,74 @@ func main() {
 		} else {
 			makeID = getOrInsert(database, "Make", "name", make)
 		}
+		makeMap[make] = makeID
+
 		for year, models := range years {
 			yearID := getOrInsert(database, "Year", "year", year)
+			yearMap[year] = yearID
+
 			for model, engines := range models {
 				modelID := getOrInsert(database, "Model", "name", model)
+				modelMap[model] = modelID
+
 				for _, engine := range engines {
 					engineID := getOrInsert(database, "Engine", "name", engine)
-					// Insert Car if not exists
-					var carID int
-					err := database.QueryRow(`SELECT id FROM Car WHERE make_id=? AND year_id=? AND model_id=? AND engine_id=?`, makeID, yearID, modelID, engineID).Scan(&carID)
-					if err == sql.ErrNoRows {
-						res, err := database.Exec(`INSERT INTO Car (make_id, year_id, model_id, engine_id) VALUES (?, ?, ?, ?)`, makeID, yearID, modelID, engineID)
-						if err != nil {
-							log.Printf("Failed to insert Car: %v", err)
-							continue
-						}
-						id, _ := res.LastInsertId()
-						carID = int(id)
-						fmt.Printf("Inserted Car: %s %s %s %s\n", make, year, model, engine)
-					} else if err == nil {
-						// Already exists
-					} else {
-						log.Printf("Car lookup error: %v", err)
+					engineMap[engine] = engineID
+				}
+			}
+		}
+	}
+
+	// Second pass: Insert all cars in batches
+	fmt.Println("Inserting cars in optimized batches...")
+	carCount := 0
+	batchSize := 1000
+	carBatch := make([]struct {
+		makeID, yearID, modelID, engineID int
+	}, 0, batchSize)
+
+	// Start transaction for bulk Car operations
+	tx, err := database.Begin()
+	if err != nil {
+		log.Fatalf("Failed to begin transaction: %v", err)
+	}
+
+	for make, years := range mym {
+		makeID := makeMap[make]
+		for year, models := range years {
+			yearID := yearMap[year]
+			for model, engines := range models {
+				modelID := modelMap[model]
+				for _, engine := range engines {
+					engineID := engineMap[engine]
+
+					// Add to batch for bulk insertion
+					carBatch = append(carBatch, struct {
+						makeID, yearID, modelID, engineID int
+					}{makeID, yearID, modelID, engineID})
+					carCount++
+
+					// Execute batch when it reaches the batch size
+					if len(carBatch) >= batchSize {
+						executeCarBatch(tx, carBatch)
+						carBatch = carBatch[:0] // Reset slice while keeping capacity
 					}
 				}
 			}
 		}
 	}
+
+	// Execute remaining cars in the batch
+	if len(carBatch) > 0 {
+		executeCarBatch(tx, carBatch)
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		log.Fatalf("Failed to commit Car transaction: %v", err)
+	}
+
+	fmt.Printf("Processed %d cars in optimized batches\n", carCount)
 
 	// Import part.json
 	partData, err := ioutil.ReadFile(partFile)
@@ -263,74 +390,14 @@ func main() {
 	}
 
 	// Create maps for efficient lookups
-	makeMap := make(map[string]int)
-	yearMap := make(map[string]int)
-	modelMap := make(map[string]int)
-	engineMap := make(map[string]int)
 	userMap := make(map[int]int)
 	categoryMap := make(map[string]int)
 	subcategoryMap := make(map[string]int)
 
 	// Declare variables for database queries
-	var makeRows, yearRows, modelRows, engineRows, userRows, categoryRows, subcategoryRows *sql.Rows
+	var userRows, categoryRows, subcategoryRows *sql.Rows
 
 	// Populate maps
-	makeRows, err = database.Query(`SELECT id, name FROM Make`)
-	if err != nil {
-		log.Fatalf("Failed to query Make: %v", err)
-	}
-	defer makeRows.Close()
-	for makeRows.Next() {
-		var id int
-		var name string
-		if err := makeRows.Scan(&id, &name); err != nil {
-			log.Fatalf("Failed to scan Make row: %v", err)
-		}
-		makeMap[name] = id
-	}
-
-	yearRows, err = database.Query(`SELECT id, year FROM Year`)
-	if err != nil {
-		log.Fatalf("Failed to query Year: %v", err)
-	}
-	defer yearRows.Close()
-	for yearRows.Next() {
-		var id int
-		var year string
-		if err := yearRows.Scan(&id, &year); err != nil {
-			log.Fatalf("Failed to scan Year row: %v", err)
-		}
-		yearMap[year] = id
-	}
-
-	modelRows, err = database.Query(`SELECT id, name FROM Model`)
-	if err != nil {
-		log.Fatalf("Failed to query Model: %v", err)
-	}
-	defer modelRows.Close()
-	for modelRows.Next() {
-		var id int
-		var name string
-		if err := modelRows.Scan(&id, &name); err != nil {
-			log.Fatalf("Failed to scan Model row: %v", err)
-		}
-		modelMap[name] = id
-	}
-
-	engineRows, err = database.Query(`SELECT id, name FROM Engine`)
-	if err != nil {
-		log.Fatalf("Failed to query Engine: %v", err)
-	}
-	defer engineRows.Close()
-	for engineRows.Next() {
-		var id int
-		var name string
-		if err := engineRows.Scan(&id, &name); err != nil {
-			log.Fatalf("Failed to scan Engine row: %v", err)
-		}
-		engineMap[name] = id
-	}
-
 	userRows, err = database.Query(`SELECT id FROM User`)
 	if err != nil {
 		log.Fatalf("Failed to query User: %v", err)
@@ -463,6 +530,34 @@ func main() {
 
 	fmt.Println("Database rebuild and import complete.")
 	fmt.Println("Vector embeddings will be processed by the main application background processor.")
+}
+
+// executeCarBatch executes a batch of Car insertions using a single INSERT statement
+func executeCarBatch(tx *sql.Tx, batch []struct {
+	makeID, yearID, modelID, engineID int
+}) {
+	// Use a single INSERT statement with multiple VALUES for better performance
+	if len(batch) == 0 {
+		return
+	}
+
+	// Build the VALUES clause
+	values := make([]string, len(batch))
+	args := make([]interface{}, len(batch)*4)
+
+	for i, car := range batch {
+		values[i] = "(?, ?, ?, ?)"
+		args[i*4] = car.makeID
+		args[i*4+1] = car.yearID
+		args[i*4+2] = car.modelID
+		args[i*4+3] = car.engineID
+	}
+
+	query := fmt.Sprintf("INSERT OR IGNORE INTO Car (make_id, year_id, model_id, engine_id) VALUES %s", strings.Join(values, ","))
+	_, err := tx.Exec(query, args...)
+	if err != nil {
+		log.Printf("Failed to insert Car batch: %v", err)
+	}
 }
 
 func getOrInsert(db *sql.DB, table, col, val string) int {
