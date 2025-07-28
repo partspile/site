@@ -154,5 +154,233 @@
   {
     "make": "CADILLAC",
     "parent_company": "General Motors"
+  },
+  {
+    "make": "CASE",
+    "parent_company": "Case Corporation"
+  },
+  {
+    "make": "CHANDLER",
+    "parent_company": "Chandler Motor Company"
+  },
+  {
+    "make": "CHANGAN",
+    "parent_company": "Changan Automobile"
+  },
+  {
+    "make": "CHECKER",
+    "parent_company": "Checker Motors Corporation"
+  },
+  {
+    "make": "CHEVROLET",
+    "parent_company": "General Motors"
+  },
+  {
+    "make": "CHIREY",
+    "parent_company": "Chirey Automobile"
+  },
+  {
+    "make": "CHRYSLER",
+    "parent_company": "Chrysler Corporation"
+  },
+  {
+    "make": "CISITALIA",
+    "parent_company": "Cisitalia"
+  },
+  {
+    "make": "CITROEN",
+    "parent_company": "Citroën"
+  },
+  {
+    "make": "CLEVELAND",
+    "parent_company": "Cleveland Automobile Company"
+  },
+  {
+    "make": "COLE",
+    "parent_company": "Cole Motor Car Company"
+  },
+  {
+    "make": "CONTINENTAL",
+    "parent_company": "Continental Motors"
+  },
+  {
+    "make": "CORD",
+    "parent_company": "Cord Automobile Company"
+  },
+  {
+    "make": "CROSLEY",
+    "parent_company": "Crosley Corporation"
+  },
+  {
+    "make": "CUNNINGHAM",
+    "parent_company": "Cunningham Automobile Company"
+  },
+  {
+    "make": "CUPRA",
+    "parent_company": "Cupra"
+  },
+  {
+    "make": "DAEWOO",
+    "parent_company": "Daewoo Motors"
+  },
+  {
+    "make": "DAF",
+    "parent_company": "DAF Trucks"
+  },
+  {
+    "make": "DAIHATSU",
+    "parent_company": "Daihatsu Motor Company"
+  },
+  {
+    "make": "DAIMLER",
+    "parent_company": "Daimler Motor Company"
+  },
+  {
+    "make": "DATSUN",
+    "parent_company": "Datsun"
+  },
+  {
+    "make": "DAVIS",
+    "parent_company": "Davis Motor Car Company"
+  },
+  {
+    "make": "DE VAUX",
+    "parent_company": "De Vaux Motors"
+  },
+  {
+    "make": "DELAGE",
+    "parent_company": "Delage"
+  },
+  {
+    "make": "DELAHAYE",
+    "parent_company": "Delahaye"
+  },
+  {
+    "make": "DELLOW",
+    "parent_company": "Dellow Cars"
+  },
+  {
+    "make": "DELOREAN",
+    "parent_company": "DeLorean Motor Company"
+  },
+  {
+    "make": "DENZEL",
+    "parent_company": "Denzel Automobil"
+  },
+  {
+    "make": "DESOTO",
+    "parent_company": "Chrysler Corporation"
+  },
+  {
+    "make": "DETOMASO",
+    "parent_company": "De Tomaso"
+  },
+  {
+    "make": "DEUTSCH-BONNET",
+    "parent_company": "Deutsch-Bonnet"
+  },
+  {
+    "make": "DFSK",
+    "parent_company": "DFSK Motor"
+  },
+  {
+    "make": "DIANA",
+    "parent_company": "Diana Motor Company"
+  },
+  {
+    "make": "DKW",
+    "parent_company": "DKW"
+  },
+  {
+    "make": "DODGE",
+    "parent_company": "Chrysler Corporation"
+  },
+  {
+    "make": "DORETTI",
+    "parent_company": "Doretti Cars"
+  },
+  {
+    "make": "DU PONT",
+    "parent_company": "Du Pont Motors"
+  },
+  {
+    "make": "DUAL-GHIA",
+    "parent_company": "Dual-Ghia"
+  },
+  {
+    "make": "DUESENBERG",
+    "parent_company": "Duesenberg Automobile & Motors Company"
+  },
+  {
+    "make": "DURANT",
+    "parent_company": "Durant Motors"
+  },
+  {
+    "make": "EAGLE",
+    "parent_company": "Chrysler Corporation"
+  },
+  {
+    "make": "EDSEL",
+    "parent_company": "Ford Motor Company"
+  },
+  {
+    "make": "ELCAR",
+    "parent_company": "Elcar Corporation"
+  },
+  {
+    "make": "ELVA",
+    "parent_company": "Elva Cars"
+  },
+  {
+    "make": "ERSKINE",
+    "parent_company": "Erskine Automobile Company"
+  },
+  {
+    "make": "ESSEX",
+    "parent_company": "Essex Motor Company"
+  },
+  {
+    "make": "EXCALIBUR",
+    "parent_company": "Excalibur Automobile Corporation"
+  },
+  {
+    "make": "FACEL VEGA",
+    "parent_company": "Facel Vega"
+  },
+  {
+    "make": "FAIRTHORPE",
+    "parent_company": "Fairthorpe Cars"
+  },
+  {
+    "make": "FALCON KNIGHT",
+    "parent_company": "Falcon-Knight"
+  },
+  {
+    "make": "FARGO",
+    "parent_company": "Fargo Trucks"
+  },
+  {
+    "make": "FAW",
+    "parent_company": "FAW Group"
+  },
+  {
+    "make": "FERRARI",
+    "parent_company": "Ferrari"
+  },
+  {
+    "make": "FIAT",
+    "parent_company": "Fiat S.p.A."
+  },
+  {
+    "make": "FISKER",
+    "parent_company": "Fisker Automotive"
+  },
+  {
+    "make": "FLINT",
+    "parent_company": "Flint Automobile Company"
+  },
+  {
+    "make": "FORD",
+    "parent_company": "Ford Motor Company"
   }
 ] 
