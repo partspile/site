@@ -12,6 +12,7 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/search"
+	"github.com/qdrant/go-client/qdrant"
 )
 
 // LoadUserEmbeddingFromDB loads the user's embedding from the UserEmbedding table.
@@ -88,9 +89,9 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 	}
 	log.Printf("[embedding][debug] userID=%d bookmarks: %v (count=%d)", userID, bookmarkIDs, len(bookmarkIDs))
 	for _, adID := range bookmarkIDs {
-		emb, err := GetAdEmbeddingFromPinecone(adID)
+		emb, err := GetAdEmbeddingFromQdrant(adID)
 		if err != nil {
-			log.Printf("[embedding][debug] Pinecone embedding missing for bookmarked adID=%d: %v", adID, err)
+			log.Printf("[embedding][debug] Qdrant embedding missing for bookmarked adID=%d: %v", adID, err)
 		}
 		if err == nil && emb != nil {
 			for i := 0; i < bookmarkWeight; i++ {
@@ -108,9 +109,9 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 	}
 	log.Printf("[embedding][debug] userID=%d clicked: %v (count=%d)", userID, clickedIDs, len(clickedIDs))
 	for _, adID := range clickedIDs {
-		emb, err := GetAdEmbeddingFromPinecone(adID)
+		emb, err := GetAdEmbeddingFromQdrant(adID)
 		if err != nil {
-			log.Printf("[embedding][debug] Pinecone embedding missing for clicked adID=%d: %v", adID, err)
+			log.Printf("[embedding][debug] Qdrant embedding missing for clicked adID=%d: %v", adID, err)
 		}
 		if err == nil && emb != nil {
 			for i := 0; i < clickWeight; i++ {
@@ -153,20 +154,42 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 	return emb, nil
 }
 
-// GetAdEmbeddingFromPinecone fetches the embedding for an ad by ID from Pinecone.
-func GetAdEmbeddingFromPinecone(adID int) ([]float32, error) {
-	if pineconeIndex == nil {
-		return nil, fmt.Errorf("Pinecone index not initialized")
+// GetAdEmbeddingFromQdrant fetches the embedding for an ad by ID from Qdrant.
+func GetAdEmbeddingFromQdrant(adID int) ([]float32, error) {
+	if qdrantClient == nil {
+		return nil, fmt.Errorf("Qdrant client not initialized")
 	}
 	ctx := context.Background()
-	vectorID := fmt.Sprintf("%d", adID)
-	resp, err := pineconeIndex.FetchVectors(ctx, []string{vectorID})
+	pointID := qdrant.NewIDNum(uint64(adID))
+	resp, err := qdrantClient.Get(ctx, &qdrant.GetPoints{
+		CollectionName: qdrantCollection,
+		Ids:            []*qdrant.PointId{pointID},
+		WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
+		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: true}},
+	})
 	if err != nil {
-		return nil, fmt.Errorf("Pinecone fetch error: %w", err)
+		return nil, fmt.Errorf("Qdrant fetch error: %w", err)
 	}
-	vec, ok := resp.Vectors[vectorID]
-	if !ok || vec == nil || vec.Values == nil {
+	if len(resp) == 0 {
 		return nil, fmt.Errorf("vector not found for adID %d", adID)
 	}
-	return *vec.Values, nil
+
+	point := resp[0]
+	if point.Vectors == nil {
+		return nil, fmt.Errorf("no vector data for adID %d", adID)
+	}
+
+	// Extract vector data
+	var vectorData []float32
+	if vectorOutput := point.Vectors.GetVector(); vectorOutput != nil {
+		if dense := vectorOutput.GetDense(); dense != nil {
+			vectorData = dense.Data
+		}
+	}
+
+	if vectorData == nil {
+		return nil, fmt.Errorf("no vector data for adID %d", adID)
+	}
+
+	return vectorData, nil
 }

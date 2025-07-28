@@ -10,12 +10,11 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/vehicle"
-	pinecone "github.com/pinecone-io/go-pinecone/v4/pinecone"
+	"github.com/qdrant/go-client/qdrant"
 	genai "google.golang.org/genai"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// AdResult represents a search result from Pinecone
+// AdResult represents a search result from Qdrant
 // TODO: Fill in fields as needed
 type AdResult struct {
 	ID       string
@@ -24,9 +23,9 @@ type AdResult struct {
 }
 
 var (
-	geminiClient   *genai.Client
-	pineconeClient *pinecone.Client
-	pineconeIndex  *pinecone.IndexConnection
+	geminiClient     *genai.Client
+	qdrantClient     *qdrant.Client
+	qdrantCollection string
 )
 
 // InitGeminiClient initializes the Gemini embedding client
@@ -46,42 +45,91 @@ func InitGeminiClient(apiKey string) error {
 	return nil
 }
 
-// InitPineconeClient initializes the Pinecone client and index
-func InitPineconeClient(apiKey, indexName string) error {
-	if apiKey == "" {
-		apiKey = config.PineconeAPIKey
+// InitQdrantClient initializes the Qdrant client and collection
+func InitQdrantClient(host, apiKey, collection string) error {
+	if host == "" {
+		host = config.QdrantHost
+	}
+	if host == "" {
+		return fmt.Errorf("missing Qdrant host")
 	}
 	if apiKey == "" {
-		return fmt.Errorf("missing Pinecone API key")
+		apiKey = config.QdrantAPIKey
 	}
-	if indexName == "" {
-		indexName = config.PineconeIndex
+	if collection == "" {
+		collection = config.QdrantCollection
 	}
-	if indexName == "" {
-		return fmt.Errorf("missing Pinecone index name")
+	if collection == "" {
+		return fmt.Errorf("missing Qdrant collection name")
 	}
 
-	clientParams := pinecone.NewClientParams{
-		ApiKey: apiKey,
+	log.Printf("[qdrant] Initializing client with host: %s, collection: %s", host, collection)
+
+	// Create Qdrant client configuration
+	clientConfig := &qdrant.Config{
+		APIKey:                 apiKey,
+		UseTLS:                 true, // Qdrant Cloud requires TLS
+		SkipCompatibilityCheck: true, // Skip version check for cloud service
 	}
-	pc, err := pinecone.NewClient(clientParams)
+	log.Printf("[qdrant] Client config - Host: %s, Port: %d, UseTLS: %v", clientConfig.Host, clientConfig.Port, clientConfig.UseTLS)
+	if host != "" {
+		// For Qdrant Cloud, the host should be just the hostname without protocol
+		// Remove any protocol prefix if present
+		if strings.HasPrefix(host, "https://") {
+			host = strings.TrimPrefix(host, "https://")
+		} else if strings.HasPrefix(host, "http://") {
+			host = strings.TrimPrefix(host, "http://")
+		}
+		clientConfig.Host = host
+		clientConfig.Port = 6334 // Qdrant Cloud uses port 6334 for gRPC
+	}
+
+	// Create Qdrant client
+	client, err := qdrant.NewClient(clientConfig)
 	if err != nil {
 		return err
 	}
-	pineconeClient = pc
+	qdrantClient = client
+	qdrantCollection = collection
 
-	// Describe the index to get the host
-	idx, err := pc.DescribeIndex(context.Background(), indexName)
+	// Check if collection exists, create if not
+	ctx := context.Background()
+
+	// Try to list collections first to test connection
+	collections, err := client.ListCollections(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to connect to Qdrant: %w", err)
 	}
 
-	// Connect to the index using the host
-	idxConn, err := pc.Index(pinecone.NewIndexConnParams{Host: idx.Host})
-	if err != nil {
-		return err
+	collectionExists := false
+	for _, col := range collections {
+		if col == collection {
+			collectionExists = true
+			break
+		}
 	}
-	pineconeIndex = idxConn
+
+	if !collectionExists {
+		log.Printf("[qdrant] Creating collection: %s", collection)
+		err = client.CreateCollection(ctx, &qdrant.CreateCollection{
+			CollectionName: collection,
+			VectorsConfig: &qdrant.VectorsConfig{
+				Config: &qdrant.VectorsConfig_Params{
+					Params: &qdrant.VectorParams{
+						Size:     768, // Gemini embedding size
+						Distance: qdrant.Distance_Cosine,
+					},
+				},
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create collection: %w", err)
+		}
+		log.Printf("[qdrant] Successfully created collection: %s", collection)
+	} else {
+		log.Printf("[qdrant] Collection already exists: %s", collection)
+	}
+
 	return nil
 }
 
@@ -94,7 +142,6 @@ func EmbedText(text string) ([]float32, error) {
 		return nil, fmt.Errorf("cannot embed empty text")
 	}
 	log.Printf("[embedding] Calculating embedding vector for text: %.80q", text)
-	log.Printf("[embedding] Full prompt: %s", text)
 	ctx := context.Background()
 	resp, err := geminiClient.Models.EmbedContent(ctx, "embedding-001", genai.Text(text), nil)
 	if err != nil {
@@ -106,74 +153,136 @@ func EmbedText(text string) ([]float32, error) {
 	return resp.Embeddings[0].Values, nil
 }
 
-// UpsertAdEmbedding upserts an ad's embedding and metadata into Pinecone
+// UpsertAdEmbedding upserts an ad's embedding and metadata into Qdrant
 func UpsertAdEmbedding(adID int, embedding []float32, metadata map[string]interface{}) error {
-	if pineconeIndex == nil {
-		return fmt.Errorf("Pinecone index not initialized")
+	if qdrantClient == nil {
+		return fmt.Errorf("Qdrant client not initialized")
 	}
-	vectorID := fmt.Sprintf("%d", adID)
-	log.Printf("[pinecone] Upserting vector for ad %d with ID %s", adID, vectorID)
+	log.Printf("[qdrant] Upserting vector for ad %d", adID)
 
-	var metaStruct *structpb.Struct
+	// Convert metadata to Qdrant format
+	var qdrantMetadata map[string]*qdrant.Value
 	if metadata != nil {
-		var err error
-		metaStruct, err = structpb.NewStruct(metadata)
-		if err != nil {
-			return fmt.Errorf("failed to convert metadata: %w", err)
+		qdrantMetadata = make(map[string]*qdrant.Value)
+		for k, v := range metadata {
+			switch val := v.(type) {
+			case string:
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: val}}
+			case int:
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(val)}}
+			case float64:
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_DoubleValue{DoubleValue: val}}
+			case bool:
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_BoolValue{BoolValue: val}}
+			default:
+				// Convert to string for other types
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: fmt.Sprintf("%v", val)}}
+			}
 		}
-		log.Printf("[pinecone] Metadata converted successfully for ad %d", adID)
+		log.Printf("[qdrant] Metadata prepared for ad %d", adID)
 	}
 
-	// TODO: Confirm if Values should be []float32 or *[]float32 for Pinecone.Vector
-	vector := &pinecone.Vector{
-		Id:       vectorID,
-		Values:   &embedding,
-		Metadata: metaStruct,
+	// Create Qdrant point with numeric ID instead of UUID
+	point := &qdrant.PointStruct{
+		Id: &qdrant.PointId{
+			PointIdOptions: &qdrant.PointId_Num{Num: uint64(adID)},
+		},
+		Vectors: &qdrant.Vectors{
+			VectorsOptions: &qdrant.Vectors_Vector{
+				Vector: &qdrant.Vector{
+					Vector: &qdrant.Vector_Dense{
+						Dense: &qdrant.DenseVector{
+							Data: embedding,
+						},
+					},
+				},
+			},
+		},
+		Payload: qdrantMetadata,
 	}
-	log.Printf("[pinecone] Created vector object for ad %d with embedding length %d", adID, len(embedding))
+
+	log.Printf("[qdrant] Upserting vector for ad %d", adID)
 
 	ctx := context.Background()
-	resp, err := pineconeIndex.UpsertVectors(ctx, []*pinecone.Vector{vector})
+	_, err := qdrantClient.Upsert(ctx, &qdrant.UpsertPoints{
+		CollectionName: qdrantCollection,
+		Points:         []*qdrant.PointStruct{point},
+	})
 	if err != nil {
 		return fmt.Errorf("failed to upsert vector: %w", err)
 	}
 
-	log.Printf("[pinecone] Upsert response for ad %d: %+v", adID, resp)
-	log.Printf("[pinecone] Successfully upserted vector for ad %d", adID)
+	log.Printf("[qdrant] Successfully upserted vector for ad %d", adID)
 	return nil
 }
 
-// QuerySimilarAds queries Pinecone for similar ads given an embedding
+// QuerySimilarAds queries Qdrant for similar ads given an embedding
 // Returns a list of AdResult, and a cursor for pagination
 func QuerySimilarAds(embedding []float32, topK int, cursor string) ([]AdResult, string, error) {
-	if pineconeIndex == nil {
-		return nil, "", fmt.Errorf("Pinecone index not initialized")
+	if qdrantClient == nil {
+		return nil, "", fmt.Errorf("Qdrant client not initialized")
 	}
 	ctx := context.Background()
-	// TODO: Add metadata filter or namespace if needed
-	// TODO: Use cursor for pagination if Pinecone supports it
-	// If Vector expects *[]float32, take address; otherwise, use embedding directly
-	resp, err := pineconeIndex.QueryByVectorValues(ctx, &pinecone.QueryByVectorValuesRequest{
-		Vector:          embedding, // Pass as []float32, not &embedding
-		TopK:            uint32(topK),
-		IncludeValues:   false,
-		IncludeMetadata: true,
-		// Pagination/cursor support: Pinecone may use a NextPageToken or similar
-		// PageToken: cursor, // Uncomment if supported
-	})
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to query Pinecone: %w", err)
+
+	// Create search request using Query method
+	limit := uint64(topK)
+	queryRequest := &qdrant.QueryPoints{
+		CollectionName: qdrantCollection,
+		Query:          qdrant.NewQueryDense(embedding),
+		Limit:          &limit,
+		WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
+		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
 	}
+
+	// Add offset if cursor is provided
+	if cursor != "" {
+		// TODO: Implement proper cursor handling for Qdrant
+		// For now, we'll ignore the cursor
+	}
+
+	resp, err := qdrantClient.Query(ctx, queryRequest)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to query Qdrant: %w", err)
+	}
+	log.Printf("[qdrant] Query returned %d results", len(resp))
+
 	var results []AdResult
-	for _, match := range resp.Matches {
+	for _, result := range resp {
+		// Convert payload to map[string]interface{}
+		metadata := make(map[string]interface{})
+		for k, v := range result.Payload {
+			switch val := v.Kind.(type) {
+			case *qdrant.Value_StringValue:
+				metadata[k] = val.StringValue
+			case *qdrant.Value_IntegerValue:
+				metadata[k] = val.IntegerValue
+			case *qdrant.Value_DoubleValue:
+				metadata[k] = val.DoubleValue
+			case *qdrant.Value_BoolValue:
+				metadata[k] = val.BoolValue
+			default:
+				metadata[k] = fmt.Sprintf("%v", val)
+			}
+		}
+
+		// Extract ID - we stored with numeric IDs, so we need to get the numeric value
+		var adID string
+		if numID := result.Id.GetNum(); numID != 0 {
+			adID = fmt.Sprintf("%d", numID)
+		} else {
+			adID = result.Id.GetUuid()
+		}
+
 		adResult := AdResult{
-			ID:       match.Vector.Id,
-			Score:    match.Score,
-			Metadata: match.Vector.Metadata.AsMap(),
+			ID:       adID,
+			Score:    float32(result.Score),
+			Metadata: metadata,
 		}
 		results = append(results, adResult)
+		log.Printf("[qdrant] Added result with ID: %s, Score: %f", adID, result.Score)
 	}
-	// TODO: Extract next cursor/page token if available
+
+	// TODO: Implement proper cursor handling for Qdrant
 	return results, "", nil
 }
 
@@ -232,8 +341,13 @@ func CalculateSiteLevelVector() ([]float32, error) {
 	log.Printf("[site-level] Calculating site-level vector from %d popular ads", len(ads))
 	log.Printf("[site-level] Popular ads being used:")
 	for i, adObj := range ads {
-		log.Printf("[site-level]   %d. Ad %d: %s (clicks: %d)",
-			i+1, adObj.ID, adObj.Title, adObj.ClickCount)
+		if i < 5 { // Only show first 5 for brevity
+			log.Printf("[site-level]   %d. Ad %d: %s (clicks: %d)",
+				i+1, adObj.ID, adObj.Title, adObj.ClickCount)
+		}
+	}
+	if len(ads) > 5 {
+		log.Printf("[site-level]   ... and %d more ads", len(ads)-5)
 	}
 	var vectors [][]float32
 	var missingIDs []int
@@ -269,46 +383,60 @@ func CalculateSiteLevelVector() ([]float32, error) {
 	return result, nil
 }
 
-// GetAdEmbedding retrieves the embedding for a given ad ID from Pinecone
+// GetAdEmbedding retrieves the embedding for a given ad ID from Qdrant
 func GetAdEmbedding(adID int) ([]float32, error) {
-	if pineconeIndex == nil {
-		return nil, fmt.Errorf("Pinecone index not initialized")
+	if qdrantClient == nil {
+		return nil, fmt.Errorf("Qdrant client not initialized")
 	}
-	vectorID := fmt.Sprintf("%d", adID)
-	log.Printf("[pinecone] Fetching vector for ad %d with ID %s", adID, vectorID)
+	log.Printf("[qdrant] Fetching vector for ad %d", adID)
 
 	ctx := context.Background()
-	resp, err := pineconeIndex.FetchVectors(ctx, []string{vectorID})
+	pointID := qdrant.NewIDNum(uint64(adID))
+	resp, err := qdrantClient.Get(ctx, &qdrant.GetPoints{
+		CollectionName: qdrantCollection,
+		Ids:            []*qdrant.PointId{pointID},
+		WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
+		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: true}},
+	})
 	if err != nil {
-		log.Printf("[pinecone] Fetch error for ad %d: %v", adID, err)
+		log.Printf("[qdrant] Fetch error for ad %d: %v", adID, err)
 		return nil, err
 	}
 
-	log.Printf("[pinecone] Fetch response for ad %d: %+v", adID, resp)
-	log.Printf("[pinecone] Available vectors in response: %v", func() []string {
-		keys := make([]string, 0, len(resp.Vectors))
-		for k := range resp.Vectors {
-			keys = append(keys, k)
+	log.Printf("[qdrant] Fetch response for ad %d: found %d points", adID, len(resp))
+	if len(resp) == 0 {
+		log.Printf("[qdrant] No points found for ad %d", adID)
+		return nil, fmt.Errorf("no embedding found for ad %d", adID)
+	}
+
+	point := resp[0]
+	log.Printf("[qdrant] Point structure for ad %d: Vectors=%v", adID, point.Vectors != nil)
+
+	if point.Vectors == nil {
+		log.Printf("[qdrant] Vector values are nil for ad %d", adID)
+		return nil, fmt.Errorf("no embedding found for ad %d", adID)
+	}
+
+	// Extract vector data
+	var vectorData []float32
+	if point.Vectors != nil {
+		if vectorOutput := point.Vectors.GetVector(); vectorOutput != nil {
+			// Try to get the vector data directly from VectorOutput
+			if data := vectorOutput.GetData(); len(data) > 0 {
+				vectorData = data
+			} else if dense := vectorOutput.GetDense(); dense != nil {
+				vectorData = dense.Data
+			}
 		}
-		return keys
-	}())
+	}
 
-	v, ok := resp.Vectors[vectorID]
-	if !ok {
-		log.Printf("[pinecone] Vector ID %s not found in response for ad %d", vectorID, adID)
-		return nil, fmt.Errorf("no embedding found for ad %d", adID)
-	}
-	if v == nil {
-		log.Printf("[pinecone] Vector object is nil for ad %d", adID)
-		return nil, fmt.Errorf("no embedding found for ad %d", adID)
-	}
-	if v.Values == nil {
-		log.Printf("[pinecone] Vector values are nil for ad %d", adID)
+	if vectorData == nil {
+		log.Printf("[qdrant] No vector data found for ad %d", adID)
 		return nil, fmt.Errorf("no embedding found for ad %d", adID)
 	}
 
-	log.Printf("[pinecone] Successfully retrieved vector for ad %d with length %d", adID, len(*v.Values))
-	return *v.Values, nil
+	log.Printf("[qdrant] Successfully retrieved vector for ad %d with length %d", adID, len(vectorData))
+	return vectorData, nil
 }
 
 // BuildAdEmbedding builds and stores an embedding for a single ad
@@ -328,7 +456,7 @@ func BuildAdEmbedding(adObj ad.Ad) error {
 	// Build metadata
 	meta := buildAdEmbeddingMetadata(adObj)
 
-	// Store in Pinecone
+	// Store in Qdrant
 	err = UpsertAdEmbedding(adObj.ID, embedding, meta)
 	if err != nil {
 		log.Printf("[BuildAdEmbedding] Failed to store embedding for ad %d: %v", adObj.ID, err)

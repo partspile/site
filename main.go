@@ -28,9 +28,9 @@ func main() {
 		log.Fatalf("Failed to initialize Gemini client: %v", err)
 	}
 
-	// Initialize Pinecone client
-	if err := vector.InitPineconeClient("", ""); err != nil {
-		log.Fatalf("Failed to initialize Pinecone client: %v", err)
+	// Initialize Qdrant client
+	if err := vector.InitQdrantClient("", "", ""); err != nil {
+		log.Fatalf("Failed to initialize Qdrant client: %v", err)
 	}
 
 	// Start background user embedding processor

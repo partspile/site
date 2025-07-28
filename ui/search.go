@@ -248,7 +248,7 @@ func BuildAdListNodesWithView(ads map[int]ad.Ad, loc *time.Location, view string
 }
 
 func GridView(ads []ad.Ad, loc *time.Location, userID ...int) g.Node {
-	// Preserve original order from backend (Pinecone order)
+	// Preserve original order from backend (Qdrant order)
 	adNodes := make([]g.Node, 0, len(ads))
 	uid := 0
 	if len(userID) > 0 {

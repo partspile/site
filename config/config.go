@@ -28,8 +28,9 @@ var (
 	B2BucketID           = getEnvWithDefault("B2_BUCKET_ID", "")
 
 	// Vector database configuration
-	PineconeAPIKey = getEnvWithDefault("PINECONE_API_KEY", "")
-	PineconeIndex  = getEnvWithDefault("PINECONE_INDEX", "")
+	QdrantHost       = getEnvWithDefault("QDRANT_HOST", "")
+	QdrantAPIKey     = getEnvWithDefault("QDRANT_API_KEY", "")
+	QdrantCollection = getEnvWithDefault("QDRANT_COLLECTION", "")
 
 	// AI/ML API configuration
 	GeminiAPIKey = getEnvWithDefault("GEMINI_API_KEY", "")

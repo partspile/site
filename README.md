@@ -15,9 +15,10 @@ A Go-based auto parts marketplace built with Fiber, HTMX, and Gomponents.
 - `BACKBLAZE_APP_KEY` - Backblaze B2 application key
 - `B2_BUCKET_ID` - Backblaze B2 bucket ID for image storage
 
-### Vector Database Configuration (Pinecone)
-- `PINECONE_API_KEY` - Pinecone API key for vector search
-- `PINECONE_INDEX` - Pinecone index name
+### Vector Database Configuration (Qdrant)
+- `QDRANT_HOST` - Qdrant Cloud host endpoint
+- `QDRANT_API_KEY` - Qdrant Cloud API key
+- `QDRANT_COLLECTION` - Qdrant collection name
 
 ### AI/ML API Configuration
 - `GEMINI_API_KEY` - Google Gemini API key for text embeddings

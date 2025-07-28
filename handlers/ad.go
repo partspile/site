@@ -137,7 +137,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 			log.Printf("[embedding] failed to upsert embedding for ad %d: %v", adObj.ID, err)
 			return
 		}
-		log.Printf("[embedding] Successfully upserted embedding for ad %d to Pinecone", adObj.ID)
+		log.Printf("[embedding] Successfully upserted embedding for ad %d to Qdrant", adObj.ID)
 	}(adID)
 	// --- END VECTOR EMBEDDING ---
 
@@ -264,7 +264,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 			log.Printf("[embedding] failed to upsert embedding for updated ad %d: %v", adObj.ID, err)
 			return
 		}
-		log.Printf("[embedding] Successfully upserted embedding for updated ad %d to Pinecone", adObj.ID)
+		log.Printf("[embedding] Successfully upserted embedding for updated ad %d to Qdrant", adObj.ID)
 	}(adID)
 	// --- END VECTOR EMBEDDING ---
 

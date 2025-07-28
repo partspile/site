@@ -83,7 +83,7 @@ func min(a, b int) int {
 	return b
 }
 
-// Helper to fetch ads by Pinecone result IDs
+// Helper to fetch ads by Qdrant result IDs
 func fetchAdsByIDs(ids []string, userID int) ([]ad.Ad, error) {
 	if len(ids) == 0 {
 		return nil, nil
@@ -119,12 +119,12 @@ func runEmbeddingSearch(embedding []float32, cursor string, userID int) ([]ad.Ad
 	if err != nil {
 		return nil, "", err
 	}
-	log.Printf("[runEmbeddingSearch] Pinecone returned %d results", len(results))
+	log.Printf("[runEmbeddingSearch] Qdrant returned %d results", len(results))
 	ids := make([]string, len(results))
 	for i, r := range results {
 		ids[i] = r.ID
 	}
-	log.Printf("[runEmbeddingSearch] Pinecone result IDs: %v", ids)
+	log.Printf("[runEmbeddingSearch] Qdrant result IDs: %v", ids)
 	ads, _ := fetchAdsByIDs(ids, userID)
 	log.Printf("[runEmbeddingSearch] DB fetch returned %d ads", len(ads))
 	return ads, nextCursor, nil
@@ -666,10 +666,10 @@ func getTreeAdsForSearch(userPrompt string, userID int) ([]ad.Ad, error) {
 	const initialK = 200
 	results, _, err := vector.QuerySimilarAds(embedding, initialK, "")
 	if err != nil {
-		return nil, fmt.Errorf("failed to query Pinecone: %w", err)
+		return nil, fmt.Errorf("failed to query Qdrant: %w", err)
 	}
 
-	log.Printf("[tree-search] Pinecone returned %d results", len(results))
+	log.Printf("[tree-search] Qdrant returned %d results", len(results))
 
 	// Filter by similarity threshold
 	const (
