@@ -588,70 +588,19 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 	if currentUser != nil {
 		userID = currentUser.ID
 	}
-	userPrompt := c.Query("q")
+	userPrompt := c.FormValue("q")
 	if userPrompt == "" {
-		userPrompt = c.FormValue("q")
+		userPrompt = c.Query("q")
 	}
-	structuredQuery := c.FormValue("structured_query")
 
 	var ads []ad.Ad
-	var usedVectorSearch bool
 	var err error
 
-	if userPrompt != "" {
-		log.Printf("[search] Generating embedding for user query in view switch: %s", userPrompt)
-		embedding, err := vector.EmbedText(userPrompt)
-		if err == nil {
-			results, _, err := vector.QuerySimilarAds(embedding, 10, "")
-			if err == nil {
-				log.Printf("[search] Embedding-based search (query embedding) used for view '%s' with q='%s'", view, userPrompt)
-				ids := make([]string, len(results))
-				for i, r := range results {
-					ids[i] = r.ID
-				}
-				ads, _ = fetchAdsByIDs(ids, userID)
-				usedVectorSearch = true
-			}
-		}
-	}
-	if !usedVectorSearch {
-		if userPrompt == "" && userID != 0 {
-			embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
-			if err == nil && embedding != nil {
-				results, _, err := vector.QuerySimilarAds(embedding, 10, "")
-				if err == nil {
-					log.Printf("[search] Embedding-based search (user embedding) used for view '%s' for userID=%d", view, userID)
-					ids := make([]string, len(results))
-					for i, r := range results {
-						ids[i] = r.ID
-					}
-					ads, _ = fetchAdsByIDs(ids, userID)
-					usedVectorSearch = true
-				}
-			}
-			if err != nil {
-				log.Printf("[embedding] User embedding error for userID=%d: %v", userID, err)
-			}
-		}
-	}
-	if !usedVectorSearch {
-		log.Printf("[search] Fallback to SQL-based search for view '%s' (q='%s', userID=%d)", view, userPrompt, userID)
-		var query SearchQuery
-		if structuredQuery != "" {
-			err := json.Unmarshal([]byte(structuredQuery), &query)
-			if err != nil {
-				return fiber.NewError(fiber.StatusBadRequest, "Invalid structured_query")
-			}
-		} else {
-			query, err = ParseSearchQuery(userPrompt)
-			if err != nil {
-				return fiber.NewError(fiber.StatusBadRequest, "Could not parse query")
-			}
-		}
-		ads, _, err = GetNextPage(query, nil, 10, userID)
-		if err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, "Could not get ads")
-		}
+	// Use the same performSearch function that HandleSearch uses
+	ads, _, err = performSearch(userPrompt, userID, nil, "")
+	if err != nil {
+		log.Printf("[handleViewSwitch] performSearch error: %v", err)
+		ads = []ad.Ad{}
 	}
 
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
