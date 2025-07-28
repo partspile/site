@@ -165,6 +165,24 @@ func performSearch(userPrompt string, userID int, cursor *SearchCursor, cursorSt
 		if len(ads) > 0 {
 			return ads, nextCursor, nil
 		}
+		// Fallback to site-level vector for logged-in users with no personalized embedding
+		log.Printf("[performSearch] No personalized embedding found for user %d, falling back to site-level vector", userID)
+		emb, err := vector.GetSiteLevelVector()
+		log.Printf("[performSearch] GetSiteLevelVector returned emb=%v, err=%v", emb != nil, err)
+		if err == nil && emb != nil {
+			log.Printf("[performSearch] site-level vector length: %d", len(emb))
+			if len(emb) > 0 {
+				log.Printf("[performSearch] site-level vector first 5 values: %v", emb[:min(5, len(emb))])
+			}
+			log.Printf("[performSearch] About to call runEmbeddingSearch with site-level vector")
+			ads, nextCursor, _ := runEmbeddingSearch(emb, cursorStr, userID)
+			log.Printf("[performSearch] site-level vector: found %d ads", len(ads))
+			if len(ads) > 0 {
+				return ads, nextCursor, nil
+			}
+		} else {
+			log.Printf("[performSearch] site-level vector error: %v", err)
+		}
 	}
 	if userPrompt == "" && userID == 0 {
 		emb, err := vector.GetSiteLevelVector()
