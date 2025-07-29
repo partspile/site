@@ -270,7 +270,6 @@ func HandleSearch(c *fiber.Ctx) error {
 	// Show no results message if no ads found, but only for list/grid views
 	if (view == "list" || view == "grid") && len(ads) == 0 {
 		render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, userID, loc, view, userPrompt, ""))
-		render(c, ui.NoSearchResultsMessage())
 		return nil
 	}
 
@@ -314,7 +313,6 @@ func HandleSearchPage(c *fiber.Ctx) error {
 
 	// Show no results message if no ads found, but only for list/grid views
 	if (view == "list" || view == "grid") && len(ads) == 0 {
-		render(c, ui.NoSearchResultsMessage())
 		return nil
 	}
 
@@ -694,7 +692,6 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 	// Only show no-results message for list and grid views
 	if (view == "list" || view == "grid") && len(ads) == 0 {
 		render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, userID, loc, selectedView, userPrompt, ""))
-		render(c, ui.NoSearchResultsMessage())
 		return nil
 	}
 

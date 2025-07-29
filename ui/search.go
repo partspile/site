@@ -141,25 +141,30 @@ func SearchResultsContainer(newAdButton g.Node, ads []ad.Ad, userID int, loc *ti
 func createViewWithInfiniteScroll(ads []ad.Ad, userID int, loc *time.Location, view string, query string, loaderURL string) g.Node {
 	var viewContent g.Node
 
-	// Create the appropriate view
-	switch view {
-	case "tree":
-		structuredQueryJSON, _ := json.Marshal(SearchSchema{})
-		viewContent = TreeViewWithQuery(query, string(structuredQueryJSON))
-	case "grid":
-		if loaderURL != "" {
-			viewContent = GridViewWithTrigger(ads, loc, userID, loaderURL)
-		} else {
-			viewContent = GridView(ads, loc, userID)
+	// Handle no results for list and grid views
+	if len(ads) == 0 && (view == "list" || view == "grid") {
+		viewContent = NoSearchResultsMessage()
+	} else {
+		// Create the appropriate view
+		switch view {
+		case "tree":
+			structuredQueryJSON, _ := json.Marshal(SearchSchema{})
+			viewContent = TreeViewWithQuery(query, string(structuredQueryJSON))
+		case "grid":
+			if loaderURL != "" {
+				viewContent = GridViewWithTrigger(ads, loc, userID, loaderURL)
+			} else {
+				viewContent = GridView(ads, loc, userID)
+			}
+		case "map":
+			adsMap := make(map[int]ad.Ad, len(ads))
+			for _, ad := range ads {
+				adsMap[ad.ID] = ad
+			}
+			viewContent = MapView(adsMap, loc)
+		default: // list
+			viewContent = ListViewFromSlice(ads, userID, loc)
 		}
-	case "map":
-		adsMap := make(map[int]ad.Ad, len(ads))
-		for _, ad := range ads {
-			adsMap[ad.ID] = ad
-		}
-		viewContent = MapView(adsMap, loc)
-	default: // list
-		viewContent = ListViewFromSlice(ads, userID, loc)
 	}
 
 	// Add infinite scroll trigger for list view only (grid has it built-in)
