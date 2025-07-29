@@ -134,22 +134,12 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 		}
 
 		log.Printf("[embedding] Starting async embedding generation for ad %d", adObj.ID)
-		prompt := buildAdEmbeddingPrompt(adObj)
-		log.Printf("[embedding] Generated prompt for ad %d: %.100q...", adObj.ID, prompt)
-		embedding, err := vector.EmbedText(prompt)
+		err := vector.BuildAdEmbedding(adObj)
 		if err != nil {
-			log.Printf("[embedding] failed to generate embedding for ad %d: %v", adObj.ID, err)
+			log.Printf("[embedding] Failed to build embedding for ad %d: %v", adObj.ID, err)
 			return
 		}
-		log.Printf("[embedding] Successfully generated embedding for ad %d (length=%d)", adObj.ID, len(embedding))
-		meta := buildAdEmbeddingMetadata(adObj)
-		log.Printf("[embedding] Generated metadata for ad %d: %+v", adObj.ID, meta)
-		err = vector.UpsertAdEmbedding(adObj.ID, embedding, meta)
-		if err != nil {
-			log.Printf("[embedding] failed to upsert embedding for ad %d: %v", adObj.ID, err)
-			return
-		}
-		log.Printf("[embedding] Successfully upserted embedding for ad %d to Qdrant", adObj.ID)
+		log.Printf("[embedding] Successfully built and stored embedding for ad %d", adObj.ID)
 	}(adID)
 	// --- END VECTOR EMBEDDING ---
 
@@ -285,22 +275,12 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		}
 
 		log.Printf("[embedding] Starting async embedding generation for updated ad %d", adObj.ID)
-		prompt := buildAdEmbeddingPrompt(adObj)
-		log.Printf("[embedding] Generated prompt for updated ad %d: %.100q...", adObj.ID, prompt)
-		embedding, err := vector.EmbedText(prompt)
+		err := vector.BuildAdEmbedding(adObj)
 		if err != nil {
-			log.Printf("[embedding] failed to generate embedding for updated ad %d: %v", adObj.ID, err)
+			log.Printf("[embedding] Failed to build embedding for updated ad %d: %v", adObj.ID, err)
 			return
 		}
-		log.Printf("[embedding] Successfully generated embedding for updated ad %d (length=%d)", adObj.ID, len(embedding))
-		meta := buildAdEmbeddingMetadata(adObj)
-		log.Printf("[embedding] Generated metadata for updated ad %d: %+v", adObj.ID, meta)
-		err = vector.UpsertAdEmbedding(adObj.ID, embedding, meta)
-		if err != nil {
-			log.Printf("[embedding] failed to upsert embedding for updated ad %d: %v", adObj.ID, err)
-			return
-		}
-		log.Printf("[embedding] Successfully upserted embedding for updated ad %d to Qdrant", adObj.ID)
+		log.Printf("[embedding] Successfully built and stored embedding for updated ad %d", adObj.ID)
 	}(adID)
 	// --- END VECTOR EMBEDDING ---
 

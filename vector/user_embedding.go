@@ -144,6 +144,7 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 	}
 	log.Printf("[embedding][debug] userID=%d vectors aggregated: %d, weights: %d", userID, len(vectors), len(weights))
 	if len(vectors) == 0 {
+		log.Printf("[embedding][warn] userID=%d: No vectors could be aggregated from user activity", userID)
 		return nil, fmt.Errorf("no user activity to aggregate")
 	}
 	emb := AggregateEmbeddings(vectors, weights)
@@ -151,6 +152,8 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 	if err != nil {
 		log.Printf("[embedding][warn] failed to save user embedding for userID=%d: %v", userID, err)
 	}
+	log.Printf("[embedding][info] userID=%d: Successfully created user embedding from %d vectors (bookmarks: %d, clicks: %d, searches: %d)",
+		userID, len(vectors), len(bookmarkIDs), len(clickedIDs), len(searches))
 	return emb, nil
 }
 
@@ -159,6 +162,7 @@ func GetAdEmbeddingFromQdrant(adID int) ([]float32, error) {
 	if qdrantClient == nil {
 		return nil, fmt.Errorf("Qdrant client not initialized")
 	}
+	log.Printf("[qdrant] Fetching vector for ad %d", adID)
 	ctx := context.Background()
 	pointID := qdrant.NewIDNum(uint64(adID))
 	resp, err := qdrantClient.Get(ctx, &qdrant.GetPoints{
@@ -168,28 +172,40 @@ func GetAdEmbeddingFromQdrant(adID int) ([]float32, error) {
 		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: true}},
 	})
 	if err != nil {
+		log.Printf("[qdrant] Fetch error for ad %d: %v", adID, err)
 		return nil, fmt.Errorf("Qdrant fetch error: %w", err)
 	}
+	log.Printf("[qdrant] Fetch response for ad %d: found %d points", adID, len(resp))
 	if len(resp) == 0 {
+		log.Printf("[qdrant] No points found for ad %d", adID)
 		return nil, fmt.Errorf("vector not found for adID %d", adID)
 	}
 
 	point := resp[0]
+	log.Printf("[qdrant] Point structure for ad %d: Vectors=%v", adID, point.Vectors != nil)
 	if point.Vectors == nil {
+		log.Printf("[qdrant] Vector values are nil for ad %d", adID)
 		return nil, fmt.Errorf("no vector data for adID %d", adID)
 	}
 
 	// Extract vector data
 	var vectorData []float32
-	if vectorOutput := point.Vectors.GetVector(); vectorOutput != nil {
-		if dense := vectorOutput.GetDense(); dense != nil {
-			vectorData = dense.Data
+	if point.Vectors != nil {
+		if vectorOutput := point.Vectors.GetVector(); vectorOutput != nil {
+			// Try to get the vector data directly from VectorOutput
+			if data := vectorOutput.GetData(); len(data) > 0 {
+				vectorData = data
+			} else if dense := vectorOutput.GetDense(); dense != nil {
+				vectorData = dense.Data
+			}
 		}
 	}
 
 	if vectorData == nil {
+		log.Printf("[qdrant] No vector data found for ad %d", adID)
 		return nil, fmt.Errorf("no vector data for adID %d", adID)
 	}
 
+	log.Printf("[qdrant] Successfully retrieved vector for ad %d with length %d", adID, len(vectorData))
 	return vectorData, nil
 }
