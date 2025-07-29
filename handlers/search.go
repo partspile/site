@@ -321,28 +321,23 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	// Add infinite scroll trigger if there are more results
 	if nextPageURL != "" {
 		log.Printf("[HandleSearchPage] Adding infinite scroll trigger with URL: %s", nextPageURL)
-		
+
 		// Create trigger that matches the view style
 		if view == "grid" {
 			// Grid trigger should be a grid item
 			render(c, Div(
-				Class("border rounded-lg shadow-sm bg-blue-100 flex items-center justify-center cursor-pointer hover:shadow-md transition-shadow"),
+				Class("h-4"),
 				g.Attr("hx-get", nextPageURL),
 				g.Attr("hx-trigger", "revealed"),
 				g.Attr("hx-swap", "outerHTML"),
-				Div(
-					Class("p-4 text-center text-blue-600"),
-					g.Text("Loading more..."),
-				),
 			))
 		} else {
 			// List trigger
 			render(c, Div(
-				Class("flex items-center justify-center py-4 bg-blue-100 text-blue-600 border"),
+				Class("h-4"),
 				g.Attr("hx-get", nextPageURL),
 				g.Attr("hx-trigger", "revealed"),
 				g.Attr("hx-swap", "outerHTML"),
-				g.Text("Loading more..."),
 			))
 		}
 	} else {

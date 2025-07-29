@@ -159,10 +159,9 @@ func ErrorPage(code int, message string) g.Node {
 func LoaderDiv(url string, view string) g.Node {
 	return Div(
 		ID("infinite-scroll-loader"),
-		Class("flex items-center justify-center py-8 text-gray-500"),
+		Class("h-4"),
 		g.Attr("hx-get", url),
 		g.Attr("hx-trigger", "intersect once"),
 		g.Attr("hx-swap", "outerHTML"),
-		g.Text("Loading more..."),
 	)
 }
