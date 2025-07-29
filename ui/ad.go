@@ -271,10 +271,11 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 				BookmarkIcon(bookmarked),
 			)
 		}
-		return AdGridWrapper(ad, Div(
+		return Div(
+			ID(fmt.Sprintf("ad-grid-wrap-%d", ad.ID)),
 			Class("border rounded-lg shadow-sm bg-white flex flex-col cursor-pointer hover:shadow-md transition-shadow"),
 			hx.Get(fmt.Sprintf("/ad/detail/%d?view=grid", ad.ID)),
-			hx.Target(htmxTarget),
+			hx.Target(fmt.Sprintf("#ad-grid-wrap-%d", ad.ID)),
 			hx.Swap("outerHTML"),
 			Div(
 				Class("rounded-t-lg overflow-hidden"),
@@ -298,7 +299,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 					),
 				),
 			),
-		), false)
+		)
 	}
 	card := Div(
 		ID(fmt.Sprintf("ad-%d", ad.ID)),
@@ -336,6 +337,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 	}
 	return card
 }
+
 
 // AdEditPartial renders the ad edit form for inline editing
 func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engineAvailability map[string]bool, cancelTarget, htmxTarget string, view ...string) g.Node {
@@ -595,7 +597,7 @@ func AdListContainer(children ...g.Node) g.Node {
 func AdCompactListContainer(children ...g.Node) g.Node {
 	return Div(
 		ID("adsList"),
-		Class("border border-gray-200 rounded-lg bg-white p-4"),
+		Class("bg-white"),
 		g.Group(children),
 	)
 }
@@ -1599,7 +1601,7 @@ func AdCardCompactList(ad ad.Ad, loc *time.Location, bookmarked bool, userID int
 
 	return Div(
 		ID(fmt.Sprintf("ad-%d", ad.ID)),
-		Class("flex items-center py-2 px-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer last:border-b-0"),
+		Class("flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer"),
 		hx.Get(fmt.Sprintf("/ad/detail/%d?view=list", ad.ID)),
 		hx.Target(fmt.Sprintf("#ad-%d", ad.ID)),
 		hx.Swap("outerHTML"),
@@ -1629,3 +1631,4 @@ func AdCardCompactList(ad ad.Ad, loc *time.Location, bookmarked bool, userID int
 		picLink,
 	)
 }
+

@@ -155,12 +155,13 @@ func ErrorPage(code int, message string) g.Node {
 	)
 }
 
-// LoaderDiv renders the loader for infinite scroll (htmx revealed)
-func LoaderDiv(url string) g.Node {
+// LoaderDiv renders the loader for infinite scroll (kept for compatibility)
+func LoaderDiv(url string, view string) g.Node {
 	return Div(
-		ID("loader"),
+		ID("infinite-scroll-loader"),
+		Class("flex items-center justify-center py-8 text-gray-500"),
 		g.Attr("hx-get", url),
-		g.Attr("hx-trigger", "revealed"),
+		g.Attr("hx-trigger", "intersect once"),
 		g.Attr("hx-swap", "outerHTML"),
 		g.Text("Loading more..."),
 	)

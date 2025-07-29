@@ -45,7 +45,9 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
   - If not logged in and `q` is empty, the feed is built using a combination of recency, click count, and embedding-based diversity (e.g., cluster sampling or diversity maximization in embedding space).
 - Results are ranked by vector similarity, with recency and popularity as secondary factors.
 - **Infinite scroll and pagination:**
-  - The system supports infinite scroll for ad results, using Qdrant's cursor-based pagination if available, or offset/ID-based pagination as a fallback.
+  - The system supports infinite scroll for ad results using Qdrant's offset-based pagination for consistent results across pages.
+  - Pagination uses a simple cursor format (base64-encoded offset) that tracks the current position in the result set.
+  - This ensures that new ads added between page loads don't cause duplicates or gaps in the results.
 - All search and feed functionality is powered by Qdrant vector search only.
 - **[Complete]** All vector embedding and personalization features are implemented, including persistent user embeddings and automatic updates after user activity.
 

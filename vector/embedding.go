@@ -2,8 +2,10 @@ package vector
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -224,27 +226,38 @@ func QuerySimilarAds(embedding []float32, topK int, cursor string) ([]AdResult, 
 	}
 	ctx := context.Background()
 
+	// Parse cursor if provided
+	var offset uint64 = 0
+	if cursor != "" {
+		// Decode cursor: format is "offset" base64 encoded
+		cursorBytes, err := base64.StdEncoding.DecodeString(cursor)
+		if err == nil {
+			cursorStr := string(cursorBytes)
+			if offsetVal, err := strconv.ParseUint(cursorStr, 10, 64); err == nil {
+				offset = offsetVal
+			}
+		}
+		log.Printf("[qdrant] Parsed cursor: offset=%d", offset)
+	} else {
+		log.Printf("[qdrant] No cursor provided, starting from beginning")
+	}
+
 	// Create search request using Query method
 	limit := uint64(topK)
 	queryRequest := &qdrant.QueryPoints{
 		CollectionName: qdrantCollection,
 		Query:          qdrant.NewQueryDense(embedding),
 		Limit:          &limit,
+		Offset:         &offset,
 		WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
 		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
-	}
-
-	// Add offset if cursor is provided
-	if cursor != "" {
-		// TODO: Implement proper cursor handling for Qdrant
-		// For now, we'll ignore the cursor
 	}
 
 	resp, err := qdrantClient.Query(ctx, queryRequest)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to query Qdrant: %w", err)
 	}
-	log.Printf("[qdrant] Query returned %d results", len(resp))
+	log.Printf("[qdrant] Query returned %d results (requested %d, offset %d)", len(resp), topK, offset)
 
 	var results []AdResult
 	for _, result := range resp {
@@ -282,8 +295,17 @@ func QuerySimilarAds(embedding []float32, topK int, cursor string) ([]AdResult, 
 		log.Printf("[qdrant] Added result with ID: %s, Score: %f", adID, result.Score)
 	}
 
-	// TODO: Implement proper cursor handling for Qdrant
-	return results, "", nil
+	// Generate next cursor if we have results
+	var nextCursor string
+	if len(results) > 0 {
+		nextOffset := offset + uint64(len(results))
+		nextCursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d", nextOffset)))
+		log.Printf("[qdrant] Generated next cursor: %s (offset: %d)", nextCursor, nextOffset)
+	} else {
+		log.Printf("[qdrant] No results, no next cursor generated")
+	}
+
+	return results, nextCursor, nil
 }
 
 // AggregateEmbeddings computes a weighted mean of multiple embeddings

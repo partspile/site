@@ -21,6 +21,7 @@ import (
 	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/vehicle"
 	g "maragu.dev/gomponents"
+	. "maragu.dev/gomponents/html"
 )
 
 const sysPrompt = `You are an expert vehicle parts assistant.
@@ -150,7 +151,7 @@ func tryUserEmbedding(userID int, cursor string) ([]ad.Ad, string, error) {
 }
 
 // Search strategy for both HandleSearch and HandleSearchPage
-func performSearch(userPrompt string, userID int, cursor *SearchCursor, cursorStr string) ([]ad.Ad, string, error) {
+func performSearch(userPrompt string, userID int, cursorStr string) ([]ad.Ad, string, error) {
 	log.Printf("[performSearch] userPrompt='%s', userID=%d, cursorStr='%s'", userPrompt, userID, cursorStr)
 	if userPrompt != "" {
 		ads, nextCursor, _ := tryQueryEmbedding(userPrompt, cursorStr, userID)
@@ -206,14 +207,6 @@ func performSearch(userPrompt string, userID int, cursor *SearchCursor, cursorSt
 	return nil, "", nil
 }
 
-// Render loader if there are more results
-func renderLoaderIfNeeded(c *fiber.Ctx, userPrompt, nextCursor string) {
-	if nextCursor != "" {
-		loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s", htmlEscape(userPrompt), htmlEscape(nextCursor))
-		render(c, ui.LoaderDiv(loaderURL))
-	}
-}
-
 // Get user ID from context
 func getUserID(c *fiber.Ctx) int {
 	currentUser, _ := CurrentUser(c)
@@ -247,7 +240,7 @@ func HandleSearch(c *fiber.Ctx) error {
 
 	userID := getUserID(c)
 	log.Printf("[HandleSearch] userPrompt='%s', userID=%d", userPrompt, userID)
-	ads, nextCursor, err := performSearch(userPrompt, userID, nil, "")
+	ads, nextCursor, err := performSearch(userPrompt, userID, "")
 	if err != nil {
 		return err
 	}
@@ -271,8 +264,14 @@ func HandleSearch(c *fiber.Ctx) error {
 	loc := getLocation(c)
 	newAdButton := renderNewAdButton(c)
 
-	render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, userID, loc, view, userPrompt))
-	renderLoaderIfNeeded(c, userPrompt, nextCursor)
+	// Create loader URL if there are more results
+	var loaderURL string
+	if nextCursor != "" {
+		loaderURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view))
+	}
+
+	render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, userID, loc, view, userPrompt, loaderURL))
+
 	return nil
 }
 
@@ -280,27 +279,76 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	c.Set("Content-Type", "text/html")
 	userPrompt := c.Query("q")
 	cursorStr := c.Query("cursor")
+	view := c.Query("view")
+	if view == "" {
+		view = "list"
+	}
 
 	userID := getUserID(c)
-	var cursor *SearchCursor
-	if cursorStr != "" {
-		curs, err2 := DecodeCursor(cursorStr)
-		if err2 == nil {
-			cursor = &curs
+	log.Printf("[HandleSearchPage] userPrompt='%s', cursorStr='%s', userID=%d, view='%s'", userPrompt, cursorStr, userID, view)
+
+	ads, nextCursor, err := performSearch(userPrompt, userID, cursorStr)
+	if err != nil {
+		log.Printf("[HandleSearchPage] performSearch error: %v", err)
+		return err
+	}
+	log.Printf("[HandleSearchPage] Found %d ads, nextCursor='%s'", len(ads), nextCursor)
+
+	loc := getLocation(c)
+
+	// Determine if there are more results for infinite scroll
+	var nextPageURL string
+	if nextCursor != "" {
+		nextPageURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view))
+	}
+
+	// For list view, render the ads in compact list format with separators
+	if view == "list" {
+		log.Printf("[HandleSearchPage] Rendering %d ads in list view", len(ads))
+		for _, ad := range ads {
+			render(c, ui.AdCardCompactList(ad, loc, ad.Bookmarked, userID))
+			// Add separator after each ad
+			render(c, Div(Class("border-b border-gray-200")))
+		}
+	} else if view == "grid" {
+		log.Printf("[HandleSearchPage] Rendering %d ads in grid view", len(ads))
+		// For grid view, render the ads in expandable format without separators
+		for _, ad := range ads {
+			render(c, ui.AdCardExpandable(ad, loc, ad.Bookmarked, userID, "grid"))
 		}
 	}
 
-	ads, nextCursor, err := performSearch(userPrompt, userID, cursor, cursorStr)
-	if err != nil {
-		return err
+	// Add infinite scroll trigger if there are more results
+	if nextPageURL != "" {
+		log.Printf("[HandleSearchPage] Adding infinite scroll trigger with URL: %s", nextPageURL)
+		
+		// Create trigger that matches the view style
+		if view == "grid" {
+			// Grid trigger should be a grid item
+			render(c, Div(
+				Class("border rounded-lg shadow-sm bg-blue-100 flex items-center justify-center cursor-pointer hover:shadow-md transition-shadow"),
+				g.Attr("hx-get", nextPageURL),
+				g.Attr("hx-trigger", "revealed"),
+				g.Attr("hx-swap", "outerHTML"),
+				Div(
+					Class("p-4 text-center text-blue-600"),
+					g.Text("Loading more..."),
+				),
+			))
+		} else {
+			// List trigger
+			render(c, Div(
+				Class("flex items-center justify-center py-4 bg-blue-100 text-blue-600 border"),
+				g.Attr("hx-get", nextPageURL),
+				g.Attr("hx-trigger", "revealed"),
+				g.Attr("hx-swap", "outerHTML"),
+				g.Text("Loading more..."),
+			))
+		}
+	} else {
+		log.Printf("[HandleSearchPage] No infinite scroll trigger - no more results")
 	}
 
-	loc := getLocation(c)
-	for _, ad := range ads {
-		render(c, ui.AdCardExpandable(ad, loc, ad.Bookmarked, userID))
-	}
-
-	renderLoaderIfNeeded(c, userPrompt, nextCursor)
 	return nil
 }
 
@@ -612,10 +660,11 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 	}
 
 	var ads []ad.Ad
+	var nextCursor string
 	var err error
 
 	// Use the same performSearch function that HandleSearch uses
-	ads, _, err = performSearch(userPrompt, userID, nil, "")
+	ads, nextCursor, err = performSearch(userPrompt, userID, "")
 	if err != nil {
 		log.Printf("[handleViewSwitch] performSearch error: %v", err)
 		ads = []ad.Ad{}
@@ -642,7 +691,13 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 		Path:     "/",
 	})
 
-	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, userID, loc, selectedView, userPrompt))
+	// Create loader URL if there are more results
+	var loaderURL string
+	if nextCursor != "" {
+		loaderURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(selectedView))
+	}
+
+	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, userID, loc, selectedView, userPrompt, loaderURL))
 }
 
 func HandleGridView(c *fiber.Ctx) error {

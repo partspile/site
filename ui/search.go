@@ -14,57 +14,6 @@ import (
 
 type SearchSchema ad.SearchQuery
 
-func FilterCheckbox(value string) g.Node {
-	return Div(
-		Class("flex items-center space-x-2"),
-		Input(
-			Type("checkbox"),
-			Checked(),
-			Disabled(),
-			Class("opacity-50 cursor-not-allowed"),
-		),
-		Label(Class("text-gray-600"), g.Text(value)),
-	)
-}
-
-func SearchFilters(filters SearchSchema) g.Node {
-	if filters.Make == "" && len(filters.Years) == 0 && len(filters.Models) == 0 &&
-		len(filters.EngineSizes) == 0 && filters.Category == "" && filters.SubCategory == "" {
-		return g.Text("")
-	}
-
-	checkboxes := []g.Node{}
-
-	if filters.Make != "" {
-		checkboxes = append(checkboxes, FilterCheckbox(filters.Make))
-	}
-
-	for _, year := range filters.Years {
-		checkboxes = append(checkboxes, FilterCheckbox(year))
-	}
-
-	for _, model := range filters.Models {
-		checkboxes = append(checkboxes, FilterCheckbox(model))
-	}
-
-	for _, engine := range filters.EngineSizes {
-		checkboxes = append(checkboxes, FilterCheckbox(engine))
-	}
-
-	if filters.Category != "" {
-		checkboxes = append(checkboxes, FilterCheckbox(filters.Category))
-	}
-
-	if filters.SubCategory != "" {
-		checkboxes = append(checkboxes, FilterCheckbox(filters.SubCategory))
-	}
-
-	return Div(
-		Class("flex flex-wrap gap-4 mt-2"),
-		g.Group(checkboxes),
-	)
-}
-
 func ViewToggleButtons(activeView string) g.Node {
 	icon := func(name, alt string) g.Node {
 		return Img(
@@ -100,11 +49,11 @@ func ViewToggleButtons(activeView string) g.Node {
 	)
 }
 
-func ListView(ads map[int]ad.Ad, loc *time.Location) g.Node {
+func ListViewFromMap(ads map[int]ad.Ad, loc *time.Location) g.Node {
 	return Div(
 		ID("list-view"),
 		AdCompactListContainer(
-			g.Group(BuildAdListNodesWithView(ads, loc, "list")),
+			g.Group(BuildAdListNodes(ads, loc)),
 		),
 	)
 }
@@ -125,10 +74,6 @@ func TreeViewWithQuery(query, structuredQuery string) g.Node {
 		hx.Trigger("load"),
 		hx.Swap("innerHTML"),
 	)
-}
-
-func TreeViewWithStructuredQuery(query, structuredQuery string) g.Node {
-	return TreeViewWithQuery(query, structuredQuery)
 }
 
 func InitialSearchResults(view string) g.Node {
@@ -180,85 +125,130 @@ func SearchWidget(newAdButton g.Node, view string, query string) g.Node {
 	)
 }
 
-func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, ads []ad.Ad, _ interface{}, userID int, loc *time.Location, view string, query string) g.Node {
-	structuredQueryJSON, _ := json.Marshal(filters)
-	adsMap := make(map[int]ad.Ad, len(ads))
-	for _, ad := range ads {
-		adsMap[ad.ID] = ad
-	}
+func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, ads []ad.Ad, _ interface{}, userID int, loc *time.Location, view string, query string, loaderURL string) g.Node {
+	return SearchResultsContainer(newAdButton, ads, userID, loc, view, query, loaderURL)
+}
+
+func SearchResultsContainer(newAdButton g.Node, ads []ad.Ad, userID int, loc *time.Location, view string, query string, loaderURL string) g.Node {
 	return Div(
 		ID("searchResults"),
 		SearchWidget(newAdButton, view, query),
-		Input(
-			Type("hidden"),
-			Name("structured_query"),
-			Value(string(structuredQueryJSON)),
-		),
-		Div(
-			ID("searchFilters"),
-			Class("flex flex-wrap gap-4 mb-4"),
-			SearchFilters(filters),
-		),
 		ViewToggleButtons(view),
-		Div(
-			ID("view-wrapper"),
-			func() g.Node {
-				switch view {
-				case "tree":
-					return TreeViewWithQuery(query, string(structuredQueryJSON))
-				case "grid":
-					return GridView(ads, loc, userID)
-				case "map":
-					return MapView(adsMap, loc)
-				default:
-					return ListViewWithFlags(ads, userID, loc)
-				}
-			}(),
-		),
+		createViewWithInfiniteScroll(ads, userID, loc, view, query, loaderURL),
 	)
 }
 
-func ListViewWithFlags(ads []ad.Ad, userID int, loc *time.Location) g.Node {
+func createViewWithInfiniteScroll(ads []ad.Ad, userID int, loc *time.Location, view string, query string, loaderURL string) g.Node {
+	var viewContent g.Node
+
+	// Create the appropriate view
+	switch view {
+	case "tree":
+		structuredQueryJSON, _ := json.Marshal(SearchSchema{})
+		viewContent = TreeViewWithQuery(query, string(structuredQueryJSON))
+	case "grid":
+		if loaderURL != "" {
+			viewContent = GridViewWithTrigger(ads, loc, userID, loaderURL)
+		} else {
+			viewContent = GridView(ads, loc, userID)
+		}
+	case "map":
+		adsMap := make(map[int]ad.Ad, len(ads))
+		for _, ad := range ads {
+			adsMap[ad.ID] = ad
+		}
+		viewContent = MapView(adsMap, loc)
+	default: // list
+		viewContent = ListViewFromSlice(ads, userID, loc)
+	}
+
+	// Add infinite scroll trigger for list view only (grid has it built-in)
+	if view == "list" && loaderURL != "" {
+		return Div(
+			ID("view-wrapper"),
+			viewContent,
+			createInfiniteScrollTrigger(loaderURL),
+		)
+	}
+
+	return Div(
+		ID("view-wrapper"),
+		viewContent,
+	)
+}
+
+func createInfiniteScrollTrigger(loaderURL string) g.Node {
+	return Div(
+		Class("flex items-center justify-center py-4 bg-blue-100 text-blue-600 border"),
+		g.Attr("hx-get", loaderURL),
+		g.Attr("hx-trigger", "revealed"),
+		g.Attr("hx-swap", "outerHTML"),
+		g.Text("Loading more..."),
+	)
+}
+
+func ListViewFromSlice(ads []ad.Ad, userID int, loc *time.Location) g.Node {
+	adNodes := buildAdListNodesFromSlice(ads, userID, loc)
+
 	return Div(
 		ID("list-view"),
 		AdCompactListContainer(
-			g.Group(BuildAdListNodesWithBookmarks(ads, userID, loc)),
+			g.Group(adNodes),
 		),
 	)
 }
 
-func BuildAdListNodesWithBookmarks(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
-	nodes := make([]g.Node, 0, len(ads))
+func buildAdListNodesFromSlice(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
+	nodes := make([]g.Node, 0, len(ads)*2) // *2 because we'll add separators between ads
 	for _, ad := range ads {
 		nodes = append(nodes, AdCardCompactList(ad, loc, ad.Bookmarked, userID))
+
+		// Add separator after each ad
+		nodes = append(nodes, Div(
+			Class("border-b border-gray-200"),
+		))
 	}
 	return nodes
 }
 
-func BuildAdListNodesWithView(ads map[int]ad.Ad, loc *time.Location, view string) []g.Node {
-	nodes := make([]g.Node, 0, len(ads))
-	for _, ad := range ads {
-		if view == "list" {
-			nodes = append(nodes, AdCardCompactList(ad, loc, ad.Bookmarked, 0))
-		} else {
-			nodes = append(nodes, AdCardExpandable(ad, loc, ad.Bookmarked, 0, view))
-		}
-	}
-	return nodes
-}
-
-func GridView(ads []ad.Ad, loc *time.Location, userID ...int) g.Node {
+func GridView(ads []ad.Ad, loc *time.Location, userID int) g.Node {
 	// Preserve original order from backend (Qdrant order)
 	adNodes := make([]g.Node, 0, len(ads))
-	uid := 0
-	if len(userID) > 0 {
-		uid = userID[0]
-	}
 	for _, ad := range ads {
 		adNodes = append(adNodes,
-			AdCardExpandable(ad, loc, ad.Bookmarked, uid, "grid"),
+			AdCardExpandable(ad, loc, ad.Bookmarked, userID, "grid"),
 		)
 	}
+
+	return Div(
+		ID("grid-view"),
+		Class("grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"),
+		g.Group(adNodes),
+	)
+}
+
+func GridViewWithTrigger(ads []ad.Ad, loc *time.Location, userID int, loaderURL string) g.Node {
+	// Preserve original order from backend (Qdrant order)
+	adNodes := make([]g.Node, 0, len(ads)+1) // +1 for trigger
+	for _, ad := range ads {
+		adNodes = append(adNodes,
+			AdCardExpandable(ad, loc, ad.Bookmarked, userID, "grid"),
+		)
+	}
+
+	// Add the trigger as a grid item
+	trigger := Div(
+		Class("border rounded-lg shadow-sm bg-blue-100 flex items-center justify-center cursor-pointer hover:shadow-md transition-shadow"),
+		g.Attr("hx-get", loaderURL),
+		g.Attr("hx-trigger", "revealed"),
+		g.Attr("hx-swap", "outerHTML"),
+		Div(
+			Class("p-4 text-center text-blue-600"),
+			g.Text("Loading more..."),
+		),
+	)
+	adNodes = append(adNodes, trigger)
+
 	return Div(
 		ID("grid-view"),
 		Class("grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"),

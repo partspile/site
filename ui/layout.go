@@ -27,6 +27,17 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 				Src("https://unpkg.com/htmx.org@2.0.4"),
 				Defer(),
 			),
+			Script(
+				Type("text/javascript"),
+				g.Raw(`
+					document.addEventListener('htmx:load', function() {
+						console.log('HTMX loaded');
+					});
+					document.addEventListener('htmx:beforeRequest', function(evt) {
+						console.log('HTMX request:', evt.detail.path);
+					});
+				`),
+			),
 			// Script(
 			// 	Type("text/javascript"),
 			// 	g.Raw("if(window.htmx){htmx.logAll()} else {document.addEventListener('htmx:load',function(){htmx.logAll()})}"),
