@@ -165,3 +165,13 @@ func LoaderDiv(url string, view string) g.Node {
 		g.Attr("hx-swap", "outerHTML"),
 	)
 }
+
+func NoSearchResultsMessage() g.Node {
+	return Div(
+		Class("flex justify-center items-center p-8"),
+		Div(
+			Class("text-center"),
+			P(Class("text-gray-600 text-lg"), g.Text("Found no results")),
+		),
+	)
+}

@@ -244,11 +244,13 @@ func QuerySimilarAds(embedding []float32, topK int, cursor string) ([]AdResult, 
 
 	// Create search request using Query method
 	limit := uint64(topK)
+	scoreThreshold := float32(config.VectorSearchThreshold)
 	queryRequest := &qdrant.QueryPoints{
 		CollectionName: qdrantCollection,
 		Query:          qdrant.NewQueryDense(embedding),
 		Limit:          &limit,
 		Offset:         &offset,
+		ScoreThreshold: &scoreThreshold,
 		WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
 		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
 	}

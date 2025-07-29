@@ -736,3 +736,172 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 
 	return ads, nil
 }
+
+// GetAdsForTreeView gets ads for tree view - always returns ads regardless of path length
+// This is used to extract children from ads at any level
+func GetAdsForTreeView(parts []string, sq ad.SearchQuery, userID int) ([]ad.Ad, error) {
+	// Decode all path segments
+	decodedParts := make([]string, len(parts))
+	for i, p := range parts {
+		d, err := url.QueryUnescape(p)
+		if err != nil {
+			decodedParts[i] = p
+		} else {
+			decodedParts[i] = d
+		}
+	}
+	query := `
+		SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
+		       a.user_id, psc.name as subcategory, pc.name as category,
+		       m.name, y.year, mo.name, e.name,
+		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
+		       a.image_order, a.location_id,
+		       l.city, l.admin_area, l.country
+		FROM Ad a
+		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
+		JOIN AdCar ac ON a.id = ac.ad_id
+		JOIN Car c ON ac.car_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN Engine e ON c.engine_id = e.id
+		LEFT JOIN BookmarkedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
+		LEFT JOIN Location l ON a.location_id = l.id
+	`
+	var args []interface{}
+	args = append(args, userID)
+	var conditions []string
+
+	if len(decodedParts) > 0 && decodedParts[0] != "" {
+		conditions = append(conditions, "m.name = ?")
+		args = append(args, decodedParts[0])
+	} else if sq.Make != "" {
+		conditions = append(conditions, "m.name = ?")
+		args = append(args, sq.Make)
+	}
+	if len(decodedParts) > 1 {
+		conditions = append(conditions, "y.year = ?")
+		args = append(args, decodedParts[1])
+	} else if len(sq.Years) > 0 {
+		placeholders := make([]string, len(sq.Years))
+		for i, y := range sq.Years {
+			placeholders[i] = "?"
+			args = append(args, y)
+		}
+		conditions = append(conditions, "y.year IN ("+strings.Join(placeholders, ",")+")")
+	}
+	if len(decodedParts) > 2 {
+		conditions = append(conditions, "mo.name = ?")
+		args = append(args, decodedParts[2])
+	} else if len(sq.Models) > 0 {
+		placeholders := make([]string, len(sq.Models))
+		for i, m := range sq.Models {
+			placeholders[i] = "?"
+			args = append(args, m)
+		}
+		conditions = append(conditions, "mo.name IN ("+strings.Join(placeholders, ",")+")")
+	}
+	if len(decodedParts) > 3 {
+		conditions = append(conditions, "e.name = ?")
+		args = append(args, decodedParts[3])
+	} else if len(sq.EngineSizes) > 0 {
+		placeholders := make([]string, len(sq.EngineSizes))
+		for i, e := range sq.EngineSizes {
+			placeholders[i] = "?"
+			args = append(args, e)
+		}
+		conditions = append(conditions, "e.name IN ("+strings.Join(placeholders, ",")+")")
+	}
+	if len(decodedParts) > 4 {
+		conditions = append(conditions, "pc.name = ?")
+		args = append(args, decodedParts[4])
+	} else if sq.Category != "" {
+		conditions = append(conditions, "pc.name = ?")
+		args = append(args, sq.Category)
+	}
+	if len(decodedParts) > 5 {
+		conditions = append(conditions, "psc.name = ?")
+		args = append(args, decodedParts[5])
+	} else if sq.SubCategory != "" {
+		conditions = append(conditions, "psc.name = ?")
+		args = append(args, sq.SubCategory)
+	}
+
+	if len(conditions) > 0 {
+		query += " WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query failed: %w; query: %s; args: %v", err, query, args)
+	}
+	defer rows.Close()
+
+	var ads []ad.Ad
+	for rows.Next() {
+		var adID int
+		var adObj ad.Ad
+		var subcategory, category, makeName, modelName, engineName sql.NullString
+		var year sql.NullInt64
+		var isBookmarked int
+		var imageOrder sql.NullString
+		var locationID sql.NullInt64
+		var city, adminArea, country sql.NullString
+		if err := rows.Scan(&adID, &adObj.Title, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName, &isBookmarked, &imageOrder, &locationID, &city, &adminArea, &country); err != nil {
+			return nil, err
+		}
+		adObj.ID = adID
+		if subcategory.Valid {
+			adObj.SubCategory = subcategory.String
+		}
+		if category.Valid {
+			adObj.Category = category.String
+		}
+		if makeName.Valid {
+			adObj.Make = makeName.String
+		}
+		if year.Valid {
+			adObj.Years = []string{fmt.Sprintf("%d", year.Int64)}
+		}
+		if modelName.Valid {
+			adObj.Models = []string{modelName.String}
+		}
+		if engineName.Valid {
+			adObj.Engines = []string{engineName.String}
+		}
+		adObj.Bookmarked = isBookmarked == 1
+
+		// Handle image order
+		if imageOrder.Valid {
+			_ = json.Unmarshal([]byte(imageOrder.String), &adObj.ImageOrder)
+		}
+
+		// Handle location fields
+		if locationID.Valid {
+			adObj.LocationID = int(locationID.Int64)
+		}
+		if city.Valid {
+			adObj.City = city.String
+		}
+		if adminArea.Valid {
+			adObj.AdminArea = adminArea.String
+		}
+		if country.Valid {
+			adObj.Country = country.String
+		}
+
+		// Populate all years, models, engines for the ad
+		fullAd, ok := ad.GetAd(adID)
+		if ok {
+			adObj.Years = fullAd.Years
+			adObj.Models = fullAd.Models
+			adObj.Engines = fullAd.Engines
+		}
+		ads = append(ads, adObj)
+	}
+
+	// For tree view, always return ads regardless of path length
+	// This allows us to extract children from ads at any level
+	return ads, nil
+}
