@@ -24,7 +24,6 @@ go.work.sum
 # env file
 .env
 
-project.db
 project.db-shm
 project.db-wal
 seed_db.sql
