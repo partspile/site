@@ -27,6 +27,7 @@ import (
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/grok"
+	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/vehicle"
@@ -42,7 +43,18 @@ func HandleNewAd(c *fiber.Ctx) error {
 		return err
 	}
 	makes := vehicle.GetMakes()
-	return render(c, ui.NewAdPage(currentUser, c.Path(), makes))
+	categories, err := part.GetAllCategories()
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get categories")
+	}
+
+	// Convert categories to string slice
+	categoryNames := make([]string, len(categories))
+	for i, cat := range categories {
+		categoryNames[i] = cat.Name
+	}
+
+	return render(c, ui.NewAdPage(currentUser, c.Path(), makes, categoryNames))
 }
 
 // Helper to resolve location using Grok and upsert into Location table
@@ -196,7 +208,31 @@ func HandleEditAd(c *fiber.Ctx) error {
 	// Prepare engine checkboxes
 	engineAvailability := vehicle.GetEnginesWithAvailability(adObj.Make, adObj.Years, adObj.Models)
 
-	return render(c, ui.EditAdPage(currentUser, c.Path(), adObj, makes, years, modelAvailability, engineAvailability))
+	// Get categories
+	categories, err := part.GetAllCategories()
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get categories")
+	}
+
+	// Convert categories to string slice
+	categoryNames := make([]string, len(categories))
+	for i, cat := range categories {
+		categoryNames[i] = cat.Name
+	}
+
+	// Get subcategories for the current category if it exists
+	var subcategoryNames []string
+	if adObj.Category != "" {
+		subCategories, err := part.GetSubCategoriesForCategory(adObj.Category)
+		if err == nil {
+			subcategoryNames = make([]string, len(subCategories))
+			for i, subCat := range subCategories {
+				subcategoryNames[i] = subCat.Name
+			}
+		}
+	}
+
+	return render(c, ui.EditAdPage(currentUser, c.Path(), adObj, makes, years, modelAvailability, engineAvailability, categoryNames, subcategoryNames))
 }
 
 func HandleUpdateAdSubmission(c *fiber.Ctx) error {
@@ -449,13 +485,38 @@ func HandleEditAdPartial(c *fiber.Ctx) error {
 	years := vehicle.GetYears(adObj.Make)
 	modelAvailability := vehicle.GetModelsWithAvailability(adObj.Make, adObj.Years)
 	engineAvailability := vehicle.GetEnginesWithAvailability(adObj.Make, adObj.Years, adObj.Models)
+
+	// Get categories
+	categories, err := part.GetAllCategories()
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get categories")
+	}
+
+	// Convert categories to string slice
+	categoryNames := make([]string, len(categories))
+	for i, cat := range categories {
+		categoryNames[i] = cat.Name
+	}
+
+	// Get subcategories for the current category if it exists
+	var subcategoryNames []string
+	if adObj.Category != "" {
+		subCategories, err := part.GetSubCategoriesForCategory(adObj.Category)
+		if err == nil {
+			subcategoryNames = make([]string, len(subCategories))
+			for i, subCat := range subCategories {
+				subcategoryNames[i] = subCat.Name
+			}
+		}
+	}
+
 	view := c.Query("view", "list")
 	cancelTarget := fmt.Sprintf("/ad/detail/%d?view=%s", adObj.ID, view)
 	htmxTarget := fmt.Sprintf("#ad-%d", adObj.ID)
 	if view == "grid" {
 		htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", adObj.ID)
 	}
-	return render(c, ui.AdEditPartial(adObj, makes, years, modelAvailability, engineAvailability, cancelTarget, htmxTarget, view))
+	return render(c, ui.AdEditPartial(adObj, makes, years, modelAvailability, engineAvailability, categoryNames, subcategoryNames, cancelTarget, htmxTarget, view))
 }
 
 // uploadAdImagesToB2 is a stub for now

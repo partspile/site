@@ -338,9 +338,8 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, bookmarked bool, userID int,
 	return card
 }
 
-
 // AdEditPartial renders the ad edit form for inline editing
-func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engineAvailability map[string]bool, cancelTarget, htmxTarget string, view ...string) g.Node {
+func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engineAvailability map[string]bool, categories, subcategories []string, cancelTarget, htmxTarget string, view ...string) g.Node {
 	isGrid := len(view) > 0 && view[0] == "grid"
 	editForm := Div(
 		ID(fmt.Sprintf("ad-%d", adObj.ID)),
@@ -458,6 +457,18 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 				}
 				return engineCheckboxes
 			}()...))),
+			CategoriesFormGroup(categories, adObj.Category),
+			Div(
+				ID("subcategoriesDiv"),
+				Class("space-y-2"),
+				// Show subcategories if they exist
+				func() g.Node {
+					if len(subcategories) > 0 {
+						return SubCategoriesFormGroup(subcategories, adObj.SubCategory)
+					}
+					return g.Text("")
+				}(),
+			),
 			FormGroup("Images", "images",
 				Div(
 					// New: Image gallery for existing images
@@ -625,7 +636,7 @@ func BuildAdListNodes(ads map[int]ad.Ad, loc *time.Location) []g.Node {
 
 // ---- Ad Pages ----
 
-func NewAdPage(currentUser *user.User, path string, makes []string) g.Node {
+func NewAdPage(currentUser *user.User, path string, makes []string, categories []string) g.Node {
 	makeOptions := []g.Node{}
 	for _, makeName := range makes {
 		makeOptions = append(makeOptions,
@@ -679,6 +690,11 @@ func NewAdPage(currentUser *user.User, path string, makes []string) g.Node {
 				),
 				Div(
 					ID("enginesDiv"),
+					Class("space-y-2"),
+				),
+				CategoriesFormGroup(categories, ""),
+				Div(
+					ID("subcategoriesDiv"),
 					Class("space-y-2"),
 				),
 				FormGroup("Images", "images",
@@ -798,7 +814,7 @@ func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad, bookmarked boo
 	)
 }
 
-func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []string, years []string, modelAvailability map[string]bool, engineAvailability map[string]bool) g.Node {
+func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []string, years []string, modelAvailability map[string]bool, engineAvailability map[string]bool, categories []string, subcategories []string) g.Node {
 	// Prepare make options
 	makeOptions := []g.Node{}
 	for _, makeName := range makes {
@@ -922,6 +938,18 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 				FormGroup("Years", "years", Div(ID("yearsDiv"), GridContainer(5, yearCheckboxes...))),
 				FormGroup("Models", "models", Div(ID("modelsDiv"), GridContainer(5, modelCheckboxes...))),
 				FormGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer(5, engineCheckboxes...))),
+				CategoriesFormGroup(categories, currentAd.Category),
+				Div(
+					ID("subcategoriesDiv"),
+					Class("space-y-2"),
+					// Show subcategories if they exist
+					func() g.Node {
+						if len(subcategories) > 0 {
+							return SubCategoriesFormGroup(subcategories, currentAd.SubCategory)
+						}
+						return g.Text("")
+					}(),
+				),
 				FormGroup("Images", "images",
 					Div(
 						// New: Image gallery for existing images
@@ -1631,4 +1659,3 @@ func AdCardCompactList(ad ad.Ad, loc *time.Location, bookmarked bool, userID int
 		picLink,
 	)
 }
-

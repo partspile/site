@@ -58,6 +58,30 @@ func GetAllSubCategories() ([]SubCategory, error) {
 	return subCategories, nil
 }
 
+func GetSubCategoriesForCategory(categoryName string) ([]SubCategory, error) {
+	rows, err := db.Query(`
+		SELECT psc.id, psc.category_id, psc.name 
+		FROM PartSubCategory psc
+		JOIN PartCategory pc ON psc.category_id = pc.id
+		WHERE pc.name = ?
+		ORDER BY psc.name
+	`, categoryName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var subCategories []SubCategory
+	for rows.Next() {
+		var sc SubCategory
+		if err := rows.Scan(&sc.ID, &sc.CategoryID, &sc.Name); err != nil {
+			return nil, err
+		}
+		subCategories = append(subCategories, sc)
+	}
+	return subCategories, nil
+}
+
 func GetMakes(query string) ([]string, error) {
 	// If there's a search query, filter makes based on matching ads
 	if query != "" {

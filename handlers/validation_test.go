@@ -226,39 +226,67 @@ func TestParseFormInt(t *testing.T) {
 
 func TestValidateAdForm(t *testing.T) {
 	tests := []struct {
-		name        string
-		years       []string
-		models      []string
-		engines     []string
-		expectError bool
+		name          string
+		years         []string
+		models        []string
+		engines       []string
+		categories    []string
+		subcategories []string
+		expectError   bool
 	}{
 		{
-			name:        "valid ad form",
-			years:       []string{"2020", "2021"},
-			models:      []string{"Civic", "Accord"},
-			engines:     []string{"2.0L", "2.5L"},
-			expectError: false,
+			name:          "valid ad form",
+			years:         []string{"2020", "2021"},
+			models:        []string{"Civic", "Accord"},
+			engines:       []string{"2.0L", "2.5L"},
+			categories:    []string{"Engine"},
+			subcategories: []string{"Engine Block"},
+			expectError:   false,
 		},
 		{
-			name:        "missing years",
-			years:       []string{},
-			models:      []string{"Civic"},
-			engines:     []string{"2.0L"},
-			expectError: true,
+			name:          "missing years",
+			years:         []string{},
+			models:        []string{"Civic"},
+			engines:       []string{"2.0L"},
+			categories:    []string{"Engine"},
+			subcategories: []string{"Engine Block"},
+			expectError:   true,
 		},
 		{
-			name:        "missing models",
-			years:       []string{"2020"},
-			models:      []string{},
-			engines:     []string{"2.0L"},
-			expectError: true,
+			name:          "missing models",
+			years:         []string{"2020"},
+			models:        []string{},
+			engines:       []string{"2.0L"},
+			categories:    []string{"Engine"},
+			subcategories: []string{"Engine Block"},
+			expectError:   true,
 		},
 		{
-			name:        "missing engines",
-			years:       []string{"2020"},
-			models:      []string{"Civic"},
-			engines:     []string{},
-			expectError: true,
+			name:          "missing engines",
+			years:         []string{"2020"},
+			models:        []string{"Civic"},
+			engines:       []string{},
+			categories:    []string{"Engine"},
+			subcategories: []string{"Engine Block"},
+			expectError:   true,
+		},
+		{
+			name:          "missing category",
+			years:         []string{"2020"},
+			models:        []string{"Civic"},
+			engines:       []string{"2.0L"},
+			categories:    []string{},
+			subcategories: []string{"Engine Block"},
+			expectError:   true,
+		},
+		{
+			name:          "missing subcategory",
+			years:         []string{"2020"},
+			models:        []string{"Civic"},
+			engines:       []string{"2.0L"},
+			categories:    []string{"Engine"},
+			subcategories: []string{},
+			expectError:   true,
 		},
 	}
 
@@ -266,9 +294,11 @@ func TestValidateAdForm(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			form := &multipart.Form{
 				Value: map[string][]string{
-					"years":   tt.years,
-					"models":  tt.models,
-					"engines": tt.engines,
+					"years":       tt.years,
+					"models":      tt.models,
+					"engines":     tt.engines,
+					"category":    tt.categories,
+					"subcategory": tt.subcategories,
 				},
 			}
 
@@ -285,25 +315,49 @@ func TestValidateAdForm(t *testing.T) {
 
 func TestValidateAdFormAndReturn(t *testing.T) {
 	tests := []struct {
-		name        string
-		years       []string
-		models      []string
-		engines     []string
-		expectError bool
+		name          string
+		years         []string
+		models        []string
+		engines       []string
+		categories    []string
+		subcategories []string
+		expectError   bool
 	}{
 		{
-			name:        "valid ad form",
-			years:       []string{"2020", "2021"},
-			models:      []string{"Civic", "Accord"},
-			engines:     []string{"2.0L", "2.5L"},
-			expectError: false,
+			name:          "valid ad form",
+			years:         []string{"2020", "2021"},
+			models:        []string{"Civic", "Accord"},
+			engines:       []string{"2.0L", "2.5L"},
+			categories:    []string{"Engine"},
+			subcategories: []string{"Engine Block"},
+			expectError:   false,
 		},
 		{
-			name:        "missing years",
-			years:       []string{},
-			models:      []string{"Civic"},
-			engines:     []string{"2.0L"},
-			expectError: true,
+			name:          "missing years",
+			years:         []string{},
+			models:        []string{"Civic"},
+			engines:       []string{"2.0L"},
+			categories:    []string{"Engine"},
+			subcategories: []string{"Engine Block"},
+			expectError:   true,
+		},
+		{
+			name:          "missing category",
+			years:         []string{"2020"},
+			models:        []string{"Civic"},
+			engines:       []string{"2.0L"},
+			categories:    []string{},
+			subcategories: []string{"Engine Block"},
+			expectError:   true,
+		},
+		{
+			name:          "missing subcategory",
+			years:         []string{"2020"},
+			models:        []string{"Civic"},
+			engines:       []string{"2.0L"},
+			categories:    []string{"Engine"},
+			subcategories: []string{},
+			expectError:   true,
 		},
 	}
 
@@ -311,24 +365,30 @@ func TestValidateAdFormAndReturn(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			form := &multipart.Form{
 				Value: map[string][]string{
-					"years":   tt.years,
-					"models":  tt.models,
-					"engines": tt.engines,
+					"years":       tt.years,
+					"models":      tt.models,
+					"engines":     tt.engines,
+					"category":    tt.categories,
+					"subcategory": tt.subcategories,
 				},
 			}
 
-			years, models, engines, err := ValidateAdFormAndReturn(form)
+			years, models, engines, categories, subcategories, err := ValidateAdFormAndReturn(form)
 
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, years)
 				assert.Nil(t, models)
 				assert.Nil(t, engines)
+				assert.Nil(t, categories)
+				assert.Nil(t, subcategories)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.years, years)
 				assert.Equal(t, tt.models, models)
 				assert.Equal(t, tt.engines, engines)
+				assert.Equal(t, tt.categories, categories)
+				assert.Equal(t, tt.subcategories, subcategories)
 			}
 		})
 	}

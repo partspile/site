@@ -99,6 +99,8 @@ func main() {
 	api.Get("/years", handlers.HandleYears)
 	api.Get("/models", handlers.HandleModels)
 	api.Get("/engines", handlers.HandleEngines)
+	api.Get("/categories", handlers.HandleCategories)
+	api.Get("/subcategories", handlers.HandleSubCategories)
 	api.Get("/ad-image-url/:adID", handlers.HandleAdImageSignedURL)
 
 	// Admin dashboard and management

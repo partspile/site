@@ -1,6 +1,7 @@
 package ad
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 
@@ -125,13 +126,13 @@ func TestGetAdByID(t *testing.T) {
 	defer mockDB.Close()
 
 	db.SetForTesting(mockDB)
-	mock.ExpectQuery("SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id, a.user_id, psc.name as subcategory, a.click_count, a.last_clicked_at, a.location_id, a.image_order, l.city, l.admin_area, l.country FROM Ad a LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id LEFT JOIN Location l ON a.location_id = l.id WHERE a.id = \\?").
+	mock.ExpectQuery("SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order, l.city, l.admin_area, l.country FROM Ad a LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id LEFT JOIN PartCategory pc ON psc.category_id = pc.id LEFT JOIN Location l ON a.location_id = l.id WHERE a.id = \\?").
 		WithArgs(1).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "title", "description", "price", "created_at", "subcategory_id",
-			"user_id", "subcategory", "click_count", "last_clicked_at", "location_id", "image_order",
+			"user_id", "subcategory", "category", "click_count", "last_clicked_at", "location_id", "image_order",
 			"city", "admin_area", "country",
-		}).AddRow(1, "Test Ad", "Test Description", 100.0, "2023-01-01T00:00:00Z", nil, 1, nil, 0, nil, 1, "[]", nil, nil, nil))
+		}).AddRow(1, "Test Ad", "Test Description", 100.0, "2023-01-01T00:00:00Z", nil, 1, nil, nil, 0, nil, 1, "[]", nil, nil, nil))
 
 	ad, status, found := GetAdByID(1)
 
@@ -150,13 +151,13 @@ func TestGetAd(t *testing.T) {
 	// Set the global db variable for testing
 	db.SetForTesting(mockDB)
 
-	mock.ExpectQuery("SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id, a.user_id, psc.name as subcategory, a.click_count, a.last_clicked_at, a.location_id, a.image_order, l.city, l.admin_area, l.country FROM Ad a LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id LEFT JOIN Location l ON a.location_id = l.id WHERE a.id = \\?").
+	mock.ExpectQuery("SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order, l.city, l.admin_area, l.country FROM Ad a LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id LEFT JOIN PartCategory pc ON psc.category_id = pc.id LEFT JOIN Location l ON a.location_id = l.id WHERE a.id = \\?").
 		WithArgs(1).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "title", "description", "price", "created_at", "subcategory_id",
-			"user_id", "subcategory", "click_count", "last_clicked_at", "location_id", "image_order",
+			"user_id", "subcategory", "category", "click_count", "last_clicked_at", "location_id", "image_order",
 			"city", "admin_area", "country",
-		}).AddRow(1, "Test Ad", "Test Description", 100.0, "2023-01-01T00:00:00Z", nil, 1, nil, 0, nil, 1, "[]", nil, nil, nil))
+		}).AddRow(1, "Test Ad", "Test Description", 100.0, "2023-01-01T00:00:00Z", nil, 1, nil, nil, 0, nil, 1, "[]", nil, nil, nil))
 
 	ad, found := GetAd(1)
 
@@ -291,4 +292,62 @@ func TestGetAdClickCount(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 42, count)
 	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetSubCategoryIDByName(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	db.SetForTesting(mockDB)
+
+	subcategoryName := "Engine Block"
+	expectedID := 1
+
+	mock.ExpectQuery("SELECT psc.id FROM PartSubCategory psc WHERE psc.name = \\?").
+		WithArgs(subcategoryName).
+		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(expectedID))
+
+	id, err := getSubCategoryIDByName(subcategoryName)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, id)
+	assert.Equal(t, expectedID, *id)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetSubCategoryIDByName_NotFound(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	db.SetForTesting(mockDB)
+
+	subcategoryName := "NonExistentSubcategory"
+
+	mock.ExpectQuery("SELECT psc.id FROM PartSubCategory psc WHERE psc.name = \\?").
+		WithArgs(subcategoryName).
+		WillReturnError(sql.ErrNoRows)
+
+	id, err := getSubCategoryIDByName(subcategoryName)
+
+	assert.NoError(t, err)
+	assert.Nil(t, id)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetSubCategoryIDByName_EmptyName(t *testing.T) {
+	mockDB, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	db.SetForTesting(mockDB)
+
+	subcategoryName := ""
+
+	id, err := getSubCategoryIDByName(subcategoryName)
+
+	assert.NoError(t, err)
+	assert.Nil(t, id)
+	// No database query should be made for empty name
 }

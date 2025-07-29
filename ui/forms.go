@@ -4,6 +4,8 @@ import (
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
+
+	"github.com/parts-pile/site/part"
 )
 
 // ---- Form Components ----
@@ -121,4 +123,80 @@ func EnginesFormGroup(engineAvailability map[string]bool) g.Node {
 		)
 	}
 	return FormGroup("Engines", "engines", GridContainer(5, checkboxes...))
+}
+
+func CategoriesFormGroup(categories []string, selectedCategory string) g.Node {
+	options := []g.Node{
+		Option(Value(""), g.Text("Select a category")),
+	}
+
+	for _, category := range categories {
+		attrs := []g.Node{Value(category), g.Text(category)}
+		if category == selectedCategory {
+			attrs = append(attrs, Selected())
+		}
+		options = append(options, Option(attrs...))
+	}
+
+	return FormGroup("Category", "category",
+		Select(
+			ID("category"),
+			Name("category"),
+			Class("w-full p-2 border rounded"),
+			Required(),
+			hx.Trigger("change"),
+			hx.Get("/api/subcategories"),
+			hx.Target("#subcategoriesDiv"),
+			hx.Include("this"),
+			g.Group(options),
+		),
+	)
+}
+
+func SubCategoriesFormGroup(subCategories []string, selectedSubCategory string) g.Node {
+	options := []g.Node{
+		Option(Value(""), g.Text("Select a subcategory")),
+	}
+
+	for _, subCategory := range subCategories {
+		attrs := []g.Node{Value(subCategory), g.Text(subCategory)}
+		if subCategory == selectedSubCategory {
+			attrs = append(attrs, Selected())
+		}
+		options = append(options, Option(attrs...))
+	}
+
+	return FormGroup("Subcategory", "subcategory",
+		Select(
+			ID("subcategory"),
+			Name("subcategory"),
+			Class("w-full p-2 border rounded"),
+			Required(),
+			g.Group(options),
+		),
+	)
+}
+
+func SubCategoriesFormGroupFromStruct(subCategories []part.SubCategory, selectedSubCategory string) g.Node {
+	options := []g.Node{
+		Option(Value(""), g.Text("Select a subcategory")),
+	}
+
+	for _, subCategory := range subCategories {
+		attrs := []g.Node{Value(subCategory.Name), g.Text(subCategory.Name)}
+		if subCategory.Name == selectedSubCategory {
+			attrs = append(attrs, Selected())
+		}
+		options = append(options, Option(attrs...))
+	}
+
+	return FormGroup("Subcategory", "subcategory",
+		Select(
+			ID("subcategory"),
+			Name("subcategory"),
+			Class("w-full p-2 border rounded"),
+			Required(),
+			g.Group(options),
+		),
+	)
 }

@@ -176,23 +176,24 @@ func GetAdByID(id int) (Ad, AdStatus, bool) {
 func GetAd(id int) (Ad, bool) {
 	row := db.QueryRow(`
 		SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-		       a.user_id, psc.name as subcategory, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+		       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
 		       l.city, l.admin_area, l.country
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
 		LEFT JOIN Location l ON a.location_id = l.id
 		WHERE a.id = ?
 	`, id)
 
 	var ad Ad
-	var subcategory sql.NullString
+	var subcategory, category sql.NullString
 	var lastClickedAt sql.NullTime
 	var locationID sql.NullInt64
 	var imageOrder sql.NullString
 	var city, adminArea, country sql.NullString
 	var createdAt string
 	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
-		&ad.SubCategoryID, &ad.UserID, &subcategory, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
+		&ad.SubCategoryID, &ad.UserID, &subcategory, &category, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
 		&city, &adminArea, &country); err != nil {
 		fmt.Println("DEBUG GetAd scan error:", err)
 		return Ad{}, false
@@ -205,6 +206,9 @@ func GetAd(id int) (Ad, bool) {
 
 	if subcategory.Valid {
 		ad.SubCategory = subcategory.String
+	}
+	if category.Valid {
+		ad.Category = category.String
 	}
 
 	if lastClickedAt.Valid {
@@ -241,10 +245,21 @@ func AddAd(ad Ad) int {
 	}
 	defer tx.Rollback()
 
+	// Get subcategory ID if subcategory name is provided
+	var subcategoryID *int
+	if ad.SubCategory != "" {
+		subcategoryID, err = getSubCategoryIDByName(ad.SubCategory)
+		if err != nil {
+			return 0
+		}
+	} else {
+		subcategoryID = ad.SubCategoryID
+	}
+
 	createdAt := time.Now().UTC().Format(time.RFC3339)
 	imgOrderJSON, _ := json.Marshal(ad.ImageOrder)
 	res, err := tx.Exec("INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		ad.Title, ad.Description, ad.Price, createdAt, ad.SubCategoryID, ad.UserID, ad.LocationID, string(imgOrderJSON))
+		ad.Title, ad.Description, ad.Price, createdAt, subcategoryID, ad.UserID, ad.LocationID, string(imgOrderJSON))
 	if err != nil {
 		return 0
 	}
@@ -326,6 +341,29 @@ func GetNextAdID() int {
 	return seq + 1
 }
 
+// getSubCategoryIDByName gets the subcategory ID by name
+func getSubCategoryIDByName(subcategoryName string) (*int, error) {
+	if subcategoryName == "" {
+		return nil, nil
+	}
+
+	var id int
+	err := db.QueryRow(`
+		SELECT psc.id 
+		FROM PartSubCategory psc 
+		WHERE psc.name = ?
+	`, subcategoryName).Scan(&id)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &id, nil
+}
+
 // GetAdsPage returns a page of ads for cursor-based pagination
 func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 	rows, err := db.Query(`
@@ -395,13 +433,14 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 		// Use JOIN-based query when we have vehicle filters
 		sqlQuery = `
 			SELECT DISTINCT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-			       psc.name as subcategory, a.click_count, a.last_clicked_at,
+			       psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at,
 			       m.name as make_name, y.year, mo.name as model_name, e.name as engine_name,
 			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
 			       a.image_order,
 			       l.city, l.admin_area, l.country
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+			LEFT JOIN PartCategory pc ON psc.category_id = pc.id
 			JOIN AdCar ac ON a.id = ac.ad_id
 			JOIN Car c ON ac.car_id = c.id
 			JOIN Make m ON c.make_id = m.id
@@ -450,13 +489,14 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 		// Use simple query when no vehicle filters - this includes ALL ads
 		sqlQuery = `
 			SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-			       psc.name as subcategory, a.click_count, a.last_clicked_at,
+			       psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at,
 			       NULL as make_name, NULL as year, NULL as model_name, NULL as engine_name,
 			       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
 			       a.image_order,
 			       l.city, l.admin_area, l.country
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+			LEFT JOIN PartCategory pc ON psc.category_id = pc.id
 			LEFT JOIN BookmarkedAd fa ON a.id = fa.ad_id AND fa.user_id = ?
 			LEFT JOIN Location l ON a.location_id = l.id
 			WHERE 1=1
@@ -502,6 +542,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			createdAt     time.Time
 			subcatID      sql.NullInt64
 			subcategory   sql.NullString
+			category      sql.NullString
 			clickCount    int
 			lastClickedAt sql.NullTime
 			makeName      sql.NullString
@@ -516,7 +557,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 		)
 
 		if err := rows.Scan(&id, &title, &description, &price, &createdAt,
-			&subcatID, &subcategory, &clickCount, &lastClickedAt, &makeName, &year, &modelName, &engineName, &isBookmarked, &imageOrder,
+			&subcatID, &subcategory, &category, &clickCount, &lastClickedAt, &makeName, &year, &modelName, &engineName, &isBookmarked, &imageOrder,
 			&city, &adminArea, &country); err != nil {
 			continue
 		}
@@ -539,6 +580,9 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			}
 			if subcategory.Valid {
 				ad.SubCategory = subcategory.String
+			}
+			if category.Valid {
+				ad.Category = category.String
 			}
 			if imageOrder.Valid {
 				_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
@@ -820,9 +864,20 @@ func UpdateAd(ad Ad) error {
 	}
 	defer tx.Rollback()
 
+	// Get subcategory ID if subcategory name is provided
+	var subcategoryID *int
+	if ad.SubCategory != "" {
+		subcategoryID, err = getSubCategoryIDByName(ad.SubCategory)
+		if err != nil {
+			return err
+		}
+	} else {
+		subcategoryID = ad.SubCategoryID
+	}
+
 	imgOrderJSON, _ := json.Marshal(ad.ImageOrder)
 	_, err = tx.Exec("UPDATE Ad SET title = ?, description = ?, price = ?, subcategory_id = ?, location_id = ?, image_order = ? WHERE id = ?",
-		ad.Title, ad.Description, ad.Price, ad.SubCategoryID, ad.LocationID, string(imgOrderJSON), ad.ID)
+		ad.Title, ad.Description, ad.Price, subcategoryID, ad.LocationID, string(imgOrderJSON), ad.ID)
 	if err != nil {
 		return err
 	}

@@ -127,3 +127,60 @@ func TestGetMakes_WithoutQuery(t *testing.T) {
 	assert.Equal(t, expectedMakes[2], makes[2])
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
+
+func TestGetSubCategoriesForCategory(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	db.SetForTesting(mockDB)
+
+	categoryName := "Engine"
+	expectedSubCategories := []SubCategory{
+		{ID: 1, CategoryID: 1, Name: "Engine Block"},
+		{ID: 2, CategoryID: 1, Name: "Cylinder Head"},
+		{ID: 3, CategoryID: 1, Name: "Pistons"},
+	}
+
+	rows := sqlmock.NewRows([]string{"id", "category_id", "name"})
+	for _, subCategory := range expectedSubCategories {
+		rows.AddRow(subCategory.ID, subCategory.CategoryID, subCategory.Name)
+	}
+
+	mock.ExpectQuery("SELECT psc.id, psc.category_id, psc.name FROM PartSubCategory psc JOIN PartCategory pc ON psc.category_id = pc.id WHERE pc.name = \\? ORDER BY psc.name").
+		WithArgs(categoryName).
+		WillReturnRows(rows)
+
+	subCategories, err := GetSubCategoriesForCategory(categoryName)
+
+	assert.NoError(t, err)
+	assert.Len(t, subCategories, 3)
+	assert.Equal(t, expectedSubCategories[0].Name, subCategories[0].Name)
+	assert.Equal(t, expectedSubCategories[0].CategoryID, subCategories[0].CategoryID)
+	assert.Equal(t, expectedSubCategories[1].Name, subCategories[1].Name)
+	assert.Equal(t, expectedSubCategories[2].Name, subCategories[2].Name)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestGetSubCategoriesForCategory_EmptyResult(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	db.SetForTesting(mockDB)
+
+	categoryName := "NonExistentCategory"
+
+	rows := sqlmock.NewRows([]string{"id", "category_id", "name"})
+	// No rows returned for non-existent category
+
+	mock.ExpectQuery("SELECT psc.id, psc.category_id, psc.name FROM PartSubCategory psc JOIN PartCategory pc ON psc.category_id = pc.id WHERE pc.name = \\? ORDER BY psc.name").
+		WithArgs(categoryName).
+		WillReturnRows(rows)
+
+	subCategories, err := GetSubCategoriesForCategory(categoryName)
+
+	assert.NoError(t, err)
+	assert.Len(t, subCategories, 0)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}

@@ -4,6 +4,7 @@ import (
 	"net/url"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vehicle"
 )
@@ -64,4 +65,25 @@ func HandleEngines(c *fiber.Ctx) error {
 
 	engineAvailability := vehicle.GetEnginesWithAvailability(makeName, years, models)
 	return render(c, ui.EnginesFormGroup(engineAvailability))
+}
+
+func HandleCategories(c *fiber.Ctx) error {
+	categories, err := part.GetAllCategories()
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get categories")
+	}
+	return c.JSON(categories)
+}
+
+func HandleSubCategories(c *fiber.Ctx) error {
+	categoryName := c.Query("category")
+	if categoryName == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Category is required")
+	}
+
+	subCategories, err := part.GetSubCategoriesForCategory(categoryName)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get subcategories")
+	}
+	return render(c, ui.SubCategoriesFormGroupFromStruct(subCategories, ""))
 }

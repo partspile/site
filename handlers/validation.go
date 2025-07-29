@@ -58,7 +58,7 @@ func ValidationErrorResponseWithStatus(c *fiber.Ctx, message string, statusCode 
 	return render(c, ui.ValidationError(message))
 }
 
-// ValidateAdForm validates the common ad form fields (years, models, engines)
+// ValidateAdForm validates the common ad form fields (years, models, engines, category, subcategory)
 func ValidateAdForm(form *multipart.Form) error {
 	if _, err := ValidateRequiredMultipart(form, "years", "year"); err != nil {
 		return err
@@ -69,27 +69,43 @@ func ValidateAdForm(form *multipart.Form) error {
 	if _, err := ValidateRequiredMultipart(form, "engines", "engine size"); err != nil {
 		return err
 	}
+	if _, err := ValidateRequiredMultipart(form, "category", "category"); err != nil {
+		return err
+	}
+	if _, err := ValidateRequiredMultipart(form, "subcategory", "subcategory"); err != nil {
+		return err
+	}
 	return nil
 }
 
 // ValidateAdFormAndReturn validates ad form and returns the values
-func ValidateAdFormAndReturn(form *multipart.Form) (years, models, engines []string, err error) {
+func ValidateAdFormAndReturn(form *multipart.Form) (years, models, engines, categories, subcategories []string, err error) {
 	years, err = ValidateRequiredMultipart(form, "years", "year")
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	models, err = ValidateRequiredMultipart(form, "models", "model")
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
 	engines, err = ValidateRequiredMultipart(form, "engines", "engine size")
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, nil, err
 	}
 
-	return years, models, engines, nil
+	categories, err = ValidateRequiredMultipart(form, "category", "category")
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+
+	subcategories, err = ValidateRequiredMultipart(form, "subcategory", "subcategory")
+	if err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+
+	return years, models, engines, categories, subcategories, nil
 }
 
 // ValidateAndParsePrice validates and parses a price field
@@ -125,10 +141,21 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
 	}
-	years, models, engines, err := ValidateAdFormAndReturn(form)
+	years, models, engines, categories, subcategories, err := ValidateAdFormAndReturn(form)
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
 	}
+
+	// Get category and subcategory from the validated arrays
+	category := ""
+	if len(categories) > 0 {
+		category = categories[0]
+	}
+	subcategory := ""
+	if len(subcategories) > 0 {
+		subcategory = subcategories[0]
+	}
+
 	// Extract image files
 	imageFiles := form.File["images"]
 	// Don't require at least one image for edit
@@ -172,6 +199,8 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 		Years:       years,
 		Models:      models,
 		Engines:     engines,
+		Category:    category,
+		SubCategory: subcategory,
 		Description: description,
 		Price:       price,
 		UserID:      userID,
