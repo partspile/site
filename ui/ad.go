@@ -149,6 +149,27 @@ func AgeDisplay(posted time.Time) g.Node {
 	)
 }
 
+// formatCategoryDisplay formats the category and subcategory for display
+func formatCategoryDisplay(ad ad.Ad) g.Node {
+	if ad.Category == "" && ad.SubCategory == "" {
+		return g.Node(nil)
+	}
+
+	var categoryText string
+	if ad.Category != "" && ad.SubCategory != "" {
+		categoryText = fmt.Sprintf("%s • %s", ad.Category, ad.SubCategory)
+	} else if ad.Category != "" {
+		categoryText = ad.Category
+	} else {
+		categoryText = ad.SubCategory
+	}
+
+	return Div(
+		Class("text-sm text-gray-500 -mt-1 mb-3"),
+		g.Text(categoryText),
+	)
+}
+
 // ---- Ad Components ----
 
 func AdDetails(adObj ad.Ad) g.Node {
@@ -1368,6 +1389,8 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, bookmarked bool, userID in
 					deleteBtn,
 				),
 			),
+			// Category display
+			formatCategoryDisplay(ad),
 			// Age and location row
 			Div(
 				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
@@ -1531,6 +1554,8 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 						deleteBtn,
 					),
 				),
+				// Category display
+				formatCategoryDisplay(ad),
 				// Age and location row
 				Div(
 					Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
@@ -1563,6 +1588,8 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 						deleteBtn,
 					),
 				),
+				// Category display
+				formatCategoryDisplay(ad),
 				// Age and location row
 				Div(
 					Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),

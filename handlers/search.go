@@ -116,13 +116,13 @@ func fetchAdsByIDs(ids []string, userID int) ([]ad.Ad, error) {
 }
 
 // Run embedding-based search and fetch ads
-func runEmbeddingSearch(embedding []float32, cursor string, userID int, threshold float32) ([]ad.Ad, string, error) {
+func runEmbeddingSearch(embedding []float32, cursor string, userID int) ([]ad.Ad, string, error) {
 	// Get results with threshold filtering at Qdrant level
-	results, nextCursor, err := vector.QuerySimilarAds(embedding, config.VectorSearchPageSize, cursor, threshold)
+	results, nextCursor, err := vector.QuerySimilarAds(embedding, config.VectorSearchPageSize, cursor)
 	if err != nil {
 		return nil, "", err
 	}
-	log.Printf("[runEmbeddingSearch] Qdrant returned %d results (threshold: %.1f)", len(results), threshold)
+	log.Printf("[runEmbeddingSearch] Qdrant returned %d results (threshold: %.1f)", len(results), config.VectorSearchThreshold)
 
 	ids := make([]string, len(results))
 	for i, r := range results {
@@ -135,36 +135,36 @@ func runEmbeddingSearch(embedding []float32, cursor string, userID int, threshol
 }
 
 // Try embedding-based search with user prompt
-func tryQueryEmbedding(userPrompt, cursor string, userID int, threshold float32) ([]ad.Ad, string, error) {
+func tryQueryEmbedding(userPrompt, cursor string, userID int) ([]ad.Ad, string, error) {
 	log.Printf("[search] Generating embedding for user query: %s", userPrompt)
 	embedding, err := vector.EmbedText(userPrompt)
 	if err != nil {
 		return nil, "", err
 	}
-	return runEmbeddingSearch(embedding, cursor, userID, threshold)
+	return runEmbeddingSearch(embedding, cursor, userID)
 }
 
 // Try embedding-based search with user embedding
-func tryUserEmbedding(userID int, cursor string, threshold float32) ([]ad.Ad, string, error) {
+func tryUserEmbedding(userID int, cursor string) ([]ad.Ad, string, error) {
 	embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
 	if err != nil || embedding == nil {
 		return nil, "", err
 	}
-	return runEmbeddingSearch(embedding, cursor, userID, threshold)
+	return runEmbeddingSearch(embedding, cursor, userID)
 }
 
 // Search strategy for both HandleSearch and HandleSearchPage
-func performSearch(userPrompt string, userID int, cursorStr string, threshold float32) ([]ad.Ad, string, error) {
-	log.Printf("[performSearch] userPrompt='%s', userID=%d, cursorStr='%s', threshold=%.2f", userPrompt, userID, cursorStr, threshold)
+func performSearch(userPrompt string, userID int, cursorStr string) ([]ad.Ad, string, error) {
+	log.Printf("[performSearch] userPrompt='%s', userID=%d, cursorStr='%s'", userPrompt, userID, cursorStr)
 	if userPrompt != "" {
-		ads, nextCursor, _ := tryQueryEmbedding(userPrompt, cursorStr, userID, threshold)
+		ads, nextCursor, _ := tryQueryEmbedding(userPrompt, cursorStr, userID)
 		log.Printf("[performSearch] tryQueryEmbedding: found %d ads", len(ads))
 		if len(ads) > 0 {
 			return ads, nextCursor, nil
 		}
 	}
 	if userPrompt == "" && userID != 0 {
-		ads, nextCursor, _ := tryUserEmbedding(userID, cursorStr, threshold)
+		ads, nextCursor, _ := tryUserEmbedding(userID, cursorStr)
 		log.Printf("[performSearch] tryUserEmbedding: found %d ads", len(ads))
 		if len(ads) > 0 {
 			return ads, nextCursor, nil
@@ -179,7 +179,7 @@ func performSearch(userPrompt string, userID int, cursorStr string, threshold fl
 				log.Printf("[performSearch] site-level vector first 5 values: %v", emb[:min(5, len(emb))])
 			}
 			log.Printf("[performSearch] About to call runEmbeddingSearch with site-level vector")
-			ads, nextCursor, _ := runEmbeddingSearch(emb, cursorStr, userID, threshold)
+			ads, nextCursor, _ := runEmbeddingSearch(emb, cursorStr, userID)
 			log.Printf("[performSearch] site-level vector: found %d ads", len(ads))
 			if len(ads) > 0 {
 				return ads, nextCursor, nil
@@ -197,7 +197,7 @@ func performSearch(userPrompt string, userID int, cursorStr string, threshold fl
 				log.Printf("[performSearch] site-level vector first 5 values: %v", emb[:min(5, len(emb))])
 			}
 			log.Printf("[performSearch] About to call runEmbeddingSearch with site-level vector")
-			ads, nextCursor, _ := runEmbeddingSearch(emb, cursorStr, userID, threshold)
+			ads, nextCursor, _ := runEmbeddingSearch(emb, cursorStr, userID)
 			log.Printf("[performSearch] site-level vector: found %d ads", len(ads))
 			if len(ads) > 0 {
 				return ads, nextCursor, nil
@@ -241,18 +241,9 @@ func HandleSearch(c *fiber.Ctx) error {
 		view = "list"
 	}
 
-	// Get threshold from request, default to config value
-	thresholdStr := c.Query("threshold")
-	threshold := float32(config.VectorSearchThreshold)
-	if thresholdStr != "" {
-		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
-			threshold = float32(thresholdVal)
-		}
-	}
-
 	userID := getUserID(c)
-	log.Printf("[HandleSearch] userPrompt='%s', userID=%d, threshold=%.2f", userPrompt, userID, threshold)
-	ads, nextCursor, err := performSearch(userPrompt, userID, "", threshold)
+	log.Printf("[HandleSearch] userPrompt='%s', userID=%d", userPrompt, userID)
+	ads, nextCursor, err := performSearch(userPrompt, userID, "")
 	if err != nil {
 		return err
 	}
@@ -278,17 +269,17 @@ func HandleSearch(c *fiber.Ctx) error {
 
 	// Show no results message if no ads found, but only for list/grid views
 	if (view == "list" || view == "grid") && len(ads) == 0 {
-		render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, userID, loc, view, userPrompt, "", fmt.Sprintf("%.2f", threshold)))
+		render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, userID, loc, view, userPrompt, ""))
 		return nil
 	}
 
 	// Create loader URL if there are more results
 	var loaderURL string
 	if nextCursor != "" {
-		loaderURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s&threshold=%.2f", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view), threshold)
+		loaderURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view))
 	}
 
-	render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, userID, loc, view, userPrompt, loaderURL, fmt.Sprintf("%.2f", threshold)))
+	render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, userID, loc, view, userPrompt, loaderURL))
 
 	return nil
 }
@@ -302,19 +293,10 @@ func HandleSearchPage(c *fiber.Ctx) error {
 		view = "list"
 	}
 
-	// Get threshold from request, default to config value
-	thresholdStr := c.Query("threshold")
-	threshold := float32(config.VectorSearchThreshold)
-	if thresholdStr != "" {
-		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
-			threshold = float32(thresholdVal)
-		}
-	}
-
 	userID := getUserID(c)
-	log.Printf("[HandleSearchPage] userPrompt='%s', cursorStr='%s', userID=%d, view='%s', threshold=%.2f", userPrompt, cursorStr, userID, view, threshold)
+	log.Printf("[HandleSearchPage] userPrompt='%s', cursorStr='%s', userID=%d, view='%s'", userPrompt, cursorStr, userID, view)
 
-	ads, nextCursor, err := performSearch(userPrompt, userID, cursorStr, threshold)
+	ads, nextCursor, err := performSearch(userPrompt, userID, cursorStr)
 	if err != nil {
 		log.Printf("[HandleSearchPage] performSearch error: %v", err)
 		return err
@@ -326,7 +308,7 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	// Determine if there are more results for infinite scroll
 	var nextPageURL string
 	if nextCursor != "" {
-		nextPageURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s&threshold=%.2f", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view), threshold)
+		nextPageURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view))
 	}
 
 	// Show no results message if no ads found, but only for list/grid views
@@ -521,15 +503,6 @@ func TreeView(c *fiber.Ctx) error {
 	}
 	level := len(parts)
 
-	// Get threshold from request, default to config value
-	thresholdStr := c.Query("threshold")
-	threshold := float32(config.VectorSearchThreshold)
-	if thresholdStr != "" {
-		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
-			threshold = float32(thresholdVal)
-		}
-	}
-
 	var structuredQuery SearchQuery
 	if structuredQueryStr != "" {
 		err := json.Unmarshal([]byte(structuredQueryStr), &structuredQuery)
@@ -556,8 +529,8 @@ func TreeView(c *fiber.Ctx) error {
 	var ads []ad.Ad
 	if q != "" {
 		// Use vector search with threshold-based filtering for search queries
-		log.Printf("[tree-view] Using vector search for query: %s with threshold: %.2f", q, threshold)
-		ads, err = getTreeAdsForSearch(q, userID, threshold)
+		log.Printf("[tree-view] Using vector search for query: %s", q)
+		ads, err = getTreeAdsForSearch(q, userID)
 	} else {
 		// Use SQL-based filtering for browse mode
 		log.Printf("[tree-view] Using SQL-based filtering for browse mode")
@@ -678,21 +651,12 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 		userPrompt = c.Query("q")
 	}
 
-	// Get threshold from request, default to config value
-	thresholdStr := c.Query("threshold")
-	threshold := float32(config.VectorSearchThreshold)
-	if thresholdStr != "" {
-		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
-			threshold = float32(thresholdVal)
-		}
-	}
-
 	var ads []ad.Ad
 	var nextCursor string
 	var err error
 
 	// Use the same performSearch function that HandleSearch uses
-	ads, nextCursor, err = performSearch(userPrompt, userID, "", threshold)
+	ads, nextCursor, err = performSearch(userPrompt, userID, "")
 	if err != nil {
 		log.Printf("[handleViewSwitch] performSearch error: %v", err)
 		ads = []ad.Ad{}
@@ -722,16 +686,16 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 	// Create loader URL if there are more results
 	var loaderURL string
 	if nextCursor != "" {
-		loaderURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s&threshold=%.2f", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(selectedView), threshold)
+		loaderURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(selectedView))
 	}
 
 	// Only show no-results message for list and grid views
 	if (view == "list" || view == "grid") && len(ads) == 0 {
-		render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, userID, loc, selectedView, userPrompt, "", fmt.Sprintf("%.2f", threshold)))
+		render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, userID, loc, selectedView, userPrompt, ""))
 		return nil
 	}
 
-	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, userID, loc, selectedView, userPrompt, loaderURL, fmt.Sprintf("%.2f", threshold)))
+	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, userID, loc, selectedView, userPrompt, loaderURL))
 }
 
 func HandleGridView(c *fiber.Ctx) error {
@@ -744,7 +708,7 @@ func HandleMapView(c *fiber.Ctx) error {
 
 // getTreeAdsForSearch performs vector search with threshold-based filtering for tree view
 // Uses larger limit to build complete tree structure
-func getTreeAdsForSearch(userPrompt string, userID int, threshold float32) ([]ad.Ad, error) {
+func getTreeAdsForSearch(userPrompt string, userID int) ([]ad.Ad, error) {
 	// Generate embedding for search query
 	log.Printf("[tree-search] Generating embedding for tree search query: %s", userPrompt)
 	embedding, err := vector.EmbedText(userPrompt)
@@ -753,12 +717,12 @@ func getTreeAdsForSearch(userPrompt string, userID int, threshold float32) ([]ad
 	}
 
 	// Get results with threshold filtering at Qdrant level (larger limit for tree building)
-	results, _, err := vector.QuerySimilarAds(embedding, config.VectorSearchInitialK, "", threshold)
+	results, _, err := vector.QuerySimilarAds(embedding, config.VectorSearchInitialK, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Qdrant: %w", err)
 	}
 
-	log.Printf("[tree-search] Qdrant returned %d results (threshold: %.1f)", len(results), threshold)
+	log.Printf("[tree-search] Qdrant returned %d results (threshold: %.1f)", len(results), config.VectorSearchThreshold)
 
 	// Fetch ads from DB
 	ids := make([]string, len(results))

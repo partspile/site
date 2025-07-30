@@ -29,11 +29,6 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 			),
 			Script(
 				Type("text/javascript"),
-				Src("/threshold-slider.js"),
-				Defer(),
-			),
-			Script(
-				Type("text/javascript"),
 				g.Raw(`
 					document.addEventListener('htmx:load', function() {
 						console.log('HTMX loaded');
