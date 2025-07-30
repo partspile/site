@@ -220,7 +220,7 @@ func UpsertAdEmbedding(adID int, embedding []float32, metadata map[string]interf
 
 // QuerySimilarAds queries Qdrant for similar ads given an embedding
 // Returns a list of AdResult, and a cursor for pagination
-func QuerySimilarAds(embedding []float32, topK int, cursor string) ([]AdResult, string, error) {
+func QuerySimilarAds(embedding []float32, topK int, cursor string, threshold float32) ([]AdResult, string, error) {
 	if qdrantClient == nil {
 		return nil, "", fmt.Errorf("Qdrant client not initialized")
 	}
@@ -244,7 +244,7 @@ func QuerySimilarAds(embedding []float32, topK int, cursor string) ([]AdResult, 
 
 	// Create search request using Query method
 	limit := uint64(topK)
-	scoreThreshold := float32(config.VectorSearchThreshold)
+	scoreThreshold := threshold
 	queryRequest := &qdrant.QueryPoints{
 		CollectionName: qdrantCollection,
 		Query:          qdrant.NewQueryDense(embedding),
