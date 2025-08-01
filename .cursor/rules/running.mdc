@@ -1,0 +1,4 @@
+---
+alwaysApply: true
+---
+Don't run the app using go run.  You can build the app, and test the app, but don't run the app.
