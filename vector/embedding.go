@@ -168,6 +168,17 @@ func UpsertAdEmbedding(adID int, embedding []float32, metadata map[string]interf
 				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_DoubleValue{DoubleValue: val}}
 			case bool:
 				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_BoolValue{BoolValue: val}}
+			case []string:
+				// Handle array of strings (years, models, engines)
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_ListValue{ListValue: &qdrant.ListValue{
+					Values: func() []*qdrant.Value {
+						result := make([]*qdrant.Value, len(val))
+						for i, s := range val {
+							result[i] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: s}}
+						}
+						return result
+					}(),
+				}}}
 			default:
 				// Convert to string for other types
 				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: fmt.Sprintf("%v", val)}}
@@ -669,17 +680,42 @@ func QuerySimilarAdsWithFilter(embedding []float32, filter *qdrant.Filter, topK 
 	}
 
 	limit := uint64(topK)
-	scoreThreshold := float32(config.VectorSearchThreshold)
 
-	queryRequest := &qdrant.QueryPoints{
-		CollectionName: qdrantCollection,
-		Query:          qdrant.NewQueryDense(embedding),
-		Filter:         filter,
-		Limit:          &limit,
-		Offset:         &offset,
-		ScoreThreshold: &scoreThreshold,
-		WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
-		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
+	// Check if this is a dummy embedding (all zeros) for pure metadata filtering
+	isDummyEmbedding := true
+	for _, val := range embedding {
+		if val != 0 {
+			isDummyEmbedding = false
+			break
+		}
+	}
+
+	var queryRequest *qdrant.QueryPoints
+	if isDummyEmbedding {
+		// For pure metadata filtering, don't use similarity threshold
+		log.Printf("[qdrant] Using pure metadata filtering (no similarity threshold)")
+		queryRequest = &qdrant.QueryPoints{
+			CollectionName: qdrantCollection,
+			Query:          qdrant.NewQueryDense(embedding),
+			Filter:         filter,
+			Limit:          &limit,
+			Offset:         &offset,
+			WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
+			WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
+		}
+	} else {
+		// For similarity search, use the threshold
+		scoreThreshold := float32(config.VectorSearchThreshold)
+		queryRequest = &qdrant.QueryPoints{
+			CollectionName: qdrantCollection,
+			Query:          qdrant.NewQueryDense(embedding),
+			Filter:         filter,
+			Limit:          &limit,
+			Offset:         &offset,
+			ScoreThreshold: &scoreThreshold,
+			WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
+			WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
+		}
 	}
 
 	resp, err := qdrantClient.Query(ctx, queryRequest)
@@ -750,7 +786,7 @@ func BuildTreeFilter(treePath map[string]string) *qdrant.Filter {
 			ConditionOneOf: &qdrant.Condition_Field{
 				Field: &qdrant.FieldCondition{
 					Key:   "years",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: year}},
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keywords{Keywords: &qdrant.RepeatedStrings{Strings: []string{year}}}},
 				},
 			},
 		})
@@ -761,7 +797,7 @@ func BuildTreeFilter(treePath map[string]string) *qdrant.Filter {
 			ConditionOneOf: &qdrant.Condition_Field{
 				Field: &qdrant.FieldCondition{
 					Key:   "models",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: model}},
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keywords{Keywords: &qdrant.RepeatedStrings{Strings: []string{model}}}},
 				},
 			},
 		})
@@ -772,7 +808,29 @@ func BuildTreeFilter(treePath map[string]string) *qdrant.Filter {
 			ConditionOneOf: &qdrant.Condition_Field{
 				Field: &qdrant.FieldCondition{
 					Key:   "engines",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: engine}},
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keywords{Keywords: &qdrant.RepeatedStrings{Strings: []string{engine}}}},
+				},
+			},
+		})
+	}
+
+	if category, ok := treePath["category"]; ok && category != "" {
+		conditions = append(conditions, &qdrant.Condition{
+			ConditionOneOf: &qdrant.Condition_Field{
+				Field: &qdrant.FieldCondition{
+					Key:   "category",
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: category}},
+				},
+			},
+		})
+	}
+
+	if subcategory, ok := treePath["subcategory"]; ok && subcategory != "" {
+		conditions = append(conditions, &qdrant.Condition{
+			ConditionOneOf: &qdrant.Condition_Field{
+				Field: &qdrant.FieldCondition{
+					Key:   "subcategory",
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: subcategory}},
 				},
 			},
 		})

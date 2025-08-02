@@ -56,9 +56,53 @@ func EnsureCollectionExists() error {
 	return nil
 }
 
-// SetupPayloadIndexes creates all necessary payload indexes
-// Note: This is a placeholder for future implementation when we understand the correct Qdrant API
+// SetupPayloadIndexes creates all necessary payload indexes for filtering
 func SetupPayloadIndexes() error {
-	log.Printf("[qdrant] Payload indexing setup skipped - to be implemented later")
+	if qdrantClient == nil {
+		return fmt.Errorf("Qdrant client not initialized")
+	}
+
+	collectionName := config.QdrantCollection
+	ctx := context.Background()
+
+	// Define the fields that need indexes for filtering
+	indexFields := []struct {
+		fieldName   string
+		fieldSchema qdrant.FieldType
+	}{
+		{"make", qdrant.FieldType_FieldTypeKeyword},
+		{"years", qdrant.FieldType_FieldTypeKeyword},
+		{"models", qdrant.FieldType_FieldTypeKeyword},
+		{"engines", qdrant.FieldType_FieldTypeKeyword},
+		{"category", qdrant.FieldType_FieldTypeKeyword},
+		{"subcategory", qdrant.FieldType_FieldTypeKeyword},
+		{"price", qdrant.FieldType_FieldTypeFloat},
+	}
+
+	log.Printf("[qdrant] Setting up payload indexes for collection: %s", collectionName)
+
+	for _, field := range indexFields {
+		log.Printf("[qdrant] Creating index for field: %s (type: %v)", field.fieldName, field.fieldSchema)
+
+		_, err := qdrantClient.CreateFieldIndex(ctx, &qdrant.CreateFieldIndexCollection{
+			CollectionName: collectionName,
+			FieldName:      field.fieldName,
+			FieldType:      &field.fieldSchema,
+		})
+
+		if err != nil {
+			// Check if index already exists (common error)
+			if fmt.Sprintf("%v", err) == "rpc error: code = AlreadyExists desc = Index already exists" {
+				log.Printf("[qdrant] Index for field %s already exists", field.fieldName)
+			} else {
+				log.Printf("[qdrant] Failed to create index for field %s: %v", field.fieldName, err)
+				return fmt.Errorf("failed to create index for field %s: %w", field.fieldName, err)
+			}
+		} else {
+			log.Printf("[qdrant] Successfully created index for field: %s", field.fieldName)
+		}
+	}
+
+	log.Printf("[qdrant] Payload indexes setup completed")
 	return nil
 }
