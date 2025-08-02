@@ -24,20 +24,32 @@ func main() {
 	}
 
 	// Initialize Gemini client
-	if err := vector.InitGeminiClient(""); err != nil {
+	if err := vector.InitGeminiClient(); err != nil {
 		log.Fatalf("Failed to initialize Gemini client: %v", err)
 	}
 
 	// Initialize Qdrant client
-	if err := vector.InitQdrantClient("", "", ""); err != nil {
+	if err := vector.InitQdrantClient(); err != nil {
 		log.Fatalf("Failed to initialize Qdrant client: %v", err)
+	}
+
+	// Ensure collection exists and setup indexes
+	if err := vector.EnsureCollectionExists(); err != nil {
+		log.Fatalf("Failed to ensure collection exists: %v", err)
+	}
+
+	if err := vector.SetupPayloadIndexes(); err != nil {
+		log.Fatalf("Failed to setup payload indexes: %v", err)
 	}
 
 	// Start background user embedding processor
 	vector.GetEmbeddingQueue().StartBackgroundProcessor()
 
 	// Start background vector processor for ads
-	vector.StartBackgroundVectorProcessor()
+	vector.GetVectorProcessor().StartBackgroundProcessor()
+
+	// Initially populate the queue with existing ads without vectors
+	vector.GetVectorProcessor().QueueAdsWithoutVectors()
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: customErrorHandler,

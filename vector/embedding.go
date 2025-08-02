@@ -31,10 +31,8 @@ var (
 )
 
 // InitGeminiClient initializes the Gemini embedding client
-func InitGeminiClient(apiKey string) error {
-	if apiKey == "" {
-		apiKey = config.GeminiAPIKey
-	}
+func InitGeminiClient() error {
+	apiKey := config.GeminiAPIKey
 	if apiKey == "" {
 		return fmt.Errorf("missing Gemini API key")
 	}
@@ -48,19 +46,13 @@ func InitGeminiClient(apiKey string) error {
 }
 
 // InitQdrantClient initializes the Qdrant client and collection
-func InitQdrantClient(host, apiKey, collection string) error {
-	if host == "" {
-		host = config.QdrantHost
-	}
+func InitQdrantClient() error {
+	host := config.QdrantHost
 	if host == "" {
 		return fmt.Errorf("missing Qdrant host")
 	}
-	if apiKey == "" {
-		apiKey = config.QdrantAPIKey
-	}
-	if collection == "" {
-		collection = config.QdrantCollection
-	}
+	apiKey := config.QdrantAPIKey
+	collection := config.QdrantCollection
 	if collection == "" {
 		return fmt.Errorf("missing Qdrant collection name")
 	}
@@ -251,8 +243,12 @@ func QuerySimilarAds(embedding []float32, topK int, cursor string) ([]AdResult, 
 		Limit:          &limit,
 		Offset:         &offset,
 		ScoreThreshold: &scoreThreshold,
-		WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
-		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
+		WithPayload: &qdrant.WithPayloadSelector{
+			SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true},
+		},
+		WithVectors: &qdrant.WithVectorsSelector{
+			SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false},
+		},
 	}
 
 	resp, err := qdrantClient.Query(ctx, queryRequest)
@@ -528,10 +524,53 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 
 // buildAdEmbeddingMetadata creates metadata for embeddings
 func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
-	return map[string]interface{}{
-		"created_at":  adObj.CreatedAt.Format(time.RFC3339),
-		"click_count": adObj.ClickCount,
+	// Get location data for geo filtering
+	var lat, lon float64
+	if adObj.LocationID != 0 {
+		// TODO: Implement location lookup
+		// For now, use default coordinates
+		lat, lon = 0, 0
 	}
+
+	// Get tree path data for navigation filtering
+	var make string
+	var years, models, engines []string
+
+	// Use the vehicle data already populated in the ad object
+	make = adObj.Make
+	years = adObj.Years
+	models = adObj.Models
+	engines = adObj.Engines
+
+	// Get category data for filtering
+	var category, subcategory string
+	if adObj.SubCategoryID != nil {
+		subcategory = adObj.SubCategory
+		category = adObj.Category
+	}
+
+	metadata := map[string]interface{}{
+		// Tree navigation (string values for filtering)
+		"make":        make,
+		"years":       years,
+		"models":      models,
+		"engines":     engines,
+		"category":    category,
+		"subcategory": subcategory,
+
+		// Price for filtering/sorting
+		"price": adObj.Price,
+	}
+
+	// Add geo payload if we have coordinates
+	if lat != 0 && lon != 0 {
+		metadata["geo"] = map[string]interface{}{
+			"lat": lat,
+			"lon": lon,
+		}
+	}
+
+	return metadata
 }
 
 // Helper function for embedding generation
@@ -540,6 +579,23 @@ func joinStrings(ss []string) string {
 		return ""
 	}
 	return fmt.Sprintf("%s", ss)
+}
+
+// Helper function to check if slice contains string
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+// geocodeLocation converts location text to lat/lon coordinates
+func geocodeLocation(locationText string) (float64, float64) {
+	// TODO: Implement geocoding service
+	// For now, return default coordinates
+	return 0, 0
 }
 
 // StartBackgroundVectorProcessor starts a background goroutine that processes ads without vectors
@@ -590,4 +646,151 @@ func StartBackgroundVectorProcessor() {
 			}
 		}
 	}()
+}
+
+// QuerySimilarAdsWithFilter queries Qdrant with filters
+func QuerySimilarAdsWithFilter(embedding []float32, filter *qdrant.Filter, topK int, cursor string) ([]AdResult, string, error) {
+	if qdrantClient == nil {
+		return nil, "", fmt.Errorf("Qdrant client not initialized")
+	}
+
+	ctx := context.Background()
+
+	// Parse cursor if provided
+	var offset uint64 = 0
+	if cursor != "" {
+		cursorBytes, err := base64.StdEncoding.DecodeString(cursor)
+		if err == nil {
+			cursorStr := string(cursorBytes)
+			if offsetVal, err := strconv.ParseUint(cursorStr, 10, 64); err == nil {
+				offset = offsetVal
+			}
+		}
+	}
+
+	limit := uint64(topK)
+	scoreThreshold := float32(config.VectorSearchThreshold)
+
+	queryRequest := &qdrant.QueryPoints{
+		CollectionName: qdrantCollection,
+		Query:          qdrant.NewQueryDense(embedding),
+		Filter:         filter,
+		Limit:          &limit,
+		Offset:         &offset,
+		ScoreThreshold: &scoreThreshold,
+		WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
+		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
+	}
+
+	resp, err := qdrantClient.Query(ctx, queryRequest)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to query Qdrant: %w", err)
+	}
+
+	var results []AdResult
+	for _, result := range resp {
+		metadata := make(map[string]interface{})
+		for k, v := range result.Payload {
+			switch val := v.Kind.(type) {
+			case *qdrant.Value_StringValue:
+				metadata[k] = val.StringValue
+			case *qdrant.Value_IntegerValue:
+				metadata[k] = val.IntegerValue
+			case *qdrant.Value_DoubleValue:
+				metadata[k] = val.DoubleValue
+			case *qdrant.Value_BoolValue:
+				metadata[k] = val.BoolValue
+			default:
+				metadata[k] = fmt.Sprintf("%v", val)
+			}
+		}
+
+		var adID string
+		if numID := result.Id.GetNum(); numID != 0 {
+			adID = fmt.Sprintf("%d", numID)
+		} else {
+			adID = result.Id.GetUuid()
+		}
+
+		adResult := AdResult{
+			ID:       adID,
+			Score:    float32(result.Score),
+			Metadata: metadata,
+		}
+		results = append(results, adResult)
+	}
+
+	// Generate next cursor
+	var nextCursor string
+	if len(results) > 0 {
+		nextOffset := offset + uint64(len(results))
+		nextCursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d", nextOffset)))
+	}
+
+	return results, nextCursor, nil
+}
+
+// BuildTreeFilter creates a filter for tree navigation
+func BuildTreeFilter(treePath map[string]string) *qdrant.Filter {
+	var conditions []*qdrant.Condition
+
+	if make, ok := treePath["make"]; ok && make != "" {
+		conditions = append(conditions, &qdrant.Condition{
+			ConditionOneOf: &qdrant.Condition_Field{
+				Field: &qdrant.FieldCondition{
+					Key:   "make",
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: make}},
+				},
+			},
+		})
+	}
+
+	if year, ok := treePath["year"]; ok && year != "" {
+		conditions = append(conditions, &qdrant.Condition{
+			ConditionOneOf: &qdrant.Condition_Field{
+				Field: &qdrant.FieldCondition{
+					Key:   "years",
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: year}},
+				},
+			},
+		})
+	}
+
+	if model, ok := treePath["model"]; ok && model != "" {
+		conditions = append(conditions, &qdrant.Condition{
+			ConditionOneOf: &qdrant.Condition_Field{
+				Field: &qdrant.FieldCondition{
+					Key:   "models",
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: model}},
+				},
+			},
+		})
+	}
+
+	if engine, ok := treePath["engine"]; ok && engine != "" {
+		conditions = append(conditions, &qdrant.Condition{
+			ConditionOneOf: &qdrant.Condition_Field{
+				Field: &qdrant.FieldCondition{
+					Key:   "engines",
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: engine}},
+				},
+			},
+		})
+	}
+
+	if len(conditions) == 0 {
+		return nil
+	}
+
+	return &qdrant.Filter{
+		Must: conditions,
+	}
+}
+
+// BuildGeoFilter creates a geo filter for location-based search
+// Note: This is a placeholder - geo filtering may require different Qdrant API calls
+func BuildGeoFilter(lat, lon float64, radiusMeters float64) *qdrant.Filter {
+	// TODO: Implement proper geo filtering when we understand the Qdrant API
+	log.Printf("[vector] Geo filtering not yet implemented")
+	return nil
 }

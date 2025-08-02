@@ -133,13 +133,8 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 			return
 		}
 
-		log.Printf("[embedding] Starting async embedding generation for ad %d", adObj.ID)
-		err := vector.BuildAdEmbedding(adObj)
-		if err != nil {
-			log.Printf("[embedding] Failed to build embedding for ad %d: %v", adObj.ID, err)
-			return
-		}
-		log.Printf("[embedding] Successfully built and stored embedding for ad %d", adObj.ID)
+		log.Printf("[embedding] Queuing ad %d for vector processing", adObj.ID)
+		vector.GetVectorProcessor().QueueAd(adObj)
 	}(adID)
 	// --- END VECTOR EMBEDDING ---
 
@@ -274,13 +269,8 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 			return
 		}
 
-		log.Printf("[embedding] Starting async embedding generation for updated ad %d", adObj.ID)
-		err := vector.BuildAdEmbedding(adObj)
-		if err != nil {
-			log.Printf("[embedding] Failed to build embedding for updated ad %d: %v", adObj.ID, err)
-			return
-		}
-		log.Printf("[embedding] Successfully built and stored embedding for updated ad %d", adObj.ID)
+		log.Printf("[embedding] Queuing updated ad %d for vector processing", adObj.ID)
+		vector.GetVectorProcessor().QueueAd(adObj)
 	}(adID)
 	// --- END VECTOR EMBEDDING ---
 
