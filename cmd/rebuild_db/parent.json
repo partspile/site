@@ -1,23 +1,23 @@
 [
   {
     "name": "AC Cars Ltd",
-    "country": "UK"
+    "country": "GB"
   },
   {
     "name": "Allard Motor Company",
-    "country": "UK"
+    "country": "GB"
   },
   {
     "name": "Alvis Car and Engineering Company",
-    "country": "UK"
+    "country": "GB"
   },
   {
     "name": "American Austin Car Company",
-    "country": "USA"
+    "country": "US"
   },
   {
     "name": "American Bantam Car Company",
-    "country": "USA"
+    "country": "US"
   },
   {
     "name": "American Motors Corporation",
@@ -25,31 +25,35 @@
   },
   {
     "name": "Amphicar Corporation",
-    "country": "Germany"
+    "country": "DE"
   },
   {
     "name": "Apollo Automobil",
-    "country": "Germany"
+    "country": "DE"
   },
   {
     "name": "Apperson Brothers Automobile Company",
-    "country": "USA"
+    "country": "US"
   },
   {
     "name": "Arnolt-Bristol",
-    "country": "UK"
+    "country": "GB"
   },
   {
     "name": "Aston Martin Lagonda",
-    "country": "UK"
+    "country": "GB"
   },
   {
     "name": "Auburn Automobile Company",
     "country": "US"
   },
   {
+    "name": "Austin-Healey",
+    "country": "GB"
+  },
+  {
     "name": "BMW AG",
-    "country": "Germany"
+    "country": "DE"
   },
   {
     "name": "BYD Company",
@@ -60,16 +64,20 @@
     "country": "CN"
   },
   {
+    "name": "Beiqi Foton Motor Co.",
+    "country": "CN"
+  },
+  {
     "name": "Bentley Motors",
     "country": "GB"
   },
   {
     "name": "Berkeley Cars Ltd",
-    "country": "UK"
+    "country": "GB"
   },
   {
     "name": "Bizzarrini S.p.A.",
-    "country": "Italy"
+    "country": "IT"
   },
   {
     "name": "Blackhawk Collection",
@@ -77,15 +85,15 @@
   },
   {
     "name": "Borgward Group",
-    "country": "Germany"
+    "country": "DE"
   },
   {
     "name": "Bricklin Canada Ltd",
-    "country": "Canada"
+    "country": "CA"
   },
   {
     "name": "Bristol Cars Ltd",
-    "country": "UK"
+    "country": "GB"
   },
   {
     "name": "British Motor Corporation",
@@ -111,7 +119,6 @@
     "name": "Checker Motors Corporation",
     "country": "US"
   },
-
   {
     "name": "Chirey Automobile",
     "country": "CN"
@@ -122,7 +129,7 @@
   },
   {
     "name": "Cisitalia",
-    "country": "Italy"
+    "country": "IT"
   },
   {
     "name": "Citroën",
@@ -166,15 +173,19 @@
   },
   {
     "name": "Daihatsu Motor Company",
-    "country": "Japan"
+    "country": "JP"
   },
   {
     "name": "Daimler Motor Company",
-    "country": "UK"
+    "country": "GB"
+  },
+  {
+    "name": "Daimler Truck",
+    "country": "DE"
   },
   {
     "name": "Datsun",
-    "country": "Japan"
+    "country": "JP"
   },
   {
     "name": "Davis Motor Car Company",
@@ -194,7 +205,7 @@
   },
   {
     "name": "Dellow Cars",
-    "country": "UK"
+    "country": "GB"
   },
   {
     "name": "DeLorean Motor Company",
@@ -202,12 +213,11 @@
   },
   {
     "name": "Denzel Automobil",
-    "country": "Austria"
+    "country": "AT"
   },
-
   {
     "name": "De Tomaso",
-    "country": "Italy"
+    "country": "IT"
   },
   {
     "name": "Deutsch-Bonnet",
@@ -219,13 +229,12 @@
   },
   {
     "name": "Diana Motor Company",
-    "country": "UK"
+    "country": "GB"
   },
   {
     "name": "DKW",
-    "country": "Germany"
+    "country": "DE"
   },
-
   {
     "name": "Doretti Cars",
     "country": "US"
@@ -246,15 +255,13 @@
     "name": "Durant Motors",
     "country": "US"
   },
-
-
   {
     "name": "Elcar Corporation",
     "country": "US"
   },
   {
     "name": "Elva Cars",
-    "country": "UK"
+    "country": "GB"
   },
   {
     "name": "Erskine Automobile Company",
@@ -274,7 +281,7 @@
   },
   {
     "name": "Fairthorpe Cars",
-    "country": "UK"
+    "country": "GB"
   },
   {
     "name": "Falcon-Knight",
@@ -290,7 +297,7 @@
   },
   {
     "name": "Ferrari",
-    "country": "Italy"
+    "country": "IT"
   },
   {
     "name": "Fiat S.p.A.",
@@ -309,36 +316,140 @@
     "country": "US"
   },
   {
+    "name": "Franklin Automobile Company",
+    "country": "US"
+  },
+  {
+    "name": "Frazer Nash",
+    "country": "GB"
+  },
+  {
     "name": "General Motors",
     "country": "US"
   },
   {
     "name": "General Motors Canada",
-    "country": "Canada"
+    "country": "CA"
+  },
+  {
+    "name": "Geely Holding Group",
+    "country": "CN"
+  },
+  {
+    "name": "Giant Motors",
+    "country": "MX"
+  },
+  {
+    "name": "Glas",
+    "country": "DE"
+  },
+  {
+    "name": "Gordon-Keeble",
+    "country": "GB"
+  },
+  {
+    "name": "Graham-Paige",
+    "country": "US"
+  },
+  {
+    "name": "Great Wall Motor",
+    "country": "CN"
+  },
+  {
+    "name": "Griffith",
+    "country": "GB"
+  },
+  {
+    "name": "Guangzhou Automobile Group",
+    "country": "CN"
   },
   {
     "name": "Hawker Siddeley Group",
-    "country": "UK"
+    "country": "GB"
   },
   {
-    "name": "Honda Motor Co.",
-    "country": "Japan"
+    "name": "Haynes",
+    "country": "US"
+  },
+  {
+    "name": "HCS",
+    "country": "GB"
+  },
+  {
+    "name": "Henry J",
+    "country": "US"
+  },
+  {
+    "name": "Hertz",
+    "country": "US"
+  },
+  {
+    "name": "Hillman",
+    "country": "GB"
+  },
+  {
+    "name": "Hispano-Suiza",
+    "country": "ES"
+  },
+  {
+    "name": "Honda Motor Company",
+    "country": "JP"
+  },
+  {
+    "name": "Hotchkiss",
+    "country": "FR"
+  },
+  {
+    "name": "HRG Engineering",
+    "country": "GB"
+  },
+  {
+    "name": "Hudson Motor Car Company",
+    "country": "US"
+  },
+  {
+    "name": "Hupmobile",
+    "country": "US"
+  },
+  {
+    "name": "Hyundai Motor Group",
+    "country": "KR"
+  },
+  {
+    "name": "Ineos Automotive",
+    "country": "GB"
+  },
+  {
+    "name": "International Harvester",
+    "country": "US"
+  },
+  {
+    "name": "Nissan Motor Company",
+    "country": "JP"
   },
   {
     "name": "Reliant Motor Company",
-    "country": "UK"
+    "country": "GB"
   },
   {
     "name": "Renault",
     "country": "FR"
   },
   {
+    "name": "Rootes Group",
+    "country": "GB"
+  },
+  {
     "name": "Sears",
-    "country": "USA"
+    "country": "US"
   },
   {
     "name": "Studebaker-Packard Corporation",
-    "country": "USA"
+    "country": "US"
+  },
+  {
+    "name": "Toyota Motor Corporation",
+    "country": "JP"
   },
   {
     "name": "Volkswagen Group",

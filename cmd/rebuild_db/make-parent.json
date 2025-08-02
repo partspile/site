@@ -9,7 +9,7 @@
   },
   {
     "make": "ACURA",
-    "parent_company": "Honda Motor Co."
+    "parent_company": "Honda Motor Company"
   },
   {
     "make": "ALFA ROMEO",
@@ -93,7 +93,7 @@
   },
   {
     "make": "AUSTIN-HEALEY",
-    "parent_company": "British Motor Corporation"
+    "parent_company": "Austin-Healey"
   },
   {
     "make": "AVANTI",
@@ -110,6 +110,10 @@
   {
     "make": "BERKELEY",
     "parent_company": "Berkeley Cars Ltd"
+  },
+  {
+    "make": "BESTUNE",
+    "parent_company": "FAW Group"
   },
   {
     "make": "BIZZARRINI",
@@ -382,5 +386,157 @@
   {
     "make": "FORD",
     "parent_company": "Ford Motor Company"
+  },
+  {
+    "make": "FOTON",
+    "parent_company": "Beiqi Foton Motor Co."
+  },
+  {
+    "make": "FRANKLIN",
+    "parent_company": "Franklin Automobile Company"
+  },
+  {
+    "make": "FRAZER NASH",
+    "parent_company": "Frazer Nash"
+  },
+  {
+    "make": "FREIGHTLINER",
+    "parent_company": "Daimler Truck"
+  },
+  {
+    "make": "GAC",
+    "parent_company": "Guangzhou Automobile Group"
+  },
+  {
+    "make": "GARDNER",
+    "parent_company": "Gardner Douglas"
+  },
+  {
+    "make": "GEELY",
+    "parent_company": "Geely Holding Group"
+  },
+  {
+    "make": "GENESIS",
+    "parent_company": "Hyundai Motor Group"
+  },
+  {
+    "make": "GEO",
+    "parent_company": "General Motors"
+  },
+  {
+    "make": "GIANT MOTORS",
+    "parent_company": "Giant Motors"
+  },
+  {
+    "make": "GLAS",
+    "parent_company": "Glas"
+  },
+  {
+    "make": "GMC",
+    "parent_company": "General Motors"
+  },
+  {
+    "make": "GOLIATH",
+    "parent_company": "Goliath"
+  },
+  {
+    "make": "GORDON-KEEBLE",
+    "parent_company": "Gordon-Keeble"
+  },
+  {
+    "make": "GRAHAM",
+    "parent_company": "Graham-Paige"
+  },
+  {
+    "make": "GRAHAM-PAIGE",
+    "parent_company": "Graham-Paige"
+  },
+  {
+    "make": "GRIFFITH",
+    "parent_company": "Griffith"
+  },
+  {
+    "make": "GWM",
+    "parent_company": "Great Wall Motor"
+  },
+  {
+    "make": "HAVAL",
+    "parent_company": "Great Wall Motor"
+  },
+  {
+    "make": "HAYNES",
+    "parent_company": "Haynes"
+  },
+  {
+    "make": "HCS",
+    "parent_company": "HCS"
+  },
+  {
+    "make": "HEALEY",
+    "parent_company": "Austin-Healey"
+  },
+  {
+    "make": "HENRY J",
+    "parent_company": "Henry J"
+  },
+  {
+    "make": "HERTZ",
+    "parent_company": "Hertz"
+  },
+  {
+    "make": "HILLMAN",
+    "parent_company": "Rootes Group"
+  },
+  {
+    "make": "HINO",
+    "parent_company": "Toyota Motor Corporation"
+  },
+  {
+    "make": "HISPANO-SUIZA",
+    "parent_company": "Hispano-Suiza"
+  },
+  {
+    "make": "HONDA",
+    "parent_company": "Honda Motor Company"
+  },
+  {
+    "make": "HOTCHKISS",
+    "parent_company": "Hotchkiss"
+  },
+  {
+    "make": "HRG",
+    "parent_company": "HRG Engineering"
+  },
+  {
+    "make": "HUDSON",
+    "parent_company": "Hudson Motor Car Company"
+  },
+  {
+    "make": "HUMBER",
+    "parent_company": "Rootes Group"
+  },
+  {
+    "make": "HUMMER",
+    "parent_company": "General Motors"
+  },
+  {
+    "make": "HUPMOBILE",
+    "parent_company": "Hupmobile"
+  },
+  {
+    "make": "HYUNDAI",
+    "parent_company": "Hyundai Motor Group"
+  },
+  {
+    "make": "INEOS",
+    "parent_company": "Ineos Automotive"
+  },
+  {
+    "make": "INFINITI",
+    "parent_company": "Nissan Motor Company"
+  },
+  {
+    "make": "INTERNATIONAL",
+    "parent_company": "International Harvester"
   }
 ] 
