@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -775,66 +776,96 @@ func BuildTreeFilter(treePath map[string]string) *qdrant.Filter {
 	var conditions []*qdrant.Condition
 
 	if make, ok := treePath["make"]; ok && make != "" {
+		// URL decode the make value
+		decodedMake, err := url.QueryUnescape(make)
+		if err != nil {
+			decodedMake = make // fallback to original if decoding fails
+		}
 		conditions = append(conditions, &qdrant.Condition{
 			ConditionOneOf: &qdrant.Condition_Field{
 				Field: &qdrant.FieldCondition{
 					Key:   "make",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: make}},
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: decodedMake}},
 				},
 			},
 		})
 	}
 
 	if year, ok := treePath["year"]; ok && year != "" {
+		// URL decode the year value
+		decodedYear, err := url.QueryUnescape(year)
+		if err != nil {
+			decodedYear = year // fallback to original if decoding fails
+		}
 		conditions = append(conditions, &qdrant.Condition{
 			ConditionOneOf: &qdrant.Condition_Field{
 				Field: &qdrant.FieldCondition{
 					Key:   "years",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keywords{Keywords: &qdrant.RepeatedStrings{Strings: []string{year}}}},
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keywords{Keywords: &qdrant.RepeatedStrings{Strings: []string{decodedYear}}}},
 				},
 			},
 		})
 	}
 
 	if model, ok := treePath["model"]; ok && model != "" {
+		// URL decode the model value
+		decodedModel, err := url.QueryUnescape(model)
+		if err != nil {
+			decodedModel = model // fallback to original if decoding fails
+		}
 		conditions = append(conditions, &qdrant.Condition{
 			ConditionOneOf: &qdrant.Condition_Field{
 				Field: &qdrant.FieldCondition{
 					Key:   "models",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keywords{Keywords: &qdrant.RepeatedStrings{Strings: []string{model}}}},
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keywords{Keywords: &qdrant.RepeatedStrings{Strings: []string{decodedModel}}}},
 				},
 			},
 		})
 	}
 
 	if engine, ok := treePath["engine"]; ok && engine != "" {
+		// URL decode the engine value
+		decodedEngine, err := url.QueryUnescape(engine)
+		if err != nil {
+			decodedEngine = engine // fallback to original if decoding fails
+		}
 		conditions = append(conditions, &qdrant.Condition{
 			ConditionOneOf: &qdrant.Condition_Field{
 				Field: &qdrant.FieldCondition{
 					Key:   "engines",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keywords{Keywords: &qdrant.RepeatedStrings{Strings: []string{engine}}}},
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keywords{Keywords: &qdrant.RepeatedStrings{Strings: []string{decodedEngine}}}},
 				},
 			},
 		})
 	}
 
 	if category, ok := treePath["category"]; ok && category != "" {
+		// URL decode the category value
+		decodedCategory, err := url.QueryUnescape(category)
+		if err != nil {
+			decodedCategory = category // fallback to original if decoding fails
+		}
 		conditions = append(conditions, &qdrant.Condition{
 			ConditionOneOf: &qdrant.Condition_Field{
 				Field: &qdrant.FieldCondition{
 					Key:   "category",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: category}},
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: decodedCategory}},
 				},
 			},
 		})
 	}
 
 	if subcategory, ok := treePath["subcategory"]; ok && subcategory != "" {
+		// URL decode the subcategory value
+		decodedSubCategory, err := url.QueryUnescape(subcategory)
+		if err != nil {
+			decodedSubCategory = subcategory // fallback to original if decoding fails
+		}
 		conditions = append(conditions, &qdrant.Condition{
 			ConditionOneOf: &qdrant.Condition_Field{
 				Field: &qdrant.FieldCondition{
 					Key:   "subcategory",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: subcategory}},
+					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: decodedSubCategory}},
 				},
 			},
 		})

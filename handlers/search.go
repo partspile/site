@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -442,7 +443,7 @@ func TreeView(c *fiber.Ctx) error {
 
 	var ads []ad.Ad
 	if q != "" {
-		// If we have a tree path, use pure metadata filtering (no vector search)
+		// If we have a tree path, use vector search with metadata filtering
 		if len(parts) > 0 && parts[0] != "" {
 			// Build tree path from parts
 			treePath := make(map[string]string)
@@ -459,8 +460,8 @@ func TreeView(c *fiber.Ctx) error {
 				treePath["engine"] = parts[3]
 			}
 
-			log.Printf("[tree-view] Using pure metadata filtering with tree path: %+v", treePath)
-			ads, err = getTreeAdsForPureFilter(treePath, userID)
+			log.Printf("[tree-view] Using vector search with metadata filtering for query: %s, tree path: %+v", q, treePath)
+			ads, err = getTreeAdsForSearchWithFilter(q, treePath, userID)
 		} else {
 			// Use vector search with threshold-based filtering for search queries without tree path
 			log.Printf("[tree-view] Using vector search for query: %s", q)
@@ -539,22 +540,9 @@ func TreeView(c *fiber.Ctx) error {
 		var childAds []ad.Ad
 		var err error
 		if q != "" {
-			// For vector search, we need to check if this child path has ads
-			// Use vector search with tree path filtering
-			treePath := make(map[string]string)
-			if len(childPath) >= 1 && childPath[0] != "" {
-				treePath["make"] = childPath[0]
-			}
-			if len(childPath) >= 2 && childPath[1] != "" {
-				treePath["year"] = childPath[1]
-			}
-			if len(childPath) >= 3 && childPath[2] != "" {
-				treePath["model"] = childPath[2]
-			}
-			if len(childPath) >= 4 && childPath[3] != "" {
-				treePath["engine"] = childPath[3]
-			}
-			childAds, err = getTreeAdsForPureFilter(treePath, userID)
+			// For vector search, filter the existing ads instead of making new vector search calls
+			childAds = filterAdsForChildPath(ads, childPath, level)
+			err = nil // No error since we're just filtering existing ads
 		} else {
 			// For SQL search, check if this child has ads
 			childAds, err = part.GetAdsForTreeView(childPath, structuredQuery, userID)
@@ -731,43 +719,90 @@ func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string
 	return ads, nil
 }
 
-// getTreeAdsForPureFilter performs pure metadata filtering without vector search
-func getTreeAdsForPureFilter(treePath map[string]string, userID int) ([]ad.Ad, error) {
-	log.Printf("[tree-pure-filter] Using pure metadata filter: %+v", treePath)
+// filterAdsForChildPath filters existing ads to find those that match a child path
+func filterAdsForChildPath(ads []ad.Ad, childPath []string, level int) []ad.Ad {
+	var filteredAds []ad.Ad
 
-	// Build filter from tree path
-	filter := vector.BuildTreeFilter(treePath)
-	if filter == nil {
-		log.Printf("[tree-pure-filter] No filter built, returning all ads")
-		// Return all ads if no filter
-		return ad.GetAllAds()
+	for _, ad := range ads {
+		// Check if this ad matches the child path
+		if matchesChildPath(ad, childPath, level) {
+			filteredAds = append(filteredAds, ad)
+		}
 	}
 
-	// Use a dummy embedding (all zeros) since we're only filtering by metadata
-	dummyEmbedding := make([]float32, 768) // 768 is the embedding dimension
+	return filteredAds
+}
 
-	// Get results with filtering at Qdrant level (larger limit for tree building)
-	results, _, err := vector.QuerySimilarAdsWithFilter(dummyEmbedding, filter, 1000, "") // Use high limit for tree building
-	if err != nil {
-		return nil, fmt.Errorf("failed to query Qdrant with filter: %w", err)
+// matchesChildPath checks if an ad matches a specific child path
+func matchesChildPath(ad ad.Ad, childPath []string, level int) bool {
+	switch level {
+	case 0: // Root level - check make
+		if len(childPath) >= 1 && childPath[0] != "" {
+			// URL decode the make value from the path
+			decodedMake, err := url.QueryUnescape(childPath[0])
+			if err != nil {
+				decodedMake = childPath[0] // fallback to original if decoding fails
+			}
+			return ad.Make == decodedMake
+		}
+	case 1: // Make level - check year
+		if len(childPath) >= 2 && childPath[1] != "" {
+			for _, year := range ad.Years {
+				if year == childPath[1] {
+					return true
+				}
+			}
+			return false
+		}
+	case 2: // Year level - check model
+		if len(childPath) >= 3 && childPath[2] != "" {
+			// URL decode the model value from the path
+			decodedModel, err := url.QueryUnescape(childPath[2])
+			if err != nil {
+				decodedModel = childPath[2] // fallback to original if decoding fails
+			}
+			for _, model := range ad.Models {
+				if model == decodedModel {
+					return true
+				}
+			}
+			return false
+		}
+	case 3: // Model level - check engine
+		if len(childPath) >= 4 && childPath[3] != "" {
+			// URL decode the engine value from the path
+			decodedEngine, err := url.QueryUnescape(childPath[3])
+			if err != nil {
+				decodedEngine = childPath[3] // fallback to original if decoding fails
+			}
+			for _, engine := range ad.Engines {
+				if engine == decodedEngine {
+					return true
+				}
+			}
+			return false
+		}
+	case 4: // Engine level - check category
+		if len(childPath) >= 5 && childPath[4] != "" {
+			// URL decode the category value from the path
+			decodedCategory, err := url.QueryUnescape(childPath[4])
+			if err != nil {
+				decodedCategory = childPath[4] // fallback to original if decoding fails
+			}
+			return ad.Category == decodedCategory
+		}
+	case 5: // Category level - check subcategory
+		if len(childPath) >= 6 && childPath[5] != "" {
+			// URL decode the subcategory value from the path
+			decodedSubCategory, err := url.QueryUnescape(childPath[5])
+			if err != nil {
+				decodedSubCategory = childPath[5] // fallback to original if decoding fails
+			}
+			return ad.SubCategory == decodedSubCategory
+		}
 	}
 
-	log.Printf("[tree-pure-filter] Qdrant returned %d results", len(results))
-
-	// Fetch ads from DB
-	ids := make([]string, len(results))
-	for i, r := range results {
-		ids[i] = r.ID
-	}
-
-	log.Printf("[tree-pure-filter] Fetching %d ads from DB", len(ids))
-	ads, err := fetchAdsByIDs(ids, userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch ads: %w", err)
-	}
-
-	log.Printf("[tree-pure-filter] Successfully fetched %d ads for tree view", len(ads))
-	return ads, nil
+	return true // Default to true if no specific filtering needed
 }
 
 // extractChildrenFromAds extracts unique values from ads to determine tree children
