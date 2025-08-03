@@ -11,11 +11,6 @@ import (
 	"github.com/parts-pile/site/config"
 )
 
-const (
-	GrokAPIURL = "https://api.x.ai/v1/chat/completions"
-	GrokModel  = "grok-3-mini"
-)
-
 type GrokRequest struct {
 	Model           string        `json:"model"`
 	ReasoningEffort string        `json:"reasoning_effort"`
@@ -43,7 +38,7 @@ func CallGrok(systemPrompt, userPrompt string) (string, error) {
 	}
 
 	payload := GrokRequest{
-		Model:           GrokModel,
+		Model:           config.GrokModel,
 		ReasoningEffort: "low",
 		Messages: []GrokMessage{
 			{
@@ -67,7 +62,7 @@ func CallGrok(systemPrompt, userPrompt string) (string, error) {
 	fmt.Println("REQUEST")
 	fmt.Println(string(data))
 
-	req, err := http.NewRequest("POST", GrokAPIURL, bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", config.GrokAPIURL, bytes.NewBuffer(data))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}

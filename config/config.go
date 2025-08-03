@@ -19,6 +19,10 @@ const (
 	VectorSearchInitialK  = 200 // Number of results to fetch from Qdrant for tree view
 	VectorSearchPageSize  = 10  // Number of results per page for list/grid views
 	VectorSearchThreshold = 0.7 // Similarity threshold for filtering results (0.0 to 1.0)
+
+	// Grok API configuration
+	GrokAPIURL = "https://api.x.ai/v1/chat/completions"
+	GrokModel  = "grok-3-mini"
 )
 
 // Global configuration variables
