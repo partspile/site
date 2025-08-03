@@ -15,64 +15,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
-	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/search"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
-	"github.com/parts-pile/site/vehicle"
 	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
-
-const sysPrompt = `You are an expert vehicle parts assistant.
-
-Your job is to extract a structured query from a user's search request.
-
-Extract the make, years, models, engine sizes, category, and subcategory from
-the user's search request.  Use your best judgement as a vehicle parts export
-to fill out the structured query as much as possible.  When filling out the
-structured query, only use values from the lists below, and not the user's values.
-For example, if user entered "Ford", the structure query would use "FORD".
-
-<Makes>
-%s
-</Makes>
-
-<Years>
-%s
-</Years>
-
-<Models>
-%s
-</Models>
-
-<EngineSizes>
-%s
-</EngineSizes>
-
-<Categories>
-%s
-</Categories>
-
-<SubCategories>
-%s
-</SubCategories>
-
-Return JSON encoding this Go structure with the vehicle parts data:
-
-struct {
-	Make        string
-	Years       []string
-	Models      []string
-	EngineSizes []string
-	Category    string
-	SubCategory string
-}
-
-Only return the JSON.  Nothing else.
-`
 
 type SearchQuery = ad.SearchQuery
 
@@ -399,57 +349,6 @@ func DecodeCursor(s string) (SearchCursor, error) {
 	return c, err
 }
 
-func ParseSearchQuery(q string) (SearchQuery, error) {
-	if q == "" {
-		return SearchQuery{}, nil
-	}
-
-	allMakes := vehicle.GetMakes()
-	allYears := vehicle.GetYearRange()
-	allModels := vehicle.GetAllModels()
-	allEngineSizes := vehicle.GetAllEngineSizes()
-
-	categories, err := part.GetAllCategories()
-	if err != nil {
-		return SearchQuery{}, fmt.Errorf("error getting categories: %w", err)
-	}
-	allCategories := make([]string, len(categories))
-	for i, c := range categories {
-		allCategories[i] = c.Name
-	}
-
-	subCategories, err := part.GetAllSubCategories()
-	if err != nil {
-		return SearchQuery{}, fmt.Errorf("error getting subcategories: %w", err)
-	}
-	allSubCategories := make([]string, len(subCategories))
-	for i, sc := range subCategories {
-		allSubCategories[i] = sc.Name
-	}
-
-	prompt := fmt.Sprintf(sysPrompt,
-		strings.Join(allMakes, "\n"),
-		strings.Join(allYears, "\n"),
-		strings.Join(allModels, "\n"),
-		strings.Join(allEngineSizes, "\n"),
-		strings.Join(allCategories, "\n"),
-		strings.Join(allSubCategories, "\n"),
-	)
-
-	var query SearchQuery
-	resp, err := grok.CallGrok(prompt, q)
-	if err != nil {
-		return SearchQuery{}, fmt.Errorf("error grokking query: %w", err)
-	}
-
-	err = json.Unmarshal([]byte(resp), &query)
-	if err != nil {
-		return SearchQuery{}, fmt.Errorf("error unmarshalling grok response: %w", err)
-	}
-
-	return query, nil
-}
-
 func FilterAds(query SearchQuery, ads []ad.Ad) []ad.Ad {
 	if query.IsEmpty() {
 		return ads
@@ -529,11 +428,6 @@ func TreeView(c *fiber.Ctx) error {
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, "Invalid structured_query")
 		}
-	} else {
-		structuredQuery, _ = ParseSearchQuery(q)
-		// If we just parsed it, re-marshal for passing to children
-		structuredQueryStrBytes, _ := json.Marshal(structuredQuery)
-		structuredQueryStr = string(structuredQueryStrBytes)
 	}
 
 	var childNodes []g.Node
@@ -604,6 +498,7 @@ func TreeView(c *fiber.Ctx) error {
 				children = []string{structuredQuery.Make}
 			}
 		} else {
+			// For vector search (q != "") or SQL-based browsing (q == ""), get all makes
 			children, err = part.GetMakes("")
 			if err != nil {
 				return err
@@ -645,8 +540,21 @@ func TreeView(c *fiber.Ctx) error {
 		var err error
 		if q != "" {
 			// For vector search, we need to check if this child path has ads
-			// We'll use the same vector search but filter by the child path
-			childAds, err = part.GetAdsForTreeView(childPath, structuredQuery, userID)
+			// Use vector search with tree path filtering
+			treePath := make(map[string]string)
+			if len(childPath) >= 1 && childPath[0] != "" {
+				treePath["make"] = childPath[0]
+			}
+			if len(childPath) >= 2 && childPath[1] != "" {
+				treePath["year"] = childPath[1]
+			}
+			if len(childPath) >= 3 && childPath[2] != "" {
+				treePath["model"] = childPath[2]
+			}
+			if len(childPath) >= 4 && childPath[3] != "" {
+				treePath["engine"] = childPath[3]
+			}
+			childAds, err = getTreeAdsForPureFilter(treePath, userID)
 		} else {
 			// For SQL search, check if this child has ads
 			childAds, err = part.GetAdsForTreeView(childPath, structuredQuery, userID)
