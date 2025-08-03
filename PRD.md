@@ -207,6 +207,13 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 
 ### 3.15 Ad Location
 - Each ad now has an optional location field to track where parts are located. This field is stored in the database and can be set or edited by the user. If present, it is displayed on the ad details page.
+- **Grok API Location Resolution:** When users enter location information (address, city, zip code, or country), the system uses the Grok API to intelligently resolve and standardize the location data:
+  - **Structured Location Data:** Grok translates user input into standardized city, admin_area (state/province), and country fields
+  - **Geographic Coordinates:** Grok also provides latitude and longitude coordinates for the resolved location
+  - **Database Storage:** Location data is stored in the Location table with coordinates for future geographic search capabilities
+  - **Vector Metadata:** Coordinates are included in vector embeddings for geographic filtering and proximity-based search
+  - **Country Code Standardization:** Countries are stored as 2-letter ISO codes (e.g., "US", "CA", "GB") for consistency
+  - **Admin Area Formatting:** US and Canadian states/provinces use official 2-letter codes (e.g., "OR", "NY", "BC", "ON"), while other countries use full names
 
 ---
 
@@ -245,7 +252,8 @@ The platform is built with the following technologies:
 - **Car**: id, make_id, year_id, model_id, engine_id
 - **PartCategory**: id, name
 - **PartSubCategory**: id, category_id, name
-- **Ad**: id, description, price, created_at, subcategory_id, user_id, has_vector
+- **Location**: id, raw_text, city, admin_area, country, latitude, longitude
+- **Ad**: id, description, price, created_at, subcategory_id, user_id, location_id, has_vector
 - **AdCar**: ad_id, car_id
 - **User**: id, name, phone, token_balance, password_hash, created_at
 - **TokenTransaction**: id, user_id, type, amount, related_user_id, ad_id, created_at, description, user_deleted

@@ -379,9 +379,11 @@ func main() {
 		Category    string   `json:"category"`
 		Subcategory string   `json:"subcategory"`
 		Location    struct {
-			City      string `json:"city"`
-			AdminArea string `json:"admin_area"`
-			Country   string `json:"country"`
+			City      string   `json:"city"`
+			AdminArea string   `json:"admin_area"`
+			Country   string   `json:"country"`
+			Latitude  *float64 `json:"latitude"`
+			Longitude *float64 `json:"longitude"`
 		} `json:"location"`
 	}
 	var ads []AdImport
@@ -446,8 +448,8 @@ func main() {
 		var locationID int
 		err := database.QueryRow(`SELECT id FROM Location WHERE raw_text=?`, locationKey).Scan(&locationID)
 		if err == sql.ErrNoRows {
-			res, err := database.Exec(`INSERT INTO Location (raw_text, city, admin_area, country) VALUES (?, ?, ?, ?)`,
-				locationKey, ad.Location.City, ad.Location.AdminArea, ad.Location.Country)
+			res, err := database.Exec(`INSERT INTO Location (raw_text, city, admin_area, country, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)`,
+				locationKey, ad.Location.City, ad.Location.AdminArea, ad.Location.Country, ad.Location.Latitude, ad.Location.Longitude)
 			if err != nil {
 				log.Printf("Failed to insert Location: %v", err)
 				continue

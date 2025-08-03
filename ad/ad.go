@@ -1143,6 +1143,16 @@ func GetLocationByID(id int) (city, adminArea, country, raw string, err error) {
 	return
 }
 
+// GetLocationWithCoords returns location data including coordinates
+func GetLocationWithCoords(id int) (city, adminArea, country, raw string, latitude, longitude *float64, err error) {
+	if id == 0 {
+		return "", "", "", "", nil, nil, nil
+	}
+	row := db.QueryRow("SELECT city, admin_area, country, raw_text, latitude, longitude FROM Location WHERE id = ?", id)
+	err = row.Scan(&city, &adminArea, &country, &raw, &latitude, &longitude)
+	return
+}
+
 // GetMostPopularAds returns the top n ads by popularity using SQL
 func GetMostPopularAds(n int) []Ad {
 	log.Printf("[GetMostPopularAds] Querying for top %d popular ads", n)

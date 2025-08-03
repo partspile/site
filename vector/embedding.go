@@ -485,7 +485,7 @@ func BuildAdEmbedding(adObj ad.Ad) error {
 	}
 
 	// Build metadata
-	meta := buildAdEmbeddingMetadata(adObj)
+	meta := BuildAdEmbeddingMetadata(adObj)
 
 	// Store in Qdrant
 	err = UpsertAdEmbedding(adObj.ID, embedding, meta)
@@ -533,14 +533,18 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 	)
 }
 
-// buildAdEmbeddingMetadata creates metadata for embeddings
-func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
+// BuildAdEmbeddingMetadata creates metadata for embeddings
+func BuildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 	// Get location data for geo filtering
 	var lat, lon float64
 	if adObj.LocationID != 0 {
-		// TODO: Implement location lookup
-		// For now, use default coordinates
-		lat, lon = 0, 0
+		// Get coordinates from Location table
+		var latPtr, lonPtr *float64
+		_, _, _, _, latPtr, lonPtr, err := ad.GetLocationWithCoords(adObj.LocationID)
+		if err == nil && latPtr != nil && lonPtr != nil {
+			lat = *latPtr
+			lon = *lonPtr
+		}
 	}
 
 	// Get tree path data for navigation filtering

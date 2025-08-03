@@ -73,7 +73,9 @@ CREATE TABLE Location (
     raw_text TEXT UNIQUE NOT NULL,
     city TEXT,
     admin_area TEXT,
-    country TEXT
+    country TEXT,
+    latitude REAL,
+    longitude REAL
 );
 
 -- User tables

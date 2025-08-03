@@ -62,26 +62,30 @@ func resolveAndStoreLocation(raw string) (int, error) {
 	if raw == "" {
 		return 0, nil
 	}
-	// Update Grok prompt
+	// Update Grok prompt to include coordinates
 	systemPrompt := `You are a location resolver for an auto parts website.
 Given a user input (which may be a address, city, zip code, or country),
 return a JSON object with the best guess for city, admin_area (state,
-province, or region), and country. The country field must be a 2-letter
-ISO country code (e.g., "US" for United States, "CA" for Canada, "GB"
-for United Kingdom). For US and Canada, the admin_area field must be the
-official 2-letter code (e.g., "OR" for Oregon, "NY" for New York, "BC"
-for British Columbia, "ON" for Ontario). For all other countries, use
-the full name for admin_area. If a field is unknown, leave it blank.
+province, or region), country, latitude, and longitude. The country field 
+must be a 2-letter ISO country code (e.g., "US" for United States, "CA" 
+for Canada, "GB" for United Kingdom). For US and Canada, the admin_area 
+field must be the official 2-letter code (e.g., "OR" for Oregon, "NY" 
+for New York, "BC" for British Columbia, "ON" for Ontario). For all 
+other countries, use the full name for admin_area. Latitude and longitude 
+should be decimal degrees (positive for North/East, negative for South/West).
+If a field is unknown, leave it blank or null.
 Example input: "97333" -> {"city": "Corvallis", "admin_area": "OR",
-"country": "US"}`
+"country": "US", "latitude": 44.5646, "longitude": -123.2620}`
 	resp, err := grok.CallGrok(systemPrompt, raw)
 	if err != nil {
 		return 0, err
 	}
 	var loc struct {
-		City      string `json:"city"`
-		AdminArea string `json:"admin_area"`
-		Country   string `json:"country"`
+		City      string   `json:"city"`
+		AdminArea string   `json:"admin_area"`
+		Country   string   `json:"country"`
+		Latitude  *float64 `json:"latitude"`
+		Longitude *float64 `json:"longitude"`
 	}
 	err = json.Unmarshal([]byte(resp), &loc)
 	if err != nil {
@@ -91,7 +95,8 @@ Example input: "97333" -> {"city": "Corvallis", "admin_area": "OR",
 	var id int
 	err = db.QueryRow("SELECT id FROM Location WHERE raw_text = ?", raw).Scan(&id)
 	if err == sql.ErrNoRows {
-		res, err := db.Exec("INSERT INTO Location (raw_text, city, admin_area, country) VALUES (?, ?, ?, ?)", raw, loc.City, loc.AdminArea, loc.Country)
+		res, err := db.Exec("INSERT INTO Location (raw_text, city, admin_area, country, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)",
+			raw, loc.City, loc.AdminArea, loc.Country, loc.Latitude, loc.Longitude)
 		if err != nil {
 			return 0, err
 		}
@@ -676,10 +681,24 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 }
 
 func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
-	return map[string]interface{}{
+	metadata := map[string]interface{}{
 		"created_at":  adObj.CreatedAt.Format(time.RFC3339),
 		"click_count": adObj.ClickCount,
 	}
+
+	// Add location coordinates if available
+	if adObj.LocationID > 0 {
+		_, _, _, _, lat, lon, err := ad.GetLocationWithCoords(adObj.LocationID)
+		if err == nil {
+			// Add coordinates if available
+			if lat != nil && lon != nil {
+				metadata["latitude"] = *lat
+				metadata["longitude"] = *lon
+			}
+		}
+	}
+
+	return metadata
 }
 
 // Helper functions for embedding generation
