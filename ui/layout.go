@@ -22,9 +22,26 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 				Rel("stylesheet"),
 				Href("https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"),
 			),
+			// Leaflet CSS for map functionality
+			Link(
+				Rel("stylesheet"),
+				Href("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"),
+			),
 			Script(
 				Type("text/javascript"),
 				Src("https://unpkg.com/htmx.org@2.0.4"),
+				Defer(),
+			),
+			// Leaflet JS for map functionality
+			Script(
+				Type("text/javascript"),
+				Src("https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"),
+				Defer(),
+			),
+			// Custom map functionality
+			Script(
+				Type("text/javascript"),
+				Src("/map.js"),
 				Defer(),
 			),
 			Script(

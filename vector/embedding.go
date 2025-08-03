@@ -887,3 +887,24 @@ func BuildGeoFilter(lat, lon float64, radiusMeters float64) *qdrant.Filter {
 	log.Printf("[vector] Geo filtering not yet implemented")
 	return nil
 }
+
+// BuildBoundingBoxGeoFilter creates a geo filter for bounding box search
+func BuildBoundingBoxGeoFilter(minLat, maxLat, minLon, maxLon float64) *qdrant.Filter {
+	log.Printf("[vector] Building bounding box filter: lat[%.6f,%.6f], lon[%.6f,%.6f]", minLat, maxLat, minLon, maxLon)
+
+	// Create geo bounding box filter using Qdrant's native geo filtering
+	// Note: The order is topLeft.lat, topLeft.lon, bottomRight.lat, bottomRight.lon
+	geoCondition := qdrant.NewGeoBoundingBox("geo", minLat, minLon, maxLat, maxLon)
+
+	conditions := []*qdrant.Condition{
+		geoCondition,
+	}
+
+	// Create filter with conditions
+	filter := &qdrant.Filter{
+		Must: conditions,
+	}
+
+	log.Printf("[vector] Created Qdrant geo bounding box filter")
+	return filter
+}

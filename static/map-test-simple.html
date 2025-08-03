@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Map Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 400px;
+            width: 100%;
+            border: 2px solid red;
+        }
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Map Test</h1>
+    <p>This is a simple test to verify Leaflet is working.</p>
+    <div id="map"></div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        console.log('Simple map test starting...');
+        
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM ready, initializing simple map...');
+            
+            try {
+                // Create a simple map
+                const map = L.map('map').setView([48.99, 7.44], 6);
+                
+                // Add tile layer
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                
+                // Add a test marker
+                const marker = L.marker([48.99, 7.44])
+                    .bindPopup('Test marker in Europe!')
+                    .addTo(map);
+                
+                console.log('Simple map initialized successfully!');
+                
+                // Force a resize after a short delay
+                setTimeout(() => {
+                    map.invalidateSize();
+                    console.log('Map size invalidated');
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error initializing simple map:', error);
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -79,6 +79,9 @@ type Ad struct {
 	LastClickedAt *time.Time `json:"last_clicked_at,omitempty"`
 	ImageOrder    []int      `json:"image_order"`
 	HasVector     bool       `json:"has_vector"`
+	// Geo fields for map functionality
+	Latitude  *float64 `json:"latitude,omitempty"`
+	Longitude *float64 `json:"longitude,omitempty"`
 }
 
 // IsArchived returns true if the ad has been archived
@@ -217,6 +220,12 @@ func GetAd(id int) (Ad, bool) {
 
 	if locationID.Valid {
 		ad.LocationID = int(locationID.Int64)
+		// Get coordinates for map functionality
+		_, _, _, _, lat, lon, err := GetLocationWithCoords(ad.LocationID)
+		if err == nil && lat != nil && lon != nil {
+			ad.Latitude = lat
+			ad.Longitude = lon
+		}
 	}
 
 	if imageOrder.Valid {

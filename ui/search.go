@@ -89,6 +89,17 @@ func InitialSearchResults(view string) g.Node {
 }
 
 func SearchWidget(newAdButton g.Node, view string, query string) g.Node {
+	// Create bounding box inputs for map view
+	var boundingBoxInputs []g.Node
+	if view == "map" {
+		boundingBoxInputs = []g.Node{
+			Input(Type("hidden"), Name("minLat"), ID("form-min-lat")),
+			Input(Type("hidden"), Name("maxLat"), ID("form-max-lat")),
+			Input(Type("hidden"), Name("minLon"), ID("form-min-lon")),
+			Input(Type("hidden"), Name("maxLon"), ID("form-max-lon")),
+		}
+	}
+
 	return Div(
 		Class("flex items-start gap-4"),
 		newAdButton,
@@ -102,6 +113,8 @@ func SearchWidget(newAdButton g.Node, view string, query string) g.Node {
 				hx.Indicator("#searchWaiting"),
 				hx.Swap("outerHTML"),
 				Input(Type("hidden"), Name("view"), Value(view), ID("view-type-input")),
+				// Add bounding box inputs for map view
+				g.Group(boundingBoxInputs),
 				Input(
 					Type("search"),
 					ID("searchBox"),
@@ -257,10 +270,38 @@ func GridViewWithTrigger(ads []ad.Ad, loc *time.Location, userID int, loaderURL 
 }
 
 func MapView(ads map[int]ad.Ad, loc *time.Location) g.Node {
-	// Placeholder: show a message or static image
+	// Create hidden data elements for each ad with coordinates
+	var adDataElements []g.Node
+	for _, ad := range ads {
+		if ad.Latitude != nil && ad.Longitude != nil {
+			adDataElements = append(adDataElements,
+				Div(
+					Class("hidden"),
+					g.Attr("data-ad-id", fmt.Sprintf("%d", ad.ID)),
+					g.Attr("data-lat", fmt.Sprintf("%f", *ad.Latitude)),
+					g.Attr("data-lon", fmt.Sprintf("%f", *ad.Longitude)),
+					g.Attr("data-title", ad.Title),
+					g.Attr("data-price", fmt.Sprintf("%.2f", ad.Price)),
+				),
+			)
+		}
+	}
+
 	return Div(
 		ID("map-view"),
-		Class("flex items-center justify-center h-64 bg-gray-100 rounded"),
-		g.Text("Map view coming soon!"),
+		Class("h-96 w-full rounded border bg-gray-50"),
+		// Map container with explicit styling
+		Div(
+			ID("map-container"),
+			Class("h-full w-full z-10"),
+			Style("min-height: 384px; position: relative;"),
+		),
+		// Hidden inputs for bounding box
+		Input(Type("hidden"), ID("min-lat"), Name("minLat")),
+		Input(Type("hidden"), ID("max-lat"), Name("maxLat")),
+		Input(Type("hidden"), ID("min-lon"), Name("minLon")),
+		Input(Type("hidden"), ID("max-lon"), Name("maxLon")),
+		// Hidden ad data elements
+		g.Group(adDataElements),
 	)
 }

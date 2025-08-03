@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Debug Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map-container {
+            height: 400px;
+            width: 100%;
+            border: 2px solid blue;
+            background-color: #f0f0f0;
+        }
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .debug-info {
+            background: #f9f9f9;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Map Debug Test</h1>
+    <div class="debug-info">
+        <p><strong>Test:</strong> This page tests map initialization without HTMX</p>
+        <p><strong>Expected:</strong> You should see a map with 10 markers in Europe</p>
+    </div>
+    
+    <div id="map-view" class="h-96 w-full rounded border bg-gray-50">
+        <div id="map-container" class="h-full w-full z-10" style="min-height: 384px; position: relative;"></div>
+        <input type="hidden" id="min-lat" name="minLat">
+        <input type="hidden" id="max-lat" name="maxLat">
+        <input type="hidden" id="min-lon" name="minLon">
+        <input type="hidden" id="max-lon" name="maxLon">
+        
+        <!-- Test ad data -->
+        <div class="hidden" data-ad-id="3" data-lat="52.520000" data-lon="13.405000" data-title="BMW Isetta 300 Electrical Wiring Harness" data-price="245.00"></div>
+        <div class="hidden" data-ad-id="30" data-lat="53.079300" data-lon="8.801700" data-title="BMW Isetta Speedometer Cable" data-price="42.00"></div>
+        <div class="hidden" data-ad-id="5" data-lat="53.551100" data-lon="9.993700" data-title="BMW 501 Series Radiator" data-price="320.00"></div>
+        <div class="hidden" data-ad-id="10" data-lat="43.769600" data-lon="11.255800" data-title="Abarth 2000 Clutch Assembly" data-price="275.00"></div>
+        <div class="hidden" data-ad-id="20" data-lat="51.339700" data-lon="12.373100" data-title="BMW 503/507 Oil Pump" data-price="380.00"></div>
+        <div class="hidden" data-ad-id="2" data-lat="45.070300" data-lon="7.686900" data-title="Abarth 1600/850 Carburetor Rebuild Kit" data-price="89.50"></div>
+        <div class="hidden" data-ad-id="6" data-lat="41.902800" data-lon="12.496400" data-title="Abarth 1000/1150 Alternator" data-price="189.00"></div>
+        <div class="hidden" data-ad-id="4" data-lat="45.464200" data-lon="9.190000" data-title="Abarth 1000/850 Brake Master Cylinder" data-price="156.75"></div>
+        <div class="hidden" data-ad-id="15" data-lat="51.050400" data-lon="13.737300" data-title="BMW 501/502 Distributor Cap" data-price="75.50"></div>
+        <div class="hidden" data-ad-id="11" data-lat="48.764400" data-lon="11.424200" data-title="Audi 100/Super 90 Fuel Pump" data-price="145.00"></div>
+    </div>
+    
+    <div class="debug-info">
+        <p><strong>Console Logs:</strong> Open browser console (F12) to see debug output</p>
+        <p><strong>Expected Logs:</strong></p>
+        <ul>
+            <li>[map.js] DOMContentLoaded event fired</li>
+            <li>[map.js] Map container found on DOMContentLoaded, initializing map...</li>
+            <li>[map.js] initMap called</li>
+            <li>[map.js] Initializing map...</li>
+            <li>[map.js] Map initialized, adding markers...</li>
+            <li>[map.js] addAdMarkers called</li>
+            <li>[map.js] Found 10 ad elements</li>
+            <li>[map.js] Total markers added: 10</li>
+            <li>[map.js] Map fitted to markers</li>
+            <li>[map.js] Map initialization complete</li>
+        </ul>
+    </div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/map.js"></script>
+</body>
+</html> 

@@ -181,6 +181,70 @@ func performSearch(userPrompt string, userID int, cursorStr string) ([]ad.Ad, st
 	return nil, "", nil
 }
 
+// GeoBounds represents a geographic bounding box
+type GeoBounds struct {
+	MinLat float64
+	MaxLat float64
+	MinLon float64
+	MaxLon float64
+}
+
+// performGeoBoxSearch performs search with geo bounding box filtering
+func performGeoBoxSearch(userPrompt string, userID int, cursorStr string, bounds *GeoBounds) ([]ad.Ad, string, error) {
+	log.Printf("[performGeoBoxSearch] userPrompt='%s', userID=%d, cursorStr='%s', bounds=%+v", userPrompt, userID, cursorStr, bounds)
+
+	// Build geo filter if bounds are provided
+	var geoFilter *qdrant.Filter
+	if bounds != nil {
+		geoFilter = vector.BuildBoundingBoxGeoFilter(bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
+	}
+
+	var ads []ad.Ad
+	var nextCursor string
+	var err error
+
+	// If no query, use site-level vector + geo filter
+	if userPrompt == "" {
+		emb, err := vector.GetSiteLevelVector()
+		if err != nil {
+			log.Printf("[performGeoBoxSearch] GetSiteLevelVector error: %v", err)
+			return nil, "", err
+		}
+		if emb != nil && len(emb) > 0 {
+			if geoFilter != nil {
+				ads, nextCursor, err = runEmbeddingSearchWithFilter(emb, geoFilter, cursorStr, userID)
+			} else {
+				ads, nextCursor, err = runEmbeddingSearch(emb, cursorStr, userID)
+			}
+		}
+	}
+
+	// If query provided, use query embedding + geo filter
+	if userPrompt != "" {
+		embedding, err := vector.EmbedText(userPrompt)
+		if err != nil {
+			log.Printf("[performGeoBoxSearch] EmbedText error: %v", err)
+			return nil, "", err
+		}
+		if geoFilter != nil {
+			ads, nextCursor, err = runEmbeddingSearchWithFilter(embedding, geoFilter, cursorStr, userID)
+		} else {
+			ads, nextCursor, err = runEmbeddingSearch(embedding, cursorStr, userID)
+		}
+	}
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	if len(ads) == 0 {
+		log.Printf("[performGeoBoxSearch] No ads found for given parameters.")
+		return nil, "", nil
+	}
+
+	return ads, nextCursor, nil
+}
+
 // Get user ID from context
 func getUserID(c *fiber.Ctx) int {
 	currentUser, _ := CurrentUser(c)
@@ -214,7 +278,44 @@ func HandleSearch(c *fiber.Ctx) error {
 
 	userID := getUserID(c)
 	log.Printf("[HandleSearch] userPrompt='%s', userID=%d", userPrompt, userID)
-	ads, nextCursor, err := performSearch(userPrompt, userID, "")
+
+	// Extract bounding box parameters for map view
+	var bounds *GeoBounds
+	if view == "map" {
+		minLatStr := c.Query("minLat")
+		maxLatStr := c.Query("maxLat")
+		minLonStr := c.Query("minLon")
+		maxLonStr := c.Query("maxLon")
+
+		if minLatStr != "" && maxLatStr != "" && minLonStr != "" && maxLonStr != "" {
+			minLat, err1 := strconv.ParseFloat(minLatStr, 64)
+			maxLat, err2 := strconv.ParseFloat(maxLatStr, 64)
+			minLon, err3 := strconv.ParseFloat(minLonStr, 64)
+			maxLon, err4 := strconv.ParseFloat(maxLonStr, 64)
+
+			if err1 == nil && err2 == nil && err3 == nil && err4 == nil {
+				bounds = &GeoBounds{
+					MinLat: minLat,
+					MaxLat: maxLat,
+					MinLon: minLon,
+					MaxLon: maxLon,
+				}
+				log.Printf("[HandleSearch] Using bounding box: %+v", bounds)
+			}
+		}
+	}
+
+	var ads []ad.Ad
+	var nextCursor string
+	var err error
+
+	// Use geo search for map view with bounds, regular search otherwise
+	if view == "map" && bounds != nil {
+		ads, nextCursor, err = performGeoBoxSearch(userPrompt, userID, "", bounds)
+	} else {
+		ads, nextCursor, err = performSearch(userPrompt, userID, "")
+	}
+
 	if err != nil {
 		return err
 	}
@@ -248,6 +349,11 @@ func HandleSearch(c *fiber.Ctx) error {
 	var loaderURL string
 	if nextCursor != "" {
 		loaderURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view))
+		// Add bounding box to loader URL for map view
+		if view == "map" && bounds != nil {
+			loaderURL += fmt.Sprintf("&minLat=%.6f&maxLat=%.6f&minLon=%.6f&maxLon=%.6f",
+				bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
+		}
 	}
 
 	render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, userID, loc, view, userPrompt, loaderURL))
@@ -640,7 +746,103 @@ func HandleGridView(c *fiber.Ctx) error {
 }
 
 func HandleMapView(c *fiber.Ctx) error {
-	return handleViewSwitch(c, "map")
+	// Extract bounding box parameters
+	minLatStr := c.Query("minLat")
+	maxLatStr := c.Query("maxLat")
+	minLonStr := c.Query("minLon")
+	maxLonStr := c.Query("maxLon")
+
+	// Parse bounding box if provided
+	var bounds *GeoBounds
+	if minLatStr != "" && maxLatStr != "" && minLonStr != "" && maxLonStr != "" {
+		minLat, err1 := strconv.ParseFloat(minLatStr, 64)
+		maxLat, err2 := strconv.ParseFloat(maxLatStr, 64)
+		minLon, err3 := strconv.ParseFloat(minLonStr, 64)
+		maxLon, err4 := strconv.ParseFloat(maxLonStr, 64)
+
+		if err1 == nil && err2 == nil && err3 == nil && err4 == nil {
+			bounds = &GeoBounds{
+				MinLat: minLat,
+				MaxLat: maxLat,
+				MinLon: minLon,
+				MaxLon: maxLon,
+			}
+			log.Printf("[HandleMapView] Using bounding box: %+v", bounds)
+		} else {
+			log.Printf("[HandleMapView] Error parsing bounding box: %v, %v, %v, %v", err1, err2, err3, err4)
+		}
+	}
+
+	return handleViewSwitchWithGeo(c, "map", bounds)
+}
+
+// handleViewSwitchWithGeo is a unified handler for switching between views with geo filtering
+func handleViewSwitchWithGeo(c *fiber.Ctx, view string, bounds *GeoBounds) error {
+	currentUser, _ := CurrentUser(c)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
+	userPrompt := c.FormValue("q")
+	if userPrompt == "" {
+		userPrompt = c.Query("q")
+	}
+
+	var ads []ad.Ad
+	var nextCursor string
+	var err error
+
+	// Use geo search for map view, regular search for other views
+	if view == "map" && bounds != nil {
+		ads, nextCursor, err = performGeoBoxSearch(userPrompt, userID, "", bounds)
+	} else {
+		ads, nextCursor, err = performSearch(userPrompt, userID, "")
+	}
+
+	if err != nil {
+		log.Printf("[handleViewSwitchWithGeo] search error: %v", err)
+		ads = []ad.Ad{}
+	}
+
+	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
+
+	var newAdButton g.Node
+	if currentUser != nil {
+		newAdButton = ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
+	} else {
+		newAdButton = ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
+	}
+
+	selectedView := c.FormValue("selected_view")
+	if selectedView == "" {
+		selectedView = view
+	}
+	c.Cookie(&fiber.Cookie{
+		Name:     "last_view",
+		Value:    selectedView,
+		Expires:  time.Now().Add(30 * 24 * time.Hour),
+		HTTPOnly: false,
+		Path:     "/",
+	})
+
+	// Create loader URL if there are more results
+	var loaderURL string
+	if nextCursor != "" {
+		loaderURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(selectedView))
+		// Add bounding box to loader URL for map view
+		if view == "map" && bounds != nil {
+			loaderURL += fmt.Sprintf("&minLat=%.6f&maxLat=%.6f&minLon=%.6f&maxLon=%.6f",
+				bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
+		}
+	}
+
+	// Only show no-results message for list and grid views
+	if (view == "list" || view == "grid") && len(ads) == 0 {
+		render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, userID, loc, selectedView, userPrompt, ""))
+		return nil
+	}
+
+	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, userID, loc, selectedView, userPrompt, loaderURL))
 }
 
 // getTreeAdsForSearch performs vector search with threshold-based filtering for tree view
