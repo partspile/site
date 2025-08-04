@@ -53,6 +53,11 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 					document.addEventListener('htmx:beforeRequest', function(evt) {
 						console.log('HTMX request:', evt.detail.path);
 					});
+					
+					// Threshold slider functionality
+					function updateThresholdValue(value) {
+						document.getElementById('thresholdValue').textContent = value;
+					}
 				`),
 			),
 			// Script(

@@ -35,7 +35,7 @@ func ViewToggleButtons(activeView string) g.Node {
 			hx.Post("/view/"+view),
 			hx.Target("#searchResults"),
 			hx.Indicator("#searchWaiting"),
-			hx.Include("[name='q'],[name='structured_query'],[name='view']"),
+			hx.Include("[name='q'],[name='structured_query'],[name='view'],[name='threshold']"),
 			hx.Vals(fmt.Sprintf(`{"selected_view":"%s"}`, view)),
 			icon(view, alt),
 		)
@@ -88,7 +88,7 @@ func InitialSearchResults(view string) g.Node {
 	)
 }
 
-func SearchWidget(newAdButton g.Node, view string, query string) g.Node {
+func SearchWidget(newAdButton g.Node, view string, query string, threshold string) g.Node {
 	// Create bounding box inputs for map view
 	var boundingBoxInputs []g.Node
 	if view == "map" {
@@ -124,6 +124,32 @@ func SearchWidget(newAdButton g.Node, view string, query string) g.Node {
 					Placeholder("Search by make, year, model, or description..."),
 					hx.Trigger("keyup changed delay:500ms, search"),
 				),
+				// Threshold slider - only show when there's a search query
+				g.If(query != "", Div(
+					Class("flex items-center gap-2"),
+					Input(
+						Type("range"),
+						ID("thresholdSlider"),
+						Name("threshold"),
+						Min("0.0"),
+						Max("1.0"),
+						Step("0.1"),
+						Value(threshold),
+						Class("flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"),
+						g.Attr("onchange", "updateThresholdValue(this.value)"),
+						hx.Get("/search"),
+						hx.Target("#searchResults"),
+						hx.Indicator("#searchWaiting"),
+						hx.Swap("outerHTML"),
+						hx.Include("closest form"),
+						hx.Trigger("change"),
+					),
+					Span(
+						ID("thresholdValue"),
+						Class("text-sm text-gray-600 min-w-[3rem]"),
+						g.Text(threshold),
+					),
+				)),
 			),
 		),
 		Div(
@@ -138,14 +164,14 @@ func SearchWidget(newAdButton g.Node, view string, query string) g.Node {
 	)
 }
 
-func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, ads []ad.Ad, _ interface{}, userID int, loc *time.Location, view string, query string, loaderURL string) g.Node {
-	return SearchResultsContainer(newAdButton, ads, userID, loc, view, query, loaderURL)
+func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, ads []ad.Ad, _ interface{}, userID int, loc *time.Location, view string, query string, loaderURL string, threshold string) g.Node {
+	return SearchResultsContainer(newAdButton, ads, userID, loc, view, query, loaderURL, threshold)
 }
 
-func SearchResultsContainer(newAdButton g.Node, ads []ad.Ad, userID int, loc *time.Location, view string, query string, loaderURL string) g.Node {
+func SearchResultsContainer(newAdButton g.Node, ads []ad.Ad, userID int, loc *time.Location, view string, query string, loaderURL string, threshold string) g.Node {
 	return Div(
 		ID("searchResults"),
-		SearchWidget(newAdButton, view, query),
+		SearchWidget(newAdButton, view, query, threshold),
 		ViewToggleButtons(view),
 		createViewWithInfiniteScroll(ads, userID, loc, view, query, loaderURL),
 	)
