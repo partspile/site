@@ -128,6 +128,7 @@ func main() {
 	admin.Get("/part-sub-categories", handlers.HandleAdminPartSubCategories)
 	admin.Get("/parent-companies", handlers.HandleAdminParentCompanies)
 	admin.Get("/make-parent-companies", handlers.HandleAdminMakeParentCompanies)
+	admin.Get("/b2-cache", handlers.HandleAdminB2Cache)
 
 	// Admin API group
 	adminAPI := api.Group("/admin", handlers.AdminRequired)
@@ -139,6 +140,7 @@ func main() {
 	adminAPI.Get("/export/users", handlers.HandleAdminExportUsers)
 	adminAPI.Get("/export/ads", handlers.HandleAdminExportAds)
 	adminAPI.Get("/export/transactions", handlers.HandleAdminExportTransactions)
+	adminAPI.Post("/b2-cache/clear", handlers.HandleClearB2Cache)
 
 	// User registration/authentication
 	app.Get("/register", handlers.HandleRegister)

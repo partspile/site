@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -82,4 +83,93 @@ func TestGetB2DownloadTokenForPrefixCached_PartialCredentials(t *testing.T) {
 	assert.Error(t, err)
 	assert.Empty(t, token)
 	assert.Contains(t, err.Error(), "B2 credentials not set")
+}
+
+func TestGetCacheStats(t *testing.T) {
+	stats := GetCacheStats()
+
+	// Check that stats contains expected keys
+	if _, ok := stats["cache_type"]; !ok {
+		t.Error("Expected cache_type in stats")
+	}
+	if _, ok := stats["items_count"]; !ok {
+		t.Error("Expected items_count in stats")
+	}
+	if _, ok := stats["hits"]; !ok {
+		t.Error("Expected hits in stats")
+	}
+	if _, ok := stats["misses"]; !ok {
+		t.Error("Expected misses in stats")
+	}
+	if _, ok := stats["hit_rate"]; !ok {
+		t.Error("Expected hit_rate in stats")
+	}
+
+	// Check that cache_type is the expected value
+	if stats["cache_type"] != "B2 Token Cache" {
+		t.Errorf("Expected cache_type to be 'B2 Token Cache', got %v", stats["cache_type"])
+	}
+
+	// Check that items_count is an integer
+	if _, ok := stats["items_count"].(int); !ok {
+		t.Error("Expected items_count to be an integer")
+	}
+}
+
+func TestClearCache(t *testing.T) {
+	// Set a test value in cache
+	tokenCache.Set("test-prefix", "test-token", cache.DefaultExpiration)
+
+	// Verify it's in cache
+	if _, found := tokenCache.Get("test-prefix"); !found {
+		t.Error("Expected test value to be in cache before clearing")
+	}
+
+	// Clear cache
+	ClearCache()
+
+	// Verify cache is empty
+	if _, found := tokenCache.Get("test-prefix"); found {
+		t.Error("Expected test value to be removed from cache after clearing")
+	}
+}
+
+func TestCacheStatistics(t *testing.T) {
+	// Clear cache first
+	ClearCache()
+
+	// Get initial stats
+	initialStats := GetCacheStats()
+	initialHits := initialStats["hits"].(int64)
+	initialMisses := initialStats["misses"].(int64)
+
+	// Set a value
+	tokenCache.Set("test-key", "test-value", cache.DefaultExpiration)
+
+	// Get the value (should be a hit)
+	tokenCache.Get("test-key")
+
+	// Try to get a non-existent value (should be a miss)
+	tokenCache.Get("non-existent-key")
+
+	// Get updated stats
+	updatedStats := GetCacheStats()
+	updatedHits := updatedStats["hits"].(int64)
+	updatedMisses := updatedStats["misses"].(int64)
+
+	// Verify hits increased
+	if updatedHits <= initialHits {
+		t.Error("Expected hits to increase after successful get")
+	}
+
+	// Verify misses increased
+	if updatedMisses <= initialMisses {
+		t.Error("Expected misses to increase after failed get")
+	}
+
+	// Verify items count is correct
+	itemsCount := updatedStats["items_count"].(int)
+	if itemsCount != 1 {
+		t.Errorf("Expected 1 item in cache, got %d", itemsCount)
+	}
 }

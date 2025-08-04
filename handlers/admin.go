@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
@@ -290,4 +291,30 @@ func HandleAdminMakeParentCompanies(c *fiber.Ctx) error {
 	}
 	c.Type("html")
 	return ui.AdminSectionPage(currentUser, c.Path(), "make-parent-companies", ui.AdminMakeParentCompaniesSection(data)).Render(c.Context().Response.BodyWriter())
+}
+
+func HandleAdminB2Cache(c *fiber.Ctx) error {
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
+
+	stats := b2util.GetCacheStats()
+
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "b2-cache", ui.AdminB2CacheSection(stats)))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "b2-cache", ui.AdminB2CacheSection(stats))},
+	))
+}
+
+func HandleClearB2Cache(c *fiber.Ctx) error {
+	b2util.ClearCache()
+
+	stats := b2util.GetCacheStats()
+	return render(c, ui.AdminB2CacheSection(stats))
 }

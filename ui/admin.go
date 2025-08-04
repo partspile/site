@@ -28,6 +28,7 @@ func AdminSectionPage(currentUser *user.User, path, activeSection string, conten
 		{"part-categories", "Part Categories"},
 		{"part-sub-categories", "Part Sub-Categories"},
 		{"parent-companies", "Parent Companies"},
+		{"b2-cache", "B2 Cache"},
 	}
 	return Div(
 		ID("admin-section"),
@@ -565,6 +566,98 @@ func AdminMakeParentCompaniesSection(rows []struct{ Make, ParentCompany string }
 						Td(Class("border border-gray-300 px-4 py-2"), g.Text(row.ParentCompany)),
 					)
 				})),
+			),
+		),
+	)
+}
+
+func AdminB2CacheSection(stats map[string]interface{}) g.Node {
+	return Div(
+		H1(g.Text("B2 Cache Management")),
+		Div(
+			Class("bg-gray-100 p-4 rounded-lg mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Statistics")),
+			Div(
+				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Items: ")),
+					g.Textf("%d", stats["items_count"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Hits: ")),
+					g.Textf("%d", stats["hits"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Misses: ")),
+					g.Textf("%d", stats["misses"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Hit Rate: ")),
+					g.Textf("%.1f%%", stats["hit_rate"]),
+				),
+			),
+		),
+		Div(
+			Class("mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Cached Items")),
+			Div(
+				Class("bg-white border border-gray-300 rounded-lg overflow-hidden"),
+				Table(
+					Class("min-w-full"),
+					THead(
+						Tr(Class("bg-gray-200"),
+							Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Prefix")),
+							Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Token Preview")),
+							Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Expires")),
+							Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Status")),
+						),
+					),
+					TBody(
+						g.Group(g.Map(stats["items"].([]map[string]interface{}), func(item map[string]interface{}) g.Node {
+							token := item["value"].(string)
+							tokenPreview := token
+							if len(token) > 20 {
+								tokenPreview = token[:20] + "..."
+							}
+
+							expiresDisplay := item["expires_display"].(string)
+							expired := item["expired"].(bool)
+
+							var status, statusClass string
+							if expired {
+								status = "Expired"
+								statusClass = "text-red-600"
+							} else if item["expires"].(int64) == 0 {
+								status = "No Expiry"
+								statusClass = "text-gray-600"
+							} else {
+								status = "Active"
+								statusClass = "text-green-600"
+							}
+
+							return Tr(Class("hover:bg-gray-50"),
+								Td(Class("border border-gray-300 px-4 py-2"), g.Text(item["key"].(string))),
+								Td(Class("border border-gray-300 px-4 py-2 font-mono text-sm"), g.Text(tokenPreview)),
+								Td(Class("border border-gray-300 px-4 py-2"), g.Text(expiresDisplay)),
+								Td(Class("border border-gray-300 px-4 py-2"), Span(Class(statusClass), g.Text(status))),
+							)
+						})),
+					),
+				),
+			),
+		),
+		Div(
+			Class("flex gap-4"),
+			Button(
+				Class("px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"),
+				hx.Post("/api/admin/b2-cache/clear"),
+				hx.Target("#admin-section-content"),
+				hx.Swap("innerHTML"),
+				g.Text("Clear Cache"),
 			),
 		),
 	)
