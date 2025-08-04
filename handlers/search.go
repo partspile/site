@@ -105,6 +105,44 @@ func runEmbeddingSearch(embedding []float32, cursor string, userID int) ([]ad.Ad
 	return ads, nextCursor, nil
 }
 
+// runEmbeddingSearchWithFilterMap runs vector search with filters for map view (200 results)
+func runEmbeddingSearchWithFilterMap(embedding []float32, filter *qdrant.Filter, cursor string, userID int) ([]ad.Ad, string, error) {
+	// Get results with threshold filtering at Qdrant level
+	results, nextCursor, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.VectorSearchInitialK, cursor)
+	if err != nil {
+		return nil, "", err
+	}
+	log.Printf("[runEmbeddingSearchWithFilterMap] Qdrant returned %d results (threshold: %.1f)", len(results), config.VectorSearchThreshold)
+
+	ids := make([]string, len(results))
+	for i, r := range results {
+		ids[i] = r.ID
+	}
+	log.Printf("[runEmbeddingSearchWithFilterMap] Qdrant result IDs: %v", ids)
+	ads, _ := fetchAdsByIDs(ids, userID)
+	log.Printf("[runEmbeddingSearchWithFilterMap] DB fetch returned %d ads", len(ads))
+	return ads, nextCursor, nil
+}
+
+// runEmbeddingSearchMap runs vector search without filters for map view (200 results)
+func runEmbeddingSearchMap(embedding []float32, cursor string, userID int) ([]ad.Ad, string, error) {
+	// Get results with threshold filtering at Qdrant level
+	results, nextCursor, err := vector.QuerySimilarAds(embedding, config.VectorSearchInitialK, cursor)
+	if err != nil {
+		return nil, "", err
+	}
+	log.Printf("[runEmbeddingSearchMap] Qdrant returned %d results (threshold: %.1f)", len(results), config.VectorSearchThreshold)
+
+	ids := make([]string, len(results))
+	for i, r := range results {
+		ids[i] = r.ID
+	}
+	log.Printf("[runEmbeddingSearchMap] Qdrant result IDs: %v", ids)
+	ads, _ := fetchAdsByIDs(ids, userID)
+	log.Printf("[runEmbeddingSearchMap] DB fetch returned %d ads", len(ads))
+	return ads, nextCursor, nil
+}
+
 // Try embedding-based search with user prompt
 func tryQueryEmbedding(userPrompt, cursor string, userID int) ([]ad.Ad, string, error) {
 	log.Printf("[search] Generating embedding for user query: %s", userPrompt)
@@ -212,9 +250,9 @@ func performGeoBoxSearch(userPrompt string, userID int, cursorStr string, bounds
 		}
 		if emb != nil && len(emb) > 0 {
 			if geoFilter != nil {
-				ads, nextCursor, err = runEmbeddingSearchWithFilter(emb, geoFilter, cursorStr, userID)
+				ads, nextCursor, err = runEmbeddingSearchWithFilterMap(emb, geoFilter, cursorStr, userID)
 			} else {
-				ads, nextCursor, err = runEmbeddingSearch(emb, cursorStr, userID)
+				ads, nextCursor, err = runEmbeddingSearchMap(emb, cursorStr, userID)
 			}
 		}
 	}
@@ -227,9 +265,9 @@ func performGeoBoxSearch(userPrompt string, userID int, cursorStr string, bounds
 			return nil, "", err
 		}
 		if geoFilter != nil {
-			ads, nextCursor, err = runEmbeddingSearchWithFilter(embedding, geoFilter, cursorStr, userID)
+			ads, nextCursor, err = runEmbeddingSearchWithFilterMap(embedding, geoFilter, cursorStr, userID)
 		} else {
-			ads, nextCursor, err = runEmbeddingSearch(embedding, cursorStr, userID)
+			ads, nextCursor, err = runEmbeddingSearchMap(embedding, cursorStr, userID)
 		}
 	}
 
@@ -860,64 +898,58 @@ func getTreeAdsForSearch(userPrompt string, userID int) ([]ad.Ad, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Qdrant: %w", err)
 	}
-
 	log.Printf("[tree-search] Qdrant returned %d results (threshold: %.1f)", len(results), config.VectorSearchThreshold)
 
-	// Fetch ads from DB
 	ids := make([]string, len(results))
 	for i, r := range results {
 		ids[i] = r.ID
 	}
-
-	log.Printf("[tree-search] Fetching %d ads from DB", len(ids))
-	ads, err := fetchAdsByIDs(ids, userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch ads: %w", err)
-	}
-
-	log.Printf("[tree-search] Successfully fetched %d ads for tree view", len(ads))
+	log.Printf("[tree-search] Qdrant result IDs: %v", ids)
+	ads, _ := fetchAdsByIDs(ids, userID)
+	log.Printf("[tree-search] DB fetch returned %d ads", len(ads))
 	return ads, nil
 }
 
-// getTreeAdsForSearchWithFilter performs vector search with tree path filtering
+// getTreeAdsForSearchWithFilter gets ads for tree view with filtering
 func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string, userID int) ([]ad.Ad, error) {
-	// Generate embedding for search query
-	log.Printf("[tree-search-filter] Generating embedding for tree search query: %s", userPrompt)
-	embedding, err := vector.EmbedText(userPrompt)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate embedding: %w", err)
+	log.Printf("[getTreeAdsForSearchWithFilter] userPrompt='%s', treePath=%+v, userID=%d", userPrompt, treePath, userID)
+
+	var embedding []float32
+	var err error
+
+	if userPrompt != "" {
+		embedding, err = vector.EmbedText(userPrompt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate embedding: %w", err)
+		}
+	} else {
+		embedding, err = vector.GetSiteLevelVector()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get site-level vector: %w", err)
+		}
 	}
 
-	// Build filter from tree path
+	// Build tree filter
 	filter := vector.BuildTreeFilter(treePath)
 	if filter == nil {
-		log.Printf("[tree-search-filter] No filter built, using unfiltered search")
-		return getTreeAdsForSearch(userPrompt, userID)
+		log.Printf("[getTreeAdsForSearchWithFilter] No tree filter built, returning empty results")
+		return []ad.Ad{}, nil
 	}
-
-	log.Printf("[tree-search-filter] Using tree filter: %+v", treePath)
 
 	// Get results with filtering at Qdrant level (larger limit for tree building)
 	results, _, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.VectorSearchInitialK, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Qdrant with filter: %w", err)
 	}
+	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant returned %d results (threshold: %.1f)", len(results), config.VectorSearchThreshold)
 
-	log.Printf("[tree-search-filter] Qdrant returned %d results (threshold: %.1f)", len(results), config.VectorSearchThreshold)
-
-	// Fetch ads from DB
 	ids := make([]string, len(results))
 	for i, r := range results {
 		ids[i] = r.ID
 	}
-
-	log.Printf("[tree-search-filter] Fetching %d ads from DB", len(ids))
-	ads, err := fetchAdsByIDs(ids, userID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch ads: %w", err)
-	}
-
-	log.Printf("[tree-search-filter] Successfully fetched %d ads for tree view", len(ads))
+	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant result IDs: %v", ids)
+	ads, _ := fetchAdsByIDs(ids, userID)
+	log.Printf("[getTreeAdsForSearchWithFilter] DB fetch returned %d ads", len(ads))
 	return ads, nil
 }
 
