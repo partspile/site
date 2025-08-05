@@ -631,7 +631,7 @@ func AdminB2CacheSection(stats map[string]interface{}) g.Node {
 		),
 		Div(
 			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Ristretto Metrics")),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Metrics")),
 			Div(
 				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
 				Div(
@@ -672,7 +672,7 @@ func AdminB2CacheSection(stats map[string]interface{}) g.Node {
 			Div(
 				Class("bg-white border border-gray-300 rounded-lg p-4"),
 				P(Class("text-gray-600"),
-					g.Text("Ristretto cache doesn't expose individual items for security reasons. "),
+					g.Text("The cache doesn't expose individual items for security reasons. "),
 					g.Text("The cache automatically manages memory usage and eviction based on cost."),
 				),
 			),
@@ -749,7 +749,7 @@ func AdminEmbeddingCacheSection(stats map[string]interface{}) g.Node {
 		),
 		Div(
 			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Ristretto Metrics")),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Metrics")),
 			Div(
 				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
 				Div(
@@ -790,7 +790,7 @@ func AdminEmbeddingCacheSection(stats map[string]interface{}) g.Node {
 			Div(
 				Class("bg-white border border-gray-300 rounded-lg p-4"),
 				P(Class("text-gray-600"),
-					g.Text("Ristretto cache doesn't expose individual items for security reasons. "),
+					g.Text("The cache doesn't expose individual items for security reasons. "),
 					g.Text("The cache automatically manages memory usage and eviction based on cost. "),
 					g.Text("This cache stores embedding vectors for user search queries to improve performance."),
 				),

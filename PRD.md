@@ -63,10 +63,21 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - All search and feed functionality is powered by Qdrant vector search only.
 - **[Complete]** All vector embedding and personalization features are implemented, including persistent user embeddings and automatic updates after user activity.
 
-### 3.5 API Endpoints
+### 3.5 Caching System
+- **B2 Token Cache:** Caches Backblaze B2 download authorization tokens to reduce API calls and improve performance when serving ad images. Tokens are cached by directory prefix (e.g., "22/") and automatically expire based on B2's token expiry settings.
+- **Embedding Query Cache:** Caches vector embeddings for user search queries to improve search performance and reduce API calls to Google Gemini. This cache stores the embedding vectors themselves and uses memory-based cost calculation (4 bytes per float32).
+- **Cache Implementation:** Both caches use a unified cache abstraction that provides:
+  - Generic type-safe cache operations (Get, Set, Clear, Wait)
+  - Standardized cache statistics for admin monitoring (hits, misses, hit rate, memory usage)
+  - Consistent configuration across all cache instances
+  - Clean abstraction that doesn't leak underlying implementation details
+- **Cache Management:** Admin interface provides real-time cache statistics and the ability to clear caches for maintenance purposes.
+- **Performance Benefits:** Caching significantly reduces API latency and costs while improving user experience through faster response times.
+
+### 3.6 API Endpoints
 - RESTful endpoints for CRUD operations on ads and for fetching vehicle/part data for dynamic forms.
 
-### 3.6 Modern UI/UX
+### 3.7 Modern UI/UX
 - Modern, accessible web UI using Tailwind CSS and HTMX for dynamic updates.
 - Form validation and user feedback for all actions.
 - **Ad timestamps are displayed in the user's local timezone, using browser-provided timezone information when available.**
@@ -76,7 +87,7 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - User's token balance is shown in the navigation bar on all pages, and is clickable for exchange and transaction history.
 - UI elements that require authentication (such as "New Ad", "Edit Ad", or "Delete Ad" buttons) are shown in a disabled state or with limited interactivity for unauthenticated users, providing clear feedback that login is required to access these features.
 
-### 3.6a In-Place Ad Card Expand/Collapse (SPA-like UX)
+### 3.7a In-Place Ad Card Expand/Collapse (SPA-like UX)
 - Users can expand an ad card in-place to view ad details without leaving the list or tree view.
 - Clicking "Expand" on an ad card loads the ad detail view in-place using htmx, replacing the card with the detail partial.
 - The detail view includes a "Collapse" button to return to the original card view in-place.
@@ -87,13 +98,13 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
   - `GET /ad/detail/:id` — Returns the ad detail partial for in-place expand.
 - This provides a seamless, SPA-like user experience while maintaining server-side rendering and progressive enhancement.
 
-### 3.6b Ad Click Count Tracking
+### 3.7b Ad Click Count Tracking
 - Each ad tracks the number of times it has been viewed (clicked) by users, and the date/time of the last click.
 - The click count and last clicked date/time are displayed on the ad card and detail views in the UI.
 - Clicks are incremented in the database each time an ad is viewed.
 - User-specific click tracking is also supported, allowing for analytics on unique user engagement, including the date/time of the last click by that user.
 
-### 3.7 Ad Cost, Token Economy, and Incentives
+### 3.8 Ad Cost, Token Economy, and Incentives
 - Posting an ad incurs a cost, which can be positive (user pays) or negative (user receives payout).
 - Cost is determined by:
   - Funds available in the payout account.

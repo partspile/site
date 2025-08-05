@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgraph-io/ristretto/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/cache"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/vehicle"
 	"github.com/qdrant/go-client/qdrant"
@@ -30,60 +30,21 @@ var (
 	geminiClient     *genai.Client
 	qdrantClient     *qdrant.Client
 	qdrantCollection string
-	embeddingCache   *ristretto.Cache[string, []float32]
+	embeddingCache   *cache.Cache[[]float32]
 )
 
 // InitEmbeddingCache initializes the embedding cache. This should be called during application startup.
 func InitEmbeddingCache() error {
 	var err error
-	embeddingCache, err = ristretto.NewCache(&ristretto.Config[string, []float32]{
-		NumCounters: 1e6,     // number of keys to track frequency of (1M)
-		MaxCost:     1 << 24, // maximum cost of cache (16MB)
-		BufferItems: 64,      // number of keys per Get buffer
-		Metrics:     true,    // enable metrics
-		Cost: func(value []float32) int64 {
-			return int64(len(value) * 4) // 4 bytes per float32
-		},
-	})
+	embeddingCache, err = cache.New[[]float32](func(value []float32) int64 {
+		return int64(len(value) * 4) // 4 bytes per float32
+	}, "Embedding Query Cache")
 	return err
 }
 
 // GetEmbeddingCacheStats returns cache statistics for admin monitoring
 func GetEmbeddingCacheStats() map[string]interface{} {
-	metrics := embeddingCache.Metrics
-
-	// Calculate memory usage in bytes
-	memoryUsed := metrics.CostAdded() - metrics.CostEvicted()
-	memoryUsedMB := float64(memoryUsed) / (1024 * 1024)
-	totalAddedMB := float64(metrics.CostAdded()) / (1024 * 1024)
-	totalEvictedMB := float64(metrics.CostEvicted()) / (1024 * 1024)
-
-	// Calculate hit rate from Ristretto metrics
-	hitRate := 0.0
-	totalRequests := metrics.Hits() + metrics.Misses()
-	if totalRequests > 0 {
-		hitRate = float64(metrics.Hits()) / float64(totalRequests) * 100
-	}
-
-	// Return Ristretto's built-in metrics for admin monitoring
-	return map[string]interface{}{
-		"cache_type":       "Embedding Query Cache (Ristretto)",
-		"hits":             metrics.Hits(),
-		"misses":           metrics.Misses(),
-		"sets":             metrics.KeysAdded(),
-		"total_requests":   totalRequests,
-		"hit_rate":         hitRate,
-		"cost_added":       metrics.CostAdded(),
-		"cost_evicted":     metrics.CostEvicted(),
-		"gets_dropped":     metrics.GetsDropped(),
-		"gets_kept":        metrics.GetsKept(),
-		"sets_dropped":     metrics.SetsDropped(),
-		"sets_rejected":    metrics.SetsRejected(),
-		"memory_used":      memoryUsed,
-		"memory_used_mb":   memoryUsedMB,
-		"total_added_mb":   totalAddedMB,
-		"total_evicted_mb": totalEvictedMB,
-	}
+	return embeddingCache.Stats()
 }
 
 // ClearEmbeddingCache clears all cached embeddings

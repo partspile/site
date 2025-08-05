@@ -6,25 +6,19 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dgraph-io/ristretto/v2"
+	"github.com/parts-pile/site/cache"
 	"github.com/parts-pile/site/config"
 )
 
-var tokenCache *ristretto.Cache[string, string]
+var tokenCache *cache.Cache[string]
 
 // Init initializes the B2 cache. This should be called during application startup.
 // If initialization fails, the application should exit.
 func Init() error {
 	var err error
-	tokenCache, err = ristretto.NewCache(&ristretto.Config[string, string]{
-		NumCounters: 1e6,     // number of keys to track frequency of (1M)
-		MaxCost:     1 << 24, // maximum cost of cache (16MB) - increased for test data
-		BufferItems: 64,      // number of keys per Get buffer
-		Metrics:     true,    // enable metrics
-		Cost: func(value string) int64 {
-			return int64(len(value))
-		},
-	})
+	tokenCache, err = cache.New[string](func(value string) int64 {
+		return int64(len(value))
+	}, "B2 Token Cache")
 	return err
 }
 
@@ -43,40 +37,7 @@ func GetB2DownloadTokenForPrefixCached(prefix string) (string, error) {
 
 // GetCacheStats returns cache statistics for admin monitoring
 func GetCacheStats() map[string]interface{} {
-	metrics := tokenCache.Metrics
-
-	// Calculate memory usage in bytes
-	memoryUsed := metrics.CostAdded() - metrics.CostEvicted()
-	memoryUsedMB := float64(memoryUsed) / (1024 * 1024)
-	totalAddedMB := float64(metrics.CostAdded()) / (1024 * 1024)
-	totalEvictedMB := float64(metrics.CostEvicted()) / (1024 * 1024)
-
-	// Calculate hit rate from Ristretto metrics
-	hitRate := 0.0
-	totalRequests := metrics.Hits() + metrics.Misses()
-	if totalRequests > 0 {
-		hitRate = float64(metrics.Hits()) / float64(totalRequests) * 100
-	}
-
-	// Return Ristretto's built-in metrics for admin monitoring
-	return map[string]interface{}{
-		"cache_type":       "B2 Token Cache (Ristretto)",
-		"hits":             metrics.Hits(),
-		"misses":           metrics.Misses(),
-		"sets":             metrics.KeysAdded(),
-		"total_requests":   totalRequests,
-		"hit_rate":         hitRate,
-		"cost_added":       metrics.CostAdded(),
-		"cost_evicted":     metrics.CostEvicted(),
-		"gets_dropped":     metrics.GetsDropped(),
-		"gets_kept":        metrics.GetsKept(),
-		"sets_dropped":     metrics.SetsDropped(),
-		"sets_rejected":    metrics.SetsRejected(),
-		"memory_used":      memoryUsed,
-		"memory_used_mb":   memoryUsedMB,
-		"total_added_mb":   totalAddedMB,
-		"total_evicted_mb": totalEvictedMB,
-	}
+	return tokenCache.Stats()
 }
 
 // ClearCache clears all cached tokens
