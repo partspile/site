@@ -581,11 +581,6 @@ func AdminB2CacheSection(stats map[string]interface{}) g.Node {
 				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
 				Div(
 					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Items: ")),
-					g.Textf("%d", stats["items_count"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Hits: ")),
 					g.Textf("%d", stats["hits"]),
 				),
@@ -599,54 +594,85 @@ func AdminB2CacheSection(stats map[string]interface{}) g.Node {
 					Strong(g.Text("Hit Rate: ")),
 					g.Textf("%.1f%%", stats["hit_rate"]),
 				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Sets: ")),
+					g.Textf("%d", stats["sets"]),
+				),
+			),
+		),
+		Div(
+			Class("bg-gray-100 p-4 rounded-lg mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Memory Usage")),
+			Div(
+				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Memory Used: ")),
+					g.Textf("%.2f MB", stats["memory_used_mb"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Total Added: ")),
+					g.Textf("%.2f MB", stats["total_added_mb"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Total Evicted: ")),
+					g.Textf("%.2f MB", stats["total_evicted_mb"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Memory Used (bytes): ")),
+					g.Textf("%d", stats["memory_used"]),
+				),
+			),
+		),
+		Div(
+			Class("bg-gray-100 p-4 rounded-lg mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Ristretto Metrics")),
+			Div(
+				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Cost Added: ")),
+					g.Textf("%d", stats["cost_added"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Cost Evicted: ")),
+					g.Textf("%d", stats["cost_evicted"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Gets Dropped: ")),
+					g.Textf("%d", stats["gets_dropped"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Gets Kept: ")),
+					g.Textf("%d", stats["gets_kept"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Sets Dropped: ")),
+					g.Textf("%d", stats["sets_dropped"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Sets Rejected: ")),
+					g.Textf("%d", stats["sets_rejected"]),
+				),
 			),
 		),
 		Div(
 			Class("mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Cached Items")),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Information")),
 			Div(
-				Class("bg-white border border-gray-300 rounded-lg overflow-hidden"),
-				Table(
-					Class("min-w-full"),
-					THead(
-						Tr(Class("bg-gray-200"),
-							Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Prefix")),
-							Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Token Preview")),
-							Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Expires")),
-							Th(Class("border border-gray-300 px-4 py-2 text-left font-semibold"), g.Text("Status")),
-						),
-					),
-					TBody(
-						g.Group(g.Map(stats["items"].([]map[string]interface{}), func(item map[string]interface{}) g.Node {
-							token := item["value"].(string)
-							tokenPreview := token
-							if len(token) > 20 {
-								tokenPreview = token[:20] + "..."
-							}
-
-							expiresDisplay := item["expires_display"].(string)
-							expired := item["expired"].(bool)
-
-							var status, statusClass string
-							if expired {
-								status = "Expired"
-								statusClass = "text-red-600"
-							} else if item["expires"].(int64) == 0 {
-								status = "No Expiry"
-								statusClass = "text-gray-600"
-							} else {
-								status = "Active"
-								statusClass = "text-green-600"
-							}
-
-							return Tr(Class("hover:bg-gray-50"),
-								Td(Class("border border-gray-300 px-4 py-2"), g.Text(item["key"].(string))),
-								Td(Class("border border-gray-300 px-4 py-2 font-mono text-sm"), g.Text(tokenPreview)),
-								Td(Class("border border-gray-300 px-4 py-2"), g.Text(expiresDisplay)),
-								Td(Class("border border-gray-300 px-4 py-2"), Span(Class(statusClass), g.Text(status))),
-							)
-						})),
-					),
+				Class("bg-white border border-gray-300 rounded-lg p-4"),
+				P(Class("text-gray-600"),
+					g.Text("Ristretto cache doesn't expose individual items for security reasons. "),
+					g.Text("The cache automatically manages memory usage and eviction based on cost."),
 				),
 			),
 		),

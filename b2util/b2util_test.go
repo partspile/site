@@ -4,11 +4,15 @@ import (
 	"os"
 	"testing"
 
-	"github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetB2DownloadTokenForPrefixCached_CacheHit(t *testing.T) {
+	// Initialize cache for test
+	if err := Init(); err != nil {
+		t.Fatalf("Failed to initialize cache for test: %v", err)
+	}
+
 	// Test that cached tokens are returned
 	prefix := "test-prefix/"
 
@@ -31,6 +35,11 @@ func TestGetB2DownloadTokenForPrefixCached_CacheHit(t *testing.T) {
 }
 
 func TestGetB2DownloadTokenForPrefixCached_DifferentPrefixes(t *testing.T) {
+	// Initialize cache for test
+	if err := Init(); err != nil {
+		t.Fatalf("Failed to initialize cache for test: %v", err)
+	}
+
 	// Test that different prefixes have separate cache entries
 	prefix1 := "prefix1/"
 	prefix2 := "prefix2/"
@@ -52,6 +61,11 @@ func TestGetB2DownloadTokenForPrefixCached_DifferentPrefixes(t *testing.T) {
 }
 
 func TestGetB2DownloadTokenForPrefixCached_MissingCredentials(t *testing.T) {
+	// Initialize cache for test
+	if err := Init(); err != nil {
+		t.Fatalf("Failed to initialize cache for test: %v", err)
+	}
+
 	// Test behavior when credentials are missing
 	prefix := "test-prefix/"
 
@@ -69,6 +83,11 @@ func TestGetB2DownloadTokenForPrefixCached_MissingCredentials(t *testing.T) {
 }
 
 func TestGetB2DownloadTokenForPrefixCached_PartialCredentials(t *testing.T) {
+	// Initialize cache for test
+	if err := Init(); err != nil {
+		t.Fatalf("Failed to initialize cache for test: %v", err)
+	}
+
 	// Test behavior when only some credentials are set
 	prefix := "test-prefix/"
 
@@ -86,14 +105,16 @@ func TestGetB2DownloadTokenForPrefixCached_PartialCredentials(t *testing.T) {
 }
 
 func TestGetCacheStats(t *testing.T) {
+	// Initialize cache for test
+	if err := Init(); err != nil {
+		t.Fatalf("Failed to initialize cache for test: %v", err)
+	}
+
 	stats := GetCacheStats()
 
 	// Check that stats contains expected keys
 	if _, ok := stats["cache_type"]; !ok {
 		t.Error("Expected cache_type in stats")
-	}
-	if _, ok := stats["items_count"]; !ok {
-		t.Error("Expected items_count in stats")
 	}
 	if _, ok := stats["hits"]; !ok {
 		t.Error("Expected hits in stats")
@@ -104,21 +125,55 @@ func TestGetCacheStats(t *testing.T) {
 	if _, ok := stats["hit_rate"]; !ok {
 		t.Error("Expected hit_rate in stats")
 	}
-
-	// Check that cache_type is the expected value
-	if stats["cache_type"] != "B2 Token Cache" {
-		t.Errorf("Expected cache_type to be 'B2 Token Cache', got %v", stats["cache_type"])
+	if _, ok := stats["memory_used_mb"]; !ok {
+		t.Error("Expected memory_used_mb in stats")
+	}
+	if _, ok := stats["total_added_mb"]; !ok {
+		t.Error("Expected total_added_mb in stats")
+	}
+	if _, ok := stats["total_evicted_mb"]; !ok {
+		t.Error("Expected total_evicted_mb in stats")
 	}
 
-	// Check that items_count is an integer
-	if _, ok := stats["items_count"].(int); !ok {
-		t.Error("Expected items_count to be an integer")
+	// Check that cache_type is the expected value
+	if stats["cache_type"] != "B2 Token Cache (Ristretto)" {
+		t.Errorf("Expected cache_type to be 'B2 Token Cache (Ristretto)', got %v", stats["cache_type"])
+	}
+
+	// Check that hits and misses are integers
+	if _, ok := stats["hits"].(uint64); !ok {
+		t.Error("Expected hits to be a uint64")
+	}
+	if _, ok := stats["misses"].(uint64); !ok {
+		t.Error("Expected misses to be a uint64")
+	}
+
+	// Check that memory metrics are floats
+	if _, ok := stats["memory_used_mb"].(float64); !ok {
+		t.Error("Expected memory_used_mb to be a float64")
+	}
+	if _, ok := stats["total_added_mb"].(float64); !ok {
+		t.Error("Expected total_added_mb to be a float64")
+	}
+	if _, ok := stats["total_evicted_mb"].(float64); !ok {
+		t.Error("Expected total_evicted_mb to be a float64")
 	}
 }
 
 func TestClearCache(t *testing.T) {
+	// Initialize cache for test
+	if err := Init(); err != nil {
+		t.Fatalf("Failed to initialize cache for test: %v", err)
+	}
+
+	// Clear cache first
+	ClearCache()
+
 	// Set a test value in cache
-	tokenCache.Set("test-prefix", "test-token", cache.DefaultExpiration)
+	tokenCache.Set("test-prefix", "test-token", int64(len("test-token")))
+
+	// Wait for the item to be available (Ristretto has eventual consistency)
+	tokenCache.Wait()
 
 	// Verify it's in cache
 	if _, found := tokenCache.Get("test-prefix"); !found {
@@ -135,16 +190,24 @@ func TestClearCache(t *testing.T) {
 }
 
 func TestCacheStatistics(t *testing.T) {
+	// Initialize cache for test
+	if err := Init(); err != nil {
+		t.Fatalf("Failed to initialize cache for test: %v", err)
+	}
+
 	// Clear cache first
 	ClearCache()
 
 	// Get initial stats
 	initialStats := GetCacheStats()
-	initialHits := initialStats["hits"].(int64)
-	initialMisses := initialStats["misses"].(int64)
+	initialHits := initialStats["hits"].(uint64)
+	initialMisses := initialStats["misses"].(uint64)
 
 	// Set a value
-	tokenCache.Set("test-key", "test-value", cache.DefaultExpiration)
+	tokenCache.Set("test-key", "test-value", int64(len("test-value")))
+
+	// Wait for the item to be available
+	tokenCache.Wait()
 
 	// Get the value (should be a hit)
 	tokenCache.Get("test-key")
@@ -154,8 +217,8 @@ func TestCacheStatistics(t *testing.T) {
 
 	// Get updated stats
 	updatedStats := GetCacheStats()
-	updatedHits := updatedStats["hits"].(int64)
-	updatedMisses := updatedStats["misses"].(int64)
+	updatedHits := updatedStats["hits"].(uint64)
+	updatedMisses := updatedStats["misses"].(uint64)
 
 	// Verify hits increased
 	if updatedHits <= initialHits {
@@ -165,11 +228,5 @@ func TestCacheStatistics(t *testing.T) {
 	// Verify misses increased
 	if updatedMisses <= initialMisses {
 		t.Error("Expected misses to increase after failed get")
-	}
-
-	// Verify items count is correct
-	itemsCount := updatedStats["items_count"].(int)
-	if itemsCount != 1 {
-		t.Errorf("Expected 1 item in cache, got %d", itemsCount)
 	}
 }

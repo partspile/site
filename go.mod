@@ -5,9 +5,9 @@ go 1.24.1
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/chai2010/webp v1.4.0
+	github.com/dgraph-io/ristretto/v2 v2.2.0
 	github.com/gofiber/fiber/v2 v2.52.8
 	github.com/mattn/go-sqlite3 v1.14.28
-	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/qdrant/go-client v1.15.1
 	github.com/stretchr/testify v1.10.0
 	github.com/valyala/fasthttp v1.51.0
@@ -24,7 +24,9 @@ require (
 	cloud.google.com/go/auth v0.16.2 // indirect
 	cloud.google.com/go/compute/metadata v0.7.0 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

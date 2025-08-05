@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/handlers"
@@ -21,6 +22,11 @@ func main() {
 	// Initialize database
 	if err := db.Init(config.DatabaseURL); err != nil {
 		log.Fatalf("error initializing database: %v", err)
+	}
+
+	// Initialize B2 cache
+	if err := b2util.Init(); err != nil {
+		log.Fatalf("Failed to initialize B2 cache: %v", err)
 	}
 
 	// Initialize Gemini client

@@ -5,128 +5,83 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
-	"time"
 
+	"github.com/dgraph-io/ristretto/v2"
 	"github.com/parts-pile/site/config"
-	"github.com/patrickmn/go-cache"
 )
 
-// CacheStats tracks cache performance metrics
-type CacheStats struct {
-	Hits   int64
-	Misses int64
-	Sets   int64
-}
+var tokenCache *ristretto.Cache[string, string]
 
-// B2Cache wraps the go-cache with statistics tracking
-type B2Cache struct {
-	cache *cache.Cache
-	stats CacheStats
-	mu    sync.RWMutex
-}
-
-var tokenCache = &B2Cache{
-	cache: cache.New(config.B2TokenCacheDuration, config.B2TokenCacheCleanup),
-}
-
-// Get retrieves a value from cache and updates statistics
-func (b *B2Cache) Get(key string) (interface{}, bool) {
-	value, found := b.cache.Get(key)
-	b.mu.Lock()
-	if found {
-		b.stats.Hits++
-	} else {
-		b.stats.Misses++
-	}
-	b.mu.Unlock()
-	return value, found
-}
-
-// Set stores a value in cache and updates statistics
-func (b *B2Cache) Set(key string, value interface{}, duration time.Duration) {
-	b.cache.Set(key, value, duration)
-	b.mu.Lock()
-	b.stats.Sets++
-	b.mu.Unlock()
-}
-
-// Flush clears all cached items
-func (b *B2Cache) Flush() {
-	b.cache.Flush()
-}
-
-// GetStats returns current cache statistics
-func (b *B2Cache) GetStats() CacheStats {
-	b.mu.RLock()
-	defer b.mu.RUnlock()
-	return b.stats
-}
-
-// GetItems returns all cached items (for admin display)
-func (b *B2Cache) GetItems() map[string]cache.Item {
-	return b.cache.Items()
+// Init initializes the B2 cache. This should be called during application startup.
+// If initialization fails, the application should exit.
+func Init() error {
+	var err error
+	tokenCache, err = ristretto.NewCache(&ristretto.Config[string, string]{
+		NumCounters: 1e6,     // number of keys to track frequency of (1M)
+		MaxCost:     1 << 24, // maximum cost of cache (16MB) - increased for test data
+		BufferItems: 64,      // number of keys per Get buffer
+		Metrics:     true,    // enable metrics
+		Cost: func(value string) int64 {
+			return int64(len(value))
+		},
+	})
+	return err
 }
 
 // GetB2DownloadTokenForPrefixCached returns a cached B2 download authorization token for a given ad directory prefix (e.g., "22/")
 func GetB2DownloadTokenForPrefixCached(prefix string) (string, error) {
 	if token, found := tokenCache.Get(prefix); found {
-		return token.(string), nil
+		return token, nil
 	}
 	token, err := getB2DownloadTokenForPrefix(prefix)
 	if err != nil {
 		return "", err
 	}
-	tokenCache.Set(prefix, token, cache.DefaultExpiration)
+	tokenCache.Set(prefix, token, int64(len(token)))
 	return token, nil
 }
 
 // GetCacheStats returns cache statistics for admin monitoring
 func GetCacheStats() map[string]interface{} {
-	stats := tokenCache.GetStats()
-	items := tokenCache.GetItems()
+	metrics := tokenCache.Metrics
 
-	totalRequests := stats.Hits + stats.Misses
+	// Calculate memory usage in bytes
+	memoryUsed := metrics.CostAdded() - metrics.CostEvicted()
+	memoryUsedMB := float64(memoryUsed) / (1024 * 1024)
+	totalAddedMB := float64(metrics.CostAdded()) / (1024 * 1024)
+	totalEvictedMB := float64(metrics.CostEvicted()) / (1024 * 1024)
+
+	// Calculate hit rate from Ristretto metrics
 	hitRate := 0.0
+	totalRequests := metrics.Hits() + metrics.Misses()
 	if totalRequests > 0 {
-		hitRate = float64(stats.Hits) / float64(totalRequests) * 100
+		hitRate = float64(metrics.Hits()) / float64(totalRequests) * 100
 	}
 
-	// Convert cache items to a more displayable format
-	itemList := make([]map[string]interface{}, 0, len(items))
-	for key, item := range items {
-		var expiresDisplay string
-		if item.Expiration == 0 {
-			expiresDisplay = "No Expiry"
-		} else {
-			expiresTime := time.Unix(0, item.Expiration)
-			expiresDisplay = expiresTime.Format("2006-01-02 15:04:05")
-		}
-
-		itemList = append(itemList, map[string]interface{}{
-			"key":             key,
-			"value":           item.Object,
-			"expires":         item.Expiration,
-			"expires_display": expiresDisplay,
-			"expired":         item.Expiration > 0 && time.Now().UnixNano() > item.Expiration,
-		})
-	}
-
+	// Return Ristretto's built-in metrics for admin monitoring
 	return map[string]interface{}{
-		"cache_type":     "B2 Token Cache",
-		"items_count":    len(items),
-		"hits":           stats.Hits,
-		"misses":         stats.Misses,
-		"sets":           stats.Sets,
-		"total_requests": totalRequests,
-		"hit_rate":       hitRate,
-		"items":          itemList,
+		"cache_type":       "B2 Token Cache (Ristretto)",
+		"hits":             metrics.Hits(),
+		"misses":           metrics.Misses(),
+		"sets":             metrics.KeysAdded(),
+		"total_requests":   totalRequests,
+		"hit_rate":         hitRate,
+		"cost_added":       metrics.CostAdded(),
+		"cost_evicted":     metrics.CostEvicted(),
+		"gets_dropped":     metrics.GetsDropped(),
+		"gets_kept":        metrics.GetsKept(),
+		"sets_dropped":     metrics.SetsDropped(),
+		"sets_rejected":    metrics.SetsRejected(),
+		"memory_used":      memoryUsed,
+		"memory_used_mb":   memoryUsedMB,
+		"total_added_mb":   totalAddedMB,
+		"total_evicted_mb": totalEvictedMB,
 	}
 }
 
 // ClearCache clears all cached tokens
 func ClearCache() {
-	tokenCache.Flush()
+	tokenCache.Clear()
 }
 
 // getB2DownloadTokenForPrefix returns a B2 download authorization token for a given ad directory prefix (e.g., "22/")
