@@ -146,7 +146,7 @@ func runEmbeddingSearchMap(embedding []float32, cursor string, userID int, thres
 // Try embedding-based search with user prompt
 func tryQueryEmbedding(userPrompt, cursor string, userID int, threshold float64) ([]ad.Ad, string, error) {
 	log.Printf("[search] Generating embedding for user query: %s", userPrompt)
-	embedding, err := vector.EmbedText(userPrompt)
+	embedding, err := vector.EmbedTextCached(userPrompt)
 	if err != nil {
 		return nil, "", err
 	}
@@ -259,7 +259,7 @@ func performGeoBoxSearch(userPrompt string, userID int, cursorStr string, bounds
 
 	// If query provided, use query embedding + geo filter
 	if userPrompt != "" {
-		embedding, err := vector.EmbedText(userPrompt)
+		embedding, err := vector.EmbedTextCached(userPrompt)
 		if err != nil {
 			log.Printf("[performGeoBoxSearch] EmbedText error: %v", err)
 			return nil, "", err
@@ -924,7 +924,7 @@ func handleViewSwitchWithGeo(c *fiber.Ctx, view string, bounds *GeoBounds) error
 func getTreeAdsForSearch(userPrompt string, userID int) ([]ad.Ad, error) {
 	// Generate embedding for search query
 	log.Printf("[tree-search] Generating embedding for tree search query: %s", userPrompt)
-	embedding, err := vector.EmbedText(userPrompt)
+	embedding, err := vector.EmbedTextCached(userPrompt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate embedding: %w", err)
 	}
@@ -954,7 +954,7 @@ func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string
 	var err error
 
 	if userPrompt != "" {
-		embedding, err = vector.EmbedText(userPrompt)
+		embedding, err = vector.EmbedTextCached(userPrompt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate embedding: %w", err)
 		}

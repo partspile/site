@@ -131,7 +131,7 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 			continue
 		}
 		log.Printf("[embedding][debug] Generating embedding for user search query: %s", s.QueryString)
-		emb, err := EmbedText(s.QueryString)
+		emb, err := EmbedTextCached(s.QueryString)
 		if err != nil {
 			log.Printf("[embedding][debug] Gemini embedding error for query=%q: %v", s.QueryString, err)
 		}

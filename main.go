@@ -29,6 +29,11 @@ func main() {
 		log.Fatalf("Failed to initialize B2 cache: %v", err)
 	}
 
+	// Initialize embedding cache
+	if err := vector.InitEmbeddingCache(); err != nil {
+		log.Fatalf("Failed to initialize embedding cache: %v", err)
+	}
+
 	// Initialize Gemini client
 	if err := vector.InitGeminiClient(); err != nil {
 		log.Fatalf("Failed to initialize Gemini client: %v", err)
@@ -135,6 +140,7 @@ func main() {
 	admin.Get("/parent-companies", handlers.HandleAdminParentCompanies)
 	admin.Get("/make-parent-companies", handlers.HandleAdminMakeParentCompanies)
 	admin.Get("/b2-cache", handlers.HandleAdminB2Cache)
+	admin.Get("/embedding-cache", handlers.HandleAdminEmbeddingCache)
 
 	// Admin API group
 	adminAPI := api.Group("/admin", handlers.AdminRequired)
@@ -147,6 +153,7 @@ func main() {
 	adminAPI.Get("/export/ads", handlers.HandleAdminExportAds)
 	adminAPI.Get("/export/transactions", handlers.HandleAdminExportTransactions)
 	adminAPI.Post("/b2-cache/clear", handlers.HandleClearB2Cache)
+	adminAPI.Post("/embedding-cache/clear", handlers.HandleClearEmbeddingCache)
 
 	// User registration/authentication
 	app.Get("/register", handlers.HandleRegister)

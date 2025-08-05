@@ -29,6 +29,7 @@ func AdminSectionPage(currentUser *user.User, path, activeSection string, conten
 		{"part-sub-categories", "Part Sub-Categories"},
 		{"parent-companies", "Parent Companies"},
 		{"b2-cache", "B2 Cache"},
+		{"embedding-cache", "Embedding Cache"},
 	}
 	return Div(
 		ID("admin-section"),
@@ -681,6 +682,125 @@ func AdminB2CacheSection(stats map[string]interface{}) g.Node {
 			Button(
 				Class("px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"),
 				hx.Post("/api/admin/b2-cache/clear"),
+				hx.Target("#admin-section-content"),
+				hx.Swap("innerHTML"),
+				g.Text("Clear Cache"),
+			),
+		),
+	)
+}
+
+func AdminEmbeddingCacheSection(stats map[string]interface{}) g.Node {
+	return Div(
+		H1(g.Text("Embedding Cache Management")),
+		Div(
+			Class("bg-gray-100 p-4 rounded-lg mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Statistics")),
+			Div(
+				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Hits: ")),
+					g.Textf("%d", stats["hits"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Misses: ")),
+					g.Textf("%d", stats["misses"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Hit Rate: ")),
+					g.Textf("%.1f%%", stats["hit_rate"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Sets: ")),
+					g.Textf("%d", stats["sets"]),
+				),
+			),
+		),
+		Div(
+			Class("bg-gray-100 p-4 rounded-lg mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Memory Usage")),
+			Div(
+				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Memory Used: ")),
+					g.Textf("%.2f MB", stats["memory_used_mb"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Total Added: ")),
+					g.Textf("%.2f MB", stats["total_added_mb"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Total Evicted: ")),
+					g.Textf("%.2f MB", stats["total_evicted_mb"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Memory Used (bytes): ")),
+					g.Textf("%d", stats["memory_used"]),
+				),
+			),
+		),
+		Div(
+			Class("bg-gray-100 p-4 rounded-lg mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Ristretto Metrics")),
+			Div(
+				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Cost Added: ")),
+					g.Textf("%d", stats["cost_added"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Cost Evicted: ")),
+					g.Textf("%d", stats["cost_evicted"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Gets Dropped: ")),
+					g.Textf("%d", stats["gets_dropped"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Gets Kept: ")),
+					g.Textf("%d", stats["gets_kept"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Sets Dropped: ")),
+					g.Textf("%d", stats["sets_dropped"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Sets Rejected: ")),
+					g.Textf("%d", stats["sets_rejected"]),
+				),
+			),
+		),
+		Div(
+			Class("mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Information")),
+			Div(
+				Class("bg-white border border-gray-300 rounded-lg p-4"),
+				P(Class("text-gray-600"),
+					g.Text("Ristretto cache doesn't expose individual items for security reasons. "),
+					g.Text("The cache automatically manages memory usage and eviction based on cost. "),
+					g.Text("This cache stores embedding vectors for user search queries to improve performance."),
+				),
+			),
+		),
+		Div(
+			Class("flex gap-4"),
+			Button(
+				Class("px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"),
+				hx.Post("/api/admin/embedding-cache/clear"),
 				hx.Target("#admin-section-content"),
 				hx.Swap("innerHTML"),
 				g.Text("Clear Cache"),

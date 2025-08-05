@@ -10,6 +10,7 @@ import (
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
+	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/vehicle"
 	g "maragu.dev/gomponents"
 )
@@ -317,4 +318,30 @@ func HandleClearB2Cache(c *fiber.Ctx) error {
 
 	stats := b2util.GetCacheStats()
 	return render(c, ui.AdminB2CacheSection(stats))
+}
+
+func HandleAdminEmbeddingCache(c *fiber.Ctx) error {
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
+
+	stats := vector.GetEmbeddingCacheStats()
+
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "embedding-cache", ui.AdminEmbeddingCacheSection(stats)))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "embedding-cache", ui.AdminEmbeddingCacheSection(stats))},
+	))
+}
+
+func HandleClearEmbeddingCache(c *fiber.Ctx) error {
+	vector.ClearEmbeddingCache()
+
+	stats := vector.GetEmbeddingCacheStats()
+	return render(c, ui.AdminEmbeddingCacheSection(stats))
 }

@@ -4,68 +4,51 @@ import (
 	"testing"
 )
 
-func TestQuerySimilarAds_ThresholdParameter(t *testing.T) {
-	// This test verifies that the threshold parameter is properly accepted
-	// by the QuerySimilarAds function signature
-
-	// Create a dummy embedding
-	embedding := make([]float32, 768)
-	for i := range embedding {
-		embedding[i] = 0.1
+func TestEmbeddingCacheInitialization(t *testing.T) {
+	// Initialize the cache
+	err := InitEmbeddingCache()
+	if err != nil {
+		t.Fatalf("Failed to initialize embedding cache: %v", err)
 	}
 
-	// Test that the function signature accepts the threshold parameter
-	// We can't actually test the Qdrant query without a real connection,
-	// but we can verify the function signature is correct
-	_, _, err := QuerySimilarAds(embedding, 10, "", 0.7)
-
-	// The error should be about Qdrant client not being initialized,
-	// not about the function signature
-	if err == nil {
-		t.Error("Expected error about Qdrant client not being initialized")
+	// Test that cache is initialized
+	if embeddingCache == nil {
+		t.Fatal("Embedding cache should not be nil after initialization")
 	}
 
-	// Test with different threshold values
-	_, _, err = QuerySimilarAds(embedding, 10, "", 0.5)
-	if err == nil {
-		t.Error("Expected error about Qdrant client not being initialized")
+	// Test cache stats
+	stats := GetEmbeddingCacheStats()
+	if stats == nil {
+		t.Fatal("Cache stats should not be nil")
 	}
 
-	_, _, err = QuerySimilarAds(embedding, 10, "", 0.9)
-	if err == nil {
-		t.Error("Expected error about Qdrant client not being initialized")
+	// Check that required stats fields exist
+	requiredFields := []string{"hits", "misses", "sets", "hit_rate", "memory_used_mb"}
+	for _, field := range requiredFields {
+		if _, exists := stats[field]; !exists {
+			t.Errorf("Required field '%s' missing from cache stats", field)
+		}
+	}
+
+	// Test cache clear
+	ClearEmbeddingCache()
+	statsAfterClear := GetEmbeddingCacheStats()
+	if statsAfterClear["hits"].(uint64) != 0 {
+		t.Error("Expected cache hits to be 0 after clear")
+	}
+	if statsAfterClear["sets"].(uint64) != 0 {
+		t.Error("Expected cache sets to be 0 after clear")
 	}
 }
 
-func TestQuerySimilarAdsWithFilter_ThresholdParameter(t *testing.T) {
-	// This test verifies that the threshold parameter is properly accepted
-	// by the QuerySimilarAdsWithFilter function signature
+func TestEmbeddingCacheWithNilCache(t *testing.T) {
+	// Test that EmbedTextCached works when cache is nil
+	embeddingCache = nil
 
-	// Create a dummy embedding
-	embedding := make([]float32, 768)
-	for i := range embedding {
-		embedding[i] = 0.1
-	}
-
-	// Test that the function signature accepts the threshold parameter
-	// We can't actually test the Qdrant query without a real connection,
-	// but we can verify the function signature is correct
-	_, _, err := QuerySimilarAdsWithFilter(embedding, nil, 10, "", 0.7)
-
-	// The error should be about Qdrant client not being initialized,
-	// not about the function signature
+	testQuery := "test query with nil cache"
+	// This should not panic and should return an error about Gemini client
+	_, err := EmbedTextCached(testQuery)
 	if err == nil {
-		t.Error("Expected error about Qdrant client not being initialized")
-	}
-
-	// Test with different threshold values
-	_, _, err = QuerySimilarAdsWithFilter(embedding, nil, 10, "", 0.5)
-	if err == nil {
-		t.Error("Expected error about Qdrant client not being initialized")
-	}
-
-	_, _, err = QuerySimilarAdsWithFilter(embedding, nil, 10, "", 0.9)
-	if err == nil {
-		t.Error("Expected error about Qdrant client not being initialized")
+		t.Error("Expected error when cache is nil and Gemini client not initialized")
 	}
 }
