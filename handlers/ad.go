@@ -433,9 +433,21 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 	if err := ad.ArchiveAd(adID); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to delete ad")
 	}
-	if c.Get("HX-Request") != "" {
-		return c.SendStatus(fiber.StatusNoContent) // 204, so htmx removes the card
+
+	// Delete from vector database (Qdrant) - this is done after DB commit
+	if err := vector.DeleteAdEmbedding(adID); err != nil {
+		// Log the error but don't fail the entire operation since DB is already committed
+		log.Printf("Warning: Failed to delete ad %d from vector database: %v", adID, err)
 	}
+
+	log.Printf("Delete ad %d: HX-Request header = '%s'", adID, c.Get("HX-Request"))
+	if c.Get("HX-Request") != "" {
+		log.Printf("Returning 200 with empty body for HTMX request to delete ad %d", adID)
+		// Return 200 with empty body instead of 204 because HTMX only swaps on 200/300 responses
+		// See: https://github.com/bigskysoftware/htmx/issues/1130
+		return c.SendString("")
+	}
+	log.Printf("Returning success page for non-HTMX request to delete ad %d", adID)
 	return render(c, ui.SuccessMessage("Ad deleted successfully", "/"))
 }
 

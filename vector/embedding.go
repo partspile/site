@@ -272,6 +272,34 @@ func UpsertAdEmbedding(adID int, embedding []float32, metadata map[string]interf
 	return nil
 }
 
+// DeleteAdEmbedding deletes an ad's embedding from Qdrant
+func DeleteAdEmbedding(adID int) error {
+	if qdrantClient == nil {
+		return fmt.Errorf("Qdrant client not initialized")
+	}
+	log.Printf("[qdrant] Deleting vector for ad %d", adID)
+
+	ctx := context.Background()
+	pointID := qdrant.NewIDNum(uint64(adID))
+	_, err := qdrantClient.Delete(ctx, &qdrant.DeletePoints{
+		CollectionName: qdrantCollection,
+		Points: &qdrant.PointsSelector{
+			PointsSelectorOneOf: &qdrant.PointsSelector_Points{
+				Points: &qdrant.PointsIdsList{
+					Ids: []*qdrant.PointId{pointID},
+				},
+			},
+		},
+	})
+	if err != nil {
+		log.Printf("[qdrant] Failed to delete vector for ad %d: %v", adID, err)
+		return fmt.Errorf("failed to delete vector: %w", err)
+	}
+
+	log.Printf("[qdrant] Successfully deleted vector for ad %d", adID)
+	return nil
+}
+
 // QuerySimilarAds queries Qdrant for similar ads given an embedding
 // Returns a list of AdResult, and a cursor for pagination
 func QuerySimilarAds(embedding []float32, topK int, cursor string, threshold float64) ([]AdResult, string, error) {

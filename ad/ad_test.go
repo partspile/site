@@ -351,3 +351,55 @@ func TestGetSubCategoryIDByName_EmptyName(t *testing.T) {
 	assert.Nil(t, id)
 	// No database query should be made for empty name
 }
+
+func TestArchiveAd(t *testing.T) {
+	// Create a mock database
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	// Set the mock database
+	db.SetForTesting(mockDB)
+
+	// Mock the queries for ArchiveAd
+	adID := 123
+
+	// Mock transaction begin
+	mock.ExpectBegin()
+
+	// Mock SELECT for image_order
+	mock.ExpectQuery("SELECT image_order FROM Ad WHERE id = ?").
+		WithArgs(adID).
+		WillReturnRows(sqlmock.NewRows([]string{"image_order"}).AddRow("[]"))
+
+	// Mock INSERT into ArchivedAd
+	mock.ExpectExec("INSERT INTO ArchivedAd").
+		WithArgs(sqlmock.AnyArg(), "[]", adID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Mock INSERT into ArchivedAdCar
+	mock.ExpectExec("INSERT INTO ArchivedAdCar").
+		WithArgs(sqlmock.AnyArg(), adID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Mock DELETE from AdCar
+	mock.ExpectExec("DELETE FROM AdCar WHERE ad_id = ?").
+		WithArgs(adID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Mock DELETE from Ad
+	mock.ExpectExec("DELETE FROM Ad WHERE id = ?").
+		WithArgs(adID).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	// Mock transaction commit
+	mock.ExpectCommit()
+
+	// Call ArchiveAd
+	err = ArchiveAd(adID)
+	require.NoError(t, err)
+
+	// Verify all expectations were met
+	err = mock.ExpectationsWereMet()
+	require.NoError(t, err)
+}
