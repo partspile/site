@@ -959,20 +959,67 @@ func RestoreAd(adID int) error {
 	// Get ad data from archive
 	var ad Ad
 	var locationID sql.NullInt64
-	err = tx.QueryRow(`SELECT id, description, price, created_at, subcategory_id, user_id, location_id, image_order 
+	var subcategoryID sql.NullInt64
+	var lastClickedAt sql.NullTime
+	var imageOrder sql.NullString
+	var createdAt string
+	err = tx.QueryRow(`SELECT id, title, description, price, created_at, subcategory_id, user_id, location_id, image_order, click_count, last_clicked_at 
 		FROM ArchivedAd WHERE id = ?`, adID).Scan(
-		&ad.ID, &ad.Description, &ad.Price, &ad.CreatedAt, &ad.SubCategoryID, &ad.UserID, &locationID, &ad.ImageOrder)
+		&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt, &subcategoryID, &ad.UserID, &locationID, &imageOrder, &ad.ClickCount, &lastClickedAt)
 	if err != nil {
 		return err
 	}
+
+	// Parse the created_at string into time.Time
+	ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+
 	if locationID.Valid {
 		ad.LocationID = int(locationID.Int64)
 	}
+	if subcategoryID.Valid {
+		subCatID := int(subcategoryID.Int64)
+		ad.SubCategoryID = &subCatID
+	}
+	if lastClickedAt.Valid {
+		ad.LastClickedAt = &lastClickedAt.Time
+	}
+	if imageOrder.Valid {
+		_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
+	}
 
-	// Restore ad
-	_, err = tx.Exec(`INSERT INTO Ad (id, description, price, created_at, subcategory_id, user_id, location_id, image_order)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		ad.ID, ad.Description, ad.Price, ad.CreatedAt, ad.SubCategoryID, ad.UserID, ad.LocationID, ad.ImageOrder)
+	// Restore ad - handle NULL values properly
+	var subcategoryIDValue interface{}
+	if subcategoryID.Valid {
+		subcategoryIDValue = *ad.SubCategoryID
+	} else {
+		subcategoryIDValue = nil
+	}
+
+	var locationIDValue interface{}
+	if locationID.Valid {
+		locationIDValue = ad.LocationID
+	} else {
+		locationIDValue = nil
+	}
+
+	var lastClickedAtValue interface{}
+	if lastClickedAt.Valid {
+		lastClickedAtValue = ad.LastClickedAt
+	} else {
+		lastClickedAtValue = nil
+	}
+
+	// Marshal ImageOrder back to JSON string for database storage
+	var imageOrderValue interface{}
+	if imageOrder.Valid {
+		imageOrderValue = imageOrder.String
+	} else {
+		imageOrderValue = nil
+	}
+
+	_, err = tx.Exec(`INSERT INTO Ad (id, title, description, price, created_at, subcategory_id, user_id, location_id, image_order, click_count, last_clicked_at, has_vector)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+		ad.ID, ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryIDValue, ad.UserID, locationIDValue, imageOrderValue, ad.ClickCount, lastClickedAtValue)
 	if err != nil {
 		return err
 	}

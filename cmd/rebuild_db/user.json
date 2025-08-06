@@ -1,9 +1,14 @@
 [
   {
+    "name": "admin",
+    "password": "admin",
+    "phone": "+15031234567",
+    "is_admin": true
+  },
+  {
     "name": "sfeldma",
     "password": "foo",
-    "phone": "+15035238780",
-    "is_admin": true
+    "phone": "+15035238780"
   },
   {
     "name": "john_doe",

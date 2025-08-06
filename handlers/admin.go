@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"database/sql"
+	"fmt"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
@@ -247,14 +249,27 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 	}
 
 	if err := ad.RestoreAd(adID); err != nil {
-		return fiber.ErrInternalServerError
+		log.Printf("Error restoring ad %d: %v", adID, err)
+		return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("Failed to restore ad: %v", err))
+	}
+
+	// After successful restore, re-add the ad to the vector database
+	restoredAd, ok := ad.GetAd(adID)
+	if ok {
+		// Queue the ad for vector processing (async)
+		go func() {
+			log.Printf("[restore] Queuing restored ad %d for vector processing", adID)
+			vector.GetVectorProcessor().QueueAd(restoredAd)
+		}()
 	}
 
 	ads, err := ad.GetAllArchivedAds()
 	if err != nil {
-		return fiber.ErrInternalServerError
+		log.Printf("Error getting archived ads: %v", err)
+		return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("Failed to get archived ads: %v", err))
 	}
 
+	log.Printf("Successfully restored ad %d, returning %d archived ads", adID, len(ads))
 	return render(c, ui.AdminAdTable(ads, "archived"))
 }
 
