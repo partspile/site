@@ -342,6 +342,7 @@ func main() {
 		Name     string `json:"name"`
 		Password string `json:"password"`
 		Phone    string `json:"phone"`
+		IsAdmin  bool   `json:"is_admin"`
 	}
 	var users []UserImport
 	if err := json.Unmarshal(userData, &users); err != nil {
@@ -353,11 +354,15 @@ func main() {
 			log.Printf("Failed to hash password for user %s: %v", u.Name, err)
 			continue
 		}
-		_, err = database.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo) VALUES (?, ?, ?, ?, ?)`, u.Name, u.Phone, hash, salt, "argon2id")
+		_, err = database.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo, is_admin) VALUES (?, ?, ?, ?, ?, ?)`, u.Name, u.Phone, hash, salt, "argon2id", u.IsAdmin)
 		if err != nil {
 			log.Printf("Failed to insert user %s: %v", u.Name, err)
 		} else {
-			fmt.Printf("Inserted user: %s\n", u.Name)
+			if u.IsAdmin {
+				fmt.Printf("Inserted admin user: %s\n", u.Name)
+			} else {
+				fmt.Printf("Inserted user: %s\n", u.Name)
+			}
 		}
 	}
 

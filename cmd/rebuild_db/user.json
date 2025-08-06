@@ -2,7 +2,8 @@
   {
     "name": "sfeldma",
     "password": "foo",
-    "phone": "+15035238780"
+    "phone": "+15035238780",
+    "is_admin": true
   },
   {
     "name": "john_doe",
