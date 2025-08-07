@@ -42,21 +42,31 @@ func fetchAdsByIDs(ids []string, userID int) ([]ad.Ad, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
-	ads := make([]ad.Ad, 0, len(ids))
+
+	// Convert string IDs to int IDs
+	intIDs := make([]int, 0, len(ids))
 	for _, idStr := range ids {
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
 			continue
 		}
-		adObj, _, ok := ad.GetAdByID(id)
-		if ok {
-			if userID > 0 {
-				bookmarked, _ := ad.IsAdBookmarkedByUser(userID, adObj.ID)
-				adObj.Bookmarked = bookmarked
-			}
-			ads = append(ads, adObj)
-		}
+		intIDs = append(intIDs, id)
 	}
+
+	// Fetch all ads in a single query
+	var ads []ad.Ad
+	var err error
+	if userID > 0 {
+		// Use the enhanced function that includes bookmark status
+		ads, err = ad.GetAdsByIDsWithBookmarks(intIDs, userID)
+	} else {
+		// Use the basic function for anonymous users
+		ads, err = ad.GetAdsByIDs(intIDs)
+	}
+	if err != nil {
+		return nil, err
+	}
+
 	log.Printf("[fetchAdsByIDs] Returning ads in order: %v", func() []int {
 		result := make([]int, len(ads))
 		for i, ad := range ads {

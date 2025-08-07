@@ -1100,7 +1100,14 @@ func GetAdsByIDs(ids []int) ([]Ad, error) {
 		placeholders[i] = "?"
 		args[i] = id
 	}
-	query := `SELECT id, title, description, price, created_at, subcategory_id, user_id FROM Ad WHERE id IN (` + strings.Join(placeholders, ",") + `)`
+	query := `SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
+		       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+		       l.city, l.admin_area, l.country
+		FROM Ad a
+		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
+		LEFT JOIN Location l ON a.location_id = l.id
+		WHERE a.id IN (` + strings.Join(placeholders, ",") + `)`
 	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -1109,13 +1116,154 @@ func GetAdsByIDs(ids []int) ([]Ad, error) {
 	adMap := make(map[int]Ad)
 	for rows.Next() {
 		var ad Ad
+		var subcategory, category sql.NullString
+		var lastClickedAt sql.NullTime
+		var locationID sql.NullInt64
+		var imageOrder sql.NullString
+		var city, adminArea, country sql.NullString
 		var createdAt string
-		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt, &ad.SubCategoryID, &ad.UserID); err != nil {
+		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
+			&ad.SubCategoryID, &ad.UserID, &subcategory, &category, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
+			&city, &adminArea, &country); err != nil {
 			continue
 		}
 
 		// Parse the created_at string into time.Time
 		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+
+		if subcategory.Valid {
+			ad.SubCategory = subcategory.String
+		}
+		if category.Valid {
+			ad.Category = category.String
+		}
+
+		if lastClickedAt.Valid {
+			ad.LastClickedAt = &lastClickedAt.Time
+		}
+
+		if locationID.Valid {
+			ad.LocationID = int(locationID.Int64)
+			// Get coordinates for map functionality
+			_, _, _, _, lat, lon, err := GetLocationWithCoords(ad.LocationID)
+			if err == nil && lat != nil && lon != nil {
+				ad.Latitude = lat
+				ad.Longitude = lon
+			}
+		}
+
+		if imageOrder.Valid {
+			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
+		}
+		if city.Valid {
+			ad.City = city.String
+		}
+		if adminArea.Valid {
+			ad.AdminArea = adminArea.String
+		}
+		if country.Valid {
+			ad.Country = country.String
+		}
+
+		// Get vehicle data
+		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
+		adMap[ad.ID] = ad
+	}
+	// Preserve order of ids
+	ads := make([]Ad, 0, len(ids))
+	for _, id := range ids {
+		if ad, ok := adMap[id]; ok {
+			ads = append(ads, ad)
+		}
+	}
+	return ads, nil
+}
+
+// GetAdsByIDsWithBookmarks returns ads for a list of IDs with bookmark status for a specific user
+func GetAdsByIDsWithBookmarks(ids []int, userID int) ([]Ad, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	// Build query with IN clause
+	placeholders := make([]string, len(ids))
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	args = append(args, userID) // Add userID for bookmark check
+	query := `SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
+		       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+		       l.city, l.admin_area, l.country,
+		       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
+		FROM Ad a
+		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
+		LEFT JOIN Location l ON a.location_id = l.id
+		LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
+		WHERE a.id IN (` + strings.Join(placeholders, ",") + `)`
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	adMap := make(map[int]Ad)
+	for rows.Next() {
+		var ad Ad
+		var subcategory, category sql.NullString
+		var lastClickedAt sql.NullTime
+		var locationID sql.NullInt64
+		var imageOrder sql.NullString
+		var city, adminArea, country sql.NullString
+		var createdAt string
+		var isBookmarked int
+		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
+			&ad.SubCategoryID, &ad.UserID, &subcategory, &category, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
+			&city, &adminArea, &country, &isBookmarked); err != nil {
+			continue
+		}
+
+		// Parse the created_at string into time.Time
+		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+
+		if subcategory.Valid {
+			ad.SubCategory = subcategory.String
+		}
+		if category.Valid {
+			ad.Category = category.String
+		}
+
+		if lastClickedAt.Valid {
+			ad.LastClickedAt = &lastClickedAt.Time
+		}
+
+		if locationID.Valid {
+			ad.LocationID = int(locationID.Int64)
+			// Get coordinates for map functionality
+			_, _, _, _, lat, lon, err := GetLocationWithCoords(ad.LocationID)
+			if err == nil && lat != nil && lon != nil {
+				ad.Latitude = lat
+				ad.Longitude = lon
+			}
+		}
+
+		if imageOrder.Valid {
+			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
+		}
+		if city.Valid {
+			ad.City = city.String
+		}
+		if adminArea.Valid {
+			ad.AdminArea = adminArea.String
+		}
+		if country.Valid {
+			ad.Country = country.String
+		}
+
+		// Set bookmark status
+		ad.Bookmarked = isBookmarked == 1
+
+		// Get vehicle data
 		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
 		adMap[ad.ID] = ad
 	}
