@@ -1564,6 +1564,11 @@ func GetAdsByIDsOptimized(ids []int) ([]Ad, error) {
 			a.user_id, psc.name, pc.name, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
 			l.city, l.admin_area, l.country, l.latitude, l.longitude
 		ORDER BY a.id`
+	
+	// Log the SQL query
+	log.Printf("[SQL] GetAdsByIDsOptimized query: %s", query)
+	log.Printf("[SQL] GetAdsByIDsOptimized args: %v", args)
+	
 	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -1690,6 +1695,11 @@ func GetAdsByIDsOptimizedWithBookmarks(ids []int, userID int) ([]Ad, error) {
 			a.user_id, psc.name, pc.name, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
 			l.city, l.admin_area, l.country, l.latitude, l.longitude, ba.ad_id
 		ORDER BY a.id`
+	
+	// Log the SQL query
+	log.Printf("[SQL] GetAdsByIDsOptimizedWithBookmarks query: %s", query)
+	log.Printf("[SQL] GetAdsByIDsOptimizedWithBookmarks args: %v", args)
+	
 	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, err
