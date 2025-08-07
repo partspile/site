@@ -1527,3 +1527,256 @@ func MarkAdAsHavingVector(adID int) error {
 	log.Printf("[MarkAdAsHavingVector] Successfully marked ad %d as having vector", adID)
 	return nil
 }
+
+// GetAdsByIDsOptimized returns ads for a list of IDs with all data in a single query
+func GetAdsByIDsOptimized(ids []int) ([]Ad, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	// Build query with IN clause
+	placeholders := make([]string, len(ids))
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	query := `
+		SELECT 
+			a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
+			a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+			l.city, l.admin_area, l.country, l.latitude, l.longitude,
+			GROUP_CONCAT(DISTINCT m.name ORDER BY m.name) as makes,
+			GROUP_CONCAT(DISTINCT y.year ORDER BY y.year) as years,
+			GROUP_CONCAT(DISTINCT mo.name ORDER BY mo.name) as models,
+			GROUP_CONCAT(DISTINCT e.name ORDER BY e.name) as engines
+		FROM Ad a
+		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
+		LEFT JOIN Location l ON a.location_id = l.id
+		LEFT JOIN AdCar ac ON a.id = ac.ad_id
+		LEFT JOIN Car c ON ac.car_id = c.id
+		LEFT JOIN Make m ON c.make_id = m.id
+		LEFT JOIN Year y ON c.year_id = y.id
+		LEFT JOIN Model mo ON c.model_id = mo.id
+		LEFT JOIN Engine e ON c.engine_id = e.id
+		WHERE a.id IN (` + strings.Join(placeholders, ",") + `)
+		GROUP BY a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
+			a.user_id, psc.name, pc.name, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+			l.city, l.admin_area, l.country, l.latitude, l.longitude
+		ORDER BY a.id`
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	adMap := make(map[int]Ad)
+	for rows.Next() {
+		var ad Ad
+		var subcategory, category sql.NullString
+		var lastClickedAt sql.NullTime
+		var locationID sql.NullInt64
+		var imageOrder sql.NullString
+		var city, adminArea, country sql.NullString
+		var latitude, longitude sql.NullFloat64
+		var makes, years, models, engines sql.NullString
+		var createdAt string
+		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
+			&ad.SubCategoryID, &ad.UserID, &subcategory, &category, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
+			&city, &adminArea, &country, &latitude, &longitude, &makes, &years, &models, &engines); err != nil {
+			continue
+		}
+
+		// Parse the created_at string into time.Time
+		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+
+		if subcategory.Valid {
+			ad.SubCategory = subcategory.String
+		}
+		if category.Valid {
+			ad.Category = category.String
+		}
+
+		if lastClickedAt.Valid {
+			ad.LastClickedAt = &lastClickedAt.Time
+		}
+
+		if locationID.Valid {
+			ad.LocationID = int(locationID.Int64)
+		}
+
+		if latitude.Valid && longitude.Valid {
+			ad.Latitude = &latitude.Float64
+			ad.Longitude = &longitude.Float64
+		}
+
+		if imageOrder.Valid {
+			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
+		}
+		if city.Valid {
+			ad.City = city.String
+		}
+		if adminArea.Valid {
+			ad.AdminArea = adminArea.String
+		}
+		if country.Valid {
+			ad.Country = country.String
+		}
+
+		// Parse vehicle data from GROUP_CONCAT results
+		if makes.Valid && makes.String != "" {
+			makeList := strings.Split(makes.String, ",")
+			if len(makeList) > 0 {
+				ad.Make = makeList[0] // Use first make as primary
+			}
+		}
+		if years.Valid && years.String != "" {
+			ad.Years = strings.Split(years.String, ",")
+		}
+		if models.Valid && models.String != "" {
+			ad.Models = strings.Split(models.String, ",")
+		}
+		if engines.Valid && engines.String != "" {
+			ad.Engines = strings.Split(engines.String, ",")
+		}
+
+		adMap[ad.ID] = ad
+	}
+	// Preserve order of ids
+	ads := make([]Ad, 0, len(ids))
+	for _, id := range ids {
+		if ad, ok := adMap[id]; ok {
+			ads = append(ads, ad)
+		}
+	}
+	return ads, nil
+}
+
+// GetAdsByIDsOptimizedWithBookmarks returns ads for a list of IDs with all data and bookmark status in a single query
+func GetAdsByIDsOptimizedWithBookmarks(ids []int, userID int) ([]Ad, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+	// Build query with IN clause
+	placeholders := make([]string, len(ids))
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+	args = append(args, userID) // Add userID for bookmark check
+	query := `
+		SELECT 
+			a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
+			a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+			l.city, l.admin_area, l.country, l.latitude, l.longitude,
+			GROUP_CONCAT(DISTINCT m.name ORDER BY m.name) as makes,
+			GROUP_CONCAT(DISTINCT y.year ORDER BY y.year) as years,
+			GROUP_CONCAT(DISTINCT mo.name ORDER BY mo.name) as models,
+			GROUP_CONCAT(DISTINCT e.name ORDER BY e.name) as engines,
+			CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
+		FROM Ad a
+		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
+		LEFT JOIN Location l ON a.location_id = l.id
+		LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
+		LEFT JOIN AdCar ac ON a.id = ac.ad_id
+		LEFT JOIN Car c ON ac.car_id = c.id
+		LEFT JOIN Make m ON c.make_id = m.id
+		LEFT JOIN Year y ON c.year_id = y.id
+		LEFT JOIN Model mo ON c.model_id = mo.id
+		LEFT JOIN Engine e ON c.engine_id = e.id
+		WHERE a.id IN (` + strings.Join(placeholders, ",") + `)
+		GROUP BY a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
+			a.user_id, psc.name, pc.name, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+			l.city, l.admin_area, l.country, l.latitude, l.longitude, ba.ad_id
+		ORDER BY a.id`
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	adMap := make(map[int]Ad)
+	for rows.Next() {
+		var ad Ad
+		var subcategory, category sql.NullString
+		var lastClickedAt sql.NullTime
+		var locationID sql.NullInt64
+		var imageOrder sql.NullString
+		var city, adminArea, country sql.NullString
+		var latitude, longitude sql.NullFloat64
+		var makes, years, models, engines sql.NullString
+		var isBookmarked int
+		var createdAt string
+		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
+			&ad.SubCategoryID, &ad.UserID, &subcategory, &category, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
+			&city, &adminArea, &country, &latitude, &longitude, &makes, &years, &models, &engines, &isBookmarked); err != nil {
+			continue
+		}
+
+		// Parse the created_at string into time.Time
+		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+
+		if subcategory.Valid {
+			ad.SubCategory = subcategory.String
+		}
+		if category.Valid {
+			ad.Category = category.String
+		}
+
+		if lastClickedAt.Valid {
+			ad.LastClickedAt = &lastClickedAt.Time
+		}
+
+		if locationID.Valid {
+			ad.LocationID = int(locationID.Int64)
+		}
+
+		if latitude.Valid && longitude.Valid {
+			ad.Latitude = &latitude.Float64
+			ad.Longitude = &longitude.Float64
+		}
+
+		if imageOrder.Valid {
+			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
+		}
+		if city.Valid {
+			ad.City = city.String
+		}
+		if adminArea.Valid {
+			ad.AdminArea = adminArea.String
+		}
+		if country.Valid {
+			ad.Country = country.String
+		}
+
+		// Set bookmark status
+		ad.Bookmarked = isBookmarked == 1
+
+		// Parse vehicle data from GROUP_CONCAT results
+		if makes.Valid && makes.String != "" {
+			makeList := strings.Split(makes.String, ",")
+			if len(makeList) > 0 {
+				ad.Make = makeList[0] // Use first make as primary
+			}
+		}
+		if years.Valid && years.String != "" {
+			ad.Years = strings.Split(years.String, ",")
+		}
+		if models.Valid && models.String != "" {
+			ad.Models = strings.Split(models.String, ",")
+		}
+		if engines.Valid && engines.String != "" {
+			ad.Engines = strings.Split(engines.String, ",")
+		}
+
+		adMap[ad.ID] = ad
+	}
+	// Preserve order of ids
+	ads := make([]Ad, 0, len(ids))
+	for _, id := range ids {
+		if ad, ok := adMap[id]; ok {
+			ads = append(ads, ad)
+		}
+	}
+	return ads, nil
+}

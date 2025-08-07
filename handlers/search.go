@@ -53,15 +53,15 @@ func fetchAdsByIDs(ids []string, userID int) ([]ad.Ad, error) {
 		intIDs = append(intIDs, id)
 	}
 
-	// Fetch all ads in a single query
+	// Fetch all ads in a single optimized query
 	var ads []ad.Ad
 	var err error
 	if userID > 0 {
-		// Use the enhanced function that includes bookmark status
-		ads, err = ad.GetAdsByIDsWithBookmarks(intIDs, userID)
+		// Use the optimized function that includes bookmark status
+		ads, err = ad.GetAdsByIDsOptimizedWithBookmarks(intIDs, userID)
 	} else {
-		// Use the basic function for anonymous users
-		ads, err = ad.GetAdsByIDs(intIDs)
+		// Use the optimized function for anonymous users
+		ads, err = ad.GetAdsByIDsOptimized(intIDs)
 	}
 	if err != nil {
 		return nil, err
