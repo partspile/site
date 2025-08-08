@@ -45,22 +45,6 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 				Src("/js/map.js"),
 				Defer(),
 			),
-			Script(
-				Type("text/javascript"),
-				g.Raw(`
-					document.addEventListener('htmx:load', function() {
-						console.log('HTMX loaded');
-					});
-					document.addEventListener('htmx:beforeRequest', function(evt) {
-						console.log('HTMX request:', evt.detail.path);
-					});
-					
-					// Threshold slider functionality
-					function updateThresholdValue(value) {
-						document.getElementById('thresholdValue').textContent = value;
-					}
-				`),
-			),
 			// Script(
 			// 	Type("text/javascript"),
 			// 	g.Raw("if(window.htmx){htmx.logAll()} else {document.addEventListener('htmx:load',function(){htmx.logAll()})}"),

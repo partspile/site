@@ -29,7 +29,7 @@ const (
 	// Qdrant vector search configuration
 	QdrantSearchInitialK          = 200 // Number of results to fetch from Qdrant for tree view
 	QdrantSearchPageSize          = 10  // Number of results per page for list/grid views
-	QdrantSearchThreshold         = 0.7 // Similarity threshold for filtering results (0.0 to 1.0)
+	QdrantSearchThreshold         = 0.6 // Similarity threshold for filtering results (0.0 to 1.0)
 	QdrantTTL                     = 10 * time.Minute
 	QdrantProcessingQueueSize     = 100
 	QdrantProcessingSleepInterval = 100 * time.Millisecond

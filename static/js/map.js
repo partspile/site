@@ -265,62 +265,74 @@ function fitMapToMarkers() {
 function shouldInitMap() {
     const mapContainer = document.getElementById('map-container');
     const mapView = document.getElementById('map-view');
-    return mapContainer && mapView && !mapInitialized && !isInitializing;
+    const shouldInit = mapContainer && mapView && !mapInitialized && !isInitializing;
+    
+    // Only log if we're actually going to initialize or if this is a retry attempt
+    if (shouldInit) {
+        console.log('[map.js] Conditions met, ready to initialize map');
+    }
+    
+    return shouldInit;
 }
 
 // Helper function to attempt map initialization with retries
 function attemptMapInit() {
-    console.log('[map.js] Attempting map initialization...');
-    
     if (shouldInitMap()) {
-        console.log('[map.js] Conditions met, initializing map...');
+        console.log('[map.js] Initializing map...');
         setTimeout(initMap, 50); // Small delay to ensure DOM is ready
-    } else {
-        console.log('[map.js] Conditions not met - container:', !!document.getElementById('map-container'), 
-                   'view:', !!document.getElementById('map-view'), 
-                   'initialized:', mapInitialized,
-                   'initializing:', isInitializing);
     }
+    // Removed the else clause that was causing console spam
 }
 
 // Initialize map when DOM is ready
 document.addEventListener('htmx:load', function() {
-    console.log('[map.js] htmx:load event fired');
-    attemptMapInit();
+    // Only log if we're in map view
+    if (document.getElementById('map-container')) {
+        console.log('[map.js] htmx:load event fired, map container found');
+        attemptMapInit();
+    }
 });
 
 // Re-initialize map when view changes to map
 document.addEventListener('htmx:afterSwap', function() {
-    console.log('[map.js] htmx:afterSwap event fired');
-    // Reset initialization state when content is swapped
-    mapInitialized = false;
-    isInitializing = false;
-    isInitialSetup = true;
-    map = null;
-    markers = [];
-    currentBounds = null;
-    
-    // Clear any pending search requests
-    if (searchDebounceTimer) {
-        clearTimeout(searchDebounceTimer);
-        searchDebounceTimer = null;
+    // Only log if we're in map view
+    if (document.getElementById('map-container')) {
+        console.log('[map.js] htmx:afterSwap event fired, map container found');
+        // Reset initialization state when content is swapped
+        mapInitialized = false;
+        isInitializing = false;
+        isInitialSetup = true;
+        map = null;
+        markers = [];
+        currentBounds = null;
+        
+        // Clear any pending search requests
+        if (searchDebounceTimer) {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = null;
+        }
+        
+        // Wait a bit for DOM to be updated
+        setTimeout(attemptMapInit, 100);
     }
-    
-    // Wait a bit for DOM to be updated
-    setTimeout(attemptMapInit, 100);
 });
 
 // Also try to initialize on regular DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('[map.js] DOMContentLoaded event fired');
-    attemptMapInit();
+    // Only log if we're in map view
+    if (document.getElementById('map-container')) {
+        console.log('[map.js] DOMContentLoaded event fired, map container found');
+        attemptMapInit();
+    }
 });
 
 // Additional initialization for map view specifically
 document.addEventListener('htmx:afterRequest', function(event) {
-    console.log('[map.js] htmx:afterRequest event fired');
-    // Check if we're in map view and try to initialize
-    setTimeout(attemptMapInit, 200); // Longer delay for after request
+    // Only attempt initialization if we're likely in map view
+    if (document.getElementById('map-container')) {
+        console.log('[map.js] htmx:afterRequest event fired, map container found');
+        setTimeout(attemptMapInit, 200); // Longer delay for after request
+    }
 });
 
 // Listen for map view button clicks specifically
@@ -332,20 +344,6 @@ document.addEventListener('click', function(event) {
     }
 });
 
-// Try to initialize map every second for the first 10 seconds after page load
-let initAttempts = 0;
-const maxInitAttempts = 10;
-const initInterval = setInterval(function() {
-    initAttempts++;
-    console.log(`[map.js] Init attempt ${initAttempts}/${maxInitAttempts}`);
-    
-    if (shouldInitMap()) {
-        console.log('[map.js] Map container found on interval, initializing map...');
-        initMap();
-    }
-    
-    if (initAttempts >= maxInitAttempts || mapInitialized) {
-        clearInterval(initInterval);
-        console.log('[map.js] Stopping init attempts');
-    }
-}, 1000); 
+// Removed the interval-based initialization that was causing console spam
+// The map will now only initialize when the user actually switches to map view
+// or when the page loads with map view already active 

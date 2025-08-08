@@ -579,10 +579,19 @@ func HandleTreeCollapse(c *fiber.Ctx) error {
 	path := c.Params("*")
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 
+	// Get threshold from query parameter, default to config value
+	thresholdStr := c.Query("threshold")
+	threshold := config.QdrantSearchThreshold
+	if thresholdStr != "" {
+		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
+			threshold = thresholdVal
+		}
+	}
+
 	name := parts[len(parts)-1]
 	level := len(parts) - 1
 
-	return render(c, ui.CollapsedTreeNode(name, "/"+path, q, structuredQueryStr, level))
+	return render(c, ui.CollapsedTreeNodeWithThreshold(name, "/"+path, q, structuredQueryStr, fmt.Sprintf("%.1f", threshold), level))
 }
 
 func TreeView(c *fiber.Ctx) error {
@@ -594,6 +603,18 @@ func TreeView(c *fiber.Ctx) error {
 		parts = []string{}
 	}
 	level := len(parts)
+
+	// Get threshold from query parameter or form data, default to config value
+	thresholdStr := c.Query("threshold")
+	if thresholdStr == "" {
+		thresholdStr = c.FormValue("threshold")
+	}
+	threshold := config.QdrantSearchThreshold
+	if thresholdStr != "" {
+		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
+			threshold = thresholdVal
+		}
+	}
 
 	var structuredQuery SearchQuery
 	if structuredQueryStr != "" {
@@ -632,12 +653,12 @@ func TreeView(c *fiber.Ctx) error {
 				treePath["engine"] = parts[3]
 			}
 
-			log.Printf("[tree-view] Using vector search with metadata filtering for query: %s, tree path: %+v", q, treePath)
-			ads, err = getTreeAdsForSearchWithFilter(q, treePath, userID)
+			log.Printf("[tree-view] Using vector search with metadata filtering for query: %s, tree path: %+v, threshold: %.2f", q, treePath, threshold)
+			ads, err = getTreeAdsForSearchWithFilter(q, treePath, userID, threshold)
 		} else {
 			// Use vector search with threshold-based filtering for search queries without tree path
-			log.Printf("[tree-view] Using vector search for query: %s", q)
-			ads, err = getTreeAdsForSearch(q, userID)
+			log.Printf("[tree-view] Using vector search for query: %s, threshold: %.2f", q, threshold)
+			ads, err = getTreeAdsForSearch(q, userID, threshold)
 		}
 	} else {
 		// Use SQL-based filtering for browse mode
@@ -728,7 +749,7 @@ func TreeView(c *fiber.Ctx) error {
 	// Show only children that have ads
 	if len(validChildren) > 0 {
 		for _, child := range validChildren {
-			childNodes = append(childNodes, ui.CollapsedTreeNode(child, "/"+path+"/"+child, q, structuredQueryStr, level+1))
+			childNodes = append(childNodes, ui.CollapsedTreeNodeWithThreshold(child, "/"+path+"/"+child, q, structuredQueryStr, fmt.Sprintf("%.1f", threshold), level+1))
 		}
 	}
 
@@ -737,7 +758,7 @@ func TreeView(c *fiber.Ctx) error {
 	}
 
 	name := parts[len(parts)-1]
-	return render(c, ui.ExpandedTreeNode(name, "/"+path, q, structuredQueryStr, level, g.Group(childNodes)))
+	return render(c, ui.ExpandedTreeNodeWithThreshold(name, "/"+path, q, structuredQueryStr, fmt.Sprintf("%.1f", threshold), level, g.Group(childNodes)))
 }
 
 func HandleListView(c *fiber.Ctx) error {
@@ -760,8 +781,11 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 		userPrompt = c.Query("q")
 	}
 
-	// Get threshold from query parameter, default to config value
+	// Get threshold from query parameter or form data, default to config value
 	thresholdStr := c.Query("threshold")
+	if thresholdStr == "" {
+		thresholdStr = c.FormValue("threshold")
+	}
 	threshold := config.QdrantSearchThreshold
 	if thresholdStr != "" {
 		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
@@ -863,8 +887,11 @@ func handleViewSwitchWithGeo(c *fiber.Ctx, view string, bounds *GeoBounds) error
 		userPrompt = c.Query("q")
 	}
 
-	// Get threshold from query parameter, default to config value
+	// Get threshold from query parameter or form data, default to config value
 	thresholdStr := c.Query("threshold")
+	if thresholdStr == "" {
+		thresholdStr = c.FormValue("threshold")
+	}
 	threshold := config.QdrantSearchThreshold
 	if thresholdStr != "" {
 		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
@@ -931,7 +958,7 @@ func handleViewSwitchWithGeo(c *fiber.Ctx, view string, bounds *GeoBounds) error
 
 // getTreeAdsForSearch performs vector search with threshold-based filtering for tree view
 // Uses larger limit to build complete tree structure
-func getTreeAdsForSearch(userPrompt string, userID int) ([]ad.Ad, error) {
+func getTreeAdsForSearch(userPrompt string, userID int, threshold float64) ([]ad.Ad, error) {
 	// Generate embedding for search query
 	log.Printf("[tree-search] Generating embedding for tree search query: %s", userPrompt)
 	embedding, err := vector.EmbedTextCached(userPrompt)
@@ -940,11 +967,11 @@ func getTreeAdsForSearch(userPrompt string, userID int) ([]ad.Ad, error) {
 	}
 
 	// Get results with threshold filtering at Qdrant level (larger limit for tree building)
-	results, _, err := vector.QuerySimilarAds(embedding, config.QdrantSearchInitialK, "", config.QdrantSearchThreshold)
+	results, _, err := vector.QuerySimilarAds(embedding, config.QdrantSearchInitialK, "", threshold)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Qdrant: %w", err)
 	}
-	log.Printf("[tree-search] Qdrant returned %d results (threshold: %.2f)", len(results), config.QdrantSearchThreshold)
+	log.Printf("[tree-search] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
 
 	ids := make([]string, len(results))
 	for i, r := range results {
@@ -957,8 +984,8 @@ func getTreeAdsForSearch(userPrompt string, userID int) ([]ad.Ad, error) {
 }
 
 // getTreeAdsForSearchWithFilter gets ads for tree view with filtering
-func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string, userID int) ([]ad.Ad, error) {
-	log.Printf("[getTreeAdsForSearchWithFilter] userPrompt='%s', treePath=%+v, userID=%d", userPrompt, treePath, userID)
+func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string, userID int, threshold float64) ([]ad.Ad, error) {
+	log.Printf("[getTreeAdsForSearchWithFilter] userPrompt='%s', treePath=%+v, userID=%d, threshold=%.2f", userPrompt, treePath, userID, threshold)
 
 	var embedding []float32
 	var err error
@@ -983,11 +1010,11 @@ func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string
 	}
 
 	// Get results with filtering at Qdrant level (larger limit for tree building)
-	results, _, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.QdrantSearchInitialK, "", config.QdrantSearchThreshold)
+	results, _, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.QdrantSearchInitialK, "", threshold)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Qdrant with filter: %w", err)
 	}
-	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant returned %d results (threshold: %.2f)", len(results), config.QdrantSearchThreshold)
+	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
 
 	ids := make([]string, len(results))
 	for i, r := range results {

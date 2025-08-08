@@ -76,6 +76,15 @@ func TreeViewWithQuery(query, structuredQuery string) g.Node {
 	)
 }
 
+func TreeViewWithQueryAndThreshold(query, structuredQuery, threshold string) g.Node {
+	return Div(
+		ID("tree-view"),
+		hx.Get("/tree?q="+query+"&structured_query="+structuredQuery+"&threshold="+threshold),
+		hx.Trigger("load"),
+		hx.Swap("innerHTML"),
+	)
+}
+
 func InitialSearchResults(view string) g.Node {
 	return Div(
 		ID("searchResults"),
@@ -136,7 +145,6 @@ func SearchWidget(newAdButton g.Node, view string, query string, threshold strin
 						Step("0.1"),
 						Value(threshold),
 						Class("flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"),
-						g.Attr("onchange", "updateThresholdValue(this.value)"),
 						hx.Get("/search"),
 						hx.Target("#searchResults"),
 						hx.Indicator("#searchWaiting"),
@@ -173,11 +181,11 @@ func SearchResultsContainer(newAdButton g.Node, ads []ad.Ad, userID int, loc *ti
 		ID("searchResults"),
 		SearchWidget(newAdButton, view, query, threshold),
 		ViewToggleButtons(view),
-		createViewWithInfiniteScroll(ads, userID, loc, view, query, loaderURL),
+		createViewWithInfiniteScroll(ads, userID, loc, view, query, loaderURL, threshold),
 	)
 }
 
-func createViewWithInfiniteScroll(ads []ad.Ad, userID int, loc *time.Location, view string, query string, loaderURL string) g.Node {
+func createViewWithInfiniteScroll(ads []ad.Ad, userID int, loc *time.Location, view string, query string, loaderURL string, threshold string) g.Node {
 	var viewContent g.Node
 
 	// Handle no results for list and grid views
@@ -188,7 +196,7 @@ func createViewWithInfiniteScroll(ads []ad.Ad, userID int, loc *time.Location, v
 		switch view {
 		case "tree":
 			structuredQueryJSON, _ := json.Marshal(SearchSchema{})
-			viewContent = TreeViewWithQuery(query, string(structuredQueryJSON))
+			viewContent = TreeViewWithQueryAndThreshold(query, string(structuredQueryJSON), threshold)
 		case "grid":
 			if loaderURL != "" {
 				viewContent = GridViewWithTrigger(ads, loc, userID, loaderURL)
