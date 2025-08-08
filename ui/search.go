@@ -17,7 +17,7 @@ type SearchSchema ad.SearchQuery
 func ViewToggleButtons(activeView string) g.Node {
 	icon := func(name, alt string) g.Node {
 		return Img(
-			Src(name+".svg"),
+			Src("/images/"+name+".svg"),
 			Alt(alt),
 			Class("w-6 h-6 inline align-middle"),
 		)
@@ -156,7 +156,7 @@ func SearchWidget(newAdButton g.Node, view string, query string, threshold strin
 			ID("searchWaiting"),
 			Class("htmx-indicator absolute inset-0 flex items-center justify-center bg-white bg-opacity-60 z-10 pointer-events-none"),
 			Img(
-				Src("/spinner.gif"),
+				Src("/images/spinner.gif"),
 				Alt("Loading..."),
 				Class("w-12 h-12 pointer-events-auto"),
 			),

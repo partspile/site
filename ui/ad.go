@@ -198,9 +198,9 @@ func AdDetails(adObj ad.Ad) g.Node {
 
 // Add a bookmark icon SVG component
 func BookmarkIcon(bookmarked bool) g.Node {
-	icon := "/bookmark-false.svg"
+	icon := "/images/bookmark-false.svg"
 	if bookmarked {
-		icon = "/bookmark-true.svg"
+		icon = "/images/bookmark-true.svg"
 	}
 	return Img(
 		Src(icon),
@@ -508,7 +508,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 											Type("button"),
 											Class("absolute top-0 right-0 bg-white bg-opacity-80 rounded-full p-1 text-red-600 hover:text-red-800 z-10 delete-image-btn"),
 											g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", idx)),
-											Img(Src("/trashcan.svg"), Alt("Delete"), Class("w-4 h-4")),
+											Img(Src("/images/trashcan.svg"), Alt("Delete"), Class("w-4 h-4")),
 										),
 									),
 								)
@@ -761,7 +761,7 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 				StyledButton("Submit", ButtonPrimary,
 					Type("submit"),
 				),
-				g.Raw(`<script src="/image-preview.js" defer></script>`),
+				g.Raw(`<script src="/js/image-preview.js" defer></script>`),
 			),
 		},
 	)
@@ -830,7 +830,7 @@ func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad, bookmarked boo
 			ActionButtons(
 				BackToListingsButton(),
 			),
-			g.Raw(`<script src="/image-preview.js" defer></script>`),
+			g.Raw(`<script src="/js/image-preview.js" defer></script>`),
 		},
 	)
 }
@@ -995,7 +995,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 												Type("button"),
 												Class("absolute top-0 right-0 bg-white bg-opacity-80 rounded-full p-1 text-red-600 hover:text-red-800 z-10 delete-image-btn"),
 												g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", currentAd.ImageOrder[i])),
-												Img(Src("/trashcan.svg"), Alt("Delete"), Class("w-4 h-4")),
+												Img(Src("/images/trashcan.svg"), Alt("Delete"), Class("w-4 h-4")),
 											),
 										),
 									)
@@ -1070,8 +1070,8 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 				StyledButton("Submit", ButtonPrimary,
 					Type("submit"),
 				),
-				g.Raw(`<script src="/image-preview.js" defer></script>`),
-				g.Raw(`<script src="/static/image-edit.js" defer></script>`),
+				g.Raw(`<script src="/js/image-preview.js" defer></script>`),
+				g.Raw(`<script src="/js/image-edit.js" defer></script>`),
 			),
 		},
 	)
@@ -1303,7 +1303,7 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, bookmarked bool, userID in
 			hx.Swap("delete"),
 			hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
 			Img(
-				Src("/trashcan.svg"),
+				Src("/images/trashcan.svg"),
 				Alt("Delete"),
 				Class("w-6 h-6 inline align-middle text-red-500 hover:text-red-700"),
 			),
@@ -1315,7 +1315,7 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, bookmarked bool, userID in
 			hx.Target(htmxTarget),
 			hx.Swap("outerHTML"),
 			Img(
-				Src("/edit.svg"),
+				Src("/images/edit.svg"),
 				Alt("Edit"),
 				Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
 			),
@@ -1461,7 +1461,7 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 			hx.Swap("delete"),
 			hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
 			Img(
-				Src("/trashcan.svg"),
+				Src("/images/trashcan.svg"),
 				Alt("Delete"),
 				Class("w-6 h-6 inline align-middle text-red-500 hover:text-red-700"),
 			),
@@ -1473,7 +1473,7 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 			hx.Target(htmxTarget),
 			hx.Swap("outerHTML"),
 			Img(
-				Src("/edit.svg"),
+				Src("/images/edit.svg"),
 				Alt("Edit"),
 				Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
 			),

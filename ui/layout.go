@@ -6,6 +6,7 @@ import (
 	"maragu.dev/gomponents/components"
 	. "maragu.dev/gomponents/html"
 
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/user"
 )
 
@@ -16,32 +17,32 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 		Title:    title,
 		Language: "en",
 		Head: []g.Node{
-			Link(Rel("icon"), Type("image/png"), Href("/favicon-32x32.png"), g.Attr("sizes", "32x32")),
-			Link(Rel("icon"), Type("image/png"), Href("/favicon-16x16.png"), g.Attr("sizes", "16x16")),
+			Link(Rel("icon"), Type("image/png"), Href("/images/favicon-32x32.png"), g.Attr("sizes", "32x32")),
+			Link(Rel("icon"), Type("image/png"), Href("/images/favicon-16x16.png"), g.Attr("sizes", "16x16")),
 			Link(
 				Rel("stylesheet"),
-				Href("https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"),
+				Href(config.TailwindCSSURL),
 			),
 			// Leaflet CSS for map functionality
 			Link(
 				Rel("stylesheet"),
-				Href("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"),
+				Href(config.LeafletCSSURL),
 			),
 			Script(
 				Type("text/javascript"),
-				Src("https://unpkg.com/htmx.org@2.0.4"),
+				Src(config.HTMXURL),
 				Defer(),
 			),
 			// Leaflet JS for map functionality
 			Script(
 				Type("text/javascript"),
-				Src("https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"),
+				Src(config.LeafletJSURL),
 				Defer(),
 			),
 			// Custom map functionality
 			Script(
 				Type("text/javascript"),
-				Src("/map.js"),
+				Src("/js/map.js"),
 				Defer(),
 			),
 			Script(
