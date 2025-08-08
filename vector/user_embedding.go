@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/search"
 	"github.com/qdrant/go-client/qdrant"
@@ -79,7 +80,7 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 		bookmarkWeight = 3
 		clickWeight    = 2
 		searchWeight   = 1
-		limit          = 10
+		limit          = config.QdrantUserEmbeddingLimit
 	)
 	var vectors [][]float32
 	var weights []float32

@@ -71,7 +71,7 @@ func main() {
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: customErrorHandler,
-		BodyLimit:    20 * 1024 * 1024, // 20 MB
+		BodyLimit:    config.ServerUploadLimit,
 	})
 
 	// Add session middleware
@@ -186,8 +186,8 @@ func main() {
 	app.Post("/view/grid", handlers.HandleGridView)
 	app.Post("/view/map", handlers.HandleMapView)
 
-	fmt.Printf("Starting server on port %s...\n", config.Port)
-	log.Fatal(app.Listen(":" + config.Port))
+	fmt.Printf("Starting server on port %s...\n", config.ServerPort)
+	log.Fatal(app.Listen(":" + config.ServerPort))
 }
 
 func customErrorHandler(ctx *fiber.Ctx, err error) error {

@@ -45,7 +45,7 @@ func main() {
 		}
 
 		// Sleep to avoid rate limits
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(config.QdrantProcessingSleepInterval)
 	}
 
 	log.Printf("Vector rebuild complete!")

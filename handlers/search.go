@@ -80,7 +80,7 @@ func fetchAdsByIDs(ids []string, userID int) ([]ad.Ad, error) {
 // runEmbeddingSearchWithFilter runs vector search with filters
 func runEmbeddingSearchWithFilter(embedding []float32, filter *qdrant.Filter, cursor string, userID int, threshold float64) ([]ad.Ad, string, error) {
 	// Get results with threshold filtering at Qdrant level
-	results, nextCursor, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.VectorSearchPageSize, cursor, threshold)
+	results, nextCursor, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.QdrantSearchPageSize, cursor, threshold)
 	if err != nil {
 		return nil, "", err
 	}
@@ -99,7 +99,7 @@ func runEmbeddingSearchWithFilter(embedding []float32, filter *qdrant.Filter, cu
 // runEmbeddingSearch runs vector search without filters
 func runEmbeddingSearch(embedding []float32, cursor string, userID int, threshold float64) ([]ad.Ad, string, error) {
 	// Get results with threshold filtering at Qdrant level
-	results, nextCursor, err := vector.QuerySimilarAds(embedding, config.VectorSearchPageSize, cursor, threshold)
+	results, nextCursor, err := vector.QuerySimilarAds(embedding, config.QdrantSearchPageSize, cursor, threshold)
 	if err != nil {
 		return nil, "", err
 	}
@@ -118,7 +118,7 @@ func runEmbeddingSearch(embedding []float32, cursor string, userID int, threshol
 // runEmbeddingSearchWithFilterMap runs vector search with filters for map view (200 results)
 func runEmbeddingSearchWithFilterMap(embedding []float32, filter *qdrant.Filter, cursor string, userID int, threshold float64) ([]ad.Ad, string, error) {
 	// Get results with threshold filtering at Qdrant level
-	results, nextCursor, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.VectorSearchInitialK, cursor, threshold)
+	results, nextCursor, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.QdrantSearchInitialK, cursor, threshold)
 	if err != nil {
 		return nil, "", err
 	}
@@ -137,7 +137,7 @@ func runEmbeddingSearchWithFilterMap(embedding []float32, filter *qdrant.Filter,
 // runEmbeddingSearchMap runs vector search without filters for map view (200 results)
 func runEmbeddingSearchMap(embedding []float32, cursor string, userID int, threshold float64) ([]ad.Ad, string, error) {
 	// Get results with threshold filtering at Qdrant level
-	results, nextCursor, err := vector.QuerySimilarAds(embedding, config.VectorSearchInitialK, cursor, threshold)
+	results, nextCursor, err := vector.QuerySimilarAds(embedding, config.QdrantSearchInitialK, cursor, threshold)
 	if err != nil {
 		return nil, "", err
 	}
@@ -324,9 +324,9 @@ func HandleSearch(c *fiber.Ctx) error {
 		view = "list"
 	}
 
-	// Get threshold from query parameter, default to 0.7
+	// Get threshold from query parameter, default to config value
 	thresholdStr := c.Query("threshold")
-	threshold := 0.7
+	threshold := config.QdrantSearchThreshold
 	if thresholdStr != "" {
 		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
 			threshold = thresholdVal
@@ -427,9 +427,9 @@ func HandleSearchPage(c *fiber.Ctx) error {
 		view = "list"
 	}
 
-	// Get threshold from query parameter, default to 0.7
+	// Get threshold from query parameter, default to config value
 	thresholdStr := c.Query("threshold")
-	threshold := 0.7
+	threshold := config.QdrantSearchThreshold
 	if thresholdStr != "" {
 		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
 			threshold = thresholdVal
@@ -760,9 +760,9 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 		userPrompt = c.Query("q")
 	}
 
-	// Get threshold from query parameter, default to 0.7
+	// Get threshold from query parameter, default to config value
 	thresholdStr := c.Query("threshold")
-	threshold := 0.7
+	threshold := config.QdrantSearchThreshold
 	if thresholdStr != "" {
 		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
 			threshold = thresholdVal
@@ -863,9 +863,9 @@ func handleViewSwitchWithGeo(c *fiber.Ctx, view string, bounds *GeoBounds) error
 		userPrompt = c.Query("q")
 	}
 
-	// Get threshold from query parameter, default to 0.7
+	// Get threshold from query parameter, default to config value
 	thresholdStr := c.Query("threshold")
-	threshold := 0.7
+	threshold := config.QdrantSearchThreshold
 	if thresholdStr != "" {
 		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
 			threshold = thresholdVal
@@ -940,11 +940,11 @@ func getTreeAdsForSearch(userPrompt string, userID int) ([]ad.Ad, error) {
 	}
 
 	// Get results with threshold filtering at Qdrant level (larger limit for tree building)
-	results, _, err := vector.QuerySimilarAds(embedding, config.VectorSearchInitialK, "", 0.7)
+	results, _, err := vector.QuerySimilarAds(embedding, config.QdrantSearchInitialK, "", config.QdrantSearchThreshold)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Qdrant: %w", err)
 	}
-	log.Printf("[tree-search] Qdrant returned %d results (threshold: %.2f)", len(results), 0.7)
+	log.Printf("[tree-search] Qdrant returned %d results (threshold: %.2f)", len(results), config.QdrantSearchThreshold)
 
 	ids := make([]string, len(results))
 	for i, r := range results {
@@ -983,11 +983,11 @@ func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string
 	}
 
 	// Get results with filtering at Qdrant level (larger limit for tree building)
-	results, _, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.VectorSearchInitialK, "", 0.7)
+	results, _, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.QdrantSearchInitialK, "", config.QdrantSearchThreshold)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Qdrant with filter: %w", err)
 	}
-	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant returned %d results (threshold: %.2f)", len(results), 0.7)
+	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant returned %d results (threshold: %.2f)", len(results), config.QdrantSearchThreshold)
 
 	ids := make([]string, len(results))
 	for i, r := range results {

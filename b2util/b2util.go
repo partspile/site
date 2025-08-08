@@ -47,21 +47,21 @@ func ClearCache() {
 
 // getB2DownloadTokenForPrefix returns a B2 download authorization token for a given ad directory prefix (e.g., "22/")
 func getB2DownloadTokenForPrefix(prefix string) (string, error) {
-	accountID := config.BackblazeMasterKeyID
-	keyID := config.BackblazeKeyID
-	appKey := config.BackblazeAppKey
+	accountID := config.B2MasterKeyID
+	keyID := config.B2KeyID
+	appKey := config.B2AppKey
 	bucketID := config.B2BucketID
 	if accountID == "" || appKey == "" || keyID == "" || bucketID == "" {
 		return "", fmt.Errorf("B2 credentials not set")
 	}
-	req, _ := http.NewRequest("GET", "https://api.backblazeb2.com/b2api/v2/b2_authorize_account", nil)
+	req, _ := http.NewRequest("GET", config.B2AuthEndpoint, nil)
 	req.SetBasicAuth(keyID, appKey)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("B2 auth error: %w", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("B2 auth failed: %s", resp.Status)
 	}
 	var authResp struct {
@@ -72,7 +72,7 @@ func getB2DownloadTokenForPrefix(prefix string) (string, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&authResp); err != nil {
 		return "", fmt.Errorf("B2 auth decode error: %w", err)
 	}
-	apiURL := authResp.APIURL + "/b2api/v2/b2_get_download_authorization"
+	apiURL := authResp.APIURL + config.B2DownloadAuthEndpoint
 	expires := int64(config.B2DownloadTokenExpiry) // 1 hour
 	body, _ := json.Marshal(map[string]interface{}{
 		"bucketId":               bucketID,
@@ -87,7 +87,7 @@ func getB2DownloadTokenForPrefix(prefix string) (string, error) {
 		return "", fmt.Errorf("B2 get_download_authorization error: %w", err)
 	}
 	defer resp2.Body.Close()
-	if resp2.StatusCode != 200 {
+	if resp2.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("B2 get_download_authorization failed: %s", resp2.Status)
 	}
 	var tokenResp struct {

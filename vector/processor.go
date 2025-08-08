@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/config"
 )
 
 // VectorProcessor handles background processing of ad embeddings via queue
@@ -26,7 +27,7 @@ var (
 func GetVectorProcessor() *VectorProcessor {
 	processorOnce.Do(func() {
 		vectorProcessor = &VectorProcessor{
-			queue:    make(chan ad.Ad, 100), // Buffer for 100 ads
+			queue:    make(chan ad.Ad, config.QdrantProcessingQueueSize), // Buffer for 100 ads
 			stopChan: make(chan struct{}),
 		}
 	})
@@ -62,7 +63,7 @@ func (p *VectorProcessor) StartBackgroundProcessor() {
 				}
 
 				// Sleep to avoid rate limits
-				time.Sleep(100 * time.Millisecond)
+				time.Sleep(config.QdrantProcessingSleepInterval)
 
 			case <-p.stopChan:
 				log.Printf("[vector] Background vector processor stopped")

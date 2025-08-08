@@ -6,19 +6,32 @@ import (
 )
 
 const (
-	// RedirectDelay is the time to wait before redirecting the user after a successful action.
-	RedirectDelay = 1 * time.Second
-	// B2TokenCacheDuration is how long to cache B2 download tokens before refreshing.
-	B2TokenCacheDuration = 55 * time.Minute
-	// B2TokenCacheCleanup is how often the cache cleanup runs for expired tokens.
-	B2TokenCacheCleanup = 10 * time.Minute
-	// B2DownloadTokenExpiry is the validity duration (in seconds) for B2 download tokens requested from Backblaze.
-	B2DownloadTokenExpiry = 3600 // seconds (1 hour)
+	// Server configuration
+	ServerUploadLimit   = 20 * 1024 * 1024 // 20 MB
+	ServerRedirectDelay = 1 * time.Second
 
-	// Vector search configuration
-	VectorSearchInitialK  = 200 // Number of results to fetch from Qdrant for tree view
-	VectorSearchPageSize  = 10  // Number of results per page for list/grid views
-	VectorSearchThreshold = 0.7 // Similarity threshold for filtering results (0.0 to 1.0)
+	// Backblaze B2 configuration
+	B2TokenCacheDuration   = 55 * time.Minute
+	B2TokenCacheCleanup    = 10 * time.Minute
+	B2DownloadTokenExpiry  = 3600 // seconds (1 hour)
+	B2AuthEndpoint         = "https://api.backblazeb2.com/b2api/v2/b2_authorize_account"
+	B2DownloadAuthEndpoint = "/b2api/v2/b2_get_download_authorization"
+	B2BucketName           = "parts-pile"
+	B2FileServerURL        = "https://f004.backblazeb2.com/file/parts-pile"
+
+	// Qdrant vector database configuration
+	QdrantPort       = 6334
+	QdrantMaxRetries = 10
+	QdrantRetryDelay = 1 * time.Second
+
+	// Qdrant vector search configuration
+	QdrantSearchInitialK          = 200 // Number of results to fetch from Qdrant for tree view
+	QdrantSearchPageSize          = 10  // Number of results per page for list/grid views
+	QdrantSearchThreshold         = 0.7 // Similarity threshold for filtering results (0.0 to 1.0)
+	QdrantTTL                     = 10 * time.Minute
+	QdrantProcessingQueueSize     = 100
+	QdrantProcessingSleepInterval = 100 * time.Millisecond
+	QdrantUserEmbeddingLimit      = 10
 
 	// Grok API configuration
 	GrokAPIURL = "https://api.x.ai/v1/chat/completions"
@@ -26,6 +39,9 @@ const (
 
 	// Gemini API configuration
 	GeminiEmbeddingModel = "embedding-001"
+
+	// Password/Argon2 configuration
+	Argon2Memory = 64 * 1024
 )
 
 // Global configuration variables
@@ -34,12 +50,12 @@ var (
 	DatabaseURL = getEnvWithDefault("DATABASE_URL", "project.db")
 
 	// Backblaze B2 configuration
-	BackblazeMasterKeyID = getEnvWithDefault("BACKBLAZE_MASTER_KEY_ID", "")
-	BackblazeKeyID       = getEnvWithDefault("BACKBLAZE_KEY_ID", "")
-	BackblazeAppKey      = getEnvWithDefault("BACKBLAZE_APP_KEY", "")
-	B2BucketID           = getEnvWithDefault("B2_BUCKET_ID", "")
+	B2MasterKeyID = getEnvWithDefault("BACKBLAZE_MASTER_KEY_ID", "")
+	B2KeyID       = getEnvWithDefault("BACKBLAZE_KEY_ID", "")
+	B2AppKey      = getEnvWithDefault("BACKBLAZE_APP_KEY", "")
+	B2BucketID    = getEnvWithDefault("B2_BUCKET_ID", "")
 
-	// Vector database configuration
+	// Qdrant vector database configuration
 	QdrantHost       = getEnvWithDefault("QDRANT_HOST", "")
 	QdrantAPIKey     = getEnvWithDefault("QDRANT_API_KEY", "")
 	QdrantCollection = getEnvWithDefault("QDRANT_COLLECTION", "")
@@ -49,7 +65,7 @@ var (
 	GrokAPIKey   = getEnvWithDefault("GROK_API_KEY", "")
 
 	// Server configuration
-	Port = getEnvWithDefault("PORT", "8000")
+	ServerPort = getEnvWithDefault("PORT", "8000")
 )
 
 // getEnvWithDefault returns the environment variable value or a default if not set

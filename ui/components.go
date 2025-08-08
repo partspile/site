@@ -130,7 +130,7 @@ func SuccessMessage(message string, redirectURL string) g.Node {
 		nodes[1] = g.Text(message + "...redirecting")
 		nodes = append(nodes, Script(g.Raw(fmt.Sprintf(
 			"setTimeout(function() { window.location = '%s' }, %d);",
-			redirectURL, config.RedirectDelay.Milliseconds())),
+			redirectURL, config.ServerRedirectDelay.Milliseconds())),
 		))
 	}
 	return Div(nodes...)

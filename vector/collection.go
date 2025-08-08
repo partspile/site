@@ -157,8 +157,8 @@ func SetupPayloadIndexes() error {
 		log.Printf("[qdrant] Verifying that %d indexes were created...", len(createdIndexes))
 
 		// Wait for indexes to be created and become available
-		maxRetries := 10
-		retryDelay := 1 * time.Second
+		maxRetries := config.QdrantMaxRetries
+		retryDelay := config.QdrantRetryDelay
 
 		for retry := 0; retry < maxRetries; retry++ {
 			time.Sleep(retryDelay)

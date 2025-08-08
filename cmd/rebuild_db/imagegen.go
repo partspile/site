@@ -104,9 +104,9 @@ func addText(img *image.RGBA, text string, textColor color.Color, x, y int) {
 
 // uploadAdImagesToB2 uploads generated images for an ad to B2
 func uploadAdImagesToB2(adID int, numImages int, title string) error {
-	accountID := config.BackblazeMasterKeyID
-	keyID := config.BackblazeKeyID
-	appKey := config.BackblazeAppKey
+	accountID := config.B2MasterKeyID
+	keyID := config.B2KeyID
+	appKey := config.B2AppKey
 	if accountID == "" || appKey == "" || keyID == "" {
 		log.Println("B2 credentials not set in env vars")
 		return fmt.Errorf("B2 credentials not set")
@@ -122,7 +122,7 @@ func uploadAdImagesToB2(adID int, numImages int, title string) error {
 		return fmt.Errorf("B2 auth error: %v", err)
 	}
 
-	bucket, err := b2.Bucket("parts-pile")
+	bucket, err := b2.Bucket(config.B2BucketName)
 	if err != nil {
 		log.Println("B2 bucket error:", err)
 		return fmt.Errorf("B2 bucket error: %v", err)

@@ -508,9 +508,9 @@ func HandleEditAdPartial(c *fiber.Ctx) error {
 
 // uploadAdImagesToB2 is a stub for now
 func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
-	accountID := config.BackblazeMasterKeyID
-	keyID := config.BackblazeKeyID
-	appKey := config.BackblazeAppKey
+	accountID := config.B2MasterKeyID
+	keyID := config.B2KeyID
+	appKey := config.B2AppKey
 	if accountID == "" || appKey == "" || keyID == "" {
 		log.Println("B2 credentials not set in env vars")
 		return
@@ -524,7 +524,7 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 		log.Println("B2 auth error:", err)
 		return
 	}
-	bucket, err := b2.Bucket("parts-pile")
+	bucket, err := b2.Bucket(config.B2BucketName)
 	if err != nil {
 		log.Println("B2 bucket error:", err)
 		return
@@ -595,14 +595,14 @@ func HandleAdImageSignedURL(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"prefix":  "/" + adID + "/",
 		"token":   token,
-		"expires": time.Now().Unix() + 3600,
+		"expires": time.Now().Unix() + config.B2DownloadTokenExpiry,
 	})
 }
 
 func deleteAdImagesFromB2(adID int, indices []int) {
-	accountID := config.BackblazeMasterKeyID
-	keyID := config.BackblazeKeyID
-	appKey := config.BackblazeAppKey
+	accountID := config.B2MasterKeyID
+	keyID := config.B2KeyID
+	appKey := config.B2AppKey
 	if accountID == "" || appKey == "" || keyID == "" {
 		log.Println("B2 credentials not set in env vars")
 		return
@@ -616,7 +616,7 @@ func deleteAdImagesFromB2(adID int, indices []int) {
 		log.Println("B2 auth error:", err)
 		return
 	}
-	bucket, err := b2.Bucket("parts-pile")
+	bucket, err := b2.Bucket(config.B2BucketName)
 	if err != nil {
 		log.Println("B2 bucket error:", err)
 		return

@@ -126,7 +126,7 @@ func InitQdrantClient() error {
 			host = strings.TrimPrefix(host, "http://")
 		}
 		clientConfig.Host = host
-		clientConfig.Port = 6334 // Qdrant Cloud uses port 6334 for gRPC
+		clientConfig.Port = config.QdrantPort // Qdrant Cloud uses port 6334 for gRPC
 	}
 
 	// Create Qdrant client
@@ -428,7 +428,7 @@ func AggregateEmbeddings(vectors [][]float32, weights []float32) []float32 {
 var (
 	siteLevelVector         []float32
 	siteLevelVectorLastCalc time.Time
-	siteLevelVectorTTL      = 10 * time.Minute
+	siteLevelVectorTTL      = config.QdrantTTL
 )
 
 // GetSiteLevelVector returns the cached site-level vector, recalculating if needed
@@ -728,7 +728,7 @@ func StartBackgroundVectorProcessor() {
 				processed++
 
 				// Sleep to avoid rate limits
-				time.Sleep(100 * time.Millisecond)
+				time.Sleep(config.QdrantProcessingSleepInterval)
 			}
 
 			if processed > 0 {

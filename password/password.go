@@ -4,13 +4,14 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 
+	"github.com/parts-pile/site/config"
 	"golang.org/x/crypto/argon2"
 )
 
 // Argon2id parameters
 const (
 	Time    = 1
-	Memory  = 64 * 1024
+	Memory  = config.Argon2Memory
 	Threads = 4
 	KeyLen  = 32
 )
