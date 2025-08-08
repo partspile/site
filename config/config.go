@@ -23,6 +23,9 @@ const (
 	// Grok API configuration
 	GrokAPIURL = "https://api.x.ai/v1/chat/completions"
 	GrokModel  = "grok-3-mini"
+
+	// Gemini API configuration
+	GeminiEmbeddingModel = "embedding-001"
 )
 
 // Global configuration variables
@@ -43,7 +46,6 @@ var (
 
 	// AI/ML API configuration
 	GeminiAPIKey = getEnvWithDefault("GEMINI_API_KEY", "")
-	GeminiModel  = getEnvWithDefault("GEMINI_MODEL", "embedding-001")
 	GrokAPIKey   = getEnvWithDefault("GROK_API_KEY", "")
 
 	// Server configuration
