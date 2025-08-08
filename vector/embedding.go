@@ -188,7 +188,7 @@ func EmbedText(text string) ([]float32, error) {
 	}
 	log.Printf("[embedding] Calculating embedding vector for text: %.80q", text)
 	ctx := context.Background()
-	resp, err := geminiClient.Models.EmbedContent(ctx, "embedding-001", genai.Text(text), nil)
+	resp, err := geminiClient.Models.EmbedContent(ctx, config.GeminiModel, genai.Text(text), nil)
 	if err != nil {
 		return nil, fmt.Errorf("Gemini embedding API error: %w", err)
 	}

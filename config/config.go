@@ -43,6 +43,7 @@ var (
 
 	// AI/ML API configuration
 	GeminiAPIKey = getEnvWithDefault("GEMINI_API_KEY", "")
+	GeminiModel  = getEnvWithDefault("GEMINI_MODEL", "embedding-001")
 	GrokAPIKey   = getEnvWithDefault("GROK_API_KEY", "")
 
 	// Server configuration
