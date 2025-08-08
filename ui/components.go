@@ -175,3 +175,8 @@ func NoSearchResultsMessage() g.Node {
 		),
 	)
 }
+
+// EmptyResponse returns an empty div for HTMX responses that don't need content
+func EmptyResponse() g.Node {
+	return Div()
+}

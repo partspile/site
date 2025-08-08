@@ -678,7 +678,7 @@ func TreeView(c *fiber.Ctx) error {
 			}
 		}
 		if len(children) == 0 {
-			return c.SendString("")
+			return render(c, ui.EmptyResponse())
 		}
 	}
 

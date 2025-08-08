@@ -445,7 +445,7 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 		log.Printf("Returning 200 with empty body for HTMX request to delete ad %d", adID)
 		// Return 200 with empty body instead of 204 because HTMX only swaps on 200/300 responses
 		// See: https://github.com/bigskysoftware/htmx/issues/1130
-		return c.SendString("")
+		return render(c, ui.EmptyResponse())
 	}
 	log.Printf("Returning success page for non-HTMX request to delete ad %d", adID)
 	return render(c, ui.SuccessMessage("Ad deleted successfully", "/"))
