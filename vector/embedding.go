@@ -230,6 +230,20 @@ func UpsertAdEmbedding(adID int, embedding []float32, metadata map[string]interf
 						return result
 					}(),
 				}}}
+			case map[string]interface{}:
+				// Handle geo metadata (lat/lon coordinates)
+				if k == "location" {
+					geoStruct := &qdrant.Struct{Fields: make(map[string]*qdrant.Value)}
+					for geoKey, geoVal := range val {
+						if geoFloat, ok := geoVal.(float64); ok {
+							geoStruct.Fields[geoKey] = &qdrant.Value{Kind: &qdrant.Value_DoubleValue{DoubleValue: geoFloat}}
+						}
+					}
+					qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StructValue{StructValue: geoStruct}}
+				} else {
+					// Convert other maps to string
+					qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: fmt.Sprintf("%v", val)}}
+				}
 			default:
 				// Convert to string for other types
 				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: fmt.Sprintf("%v", val)}}
@@ -658,7 +672,7 @@ func BuildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 
 	// Add geo payload if we have coordinates
 	if lat != 0 && lon != 0 {
-		metadata["geo"] = map[string]interface{}{
+		metadata["location"] = map[string]interface{}{
 			"lat": lat,
 			"lon": lon,
 		}
@@ -972,7 +986,9 @@ func BuildBoundingBoxGeoFilter(minLat, maxLat, minLon, maxLon float64) *qdrant.F
 
 	// Create geo bounding box filter using Qdrant's native geo filtering
 	// Note: The order is topLeft.lat, topLeft.lon, bottomRight.lat, bottomRight.lon
-	geoCondition := qdrant.NewGeoBoundingBox("geo", minLat, minLon, maxLat, maxLon)
+	// topLeft = maxLat, minLon (northwest corner)
+	// bottomRight = minLat, maxLon (southeast corner)
+	geoCondition := qdrant.NewGeoBoundingBox("location", maxLat, minLon, minLat, maxLon)
 
 	conditions := []*qdrant.Condition{
 		geoCondition,

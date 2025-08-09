@@ -9,18 +9,24 @@ let mapInitialized = false;
 let isInitializing = false;
 let searchDebounceTimer = null;
 let isInitialSetup = true;
+let hasEverBeenInitialized = false;
 
 function initMap() {
     console.log('[map.js] initMap called');
     
     // Prevent multiple initializations
     if (mapInitialized || isInitializing) {
-        console.log('[map.js] Map already initialized or initializing, skipping');
+        console.log('[map.js] Map already initialized or initializing, just updating markers');
+        if (mapInitialized) {
+            // Just update markers without fitting bounds
+            addAdMarkers();
+        }
         return;
     }
     
     isInitializing = true;
-    isInitialSetup = true;
+    // Only set isInitialSetup to true if this is the very first initialization
+    isInitialSetup = !hasEverBeenInitialized;
     
     // Check if Leaflet is available
     if (typeof L === 'undefined') {
@@ -85,6 +91,7 @@ function initMap() {
         
         mapInitialized = true;
         isInitializing = false;
+        hasEverBeenInitialized = true;
         console.log('[map.js] Map initialization complete');
         
         // Force a resize to ensure the map renders properly
@@ -145,6 +152,10 @@ function addAdMarkers() {
                 const marker = L.marker([lat, lon])
                     .bindPopup(popupContent)
                     .addTo(map);
+                
+                // Store the ad ID on the marker for tracking
+                marker._adId = adId;
+                
                 markers.push(marker);
                 console.log(`[map.js] Added marker for ad ${adId} at [${lat}, ${lon}]`);
             } catch (error) {
@@ -155,17 +166,21 @@ function addAdMarkers() {
         }
     });
     
-    console.log('[map.js] Total markers added:', markers.length);
+    console.log('[map.js] Total markers added (v2):', markers.length);
     
-    // Fit map to markers if we have any (but don't trigger search)
-    if (markers.length > 0) {
+    // Only fit bounds on the very first page load to establish initial view
+    // After that, user controls the map view completely
+    console.log(`[map.js] addAdMarkers: markers=${markers.length}, hasEverBeenInitialized=${hasEverBeenInitialized}`);
+    if (markers.length > 0 && !hasEverBeenInitialized) {
         try {
             const group = new L.featureGroup(markers);
             map.fitBounds(group.getBounds().pad(0.1));
-            console.log('[map.js] Map fitted to markers');
+            console.log('[map.js] Initial view: fitted map to show all ads');
         } catch (error) {
             console.error('[map.js] Error fitting map to markers:', error);
         }
+    } else {
+        console.log(`[map.js] Updated ${markers.length} markers, keeping user's chosen view (hasEverBeenInitialized=${hasEverBeenInitialized})`);
     }
 }
 
@@ -234,15 +249,82 @@ function triggerMapSearch() {
             
             console.log('[map.js] Triggering search with params:', params.toString());
             
-            // Use HTMX to update results
-            htmx.ajax('GET', `/search?${params.toString()}`, {
-                target: '#searchResults',
-                swap: 'outerHTML'
-            });
+            // Use direct fetch to get ads and update markers only
+            fetch(`/api/search?${params.toString()}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('[map.js] Search completed, got', data.ads?.length || 0, 'ads');
+                    // Update markers directly without HTMX
+                    updateMarkersFromData(data.ads || []);
+                })
+                .catch(error => {
+                    console.error('[map.js] Search failed:', error);
+                });
         } catch (error) {
             console.error('[map.js] Error triggering search:', error);
         }
     }, 1000); // 1 second debounce
+}
+
+function updateMarkersFromData(ads) {
+    console.log('[map.js] Updating markers from API data:', ads.length, 'ads');
+    
+    // Create a set of new ad IDs for quick lookup
+    const newAdIds = new Set();
+    const newAdData = new Map();
+    
+    ads.forEach(ad => {
+        if (ad.latitude && ad.longitude) {
+            const lat = parseFloat(ad.latitude);
+            const lon = parseFloat(ad.longitude);
+            
+            if (!isNaN(lat) && !isNaN(lon) && lat !== 0 && lon !== 0) {
+                newAdIds.add(ad.id);
+                newAdData.set(ad.id, { ad, lat, lon });
+            }
+        }
+    });
+    
+    // Remove markers that are no longer in the results
+    // But keep existing markers that are still in the new results (smoother UX)
+    markers = markers.filter(marker => {
+        const adId = marker._adId;
+        if (adId && !newAdIds.has(adId)) {
+            // This marker is no longer in results, remove it
+            map.removeLayer(marker);
+            console.log(`[map.js] Removed marker for ad ${adId} (no longer in results)`);
+            return false;
+        }
+        return true;
+    });
+    
+    // Add new markers that don't already exist
+    const existingAdIds = new Set(markers.map(m => m._adId).filter(id => id));
+    
+    newAdData.forEach(({ ad, lat, lon }, adId) => {
+        if (!existingAdIds.has(adId)) {
+            // This is a new marker, add it
+            const marker = L.marker([lat, lon])
+                .bindPopup(`
+                    <div class="popup-content">
+                        <h3><a href="/ad/${ad.id}">${ad.title}</a></h3>
+                        <p>€${ad.price}</p>
+                        <p>${ad.location || ''}</p>
+                    </div>
+                `)
+                .on('click', () => viewAd(ad.id));
+            
+            // Store the ad ID on the marker for tracking
+            marker._adId = adId;
+            
+            marker.addTo(map);
+            markers.push(marker);
+            console.log(`[map.js] Added new marker for ad ${adId} at ${lat}, ${lon}`);
+        }
+    });
+    
+    console.log('[map.js] Updated markers smoothly, total:', markers.length);
+    // Never call fitBounds here - user controls the view
 }
 
 function viewAd(adId) {
@@ -250,16 +332,7 @@ function viewAd(adId) {
     window.location.href = `/ad/${adId}`;
 }
 
-function fitMapToMarkers() {
-    if (markers.length > 0 && map) {
-        try {
-            const group = new L.featureGroup(markers);
-            map.fitBounds(group.getBounds().pad(0.1));
-        } catch (error) {
-            console.error('[map.js] Error fitting map to markers:', error);
-        }
-    }
-}
+// fitMapToMarkers function removed - user controls map view
 
 // Helper function to check if we should initialize map
 function shouldInitMap() {
@@ -293,29 +366,7 @@ document.addEventListener('htmx:load', function() {
     }
 });
 
-// Re-initialize map when view changes to map
-document.addEventListener('htmx:afterSwap', function() {
-    // Only log if we're in map view
-    if (document.getElementById('map-container')) {
-        console.log('[map.js] htmx:afterSwap event fired, map container found');
-        // Reset initialization state when content is swapped
-        mapInitialized = false;
-        isInitializing = false;
-        isInitialSetup = true;
-        map = null;
-        markers = [];
-        currentBounds = null;
-        
-        // Clear any pending search requests
-        if (searchDebounceTimer) {
-            clearTimeout(searchDebounceTimer);
-            searchDebounceTimer = null;
-        }
-        
-        // Wait a bit for DOM to be updated
-        setTimeout(attemptMapInit, 100);
-    }
-});
+// No HTMX interference - map is managed purely by JavaScript
 
 // Also try to initialize on regular DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {

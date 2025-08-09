@@ -191,6 +191,13 @@ func createViewWithInfiniteScroll(ads []ad.Ad, userID int, loc *time.Location, v
 	// Handle no results for list and grid views
 	if len(ads) == 0 && (view == "list" || view == "grid") {
 		viewContent = NoSearchResultsMessage()
+	} else if view == "map" {
+		// For map view, always show the map (even if empty)
+		adsMap := make(map[int]ad.Ad, len(ads))
+		for _, ad := range ads {
+			adsMap[ad.ID] = ad
+		}
+		viewContent = MapView(adsMap, loc)
 	} else {
 		// Create the appropriate view
 		switch view {
@@ -203,12 +210,6 @@ func createViewWithInfiniteScroll(ads []ad.Ad, userID int, loc *time.Location, v
 			} else {
 				viewContent = GridView(ads, loc, userID)
 			}
-		case "map":
-			adsMap := make(map[int]ad.Ad, len(ads))
-			for _, ad := range ads {
-				adsMap[ad.ID] = ad
-			}
-			viewContent = MapView(adsMap, loc)
 		default: // list
 			viewContent = ListViewFromSlice(ads, userID, loc)
 		}

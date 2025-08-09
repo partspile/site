@@ -99,6 +99,7 @@ func main() {
 	app.Get("/", handlers.HandleHome)
 	app.Get("/search", handlers.HandleSearch)
 	app.Get("/search-page", handlers.HandleSearchPage)
+	app.Get("/api/search", handlers.HandleSearchAPI)
 	app.Get("/tree", handlers.TreeView)
 	app.Get("/tree/*", handlers.TreeView)
 	app.Get("/tree-collapsed/*", handlers.HandleTreeCollapse)

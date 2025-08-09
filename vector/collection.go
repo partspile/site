@@ -78,6 +78,7 @@ func SetupPayloadIndexes() error {
 		{"category", qdrant.FieldType_FieldTypeKeyword},
 		{"subcategory", qdrant.FieldType_FieldTypeKeyword},
 		{"price", qdrant.FieldType_FieldTypeFloat},
+		{"location", qdrant.FieldType_FieldTypeGeo},
 	}
 
 	log.Printf("[qdrant] Setting up payload indexes for collection: %s", collectionName)
@@ -120,6 +121,8 @@ func SetupPayloadIndexes() error {
 			fieldIndexParams = qdrant.NewPayloadIndexParamsKeyword(&qdrant.KeywordIndexParams{})
 		case qdrant.FieldType_FieldTypeFloat:
 			fieldIndexParams = qdrant.NewPayloadIndexParamsFloat(&qdrant.FloatIndexParams{})
+		case qdrant.FieldType_FieldTypeGeo:
+			fieldIndexParams = qdrant.NewPayloadIndexParamsGeo(&qdrant.GeoIndexParams{})
 		default:
 			// For other types, use keyword as default
 			fieldIndexParams = qdrant.NewPayloadIndexParamsKeyword(&qdrant.KeywordIndexParams{})

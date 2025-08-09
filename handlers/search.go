@@ -229,6 +229,74 @@ func performSearch(userPrompt string, userID int, cursorStr string, threshold fl
 	return nil, "", nil
 }
 
+// performMapSearch performs search for map view using map-specific functions (200 results)
+func performMapSearch(userPrompt string, userID int, cursorStr string, threshold float64) ([]ad.Ad, string, error) {
+	log.Printf("[performMapSearch] userPrompt='%s', userID=%d, cursorStr='%s', threshold=%.2f", userPrompt, userID, cursorStr, threshold)
+	if userPrompt != "" {
+		// For map view with query, use map-specific search
+		log.Printf("[performMapSearch] Generating embedding for user query: %s", userPrompt)
+		embedding, err := vector.EmbedTextCached(userPrompt)
+		if err != nil {
+			return nil, "", err
+		}
+		ads, nextCursor, _ := runEmbeddingSearchMap(embedding, cursorStr, userID, threshold)
+		log.Printf("[performMapSearch] tryQueryEmbedding: found %d ads", len(ads))
+		if len(ads) > 0 {
+			return ads, nextCursor, nil
+		}
+	}
+	if userPrompt == "" && userID != 0 {
+		// For logged-in users with no query, try user embedding first
+		embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
+		if err == nil && embedding != nil {
+			ads, nextCursor, _ := runEmbeddingSearchMap(embedding, cursorStr, userID, threshold)
+			log.Printf("[performMapSearch] tryUserEmbedding: found %d ads", len(ads))
+			if len(ads) > 0 {
+				return ads, nextCursor, nil
+			}
+		}
+		// Fallback to site-level vector for logged-in users with no personalized embedding
+		log.Printf("[performMapSearch] No personalized embedding found for user %d, falling back to site-level vector", userID)
+		emb, err := vector.GetSiteLevelVector()
+		log.Printf("[performMapSearch] GetSiteLevelVector returned emb=%v, err=%v", emb != nil, err)
+		if err == nil && emb != nil {
+			log.Printf("[performMapSearch] site-level vector length: %d", len(emb))
+			if len(emb) > 0 {
+				log.Printf("[performMapSearch] site-level vector first 5 values: %v", emb[:min(5, len(emb))])
+			}
+			log.Printf("[performMapSearch] About to call runEmbeddingSearchMap with site-level vector")
+			ads, nextCursor, _ := runEmbeddingSearchMap(emb, cursorStr, userID, threshold)
+			log.Printf("[performMapSearch] site-level vector: found %d ads", len(ads))
+			if len(ads) > 0 {
+				return ads, nextCursor, nil
+			}
+		} else {
+			log.Printf("[performMapSearch] site-level vector error: %v", err)
+		}
+	}
+	if userPrompt == "" && userID == 0 {
+		// For anonymous users with no query, use site-level vector
+		emb, err := vector.GetSiteLevelVector()
+		log.Printf("[performMapSearch] GetSiteLevelVector returned emb=%v, err=%v", emb != nil, err)
+		if err == nil && emb != nil {
+			log.Printf("[performMapSearch] site-level vector length: %d", len(emb))
+			if len(emb) > 0 {
+				log.Printf("[performMapSearch] site-level vector first 5 values: %v", emb[:min(5, len(emb))])
+			}
+			log.Printf("[performMapSearch] About to call runEmbeddingSearchMap with site-level vector")
+			ads, nextCursor, _ := runEmbeddingSearchMap(emb, cursorStr, userID, threshold)
+			log.Printf("[performMapSearch] site-level vector: found %d ads", len(ads))
+			if len(ads) > 0 {
+				return ads, nextCursor, nil
+			}
+		} else {
+			log.Printf("[performMapSearch] site-level vector error: %v", err)
+		}
+	}
+	log.Printf("[performMapSearch] No ads found for given parameters.")
+	return nil, "", nil
+}
+
 // GeoBounds represents a geographic bounding box
 type GeoBounds struct {
 	MinLat float64
@@ -285,11 +353,7 @@ func performGeoBoxSearch(userPrompt string, userID int, cursorStr string, bounds
 		return nil, "", err
 	}
 
-	if len(ads) == 0 {
-		log.Printf("[performGeoBoxSearch] No ads found for given parameters.")
-		return nil, "", nil
-	}
-
+	log.Printf("[performGeoBoxSearch] Found %d ads in bounding box", len(ads))
 	return ads, nextCursor, nil
 }
 
@@ -369,6 +433,9 @@ func HandleSearch(c *fiber.Ctx) error {
 	// Use geo search for map view with bounds, regular search otherwise
 	if view == "map" && bounds != nil {
 		ads, nextCursor, err = performGeoBoxSearch(userPrompt, userID, "", bounds, threshold)
+	} else if view == "map" {
+		// For map view without bounds, use map-specific search functions
+		ads, nextCursor, err = performMapSearch(userPrompt, userID, "", threshold)
 	} else {
 		ads, nextCursor, err = performSearch(userPrompt, userID, "", threshold)
 	}
@@ -906,6 +973,9 @@ func handleViewSwitchWithGeo(c *fiber.Ctx, view string, bounds *GeoBounds) error
 	// Use geo search for map view, regular search for other views
 	if view == "map" && bounds != nil {
 		ads, nextCursor, err = performGeoBoxSearch(userPrompt, userID, "", bounds, threshold)
+	} else if view == "map" {
+		// For map view without bounds, use map-specific search functions
+		ads, nextCursor, err = performMapSearch(userPrompt, userID, "", threshold)
 	} else {
 		ads, nextCursor, err = performSearch(userPrompt, userID, "", threshold)
 	}
@@ -1171,4 +1241,72 @@ func extractChildrenFromAds(ads []ad.Ad, level int, parts []string, structuredQu
 
 	log.Printf("[extractChildrenFromAds] Level %d: extracted %d children from %d ads", level, len(children), len(ads))
 	return children
+}
+
+// HandleSearchAPI returns search results as JSON for JavaScript consumption
+func HandleSearchAPI(c *fiber.Ctx) error {
+	userPrompt := strings.TrimSpace(c.Query("q", ""))
+	view := c.Query("view", "list")
+	threshold := c.QueryFloat("threshold", 0.6)
+
+	// Get current user
+	userID := getUserID(c)
+
+	log.Printf("[HandleSearchAPI] userPrompt='%s', userID=%d, view=%s, threshold=%.2f", userPrompt, userID, view, threshold)
+
+	// Parse bounding box parameters
+	var bounds *GeoBounds
+	if minLatStr := c.Query("minLat"); minLatStr != "" {
+		if maxLatStr := c.Query("maxLat"); maxLatStr != "" {
+			if minLonStr := c.Query("minLon"); minLonStr != "" {
+				if maxLonStr := c.Query("maxLon"); maxLonStr != "" {
+					minLat, err1 := strconv.ParseFloat(minLatStr, 64)
+					maxLat, err2 := strconv.ParseFloat(maxLatStr, 64)
+					minLon, err3 := strconv.ParseFloat(minLonStr, 64)
+					maxLon, err4 := strconv.ParseFloat(maxLonStr, 64)
+					if err1 == nil && err2 == nil && err3 == nil && err4 == nil {
+						bounds = &GeoBounds{
+							MinLat: minLat,
+							MaxLat: maxLat,
+							MinLon: minLon,
+							MaxLon: maxLon,
+						}
+						log.Printf("[HandleSearchAPI] Using bounding box: %+v", bounds)
+					}
+				}
+			}
+		}
+	}
+
+	// Perform search
+	var ads []ad.Ad
+	var nextCursor string
+	var err error
+
+	// Use geo search for map view with bounds, regular search otherwise
+	if view == "map" && bounds != nil {
+		ads, nextCursor, err = performGeoBoxSearch(userPrompt, userID, "", bounds, threshold)
+	} else if view == "map" {
+		// For map view without bounds, use map-specific search functions
+		ads, nextCursor, err = performMapSearch(userPrompt, userID, "", threshold)
+	} else {
+		ads, nextCursor, err = performSearch(userPrompt, userID, "", threshold)
+	}
+
+	if err != nil {
+		log.Printf("[HandleSearchAPI] Search error: %v", err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Search failed",
+			"ads":   []ad.Ad{},
+		})
+	}
+
+	log.Printf("[HandleSearchAPI] ads returned: %d", len(ads))
+
+	// Return JSON response
+	return c.JSON(fiber.Map{
+		"ads":        ads,
+		"nextCursor": nextCursor,
+		"count":      len(ads),
+	})
 }
