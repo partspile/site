@@ -6,7 +6,7 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/chai2010/webp v1.4.0
 	github.com/dgraph-io/ristretto/v2 v2.2.0
-	github.com/gofiber/fiber/v2 v2.52.8
+	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/qdrant/go-client v1.15.1
 	github.com/stretchr/testify v1.10.0
