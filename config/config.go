@@ -74,6 +74,11 @@ var (
 	GeminiAPIKey = getEnvWithDefault("GEMINI_API_KEY", "")
 	GrokAPIKey   = getEnvWithDefault("GROK_API_KEY", "")
 
+	// SMS/Twilio configuration
+	TwilioAccountSID = getEnvWithDefault("TWILIO_ACCOUNT_SID", "")
+	TwilioAuthToken  = getEnvWithDefault("TWILIO_AUTH_TOKEN", "")
+	TwilioFromNumber = getEnvWithDefault("TWILIO_FROM_NUMBER", "")
+
 	// Server configuration
 	ServerPort = getEnvWithDefault("PORT", "8000")
 )
