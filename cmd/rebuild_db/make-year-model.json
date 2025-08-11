@@ -77846,6 +77846,1006 @@
     }
   },
   "ISUZU": {
+    "1961": {
+      "BELLEL": [
+        "2.0L L4 DIESEL"
+      ]
+    },
+    "1962": {
+      "BELLEL": [
+        "2.0L L4 DIESEL"
+      ]
+    },
+    "1963": {
+      "BELLEL": [
+        "2.0L L4 DIESEL"
+      ]
+    },
+    "1964": {
+      "BELLEL": [
+        "2.0L L4 DIESEL"
+      ]
+    },
+    "1965": {
+      "BELLEL": [
+        "2.0L L4 DIESEL"
+      ]
+    },
+    "1966": {
+      "BELLEL": [
+        "2.0L L4 DIESEL"
+      ]
+    },
+    "1981": {
+      "I-MARK": [
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "PICKUP": [
+        "1.8L L4",
+        "2.2L L4 DIESEL"
+      ]
+    },
+    "1982": {
+      "I-MARK": [
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "PICKUP": [
+        "1.8L L4",
+        "2.2L L4 DIESEL"
+      ]
+    },
+    "1983": {
+      "I-MARK": [
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "IMPULSE": [
+        "1.9L L4"
+      ],
+      "PICKUP": [
+        "1.9L L4",
+        "2.2L L4 DIESEL"
+      ]
+    },
+    "1984": {
+      "I-MARK": [
+        "1.8L L4",
+        "1.8L L4 DIESEL"
+      ],
+      "IMPULSE": [
+        "1.9L L4"
+      ],
+      "PICKUP": [
+        "1.9L L4",
+        "2.2L L4 DIESEL"
+      ],
+      "TROOPER": [
+        "1.9L L4",
+        "2.2L L4 DIESEL"
+      ]
+    },
+    "1985": {
+      "I-MARK": [
+        "1.5L L4",
+        "1.8L L4"
+      ],
+      "IMPULSE": [
+        "1.9L L4",
+        "2.0L L4 Turbocharged"
+      ],
+      "PICKUP": [
+        "1.9L L4",
+        "2.2L L4 DIESEL"
+      ],
+      "TROOPER": [
+        "1.9L L4"
+      ]
+    },
+    "1986": {
+      "I-MARK": [
+        "1.5L L4"
+      ],
+      "IMPULSE": [
+        "1.9L L4",
+        "2.0L L4 Turbocharged"
+      ],
+      "NPR": [
+        "3.9L L4 DIESEL",
+        "3.9L L4 DIESEL Turbocharged"
+      ],
+      "PICKUP": [
+        "1.9L L4",
+        "2.2L L4 DIESEL",
+        "2.2L L4 DIESEL Turbocharged",
+        "2.3L L4"
+      ],
+      "TROOPER": [
+        "2.2L L4 DIESEL Turbocharged",
+        "2.3L L4"
+      ]
+    },
+    "1987": {
+      "F SERIES TRUCK": [
+        "5.8L L6 DIESEL",
+        "5.8L L6 DIESEL Turbocharged",
+        "6.5L L6 DIESEL"
+      ],
+      "I-MARK": [
+        "1.5L L4",
+        "1.5L L4 Turbocharged"
+      ],
+      "IMPULSE": [
+        "1.9L L4",
+        "2.0L L4 Turbocharged"
+      ],
+      "NPR": [
+        "3.9L L4 DIESEL Turbocharged"
+      ],
+      "PICKUP": [
+        "1.9L L4",
+        "2.2L L4 DIESEL",
+        "2.2L L4 DIESEL Turbocharged",
+        "2.3L L4"
+      ],
+      "TROOPER": [
+        "2.2L L4 DIESEL Turbocharged",
+        "2.3L L4"
+      ]
+    },
+    "1988": {
+      "F SERIES TRUCK": [
+        "5.8L L6 DIESEL Turbocharged",
+        "6.5L L6 DIESEL",
+        "8.4L L6 DIESEL Turbocharged"
+      ],
+      "I-MARK": [
+        "1.5L L4",
+        "1.5L L4 Turbocharged"
+      ],
+      "IMPULSE": [
+        "2.0L L4 Turbocharged",
+        "2.3L L4"
+      ],
+      "NPR": [
+        "3.9L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "6.5L L6 DIESEL"
+      ],
+      "PICKUP": [
+        "1.9L L4",
+        "2.2L L4 DIESEL",
+        "2.3L L4",
+        "2.6L L4"
+      ],
+      "TROOPER": [
+        "2.2L L4 DIESEL Turbocharged",
+        "2.6L L4"
+      ]
+    },
+    "1989": {
+      "AMIGO": [
+        "2.3L L4",
+        "2.6L L4"
+      ],
+      "F SERIES TRUCK": [
+        "5.8L L6 DIESEL Turbocharged",
+        "6.5L L6 DIESEL",
+        "6.5L L6 DIESEL Turbocharged",
+        "8.4L L6 DIESEL Turbocharged"
+      ],
+      "I-MARK": [
+        "1.5L L4",
+        "1.5L L4 Turbocharged",
+        "1.6L L4"
+      ],
+      "IMPULSE": [
+        "2.0L L4 Turbocharged",
+        "2.3L L4"
+      ],
+      "NPR": [
+        "3.9L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "6.5L L6 DIESEL"
+      ],
+      "PICKUP": [
+        "2.3L L4",
+        "2.6L L4"
+      ],
+      "TROOPER": [
+        "2.6L L4",
+        "2.8L V6"
+      ]
+    },
+    "1990": {
+      "AMIGO": [
+        "2.3L L4",
+        "2.6L L4"
+      ],
+      "F SERIES TRUCK": [
+        "5.8L L6 DIESEL Turbocharged",
+        "6.5L L6 DIESEL Turbocharged",
+        "8.4L L6 DIESEL Turbocharged"
+      ],
+      "IMPULSE": [
+        "1.6L L4"
+      ],
+      "NPR": [
+        "3.9L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "6.5L L6 DIESEL"
+      ],
+      "PICKUP": [
+        "2.3L L4",
+        "2.6L L4"
+      ],
+      "TROOPER": [
+        "2.6L L4",
+        "2.8L V6"
+      ]
+    },
+    "1991": {
+      "AMIGO": [
+        "2.3L L4",
+        "2.6L L4"
+      ],
+      "F SERIES TRUCK": [
+        "5.8L L6 DIESEL Turbocharged",
+        "6.5L L6 DIESEL Turbocharged"
+      ],
+      "IMPULSE": [
+        "1.6L L4",
+        "1.6L L4 Turbocharged"
+      ],
+      "NPR": [
+        "3.9L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "6.5L L6 DIESEL"
+      ],
+      "PICKUP": [
+        "2.3L L4",
+        "2.6L L4",
+        "3.1L V6"
+      ],
+      "RODEO": [
+        "2.6L L4",
+        "3.1L V6"
+      ],
+      "STYLUS": [
+        "1.6L L4 DOHC",
+        "1.6L L4 SOHC"
+      ],
+      "TROOPER": [
+        "2.6L L4",
+        "2.8L V6"
+      ]
+    },
+    "1992": {
+      "AMIGO": [
+        "2.3L L4",
+        "2.6L L4"
+      ],
+      "F SERIES TRUCK": [
+        "6.5L L6 DIESEL Turbocharged"
+      ],
+      "IMPULSE": [
+        "1.6L L4 Turbocharged",
+        "1.8L L4"
+      ],
+      "NPR": [
+        "3.9L L4 DIESEL",
+        "3.9L L4 DIESEL Turbocharged",
+        "5.7L V8"
+      ],
+      "NRR": [
+        "6.5L L6 DIESEL Turbocharged"
+      ],
+      "PICKUP": [
+        "2.3L L4",
+        "2.6L L4",
+        "3.1L V6"
+      ],
+      "RODEO": [
+        "2.6L L4",
+        "3.1L V6"
+      ],
+      "STYLUS": [
+        "1.6L L4",
+        "1.8L L4"
+      ],
+      "TROOPER": [
+        "3.2L V6 DOHC",
+        "3.2L V6 SOHC"
+      ]
+    },
+    "1993": {
+      "AMIGO": [
+        "2.3L L4",
+        "2.6L L4"
+      ],
+      "F SERIES TRUCK": [
+        "6.5L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "3.9L L4 DIESEL",
+        "3.9L L4 DIESEL Turbocharged",
+        "5.7L V8"
+      ],
+      "NRR": [
+        "6.5L L6 DIESEL Turbocharged"
+      ],
+      "PICKUP": [
+        "2.3L L4",
+        "2.6L L4",
+        "3.1L V6"
+      ],
+      "RODEO": [
+        "2.6L L4",
+        "3.2L V6"
+      ],
+      "STYLUS": [
+        "1.6L L4"
+      ],
+      "TROOPER": [
+        "3.2L V6 DOHC",
+        "3.2L V6 SOHC"
+      ]
+    },
+    "1994": {
+      "AMIGO": [
+        "2.6L L4"
+      ],
+      "F SERIES TRUCK": [
+        "6.5L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "3.9L L4 DIESEL",
+        "3.9L L4 DIESEL Turbocharged",
+        "5.7L V8"
+      ],
+      "NQR": [
+        "3.9L L4 DIESEL",
+        "3.9L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "6.5L L6 DIESEL Turbocharged"
+      ],
+      "PICKUP": [
+        "2.3L L4",
+        "2.6L L4",
+        "3.1L V6"
+      ],
+      "RODEO": [
+        "2.6L L4",
+        "3.2L V6"
+      ],
+      "TROOPER": [
+        "3.2L V6 DOHC",
+        "3.2L V6 SOHC"
+      ]
+    },
+    "1995": {
+      "F SERIES TRUCK": [
+        "7.1L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "3.9L L4 DIESEL",
+        "3.9L L4 DIESEL Turbocharged",
+        "5.7L V8"
+      ],
+      "NQR": [
+        "3.9L L4 DIESEL",
+        "3.9L L4 DIESEL Turbocharged"
+      ],
+      "PICKUP": [
+        "2.3L L4",
+        "2.6L L4"
+      ],
+      "RODEO": [
+        "2.6L L4",
+        "3.2L V6"
+      ],
+      "TROOPER": [
+        "3.2L V6 DOHC",
+        "3.2L V6 SOHC"
+      ]
+    },
+    "1996": {
+      "F SERIES TRUCK": [
+        "7.1L L6 DIESEL Turbocharged"
+      ],
+      "HOMBRE": [
+        "2.2L L4"
+      ],
+      "NPR": [
+        "3.9L L4 DIESEL",
+        "3.9L L4 DIESEL Turbocharged",
+        "5.7L V8"
+      ],
+      "NQR": [
+        "3.9L L4 DIESEL",
+        "3.9L L4 DIESEL Turbocharged"
+      ],
+      "OASIS": [
+        "2.2L L4"
+      ],
+      "RODEO": [
+        "2.6L L4",
+        "3.2L V6"
+      ],
+      "TROOPER": [
+        "3.2L V6"
+      ]
+    },
+    "1997": {
+      "F SERIES TRUCK": [
+        "7.1L L6 DIESEL Turbocharged"
+      ],
+      "HOMBRE": [
+        "2.2L L4",
+        "4.3L V6"
+      ],
+      "NPR": [
+        "3.9L L4 DIESEL",
+        "3.9L L4 DIESEL Turbocharged",
+        "5.7L V8"
+      ],
+      "NQR": [
+        "3.9L L4 DIESEL",
+        "3.9L L4 DIESEL Turbocharged"
+      ],
+      "OASIS": [
+        "2.2L L4"
+      ],
+      "RODEO": [
+        "2.6L L4",
+        "3.2L V6"
+      ],
+      "TROOPER": [
+        "3.2L V6"
+      ]
+    },
+    "1998": {
+      "AMIGO": [
+        "2.2L L4",
+        "3.2L V6"
+      ],
+      "F SERIES TRUCK": [
+        "7.1L L6 DIESEL Turbocharged",
+        "7.8L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1999": {
+      "AMIGO": [
+        "2.2L L4",
+        "3.2L V6"
+      ],
+      "F SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "HOMBRE": [
+        "2.2L L4",
+        "4.3L V6"
+      ],
+      "NPR": [
+        "4.8L L4 DIESEL Turbocharged",
+        "5.7L V8"
+      ],
+      "NQR": [
+        "4.8L L4 DIESEL Turbocharged"
+      ],
+      "OASIS": [
+        "2.3L L4"
+      ],
+      "RODEO": [
+        "2.2L L4",
+        "3.2L V6"
+      ],
+      "TROOPER": [
+        "3.5L V6"
+      ],
+      "VEHICROSS": [
+        "3.5L V6"
+      ]
+    },
+    "2000": {
+      "AMIGO": [
+        "2.2L L4",
+        "3.2L V6"
+      ],
+      "F SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "HOMBRE": [
+        "2.2L L4",
+        "4.3L V6"
+      ],
+      "NPR": [
+        "4.8L L4 DIESEL Turbocharged",
+        "5.7L V8"
+      ],
+      "NQR": [
+        "4.8L L4 DIESEL Turbocharged"
+      ],
+      "RODEO": [
+        "2.2L L4",
+        "3.2L V6"
+      ],
+      "TROOPER": [
+        "3.5L V6"
+      ],
+      "VEHICROSS": [
+        "3.5L V6"
+      ]
+    },
+    "2001": {
+      "F SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "4.8L L4 DIESEL Turbocharged",
+        "5.7L V8"
+      ],
+      "NQR": [
+        "4.8L L4 DIESEL Turbocharged"
+      ],
+      "RODEO": [
+        "2.2L L4",
+        "3.2L V6"
+      ],
+      "RODEO SPORT": [
+        "2.2L L4",
+        "3.2L V6"
+      ],
+      "TROOPER": [
+        "3.5L V6"
+      ],
+      "VEHICROSS": [
+        "3.5L V6"
+      ]
+    },
+    "2002": {
+      "AXIOM": [
+        "3.5L V6"
+      ],
+      "F SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "4.8L L4 DIESEL Turbocharged",
+        "5.7L V8"
+      ],
+      "NQR": [
+        "4.8L L4 DIESEL Turbocharged"
+      ],
+      "RODEO": [
+        "2.2L L4",
+        "3.2L V6"
+      ],
+      "RODEO SPORT": [
+        "2.2L L4",
+        "3.2L V6"
+      ],
+      "TROOPER": [
+        "3.5L V6"
+      ]
+    },
+    "2003": {
+      "ASCENDER": [
+        "4.2L L6",
+        "5.3L V8"
+      ],
+      "AXIOM": [
+        "3.5L V6"
+      ],
+      "F SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "4.8L L4 DIESEL Turbocharged",
+        "5.7L V8",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "4.8L L4 DIESEL Turbocharged"
+      ],
+      "RODEO": [
+        "2.2L L4",
+        "3.2L V6"
+      ],
+      "RODEO SPORT": [
+        "2.2L L4",
+        "3.2L V6"
+      ]
+    },
+    "2004": {
+      "ASCENDER": [
+        "4.2L L6",
+        "5.3L V8"
+      ],
+      "AXIOM": [
+        "3.5L V6"
+      ],
+      "F SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "4.8L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "4.8L L4 DIESEL Turbocharged"
+      ],
+      "RODEO": [
+        "3.2L V6",
+        "3.5L V6"
+      ]
+    },
+    "2005": {
+      "ASCENDER": [
+        "4.2L L6",
+        "5.3L V8"
+      ],
+      "F SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "H SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2006": {
+      "ASCENDER": [
+        "4.2L L6",
+        "5.3L V8"
+      ],
+      "ELF": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "F SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "H SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "I-280": [
+        "2.8L L4"
+      ],
+      "I-350": [
+        "3.5L L5"
+      ],
+      "NPR": [
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2007": {
+      "ASCENDER": [
+        "4.2L L6"
+      ],
+      "ELF": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "F SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "H SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "I-290": [
+        "2.9L L4"
+      ],
+      "I-370": [
+        "3.7L L5"
+      ],
+      "NPR": [
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2008": {
+      "ASCENDER": [
+        "4.2L L6"
+      ],
+      "ELF": [
+        "3.0L L4 DIESEL Turbocharged",
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "F SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "H SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "I-290": [
+        "2.9L L4"
+      ],
+      "I-370": [
+        "3.7L L5"
+      ],
+      "NPR": [
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2009": {
+      "ELF": [
+        "5.2L 4cyl DIESEL Turbocharged"
+      ],
+      "F SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2010": {
+      "ELF": [
+        "5.2L 4cyl DIESEL Turbocharged"
+      ],
+      "F SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2011": {
+      "ELF": [
+        "5.2L 4cyl DIESEL Turbocharged"
+      ],
+      "F SERIES TRUCK": [
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "3.0L L4 DIESEL Turbocharged",
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "REACH": [
+        "3.0L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2012": {
+      "ELF": [
+        "5.2L 4cyl DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "3.0L L4 DIESEL Turbocharged",
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "REACH": [
+        "3.0L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2013": {
+      "ELF": [
+        "3.0L L4 DIESEL Turbocharged",
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "3.0L L4 DIESEL Turbocharged",
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "REACH": [
+        "3.0L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2014": {
+      "ELF": [
+        "3.0L L4 DIESEL Turbocharged",
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "3.0L L4 DIESEL Turbocharged",
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "REACH": [
+        "3.0L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2015": {
+      "ELF": [
+        "3.0L L4 DIESEL Turbocharged",
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "F SERIES TRUCK": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "3.0L L4 DIESEL Turbocharged",
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "REACH": [
+        "3.0L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2016": {
+      "ELF": [
+        "3.0L L4 DIESEL Turbocharged DOHC",
+        "3.0L L4 DIESEL Turbocharged SOHC",
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "F SERIES TRUCK": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "3.0L L4 DIESEL Turbocharged",
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2017": {
+      "ELF": [
+        "3.0L L4 DIESEL Turbocharged DOHC",
+        "3.0L L4 DIESEL Turbocharged SOHC",
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "F SERIES TRUCK": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "3.0L L4 DIESEL Turbocharged",
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2018": {
+      "ELF": [
+        "3.0L L4 DIESEL Turbocharged DOHC",
+        "3.0L L4 DIESEL Turbocharged SOHC",
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "F SERIES TRUCK": [
+        "5.2L L4 DIESEL Turbocharged",
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "3.0L L4 DIESEL Turbocharged",
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2019": {
+      "ELF": [
+        "3.0L L4 DIESEL Turbocharged DOHC",
+        "3.0L L4 DIESEL Turbocharged SOHC",
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "F SERIES TRUCK": [
+        "5.2L L4 DIESEL Turbocharged",
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2020": {
+      "ELF": [
+        "3.0L L4 DIESEL Turbocharged",
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "F SERIES TRUCK": [
+        "5.2L L4 DIESEL Turbocharged",
+        "7.8L L6 DIESEL Turbocharged"
+      ],
+      "NPR": [
+        "5.2L L4 DIESEL Turbocharged",
+        "6.0L V8",
+        "6.6L V8"
+      ],
+      "NQR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ],
+      "NRR": [
+        "5.2L L4 DIESEL Turbocharged"
+      ]
+    },
     "2021": {
       "ELF": [
         "3.0L L4 DIESEL Turbocharged",
@@ -77942,6 +78942,2402 @@
       "NRR": [
         "5.2L L4 DIESEL Turbocharged",
         "6.6L V8"
+      ]
+    }
+  },
+  "IVECO": {
+    "1980": {
+      "Z340T": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "Z450T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1981": {
+      "Z340T": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "Z450T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1982": {
+      "Z340T": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "Z450T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1983": {
+      "Z340T": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "Z450T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1984": {
+      "Z340T": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "Z450T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1985": {
+      "Z340T": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "Z450T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1986": {
+      "Z340T": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "Z450T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1987": {
+      "EURO 110": [
+        "5.2L L6 DIESEL"
+      ],
+      "EURO 220": [
+        "5.2L L6 DIESEL"
+      ],
+      "EUROTURBO 120TA": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 220T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 230T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 335T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 340T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 435T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 450T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "Z450T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1988": {
+      "EURO 110": [
+        "5.2L L6 DIESEL"
+      ],
+      "EURO 220": [
+        "5.2L L6 DIESEL"
+      ],
+      "EUROTURBO 120TA": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 220T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 230T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 335T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 340T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 435T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 450T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1989": {
+      "EUROTURBO 335T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 340T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 435T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 450T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1990": {
+      "EUROTURBO 335T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 340T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 435T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "EUROTURBO 450T": [
+        "5.9L L6 DIESEL Turbocharged"
+      ]
+    }
+  },
+  "JAC": {
+    "2018": {
+      "J4": [
+        "1.5L L4"
+      ],
+      "SEI 2": [
+        "1.5L L4"
+      ],
+      "SEI 3": [
+        "1.6L L4"
+      ]
+    },
+    "2019": {
+      "FRISON": [
+        "2.0L L4 Turbocharged"
+      ],
+      "J4": [
+        "1.5L L4"
+      ],
+      "SEI 2": [
+        "1.5L L4"
+      ],
+      "SEI 3": [
+        "1.6L L4"
+      ],
+      "SEI 7": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2020": {
+      "EJ4": [
+        "ELECTRIC"
+      ],
+      "ESEI 1": [
+        "ELECTRIC"
+      ],
+      "ESEI 2": [
+        "ELECTRIC"
+      ],
+      "ESEI 4": [
+        "ELECTRIC"
+      ],
+      "FRISON": [
+        "2.0L L4 Turbocharged"
+      ],
+      "J4": [
+        "1.5L L4"
+      ],
+      "SEI 2": [
+        "1.5L L4"
+      ],
+      "SEI 3": [
+        "1.6L L4"
+      ],
+      "SEI 4": [
+        "1.5L L4 Turbocharged"
+      ],
+      "SEI 7": [
+        "2.0L L4 Turbocharged"
+      ],
+      "X200": [
+        "2.0L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2021": {
+      "E SUNRAY": [
+        "ELECTRIC"
+      ],
+      "E X350": [
+        "ELECTRIC"
+      ],
+      "EJ4": [
+        "ELECTRIC"
+      ],
+      "ESEI 1": [
+        "ELECTRIC"
+      ],
+      "ESEI 2": [
+        "ELECTRIC"
+      ],
+      "ESEI 4": [
+        "ELECTRIC"
+      ],
+      "FRISON": [
+        "2.0L L4 Turbocharged"
+      ],
+      "J4": [
+        "1.5L L4"
+      ],
+      "J7": [
+        "1.5L L4 Turbocharged"
+      ],
+      "SEI 2": [
+        "1.5L L4"
+      ],
+      "SEI 3": [
+        "1.6L L4"
+      ],
+      "SEI 4": [
+        "1.5L L4 Turbocharged"
+      ],
+      "SEI 7": [
+        "1.5L L4 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "SUNRAY": [
+        "2.7L L4 DIESEL Turbocharged"
+      ],
+      "X200": [
+        "2.0L L4 DIESEL Turbocharged"
+      ],
+      "X250": [
+        "2.7L L4 DIESEL Turbocharged"
+      ],
+      "X350": [
+        "2.7L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2022": {
+      "E SUNRAY": [
+        "ELECTRIC"
+      ],
+      "E X350": [
+        "ELECTRIC"
+      ],
+      "E10X": [
+        "ELECTRIC"
+      ],
+      "EJ7": [
+        "ELECTRIC"
+      ],
+      "ESEI 4": [
+        "ELECTRIC"
+      ],
+      "FRISON": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "J7": [
+        "1.5L L4 Turbocharged"
+      ],
+      "SEI 2": [
+        "1.5L L4"
+      ],
+      "SEI 3": [
+        "1.6L L4"
+      ],
+      "SEI 4": [
+        "1.5L L4 Turbocharged"
+      ],
+      "SEI 7": [
+        "1.5L L4 Turbocharged"
+      ],
+      "SUNRAY": [
+        "2.7L L4 DIESEL Turbocharged"
+      ],
+      "X200": [
+        "2.0L L4 DIESEL Turbocharged"
+      ],
+      "X250": [
+        "2.7L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2023": {
+      "E SUNRAY": [
+        "ELECTRIC"
+      ],
+      "E10X": [
+        "ELECTRIC"
+      ],
+      "EJ7": [
+        "ELECTRIC"
+      ],
+      "ESEI 4": [
+        "ELECTRIC"
+      ],
+      "FRISON": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "J7": [
+        "1.5L L4 Turbocharged"
+      ],
+      "SEI 2": [
+        "1.5L L4"
+      ],
+      "SEI 3": [
+        "1.6L L4"
+      ],
+      "SEI 4": [
+        "1.5L L4 Turbocharged",
+        "1.6L L4"
+      ],
+      "SEI 6": [
+        "1.5L L4 Turbocharged"
+      ],
+      "SEI 7": [
+        "1.5L L4 Turbocharged"
+      ],
+      "SUNRAY": [
+        "2.7L L4 DIESEL Turbocharged"
+      ],
+      "X200": [
+        "2.0L L4 DIESEL Turbocharged"
+      ],
+      "X250": [
+        "2.7L L4 DIESEL Turbocharged"
+      ],
+      "X350": [
+        "2.7L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2024": {
+      "E SUNRAY": [
+        "ELECTRIC"
+      ],
+      "E10X": [
+        "ELECTRIC"
+      ],
+      "EJ7": [
+        "ELECTRIC"
+      ],
+      "ESEI 4": [
+        "ELECTRIC"
+      ],
+      "FRISON": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "J7": [
+        "1.5L L4 Turbocharged"
+      ],
+      "SEI 4": [
+        "1.6L L4"
+      ],
+      "SEI 6": [
+        "1.5L L4 Turbocharged"
+      ],
+      "SEI 7": [
+        "1.5L L4 Turbocharged"
+      ],
+      "X200": [
+        "2.0L L4 DIESEL Turbocharged"
+      ]
+    },
+    "2025": {
+      "FRISON": [
+        "2.0L L4 Turbocharged"
+      ]
+    }
+  },
+  "JAGUAR": {
+    "1937": {
+      "SS100": [
+        "All Engines"
+      ]
+    },
+    "1938": {
+      "SS100": [
+        "All Engines"
+      ]
+    },
+    "1939": {
+      "SS100": [
+        "All Engines"
+      ]
+    },
+    "1940": {
+      "SS100": [
+        "All Engines"
+      ]
+    },
+    "1946": {
+      "MARK IV": [
+        "2.7L 162cid L6",
+        "3.5L 213cid L6"
+      ]
+    },
+    "1947": {
+      "MARK IV": [
+        "2.7L 162cid L6",
+        "3.5L 213cid L6"
+      ]
+    },
+    "1948": {
+      "MARK IV": [
+        "2.7L 162cid L6",
+        "3.5L 213cid L6"
+      ]
+    },
+    "1949": {
+      "MARK V": [
+        "2.7L 162cid L6",
+        "3.5L 213cid L6"
+      ],
+      "XK120": [
+        "3.4L 210cid L6"
+      ]
+    },
+    "1950": {
+      "MARK V": [
+        "2.7L L6",
+        "3.5L L6"
+      ],
+      "XK120": [
+        "3.4L L6"
+      ]
+    },
+    "1951": {
+      "C-TYPE": [
+        "3.4L L6"
+      ],
+      "MARK VII": [
+        "3.4L L6"
+      ],
+      "XK120": [
+        "3.4L L6"
+      ]
+    },
+    "1952": {
+      "C-TYPE": [
+        "3.4L L6"
+      ],
+      "MARK VII": [
+        "3.4L L6"
+      ],
+      "XK120": [
+        "3.4L L6"
+      ]
+    },
+    "1953": {
+      "C-TYPE": [
+        "3.4L L6"
+      ],
+      "MARK VII": [
+        "3.4L L6"
+      ],
+      "XK120": [
+        "3.4L L6"
+      ]
+    },
+    "1954": {
+      "D-TYPE": [
+        "3.4L L6"
+      ],
+      "MARK VII": [
+        "3.4L L6"
+      ],
+      "XK120": [
+        "3.4L L6"
+      ]
+    },
+    "1955": {
+      "2.4": [
+        "2.5L L6"
+      ],
+      "D-TYPE": [
+        "3.4L L6"
+      ],
+      "MARK VII": [
+        "3.4L L6"
+      ],
+      "XK140": [
+        "3.4L L6"
+      ]
+    },
+    "1956": {
+      "2.4": [
+        "2.5L L6"
+      ],
+      "D-TYPE": [
+        "3.4L L6"
+      ],
+      "MARK VII": [
+        "3.4L L6"
+      ],
+      "XK140": [
+        "3.4L L6"
+      ]
+    },
+    "1957": {
+      "2.4": [
+        "2.5L L6"
+      ],
+      "3.4": [
+        "3.4L L6"
+      ],
+      "MARK VII": [
+        "3.4L L6"
+      ],
+      "MARK VIII": [
+        "3.4L L6"
+      ],
+      "XK140": [
+        "3.4L L6"
+      ],
+      "XKSS": [
+        "3.4L L6"
+      ]
+    },
+    "1958": {
+      "2.4": [
+        "2.5L L6"
+      ],
+      "3.4": [
+        "3.4L L6"
+      ],
+      "MARK VIII": [
+        "3.4L L6"
+      ],
+      "XK150": [
+        "3.4L L6",
+        "3.8L L6"
+      ]
+    },
+    "1959": {
+      "2.4": [
+        "2.5L L6"
+      ],
+      "3.4": [
+        "3.4L L6"
+      ],
+      "MARK IX": [
+        "3.4L L6",
+        "3.8L L6"
+      ],
+      "XK150": [
+        "3.4L L6",
+        "3.8L L6"
+      ]
+    },
+    "1960": {
+      "2.4": [
+        "2.5L L6"
+      ],
+      "3.4": [
+        "3.4L L6"
+      ],
+      "3.8": [
+        "3.8L L6"
+      ],
+      "MARK 2": [
+        "3.4L L6"
+      ],
+      "MARK IX": [
+        "3.4L L6",
+        "3.8L L6"
+      ],
+      "XK150": [
+        "3.4L L6",
+        "3.8L L6"
+      ]
+    },
+    "1961": {
+      "2.4": [
+        "2.5L L6"
+      ],
+      "3.4": [
+        "3.4L L6"
+      ],
+      "3.8": [
+        "3.8L L6"
+      ],
+      "MARK IX": [
+        "3.4L L6",
+        "3.8L L6"
+      ],
+      "XK150": [
+        "3.4L L6",
+        "3.8L L6"
+      ],
+      "XKE": [
+        "3.8L L6"
+      ]
+    },
+    "1962": {
+      "2.4": [
+        "2.5L L6"
+      ],
+      "3.4": [
+        "3.4L L6"
+      ],
+      "3.8": [
+        "3.8L L6"
+      ],
+      "MARK 2": [
+        "3.4L L6"
+      ],
+      "MARK X": [
+        "3.8L L6"
+      ],
+      "XKE": [
+        "3.8L L6"
+      ]
+    },
+    "1963": {
+      "2.4": [
+        "2.5L L6"
+      ],
+      "3.4": [
+        "3.4L L6"
+      ],
+      "3.8": [
+        "3.8L L6"
+      ],
+      "MARK X": [
+        "3.8L L6"
+      ],
+      "XKE": [
+        "3.8L L6"
+      ]
+    },
+    "1964": {
+      "2.4": [
+        "2.5L L6"
+      ],
+      "3.4": [
+        "3.4L L6"
+      ],
+      "3.8": [
+        "3.8L L6"
+      ],
+      "MARK X": [
+        "3.8L L6",
+        "4.2L L6"
+      ],
+      "XKE": [
+        "3.8L L6",
+        "4.2L L6"
+      ]
+    },
+    "1965": {
+      "2.4": [
+        "2.5L L6"
+      ],
+      "3.4": [
+        "3.4L L6"
+      ],
+      "3.8": [
+        "3.8L L6"
+      ],
+      "MARK X": [
+        "4.2L L6"
+      ],
+      "XKE": [
+        "4.2L L6"
+      ]
+    },
+    "1966": {
+      "2.4": [
+        "2.5L L6"
+      ],
+      "3.4": [
+        "3.4L L6"
+      ],
+      "3.8": [
+        "3.8L L6"
+      ],
+      "MARK X": [
+        "4.2L L6"
+      ],
+      "XKE": [
+        "4.2L L6"
+      ]
+    },
+    "1967": {
+      "2.4": [
+        "2.5L L6"
+      ],
+      "240": [
+        "2.5L L6"
+      ],
+      "3.4": [
+        "3.4L L6"
+      ],
+      "3.8": [
+        "3.8L L6"
+      ],
+      "340": [
+        "3.4L L6"
+      ],
+      "420": [
+        "4.2L L6"
+      ],
+      "XKE": [
+        "4.2L L6"
+      ]
+    },
+    "1968": {
+      "240": [
+        "2.5L L6"
+      ],
+      "3.4": [
+        "3.4L L6"
+      ],
+      "3.8": [
+        "3.8L L6"
+      ],
+      "340": [
+        "3.4L L6"
+      ],
+      "420": [
+        "4.2L L6"
+      ],
+      "XJ": [
+        "2.8L L6"
+      ],
+      "XKE": [
+        "4.2L L6"
+      ]
+    },
+    "1969": {
+      "240": [
+        "2.5L L6"
+      ],
+      "3.8": [
+        "3.8L L6"
+      ],
+      "340": [
+        "3.4L L6"
+      ],
+      "XJ": [
+        "2.8L L6",
+        "4.2L L6"
+      ],
+      "XKE": [
+        "4.2L L6"
+      ]
+    },
+    "1970": {
+      "340": [
+        "3.4L L6"
+      ],
+      "XJ": [
+        "2.8L L6",
+        "4.2L L6"
+      ],
+      "XKE": [
+        "4.2L L6"
+      ]
+    },
+    "1971": {
+      "XJ": [
+        "2.8L L6",
+        "4.2L L6"
+      ],
+      "XKE": [
+        "4.2L L6",
+        "5.3L V12"
+      ]
+    },
+    "1972": {
+      "XJ6": [
+        "4.2L L6"
+      ],
+      "XKE": [
+        "5.3L V12"
+      ]
+    },
+    "1973": {
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.2L L6"
+      ],
+      "XKE": [
+        "5.3L V12"
+      ]
+    },
+    "1974": {
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.2L L6"
+      ],
+      "XKE": [
+        "5.3L V12"
+      ]
+    },
+    "1975": {
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.2L L6"
+      ]
+    },
+    "1976": {
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.2L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1977": {
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.2L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1978": {
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.2L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1979": {
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.2L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1980": {
+      "XJ6": [
+        "4.2L L6",
+        "5.3L V12"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1981": {
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.2L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1982": {
+      "VANDEN PLAS": [
+        "4.2L L6"
+      ],
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.2L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1983": {
+      "VANDEN PLAS": [
+        "4.2L L6"
+      ],
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.2L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1984": {
+      "VANDEN PLAS": [
+        "4.2L L6"
+      ],
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.2L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1985": {
+      "VANDEN PLAS": [
+        "4.2L L6"
+      ],
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.2L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1986": {
+      "VANDEN PLAS": [
+        "4.2L L6"
+      ],
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.2L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1987": {
+      "VANDEN PLAS": [
+        "4.2L L6"
+      ],
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "3.6L L6",
+        "4.2L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1988": {
+      "VANDEN PLAS": [
+        "3.6L L6"
+      ],
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "3.6L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1989": {
+      "VANDEN PLAS": [
+        "3.6L L6"
+      ],
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "3.6L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1990": {
+      "VANDEN PLAS": [
+        "4.0L L6"
+      ],
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.0L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1991": {
+      "VANDEN PLAS": [
+        "4.0L L6"
+      ],
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.0L L6"
+      ],
+      "XJS": [
+        "5.3L V12"
+      ]
+    },
+    "1992": {
+      "VANDEN PLAS": [
+        "4.0L L6"
+      ],
+      "XJ12": [
+        "5.3L V12"
+      ],
+      "XJ6": [
+        "4.0L L6"
+      ],
+      "XJS": [
+        "4.0L L6",
+        "5.3L V12"
+      ]
+    },
+    "1993": {
+      "VANDEN PLAS": [
+        "4.0L L6"
+      ],
+      "XJ12": [
+        "6.0L V12"
+      ],
+      "XJ6": [
+        "4.0L L6"
+      ],
+      "XJRS": [
+        "6.0L V12"
+      ],
+      "XJS": [
+        "4.0L L6",
+        "6.0L V12"
+      ]
+    },
+    "1994": {
+      "VANDEN PLAS": [
+        "4.0L L6"
+      ],
+      "XJ12": [
+        "6.0L V12"
+      ],
+      "XJ6": [
+        "4.0L L6"
+      ],
+      "XJS": [
+        "4.0L L6",
+        "6.0L V12"
+      ]
+    },
+    "1995": {
+      "VANDEN PLAS": [
+        "4.0L L6"
+      ],
+      "XJ12": [
+        "6.0L V12"
+      ],
+      "XJ6": [
+        "4.0L L6"
+      ],
+      "XJR": [
+        "4.0L L6 Supercharged"
+      ],
+      "XJS": [
+        "4.0L L6",
+        "6.0L V12"
+      ]
+    },
+    "1996": {
+      "VANDEN PLAS": [
+        "4.0L L6"
+      ],
+      "XJ12": [
+        "6.0L V12"
+      ],
+      "XJ6": [
+        "4.0L L6"
+      ],
+      "XJR": [
+        "4.0L L6 Supercharged"
+      ],
+      "XJS": [
+        "4.0L L6"
+      ]
+    },
+    "1997": {
+      "VANDEN PLAS": [
+        "4.0L L6"
+      ],
+      "XJ6": [
+        "4.0L L6"
+      ],
+      "XJR": [
+        "4.0L L6 Supercharged"
+      ],
+      "XK8": [
+        "4.0L V8"
+      ]
+    },
+    "1998": {
+      "VANDEN PLAS": [
+        "4.0L V8"
+      ],
+      "XJ8": [
+        "4.0L V8"
+      ],
+      "XJR": [
+        "4.0L V8 Supercharged"
+      ],
+      "XK8": [
+        "4.0L V8"
+      ]
+    },
+    "1999": {
+      "S-TYPE": [
+        "4.0L V8"
+      ],
+      "VANDEN PLAS": [
+        "4.0L V8"
+      ],
+      "XJ8": [
+        "4.0L V8"
+      ],
+      "XJR": [
+        "4.0L V8 Supercharged"
+      ],
+      "XK8": [
+        "4.0L V8"
+      ]
+    },
+    "2000": {
+      "S-TYPE": [
+        "3.0L V6",
+        "4.0L V8"
+      ],
+      "VANDEN PLAS": [
+        "4.0L V8",
+        "4.0L V8 Supercharged"
+      ],
+      "XJ8": [
+        "4.0L V8"
+      ],
+      "XJR": [
+        "4.0L V8 Supercharged"
+      ],
+      "XK8": [
+        "4.0L V8"
+      ],
+      "XKR": [
+        "4.0L V8 Supercharged"
+      ]
+    },
+    "2001": {
+      "S-TYPE": [
+        "3.0L V6",
+        "4.0L V8"
+      ],
+      "VANDEN PLAS": [
+        "4.0L V8",
+        "4.0L V8 Supercharged"
+      ],
+      "X-TYPE": [
+        "2.5L V6",
+        "3.0L V6"
+      ],
+      "XJ8": [
+        "4.0L V8"
+      ],
+      "XJR": [
+        "4.0L V8 Supercharged"
+      ],
+      "XK8": [
+        "4.0L V8"
+      ],
+      "XKR": [
+        "4.0L V8 Supercharged"
+      ]
+    },
+    "2002": {
+      "S-TYPE": [
+        "3.0L V6",
+        "4.0L V8"
+      ],
+      "VANDEN PLAS": [
+        "4.0L V8",
+        "4.0L V8 Supercharged"
+      ],
+      "X-TYPE": [
+        "2.5L V6",
+        "3.0L V6"
+      ],
+      "XJ8": [
+        "4.0L V8"
+      ],
+      "XJR": [
+        "4.0L V8 Supercharged"
+      ],
+      "XK8": [
+        "4.0L V8"
+      ],
+      "XKR": [
+        "4.0L V8 Supercharged"
+      ]
+    },
+    "2003": {
+      "S-TYPE": [
+        "3.0L V6",
+        "4.2L V8",
+        "4.2L V8 Supercharged"
+      ],
+      "VANDEN PLAS": [
+        "4.0L V8",
+        "4.0L V8 Supercharged"
+      ],
+      "X-TYPE": [
+        "2.5L V6",
+        "3.0L V6"
+      ],
+      "XJ8": [
+        "4.0L V8"
+      ],
+      "XJR": [
+        "4.0L V8 Supercharged"
+      ],
+      "XK8": [
+        "4.2L V8"
+      ],
+      "XKR": [
+        "4.2L V8",
+        "4.2L V8 Supercharged"
+      ]
+    },
+    "2004": {
+      "S-TYPE": [
+        "3.0L V6",
+        "4.2L V8",
+        "4.2L V8 Supercharged"
+      ],
+      "VANDEN PLAS": [
+        "4.2L V8"
+      ],
+      "X-TYPE": [
+        "2.5L V6",
+        "3.0L V6"
+      ],
+      "XJ8": [
+        "4.2L V8"
+      ],
+      "XJR": [
+        "4.2L V8 Supercharged"
+      ],
+      "XK8": [
+        "4.2L V8"
+      ],
+      "XKR": [
+        "4.2L V8",
+        "4.2L V8 Supercharged"
+      ]
+    },
+    "2005": {
+      "S-TYPE": [
+        "3.0L V6",
+        "4.2L V8",
+        "4.2L V8 Supercharged"
+      ],
+      "SUPER V8": [
+        "4.2L V8 Supercharged"
+      ],
+      "VANDEN PLAS": [
+        "4.2L V8"
+      ],
+      "X-TYPE": [
+        "2.5L V6",
+        "3.0L V6"
+      ],
+      "XJ8": [
+        "4.2L V8"
+      ],
+      "XJR": [
+        "4.2L V8 Supercharged"
+      ],
+      "XK8": [
+        "4.2L V8"
+      ],
+      "XKR": [
+        "4.2L V8 Supercharged"
+      ]
+    },
+    "2006": {
+      "S-TYPE": [
+        "3.0L V6",
+        "4.2L V8",
+        "4.2L V8 Supercharged"
+      ],
+      "SUPER V8": [
+        "4.2L V8 Supercharged"
+      ],
+      "VANDEN PLAS": [
+        "4.2L V8",
+        "4.2L V8 Supercharged"
+      ],
+      "X-TYPE": [
+        "3.0L V6"
+      ],
+      "XJ8": [
+        "4.2L V8"
+      ],
+      "XJR": [
+        "4.2L V8 Supercharged"
+      ],
+      "XK8": [
+        "4.2L V8"
+      ],
+      "XKR": [
+        "4.2L V8 Supercharged"
+      ]
+    },
+    "2007": {
+      "S-TYPE": [
+        "3.0L V6",
+        "4.2L V8",
+        "4.2L V8 Supercharged"
+      ],
+      "SUPER V8": [
+        "4.2L V8 Supercharged"
+      ],
+      "VANDEN PLAS": [
+        "4.2L V8",
+        "4.2L V8 Supercharged"
+      ],
+      "X-TYPE": [
+        "3.0L V6"
+      ],
+      "XJ8": [
+        "4.2L V8"
+      ],
+      "XJR": [
+        "4.2L V8 Supercharged"
+      ],
+      "XK": [
+        "4.2L V8"
+      ],
+      "XKR": [
+        "4.2L V8 Supercharged"
+      ]
+    },
+    "2008": {
+      "S-TYPE": [
+        "3.0L V6",
+        "4.2L V8",
+        "4.2L V8 Supercharged"
+      ],
+      "SUPER V8": [
+        "4.2L V8 Supercharged"
+      ],
+      "VANDEN PLAS": [
+        "4.2L V8",
+        "4.2L V8 Supercharged"
+      ],
+      "X-TYPE": [
+        "3.0L V6"
+      ],
+      "XJ8": [
+        "4.2L V8"
+      ],
+      "XJR": [
+        "4.2L V8 Supercharged"
+      ],
+      "XK": [
+        "4.2L V8"
+      ],
+      "XKR": [
+        "4.2L V8 Supercharged"
+      ]
+    },
+    "2009": {
+      "SUPER V8": [
+        "4.2L V8 Supercharged"
+      ],
+      "VANDEN PLAS": [
+        "4.2L V8",
+        "4.2L V8 Supercharged"
+      ],
+      "XF": [
+        "4.2L V8",
+        "4.2L V8 Supercharged"
+      ],
+      "XJ8": [
+        "4.2L V8"
+      ],
+      "XJR": [
+        "4.2L V8 Supercharged"
+      ],
+      "XK": [
+        "4.2L V8"
+      ],
+      "XKR": [
+        "4.2L V8 Supercharged"
+      ]
+    },
+    "2010": {
+      "XF": [
+        "4.2L V8",
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ],
+      "XJ": [
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ],
+      "XK": [
+        "5.0L V8"
+      ],
+      "XKR": [
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2011": {
+      "XF": [
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ],
+      "XJ": [
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ],
+      "XK": [
+        "5.0L V8"
+      ],
+      "XKR": [
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2012": {
+      "XF": [
+        "3.0L V6",
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ],
+      "XJ": [
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ],
+      "XK": [
+        "5.0L V8"
+      ],
+      "XKR": [
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2013": {
+      "XF": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XJ": [
+        "3.0L V6 Supercharged",
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ],
+      "XK": [
+        "5.0L V8"
+      ],
+      "XKR": [
+        "3.0L V6",
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2014": {
+      "F-TYPE": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XF": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XJ": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XJR": [
+        "5.0L V8 Supercharged"
+      ],
+      "XK": [
+        "5.0L V8"
+      ],
+      "XKR": [
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2015": {
+      "F-TYPE": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XF": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XJ": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XJR": [
+        "5.0L V8 Supercharged"
+      ],
+      "XK": [
+        "5.0L V8"
+      ],
+      "XKR": [
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2016": {
+      "F-TYPE": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XE": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged"
+      ],
+      "XF": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged"
+      ],
+      "XJ": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XJR": [
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2017": {
+      "F-PACE": [
+        "2.0L L4 DIESEL Turbocharged",
+        "3.0L V6 Supercharged"
+      ],
+      "F-TYPE": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XE": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged"
+      ],
+      "XF": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged"
+      ],
+      "XJ": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XJR": [
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2018": {
+      "E-PACE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "F-PACE": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged"
+      ],
+      "F-TYPE": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XE": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged"
+      ],
+      "XF": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged"
+      ],
+      "XJ": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XJR575": [
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2019": {
+      "E-PACE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "F-PACE": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "F-TYPE": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "I-PACE": [
+        "ELECTRIC"
+      ],
+      "XE": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "XF": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged"
+      ],
+      "XJ": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2020": {
+      "E-PACE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "F-PACE": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "F-TYPE": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "I-PACE": [
+        "ELECTRIC"
+      ],
+      "XE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "XF": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged"
+      ]
+    },
+    "2021": {
+      "E-PACE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "F-PACE": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "F-TYPE": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "I-PACE": [
+        "ELECTRIC"
+      ],
+      "XE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "XF": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2022": {
+      "E-PACE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "F-PACE": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "F-TYPE": [
+        "2.0L L4 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "I-PACE": [
+        "ELECTRIC"
+      ],
+      "XF": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2023": {
+      "E-PACE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "F-PACE": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "F-TYPE": [
+        "2.0L L4 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "I-PACE": [
+        "ELECTRIC"
+      ],
+      "XF": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2024": {
+      "E-PACE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "F-PACE": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "F-TYPE": [
+        "5.0L V8 Supercharged"
+      ],
+      "I-PACE": [
+        "ELECTRIC"
+      ],
+      "XF": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2025": {
+      "F-PACE": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "I-PACE": [
+        "ELECTRIC"
+      ]
+    }
+  },
+  "JEEP": {
+    "2005": {
+      "GRAND CHEROKEE": [
+        "3.7L V6",
+        "4.7L V8",
+        "5.7L V8"
+      ],
+      "LIBERTY": [
+        "2.4L L4",
+        "2.8L L4 DIESEL Turbocharged",
+        "3.7L V6"
+      ],
+      "WRANGLER": [
+        "2.4L L4",
+        "4.0L L6"
+      ]
+    },
+    "2006": {
+      "COMMANDER": [
+        "3.7L V6",
+        "4.7L V8",
+        "5.7L V8"
+      ],
+      "GRAND CHEROKEE": [
+        "3.7L V6",
+        "4.7L V8",
+        "5.7L V8",
+        "6.1L V8"
+      ],
+      "LIBERTY": [
+        "2.8L L4 DIESEL Turbocharged",
+        "3.7L V6"
+      ],
+      "WRANGLER": [
+        "2.4L L4",
+        "4.0L L6"
+      ]
+    },
+    "2007": {
+      "COMMANDER": [
+        "3.7L V6",
+        "4.7L V8",
+        "5.7L V8"
+      ],
+      "COMPASS": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "GRAND CHEROKEE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.7L V6",
+        "4.7L V8",
+        "5.7L V8",
+        "6.1L V8"
+      ],
+      "LIBERTY": [
+        "3.7L V6"
+      ],
+      "PATRIOT": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "3.8L V6"
+      ]
+    },
+    "2008": {
+      "COMMANDER": [
+        "3.7L V6",
+        "4.7L V8",
+        "5.7L V8"
+      ],
+      "COMPASS": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "GRAND CHEROKEE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.7L V6",
+        "4.7L V8",
+        "5.7L V8",
+        "6.1L V8"
+      ],
+      "LIBERTY": [
+        "3.7L V6"
+      ],
+      "PATRIOT": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "3.8L V6"
+      ]
+    },
+    "2009": {
+      "COMMANDER": [
+        "3.7L V6",
+        "4.7L V8",
+        "5.7L V8"
+      ],
+      "COMPASS": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "GRAND CHEROKEE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.7L V6",
+        "4.7L V8",
+        "5.7L V8",
+        "6.1L V8"
+      ],
+      "LIBERTY": [
+        "3.7L V6"
+      ],
+      "PATRIOT": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "3.8L V6"
+      ]
+    },
+    "2010": {
+      "COMMANDER": [
+        "3.7L V6",
+        "4.7L V8",
+        "5.7L V8"
+      ],
+      "COMPASS": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "GRAND CHEROKEE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.7L V6",
+        "4.7L V8",
+        "5.7L V8",
+        "6.1L V8"
+      ],
+      "LIBERTY": [
+        "3.7L V6"
+      ],
+      "PATRIOT": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "3.8L V6"
+      ]
+    },
+    "2011": {
+      "COMPASS": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "GRAND CHEROKEE": [
+        "3.6L V6",
+        "5.7L V8"
+      ],
+      "LIBERTY": [
+        "3.7L V6"
+      ],
+      "PATRIOT": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "3.8L V6"
+      ]
+    },
+    "2012": {
+      "COMPASS": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "GRAND CHEROKEE": [
+        "3.6L V6",
+        "5.7L V8",
+        "6.4L V8"
+      ],
+      "LIBERTY": [
+        "3.7L V6"
+      ],
+      "PATRIOT": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "3.6L V6"
+      ]
+    },
+    "2013": {
+      "COMPASS": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "GRAND CHEROKEE": [
+        "3.6L V6",
+        "5.7L V8",
+        "6.4L V8"
+      ],
+      "LIBERTY": [
+        "3.7L V6"
+      ],
+      "PATRIOT": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "3.6L V6"
+      ]
+    },
+    "2014": {
+      "CHEROKEE": [
+        "2.4L L4",
+        "3.2L V6"
+      ],
+      "COMPASS": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "GRAND CHEROKEE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6",
+        "5.7L V8",
+        "6.4L V8"
+      ],
+      "PATRIOT": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "3.6L V6"
+      ]
+    },
+    "2015": {
+      "CHEROKEE": [
+        "2.4L L4",
+        "3.2L V6"
+      ],
+      "COMPASS": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "GRAND CHEROKEE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6",
+        "5.7L V8",
+        "6.4L V8"
+      ],
+      "PATRIOT": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "RENEGADE": [
+        "1.4L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "3.6L V6"
+      ]
+    },
+    "2016": {
+      "CHEROKEE": [
+        "2.4L L4",
+        "3.2L V6"
+      ],
+      "COMPASS": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "GRAND CHEROKEE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6",
+        "5.7L V8",
+        "6.4L V8"
+      ],
+      "PATRIOT": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "RENEGADE": [
+        "1.4L L4 Turbocharged",
+        "2.4L L4 DOHC",
+        "2.4L L4 SOHC"
+      ],
+      "WRANGLER": [
+        "3.6L V6"
+      ]
+    },
+    "2017": {
+      "CHEROKEE": [
+        "2.4L L4",
+        "3.2L V6"
+      ],
+      "COMPASS": [
+        "2.0L L4",
+        "2.4L L4 DOHC",
+        "2.4L L4 SOHC"
+      ],
+      "GRAND CHEROKEE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6",
+        "5.7L V8",
+        "6.4L V8"
+      ],
+      "PATRIOT": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "RENEGADE": [
+        "1.4L L4 Turbocharged",
+        "1.8L L4",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "3.6L V6"
+      ]
+    },
+    "2018": {
+      "CHEROKEE": [
+        "2.4L L4",
+        "3.2L V6"
+      ],
+      "COMPASS": [
+        "2.4L L4"
+      ],
+      "GRAND CHEROKEE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6",
+        "5.7L V8",
+        "6.2L V8 Supercharged",
+        "6.4L V8"
+      ],
+      "RENEGADE": [
+        "1.4L L4 Turbocharged",
+        "1.8L L4",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ],
+      "WRANGLER JK": [
+        "3.6L V6"
+      ]
+    },
+    "2019": {
+      "CHEROKEE": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "3.2L V6"
+      ],
+      "COMPASS": [
+        "2.4L L4"
+      ],
+      "GRAND CHEROKEE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6",
+        "5.7L V8",
+        "6.2L V8 Supercharged",
+        "6.4L V8"
+      ],
+      "RENEGADE": [
+        "1.3L L4 Turbocharged",
+        "1.8L L4",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "2.0L L4 Turbocharged",
+        "3.6L V6"
+      ]
+    },
+    "2020": {
+      "CHEROKEE": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "3.2L V6"
+      ],
+      "COMPASS": [
+        "2.4L L4"
+      ],
+      "GLADIATOR": [
+        "3.6L V6"
+      ],
+      "GRAND CHEROKEE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6",
+        "5.7L V8",
+        "6.2L V8 Supercharged",
+        "6.4L V8"
+      ],
+      "RENEGADE": [
+        "1.3L L4 Turbocharged",
+        "1.8L L4",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6"
+      ]
+    },
+    "2021": {
+      "CHEROKEE": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "3.2L V6"
+      ],
+      "COMPASS": [
+        "2.4L L4"
+      ],
+      "GLADIATOR": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6"
+      ],
+      "GRAND CHEROKEE": [
+        "3.6L V6",
+        "5.7L V8",
+        "6.2L V8 Supercharged",
+        "6.4L V8"
+      ],
+      "GRAND CHEROKEE L": [
+        "3.6L V6",
+        "5.7L V8"
+      ],
+      "RENEGADE": [
+        "1.3L L4 Turbocharged",
+        "1.8L L4",
+        "2.4L L4"
+      ],
+      "WRANGLER": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6",
+        "6.4L V8"
+      ]
+    },
+    "2022": {
+      "CHEROKEE": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "3.2L V6"
+      ],
+      "COMPASS": [
+        "2.4L L4"
+      ],
+      "GLADIATOR": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6"
+      ],
+      "GRAND CHEROKEE": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.6L V6",
+        "5.7L V8"
+      ],
+      "GRAND CHEROKEE L": [
+        "3.6L V6",
+        "5.7L V8"
+      ],
+      "GRAND CHEROKEE WK": [
+        "3.6L V6"
+      ],
+      "GRAND WAGONEER": [
+        "3.0L L6 Turbocharged",
+        "6.4L V8"
+      ],
+      "RENEGADE": [
+        "1.3L L4 Turbocharged",
+        "1.8L L4"
+      ],
+      "WAGONEER": [
+        "5.7L V8"
+      ],
+      "WRANGLER": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6",
+        "3.6L V6 ELECTRIC/GAS",
+        "6.4L V8"
+      ]
+    },
+    "2023": {
+      "CHEROKEE": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "COMPASS": [
+        "1.3L L4 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "GLADIATOR": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6"
+      ],
+      "GRAND CHEROKEE": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.6L V6",
+        "5.7L V8"
+      ],
+      "GRAND CHEROKEE L": [
+        "3.6L V6",
+        "5.7L V8"
+      ],
+      "GRAND WAGONEER": [
+        "3.0L L6 Turbocharged",
+        "6.4L V8"
+      ],
+      "GRAND WAGONEER L": [
+        "3.0L L6 Turbocharged"
+      ],
+      "RENEGADE": [
+        "1.3L L4 Turbocharged"
+      ],
+      "WAGONEER": [
+        "3.0L L6 Turbocharged",
+        "5.7L V8"
+      ],
+      "WAGONEER L": [
+        "3.0L L6 Turbocharged"
+      ],
+      "WRANGLER": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 DIESEL Turbocharged",
+        "3.6L V6",
+        "6.4L V8"
+      ]
+    },
+    "2024": {
+      "COMPASS": [
+        "1.3L L4 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "GLADIATOR": [
+        "3.6L V6"
+      ],
+      "GRAND CHEROKEE": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.6L V6",
+        "5.7L V8"
+      ],
+      "GRAND CHEROKEE L": [
+        "3.6L V6",
+        "5.7L V8"
+      ],
+      "GRAND WAGONEER": [
+        "3.0L L6 Turbocharged"
+      ],
+      "GRAND WAGONEER L": [
+        "3.0L L6 Turbocharged"
+      ],
+      "RENEGADE": [
+        "1.3L L4 Turbocharged"
+      ],
+      "WAGONEER": [
+        "3.0L L6 Turbocharged"
+      ],
+      "WAGONEER L": [
+        "3.0L L6 Turbocharged"
+      ],
+      "WRANGLER": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.6L V6",
+        "6.4L V8"
+      ]
+    },
+    "2025": {
+      "COMPASS": [
+        "1.3L L4 Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "GLADIATOR": [
+        "3.6L V6"
+      ],
+      "GRAND CHEROKEE": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.6L V6"
+      ],
+      "GRAND CHEROKEE L": [
+        "3.6L V6"
+      ],
+      "GRAND WAGONEER": [
+        "3.0L L6 Turbocharged"
+      ],
+      "GRAND WAGONEER L": [
+        "3.0L L6 Turbocharged"
+      ],
+      "WAGONEER": [
+        "3.0L L6 Turbocharged"
+      ],
+      "WAGONEER L": [
+        "3.0L L6 Turbocharged"
+      ],
+      "WRANGLER": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.6L V6",
+        "6.4L V8"
       ]
     }
   }

@@ -335,6 +335,21 @@ func HandleClearB2Cache(c *fiber.Ctx) error {
 	return render(c, ui.AdminB2CacheSection(stats))
 }
 
+func HandleRefreshB2Token(c *fiber.Ctx) error {
+	prefix := c.FormValue("prefix")
+	if prefix == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "prefix parameter is required")
+	}
+
+	_, err := b2util.ForceRefreshToken(prefix)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("Failed to refresh token: %v", err))
+	}
+
+	stats := b2util.GetCacheStats()
+	return render(c, ui.AdminB2CacheSection(stats))
+}
+
 func HandleAdminEmbeddingCache(c *fiber.Ctx) error {
 	currentUser, err := CurrentUser(c)
 	if err != nil {

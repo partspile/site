@@ -538,5 +538,29 @@
   {
     "make": "INTERNATIONAL",
     "parent_company": "International Harvester"
+  },
+  {
+    "make": "ISO",
+    "parent_company": "Isotta Fraschini"
+  },
+  {
+    "make": "ISUZU",
+    "parent_company": "Isuzu Motors"
+  },
+  {
+    "make": "IVECO",
+    "parent_company": "CNH Industrial"
+  },
+  {
+    "make": "JAC",
+    "parent_company": "JAC Motors"
+  },
+  {
+    "make": "JAGUAR",
+    "parent_company": "Jaguar Land Rover"
+  },
+  {
+    "make": "JEEP",
+    "parent_company": "Stellantis"
   }
 ] 

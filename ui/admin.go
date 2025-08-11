@@ -667,6 +667,56 @@ func AdminB2CacheSection(stats map[string]interface{}) g.Node {
 			),
 		),
 		Div(
+			Class("bg-gray-100 p-4 rounded-lg mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("TTL Statistics")),
+			Div(
+				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("B2 Token TTL: ")),
+					g.Textf("%s", stats["b2_token_expiry_formatted"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Cache TTL: ")),
+					g.Textf("%s", stats["b2_cache_ttl_formatted"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Life Expectancy Count: ")),
+					g.Textf("%d", stats["life_expectancy_count"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Life Expectancy Mean: ")),
+					g.Textf("%.1fs", stats["life_expectancy_mean"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Current Items: ")),
+					g.Textf("%d", stats["current_items"]),
+				),
+			),
+			Div(
+				Class("grid grid-cols-3 gap-4 mt-4"),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Life Expectancy P50: ")),
+					g.Textf("%.1fs", stats["life_expectancy_p50"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Life Expectancy P95: ")),
+					g.Textf("%.1fs", stats["life_expectancy_p95"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Life Expectancy P99: ")),
+					g.Textf("%.1fs", stats["life_expectancy_p99"]),
+				),
+			),
+		),
+		Div(
 			Class("mb-4"),
 			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Information")),
 			Div(
@@ -678,13 +728,45 @@ func AdminB2CacheSection(stats map[string]interface{}) g.Node {
 			),
 		),
 		Div(
-			Class("flex gap-4"),
-			Button(
-				Class("px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"),
-				hx.Post("/api/admin/b2-cache/clear"),
-				hx.Target("#admin-section-content"),
-				hx.Swap("innerHTML"),
-				g.Text("Clear Cache"),
+			Class("mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Actions")),
+			Div(
+				Class("bg-white border border-gray-300 rounded-lg p-4"),
+				Div(
+					Class("flex gap-4 mb-4"),
+					Button(
+						Class("px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"),
+						hx.Post("/api/admin/b2-cache/clear"),
+						hx.Target("#admin-section-content"),
+						hx.Swap("innerHTML"),
+						g.Text("Clear All Cache"),
+					),
+				),
+				Div(
+					Class("border-t pt-4"),
+					H3(Class("text-md font-semibold mb-2"), g.Text("Refresh Specific Token")),
+					P(Class("text-gray-600 mb-3"),
+						g.Text("Enter an ad directory prefix (e.g., '22/') to refresh its B2 download token:"),
+					),
+					Form(
+						Class("flex gap-2"),
+						hx.Post("/api/admin/b2-cache/refresh"),
+						hx.Target("#admin-section-content"),
+						hx.Swap("innerHTML"),
+						Input(
+							Type("text"),
+							Name("prefix"),
+							Placeholder("e.g., 22/"),
+							Class("flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"),
+							Required(),
+						),
+						Button(
+							Type("submit"),
+							Class("px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"),
+							g.Text("Refresh Token"),
+						),
+					),
+				),
 			),
 		),
 	)

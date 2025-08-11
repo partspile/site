@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/parts-pile/site/cache"
 	"github.com/parts-pile/site/config"
@@ -31,18 +32,42 @@ func GetB2DownloadTokenForPrefixCached(prefix string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	tokenCache.Set(prefix, token, int64(len(token)))
+	// Set TTL to be slightly less than the actual token expiry to ensure we refresh before expiration
+	// B2 tokens expire in 1 hour (3600 seconds), so we'll cache for 50 minutes (3000 seconds)
+	ttl := time.Duration(config.B2DownloadTokenExpiry-600) * time.Second
+	tokenCache.SetWithTTL(prefix, token, int64(len(token)), ttl)
 	return token, nil
 }
 
 // GetCacheStats returns cache statistics for admin monitoring
 func GetCacheStats() map[string]interface{} {
-	return tokenCache.Stats()
+	stats := tokenCache.Stats()
+
+	// Add B2-specific TTL information
+	stats["b2_token_ttl_seconds"] = config.B2DownloadTokenExpiry
+	stats["b2_cache_ttl_seconds"] = config.B2DownloadTokenExpiry - 600 // 50 minutes
+	stats["b2_cache_ttl_formatted"] = fmt.Sprintf("%.1f minutes", float64(config.B2DownloadTokenExpiry-600)/60)
+	stats["b2_token_expiry_formatted"] = fmt.Sprintf("%.1f minutes", float64(config.B2DownloadTokenExpiry)/60)
+
+	return stats
 }
 
 // ClearCache clears all cached tokens
 func ClearCache() {
 	tokenCache.Clear()
+}
+
+// ForceRefreshToken forces a refresh of the token for a specific prefix
+func ForceRefreshToken(prefix string) (string, error) {
+	token, err := getB2DownloadTokenForPrefix(prefix)
+	if err != nil {
+		return "", err
+	}
+	// Set TTL to be slightly less than the actual token expiry to ensure we refresh before expiration
+	// B2 tokens expire in 1 hour (3600 seconds), so we'll cache for 50 minutes (3000 seconds)
+	ttl := time.Duration(config.B2DownloadTokenExpiry-600) * time.Second
+	tokenCache.SetWithTTL(prefix, token, int64(len(token)), ttl)
+	return token, nil
 }
 
 // getB2DownloadTokenForPrefix returns a B2 download authorization token for a given ad directory prefix (e.g., "22/")

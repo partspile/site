@@ -454,5 +454,29 @@
   {
     "name": "Volkswagen Group",
     "country": "DE"
+  },
+  {
+    "name": "Isotta Fraschini",
+    "country": "IT"
+  },
+  {
+    "name": "Isuzu Motors",
+    "country": "JP"
+  },
+  {
+    "name": "CNH Industrial",
+    "country": "IT"
+  },
+  {
+    "name": "JAC Motors",
+    "country": "CN"
+  },
+  {
+    "name": "Jaguar Land Rover",
+    "country": "GB"
+  },
+  {
+    "name": "Stellantis",
+    "country": "NL"
   }
 ] 

@@ -161,6 +161,7 @@ func main() {
 	adminAPI.Get("/export/ads", handlers.HandleAdminExportAds)
 	adminAPI.Get("/export/transactions", handlers.HandleAdminExportTransactions)
 	adminAPI.Post("/b2-cache/clear", handlers.HandleClearB2Cache)
+	adminAPI.Post("/b2-cache/refresh", handlers.HandleRefreshB2Token)
 	adminAPI.Post("/embedding-cache/clear", handlers.HandleClearEmbeddingCache)
 
 	// User registration/authentication
