@@ -35,6 +35,8 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 					),
 				),
 				FormContainer("registerForm",
+					Action("/api/register/step1"),
+					Method("POST"),
 					FormGroup("Username", "name",
 						Input(
 							Type("text"),
@@ -63,33 +65,6 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 					Div(
 						Class("space-y-3"),
 						Checkbox("offers", "true", "I agree to receive informational text messages", false, false, Required()),
-						Div(
-							Class("flex items-center space-x-2"),
-							Input(
-								Type("checkbox"),
-								Name("terms"),
-								Value("true"),
-								ID("terms-true"),
-								Required(),
-							),
-							Label(
-								For("terms-true"),
-								Class("text-sm"),
-								g.Text("I accept the "),
-								A(
-									Href("/terms"),
-									Class("text-blue-600 hover:text-blue-800 underline"),
-									g.Text("Terms of Service"),
-								),
-								g.Text(" & "),
-								A(
-									Href("/privacy"),
-									Class("text-blue-600 hover:text-blue-800 underline"),
-									g.Text("Privacy Policy"),
-								),
-								g.Text("."),
-							),
-						),
 					),
 					Div(
 						Class("text-xs text-gray-600 bg-gray-50 p-3 rounded border"),
@@ -97,12 +72,9 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 					),
 					ActionButtons(
 						StyledButton("Send Verification Code", ButtonPrimary,
-							hx.Post("/api/register/step1"),
-							hx.Target("#result"),
-							hx.Indicator("#registerForm"),
+							Type("submit"),
 						),
 					),
-					ResultContainer(),
 				),
 			),
 		},

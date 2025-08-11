@@ -399,37 +399,21 @@ func TestCheckboxValidation(t *testing.T) {
 	tests := []struct {
 		name        string
 		offers      string
-		terms       string
 		expectError bool
 	}{
 		{
-			name:        "valid checkboxes",
+			name:        "valid checkbox",
 			offers:      "true",
-			terms:       "true",
 			expectError: false,
 		},
 		{
 			name:        "missing offers",
 			offers:      "",
-			terms:       "true",
 			expectError: true,
 		},
 		{
-			name:        "missing terms",
-			offers:      "true",
-			terms:       "",
-			expectError: true,
-		},
-		{
-			name:        "both missing",
-			offers:      "",
-			terms:       "",
-			expectError: true,
-		},
-		{
-			name:        "wrong values",
+			name:        "wrong value",
 			offers:      "false",
-			terms:       "false",
 			expectError: true,
 		},
 	}
@@ -438,12 +422,11 @@ func TestCheckboxValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test the checkbox validation logic
 			offersValid := tt.offers == "true"
-			termsValid := tt.terms == "true"
-
+			
 			if tt.expectError {
-				assert.False(t, offersValid && termsValid)
+				assert.False(t, offersValid)
 			} else {
-				assert.True(t, offersValid && termsValid)
+				assert.True(t, offersValid)
 			}
 		})
 	}

@@ -155,16 +155,11 @@ func HandleRegisterSubmission(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, "Phone number is required.")
 	}
 
-	// Validate required checkboxes
+	// Validate required checkbox
 	offers := c.FormValue("offers")
-	terms := c.FormValue("terms")
 
 	if offers != "true" {
 		return ValidationErrorResponse(c, "You must agree to receive informational text messages to continue.")
-	}
-
-	if terms != "true" {
-		return ValidationErrorResponse(c, "You must accept the Terms of Service and Privacy Policy to continue.")
 	}
 	if strings.HasPrefix(phone, "+") {
 		matched, _ := regexp.MatchString(`^\+[1-9][0-9]{7,14}$`, phone)

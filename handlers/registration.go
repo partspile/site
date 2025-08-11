@@ -36,16 +36,11 @@ func HandleRegistrationStep1Submission(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, "Phone number is required.")
 	}
 
-	// Validate required checkboxes
+	// Validate required checkbox
 	offers := c.FormValue("offers")
-	terms := c.FormValue("terms")
 
 	if offers != "true" {
 		return ValidationErrorResponse(c, "You must agree to receive informational text messages to continue.")
-	}
-
-	if terms != "true" {
-		return ValidationErrorResponse(c, "You must accept the Terms of Service and Privacy Policy to continue.")
 	}
 
 	// Validate phone format
@@ -200,12 +195,6 @@ func HandleRegistrationStep2Submission(c *fiber.Ctx) error {
 	// Get password from form
 	userPassword := c.FormValue("password")
 	password2 := c.FormValue("password2")
-	termsAccepted := c.FormValue("terms")
-
-	// Check if terms were accepted
-	if termsAccepted != "accepted" {
-		return ValidationErrorResponse(c, "You must accept the Terms of Service and Privacy Policy to continue.")
-	}
 
 	if err := password.ValidatePasswordConfirmation(userPassword, password2); err != nil {
 		return ValidationErrorResponse(c, err.Error())
