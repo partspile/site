@@ -27,6 +27,27 @@ func HandleRegistrationStep1Submission(c *fiber.Ctx) error {
 	phone := c.FormValue("phone")
 	phone = strings.TrimSpace(phone)
 
+	// Validate required fields
+	if strings.TrimSpace(name) == "" {
+		return ValidationErrorResponse(c, "Username is required.")
+	}
+
+	if phone == "" {
+		return ValidationErrorResponse(c, "Phone number is required.")
+	}
+
+	// Validate required checkboxes
+	offers := c.FormValue("offers")
+	terms := c.FormValue("terms")
+
+	if offers != "true" {
+		return ValidationErrorResponse(c, "You must agree to receive informational text messages to continue.")
+	}
+
+	if terms != "true" {
+		return ValidationErrorResponse(c, "You must accept the Terms of Service and Privacy Policy to continue.")
+	}
+
 	// Validate phone format
 	if strings.HasPrefix(phone, "+") {
 		matched, _ := regexp.MatchString(`^\+[1-9][0-9]{7,14}$`, phone)

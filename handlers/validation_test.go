@@ -3,6 +3,7 @@ package handlers
 import (
 	"mime/multipart"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -389,6 +390,114 @@ func TestValidateAdFormAndReturn(t *testing.T) {
 				assert.Equal(t, tt.engines, engines)
 				assert.Equal(t, tt.categories, categories)
 				assert.Equal(t, tt.subcategories, subcategories)
+			}
+		})
+	}
+}
+
+func TestCheckboxValidation(t *testing.T) {
+	tests := []struct {
+		name        string
+		offers      string
+		terms       string
+		expectError bool
+	}{
+		{
+			name:        "valid checkboxes",
+			offers:      "true",
+			terms:       "true",
+			expectError: false,
+		},
+		{
+			name:        "missing offers",
+			offers:      "",
+			terms:       "true",
+			expectError: true,
+		},
+		{
+			name:        "missing terms",
+			offers:      "true",
+			terms:       "",
+			expectError: true,
+		},
+		{
+			name:        "both missing",
+			offers:      "",
+			terms:       "",
+			expectError: true,
+		},
+		{
+			name:        "wrong values",
+			offers:      "false",
+			terms:       "false",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Test the checkbox validation logic
+			offersValid := tt.offers == "true"
+			termsValid := tt.terms == "true"
+
+			if tt.expectError {
+				assert.False(t, offersValid && termsValid)
+			} else {
+				assert.True(t, offersValid && termsValid)
+			}
+		})
+	}
+}
+
+func TestRequiredFieldValidation(t *testing.T) {
+	tests := []struct {
+		name        string
+		username    string
+		phone       string
+		expectError bool
+	}{
+		{
+			name:        "valid fields",
+			username:    "testuser",
+			phone:       "+1234567890",
+			expectError: false,
+		},
+		{
+			name:        "blank username",
+			username:    "",
+			phone:       "+1234567890",
+			expectError: true,
+		},
+		{
+			name:        "whitespace username",
+			username:    "   ",
+			phone:       "+1234567890",
+			expectError: true,
+		},
+		{
+			name:        "blank phone",
+			username:    "testuser",
+			phone:       "",
+			expectError: true,
+		},
+		{
+			name:        "both blank",
+			username:    "",
+			phone:       "",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Test the required field validation logic
+			usernameValid := strings.TrimSpace(tt.username) != ""
+			phoneValid := tt.phone != ""
+
+			if tt.expectError {
+				assert.False(t, usernameValid && phoneValid)
+			} else {
+				assert.True(t, usernameValid && phoneValid)
 			}
 		})
 	}

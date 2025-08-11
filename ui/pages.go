@@ -36,7 +36,13 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 				),
 				FormContainer("registerForm",
 					FormGroup("Username", "name",
-						TextInput("name", "name", ""),
+						Input(
+							Type("text"),
+							ID("name"),
+							Name("name"),
+							Class("w-full p-2 border rounded"),
+							Required(),
+						),
 					),
 					FormGroup("Phone Number", "phone",
 						Div(
@@ -46,10 +52,42 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 								Name("phone"),
 								Class("w-full p-2 border rounded"),
 								g.Attr("placeholder", "+12025550123 or 202-555-0123"),
+								Required(),
 							),
 							Span(
 								Class("text-xs text-gray-500 mt-1"),
 								g.Text("Enter your phone in international format (e.g. +12025550123) or US/Canada format (e.g. 503-523-8780)."),
+							),
+						),
+					),
+					Div(
+						Class("space-y-3"),
+						Checkbox("offers", "true", "I agree to receive informational text messages", false, false, Required()),
+						Div(
+							Class("flex items-center space-x-2"),
+							Input(
+								Type("checkbox"),
+								Name("terms"),
+								Value("true"),
+								ID("terms-true"),
+								Required(),
+							),
+							Label(
+								For("terms-true"),
+								Class("text-sm"),
+								g.Text("I accept the "),
+								A(
+									Href("/terms"),
+									Class("text-blue-600 hover:text-blue-800 underline"),
+									g.Text("Terms of Service"),
+								),
+								g.Text(" & "),
+								A(
+									Href("/privacy"),
+									Class("text-blue-600 hover:text-blue-800 underline"),
+									g.Text("Privacy Policy"),
+								),
+								g.Text("."),
 							),
 						),
 					),

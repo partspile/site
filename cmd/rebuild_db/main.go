@@ -354,7 +354,7 @@ func main() {
 			log.Printf("Failed to hash password for user %s: %v", u.Name, err)
 			continue
 		}
-			_, err = database.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, is_admin) VALUES (?, ?, ?, ?, ?, 0, NULL, ?)`, u.Name, u.Phone, hash, salt, "argon2id", u.IsAdmin)
+		_, err = database.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, is_admin) VALUES (?, ?, ?, ?, ?, 0, NULL, ?)`, u.Name, u.Phone, hash, salt, "argon2id", u.IsAdmin)
 		if err != nil {
 			log.Printf("Failed to insert user %s: %v", u.Name, err)
 		} else {
@@ -498,10 +498,9 @@ func main() {
 		adID, _ := res.LastInsertId()
 
 		// Generate and upload images for this ad
-		// Temporarily disabled for database rebuild
-		// if err := uploadAdImagesToB2(int(adID), numImages, ad.Title); err != nil {
-		// 	log.Printf("Failed to upload images for ad %d: %v", adID, err)
-		// }
+		if err := uploadAdImagesToB2(int(adID), numImages, ad.Title); err != nil {
+			log.Printf("Failed to upload images for ad %d: %v", adID, err)
+		}
 
 		// Create AdCar relationships for all combinations
 		for _, year := range ad.Years {
