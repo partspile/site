@@ -10,6 +10,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/qdrant/go-client v1.15.1
 	github.com/stretchr/testify v1.10.0
+	github.com/twilio/twilio-go v1.27.0
 	github.com/valyala/fasthttp v1.51.0
 	golang.org/x/crypto v0.39.0
 	golang.org/x/image v0.28.0
@@ -30,7 +31,9 @@ require (
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/golang/glog v1.2.5 // indirect
+	github.com/golang/mock v1.6.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/readahead v0.0.0-20161222183148-eaceba169032 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
@@ -43,6 +46,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/philhofer/fwd v1.1.3-0.20240916144458-20a13a1f6b7c // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
