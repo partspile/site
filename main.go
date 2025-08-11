@@ -164,11 +164,17 @@ func main() {
 	adminAPI.Post("/embedding-cache/clear", handlers.HandleClearEmbeddingCache)
 
 	// User registration/authentication
-	app.Get("/register", handlers.HandleRegister)
-	api.Post("/register", handlers.HandleRegisterSubmission)
+	app.Get("/register", handlers.HandleRegistrationStep1)
+	api.Post("/register/step1", handlers.HandleRegistrationStep1Submission)
+	app.Get("/register/verify", handlers.HandleRegistrationVerification)
+	api.Post("/register/verify", handlers.HandleRegistrationStep2Submission)
 	app.Get("/login", handlers.HandleLogin)
 	api.Post("/login", handlers.HandleLoginSubmission)
 	app.Post("/logout", handlers.HandleLogout)
+
+	// Legal pages
+	app.Get("/terms", handlers.HandleTermsOfService)
+	app.Get("/privacy", handlers.HandlePrivacyPolicy)
 
 	// User settings
 	app.Get("/settings", handlers.AuthRequired, handlers.HandleSettings)
