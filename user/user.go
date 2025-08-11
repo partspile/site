@@ -1,6 +1,7 @@
 package user
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/parts-pile/site/db"
@@ -21,16 +22,18 @@ const (
 )
 
 type User struct {
-	ID           int
-	Name         string
-	Phone        string
-	TokenBalance float64
-	PasswordHash string
-	PasswordSalt string
-	PasswordAlgo string
-	CreatedAt    time.Time
-	IsAdmin      bool
-	DeletedAt    *time.Time `json:"deleted_at,omitempty"`
+	ID               int
+	Name             string
+	Phone            string
+	TokenBalance     float64
+	PasswordHash     string
+	PasswordSalt     string
+	PasswordAlgo     string
+	PhoneVerified    bool
+	VerificationCode *string
+	CreatedAt        time.Time
+	IsAdmin          bool
+	DeletedAt        *time.Time `json:"deleted_at,omitempty"`
 }
 
 // IsArchived returns true if the user has been archived
@@ -40,7 +43,7 @@ func (u User) IsArchived() bool {
 
 // CreateUser inserts a new user into the database
 func CreateUser(name, phone, passwordHash, passwordSalt, passwordAlgo string) (int, error) {
-	res, err := db.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo) VALUES (?, ?, ?, ?, ?)`, name, phone, passwordHash, passwordSalt, passwordAlgo)
+	res, err := db.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo, phone_verified) VALUES (?, ?, ?, ?, ?, 0)`, name, phone, passwordHash, passwordSalt, passwordAlgo)
 	if err != nil {
 		return 0, err
 	}
@@ -68,31 +71,39 @@ func GetUserByID(id int) (User, UserStatus, bool) {
 
 // GetUserByPhone retrieves a user by phone number
 func GetUserByPhone(phone string) (User, error) {
-	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM User WHERE phone = ?`, phone)
+	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, created_at, is_admin FROM User WHERE phone = ?`, phone)
 	var u User
 	var createdAt string
 	var isAdmin int
-	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin)
+	var phoneVerified int
+	var verificationCode *string
+	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &createdAt, &isAdmin)
 	if err != nil {
 		return User{}, err
 	}
 	u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 	u.IsAdmin = isAdmin == 1
+	u.PhoneVerified = phoneVerified == 1
+	u.VerificationCode = verificationCode
 	return u, nil
 }
 
 // GetUser retrieves a user by ID (active users only)
 func GetUser(id int) (User, error) {
-	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, created_at, is_admin FROM User WHERE id = ?`, id)
+	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, created_at, is_admin FROM User WHERE id = ?`, id)
 	var u User
 	var createdAt string
 	var isAdmin int
-	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &createdAt, &isAdmin)
+	var phoneVerified int
+	var verificationCode *string
+	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &createdAt, &isAdmin)
 	if err != nil {
 		return User{}, err
 	}
 	u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 	u.IsAdmin = isAdmin == 1
+	u.PhoneVerified = phoneVerified == 1
+	u.VerificationCode = verificationCode
 	return u, nil
 }
 
@@ -121,16 +132,20 @@ func GetArchivedUser(id int) (User, bool) {
 
 // GetUserByName retrieves a user by name (username)
 func GetUserByName(name string) (User, error) {
-	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, created_at, is_admin FROM User WHERE name = ?`, name)
+	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, created_at, is_admin FROM User WHERE name = ?`, name)
 	var u User
 	var createdAt string
 	var isAdmin int
-	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &createdAt, &isAdmin)
+	var phoneVerified int
+	var verificationCode *string
+	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &createdAt, &isAdmin)
 	if err != nil {
 		return User{}, err
 	}
 	u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 	u.IsAdmin = isAdmin == 1
+	u.PhoneVerified = phoneVerified == 1
+	u.VerificationCode = verificationCode
 	return u, nil
 }
 
@@ -297,7 +312,7 @@ func RestoreUser(userID int) error {
 
 // GetAllUsers returns all users in the system
 func GetAllUsers() ([]User, error) {
-	rows, err := db.Query(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin FROM User`)
+	rows, err := db.Query(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, created_at, is_admin FROM User`)
 	if err != nil {
 		return nil, err
 	}
@@ -308,12 +323,16 @@ func GetAllUsers() ([]User, error) {
 		var u User
 		var createdAt string
 		var isAdmin int
-		err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin)
+		var phoneVerified int
+		var verificationCode *string
+		err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &createdAt, &isAdmin)
 		if err != nil {
 			return nil, err
 		}
 		u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		u.IsAdmin = isAdmin == 1
+		u.PhoneVerified = phoneVerified == 1
+		u.VerificationCode = verificationCode
 		users = append(users, u)
 	}
 	return users, nil
@@ -382,4 +401,13 @@ func SetAdmin(userID int, isAdmin bool) error {
 	_, err := db.Exec(`UPDATE User SET is_admin = ? WHERE id = ?`,
 		map[bool]int{false: 0, true: 1}[isAdmin], userID)
 	return err
+}
+
+// MarkPhoneVerified marks a user's phone number as verified
+func MarkPhoneVerified(userID int) error {
+	_, err := db.Exec(`UPDATE User SET phone_verified = 1, verification_code = NULL WHERE id = ?`, userID)
+	if err != nil {
+		return fmt.Errorf("failed to mark phone verified: %w", err)
+	}
+	return nil
 }
