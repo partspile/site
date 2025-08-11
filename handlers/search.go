@@ -165,10 +165,17 @@ func tryQueryEmbedding(userPrompt, cursor string, userID int, threshold float64)
 
 // Try embedding-based search with user embedding
 func tryUserEmbedding(userID int, cursor string, threshold float64) ([]ad.Ad, string, error) {
+	log.Printf("[DEBUG] tryUserEmbedding called with userID=%d, cursor=%s, threshold=%.2f", userID, cursor, threshold)
 	embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
-	if err != nil || embedding == nil {
+	if err != nil {
+		log.Printf("[DEBUG] tryUserEmbedding GetUserPersonalizedEmbedding error: %v", err)
 		return nil, "", err
 	}
+	if embedding == nil {
+		log.Printf("[DEBUG] tryUserEmbedding GetUserPersonalizedEmbedding returned nil embedding")
+		return nil, "", nil
+	}
+	log.Printf("[DEBUG] tryUserEmbedding GetUserPersonalizedEmbedding returned embedding with length=%d", len(embedding))
 	return runEmbeddingSearch(embedding, cursor, userID, threshold)
 }
 
@@ -183,6 +190,7 @@ func performSearch(userPrompt string, userID int, cursorStr string, threshold fl
 		}
 	}
 	if userPrompt == "" && userID != 0 {
+		log.Printf("[DEBUG] performSearch: userPrompt is empty, userID=%d, trying user embedding", userID)
 		ads, nextCursor, _ := tryUserEmbedding(userID, cursorStr, threshold)
 		log.Printf("[performSearch] tryUserEmbedding: found %d ads", len(ads))
 		if len(ads) > 0 {
@@ -359,10 +367,15 @@ func performGeoBoxSearch(userPrompt string, userID int, cursorStr string, bounds
 
 // Get user ID from context
 func getUserID(c *fiber.Ctx) int {
-	currentUser, _ := CurrentUser(c)
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		log.Printf("[DEBUG] CurrentUser error: %v", err)
+	}
 	if currentUser != nil {
+		log.Printf("[DEBUG] getUserID returning userID=%d", currentUser.ID)
 		return currentUser.ID
 	}
+	log.Printf("[DEBUG] getUserID returning userID=0 (no current user)")
 	return 0
 }
 

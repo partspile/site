@@ -498,9 +498,10 @@ func main() {
 		adID, _ := res.LastInsertId()
 
 		// Generate and upload images for this ad
-		if err := uploadAdImagesToB2(int(adID), numImages, ad.Title); err != nil {
-			log.Printf("Failed to upload images for ad %d: %v", adID, err)
-		}
+		// Temporarily disabled for database rebuild
+		// if err := uploadAdImagesToB2(int(adID), numImages, ad.Title); err != nil {
+		// 	log.Printf("Failed to upload images for ad %d: %v", adID, err)
+		// }
 
 		// Create AdCar relationships for all combinations
 		for _, year := range ad.Years {

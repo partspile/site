@@ -1321,19 +1321,26 @@ func GetAdClickCountForUser(adID int, userID int) (int, error) {
 
 // GetRecentlyClickedAdIDsByUser returns ad IDs the user has clicked, most recent first.
 func GetRecentlyClickedAdIDsByUser(userID, limit int) ([]int, error) {
+	log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser called with userID=%d, limit=%d", userID, limit)
+
 	rows, err := db.Query(`SELECT ad_id FROM UserAdClick WHERE user_id = ? ORDER BY last_clicked_at DESC LIMIT ?`, userID, limit)
 	if err != nil {
+		log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser SQL error: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
+
 	var adIDs []int
 	for rows.Next() {
 		var adID int
 		if err := rows.Scan(&adID); err != nil {
+			log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser row scan error: %v", err)
 			continue
 		}
 		adIDs = append(adIDs, adID)
 	}
+
+	log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser returning %d adIDs: %v", len(adIDs), adIDs)
 	return adIDs, nil
 }
 
@@ -1563,7 +1570,7 @@ func GetAdsByIDsOptimized(ids []int) ([]Ad, error) {
 		GROUP BY a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
 			a.user_id, psc.name, pc.name, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
 			l.city, l.admin_area, l.country, l.latitude, l.longitude`
-	
+
 	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -1689,7 +1696,7 @@ func GetAdsByIDsOptimizedWithBookmarks(ids []int, userID int) ([]Ad, error) {
 		GROUP BY a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
 			a.user_id, psc.name, pc.name, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
 			l.city, l.admin_area, l.country, l.latitude, l.longitude, ba.ad_id`
-	
+
 	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, err

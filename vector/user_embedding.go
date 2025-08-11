@@ -66,12 +66,16 @@ func math32tobytes(f float32) uint32 {
 
 // GetUserPersonalizedEmbedding loads from DB unless forceRecompute is true or not found.
 func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, error) {
+	log.Printf("[DEBUG] GetUserPersonalizedEmbedding called with userID=%d, forceRecompute=%v", userID, forceRecompute)
+
 	if !forceRecompute {
 		emb, err := LoadUserEmbeddingFromDB(userID)
 		if err != nil {
+			log.Printf("[DEBUG] LoadUserEmbeddingFromDB error: %v", err)
 			return nil, err
 		}
 		if emb != nil {
+			log.Printf("[DEBUG] Returning cached embedding for userID=%d", userID)
 			return emb, nil
 		}
 	}
@@ -82,6 +86,8 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 		searchWeight   = 1
 		limit          = config.QdrantUserEmbeddingLimit
 	)
+	log.Printf("[DEBUG] Using limit=%d for userID=%d", limit, userID)
+
 	var vectors [][]float32
 	var weights []float32
 	bookmarkIDs, err := ad.GetBookmarkedAdIDsByUser(userID)
@@ -104,8 +110,11 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 			break
 		}
 	}
+
+	log.Printf("[DEBUG] About to call GetRecentlyClickedAdIDsByUser for userID=%d with limit=%d", userID, limit)
 	clickedIDs, err := ad.GetRecentlyClickedAdIDsByUser(userID, limit)
 	if err != nil {
+		log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser error: %v", err)
 		return nil, fmt.Errorf("fetch clicks: %w", err)
 	}
 	log.Printf("[embedding][debug] userID=%d clicked: %v (count=%d)", userID, clickedIDs, len(clickedIDs))

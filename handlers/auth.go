@@ -288,8 +288,10 @@ func HandleDeleteAccount(c *fiber.Ctx) error {
 func CurrentUser(c *fiber.Ctx) (*user.User, error) {
 	u, ok := c.Locals("user").(*user.User)
 	if ok && u != nil {
+		log.Printf("[DEBUG] CurrentUser returning user from context: userID=%d", u.ID)
 		return u, nil
 	}
+	log.Printf("[DEBUG] CurrentUser no user in context, falling back to session")
 	// Fallback to session-based extraction
 	return GetCurrentUser(c)
 }
