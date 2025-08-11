@@ -168,6 +168,7 @@ func main() {
 	api.Post("/register/step1", handlers.HandleRegistrationStep1Submission)
 	app.Get("/register/verify", handlers.HandleRegistrationVerification)
 	api.Post("/register/verify", handlers.HandleRegistrationStep2Submission)
+	api.Post("/sms/webhook", handlers.HandleSMSWebhook)
 	app.Get("/login", handlers.HandleLogin)
 	api.Post("/login", handlers.HandleLoginSubmission)
 	app.Post("/logout", handlers.HandleLogout)

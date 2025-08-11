@@ -76,6 +76,10 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 
 ### 3.6 API Endpoints
 - RESTful endpoints for CRUD operations on ads and for fetching vehicle/part data for dynamic forms.
+- **SMS Webhook Endpoint**: `/api/sms/webhook` - Processes Twilio SMS status callbacks and user responses.
+- **Registration Endpoints**: 
+  - `POST /api/register/step1` - Handles initial registration with phone verification
+  - `POST /api/register/verify` - Processes verification code and completes registration
 
 ### 3.7 Modern UI/UX
 - Modern, accessible web UI using Tailwind CSS and HTMX for dynamic updates.
@@ -86,6 +90,38 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
   - Red if it's an expense (user pays tokens).
 - User's token balance is shown in the navigation bar on all pages, and is clickable for exchange and transaction history.
 - UI elements that require authentication (such as "New Ad", "Edit Ad", or "Delete Ad" buttons) are shown in a disabled state or with limited interactivity for unauthenticated users, providing clear feedback that login is required to access these features.
+
+### 3.8 SMS Verification & Two-Factor Authentication (2FA)
+- **Phone Number Verification**: Users must verify their phone number during registration using SMS verification codes.
+- **Verification Code System**: 
+  - 6-digit numeric codes sent via SMS
+  - 10-minute expiration window
+  - Maximum 3 attempts per code
+  - Codes are invalidated after successful verification or expiration
+- **Twilio Integration**: SMS delivery through Twilio with comprehensive status tracking and webhook handling.
+- **SMS Status Webhooks**: Real-time monitoring of SMS delivery status including:
+  - Delivery confirmations
+  - Failed deliveries
+  - Undelivered messages
+  - User STOP responses
+- **STOP Response Handling**: When users reply "STOP" to SMS messages:
+  - All pending verification codes are immediately invalidated
+  - User is effectively blocked from completing registration
+  - Compliance with SMS opt-out regulations
+- **Failed Delivery Handling**: Automatic cleanup when SMS delivery fails:
+  - Verification codes are invalidated for failed deliveries
+  - Prevents registration completion with invalid phone numbers
+- **Account Cleanup & Security**: Automatic account deletion for failed verification attempts:
+  - Tracks failed verification attempts within a 24-hour window
+  - Automatically deletes accounts after 5 failed verification attempts
+  - Removes all associated data (verification codes, partial user records)
+  - Prevents abuse and maintains system security
+- **Registration Flow**: Two-step registration process:
+  - Step 1: Username, phone number, and SMS consent
+  - Step 2: Verification code entry and password creation
+  - Proper page navigation between steps (no HTMX result div updates)
+- **Required Field Validation**: Username and phone number are mandatory form fields with server-side validation.
+- **SMS Consent**: Users must explicitly agree to receive informational text messages to proceed with registration.
 
 ### 3.7a In-Place Ad Card Expand/Collapse (SPA-like UX)
 - Users can expand an ad card in-place to view ad details without leaving the list or tree view.

@@ -17,6 +17,10 @@ const (
 	CodeExpiry = 10 * time.Minute
 	// MaxAttempts is the maximum verification attempts allowed
 	MaxAttempts = 3
+	// MaxFailedVerifications is the maximum failed verification attempts before account cleanup
+	MaxFailedVerifications = 5
+	// VerificationWindow is the time window for tracking failed verifications
+	VerificationWindow = 24 * time.Hour
 )
 
 // VerificationCode represents a phone verification code
@@ -101,6 +105,8 @@ func ValidateCode(phone, code string) (bool, error) {
 	// Check if max attempts exceeded
 	if vc.Attempts >= MaxAttempts {
 		log.Printf("[VERIFICATION] Max attempts exceeded for %s", phone)
+		// Track this failed verification for potential account cleanup
+		TrackFailedVerification(phone)
 		return false, nil
 	}
 
@@ -152,5 +158,73 @@ func MarkPhoneVerified(userID int) error {
 	}
 
 	log.Printf("[VERIFICATION] Marked phone verified for user %d", userID)
+	return nil
+}
+
+// InvalidateVerificationCodes invalidates all verification codes for a phone number
+// This is called when a user replies STOP or when SMS delivery fails
+func InvalidateVerificationCodes(phone string) error {
+	_, err := db.Exec(`
+		DELETE FROM PhoneVerification 
+		WHERE phone = ?
+	`, phone)
+
+	if err != nil {
+		return fmt.Errorf("failed to invalidate verification codes for %s: %w", phone, err)
+	}
+
+	log.Printf("[VERIFICATION] Invalidated all verification codes for %s", phone)
+	return nil
+}
+
+// TrackFailedVerification records a failed verification attempt and cleans up if threshold exceeded
+func TrackFailedVerification(phone string) error {
+	// Count failed verifications in the last 24 hours
+	var count int
+	err := db.QueryRow(`
+		SELECT COUNT(*) FROM PhoneVerification 
+		WHERE phone = ? AND created_at > ?
+	`, phone, time.Now().Add(-VerificationWindow).Format(time.RFC3339)).Scan(&count)
+	
+	if err != nil {
+		return fmt.Errorf("failed to count failed verifications for %s: %w", phone, err)
+	}
+
+	// If we've exceeded the threshold, clean up the account
+	if count >= MaxFailedVerifications {
+		log.Printf("[VERIFICATION] Max failed verifications exceeded for %s, cleaning up account", phone)
+		return CleanupFailedAccount(phone)
+	}
+
+	return nil
+}
+
+// CleanupFailedAccount removes all data associated with a failed verification attempt
+func CleanupFailedAccount(phone string) error {
+	// Start a transaction
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Delete verification codes
+	_, err = tx.Exec(`DELETE FROM PhoneVerification WHERE phone = ?`, phone)
+	if err != nil {
+		return fmt.Errorf("failed to delete verification codes: %w", err)
+	}
+
+	// Delete any partial user records (users created but not verified)
+	_, err = tx.Exec(`DELETE FROM User WHERE phone = ? AND phone_verified = 0`, phone)
+	if err != nil {
+		return fmt.Errorf("failed to delete unverified user: %w", err)
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit cleanup transaction: %w", err)
+	}
+
+	log.Printf("[VERIFICATION] Successfully cleaned up failed account for %s", phone)
 	return nil
 }

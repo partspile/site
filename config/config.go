@@ -81,6 +81,7 @@ var (
 
 	// Server configuration
 	ServerPort = getEnvWithDefault("PORT", "8000")
+	BaseURL    = getEnvWithDefault("BASE_URL", "http://localhost:8000")
 )
 
 // getEnvWithDefault returns the environment variable value or a default if not set
