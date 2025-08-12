@@ -354,7 +354,7 @@ func main() {
 			log.Printf("Failed to hash password for user %s: %v", u.Name, err)
 			continue
 		}
-		_, err = database.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, is_admin) VALUES (?, ?, ?, ?, ?, 0, NULL, ?)`, u.Name, u.Phone, hash, salt, "argon2id", u.IsAdmin)
+		_, err = database.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, is_admin) VALUES (?, ?, ?, ?, ?, 0, NULL, 'sms', NULL, ?)`, u.Name, u.Phone, hash, salt, "argon2id", u.IsAdmin)
 		if err != nil {
 			log.Printf("Failed to insert user %s: %v", u.Name, err)
 		} else {

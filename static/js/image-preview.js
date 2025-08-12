@@ -27,7 +27,7 @@
     wrapper.appendChild(img);
 
     const trash = document.createElement('img');
-    trash.src = '/trashcan.svg';
+    trash.src = '/images/trashcan.svg';
     trash.alt = 'Delete';
     trash.className = 'absolute top-0 right-0 w-6 h-6 p-1 bg-white rounded-full shadow cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity';
     trash.style.zIndex = 10;

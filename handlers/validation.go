@@ -20,6 +20,56 @@ func ValidateRequired(c *fiber.Ctx, fieldName, displayName string) (string, erro
 	return value, nil
 }
 
+// ValidateEmail validates that a string is a valid email address
+func ValidateEmail(email string) error {
+	if email == "" {
+		return fmt.Errorf("email address is required")
+	}
+
+	// Basic email validation using regex-like string operations
+	// Check for @ symbol and basic structure
+	if !strings.Contains(email, "@") {
+		return fmt.Errorf("email address must contain @ symbol")
+	}
+
+	parts := strings.Split(email, "@")
+	if len(parts) != 2 {
+		return fmt.Errorf("email address must have exactly one @ symbol")
+	}
+
+	localPart := parts[0]
+	domainPart := parts[1]
+
+	// Check local part (before @)
+	if len(localPart) == 0 {
+		return fmt.Errorf("email address local part cannot be empty")
+	}
+
+	// Check domain part (after @)
+	if len(domainPart) == 0 {
+		return fmt.Errorf("email address domain cannot be empty")
+	}
+
+	// Check for at least one dot in domain
+	if !strings.Contains(domainPart, ".") {
+		return fmt.Errorf("email address domain must contain at least one dot")
+	}
+
+	// Check domain parts
+	domainParts := strings.Split(domainPart, ".")
+	if len(domainParts) < 2 {
+		return fmt.Errorf("email address domain must have at least two parts")
+	}
+
+	// Check that TLD is at least 2 characters
+	tld := domainParts[len(domainParts)-1]
+	if len(tld) < 2 {
+		return fmt.Errorf("email address TLD must be at least 2 characters")
+	}
+
+	return nil
+}
+
 // ValidateRequiredMultipart validates that a required multipart form field has at least one value
 func ValidateRequiredMultipart(form *multipart.Form, fieldName, displayName string) ([]string, error) {
 	values := form.Value[fieldName]

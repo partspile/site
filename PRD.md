@@ -80,6 +80,11 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - **Registration Endpoints**: 
   - `POST /api/register/step1` - Handles initial registration with phone verification
   - `POST /api/register/verify` - Processes verification code and completes registration
+- **User Settings Endpoints**:
+  - `POST /api/change-password` - Updates user password
+  - `POST /api/update-notification-method` - Updates user notification method preference
+  - `POST /api/notification-method-changed` - Handles dynamic UI updates when notification method changes
+  - `POST /api/delete-account` - Deletes user account
 
 ### 3.7 Modern UI/UX
 - Modern, accessible web UI using Tailwind CSS and HTMX for dynamic updates.
@@ -89,6 +94,12 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
   - Green if it's a payout (user receives tokens).
   - Red if it's an expense (user pays tokens).
 - User's token balance is shown in the navigation bar on all pages, and is clickable for exchange and transaction history.
+- **Settings Page**: Comprehensive user settings management including:
+  - Notification method preferences (SMS, Email, Signal) with radio button selection
+  - Conditional email address field (always visible, enabled only when email is selected)
+  - Password change functionality
+  - Account deletion options
+  - Bookmarked ads management
 - UI elements that require authentication (such as "New Ad", "Edit Ad", or "Delete Ad" buttons) are shown in a disabled state or with limited interactivity for unauthenticated users, providing clear feedback that login is required to access these features.
 
 ### 3.8 SMS Verification & Two-Factor Authentication (2FA)
@@ -98,6 +109,19 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
   - 10-minute expiration window
   - Maximum 3 attempts per code
   - Codes are invalidated after successful verification or expiration
+
+### 3.9 User Notification Preferences
+- **Notification Method Selection**: Users can choose their preferred notification method from:
+  - Text to phone number - displays the user's actual phone number
+  - Email to: - displays email input field below (no redundant label)
+  - Signal
+- **Email Address Storage**: When email is selected as the notification method, users can provide and save their email address
+- **Email Validation**: Email addresses are validated for proper format (contains @, valid domain structure, etc.)
+- **Required Field**: Email address is required when email notifications are selected
+- **Error Handling**: Validation errors are displayed inline within the notification preferences section
+- **Success Feedback**: Users receive confirmation when preferences are successfully updated
+- **Settings Management**: Users can update their notification preferences through the settings page
+- **Future Extensibility**: The system is designed to support additional notification methods as they become available
 - **Twilio Integration**: SMS delivery through Twilio with comprehensive status tracking and webhook handling.
 - **SMS Status Webhooks**: Real-time monitoring of SMS delivery status including:
   - Delivery confirmations

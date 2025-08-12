@@ -200,3 +200,76 @@ func SubCategoriesFormGroupFromStruct(subCategories []part.SubCategory, selected
 		),
 	)
 }
+
+// NotificationMethodRadioGroup creates radio buttons for selecting notification method
+func NotificationMethodRadioGroup(selectedMethod string, emailAddress *string, phoneNumber string) g.Node {
+	radioButtons := []g.Node{
+		Div(Class("flex items-center"),
+			Input(Type("radio"), Name("notificationMethod"), Value("sms"), ID("notificationMethod-sms"), g.If(selectedMethod == "sms", Checked()), Class("mr-2"),
+				hx.Post("/api/notification-method-changed"),
+				hx.Target("#emailField"),
+				hx.Swap("innerHTML"),
+				hx.Include("this"),
+			),
+			Label(For("notificationMethod-sms"), g.Text("Text to "+phoneNumber)),
+		),
+		Div(Class("flex items-center"),
+			Input(Type("radio"), Name("notificationMethod"), Value("email"), ID("notificationMethod-email"), g.If(selectedMethod == "email", Checked()), Class("mr-2"),
+				hx.Post("/api/notification-method-changed"),
+				hx.Target("#emailField"),
+				hx.Swap("innerHTML"),
+				hx.Include("this"),
+			),
+			Label(For("notificationMethod-email"), g.Text("Email to:")),
+		),
+		Div(ID("emailField"), Class("ml-6 mt-2"),
+			g.If(selectedMethod == "email",
+				Input(
+					Type("text"),
+					ID("emailAddress"),
+					Name("emailAddress"),
+					Placeholder("Enter email address"),
+					Value(func() string {
+						if emailAddress != nil {
+							return *emailAddress
+						}
+						return ""
+					}()),
+					Class("w-full p-2 border rounded"),
+					Required(),
+				),
+			),
+			g.If(selectedMethod != "email",
+				Input(
+					Type("text"),
+					ID("emailAddress"),
+					Name("emailAddress"),
+					Placeholder("Enter email address"),
+					Value(func() string {
+						if emailAddress != nil {
+							return *emailAddress
+						}
+						return ""
+					}()),
+					Class("w-full p-2 border rounded opacity-50 cursor-not-allowed"),
+					Disabled(),
+				),
+			),
+		),
+		Div(Class("flex items-center"),
+			Input(Type("radio"), Name("notificationMethod"), Value("signal"), ID("notificationMethod-signal"), g.If(selectedMethod == "signal", Checked()), Class("mr-2"),
+				hx.Post("/api/notification-method-changed"),
+				hx.Target("#emailField"),
+				hx.Swap("innerHTML"),
+				hx.Include("this"),
+			),
+			Label(For("notificationMethod-signal"), g.Text("Signal")),
+		),
+	}
+
+	return FormGroup("Notification Method", "notificationMethod",
+		Div(Class("space-y-3"),
+			g.Group(radioButtons),
+		),
+	)
+}

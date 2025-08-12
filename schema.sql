@@ -101,6 +101,8 @@ CREATE TABLE User (
     password_algo TEXT NOT NULL DEFAULT 'argon2id',
     phone_verified INTEGER NOT NULL DEFAULT 0,
     verification_code TEXT,
+    notification_method TEXT NOT NULL DEFAULT 'sms',
+    email_address TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_admin INTEGER NOT NULL DEFAULT 0
 );
@@ -113,6 +115,8 @@ CREATE TABLE ArchivedUser (
     password_hash TEXT NOT NULL,
     password_salt TEXT NOT NULL,
     password_algo TEXT NOT NULL DEFAULT 'argon2id',
+    notification_method TEXT NOT NULL DEFAULT 'sms',
+    email_address TEXT,
     created_at DATETIME,
     deletion_date DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_admin INTEGER NOT NULL DEFAULT 0

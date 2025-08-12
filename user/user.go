@@ -13,6 +13,13 @@ const (
 	TableArchivedUser = "ArchivedUser"
 )
 
+// Notification method constants
+const (
+	NotificationMethodSMS    = "sms"
+	NotificationMethodEmail  = "email"
+	NotificationMethodSignal = "signal"
+)
+
 // UserStatus represents the status of a user
 type UserStatus string
 
@@ -22,18 +29,20 @@ const (
 )
 
 type User struct {
-	ID               int
-	Name             string
-	Phone            string
-	TokenBalance     float64
-	PasswordHash     string
-	PasswordSalt     string
-	PasswordAlgo     string
-	PhoneVerified    bool
-	VerificationCode *string
-	CreatedAt        time.Time
-	IsAdmin          bool
-	DeletedAt        *time.Time `json:"deleted_at,omitempty"`
+	ID                 int
+	Name               string
+	Phone              string
+	TokenBalance       float64
+	PasswordHash       string
+	PasswordSalt       string
+	PasswordAlgo       string
+	PhoneVerified      bool
+	VerificationCode   *string
+	NotificationMethod string
+	EmailAddress       *string
+	CreatedAt          time.Time
+	IsAdmin            bool
+	DeletedAt          *time.Time `json:"deleted_at,omitempty"`
 }
 
 // IsArchived returns true if the user has been archived
@@ -43,7 +52,7 @@ func (u User) IsArchived() bool {
 
 // CreateUser inserts a new user into the database
 func CreateUser(name, phone, passwordHash, passwordSalt, passwordAlgo string) (int, error) {
-	res, err := db.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo, phone_verified) VALUES (?, ?, ?, ?, ?, 0)`, name, phone, passwordHash, passwordSalt, passwordAlgo)
+	res, err := db.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo, phone_verified, notification_method) VALUES (?, ?, ?, ?, ?, 0, ?)`, name, phone, passwordHash, passwordSalt, passwordAlgo, NotificationMethodSMS)
 	if err != nil {
 		return 0, err
 	}
@@ -71,13 +80,15 @@ func GetUserByID(id int) (User, UserStatus, bool) {
 
 // GetUserByPhone retrieves a user by phone number
 func GetUserByPhone(phone string) (User, error) {
-	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, created_at, is_admin FROM User WHERE phone = ?`, phone)
+	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin FROM User WHERE phone = ?`, phone)
 	var u User
 	var createdAt string
 	var isAdmin int
 	var phoneVerified int
 	var verificationCode *string
-	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &createdAt, &isAdmin)
+	var notificationMethod string
+	var emailAddress *string
+	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &emailAddress, &createdAt, &isAdmin)
 	if err != nil {
 		return User{}, err
 	}
@@ -85,18 +96,22 @@ func GetUserByPhone(phone string) (User, error) {
 	u.IsAdmin = isAdmin == 1
 	u.PhoneVerified = phoneVerified == 1
 	u.VerificationCode = verificationCode
+	u.NotificationMethod = notificationMethod
+	u.EmailAddress = emailAddress
 	return u, nil
 }
 
 // GetUser retrieves a user by ID (active users only)
 func GetUser(id int) (User, error) {
-	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, created_at, is_admin FROM User WHERE id = ?`, id)
+	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin FROM User WHERE id = ?`, id)
 	var u User
 	var createdAt string
 	var isAdmin int
 	var phoneVerified int
 	var verificationCode *string
-	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &createdAt, &isAdmin)
+	var notificationMethod string
+	var emailAddress *string
+	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &emailAddress, &createdAt, &isAdmin)
 	if err != nil {
 		return User{}, err
 	}
@@ -104,6 +119,8 @@ func GetUser(id int) (User, error) {
 	u.IsAdmin = isAdmin == 1
 	u.PhoneVerified = phoneVerified == 1
 	u.VerificationCode = verificationCode
+	u.NotificationMethod = notificationMethod
+	u.EmailAddress = emailAddress
 	return u, nil
 }
 
@@ -132,13 +149,15 @@ func GetArchivedUser(id int) (User, bool) {
 
 // GetUserByName retrieves a user by name (username)
 func GetUserByName(name string) (User, error) {
-	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, created_at, is_admin FROM User WHERE name = ?`, name)
+	row := db.QueryRow(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin FROM User WHERE name = ?`, name)
 	var u User
 	var createdAt string
 	var isAdmin int
 	var phoneVerified int
 	var verificationCode *string
-	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &createdAt, &isAdmin)
+	var notificationMethod string
+	var emailAddress *string
+	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &emailAddress, &createdAt, &isAdmin)
 	if err != nil {
 		return User{}, err
 	}
@@ -146,6 +165,8 @@ func GetUserByName(name string) (User, error) {
 	u.IsAdmin = isAdmin == 1
 	u.PhoneVerified = phoneVerified == 1
 	u.VerificationCode = verificationCode
+	u.NotificationMethod = notificationMethod
+	u.EmailAddress = emailAddress
 	return u, nil
 }
 
@@ -312,7 +333,7 @@ func RestoreUser(userID int) error {
 
 // GetAllUsers returns all users in the system
 func GetAllUsers() ([]User, error) {
-	rows, err := db.Query(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, created_at, is_admin FROM User`)
+	rows, err := db.Query(`SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, created_at, is_admin FROM User`)
 	if err != nil {
 		return nil, err
 	}
@@ -325,7 +346,8 @@ func GetAllUsers() ([]User, error) {
 		var isAdmin int
 		var phoneVerified int
 		var verificationCode *string
-		err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &createdAt, &isAdmin)
+		var notificationMethod string
+		err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &createdAt, &isAdmin)
 		if err != nil {
 			return nil, err
 		}
@@ -333,6 +355,7 @@ func GetAllUsers() ([]User, error) {
 		u.IsAdmin = isAdmin == 1
 		u.PhoneVerified = phoneVerified == 1
 		u.VerificationCode = verificationCode
+		u.NotificationMethod = notificationMethod
 		users = append(users, u)
 	}
 	return users, nil
@@ -340,7 +363,7 @@ func GetAllUsers() ([]User, error) {
 
 // GetAllArchivedUsers returns all archived users
 func GetAllArchivedUsers() ([]User, error) {
-	rows, err := db.Query(`SELECT id, name, phone, token_balance, password_hash, created_at, is_admin, deletion_date FROM ArchivedUser`)
+	rows, err := db.Query(`SELECT id, name, phone, token_balance, password_hash, notification_method, created_at, is_admin, deletion_date FROM ArchivedUser`)
 	if err != nil {
 		return nil, err
 	}
@@ -351,12 +374,14 @@ func GetAllArchivedUsers() ([]User, error) {
 		var u User
 		var createdAt, deletionDate string
 		var isAdmin int
-		err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &createdAt, &isAdmin, &deletionDate)
+		var notificationMethod string
+		err := rows.Scan(&u.ID, &u.Name, &u.Phone, &u.TokenBalance, &u.PasswordHash, &notificationMethod, &createdAt, &isAdmin, &deletionDate)
 		if err != nil {
 			return nil, err
 		}
 		u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		u.IsAdmin = isAdmin == 1
+		u.NotificationMethod = notificationMethod
 		if parsedTime, err := time.Parse(time.RFC3339Nano, deletionDate); err == nil {
 			u.DeletedAt = &parsedTime
 		}
@@ -410,4 +435,16 @@ func MarkPhoneVerified(userID int) error {
 		return fmt.Errorf("failed to mark phone verified: %w", err)
 	}
 	return nil
+}
+
+// UpdateNotificationMethod updates the user's notification method preference
+func UpdateNotificationMethod(userID int, method string) error {
+	_, err := db.Exec(`UPDATE User SET notification_method = ? WHERE id = ?`, method, userID)
+	return err
+}
+
+// UpdateNotificationPreferences updates both notification method and email address
+func UpdateNotificationPreferences(userID int, method string, emailAddress *string) error {
+	_, err := db.Exec(`UPDATE User SET notification_method = ?, email_address = ? WHERE id = ?`, method, emailAddress, userID)
+	return err
 }
