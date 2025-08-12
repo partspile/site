@@ -4,6 +4,7 @@ import (
 	"log"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -116,7 +117,7 @@ Only reject names that are truly offensive to a general audience.`
 		return ValidationErrorResponse(c, "Unable to send verification code. Please try again.")
 	}
 
-	err = smsService.SendVerificationCode(phone, code)
+	messageSid, err := smsService.SendVerificationCode(phone, code)
 	if err != nil {
 		log.Printf("[REGISTRATION] Failed to send SMS: %v", err)
 		return ValidationErrorResponse(c, "Unable to send verification code. Please try again.")
@@ -132,15 +133,60 @@ Only reject names that are truly offensive to a general audience.`
 
 	sess.Set("reg_name", name)
 	sess.Set("reg_phone", phone)
-	sess.Set("reg_step", "verification")
+	sess.Set("reg_step", "waiting")
+	sess.Set("reg_message_sid", messageSid)
 
 	if err := sess.Save(); err != nil {
 		log.Printf("[REGISTRATION] Failed to save session: %v", err)
 		return ValidationErrorResponse(c, "Session error. Please try again.")
 	}
 
-	// Redirect to verification page
-	return c.Redirect("/register/verify")
+	// Wait for SMS delivery confirmation
+	delivered, err := waitForSMSDelivery(messageSid, 30*time.Second)
+	if err != nil {
+		log.Printf("[REGISTRATION] SMS delivery wait failed: %v", err)
+		return ValidationErrorResponse(c, "SMS delivery confirmation failed. Please try again.")
+	}
+
+	if !delivered {
+		return ValidationErrorResponse(c, "SMS delivery failed. Please check your phone number and try again.")
+	}
+
+	// SMS delivered successfully, update session
+	sess.Set("reg_step", "verification")
+	if err := sess.Save(); err != nil {
+		log.Printf("[REGISTRATION] Failed to save session: %v", err)
+		return ValidationErrorResponse(c, "Session error. Please try again.")
+	}
+
+	// Return success response with redirect
+	return render(c, ui.SuccessMessage("SMS delivered successfully! Redirecting to verification...", "/register/verify"))
+}
+
+// waitForSMSDelivery waits for SMS delivery confirmation with a timeout
+func waitForSMSDelivery(messageSid string, timeout time.Duration) (bool, error) {
+	start := time.Now()
+	ticker := time.NewTicker(500 * time.Millisecond) // Check every 500ms
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			status := sms.GetGlobalStatusTracker().GetMessageStatus(messageSid)
+
+			switch status {
+			case sms.SMSStatusDelivered:
+				return true, nil
+			case sms.SMSStatusFailed, sms.SMSStatusUndelivered:
+				return false, nil
+			}
+
+			// Check if we've exceeded the timeout
+			if time.Since(start) > timeout {
+				return false, nil
+			}
+		}
+	}
 }
 
 // HandleRegistrationVerification shows the verification code input page

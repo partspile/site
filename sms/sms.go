@@ -37,6 +37,33 @@ type SMSWebhookData struct {
 	ErrorMessage  string `form:"ErrorMessage"`
 }
 
+// SMSStatusTracker tracks the status of SMS messages
+type SMSStatusTracker struct {
+	statuses map[string]SMSStatus
+}
+
+var globalStatusTracker = &SMSStatusTracker{
+	statuses: make(map[string]SMSStatus),
+}
+
+// GetMessageStatus returns the current status of a message
+func (s *SMSStatusTracker) GetMessageStatus(messageSid string) SMSStatus {
+	if status, exists := s.statuses[messageSid]; exists {
+		return status
+	}
+	return ""
+}
+
+// SetMessageStatus sets the status of a message
+func (s *SMSStatusTracker) SetMessageStatus(messageSid string, status SMSStatus) {
+	s.statuses[messageSid] = status
+}
+
+// GetGlobalStatusTracker returns the global SMS status tracker
+func GetGlobalStatusTracker() *SMSStatusTracker {
+	return globalStatusTracker
+}
+
 // NewSMSService creates a new SMS service instance
 func NewSMSService() (*SMSService, error) {
 	accountSid := config.TwilioAccountSID
@@ -59,7 +86,7 @@ func NewSMSService() (*SMSService, error) {
 }
 
 // SendVerificationCode sends a verification code via SMS
-func (s *SMSService) SendVerificationCode(phoneNumber, code string) error {
+func (s *SMSService) SendVerificationCode(phoneNumber, code string) (string, error) {
 	message := fmt.Sprintf("Your Parts Pile verification code is: %s. "+
 		"This code expires in 10 minutes. Reply STOP to unsubscribe.", code)
 
@@ -69,14 +96,14 @@ func (s *SMSService) SendVerificationCode(phoneNumber, code string) error {
 	params.SetBody(message)
 	params.SetStatusCallback(fmt.Sprintf("%s/api/sms/webhook", config.BaseURL))
 
-	_, err := s.client.Api.CreateMessage(params)
+	result, err := s.client.Api.CreateMessage(params)
 	if err != nil {
 		log.Printf("[SMS] Failed to send verification code to %s: %v", phoneNumber, err)
-		return fmt.Errorf("failed to send SMS: %w", err)
+		return "", fmt.Errorf("failed to send SMS: %w", err)
 	}
 
 	log.Printf("[SMS] Verification code sent to %s", phoneNumber)
-	return nil
+	return *result.Sid, nil
 }
 
 // HandleWebhook processes Twilio webhook callbacks for SMS status updates
@@ -84,13 +111,17 @@ func (s *SMSService) HandleWebhook(data SMSWebhookData) error {
 	log.Printf("[SMS] Webhook received: MessageSid=%s, Status=%s, To=%s, From=%s",
 		data.MessageSid, data.MessageStatus, data.To, data.From)
 
+	// Update the global status tracker
+	status := SMSStatus(data.MessageStatus)
+	GetGlobalStatusTracker().SetMessageStatus(data.MessageSid, status)
+
 	// Handle STOP responses
 	if strings.ToUpper(strings.TrimSpace(data.Body)) == "STOP" {
 		return s.handleStopResponse(data.To)
 	}
 
 	// Handle delivery status updates
-	switch SMSStatus(data.MessageStatus) {
+	switch status {
 	case SMSStatusDelivered:
 		log.Printf("[SMS] Message delivered successfully to %s", data.To)
 	case SMSStatusFailed, SMSStatusUndelivered:

@@ -35,8 +35,6 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 					),
 				),
 				FormContainer("registerForm",
-					Action("/api/register/step1"),
-					Method("POST"),
 					FormGroup("Username", "name",
 						Input(
 							Type("text"),
@@ -72,10 +70,13 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 					),
 					ActionButtons(
 						StyledButton("Send Verification Code", ButtonPrimary,
-							Type("submit"),
+							hx.Post("/api/register/step1"),
+							hx.Target("#result"),
+							hx.Indicator("#registerForm"),
 						),
 					),
 				),
+				ResultContainer(),
 			),
 		},
 	)
@@ -238,6 +239,24 @@ func PrivacyPolicyPage(currentUser *user.User, path string) g.Node {
 
 					H3(Class("text-lg font-semibold mb-2"), g.Text("6. Cookies and Tracking")),
 					P(Class("mb-4"), g.Text("We use cookies and similar tracking technologies to enhance your experience on our website and to analyze how our services are used.")),
+
+					H4(Class("text-md font-semibold mb-2"), g.Text("Cookies We Use:")),
+
+					Div(Class("ml-4 mb-4"),
+						H5(Class("text-sm font-semibold mb-1"), g.Text("last_view")),
+						P(Class("text-sm mb-2"), g.Text("Purpose: Saves your last viewed page layout (list, grid, tree, or map) for a seamless browsing experience.")),
+						P(Class("text-sm mb-2"), g.Text("Data collected: View preference (e.g., 'list', 'grid', 'tree', 'map').")),
+						P(Class("text-sm mb-2"), g.Text("Retention: Expires after 30 days.")),
+						P(Class("text-sm mb-2"), g.Text("Third parties: None.")),
+					),
+
+					Div(Class("ml-4 mb-4"),
+						H5(Class("text-sm font-semibold mb-1"), g.Text("Session Cookies")),
+						P(Class("text-sm mb-2"), g.Text("Purpose: Maintains your login session and authentication state while using the website.")),
+						P(Class("text-sm mb-2"), g.Text("Data collected: User ID and session identifier.")),
+						P(Class("text-sm mb-2"), g.Text("Retention: Expires when you close your browser or log out.")),
+						P(Class("text-sm mb-2"), g.Text("Third parties: None.")),
+					),
 
 					H3(Class("text-lg font-semibold mb-2"), g.Text("7. Your Rights")),
 					P(Class("mb-4"), g.Text("You have the right to access, update, or delete your personal information. You may also opt out of certain communications or request that we restrict the processing of your information.")),
