@@ -1385,6 +1385,7 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, bookmarked bool, userID in
 				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
 					bookmarkBtn,
+					MessageButton(ad.ID, ad.UserID, userID),
 					editBtn,
 					deleteBtn,
 				),
@@ -1550,6 +1551,7 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 					Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
 					Div(Class("flex flex-row items-center gap-2 ml-2"),
 						bookmarkBtn,
+						MessageButton(ad.ID, ad.UserID, userID),
 						editBtn,
 						deleteBtn,
 					),
@@ -1584,6 +1586,7 @@ func AdDetailUnified(ad ad.Ad, bookmarked bool, userID int, view string) g.Node 
 					Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
 					Div(Class("flex flex-row items-center gap-2 ml-2"),
 						bookmarkBtn,
+						MessageButton(ad.ID, ad.UserID, userID),
 						editBtn,
 						deleteBtn,
 					),
@@ -1684,5 +1687,29 @@ func AdCardCompactList(ad ad.Ad, loc *time.Location, bookmarked bool, userID int
 		),
 		// Pic link (orange text)
 		picLink,
+	)
+}
+
+// MessageButton renders a message button for an ad
+func MessageButton(adID, adUserID, currentUserID int) g.Node {
+	// Don't show message button if user is viewing their own ad
+	if currentUserID == adUserID {
+		return g.Node(nil)
+	}
+
+	// Don't show message button if user is not logged in
+	if currentUserID == 0 {
+		return g.Node(nil)
+	}
+
+	return A(
+		Href(fmt.Sprintf("/messages/start/%d", adID)),
+		Class("focus:outline-none z-20"),
+		Title("Message seller"),
+		Img(
+			Src("/images/message.svg"),
+			Alt("Message"),
+			Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
+		),
 	)
 }

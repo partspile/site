@@ -186,6 +186,13 @@ func main() {
 	api.Post("/delete-account", handlers.AuthRequired, handlers.HandleDeleteAccount)
 	app.Get("/settings/bookmarked-ads", handlers.AuthRequired, handlers.HandleBookmarkedAds)
 
+	// Messaging system
+	app.Get("/messages", handlers.AuthRequired, handlers.HandleMessagesPage)
+	app.Get("/messages/:id", handlers.AuthRequired, handlers.HandleConversationPage)
+	app.Post("/messages/:id/send", handlers.AuthRequired, handlers.HandleSendMessage)
+	app.Get("/messages/start/:adID", handlers.AuthRequired, handlers.HandleStartConversation)
+	api.Get("/messages/:action", handlers.AuthRequired, handlers.HandleMessagesAPI)
+
 	// Views for HTMX/direct navigation
 	app.Get("/view/list", handlers.HandleListView)
 	app.Get("/view/tree", handlers.HandleTreeViewContent)

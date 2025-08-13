@@ -79,6 +79,10 @@ var (
 	TwilioAuthToken  = getEnvWithDefault("TWILIO_AUTH_TOKEN", "")
 	TwilioFromNumber = getEnvWithDefault("TWILIO_FROM_NUMBER", "")
 
+	// Twilio SendGrid email configuration
+	TwilioSendGridAPIKey = getEnvWithDefault("TWILIO_SENDGRID_API_KEY", "")
+	TwilioFromEmail      = getEnvWithDefault("TWILIO_FROM_EMAIL", "")
+
 	// Server configuration
 	ServerPort = getEnvWithDefault("PORT", "8000")
 	BaseURL    = getEnvWithDefault("BASE_URL", "http://localhost:8000")

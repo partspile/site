@@ -77,6 +77,7 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 ### 3.6 API Endpoints
 - RESTful endpoints for CRUD operations on ads and for fetching vehicle/part data for dynamic forms.
 - **SMS Webhook Endpoint**: `/api/sms/webhook` - Processes Twilio SMS status callbacks and user responses.
+- **Twilio Integration**: Unified platform for both SMS and email notifications using Twilio's services.
 - **Registration Endpoints**: 
   - `POST /api/register/step1` - Handles initial registration with phone verification
   - `POST /api/register/verify` - Processes verification code and completes registration
@@ -85,6 +86,12 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
   - `POST /api/update-notification-method` - Updates user notification method preference
   - `POST /api/notification-method-changed` - Handles dynamic UI updates when notification method changes
   - `POST /api/delete-account` - Deletes user account
+- **Messaging Endpoints**:
+  - `GET /messages` - Main messages page showing all conversations
+  - `GET /messages/:id` - Specific conversation page with message history
+  - `POST /messages/:id/send` - Send a new message in a conversation
+  - `GET /messages/start/:adID` - Start a new conversation about an ad
+  - `GET /api/messages/:action` - API for conversations and unread counts
 
 ### 3.7 Modern UI/UX
 - Modern, accessible web UI using Tailwind CSS and HTMX for dynamic updates.
@@ -98,6 +105,25 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
   - Notification method preferences (SMS, Email, Signal) with radio button selection
   - Conditional email address field (always visible, enabled only when email is selected)
   - Password change functionality
+
+### 3.8 User-to-User Messaging System
+- **Per-Ad Conversations**: Users can start conversations about specific ads by clicking a message button on expanded ad views.
+- **Message Button**: Appears on all ad cards (except user's own ads) when logged in, redirects to conversation page.
+- **Conversation Management**: 
+  - New conversations are automatically created when messaging about an ad for the first time
+  - Existing conversations show full message history
+  - Messages are displayed in chronological order with sender identification
+- **Navigation**: Messages link added to main header navigation for logged in users
+- **Security**: Users cannot message themselves (guarded against in backend)
+- **Notifications**: 
+  - SMS notifications via Twilio include brief message preview and clickable link to conversation
+  - Email notifications via Twilio SendGrid show conversation context and direct link to inbox
+  - Notifications respect user's preferred notification method (SMS/Email)
+  - Unified Twilio platform for both SMS and email delivery
+  - Robust error handling and graceful degradation when services are unavailable
+  - Phone number validation and proper error logging for debugging
+- **Database Schema**: Normalized tables for conversations and messages with proper indexing
+- **HTMX Integration**: All messaging functionality uses HTMX for seamless user experience without JavaScript
   - Account deletion options
   - Bookmarked ads management
 - UI elements that require authentication (such as "New Ad", "Edit Ad", or "Delete Ad" buttons) are shown in a disabled state or with limited interactivity for unauthenticated users, providing clear feedback that login is required to access these features.

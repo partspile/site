@@ -106,6 +106,24 @@ func (s *SMSService) SendVerificationCode(phoneNumber, code string) (string, err
 	return *result.Sid, nil
 }
 
+// SendGeneralMessage sends a general SMS message
+func (s *SMSService) SendGeneralMessage(phoneNumber, message string) (string, error) {
+	params := &Api.CreateMessageParams{}
+	params.SetTo(phoneNumber)
+	params.SetFrom(s.from)
+	params.SetBody(message)
+	params.SetStatusCallback(fmt.Sprintf("%s/api/sms/webhook", config.BaseURL))
+
+	result, err := s.client.Api.CreateMessage(params)
+	if err != nil {
+		log.Printf("[SMS] Failed to send general message to %s: %v", phoneNumber, err)
+		return "", fmt.Errorf("failed to send SMS: %w", err)
+	}
+
+	log.Printf("[SMS] General message sent to %s", phoneNumber)
+	return *result.Sid, nil
+}
+
 // HandleWebhook processes Twilio webhook callbacks for SMS status updates
 func (s *SMSService) HandleWebhook(data SMSWebhookData) error {
 	log.Printf("[SMS] Webhook received: MessageSid=%s, Status=%s, To=%s, From=%s",

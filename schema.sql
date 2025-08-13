@@ -242,3 +242,36 @@ CREATE TABLE UserEmbedding (
     updated_at DATETIME NOT NULL,
     FOREIGN KEY (user_id) REFERENCES User(id)
 );
+
+-- Messaging system tables
+CREATE TABLE Conversation (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user1_id INTEGER NOT NULL,
+    user2_id INTEGER NOT NULL,
+    ad_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user1_id) REFERENCES User(id),
+    FOREIGN KEY (user2_id) REFERENCES User(id),
+    FOREIGN KEY (ad_id) REFERENCES Ad(id),
+    UNIQUE (user1_id, user2_id, ad_id)
+);
+CREATE INDEX idx_conversation_user1_id ON Conversation(user1_id);
+CREATE INDEX idx_conversation_user2_id ON Conversation(user2_id);
+CREATE INDEX idx_conversation_ad_id ON Conversation(ad_id);
+CREATE INDEX idx_conversation_updated_at ON Conversation(updated_at);
+
+CREATE TABLE Message (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversation_id INTEGER NOT NULL,
+    sender_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    read_at DATETIME,
+    FOREIGN KEY (conversation_id) REFERENCES Conversation(id),
+    FOREIGN KEY (sender_id) REFERENCES User(id)
+);
+CREATE INDEX idx_message_conversation_id ON Message(conversation_id);
+CREATE INDEX idx_message_sender_id ON Message(sender_id);
+CREATE INDEX idx_message_created_at ON Message(created_at);
+CREATE INDEX idx_message_read_at ON Message(read_at);
