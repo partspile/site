@@ -45,11 +45,6 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 				Src("/js/map.js"),
 				Defer(),
 			),
-			// Messaging interface styles
-			Link(
-				Rel("stylesheet"),
-				Href("/css/messaging.css"),
-			),
 			// Script(
 			// 	Type("text/javascript"),
 			// 	g.Raw("if(window.htmx){htmx.logAll()} else {document.addEventListener('htmx:load',function(){htmx.logAll()})}"),

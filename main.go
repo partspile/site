@@ -189,6 +189,7 @@ func main() {
 	// Messaging system
 	app.Get("/messages", handlers.AuthRequired, handlers.HandleMessagesPage)
 	app.Get("/messages/:id", handlers.AuthRequired, handlers.HandleConversationPage)
+	app.Get("/messages/:id/expand", handlers.AuthRequired, handlers.HandleExpandConversation)
 	app.Post("/messages/:id/send", handlers.AuthRequired, handlers.HandleSendMessage)
 	app.Get("/messages/start/:adID", handlers.AuthRequired, handlers.HandleStartConversation)
 	api.Get("/messages/:action", handlers.AuthRequired, handlers.HandleMessagesAPI)

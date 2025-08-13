@@ -31,6 +31,26 @@ func MessagesPage(currentUser *user.User, conversations []messaging.Conversation
 					ConversationsList(conversations, currentUser.ID),
 				),
 			),
+			// Add JavaScript to auto-expand conversation if specified in URL
+			Script(
+				Type("text/javascript"),
+				g.Text(`
+					document.addEventListener('DOMContentLoaded', function() {
+						const urlParams = new URLSearchParams(window.location.search);
+						const expandID = urlParams.get('expand');
+						if (expandID) {
+							const conversationElement = document.getElementById('conversation-' + expandID);
+							if (conversationElement) {
+								// Trigger the expand action
+								const expandTrigger = conversationElement.previousElementSibling;
+								if (expandTrigger && expandTrigger.hasAttribute('hx-get')) {
+									expandTrigger.click();
+								}
+							}
+						}
+					});
+				`),
+			),
 		},
 	)
 }
@@ -71,27 +91,36 @@ func ConversationListItem(conv messaging.Conversation, currentUserID int) g.Node
 		)
 	}
 
-	return A(
-		Href(fmt.Sprintf("/messages/%d", conv.ID)),
-		Class("block border rounded-lg p-4 hover:bg-gray-50 transition-colors"),
+	return Div(
+		Class("border rounded-lg overflow-hidden"),
 		Div(
-			Class("flex items-center justify-between"),
+			Class("p-4 hover:bg-gray-50 transition-colors cursor-pointer"),
+			hx.Get(fmt.Sprintf("/messages/%d/expand", conv.ID)),
+			hx.Target(fmt.Sprintf("#conversation-%d", conv.ID)),
+			hx.Swap("innerHTML"),
 			Div(
-				Class("flex-1"),
+				Class("flex items-center justify-between"),
 				Div(
-					Class("flex items-center gap-2"),
-					H3(Class("font-semibold text-lg"), g.Text(otherUserName)),
-					unreadBadge,
+					Class("flex-1"),
+					Div(
+						Class("flex items-center gap-2"),
+						H3(Class("font-semibold text-lg"), g.Text(otherUserName)),
+						unreadBadge,
+					),
+					P(Class("text-gray-600 text-sm"), g.Text(conv.AdTitle)),
+					g.If(conv.LastMessage != "",
+						P(Class("text-gray-500 text-sm truncate"), g.Text(conv.LastMessage)),
+					),
 				),
-				P(Class("text-gray-600 text-sm"), g.Text(conv.AdTitle)),
-				g.If(conv.LastMessage != "",
-					P(Class("text-gray-500 text-sm truncate"), g.Text(conv.LastMessage)),
+				Div(
+					Class("text-right text-sm text-gray-400"),
+					g.Text(timeStr),
 				),
 			),
-			Div(
-				Class("text-right text-sm text-gray-400"),
-				g.Text(timeStr),
-			),
+		),
+		Div(
+			ID(fmt.Sprintf("conversation-%d", conv.ID)),
+			Class("hidden"),
 		),
 	)
 }
@@ -110,17 +139,16 @@ func ConversationPage(currentUser *user.User, conversation messaging.Conversatio
 		fmt.Sprintf("/messages/%d", conversation.ID),
 		[]g.Node{
 			Div(
-				Class("flex items-center gap-4 mb-6"),
+				Class("mb-6"),
 				A(
 					Href("/messages"),
 					Class("text-blue-500 hover:underline"),
 					g.Text("← Back to messages"),
 				),
-				PageHeader(fmt.Sprintf("Conversation with %s", otherUserName)),
 			),
 			ContentContainer(
 				Div(
-					Class("flex flex-col bg-white rounded-lg border"),
+					Class("flex flex-col h-96 bg-white rounded-lg border"),
 					Div(
 						Class("p-4 border-b bg-gray-50"),
 						Div(
@@ -131,26 +159,62 @@ func ConversationPage(currentUser *user.User, conversation messaging.Conversatio
 								g.Text(otherUserName),
 							),
 							Div(
-								Class("text-gray-600"),
+								Class("text-gray-400"),
 								Span(Class("font-medium"), g.Text("Subject: ")),
 								g.Text(fmt.Sprintf("Re: %s", conversation.AdTitle)),
 							),
 						),
 					),
-					Div(
-						Class("flex-1 min-h-96 relative"),
-						ID("chat-container"),
-						MessagesList(messages, currentUser.ID),
-						Div(
-							Class("absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize bg-gray-200 hover:bg-gray-300 transition-colors"),
-							ID("resize-handle"),
-							Title("Drag to resize chat area"),
-						),
-					),
+					MessagesList(messages, currentUser.ID),
 					MessageForm(conversation.ID),
 				),
 			),
 		},
+	)
+}
+
+// ExpandedConversation renders an expanded conversation view within the list
+func ExpandedConversation(currentUser *user.User, conversation messaging.Conversation, messages []messaging.Message) g.Node {
+	// Determine the other participant's name
+	otherUserName := conversation.User1Name
+	if currentUser.ID == conversation.User1ID {
+		otherUserName = conversation.User2Name
+	}
+
+	return Div(
+		Class("border-t bg-gray-50"),
+		Div(
+			Class("p-4"),
+			Div(
+				Class("flex items-center justify-between mb-4"),
+				Div(
+					Class("space-y-1"),
+					Div(
+						Class("text-sm text-gray-600"),
+						Span(Class("font-medium"), g.Text("To: ")),
+						g.Text(otherUserName),
+					),
+					Div(
+						Class("text-sm text-gray-600"),
+						Span(Class("font-medium"), g.Text("Subject: ")),
+						g.Text(fmt.Sprintf("Re: %s", conversation.AdTitle)),
+					),
+				),
+				Button(
+					Class("text-gray-400 hover:text-gray-600 p-1"),
+					hx.Get("/messages"),
+					hx.Target(fmt.Sprintf("#conversation-%d", conversation.ID)),
+					hx.Swap("innerHTML"),
+					Title("Close conversation"),
+					g.Text("✕"),
+				),
+			),
+			Div(
+				Class("bg-white rounded-lg border h-80 overflow-hidden"),
+				MessagesList(messages, currentUser.ID),
+				MessageForm(conversation.ID),
+			),
+		),
 	)
 }
 
@@ -162,8 +226,7 @@ func MessagesList(messages []messaging.Message, currentUserID int) g.Node {
 	}
 
 	return Div(
-		ID("messages-list"),
-		Class("space-y-4"),
+		Class("flex-1 overflow-y-auto p-4 space-y-4"),
 		g.If(len(messages) == 0,
 			Div(
 				Class("text-center py-8"),
@@ -214,11 +277,10 @@ func MessageItem(msg messaging.Message, currentUserID int) g.Node {
 // MessageForm renders the form for sending new messages
 func MessageForm(conversationID int) g.Node {
 	return Form(
-		Class("flex gap-3 message-form"),
+		Class("flex gap-3 p-4 bg-white border-t"),
 		hx.Post(fmt.Sprintf("/messages/%d/send", conversationID)),
-		hx.Target("#messages-list"),
+		hx.Target("body"),
 		hx.Swap("outerHTML"),
-		hx.On("htmx:afterRequest", "document.getElementById('messages-list').scrollTop = document.getElementById('messages-list').scrollHeight"),
 		Input(
 			Type("text"),
 			Name("message"),
