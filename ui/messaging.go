@@ -120,11 +120,11 @@ func ConversationPage(currentUser *user.User, conversation messaging.Conversatio
 			),
 			ContentContainer(
 				Div(
-					Class("flex flex-col h-96 bg-white rounded-lg border"),
+					Class("flex flex-col bg-white rounded-lg border"),
 					Div(
 						Class("p-4 border-b bg-gray-50"),
 						Div(
-							Class("grid grid-cols-2 gap-4 text-sm"),
+							Class("space-y-2 text-sm"),
 							Div(
 								Class("text-gray-600"),
 								Span(Class("font-medium"), g.Text("To: ")),
@@ -137,7 +137,16 @@ func ConversationPage(currentUser *user.User, conversation messaging.Conversatio
 							),
 						),
 					),
-					MessagesList(messages, currentUser.ID),
+					Div(
+						Class("flex-1 min-h-96 relative"),
+						ID("chat-container"),
+						MessagesList(messages, currentUser.ID),
+						Div(
+							Class("absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize bg-gray-200 hover:bg-gray-300 transition-colors"),
+							ID("resize-handle"),
+							Title("Drag to resize chat area"),
+						),
+					),
 					MessageForm(conversation.ID),
 				),
 			),
@@ -153,7 +162,8 @@ func MessagesList(messages []messaging.Message, currentUserID int) g.Node {
 	}
 
 	return Div(
-		Class("flex-1 overflow-y-auto p-4 space-y-4"),
+		ID("messages-list"),
+		Class("space-y-4"),
 		g.If(len(messages) == 0,
 			Div(
 				Class("text-center py-8"),
@@ -204,10 +214,11 @@ func MessageItem(msg messaging.Message, currentUserID int) g.Node {
 // MessageForm renders the form for sending new messages
 func MessageForm(conversationID int) g.Node {
 	return Form(
-		Class("flex gap-3 p-4 bg-white border-t"),
+		Class("flex gap-3 message-form"),
 		hx.Post(fmt.Sprintf("/messages/%d/send", conversationID)),
-		hx.Target("body"),
+		hx.Target("#messages-list"),
 		hx.Swap("outerHTML"),
+		hx.On("htmx:afterRequest", "document.getElementById('messages-list').scrollTop = document.getElementById('messages-list').scrollHeight"),
 		Input(
 			Type("text"),
 			Name("message"),
