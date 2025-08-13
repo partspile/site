@@ -26,8 +26,8 @@ func HandleMessagesPage(c *fiber.Ctx) error {
 	// Check if we should expand a specific conversation
 	expandID := c.Query("expand")
 	if expandID != "" {
-		// Add JavaScript to automatically expand the conversation
-		c.Locals("expandConversationID", expandID)
+		// Return the page with the conversation pre-expanded
+		return render(c, ui.MessagesPageWithExpanded(currentUser, conversations, expandID))
 	}
 
 	return render(c, ui.MessagesPage(currentUser, conversations))
@@ -97,7 +97,31 @@ func HandleExpandConversation(c *fiber.Ctx) error {
 		return c.Status(500).SendString("Failed to load messages")
 	}
 
-	return render(c, ui.ExpandedConversation(currentUser, conversation, messages))
+	component := ui.ExpandedConversation(currentUser, conversation, messages)
+	return render(c, component)
+}
+
+// HandleCollapseConversation handles collapsing a conversation back to the list view
+func HandleCollapseConversation(c *fiber.Ctx) error {
+	currentUser := c.Locals("user").(*user.User)
+
+	conversationID, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("Invalid conversation ID")
+	}
+
+	conversation, err := messaging.GetConversationWithDetails(conversationID)
+	if err != nil {
+		return c.Status(404).SendString("Conversation not found")
+	}
+
+	// Check if user is part of this conversation
+	if conversation.User1ID != currentUser.ID && conversation.User2ID != currentUser.ID {
+		return c.Status(403).SendString("Access denied")
+	}
+
+	// Return just the collapsed conversation item
+	return render(c, ui.ConversationListItem(conversation, currentUser.ID))
 }
 
 // HandleStartConversation handles starting a new conversation about an ad

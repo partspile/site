@@ -31,25 +31,48 @@ func MessagesPage(currentUser *user.User, conversations []messaging.Conversation
 					ConversationsList(conversations, currentUser.ID),
 				),
 			),
-			// Add JavaScript to auto-expand conversation if specified in URL
-			Script(
-				Type("text/javascript"),
-				g.Text(`
-					document.addEventListener('DOMContentLoaded', function() {
-						const urlParams = new URLSearchParams(window.location.search);
-						const expandID = urlParams.get('expand');
-						if (expandID) {
-							const conversationElement = document.getElementById('conversation-' + expandID);
-							if (conversationElement) {
-								// Trigger the expand action
-								const expandTrigger = conversationElement.previousElementSibling;
-								if (expandTrigger && expandTrigger.hasAttribute('hx-get')) {
-									expandTrigger.click();
-								}
-							}
-						}
-					});
-				`),
+		},
+	)
+}
+
+// MessagesPageWithExpanded renders the messages page with a specific conversation pre-expanded
+func MessagesPageWithExpanded(currentUser *user.User, conversations []messaging.Conversation, expandID string) g.Node {
+	// Find the conversation to expand
+	var expandedConversation *messaging.Conversation
+	var expandedMessages []messaging.Message
+
+	for _, conv := range conversations {
+		if fmt.Sprintf("%d", conv.ID) == expandID {
+			expandedConversation = &conv
+			break
+		}
+	}
+
+	// If conversation found, get its messages
+	if expandedConversation != nil {
+		messages, err := messaging.GetMessages(expandedConversation.ID)
+		if err == nil {
+			expandedMessages = messages
+		}
+	}
+
+	return Page(
+		"Messages",
+		currentUser,
+		"/messages",
+		[]g.Node{
+			PageHeader("Messages"),
+			ContentContainer(
+				g.If(len(conversations) == 0,
+					Div(
+						Class("text-center py-8"),
+						P(Class("text-gray-500 text-lg"), g.Text("No conversations yet.")),
+						P(Class("text-gray-400"), g.Text("Start a conversation by clicking the message button on any ad.")),
+					),
+				),
+				g.If(len(conversations) > 0,
+					ConversationsListWithExpanded(conversations, currentUser, expandedConversation, expandedMessages),
+				),
 			),
 		},
 	)
@@ -63,7 +86,26 @@ func ConversationsList(conversations []messaging.Conversation, currentUserID int
 	}
 
 	return Div(
-		Class("space-y-4"),
+		Class("divide-y divide-gray-200"),
+		g.Group(conversationNodes),
+	)
+}
+
+// ConversationsListWithExpanded renders the list of conversations with one pre-expanded
+func ConversationsListWithExpanded(conversations []messaging.Conversation, currentUser *user.User, expandedConversation *messaging.Conversation, expandedMessages []messaging.Message) g.Node {
+	var conversationNodes []g.Node
+	for _, conv := range conversations {
+		if expandedConversation != nil && conv.ID == expandedConversation.ID {
+			// Render the expanded conversation
+			conversationNodes = append(conversationNodes, ExpandedConversation(currentUser, conv, expandedMessages))
+		} else {
+			// Render the collapsed conversation
+			conversationNodes = append(conversationNodes, ConversationListItem(conv, currentUser.ID))
+		}
+	}
+
+	return Div(
+		Class("divide-y divide-gray-200"),
 		g.Group(conversationNodes),
 	)
 }
@@ -76,10 +118,12 @@ func ConversationListItem(conv messaging.Conversation, currentUserID int) g.Node
 		otherUserName = conv.User2Name
 	}
 
-	// Format the last message time
-	timeStr := "No messages yet"
+	// Format the time - use last message time if available, otherwise use conversation creation time
+	var timeStr string
 	if !conv.LastMessageAt.IsZero() {
 		timeStr = formatAdAge(conv.LastMessageAt)
+	} else {
+		timeStr = formatAdAge(conv.CreatedAt)
 	}
 
 	// Show unread count if any
@@ -92,35 +136,31 @@ func ConversationListItem(conv messaging.Conversation, currentUserID int) g.Node
 	}
 
 	return Div(
-		Class("border rounded-lg overflow-hidden"),
+		ID(fmt.Sprintf("conversation-%d", conv.ID)),
 		Div(
-			Class("p-4 hover:bg-gray-50 transition-colors cursor-pointer"),
+			Class("py-3 px-4 hover:bg-gray-50 transition-colors cursor-pointer"),
 			hx.Get(fmt.Sprintf("/messages/%d/expand", conv.ID)),
 			hx.Target(fmt.Sprintf("#conversation-%d", conv.ID)),
-			hx.Swap("innerHTML"),
+			hx.Swap("outerHTML"),
+
+			hx.On("htmx:beforeRequest", fmt.Sprintf("console.log('Expanding conversation %d');", conv.ID)),
+			hx.On("htmx:afterRequest", fmt.Sprintf("console.log('Conversation %d expanded');", conv.ID)),
 			Div(
-				Class("flex items-center justify-between"),
+				Class("grid grid-cols-3 gap-4 items-center"),
 				Div(
-					Class("flex-1"),
-					Div(
-						Class("flex items-center gap-2"),
-						H3(Class("font-semibold text-lg"), g.Text(otherUserName)),
-						unreadBadge,
-					),
-					P(Class("text-gray-600 text-sm"), g.Text(conv.AdTitle)),
-					g.If(conv.LastMessage != "",
-						P(Class("text-gray-500 text-sm truncate"), g.Text(conv.LastMessage)),
-					),
+					Class("flex items-center gap-2 min-w-0"),
+					Span(Class("text-sm font-medium text-gray-900"), g.Text(otherUserName)),
+					unreadBadge,
 				),
 				Div(
-					Class("text-right text-sm text-gray-400"),
+					Class("text-sm text-gray-700 truncate"),
+					g.Text(conv.AdTitle),
+				),
+				Div(
+					Class("text-sm text-gray-400 text-right"),
 					g.Text(timeStr),
 				),
 			),
-		),
-		Div(
-			ID(fmt.Sprintf("conversation-%d", conv.ID)),
-			Class("hidden"),
 		),
 	)
 }
@@ -182,7 +222,8 @@ func ExpandedConversation(currentUser *user.User, conversation messaging.Convers
 	}
 
 	return Div(
-		Class("border-t bg-gray-50"),
+		ID(fmt.Sprintf("conversation-%d", conversation.ID)),
+		Class("bg-gray-50"),
 		Div(
 			Class("p-4"),
 			Div(
@@ -202,15 +243,15 @@ func ExpandedConversation(currentUser *user.User, conversation messaging.Convers
 				),
 				Button(
 					Class("text-gray-400 hover:text-gray-600 p-1"),
-					hx.Get("/messages"),
+					hx.Get(fmt.Sprintf("/messages/%d/collapse", conversation.ID)),
 					hx.Target(fmt.Sprintf("#conversation-%d", conversation.ID)),
-					hx.Swap("innerHTML"),
+					hx.Swap("outerHTML"),
 					Title("Close conversation"),
 					g.Text("✕"),
 				),
 			),
 			Div(
-				Class("bg-white rounded-lg border h-80 overflow-hidden"),
+				Class("bg-white rounded-lg border h-96 flex flex-col"),
 				MessagesList(messages, currentUser.ID),
 				MessageForm(conversation.ID),
 			),
@@ -226,7 +267,7 @@ func MessagesList(messages []messaging.Message, currentUserID int) g.Node {
 	}
 
 	return Div(
-		Class("flex-1 overflow-y-auto p-4 space-y-4"),
+		Class("flex-1 overflow-y-auto p-4 space-y-4 min-h-0"),
 		g.If(len(messages) == 0,
 			Div(
 				Class("text-center py-8"),
