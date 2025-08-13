@@ -97,11 +97,7 @@ func HandleExpandConversation(c *fiber.Ctx) error {
 		return c.Status(500).SendString("Failed to load messages")
 	}
 
-	return c.Render("expanded-conversation", fiber.Map{
-		"currentUser":  currentUser,
-		"conversation": conversation,
-		"messages":     messages,
-	})
+	return render(c, ui.ExpandedConversation(currentUser, conversation, messages))
 }
 
 // HandleStartConversation handles starting a new conversation about an ad
