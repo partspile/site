@@ -22,6 +22,8 @@ type Conversation struct {
 	AdID      int       `json:"ad_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	User1Read bool      `json:"user1_read"`
+	User2Read bool      `json:"user2_read"`
 	// Runtime fields
 	User1Name     string    `json:"user1_name,omitempty"`
 	User2Name     string    `json:"user2_name,omitempty"`
@@ -29,6 +31,7 @@ type Conversation struct {
 	LastMessage   string    `json:"last_message,omitempty"`
 	LastMessageAt time.Time `json:"last_message_at,omitempty"`
 	UnreadCount   int       `json:"unread_count,omitempty"`
+	IsUnread      bool      `json:"is_unread,omitempty"` // Whether current user has unread messages
 }
 
 // Message represents a single message in a conversation
@@ -82,16 +85,17 @@ func GetOrCreateConversation(user1ID, user2ID, adID int) (int, error) {
 
 // GetConversationByID retrieves a conversation by ID
 func GetConversationByID(id int) (Conversation, error) {
-	row := db.QueryRow(`SELECT id, user1_id, user2_id, ad_id, created_at, updated_at FROM Conversation WHERE id = ?`, id)
+	row := db.QueryRow(`SELECT id, user1_id, user2_id, ad_id, created_at, updated_at, user1_read, user2_read FROM Conversation WHERE id = ?`, id)
 	var conv Conversation
 	var createdAt, updatedAt string
-	err := row.Scan(&conv.ID, &conv.User1ID, &conv.User2ID, &conv.AdID, &createdAt, &updatedAt)
+	err := row.Scan(&conv.ID, &conv.User1ID, &conv.User2ID, &conv.AdID, &createdAt, &updatedAt, &conv.User1Read, &conv.User2Read)
 	if err != nil {
 		return Conversation{}, err
 	}
 
 	conv.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 	conv.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
+
 	return conv, nil
 }
 
@@ -142,6 +146,7 @@ func GetConversationWithDetails(id int) (Conversation, error) {
 func GetConversationsForUser(userID int) ([]Conversation, error) {
 	rows, err := db.Query(`
 		SELECT c.id, c.user1_id, c.user2_id, c.ad_id, c.created_at, c.updated_at,
+		       c.user1_read, c.user2_read,
 		       u1.name as user1_name, u2.name as user2_name,
 		       a.title as ad_title,
 		       m.content as last_message, m.created_at as last_message_at,
@@ -173,6 +178,7 @@ func GetConversationsForUser(userID int) ([]Conversation, error) {
 		var lastMessage sql.NullString
 		var lastMessageAtStr sql.NullString
 		err := rows.Scan(&conv.ID, &conv.User1ID, &conv.User2ID, &conv.AdID, &createdAt, &updatedAt,
+			&conv.User1Read, &conv.User2Read,
 			&conv.User1Name, &conv.User2Name, &conv.AdTitle,
 			&lastMessage, &lastMessageAtStr, &conv.UnreadCount)
 		if err != nil {
@@ -181,6 +187,7 @@ func GetConversationsForUser(userID int) ([]Conversation, error) {
 
 		conv.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 		conv.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
+
 		if lastMessage.Valid {
 			conv.LastMessage = lastMessage.String
 		}
@@ -188,10 +195,32 @@ func GetConversationsForUser(userID int) ([]Conversation, error) {
 			conv.LastMessageAt, _ = time.Parse(time.RFC3339Nano, lastMessageAtStr.String)
 		}
 
+		// Calculate if conversation is unread for current user
+		conv.IsUnread = conv.UnreadCount > 0
+
 		conversations = append(conversations, conv)
 	}
 
 	return conversations, nil
+}
+
+// MarkConversationAsRead marks a conversation as read for a specific user
+func MarkConversationAsRead(conversationID, userID int) error {
+	// Determine which read field to update based on user position in conversation
+	conv, err := GetConversationByID(conversationID)
+	if err != nil {
+		return err
+	}
+
+	if conv.User1ID == userID {
+		_, err = db.Exec(`UPDATE Conversation SET user1_read = TRUE WHERE id = ?`, conversationID)
+	} else if conv.User2ID == userID {
+		_, err = db.Exec(`UPDATE Conversation SET user2_read = TRUE WHERE id = ?`, conversationID)
+	} else {
+		return fmt.Errorf("user %d is not part of conversation %d", userID, conversationID)
+	}
+
+	return err
 }
 
 // GetConversationWithUser retrieves a conversation between two specific users about an ad

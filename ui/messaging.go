@@ -149,67 +149,25 @@ func ConversationListItem(conv messaging.Conversation, currentUserID int) g.Node
 				Class("grid grid-cols-3 gap-4 items-center"),
 				Div(
 					Class("flex items-center gap-2 min-w-0"),
-					Span(Class("text-sm font-medium text-gray-900"), g.Text(otherUserName)),
+					Span(
+						g.If(conv.IsUnread, Class("text-sm font-bold text-gray-900")),
+						g.If(!conv.IsUnread, Class("text-sm font-medium text-gray-900")),
+						g.Text(otherUserName),
+					),
 					unreadBadge,
 				),
 				Div(
-					Class("text-sm text-gray-700 truncate"),
+					g.If(conv.IsUnread, Class("text-sm font-bold text-gray-700 truncate")),
+					g.If(!conv.IsUnread, Class("text-sm text-gray-700 truncate")),
 					g.Text(conv.AdTitle),
 				),
 				Div(
-					Class("text-sm text-gray-400 text-right"),
+					g.If(conv.IsUnread, Class("text-sm font-bold text-gray-400 text-right")),
+					g.If(!conv.IsUnread, Class("text-sm text-gray-400 text-right")),
 					g.Text(timeStr),
 				),
 			),
 		),
-	)
-}
-
-// ConversationPage renders a specific conversation page
-func ConversationPage(currentUser *user.User, conversation messaging.Conversation, messages []messaging.Message) g.Node {
-	// Determine the other participant's name
-	otherUserName := conversation.User1Name
-	if currentUser.ID == conversation.User1ID {
-		otherUserName = conversation.User2Name
-	}
-
-	return Page(
-		fmt.Sprintf("Conversation with %s", otherUserName),
-		currentUser,
-		fmt.Sprintf("/messages/%d", conversation.ID),
-		[]g.Node{
-			Div(
-				Class("mb-6"),
-				A(
-					Href("/messages"),
-					Class("text-blue-500 hover:underline"),
-					g.Text("← Back to messages"),
-				),
-			),
-			ContentContainer(
-				Div(
-					Class("flex flex-col h-96 bg-white rounded-lg border"),
-					Div(
-						Class("p-4 border-b bg-gray-50"),
-						Div(
-							Class("space-y-2 text-sm"),
-							Div(
-								Class("text-gray-600"),
-								Span(Class("font-medium"), g.Text("To: ")),
-								g.Text(otherUserName),
-							),
-							Div(
-								Class("text-gray-400"),
-								Span(Class("font-medium"), g.Text("Subject: ")),
-								g.Text(fmt.Sprintf("Re: %s", conversation.AdTitle)),
-							),
-						),
-					),
-					MessagesList(messages, currentUser.ID),
-					MessageForm(conversation.ID),
-				),
-			),
-		},
 	)
 }
 
@@ -320,7 +278,7 @@ func MessageForm(conversationID int) g.Node {
 	return Form(
 		Class("flex gap-3 p-4 bg-white border-t"),
 		hx.Post(fmt.Sprintf("/messages/%d/send", conversationID)),
-		hx.Target("body"),
+		hx.Target(fmt.Sprintf("#conversation-%d", conversationID)),
 		hx.Swap("outerHTML"),
 		Input(
 			Type("text"),

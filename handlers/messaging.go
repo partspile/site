@@ -33,40 +33,6 @@ func HandleMessagesPage(c *fiber.Ctx) error {
 	return render(c, ui.MessagesPage(currentUser, conversations))
 }
 
-// HandleConversationPage handles a specific conversation page
-func HandleConversationPage(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
-
-	conversationID, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return render(c, ui.ErrorPage(400, "Invalid conversation ID"))
-	}
-
-	conversation, err := messaging.GetConversationWithDetails(conversationID)
-	if err != nil {
-		return render(c, ui.ErrorPage(404, "Conversation not found"))
-	}
-
-	// Check if user is part of this conversation
-	if conversation.User1ID != currentUser.ID && conversation.User2ID != currentUser.ID {
-		return render(c, ui.ErrorPage(403, "Access denied"))
-	}
-
-	// Mark messages as read
-	err = messaging.MarkMessagesAsRead(conversationID, currentUser.ID)
-	if err != nil {
-		// Log error but don't fail the request
-		log.Printf("Failed to mark messages as read: %v", err)
-	}
-
-	messages, err := messaging.GetMessages(conversationID)
-	if err != nil {
-		return render(c, ui.ErrorPage(500, "Failed to load messages"))
-	}
-
-	return render(c, ui.ConversationPage(currentUser, conversation, messages))
-}
-
 // HandleExpandConversation handles expanding a conversation in-place
 func HandleExpandConversation(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
@@ -84,6 +50,12 @@ func HandleExpandConversation(c *fiber.Ctx) error {
 	// Check if user is part of this conversation
 	if conversation.User1ID != currentUser.ID && conversation.User2ID != currentUser.ID {
 		return c.Status(403).SendString("Access denied")
+	}
+
+	// Mark conversation as read for current user
+	err = messaging.MarkConversationAsRead(conversationID, currentUser.ID)
+	if err != nil {
+		log.Printf("Failed to mark conversation as read: %v", err)
 	}
 
 	// Mark messages as read
@@ -206,8 +178,19 @@ func HandleSendMessage(c *fiber.Ctx) error {
 		}()
 	}
 
-	// Redirect back to conversation page
-	return c.Redirect(fmt.Sprintf("/messages/%d", conversationID))
+	// Get updated conversation and messages
+	updatedConversation, err := messaging.GetConversationWithDetails(conversationID)
+	if err != nil {
+		return render(c, ui.ErrorPage(500, "Failed to load updated conversation"))
+	}
+
+	updatedMessages, err := messaging.GetMessages(conversationID)
+	if err != nil {
+		return render(c, ui.ErrorPage(500, "Failed to load updated messages"))
+	}
+
+	// Return the updated expanded conversation view
+	return render(c, ui.ExpandedConversation(currentUser, updatedConversation, updatedMessages))
 }
 
 // HandleMessagesAPI handles AJAX requests for messages
