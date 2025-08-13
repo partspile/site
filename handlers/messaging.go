@@ -35,7 +35,7 @@ func HandleConversationPage(c *fiber.Ctx) error {
 		return render(c, ui.ErrorPage(400, "Invalid conversation ID"))
 	}
 
-	conversation, err := messaging.GetConversationByID(conversationID)
+	conversation, err := messaging.GetConversationWithDetails(conversationID)
 	if err != nil {
 		return render(c, ui.ErrorPage(404, "Conversation not found"))
 	}
@@ -100,7 +100,7 @@ func HandleSendMessage(c *fiber.Ctx) error {
 		return render(c, ui.ErrorPage(400, "Invalid conversation ID"))
 	}
 
-	conversation, err := messaging.GetConversationByID(conversationID)
+	conversation, err := messaging.GetConversationWithDetails(conversationID)
 	if err != nil {
 		return render(c, ui.ErrorPage(404, "Conversation not found"))
 	}

@@ -120,11 +120,26 @@ func ConversationPage(currentUser *user.User, conversation messaging.Conversatio
 			),
 			ContentContainer(
 				Div(
-					Class("mb-4 p-3 bg-gray-50 rounded-lg"),
-					P(Class("text-sm text-gray-600"), g.Text(fmt.Sprintf("About: %s", conversation.AdTitle))),
+					Class("flex flex-col h-96 bg-white rounded-lg border"),
+					Div(
+						Class("p-4 border-b bg-gray-50"),
+						Div(
+							Class("grid grid-cols-2 gap-4 text-sm"),
+							Div(
+								Class("text-gray-600"),
+								Span(Class("font-medium"), g.Text("To: ")),
+								g.Text(otherUserName),
+							),
+							Div(
+								Class("text-gray-600"),
+								Span(Class("font-medium"), g.Text("Subject: ")),
+								g.Text(fmt.Sprintf("Re: %s", conversation.AdTitle)),
+							),
+						),
+					),
+					MessagesList(messages, currentUser.ID),
+					MessageForm(conversation.ID),
 				),
-				MessagesList(messages, currentUser.ID),
-				MessageForm(conversation.ID),
 			),
 		},
 	)
@@ -138,7 +153,13 @@ func MessagesList(messages []messaging.Message, currentUserID int) g.Node {
 	}
 
 	return Div(
-		Class("space-y-4 mb-6"),
+		Class("flex-1 overflow-y-auto p-4 space-y-4"),
+		g.If(len(messages) == 0,
+			Div(
+				Class("text-center py-8"),
+				P(Class("text-gray-500"), g.Text("No messages yet. Start the conversation!")),
+			),
+		),
 		g.Group(messageNodes),
 	)
 }
@@ -149,19 +170,32 @@ func MessageItem(msg messaging.Message, currentUserID int) g.Node {
 
 	messageClass := "bg-blue-500 text-white"
 	containerClass := "flex justify-end"
+	timeClass := "text-right text-xs text-gray-400 mr-2"
 	if !isOwnMessage {
 		messageClass = "bg-gray-200 text-gray-800"
 		containerClass = "flex justify-start"
+		timeClass = "text-left text-xs text-gray-400 ml-2"
 	}
 
 	return Div(
 		Class(containerClass),
 		Div(
-			Class(fmt.Sprintf("max-w-xs lg:max-w-md px-4 py-2 rounded-lg %s", messageClass)),
-			P(Class("text-sm"), g.Text(msg.Content)),
+			Class("flex items-end gap-2"),
+			g.If(!isOwnMessage,
+				Div(
+					Class(timeClass),
+					g.Text(formatAdAge(msg.CreatedAt)),
+				),
+			),
 			Div(
-				Class("text-xs opacity-75 mt-1"),
-				g.Text(formatAdAge(msg.CreatedAt)),
+				Class(fmt.Sprintf("max-w-xs lg:max-w-md px-4 py-2 rounded-lg %s", messageClass)),
+				P(Class("text-sm"), g.Text(msg.Content)),
+			),
+			g.If(isOwnMessage,
+				Div(
+					Class(timeClass),
+					g.Text(formatAdAge(msg.CreatedAt)),
+				),
 			),
 		),
 	)
@@ -170,7 +204,7 @@ func MessageItem(msg messaging.Message, currentUserID int) g.Node {
 // MessageForm renders the form for sending new messages
 func MessageForm(conversationID int) g.Node {
 	return Form(
-		Class("flex gap-2"),
+		Class("flex gap-3 p-4 bg-white border-t"),
 		hx.Post(fmt.Sprintf("/messages/%d/send", conversationID)),
 		hx.Target("body"),
 		hx.Swap("outerHTML"),
@@ -178,12 +212,12 @@ func MessageForm(conversationID int) g.Node {
 			Type("text"),
 			Name("message"),
 			Placeholder("Type your message..."),
-			Class("flex-1 p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"),
+			Class("flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
 			Required(),
 		),
 		Button(
 			Type("submit"),
-			Class("px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"),
+			Class("px-6 py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"),
 			g.Text("Send"),
 		),
 	)

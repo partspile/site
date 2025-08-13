@@ -95,6 +95,49 @@ func GetConversationByID(id int) (Conversation, error) {
 	return conv, nil
 }
 
+// GetConversationWithDetails retrieves a conversation by ID with runtime data populated
+func GetConversationWithDetails(id int) (Conversation, error) {
+	conv, err := GetConversationByID(id)
+	if err != nil {
+		return Conversation{}, err
+	}
+
+	// Get user names
+	user1Name, user2Name, err := GetConversationParticipantNames(id)
+	if err != nil {
+		return Conversation{}, err
+	}
+	conv.User1Name = user1Name
+	conv.User2Name = user2Name
+
+	// Get ad title
+	row := db.QueryRow(`SELECT title FROM Ad WHERE id = ?`, conv.AdID)
+	var adTitle string
+	err = row.Scan(&adTitle)
+	if err != nil {
+		return Conversation{}, err
+	}
+	conv.AdTitle = adTitle
+
+	// Get last message info
+	row = db.QueryRow(`
+		SELECT content, created_at 
+		FROM Message 
+		WHERE conversation_id = ? 
+		ORDER BY created_at DESC 
+		LIMIT 1
+	`, id)
+	var lastMessage string
+	var lastMessageAt string
+	err = row.Scan(&lastMessage, &lastMessageAt)
+	if err == nil {
+		conv.LastMessage = lastMessage
+		conv.LastMessageAt, _ = time.Parse(time.RFC3339Nano, lastMessageAt)
+	}
+
+	return conv, nil
+}
+
 // GetConversationsForUser retrieves all conversations for a user
 func GetConversationsForUser(userID int) ([]Conversation, error) {
 	rows, err := db.Query(`
