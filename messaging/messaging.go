@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"sync"
+
 	"github.com/parts-pile/site/db"
 )
 
@@ -276,9 +278,36 @@ func AddMessage(conversationID, senderID int, content string) (int, error) {
 		return 0, err
 	}
 
+	// Mark conversation as unread for the recipient
+	conv, err := GetConversationByID(conversationID)
+	if err != nil {
+		return 0, err
+	}
+
+	if conv.User1ID == senderID {
+		_, err = tx.Exec(`UPDATE Conversation SET user2_read = FALSE WHERE id = ?`, conversationID)
+	} else {
+		_, err = tx.Exec(`UPDATE Conversation SET user1_read = FALSE WHERE id = ?`, conversationID)
+	}
+	if err != nil {
+		return 0, err
+	}
+
 	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
+
+	// Create a message struct for notification
+	msg := Message{
+		ID:             int(messageID),
+		ConversationID: conversationID,
+		SenderID:       senderID,
+		Content:        content,
+		CreatedAt:      time.Now(),
+	}
+
+	// Notify all participants about the new message
+	NotifyConversationUpdate(conversationID, "new_message", &msg)
 
 	return int(messageID), nil
 }
@@ -364,4 +393,65 @@ func CanUserMessageAd(userID, adUserID int) error {
 		return fmt.Errorf("users cannot message themselves")
 	}
 	return nil
+}
+
+// ConversationUpdate represents a real-time update for a conversation
+type ConversationUpdate struct {
+	Type           string                 `json:"type"`
+	ConversationID int                    `json:"conversation_id"`
+	Message        *Message               `json:"message,omitempty"`
+	UnreadCount    int                    `json:"unread_count,omitempty"`
+	Data           map[string]interface{} `json:"data,omitempty"`
+}
+
+// Global map to store user update channels
+var userUpdateChannels = make(map[int]chan ConversationUpdate)
+var userUpdateMutex sync.RWMutex
+
+// RegisterUserUpdates registers a channel for a user to receive real-time updates
+func RegisterUserUpdates(userID int, ch chan ConversationUpdate) {
+	userUpdateMutex.Lock()
+	defer userUpdateMutex.Unlock()
+	userUpdateChannels[userID] = ch
+}
+
+// UnregisterUserUpdates removes a user's update channel
+func UnregisterUserUpdates(userID int) {
+	userUpdateMutex.Lock()
+	defer userUpdateMutex.Unlock()
+	delete(userUpdateChannels, userID)
+}
+
+// NotifyUserUpdate sends an update to a specific user
+func NotifyUserUpdate(userID int, update ConversationUpdate) {
+	userUpdateMutex.RLock()
+	defer userUpdateMutex.RUnlock()
+
+	if ch, exists := userUpdateChannels[userID]; exists {
+		select {
+		case ch <- update:
+			// Update sent successfully
+		default:
+			// Channel is full, skip this update
+		}
+	}
+}
+
+// NotifyConversationUpdate notifies all participants in a conversation about an update
+func NotifyConversationUpdate(conversationID int, updateType string, message *Message) {
+	conv, err := GetConversationByID(conversationID)
+	if err != nil {
+		return
+	}
+
+	// Create update for both users
+	update := ConversationUpdate{
+		Type:           updateType,
+		ConversationID: conversationID,
+		Message:        message,
+	}
+
+	// Notify both users
+	NotifyUserUpdate(conv.User1ID, update)
+	NotifyUserUpdate(conv.User2ID, update)
 }

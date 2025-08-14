@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -213,5 +215,52 @@ func HandleMessagesAPI(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"count": count})
 	default:
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid action"})
+	}
+}
+
+// HandleSSE handles Server-Sent Events for real-time messaging updates
+func HandleSSE(c *fiber.Ctx) error {
+	currentUser := c.Locals("user").(*user.User)
+
+	// Set SSE headers
+	c.Set("Content-Type", "text/event-stream")
+	c.Set("Cache-Control", "no-cache")
+	c.Set("Connection", "keep-alive")
+	c.Set("Access-Control-Allow-Origin", "*")
+	c.Set("Access-Control-Allow-Headers", "Cache-Control")
+
+	// Create a channel for this user's updates
+	userUpdates := make(chan messaging.ConversationUpdate, 10)
+	defer close(userUpdates)
+
+	// Register this user's update channel
+	messaging.RegisterUserUpdates(currentUser.ID, userUpdates)
+	defer messaging.UnregisterUserUpdates(currentUser.ID)
+
+	// Send initial unread count
+	unreadCount, err := messaging.GetUnreadCount(currentUser.ID)
+	if err == nil {
+		c.WriteString(fmt.Sprintf("data: {\"type\":\"unread_count\",\"count\":%d}\n\n", unreadCount))
+	}
+
+	// Keep connection alive and send updates
+	ticker := time.NewTicker(30 * time.Second) // Keep-alive ping
+	defer ticker.Stop()
+
+	for {
+		select {
+		case update := <-userUpdates:
+			// Send conversation update
+			updateJSON, _ := json.Marshal(update)
+			c.WriteString(fmt.Sprintf("data: %s\n\n", updateJSON))
+
+		case <-ticker.C:
+			// Send keep-alive ping
+			c.WriteString("data: {\"type\":\"ping\"}\n\n")
+
+		case <-c.Context().Done():
+			// Client disconnected
+			return nil
+		}
 	}
 }

@@ -111,7 +111,7 @@ func LoginPage(currentUser *user.User, path string) g.Node {
 	)
 }
 
-func VerificationPage(currentUser *user.User, path string) g.Node {
+func VerificationPage(currentUser *user.User, path string, username string) g.Node {
 	return Page(
 		"Verify Phone Number",
 		currentUser,
@@ -128,6 +128,17 @@ func VerificationPage(currentUser *user.User, path string) g.Node {
 					),
 				),
 				FormContainer("verificationForm",
+					// Username field for password managers (readonly to show the username)
+					FormGroup("Username", "username",
+						Input(
+							Type("text"),
+							Name("username"),
+							ID("username"),
+							Value(username),
+							g.Attr("readonly"),
+							Class("bg-gray-100 cursor-not-allowed"),
+						),
+					),
 					FormGroup("Verification Code", "verification_code",
 						TextInput("verification_code", "verification_code", ""),
 					),

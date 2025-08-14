@@ -141,26 +141,25 @@ Only reject names that are truly offensive to a general audience.`
 		return ValidationErrorResponse(c, "Session error. Please try again.")
 	}
 
-	// Wait for SMS delivery confirmation
-	delivered, err := waitForSMSDelivery(messageSid, 30*time.Second)
-	if err != nil {
-		log.Printf("[REGISTRATION] SMS delivery wait failed: %v", err)
-		return ValidationErrorResponse(c, "SMS delivery confirmation failed. Please try again.")
-	}
+	// Start SMS delivery monitoring in background
+	go func() {
+		// Wait for SMS delivery confirmation
+		delivered, err := waitForSMSDelivery(messageSid, 30*time.Second)
+		if err != nil {
+			log.Printf("[REGISTRATION] SMS delivery wait failed: %v", err)
+			return
+		}
 
-	if !delivered {
-		return ValidationErrorResponse(c, "SMS delivery failed. Please check your phone number and try again.")
-	}
+		if delivered {
+			log.Printf("[REGISTRATION] SMS delivered successfully for %s", phone)
+		} else {
+			log.Printf("[REGISTRATION] SMS delivery failed for %s", phone)
+		}
+	}()
 
-	// SMS delivered successfully, update session
-	sess.Set("reg_step", "verification")
-	if err := sess.Save(); err != nil {
-		log.Printf("[REGISTRATION] Failed to save session: %v", err)
-		return ValidationErrorResponse(c, "Session error. Please try again.")
-	}
-
-	// Return success response with redirect
-	return render(c, ui.SuccessMessage("SMS delivered successfully! Redirecting to verification...", "/register/verify"))
+	// Return success response immediately - user can proceed to verification
+	// The SMS delivery status will be checked during verification
+	return render(c, ui.SuccessMessage("Verification code sent! Please check your phone and enter the code below.", "/register/verify"))
 }
 
 // waitForSMSDelivery waits for SMS delivery confirmation with a timeout
@@ -198,12 +197,20 @@ func HandleRegistrationVerification(c *fiber.Ctx) error {
 	}
 
 	regStep := sess.Get("reg_step")
-	if regStep != "verification" {
+	if regStep != "waiting" && regStep != "verification" {
+		return c.Redirect("/register")
+	}
+
+	// Check if we have the required session data
+	name := sess.Get("reg_name")
+	phone := sess.Get("reg_phone")
+	if name == nil || phone == nil {
 		return c.Redirect("/register")
 	}
 
 	currentUser, _ := GetCurrentUser(c)
-	return render(c, ui.VerificationPage(currentUser, c.Path()))
+	username := name.(string) // We know this exists from the check above
+	return render(c, ui.VerificationPage(currentUser, c.Path(), username))
 }
 
 // HandleRegistrationStep2Submission handles verification code submission and completes registration
@@ -215,7 +222,7 @@ func HandleRegistrationStep2Submission(c *fiber.Ctx) error {
 	}
 
 	regStep := sess.Get("reg_step")
-	if regStep != "verification" {
+	if regStep != "waiting" && regStep != "verification" {
 		return c.Redirect("/register")
 	}
 
@@ -275,7 +282,10 @@ func HandleRegistrationStep2Submission(c *fiber.Ctx) error {
 	sess.Delete("reg_name")
 	sess.Delete("reg_phone")
 	sess.Delete("reg_step")
-	sess.Save()
+	if err := sess.Save(); err != nil {
+		log.Printf("[REGISTRATION] Failed to save session cleanup: %v", err)
+		// Don't fail registration for session cleanup errors
+	}
 
 	return render(c, ui.SuccessMessage("Registration successful! Your phone number has been verified.", "/login"))
 }

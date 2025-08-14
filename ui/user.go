@@ -28,7 +28,69 @@ func UserNav(currentUser *user.User, currentPath string) g.Node {
 		}
 		if currentPath != "/messages" {
 			navItems = append(navItems,
-				A(Href("/messages"), Class("text-blue-500 hover:underline"), g.Text("Messages")),
+				Div(
+					Class("relative"),
+					A(
+						Href("/messages"),
+						Class("text-blue-500 hover:underline flex items-center gap-2"),
+						g.Text("Messages"),
+						Span(
+							ID("unread-count"),
+							Class("bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full hidden"),
+							g.Text("0"),
+						),
+					),
+					// SSE connection for real-time updates
+					Script(g.Raw(`
+						// Load initial unread count
+						fetch('/api/messages/unread-count')
+							.then(response => response.json())
+							.then(data => {
+								const countEl = document.getElementById('unread-count');
+								if (data.count > 0) {
+									countEl.textContent = data.count;
+									countEl.classList.remove('hidden');
+								}
+							})
+							.catch(error => console.log('Failed to load unread count:', error));
+						
+						// Connect to SSE endpoint for real-time updates
+						const eventSource = new EventSource('/messages/sse');
+						
+						eventSource.onmessage = function(event) {
+							try {
+								const data = JSON.parse(event.data);
+								if (data.type === 'unread_count') {
+									const countEl = document.getElementById('unread-count');
+									if (data.count > 0) {
+										countEl.textContent = data.count;
+										countEl.classList.remove('hidden');
+									} else {
+										countEl.classList.add('hidden');
+									}
+								} else if (data.type === 'new_message') {
+									// Update conversation list if on messages page
+									const convEl = document.getElementById('conversation-' + data.conversation_id);
+									if (convEl) {
+										// If conversation is expanded, append new message
+										if (convEl.querySelector('.bg-gray-50')) {
+											// TODO: Append new message to expanded view
+										} else {
+											// If collapsed, make it bold (unread)
+											convEl.classList.add('font-bold');
+										}
+									}
+								}
+							} catch (e) {
+								// Ignore parsing errors
+							}
+						};
+						
+						eventSource.onerror = function(event) {
+							console.log('SSE connection error, retrying...');
+						};
+					`)),
+				),
 			)
 		}
 		if currentPath != "/settings" {

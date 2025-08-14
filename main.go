@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
@@ -71,6 +72,8 @@ func main() {
 	app := fiber.New(fiber.Config{
 		ErrorHandler: customErrorHandler,
 		BodyLimit:    config.ServerUploadLimit,
+		ReadTimeout:  30 * time.Second, // Prevent long-running requests
+		WriteTimeout: 30 * time.Second, // Prevent long-running responses
 	})
 
 	// Add session middleware
@@ -190,6 +193,7 @@ func main() {
 	app.Get("/messages", handlers.AuthRequired, handlers.HandleMessagesPage)
 	app.Get("/messages/:id/expand", handlers.AuthRequired, handlers.HandleExpandConversation)
 	app.Get("/messages/:id/collapse", handlers.AuthRequired, handlers.HandleCollapseConversation)
+	app.Get("/messages/sse", handlers.AuthRequired, handlers.HandleSSE)
 	app.Post("/messages/:id/send", handlers.AuthRequired, handlers.HandleSendMessage)
 	app.Get("/messages/start/:adID", handlers.AuthRequired, handlers.HandleStartConversation)
 	api.Get("/messages/:action", handlers.AuthRequired, handlers.HandleMessagesAPI)
