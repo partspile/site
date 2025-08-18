@@ -149,24 +149,15 @@ func AgeDisplay(posted time.Time) g.Node {
 	)
 }
 
-// formatCategoryDisplay formats the category and subcategory for display
+// formatCategoryDisplay formats the category for display
 func formatCategoryDisplay(ad ad.Ad) g.Node {
-	if ad.Category == "" && ad.SubCategory == "" {
+	if ad.Category == "" {
 		return g.Node(nil)
-	}
-
-	var categoryText string
-	if ad.Category != "" && ad.SubCategory != "" {
-		categoryText = fmt.Sprintf("%s • %s", ad.Category, ad.SubCategory)
-	} else if ad.Category != "" {
-		categoryText = ad.Category
-	} else {
-		categoryText = ad.SubCategory
 	}
 
 	return Div(
 		Class("text-sm text-gray-500 -mt-1 mb-3"),
-		g.Text(categoryText),
+		g.Text(ad.Category),
 	)
 }
 
@@ -498,7 +489,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 				// Show subcategories if they exist
 				func() g.Node {
 					if len(subcategories) > 0 {
-						return SubCategoriesFormGroup(subcategories, adObj.SubCategory)
+						return SubCategoriesFormGroup(subcategories, "")
 					}
 					return g.Text("")
 				}(),
@@ -979,7 +970,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 					// Show subcategories if they exist
 					func() g.Node {
 						if len(subcategories) > 0 {
-							return SubCategoriesFormGroup(subcategories, currentAd.SubCategory)
+							return SubCategoriesFormGroup(subcategories, "")
 						}
 						return g.Text("")
 					}(),

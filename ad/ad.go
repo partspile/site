@@ -60,7 +60,7 @@ type Ad struct {
 	Description   string    `json:"description"`
 	Price         float64   `json:"price"`
 	CreatedAt     time.Time `json:"created_at"`
-	SubCategoryID *int      `json:"subcategory_id,omitempty"`
+	SubCategoryID int       `json:"subcategory_id"`
 	UserID        int       `json:"user_id"`
 	LocationID    int       `json:"location_id"`
 	City          string    `json:"city,omitempty"`
@@ -73,7 +73,6 @@ type Ad struct {
 	Models        []string   `json:"models"`
 	Engines       []string   `json:"engines"`
 	Category      string     `json:"category,omitempty"`
-	SubCategory   string     `json:"subcategory,omitempty"`
 	DeletedAt     *time.Time `json:"deleted_at,omitempty"`
 	Bookmarked    bool       `json:"bookmarked"` // true if bookmarked by current user
 	ClickCount    int        `json:"click_count"`
@@ -221,9 +220,6 @@ func GetAd(id int, currentUser *user.User) (Ad, bool) {
 	// Parse the created_at string into time.Time
 	ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 
-	if subcategory.Valid {
-		ad.SubCategory = subcategory.String
-	}
 	if category.Valid {
 		ad.Category = category.String
 	}
@@ -278,21 +274,10 @@ func AddAd(ad Ad) int {
 	}
 	defer tx.Rollback()
 
-	// Get subcategory ID if subcategory name is provided
-	var subcategoryID *int
-	if ad.SubCategory != "" {
-		subcategoryID, err = getSubCategoryIDByName(ad.SubCategory)
-		if err != nil {
-			return 0
-		}
-	} else {
-		subcategoryID = ad.SubCategoryID
-	}
-
 	createdAt := time.Now().UTC().Format(time.RFC3339)
 	imgOrderJSON, _ := json.Marshal(ad.ImageOrder)
 	res, err := tx.Exec("INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		ad.Title, ad.Description, ad.Price, createdAt, subcategoryID, ad.UserID, ad.LocationID, string(imgOrderJSON))
+		ad.Title, ad.Description, ad.Price, createdAt, ad.SubCategoryID, ad.UserID, ad.LocationID, string(imgOrderJSON))
 	if err != nil {
 		return 0
 	}
@@ -418,25 +403,17 @@ func GetAdsPage(cursorID int, limit int) ([]Ad, bool) {
 	var ads []Ad
 	for rows.Next() {
 		var ad Ad
-		var subcatID sql.NullInt64
 		var subcategory sql.NullString
 		var lastClickedAt sql.NullTime
 		var isBookmarked int
 		var createdAt string
 		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
-			&subcatID, &subcategory, &ad.ClickCount, &lastClickedAt, &isBookmarked); err != nil {
+			&ad.SubCategoryID, &subcategory, &ad.ClickCount, &lastClickedAt, &isBookmarked); err != nil {
 			continue
 		}
 
 		// Parse the created_at string into time.Time
 		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-		if subcatID.Valid {
-			intVal := int(subcatID.Int64)
-			ad.SubCategoryID = &intVal
-		}
-		if subcategory.Valid {
-			ad.SubCategory = subcategory.String
-		}
 		if lastClickedAt.Valid {
 			ad.LastClickedAt = &lastClickedAt.Time
 		}
@@ -611,10 +588,7 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			}
 			if subcatID.Valid {
 				intVal := int(subcatID.Int64)
-				ad.SubCategoryID = &intVal
-			}
-			if subcategory.Valid {
-				ad.SubCategory = subcategory.String
+				ad.SubCategoryID = intVal
 			}
 			if category.Valid {
 				ad.Category = category.String
@@ -914,20 +888,9 @@ func UpdateAd(ad Ad) error {
 	}
 	defer tx.Rollback()
 
-	// Get subcategory ID if subcategory name is provided
-	var subcategoryID *int
-	if ad.SubCategory != "" {
-		subcategoryID, err = getSubCategoryIDByName(ad.SubCategory)
-		if err != nil {
-			return err
-		}
-	} else {
-		subcategoryID = ad.SubCategoryID
-	}
-
 	imgOrderJSON, _ := json.Marshal(ad.ImageOrder)
 	_, err = tx.Exec("UPDATE Ad SET title = ?, description = ?, price = ?, subcategory_id = ?, location_id = ?, image_order = ? WHERE id = ?",
-		ad.Title, ad.Description, ad.Price, subcategoryID, ad.LocationID, string(imgOrderJSON), ad.ID)
+		ad.Title, ad.Description, ad.Price, ad.SubCategoryID, ad.LocationID, string(imgOrderJSON), ad.ID)
 	if err != nil {
 		return err
 	}
@@ -1000,13 +963,12 @@ func RestoreAd(adID int) error {
 	// Get ad data from archive
 	var ad Ad
 	var locationID sql.NullInt64
-	var subcategoryID sql.NullInt64
 	var lastClickedAt sql.NullTime
 	var imageOrder sql.NullString
 	var createdAt string
 	err = tx.QueryRow(`SELECT id, title, description, price, created_at, subcategory_id, user_id, location_id, image_order, click_count, last_clicked_at 
 		FROM ArchivedAd WHERE id = ?`, adID).Scan(
-		&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt, &subcategoryID, &ad.UserID, &locationID, &imageOrder, &ad.ClickCount, &lastClickedAt)
+		&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt, &ad.SubCategoryID, &ad.UserID, &locationID, &imageOrder, &ad.ClickCount, &lastClickedAt)
 	if err != nil {
 		return err
 	}
@@ -1017,10 +979,6 @@ func RestoreAd(adID int) error {
 	if locationID.Valid {
 		ad.LocationID = int(locationID.Int64)
 	}
-	if subcategoryID.Valid {
-		subCatID := int(subcategoryID.Int64)
-		ad.SubCategoryID = &subCatID
-	}
 	if lastClickedAt.Valid {
 		ad.LastClickedAt = &lastClickedAt.Time
 	}
@@ -1028,39 +986,11 @@ func RestoreAd(adID int) error {
 		_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
 	}
 
-	// Restore ad - handle NULL values properly
-	var subcategoryIDValue interface{}
-	if subcategoryID.Valid {
-		subcategoryIDValue = *ad.SubCategoryID
-	} else {
-		subcategoryIDValue = nil
-	}
-
-	var locationIDValue interface{}
-	if locationID.Valid {
-		locationIDValue = ad.LocationID
-	} else {
-		locationIDValue = nil
-	}
-
-	var lastClickedAtValue interface{}
-	if lastClickedAt.Valid {
-		lastClickedAtValue = ad.LastClickedAt
-	} else {
-		lastClickedAtValue = nil
-	}
-
-	// Marshal ImageOrder back to JSON string for database storage
-	var imageOrderValue interface{}
-	if imageOrder.Valid {
-		imageOrderValue = imageOrder.String
-	} else {
-		imageOrderValue = nil
-	}
-
+	// Restore ad - subcategory_id is now NOT NULL so no need for complex NULL handling
+	imgOrderJSON, _ := json.Marshal(ad.ImageOrder)
 	_, err = tx.Exec(`INSERT INTO Ad (id, title, description, price, created_at, subcategory_id, user_id, location_id, image_order, click_count, last_clicked_at, has_vector)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-		ad.ID, ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryIDValue, ad.UserID, locationIDValue, imageOrderValue, ad.ClickCount, lastClickedAtValue)
+		ad.ID, ad.Title, ad.Description, ad.Price, ad.CreatedAt, ad.SubCategoryID, ad.UserID, ad.LocationID, string(imgOrderJSON), ad.ClickCount, ad.LastClickedAt)
 	if err != nil {
 		return err
 	}
@@ -1176,9 +1106,6 @@ func GetAdsByIDs(ids []int, userID int) ([]Ad, error) {
 		// Parse the created_at string into time.Time
 		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 
-		if subcategory.Valid {
-			ad.SubCategory = subcategory.String
-		}
 		if category.Valid {
 			ad.Category = category.String
 		}
@@ -1364,9 +1291,6 @@ func GetMostPopularAds(n int) []Ad {
 			continue
 		}
 
-		if subcategory.Valid {
-			ad.SubCategory = subcategory.String
-		}
 		if lastClickedAt.Valid {
 			ad.LastClickedAt = &lastClickedAt.Time
 		}
@@ -1444,9 +1368,6 @@ func GetAdsWithoutVectors() ([]Ad, error) {
 
 		ad.HasVector = hasVector == 1
 
-		if subcategory.Valid {
-			ad.SubCategory = subcategory.String
-		}
 		if lastClickedAt.Valid {
 			ad.LastClickedAt = &lastClickedAt.Time
 		}
@@ -1546,9 +1467,6 @@ func GetAdsByIDsOptimized(ids []int) ([]Ad, error) {
 		// Parse the created_at string into time.Time
 		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 
-		if subcategory.Valid {
-			ad.SubCategory = subcategory.String
-		}
 		if category.Valid {
 			ad.Category = category.String
 		}
@@ -1676,9 +1594,6 @@ func GetAdsByIDsOptimizedWithBookmarks(ids []int, userID int) ([]Ad, error) {
 		// Parse the created_at string into time.Time
 		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
 
-		if subcategory.Valid {
-			ad.SubCategory = subcategory.String
-		}
 		if category.Valid {
 			ad.Category = category.String
 		}

@@ -191,19 +191,15 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
 	}
-	years, models, engines, categories, subcategories, err := ValidateAdFormAndReturn(form)
+	years, models, engines, categories, _, err := ValidateAdFormAndReturn(form)
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
 	}
 
-	// Get category and subcategory from the validated arrays
+	// Get category from the validated arrays
 	category := ""
 	if len(categories) > 0 {
 		category = categories[0]
-	}
-	subcategory := ""
-	if len(subcategories) > 0 {
-		subcategory = subcategories[0]
 	}
 
 	// Extract image files
@@ -250,7 +246,6 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 		Models:      models,
 		Engines:     engines,
 		Category:    category,
-		SubCategory: subcategory,
 		Description: description,
 		Price:       price,
 		UserID:      userID,

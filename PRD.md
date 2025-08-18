@@ -40,13 +40,13 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - **Enhanced Brand Clustering:** Embeddings include parent company name and country information to improve clustering of related automotive brands (e.g., Ford/Mercury, Toyota/Lexus, Honda/Acura). This ensures ads for makes with the same parent company are semantically grouped together for better search relevance.
 - **Parent Company Integration:** The system maintains a simplified parent company relationship where each make has one primary parent company (chosen for historical significance rather than current ownership). This enables better semantic understanding and brand clustering in vector embeddings.
 - **Vector Search Metadata:** Each ad embedding includes comprehensive metadata for filtering and navigation:
-  - **Tree Navigation Fields:** make, years (array), models (array), engines (array), category, subcategory
+  - **Tree Navigation Fields:** make, years (array), models (array), engines (array), category, subcategory (optional)
   - **Pricing:** price (for filtering/sorting)
   - **Geographic:** geo coordinates (lat/lon) when available
   - **Engagement:** click_count, created_at
   - **Brand Information:** parent_company, parent_company_country
 - **Vector Search Filtering:** The system supports sophisticated filtering at the Qdrant vector database level:
-  - **Tree Navigation Filtering:** Filter by make, year, model, engine, category, subcategory using exact matches
+  - **Tree Navigation Filtering:** Filter by make, year, model, engine, category using exact matches
   - **Price Range Filtering:** Filter by price ranges (implemented via metadata)
   - **Geographic Filtering:** Filter by location/radius (placeholder implementation)
   - **Combined Filters:** Multiple filters can be applied simultaneously using Qdrant's filter system
@@ -360,7 +360,7 @@ The platform is built with the following technologies:
 
 ### Vector Database (Qdrant)
 - **Ad Embeddings**: Stored with comprehensive metadata including:
-  - Tree navigation fields (make, years, models, engines, category, subcategory)
+  - Tree navigation fields (make, years, models, engines, category, subcategory (optional))
   - Pricing information (price)
   - Geographic coordinates (lat/lon) when available
   - Engagement metrics (click_count, created_at)

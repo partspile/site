@@ -684,7 +684,6 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 		joinStrings(adObj.Models),
 		joinStrings(adObj.Engines),
 		adObj.Category,
-		adObj.SubCategory,
 		adObj.City,
 		adObj.AdminArea,
 		adObj.Country,

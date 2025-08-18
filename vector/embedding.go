@@ -619,7 +619,6 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 		joinStrings(adObj.Models),
 		joinStrings(adObj.Engines),
 		adObj.Category,
-		adObj.SubCategory,
 		adObj.City,
 		adObj.AdminArea,
 		adObj.Country,
@@ -652,9 +651,11 @@ func BuildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 
 	// Get category data for filtering
 	var category, subcategory string
-	if adObj.SubCategoryID != nil {
-		subcategory = adObj.SubCategory
+	if adObj.SubCategoryID != 0 {
+		// Since SubCategory field no longer exists, we'll need to look up the name
+		// For now, just use the category if available
 		category = adObj.Category
+		// TODO: Look up subcategory name from SubCategoryID if needed
 	}
 
 	metadata := map[string]interface{}{

@@ -530,9 +530,6 @@ func GetAdsForNode(parts []string, q string) ([]ad.Ad, error) {
 			return nil, err
 		}
 		adObj.ID = adID
-		if subcategory.Valid {
-			adObj.SubCategory = subcategory.String
-		}
 		if category.Valid {
 			adObj.Category = category.String
 		}
@@ -680,9 +677,6 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 			return nil, err
 		}
 		adObj.ID = adID
-		if subcategory.Valid {
-			adObj.SubCategory = subcategory.String
-		}
 		if category.Valid {
 			adObj.Category = category.String
 		}
@@ -852,9 +846,6 @@ func GetAdsForTreeView(parts []string, sq ad.SearchQuery, userID int) ([]ad.Ad, 
 			return nil, err
 		}
 		adObj.ID = adID
-		if subcategory.Valid {
-			adObj.SubCategory = subcategory.String
-		}
 		if category.Valid {
 			adObj.Category = category.String
 		}

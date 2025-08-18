@@ -13,15 +13,6 @@ CREATE TABLE ParentCompany (
     country TEXT
 );
 
--- Note: MakeParentCompany table has been removed in favor of direct relationship
--- CREATE TABLE MakeParentCompany (
---     make_id INTEGER NOT NULL,
---     parent_company_id INTEGER NOT NULL,
---     PRIMARY KEY (make_id, parent_company_id),
---     FOREIGN KEY (make_id) REFERENCES Make(id),
---     FOREIGN KEY (parent_company_id) REFERENCES ParentCompany(id)
--- );
-
 CREATE TABLE Year (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     year INTEGER NOT NULL UNIQUE
@@ -130,7 +121,7 @@ CREATE TABLE Ad (
     description TEXT,
     price REAL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    subcategory_id INTEGER,
+    subcategory_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     image_order TEXT,
     location_id INTEGER REFERENCES Location(id),
@@ -149,7 +140,7 @@ CREATE TABLE ArchivedAd (
     price REAL,
     created_at DATETIME,
     deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    subcategory_id INTEGER,
+    subcategory_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     image_order TEXT,
     location_id INTEGER REFERENCES Location(id),

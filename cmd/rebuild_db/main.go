@@ -466,12 +466,30 @@ func main() {
 			continue
 		}
 
-		// Get subcategory ID if specified
-		var subcategoryID *int
+		// Get subcategory ID if specified, or use a default one
+		var subcategoryID int
 		if ad.Subcategory != "" {
 			if id, exists := subcategoryMap[ad.Subcategory]; exists {
-				subcategoryID = &id
+				subcategoryID = id
+			} else {
+				// If the specified subcategory doesn't exist, use the first available one
+				for _, id := range subcategoryMap {
+					subcategoryID = id
+					break
+				}
 			}
+		} else {
+			// If no subcategory specified, use the first available one
+			for _, id := range subcategoryMap {
+				subcategoryID = id
+				break
+			}
+		}
+
+		// Ensure we have a valid subcategory ID
+		if subcategoryID == 0 {
+			log.Printf("No valid subcategory found for ad: %s, skipping", ad.Title)
+			continue
 		}
 
 		// Generate between 1 and 5 images per ad

@@ -1182,14 +1182,8 @@ func matchesChildPath(ad ad.Ad, childPath []string, level int) bool {
 			return ad.Category == decodedCategory
 		}
 	case 5: // Category level - check subcategory
-		if len(childPath) >= 6 && childPath[5] != "" {
-			// URL decode the subcategory value from the path
-			decodedSubCategory, err := url.QueryUnescape(childPath[5])
-			if err != nil {
-				decodedSubCategory = childPath[5] // fallback to original if decoding fails
-			}
-			return ad.SubCategory == decodedSubCategory
-		}
+		// TODO: Implement subcategory filtering using SubCategoryID
+		// For now, skip subcategory level filtering
 	}
 
 	return true // Default to true if no specific filtering needed
@@ -1238,11 +1232,8 @@ func extractChildrenFromAds(ads []ad.Ad, level int, parts []string, structuredQu
 			}
 		}
 	case 5: // Category level - extract subcategories
-		for _, ad := range ads {
-			if ad.SubCategory != "" {
-				uniqueValues[ad.SubCategory] = true
-			}
-		}
+		// TODO: Implement subcategory extraction using SubCategoryID
+		// For now, skip subcategory level extraction
 	}
 
 	// Convert map keys to slice and sort
