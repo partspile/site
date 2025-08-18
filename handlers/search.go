@@ -633,26 +633,6 @@ func FilterAds(query SearchQuery, ads []ad.Ad) []ad.Ad {
 	return filteredAds
 }
 
-func GetNextPage(query SearchQuery, cursor *SearchCursor, limit int, userID int) ([]ad.Ad, *SearchCursor, error) {
-	// Get filtered page from database
-	ads, hasMore, err := ad.GetFilteredAdsPageDB(query, cursor, limit, userID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var nextCursor *SearchCursor
-	if hasMore && len(ads) > 0 {
-		lastAd := ads[len(ads)-1]
-		nextCursor = &SearchCursor{
-			Query:      query,
-			LastID:     lastAd.ID,
-			LastPosted: lastAd.CreatedAt,
-		}
-	}
-
-	return ads, nextCursor, nil
-}
-
 func HandleTreeCollapse(c *fiber.Ctx) error {
 	q := c.Query("q")
 	structuredQueryStr := c.Query("structured_query")
