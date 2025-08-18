@@ -313,36 +313,16 @@ func addAdVehicleAssociations(tx *sql.Tx, adID int, makeName string, years []str
 					JOIN Engine e ON c.engine_id = e.id
 					WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ?
 				`, makeName, yearStr, modelName, engineName).Scan(&carID)
-				if err == sql.ErrNoRows {
-					var makeID, yearID, modelID, engineID int
-					err = tx.QueryRow("SELECT id FROM Make WHERE name = ?", makeName).Scan(&makeID)
-					if err != nil {
-						continue
+				if err != nil {
+					if err == sql.ErrNoRows {
+						return fmt.Errorf("car not found for make=%s, year=%s, model=%s, engine=%s", makeName, yearStr, modelName, engineName)
 					}
-					err = tx.QueryRow("SELECT id FROM Year WHERE year = ?", yearStr).Scan(&yearID)
-					if err != nil {
-						continue
-					}
-					err = tx.QueryRow("SELECT id FROM Model WHERE name = ?", modelName).Scan(&modelID)
-					if err != nil {
-						continue
-					}
-					err = tx.QueryRow("SELECT id FROM Engine WHERE name = ?", engineName).Scan(&engineID)
-					if err != nil {
-						continue
-					}
-					res, err := tx.Exec("INSERT INTO Car (make_id, year_id, model_id, engine_id) VALUES (?, ?, ?, ?)", makeID, yearID, modelID, engineID)
-					if err != nil {
-						continue
-					}
-					id, _ := res.LastInsertId()
-					carID = int(id)
-				} else if err != nil {
-					continue
+					return fmt.Errorf("error looking up car: %w", err)
 				}
+
 				_, err = tx.Exec("INSERT OR IGNORE INTO AdCar (ad_id, car_id) VALUES (?, ?)", adID, carID)
 				if err != nil {
-					continue
+					return fmt.Errorf("error inserting AdCar association: %w", err)
 				}
 			}
 		}
