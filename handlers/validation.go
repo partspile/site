@@ -213,12 +213,14 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
 	}
+	
+	// For new ads, don't set ID (let SQLite auto-generate)
+	// For editing existing ads, use the provided ID
 	id := 0
 	if len(adID) > 0 {
 		id = adID[0]
-	} else {
-		id = ad.GetNextAdID()
 	}
+	// If id is 0, SQLite will auto-generate the ID
 	imageOrderStr := c.FormValue("image_order")
 	imageOrder := []int{}
 	if imageOrderStr != "" {

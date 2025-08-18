@@ -283,10 +283,8 @@ func AddAd(ad Ad) int {
 	}
 	adID, _ := res.LastInsertId()
 
-	if ad.Make != "" || len(ad.Years) > 0 || len(ad.Models) > 0 || len(ad.Engines) > 0 {
-		if err := addAdVehicleAssociations(tx, int(adID), ad.Make, ad.Years, ad.Models, ad.Engines); err != nil {
-			return 0
-		}
+	if err := addAdVehicleAssociations(tx, int(adID), ad.Make, ad.Years, ad.Models, ad.Engines); err != nil {
+		return 0
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -328,15 +326,6 @@ func addAdVehicleAssociations(tx *sql.Tx, adID int, makeName string, years []str
 		}
 	}
 	return nil
-}
-
-func GetNextAdID() int {
-	row := db.QueryRow("SELECT seq FROM sqlite_sequence WHERE name='Ad'")
-	var seq int
-	if err := row.Scan(&seq); err != nil {
-		return 1
-	}
-	return seq + 1
 }
 
 // getSubCategoryIDByName gets the subcategory ID by name

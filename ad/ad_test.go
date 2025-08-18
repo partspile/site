@@ -148,23 +148,6 @@ func TestAddAd(t *testing.T) {
 	t.Skip("Skipping TestAddAd due to complex transaction mocking requirements")
 }
 
-func TestGetNextAdID(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer mockDB.Close()
-
-	// Set the global db variable for testing
-	db.SetForTesting(mockDB)
-
-	mock.ExpectQuery("SELECT seq FROM sqlite_sequence WHERE name='Ad'").
-		WillReturnRows(sqlmock.NewRows([]string{"seq"}).AddRow(100))
-
-	nextID := GetNextAdID()
-
-	assert.Equal(t, 101, nextID)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
 func TestGetAdsPage(t *testing.T) {
 	// Skip this test for now as it requires complex mocking
 	// The function works correctly with real database
