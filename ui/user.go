@@ -41,55 +41,12 @@ func UserNav(currentUser *user.User, currentPath string) g.Node {
 						),
 					),
 					// SSE connection for real-time updates
-					Script(g.Raw(`
-						// Load initial unread count
-						fetch('/api/messages/unread-count')
-							.then(response => response.json())
-							.then(data => {
-								const countEl = document.getElementById('unread-count');
-								if (data.count > 0) {
-									countEl.textContent = data.count;
-									countEl.classList.remove('hidden');
-								}
-							})
-							.catch(error => console.log('Failed to load unread count:', error));
-						
-						// Connect to SSE endpoint for real-time updates
-						const eventSource = new EventSource('/messages/sse');
-						
-						eventSource.onmessage = function(event) {
-							try {
-								const data = JSON.parse(event.data);
-								if (data.type === 'unread_count') {
-									const countEl = document.getElementById('unread-count');
-									if (data.count > 0) {
-										countEl.textContent = data.count;
-										countEl.classList.remove('hidden');
-									} else {
-										countEl.classList.add('hidden');
-									}
-								} else if (data.type === 'new_message') {
-									// Update conversation list if on messages page
-									const convEl = document.getElementById('conversation-' + data.conversation_id);
-									if (convEl) {
-										// If conversation is expanded, append new message
-										if (convEl.querySelector('.bg-gray-50')) {
-											// TODO: Append new message to expanded view
-										} else {
-											// If collapsed, make it bold (unread)
-											convEl.classList.add('font-bold');
-										}
-									}
-								}
-							} catch (e) {
-								// Ignore parsing errors
-							}
-						};
-						
-						eventSource.onerror = function(event) {
-							console.log('SSE connection error, retrying...');
-						};
-					`)),
+					Div(
+						g.Attr("hx-ext", "sse"),
+						g.Attr("sse-connect", "/messages/sse"),
+						g.Attr("sse-swap", "unread_count"),
+						Class("hidden"),
+					),
 				),
 			)
 		}
@@ -139,13 +96,13 @@ func BookmarkedAdsSection(currentUser *user.User, ads []ad.Ad) g.Node {
 		),
 		g.If(len(ads) > 0,
 			AdCompactListContainer(
-				g.Group(BuildAdListNodesFromSlice(currentUser, ads, true)),
+				g.Group(BuildAdListNodesFromSlice(currentUser, ads)),
 			),
 		),
 	)
 }
 
-func BuildAdListNodesFromSlice(currentUser *user.User, ads []ad.Ad, bookmarked bool) []g.Node {
+func BuildAdListNodesFromSlice(currentUser *user.User, ads []ad.Ad) []g.Node {
 	loc := time.Local
 	userID := 0
 	if currentUser != nil {
@@ -153,7 +110,7 @@ func BuildAdListNodesFromSlice(currentUser *user.User, ads []ad.Ad, bookmarked b
 	}
 	nodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
-		nodes = append(nodes, AdCardCompactList(ad, loc, bookmarked, userID))
+		nodes = append(nodes, AdCardCompactList(ad, loc, userID))
 	}
 	return nodes
 }

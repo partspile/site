@@ -120,46 +120,21 @@ func TestAd_IsArchived(t *testing.T) {
 	}
 }
 
-func TestGetAdByID(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer mockDB.Close()
-
-	db.SetForTesting(mockDB)
-	mock.ExpectQuery("SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order, l.city, l.admin_area, l.country FROM Ad a LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id LEFT JOIN PartCategory pc ON psc.category_id = pc.id LEFT JOIN Location l ON a.location_id = l.id WHERE a.id = \\?").
-		WithArgs(1).
-		WillReturnRows(sqlmock.NewRows([]string{
-			"id", "title", "description", "price", "created_at", "subcategory_id",
-			"user_id", "subcategory", "category", "click_count", "last_clicked_at", "location_id", "image_order",
-			"city", "admin_area", "country",
-		}).AddRow(1, "Test Ad", "Test Description", 100.0, "2023-01-01T00:00:00Z", nil, 1, nil, nil, 0, nil, 1, "[]", nil, nil, nil))
-
-	ad, status, found := GetAdByID(1)
-
-	assert.True(t, found)
-	assert.Equal(t, StatusActive, status)
-	assert.Equal(t, 1, ad.ID)
-	assert.Equal(t, "Test Ad", ad.Title)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
 func TestGetAd(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	// Set the global db variable for testing
 	db.SetForTesting(mockDB)
-
-	mock.ExpectQuery("SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order, l.city, l.admin_area, l.country FROM Ad a LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id LEFT JOIN PartCategory pc ON psc.category_id = pc.id LEFT JOIN Location l ON a.location_id = l.id WHERE a.id = \\?").
+	mock.ExpectQuery("SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order, l.city, l.admin_area, l.country, l.latitude, l.longitude, 0 as is_bookmarked FROM Ad a LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id LEFT JOIN PartCategory pc ON psc.category_id = pc.id LEFT JOIN Location l ON a.location_id = l.id WHERE a.id = \\?").
 		WithArgs(1).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "title", "description", "price", "created_at", "subcategory_id",
 			"user_id", "subcategory", "category", "click_count", "last_clicked_at", "location_id", "image_order",
-			"city", "admin_area", "country",
-		}).AddRow(1, "Test Ad", "Test Description", 100.0, "2023-01-01T00:00:00Z", nil, 1, nil, nil, 0, nil, 1, "[]", nil, nil, nil))
+			"city", "admin_area", "country", "latitude", "longitude", "is_bookmarked",
+		}).AddRow(1, "Test Ad", "Test Description", 100.0, "2023-01-01T00:00:00Z", nil, 1, nil, nil, 0, nil, 1, "[]", nil, nil, nil, nil, nil, 0))
 
-	ad, found := GetAd(1)
+	ad, found := GetAd(1, nil)
 
 	assert.True(t, found)
 	assert.Equal(t, 1, ad.ID)

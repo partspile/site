@@ -254,7 +254,7 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 	}
 
 	// After successful restore, re-add the ad to the vector database
-	restoredAd, ok := ad.GetAd(adID)
+	restoredAd, ok := ad.GetAd(adID, nil)
 	if ok {
 		// Queue the ad for vector processing (async)
 		go func() {

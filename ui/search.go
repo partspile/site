@@ -253,7 +253,7 @@ func ListViewFromSlice(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 func buildAdListNodesFromSlice(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
 	nodes := make([]g.Node, 0, len(ads)*2) // *2 because we'll add separators between ads
 	for _, ad := range ads {
-		nodes = append(nodes, AdCardCompactList(ad, loc, ad.Bookmarked, userID))
+		nodes = append(nodes, AdCardCompactList(ad, loc, userID))
 
 		// Add separator after each ad
 		nodes = append(nodes, Div(
@@ -268,7 +268,7 @@ func GridView(ads []ad.Ad, loc *time.Location, userID int) g.Node {
 	adNodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
 		adNodes = append(adNodes,
-			AdCardExpandable(ad, loc, ad.Bookmarked, userID, "grid"),
+			AdCardExpandable(ad, loc, userID, "grid"),
 		)
 	}
 
@@ -284,7 +284,7 @@ func GridViewWithTrigger(ads []ad.Ad, loc *time.Location, userID int, loaderURL 
 	adNodes := make([]g.Node, 0, len(ads)+1) // +1 for trigger
 	for _, ad := range ads {
 		adNodes = append(adNodes,
-			AdCardExpandable(ad, loc, ad.Bookmarked, userID, "grid"),
+			AdCardExpandable(ad, loc, userID, "grid"),
 		)
 	}
 

@@ -12,6 +12,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/user"
 )
 
 // Table name constants
@@ -153,40 +154,53 @@ func getAdVehicleData(adID int) (makeName string, years []string, models []strin
 	return getVehicleData(adID, TableAdCar)
 }
 
+// GetAdVehicleDataOnly retrieves only vehicle information without affecting other ad fields
+func GetAdVehicleDataOnly(adID int) (makeName string, years []string, models []string, engines []string) {
+	return getVehicleData(adID, TableAdCar)
+}
+
 // getArchivedAdVehicleData retrieves vehicle information for an archived ad
 func getArchivedAdVehicleData(adID int) (makeName string, years []string, models []string, engines []string) {
 	return getVehicleData(adID, TableArchivedAdCar)
 }
 
-// GetAdByID retrieves an ad by ID from either active or archived tables
-// Returns the ad, its status, and whether it was found
-func GetAdByID(id int) (Ad, AdStatus, bool) {
-	// Try active ads first
-	ad, ok := GetAd(id)
-	if ok {
-		return ad, StatusActive, true
+// GetAd retrieves an ad by ID from the active ads table (without vehicle data)
+func GetAd(id int, currentUser *user.User) (Ad, bool) {
+	var query string
+	var args []interface{}
+
+	if currentUser != nil {
+		// Query with bookmark status
+		query = `
+			SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
+			       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+			       l.city, l.admin_area, l.country, l.latitude, l.longitude,
+			       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
+			FROM Ad a
+			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+			LEFT JOIN PartCategory pc ON psc.category_id = pc.id
+			LEFT JOIN Location l ON a.location_id = l.id
+			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
+			WHERE a.id = ?
+		`
+		args = []interface{}{currentUser.ID, id}
+	} else {
+		// Query without bookmark status (default to false)
+		query = `
+			SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
+			       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+			       l.city, l.admin_area, l.country, l.latitude, l.longitude,
+			       0 as is_bookmarked
+			FROM Ad a
+			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+			LEFT JOIN PartCategory pc ON psc.category_id = pc.id
+			LEFT JOIN Location l ON a.location_id = l.id
+			WHERE a.id = ?
+		`
+		args = []interface{}{id}
 	}
 
-	// Try archived ads
-	archivedAd, ok := GetArchivedAd(id)
-	if ok {
-		return archivedAd, StatusArchived, true
-	}
-
-	return Ad{}, StatusActive, false
-}
-
-func GetAd(id int) (Ad, bool) {
-	row := db.QueryRow(`
-		SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-		       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
-		       l.city, l.admin_area, l.country
-		FROM Ad a
-		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
-		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
-		LEFT JOIN Location l ON a.location_id = l.id
-		WHERE a.id = ?
-	`, id)
+	row := db.QueryRow(query, args...)
 
 	var ad Ad
 	var subcategory, category sql.NullString
@@ -194,18 +208,18 @@ func GetAd(id int) (Ad, bool) {
 	var locationID sql.NullInt64
 	var imageOrder sql.NullString
 	var city, adminArea, country sql.NullString
+	var latitude, longitude sql.NullFloat64
 	var createdAt string
+	var isBookmarked int
 	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
 		&ad.SubCategoryID, &ad.UserID, &subcategory, &category, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
-		&city, &adminArea, &country); err != nil {
-		fmt.Println("DEBUG GetAd scan error:", err)
+		&city, &adminArea, &country, &latitude, &longitude, &isBookmarked); err != nil {
+		fmt.Println("DEBUG getAd scan error:", err)
 		return Ad{}, false
 	}
 
 	// Parse the created_at string into time.Time
 	ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-
-	fmt.Printf("DEBUG GetAd: id=%d, click_count=%d\n", ad.ID, ad.ClickCount)
 
 	if subcategory.Valid {
 		ad.SubCategory = subcategory.String
@@ -220,25 +234,35 @@ func GetAd(id int) (Ad, bool) {
 
 	if locationID.Valid {
 		ad.LocationID = int(locationID.Int64)
-		// Get coordinates for map functionality
-		_, _, _, _, lat, lon, err := GetLocationWithCoords(ad.LocationID)
-		if err == nil && lat != nil && lon != nil {
-			ad.Latitude = lat
-			ad.Longitude = lon
+		if city.Valid {
+			ad.City = city.String
+		}
+		if adminArea.Valid {
+			ad.AdminArea = adminArea.String
+		}
+		if country.Valid {
+			ad.Country = country.String
+		}
+		if latitude.Valid && longitude.Valid {
+			ad.Latitude = &latitude.Float64
+			ad.Longitude = &longitude.Float64
 		}
 	}
 
 	if imageOrder.Valid {
 		_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
 	}
-	if city.Valid {
-		ad.City = city.String
-	}
-	if adminArea.Valid {
-		ad.AdminArea = adminArea.String
-	}
-	if country.Valid {
-		ad.Country = country.String
+
+	ad.Bookmarked = isBookmarked == 1
+
+	return ad, true
+}
+
+// GetAdWithVehicle retrieves an ad by ID from the active ads table with vehicle data
+func GetAdWithVehicle(id int, currentUser *user.User) (Ad, bool) {
+	ad, ok := GetAd(id, currentUser)
+	if !ok {
+		return Ad{}, false
 	}
 
 	// Get vehicle data
@@ -563,11 +587,13 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 			city          sql.NullString
 			adminArea     sql.NullString
 			country       sql.NullString
+			latitude      sql.NullFloat64
+			longitude     sql.NullFloat64
 		)
 
 		if err := rows.Scan(&id, &title, &description, &price, &createdAt,
 			&subcatID, &subcategory, &category, &clickCount, &lastClickedAt, &makeName, &year, &modelName, &engineName, &isBookmarked, &imageOrder,
-			&city, &adminArea, &country); err != nil {
+			&city, &adminArea, &country, &latitude, &longitude); err != nil {
 			continue
 		}
 
@@ -628,6 +654,10 @@ func GetFilteredAdsPageDB(query SearchQuery, cursor *SearchCursor, limit int, us
 		}
 		if country.Valid {
 			ad.Country = country.String
+		}
+		if latitude.Valid && longitude.Valid {
+			ad.Latitude = &latitude.Float64
+			ad.Longitude = &longitude.Float64
 		}
 	}
 
@@ -827,39 +857,50 @@ func GetAllArchivedAds() ([]Ad, error) {
 }
 
 // GetArchivedAd retrieves an archived ad by ID
-func GetArchivedAd(id int) (Ad, bool) {
-	row := db.QueryRow(`
-		SELECT id, title, description, price, created_at, subcategory_id, user_id, deleted_at, location_id, image_order
-		FROM ArchivedAd
-		WHERE id = ?
-	`, id)
+func GetArchivedAd(id int, currentUser *user.User) (Ad, bool) {
+	var query string
+	var args []interface{}
+
+	if currentUser != nil {
+		// Query with bookmark status
+		query = `
+			SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id, a.user_id, a.deleted_at, a.location_id, a.image_order,
+			       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
+			FROM ArchivedAd a
+			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
+			WHERE a.id = ?
+		`
+		args = []interface{}{currentUser.ID, id}
+	} else {
+		// Query without bookmark status (default to false)
+		query = `
+			SELECT id, title, description, price, created_at, subcategory_id, user_id, deleted_at, location_id, image_order,
+			       0 as is_bookmarked
+			FROM ArchivedAd
+			WHERE id = ?
+		`
+		args = []interface{}{id}
+	}
+
+	row := db.QueryRow(query, args...)
 
 	var ad Ad
-	var deletedAt string
-	var locationID sql.NullInt64
-	var imageOrder sql.NullString
-	var createdAt string
+	var createdAt, deletedAt string
+	var isBookmarked int
 	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
-		&ad.SubCategoryID, &ad.UserID, &deletedAt, &locationID, &imageOrder); err != nil {
+		&ad.SubCategoryID, &ad.UserID, &deletedAt, &ad.LocationID, &ad.ImageOrder, &isBookmarked); err != nil {
 		return Ad{}, false
 	}
 
-	// Parse the created_at string into time.Time
+	// Parse the created_at and deleted_at strings into time.Time
 	ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+	deletedTime, _ := time.Parse(time.RFC3339Nano, deletedAt)
+	ad.DeletedAt = &deletedTime
 
-	// Parse deleted_at
-	if parsedTime, err := time.Parse(time.RFC3339Nano, deletedAt); err == nil {
-		ad.DeletedAt = &parsedTime
-	}
-	if locationID.Valid {
-		ad.LocationID = int(locationID.Int64)
-	}
+	// Set bookmark status
+	ad.Bookmarked = isBookmarked == 1
 
-	if imageOrder.Valid {
-		_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
-	}
-
-	// Get vehicle data from ArchivedAdCar
+	// Get vehicle data
 	ad.Make, ad.Years, ad.Models, ad.Engines = getArchivedAdVehicleData(id)
 
 	return ad, true
@@ -1088,99 +1129,8 @@ func GetBookmarkedAdIDsByUser(userID int) ([]int, error) {
 	return adIDs, nil
 }
 
-// GetAdsByIDs returns ads for a list of IDs (order preserved as much as possible)
-func GetAdsByIDs(ids []int) ([]Ad, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-	// Build query with IN clause
-	placeholders := make([]string, len(ids))
-	args := make([]interface{}, len(ids))
-	for i, id := range ids {
-		placeholders[i] = "?"
-		args[i] = id
-	}
-	query := `SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-		       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
-		       l.city, l.admin_area, l.country
-		FROM Ad a
-		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
-		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
-		LEFT JOIN Location l ON a.location_id = l.id
-		WHERE a.id IN (` + strings.Join(placeholders, ",") + `)`
-	rows, err := db.Query(query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	adMap := make(map[int]Ad)
-	for rows.Next() {
-		var ad Ad
-		var subcategory, category sql.NullString
-		var lastClickedAt sql.NullTime
-		var locationID sql.NullInt64
-		var imageOrder sql.NullString
-		var city, adminArea, country sql.NullString
-		var createdAt string
-		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
-			&ad.SubCategoryID, &ad.UserID, &subcategory, &category, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
-			&city, &adminArea, &country); err != nil {
-			continue
-		}
-
-		// Parse the created_at string into time.Time
-		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-
-		if subcategory.Valid {
-			ad.SubCategory = subcategory.String
-		}
-		if category.Valid {
-			ad.Category = category.String
-		}
-
-		if lastClickedAt.Valid {
-			ad.LastClickedAt = &lastClickedAt.Time
-		}
-
-		if locationID.Valid {
-			ad.LocationID = int(locationID.Int64)
-			// Get coordinates for map functionality
-			_, _, _, _, lat, lon, err := GetLocationWithCoords(ad.LocationID)
-			if err == nil && lat != nil && lon != nil {
-				ad.Latitude = lat
-				ad.Longitude = lon
-			}
-		}
-
-		if imageOrder.Valid {
-			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
-		}
-		if city.Valid {
-			ad.City = city.String
-		}
-		if adminArea.Valid {
-			ad.AdminArea = adminArea.String
-		}
-		if country.Valid {
-			ad.Country = country.String
-		}
-
-		// Get vehicle data
-		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
-		adMap[ad.ID] = ad
-	}
-	// Preserve order of ids
-	ads := make([]Ad, 0, len(ids))
-	for _, id := range ids {
-		if ad, ok := adMap[id]; ok {
-			ads = append(ads, ad)
-		}
-	}
-	return ads, nil
-}
-
-// GetAdsByIDsWithBookmarks returns ads for a list of IDs with bookmark status for a specific user
-func GetAdsByIDsWithBookmarks(ids []int, userID int) ([]Ad, error) {
+// GetAdsByIDs returns ads for a list of IDs with bookmark status for a specific user
+func GetAdsByIDs(ids []int, userID int) ([]Ad, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -1628,6 +1578,9 @@ func GetAdsByIDsOptimized(ids []int) ([]Ad, error) {
 		if country.Valid {
 			ad.Country = country.String
 		}
+
+		// Set bookmark status to false for anonymous users
+		ad.Bookmarked = false
 
 		// Parse vehicle data from GROUP_CONCAT results
 		if makes.Valid && makes.String != "" {

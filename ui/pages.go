@@ -128,16 +128,12 @@ func VerificationPage(currentUser *user.User, path string, username string) g.No
 					),
 				),
 				FormContainer("verificationForm",
-					// Username field for password managers (readonly to show the username)
-					FormGroup("Username", "username",
-						Input(
-							Type("text"),
-							Name("username"),
-							ID("username"),
-							Value(username),
-							g.Attr("readonly"),
-							Class("bg-gray-100 cursor-not-allowed"),
-						),
+					// Hidden username field for password managers
+					Input(
+						Type("hidden"),
+						Name("username"),
+						Value(username),
+						g.Attr("autocomplete", "username"),
 					),
 					FormGroup("Verification Code", "verification_code",
 						TextInput("verification_code", "verification_code", ""),

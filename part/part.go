@@ -549,7 +549,7 @@ func GetAdsForNode(parts []string, q string) ([]ad.Ad, error) {
 			adObj.Engines = []string{engineName.String}
 		}
 		// Populate all years, models, engines for the ad
-		fullAd, ok := ad.GetAd(adID)
+		fullAd, ok := ad.GetAdWithVehicle(adID, nil)
 		if ok {
 			adObj.Years = fullAd.Years
 			adObj.Models = fullAd.Models
@@ -720,7 +720,7 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 		}
 
 		// Populate all years, models, engines for the ad
-		fullAd, ok := ad.GetAd(adID)
+		fullAd, ok := ad.GetAdWithVehicle(adID, nil)
 		if ok {
 			adObj.Years = fullAd.Years
 			adObj.Models = fullAd.Models
@@ -891,13 +891,8 @@ func GetAdsForTreeView(parts []string, sq ad.SearchQuery, userID int) ([]ad.Ad, 
 			adObj.Country = country.String
 		}
 
-		// Populate all years, models, engines for the ad
-		fullAd, ok := ad.GetAd(adID)
-		if ok {
-			adObj.Years = fullAd.Years
-			adObj.Models = fullAd.Models
-			adObj.Engines = fullAd.Engines
-		}
+		// Get vehicle data directly to avoid overwriting bookmark status
+		adObj.Make, adObj.Years, adObj.Models, adObj.Engines = ad.GetAdVehicleDataOnly(adID)
 		ads = append(ads, adObj)
 	}
 

@@ -439,7 +439,7 @@ func NotifyUserUpdate(userID int, update ConversationUpdate) {
 
 // NotifyConversationUpdate notifies all participants in a conversation about an update
 func NotifyConversationUpdate(conversationID int, updateType string, message *Message) {
-	conv, err := GetConversationByID(conversationID)
+	conv, err := GetConversationWithDetails(conversationID)
 	if err != nil {
 		return
 	}
@@ -449,6 +449,7 @@ func NotifyConversationUpdate(conversationID int, updateType string, message *Me
 		Type:           updateType,
 		ConversationID: conversationID,
 		Message:        message,
+		UnreadCount:    1, // Increment unread count
 	}
 
 	// Notify both users

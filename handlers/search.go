@@ -543,7 +543,7 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	if view == "list" {
 		log.Printf("[HandleSearchPage] Rendering %d ads in list view", len(ads))
 		for _, ad := range ads {
-			render(c, ui.AdCardCompactList(ad, loc, ad.Bookmarked, userID))
+			render(c, ui.AdCardCompactList(ad, loc, userID))
 			// Add separator after each ad
 			render(c, Div(Class("border-b border-gray-200")))
 		}
@@ -551,7 +551,7 @@ func HandleSearchPage(c *fiber.Ctx) error {
 		log.Printf("[HandleSearchPage] Rendering %d ads in grid view", len(ads))
 		// For grid view, render the ads in expandable format without separators
 		for _, ad := range ads {
-			render(c, ui.AdCardExpandable(ad, loc, ad.Bookmarked, userID, "grid"))
+			render(c, ui.AdCardExpandable(ad, loc, userID, "grid"))
 		}
 	}
 
@@ -794,7 +794,7 @@ func TreeView(c *fiber.Ctx) error {
 		if len(ads) > 0 {
 			loc, _ := time.LoadLocation(c.Get("X-Timezone"))
 			for _, ad := range ads {
-				childNodes = append(childNodes, ui.AdCardCompactTree(ad, loc, ad.Bookmarked, userID))
+				childNodes = append(childNodes, ui.AdCardCompactTree(ad, loc, userID))
 			}
 		} else {
 			// Show "no results" message when no ads found (for all cases)

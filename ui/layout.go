@@ -33,6 +33,11 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 				Src(config.HTMXURL),
 				Defer(),
 			),
+			Script(
+				Type("text/javascript"),
+				Src(config.HTMXSSEURL),
+				Defer(),
+			),
 			// Leaflet JS for map functionality
 			Script(
 				Type("text/javascript"),

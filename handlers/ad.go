@@ -132,7 +132,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	// --- VECTOR EMBEDDING GENERATION (ASYNC) ---
 	go func(adID int) {
 		// Fetch the newly created ad from database to get proper timestamp
-		adObj, ok := ad.GetAd(adID)
+		adObj, ok := ad.GetAd(adID, nil)
 		if !ok {
 			log.Printf("[embedding] Failed to fetch ad %d from database", adID)
 			return
@@ -154,18 +154,13 @@ func HandleViewAd(c *fiber.Ctx) error {
 
 	currentUser, _ := GetCurrentUser(c)
 
-	// Get ad from either active or archived tables
-	adObj, _, ok := ad.GetAdByID(adID)
+	// Get ad from either active or archived tables with bookmark status
+	adObj, ok := ad.GetAdWithVehicle(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	bookmarked := false
-	if currentUser != nil {
-		bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
-	}
-
-	return render(c, ui.ViewAdPage(currentUser, c.Path(), adObj, bookmarked))
+	return render(c, ui.ViewAdPage(currentUser, c.Path(), adObj))
 }
 
 func HandleEditAd(c *fiber.Ctx) error {
@@ -179,7 +174,7 @@ func HandleEditAd(c *fiber.Ctx) error {
 		return err
 	}
 
-	adObj, ok := ad.GetAd(adID)
+	adObj, ok := ad.GetAdWithVehicle(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
@@ -237,7 +232,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	existingAd, ok := ad.GetAd(adID)
+	existingAd, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
@@ -268,7 +263,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	// --- VECTOR EMBEDDING GENERATION (ASYNC) ---
 	go func(adID int) {
 		// Fetch the updated ad from database to get proper timestamp
-		adObj, ok := ad.GetAd(adID)
+		adObj, ok := ad.GetAd(adID, nil)
 		if !ok {
 			log.Printf("[embedding] Failed to fetch updated ad %d from database", adID)
 			return
@@ -281,12 +276,8 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 
 	if c.Get("HX-Request") != "" {
 		// For htmx, return the updated detail partial
-		bookmarked := false
-		if currentUser != nil {
-			bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
-		}
 		view := c.Query("view", "list")
-		return render(c, ui.AdDetailPartial(updatedAd, bookmarked, currentUser.ID, view))
+		return render(c, ui.AdDetailPartial(updatedAd, currentUser.ID, view))
 	}
 	return render(c, ui.SuccessMessage("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
 }
@@ -306,8 +297,13 @@ func HandleBookmarkAd(c *fiber.Ctx) error {
 	}
 	// Queue user for background embedding update
 	vector.GetEmbeddingQueue().QueueUserForUpdate(currentUser.ID)
+	// Get the updated ad with bookmark status
+	adObj, ok := ad.GetAd(adID, currentUser)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
 	// Return the bookmarked button HTML for HTMX swap
-	return render(c, ui.BookmarkButton(true, adID))
+	return render(c, ui.BookmarkButton(adObj))
 }
 
 // Handler to unbookmark an ad
@@ -325,8 +321,13 @@ func HandleUnbookmarkAd(c *fiber.Ctx) error {
 	}
 	// Queue user for background embedding update
 	vector.GetEmbeddingQueue().QueueUserForUpdate(currentUser.ID)
+	// Get the updated ad with bookmark status
+	adObj, ok := ad.GetAd(adID, currentUser)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
 	// Return the unbookmarked button HTML for HTMX swap
-	return render(c, ui.BookmarkButton(false, adID))
+	return render(c, ui.BookmarkButton(adObj))
 }
 
 // Handler to get bookmarked ads for the current user (for settings page)
@@ -339,7 +340,7 @@ func HandleBookmarkedAds(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ad IDs")
 	}
-	ads, err := ad.GetAdsByIDs(adIDs)
+	ads, err := ad.GetAdsByIDs(adIDs, currentUser.ID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ads")
 	}
@@ -363,23 +364,23 @@ func HandleAdCardPartial(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
-	adObj, _, ok := ad.GetAdByID(adID)
+	currentUser, _ := CurrentUser(c)
+	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	currentUser, _ := CurrentUser(c)
-	bookmarked := false
 	userID := 0
 	if currentUser != nil {
-		bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
 		userID = currentUser.ID
 	}
 	loc := c.Context().Time().Location()
 	view := c.Query("view", "list")
 	if view == "list" {
-		return render(c, ui.AdCardCompactList(adObj, loc, bookmarked, userID))
+		return render(c, ui.AdCardCompactList(adObj, loc, userID))
+	} else if view == "tree" {
+		return render(c, ui.AdCardCompactTree(adObj, loc, userID))
 	}
-	return render(c, ui.AdCardExpandable(adObj, loc, bookmarked, userID, view))
+	return render(c, ui.AdCardExpandable(adObj, loc, userID, view))
 }
 
 // Handler for ad detail partial (expand)
@@ -399,18 +400,16 @@ func HandleAdDetailPartial(c *fiber.Ctx) error {
 		vector.GetEmbeddingQueue().QueueUserForUpdate(currentUser.ID)
 	}
 
-	adObj, _, ok := ad.GetAdByID(adID)
+	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	bookmarked := false
 	userID := 0
 	if currentUser != nil {
-		bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
 		userID = currentUser.ID
 	}
 	view := c.Query("view", "list")
-	return render(c, ui.AdDetailPartial(adObj, bookmarked, userID, view))
+	return render(c, ui.AdDetailPartial(adObj, userID, view))
 }
 
 // Add this handler for deleting an ad
@@ -423,7 +422,7 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	adObj, ok := ad.GetAd(adID)
+	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
@@ -457,13 +456,13 @@ func HandleEditAdPartial(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
-	adObj, ok := ad.GetAd(adID)
-	if !ok {
-		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
-	}
 	currentUser, err := CurrentUser(c)
 	if err != nil {
 		return err
+	}
+	adObj, ok := ad.GetAd(adID, currentUser)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 	if adObj.UserID != currentUser.ID {
 		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
@@ -651,7 +650,7 @@ func HandleAdImagePartial(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid image index")
 	}
-	adObj, _, ok := ad.GetAdByID(adID)
+	adObj, ok := ad.GetAd(adID, nil)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
@@ -744,19 +743,14 @@ func HandleExpandAdTree(c *fiber.Ctx) error {
 		userID = currentUser.ID
 	}
 
-	// Get ad from either active or archived tables
-	adObj, _, ok := ad.GetAdByID(adID)
+	// Get ad from either active or archived tables with bookmark status
+	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	bookmarked := false
-	if currentUser != nil {
-		bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
-	}
-
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
-	return render(c, ui.AdCardExpandedTree(adObj, loc, bookmarked, userID))
+	return render(c, ui.AdCardExpandedTree(adObj, loc, userID))
 }
 
 // HandleCollapseAdTree collapses an ad in tree view from detailed to compact view
@@ -772,17 +766,12 @@ func HandleCollapseAdTree(c *fiber.Ctx) error {
 		userID = currentUser.ID
 	}
 
-	// Get ad from either active or archived tables
-	adObj, _, ok := ad.GetAdByID(adID)
+	// Get ad from either active or archived tables with bookmark status
+	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	bookmarked := false
-	if currentUser != nil {
-		bookmarked, _ = ad.IsAdBookmarkedByUser(currentUser.ID, adID)
-	}
-
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
-	return render(c, ui.AdCardCompactTree(adObj, loc, bookmarked, userID))
+	return render(c, ui.AdCardCompactTree(adObj, loc, userID))
 }
