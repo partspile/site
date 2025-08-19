@@ -39,33 +39,37 @@ type SearchCursor struct {
 
 // Ad represents an advertisement in the system
 type Ad struct {
-	ID            int       `json:"id"`
-	Title         string    `json:"title"`
-	Description   string    `json:"description"`
-	Price         float64   `json:"price"`
-	CreatedAt     time.Time `json:"created_at"`
-	SubCategoryID int       `json:"subcategory_id"`
-	UserID        int       `json:"user_id"`
-	LocationID    int       `json:"location_id"`
-	City          string    `json:"city,omitempty"`
-	AdminArea     string    `json:"admin_area,omitempty"`
-	Country       string    `json:"country,omitempty"`
-	// Runtime fields populated via joins
-	Year          string     `json:"year,omitempty"`
-	Make          string     `json:"make"`
-	Years         []string   `json:"years"`
-	Models        []string   `json:"models"`
-	Engines       []string   `json:"engines"`
-	Category      string     `json:"category,omitempty"`
+	// Core database fields (matching schema order)
+	ID            int        `json:"id"`
+	Title         string     `json:"title"`
+	Description   string     `json:"description"`
+	Price         float64    `json:"price"`
+	CreatedAt     time.Time  `json:"created_at"`
 	DeletedAt     *time.Time `json:"deleted_at,omitempty"`
-	Bookmarked    bool       `json:"bookmarked"` // true if bookmarked by current user
+	SubCategoryID int        `json:"subcategory_id"`
+	UserID        int        `json:"user_id"`
+	ImageOrder    []int      `json:"image_order"`
+	LocationID    int        `json:"location_id"`
 	ClickCount    int        `json:"click_count"`
 	LastClickedAt *time.Time `json:"last_clicked_at,omitempty"`
-	ImageOrder    []int      `json:"image_order"`
 	HasVector     bool       `json:"has_vector"`
-	// Geo fields for map functionality
+
+	// Computed/derived fields from joins
+	City      string   `json:"city,omitempty"`
+	AdminArea string   `json:"admin_area,omitempty"`
+	Country   string   `json:"country,omitempty"`
+	Category  string   `json:"category,omitempty"`
 	Latitude  *float64 `json:"latitude,omitempty"`
 	Longitude *float64 `json:"longitude,omitempty"`
+
+	// Vehicle compatibility fields from AdCar join
+	Make    string   `json:"make"`
+	Years   []string `json:"years"`
+	Models  []string `json:"models"`
+	Engines []string `json:"engines"`
+
+	// User-specific computed fields
+	Bookmarked bool `json:"bookmarked"`
 }
 
 // IsArchived returns true if the ad has been archived
@@ -132,8 +136,8 @@ func GetVehicleData(adID int) (makeName string, years []string, models []string,
 	return makeName, years, models, engines
 }
 
-// getAd retrieves an ad by ID from the Ad table
-func getAd(id int, currentUser *user.User) (Ad, bool) {
+// GetAd retrieves an ad by ID from the Ad table
+func GetAd(id int, currentUser *user.User) (Ad, bool) {
 	var query string
 	var args []interface{}
 
@@ -222,11 +226,6 @@ func getAd(id int, currentUser *user.User) (Ad, bool) {
 	ad.Bookmarked = isBookmarked == 1
 
 	return ad, true
-}
-
-// GetAd retrieves an ad by ID from the active ads table (without vehicle data)
-func GetAd(id int, currentUser *user.User) (Ad, bool) {
-	return getAd(id, currentUser)
 }
 
 // GetAdWithVehicle retrieves an ad by ID from the active ads table with vehicle data
@@ -444,7 +443,7 @@ func GetArchivedAds() ([]Ad, error) {
 
 // GetArchivedAd retrieves an archived ad by ID
 func GetArchivedAd(id int, currentUser *user.User) (Ad, bool) {
-	ad, ok := getAd(id, currentUser)
+	ad, ok := GetAd(id, currentUser)
 	if !ok {
 		return Ad{}, false
 	}
