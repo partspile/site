@@ -212,20 +212,8 @@ func ArchiveUser(userID int) error {
 		return err
 	}
 
-	// Archive all ads by this user
-	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, title, description, price, created_at, subcategory_id, user_id, deleted_at)
-		SELECT id, title, description, price, created_at, subcategory_id, user_id, ?
-		FROM Ad WHERE user_id = ?`, deletionDate, userID)
-	if err != nil {
-		return err
-	}
-
-	// Archive all ad-car relationships for this user's ads
-	_, err = tx.Exec(`INSERT INTO ArchivedAdCar (ad_id, car_id, deleted_at)
-		SELECT ac.ad_id, ac.car_id, ?
-		FROM AdCar ac
-		JOIN Ad a ON a.id = ac.ad_id
-		WHERE a.user_id = ?`, deletionDate, userID)
+	// Soft delete all ads by this user
+	_, err = tx.Exec(`UPDATE Ad SET deleted_at = ? WHERE user_id = ?`, deletionDate, userID)
 	if err != nil {
 		return err
 	}
@@ -234,19 +222,6 @@ func ArchiveUser(userID int) error {
 	_, err = tx.Exec(`UPDATE TokenTransaction 
 		SET user_deleted = 1 
 		WHERE user_id = ? OR related_user_id = ?`, userID, userID)
-	if err != nil {
-		return err
-	}
-
-	// Delete original ad-car relationships
-	_, err = tx.Exec(`DELETE FROM AdCar WHERE ad_id IN (
-		SELECT id FROM Ad WHERE user_id = ?)`, userID)
-	if err != nil {
-		return err
-	}
-
-	// Delete original ads
-	_, err = tx.Exec(`DELETE FROM Ad WHERE user_id = ?`, userID)
 	if err != nil {
 		return err
 	}
@@ -291,20 +266,8 @@ func RestoreUser(userID int) error {
 		return err
 	}
 
-	// Restore all ads by this user
-	_, err = tx.Exec(`INSERT INTO Ad (id, description, price, created_at, subcategory_id, user_id)
-		SELECT id, description, price, created_at, subcategory_id, user_id
-		FROM ArchivedAd WHERE user_id = ?`, userID)
-	if err != nil {
-		return err
-	}
-
-	// Restore all ad-car relationships for this user's ads
-	_, err = tx.Exec(`INSERT INTO AdCar (ad_id, car_id)
-		SELECT aac.ad_id, aac.car_id
-		FROM ArchivedAdCar aac
-		JOIN ArchivedAd ad ON ad.id = aac.ad_id
-		WHERE ad.user_id = ?`, userID)
+	// Restore all ads by this user by clearing deleted_at
+	_, err = tx.Exec(`UPDATE Ad SET deleted_at = NULL WHERE user_id = ?`, userID)
 	if err != nil {
 		return err
 	}
@@ -313,17 +276,6 @@ func RestoreUser(userID int) error {
 	_, err = tx.Exec(`UPDATE TokenTransaction 
 		SET user_deleted = 0 
 		WHERE user_id = ? OR related_user_id = ?`, userID, userID)
-	if err != nil {
-		return err
-	}
-
-	// Delete from archive tables
-	_, err = tx.Exec(`DELETE FROM ArchivedAdCar WHERE ad_id IN (
-		SELECT id FROM ArchivedAd WHERE user_id = ?)`, userID)
-	if err != nil {
-		return err
-	}
-	_, err = tx.Exec(`DELETE FROM ArchivedAd WHERE user_id = ?`, userID)
 	if err != nil {
 		return err
 	}

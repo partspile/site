@@ -883,7 +883,7 @@ func GetAdsForTreeView(parts []string, sq ad.SearchQuery, userID int) ([]ad.Ad, 
 		}
 
 		// Get vehicle data directly to avoid overwriting bookmark status
-		adObj.Make, adObj.Years, adObj.Models, adObj.Engines = ad.GetAdVehicleDataOnly(adID)
+		adObj.Make, adObj.Years, adObj.Models, adObj.Engines = ad.GetVehicleData(adID)
 		ads = append(ads, adObj)
 	}
 

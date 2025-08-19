@@ -121,6 +121,7 @@ CREATE TABLE Ad (
     description TEXT,
     price REAL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    deleted_at DATETIME,
     subcategory_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     image_order TEXT,
@@ -132,25 +133,7 @@ CREATE TABLE Ad (
     FOREIGN KEY (user_id) REFERENCES User(id)
 );
 CREATE INDEX idx_ad_created_at_id ON Ad(created_at, id);
-
-CREATE TABLE ArchivedAd (
-    id INTEGER PRIMARY KEY,
-    title TEXT,
-    description TEXT,
-    price REAL,
-    created_at DATETIME,
-    deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    subcategory_id INTEGER NOT NULL,
-    user_id INTEGER NOT NULL,
-    image_order TEXT,
-    location_id INTEGER REFERENCES Location(id),
-    click_count INTEGER DEFAULT 0,
-    last_clicked_at DATETIME,
-    FOREIGN KEY (subcategory_id) REFERENCES PartSubCategory(id),
-    FOREIGN KEY (user_id) REFERENCES ArchivedUser(id)
-);
-CREATE INDEX idx_archivedad_user_id ON ArchivedAd(user_id);
-CREATE INDEX idx_archivedad_deleted_at ON ArchivedAd(deleted_at);
+CREATE INDEX idx_ad_deleted_at ON Ad(deleted_at);
 
 CREATE TABLE AdCar (
     ad_id INTEGER NOT NULL,
@@ -161,16 +144,6 @@ CREATE TABLE AdCar (
 );
 CREATE INDEX idx_adcar_car_id ON AdCar(car_id);
 CREATE INDEX idx_adcar_ad_id ON AdCar(ad_id);
-
-CREATE TABLE ArchivedAdCar (
-    ad_id INTEGER NOT NULL,
-    car_id INTEGER NOT NULL,
-    deleted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (ad_id) REFERENCES ArchivedAd(id),
-    FOREIGN KEY (car_id) REFERENCES Car(id),
-    PRIMARY KEY (ad_id, car_id)
-);
-CREATE INDEX idx_archivedadcar_ad_id ON ArchivedAdCar(ad_id);
 
 CREATE TABLE BookmarkedAd (
     user_id INTEGER NOT NULL,

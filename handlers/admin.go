@@ -135,7 +135,7 @@ func HandleSetAdmin(c *fiber.Ctx) error {
 }
 
 func HandleAdminAds(c *fiber.Ctx) error {
-	return adminHandler(c, "ads", ad.GetAllAds, ad.GetAllArchivedAds, ui.AdminAdsSection)
+	return adminHandler(c, "ads", ad.GetAllAds, ad.GetArchivedAds, ui.AdminAdsSection)
 }
 
 func HandleAdminTransactions(c *fiber.Ctx) error {
@@ -178,7 +178,7 @@ func HandleAdminExportUsers(c *fiber.Ctx) error {
 }
 
 func HandleAdminExportAds(c *fiber.Ctx) error {
-	return exportWithStatus(c, ad.GetAllAds, ad.GetAllArchivedAds, "ads")
+	return exportWithStatus(c, ad.GetAllAds, ad.GetArchivedAds, "ads")
 }
 
 func HandleAdminExportTransactions(c *fiber.Ctx) error {
@@ -263,7 +263,7 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 		}()
 	}
 
-	ads, err := ad.GetAllArchivedAds()
+	ads, err := ad.GetArchivedAds()
 	if err != nil {
 		log.Printf("Error getting archived ads: %v", err)
 		return fiber.NewError(fiber.StatusInternalServerError, fmt.Sprintf("Failed to get archived ads: %v", err))

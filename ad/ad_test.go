@@ -1,7 +1,6 @@
 package ad
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
@@ -250,64 +249,6 @@ func TestGetAdClickCount(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 42, count)
 	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetSubCategoryIDByName(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer mockDB.Close()
-
-	db.SetForTesting(mockDB)
-
-	subcategoryName := "Engine Block"
-	expectedID := 1
-
-	mock.ExpectQuery("SELECT psc.id FROM PartSubCategory psc WHERE psc.name = \\?").
-		WithArgs(subcategoryName).
-		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(expectedID))
-
-	id, err := getSubCategoryIDByName(subcategoryName)
-
-	assert.NoError(t, err)
-	assert.NotNil(t, id)
-	assert.Equal(t, expectedID, *id)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetSubCategoryIDByName_NotFound(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer mockDB.Close()
-
-	db.SetForTesting(mockDB)
-
-	subcategoryName := "NonExistentSubcategory"
-
-	mock.ExpectQuery("SELECT psc.id FROM PartSubCategory psc WHERE psc.name = \\?").
-		WithArgs(subcategoryName).
-		WillReturnError(sql.ErrNoRows)
-
-	id, err := getSubCategoryIDByName(subcategoryName)
-
-	assert.NoError(t, err)
-	assert.Nil(t, id)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetSubCategoryIDByName_EmptyName(t *testing.T) {
-	mockDB, _, err := sqlmock.New()
-	require.NoError(t, err)
-	defer mockDB.Close()
-
-	db.SetForTesting(mockDB)
-
-	subcategoryName := ""
-
-	id, err := getSubCategoryIDByName(subcategoryName)
-
-	assert.NoError(t, err)
-	assert.Nil(t, id)
-	// No database query should be made for empty name
 }
 
 func TestArchiveAd(t *testing.T) {

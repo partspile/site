@@ -270,23 +270,29 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 
 ### 3.12 Data Archiving & Admin Interface
 - **Data Archiving:**
-  - Deleted user data is preserved in archive tables for historical records
-  - Archive tables maintain the same structure as live tables, with additional deletion timestamps
+  - The system uses soft deletes to preserve data for historical records
+  - When users or ads are "deleted", they are marked with a `deleted_at` timestamp rather than being physically removed
+  - This approach preserves all data for auditing while removing it from active use
   - Archived data includes:
-    - User profiles (UserDead table)
-    - User's ads (AdDead table)
-    - Ad-car relationships (AdCarDead table)
+    - User profiles (marked with deletion_date in ArchivedUser table)
+    - User's ads (marked with deleted_at in Ad table)
+    - Vehicle associations remain intact in the single AdCar table
     - Token transactions (marked with user_deleted flag)
-  - This preserves data for auditing while removing it from active use
+  - Benefits of soft delete approach:
+    - No data duplication between active and archived tables
+    - Simpler database schema and maintenance
+    - Consistent vehicle data access for both active and archived ads
+    - Easier restoration of accidentally deleted content
 
 - **Admin Interface:**
   - Administrators can access archived data through dedicated endpoints
   - Admin features include:
     - View archived users with deletion dates
-    - View archived ads for any deleted user
+    - View archived ads (filtered by deleted_at IS NOT NULL)
     - Search archived data by various criteria
     - Export archived data for analysis
     - View token transaction history, including deleted users
+    - Restore archived ads by clearing the deleted_at field
   - Admin access is restricted by role-based authentication
 
 ### 3.13 Ad Card UX (2024-06-xx)
@@ -340,7 +346,7 @@ The platform is built with the following technologies:
 
 ## 6. Data Model (Simplified)
 
-### Live Tables
+### Database Tables
 - **Make**: id, name, parent_company_id
 - **ParentCompany**: id, name, country
 - **Year**: id, year
@@ -350,13 +356,27 @@ The platform is built with the following technologies:
 - **PartCategory**: id, name
 - **PartSubCategory**: id, category_id, name
 - **Location**: id, raw_text, city, admin_area, country, latitude, longitude
-- **Ad**: id, description, price, created_at, subcategory_id, user_id, location_id, has_vector
-- **AdCar**: ad_id, car_id
-- **User**: id, name, phone, token_balance, password_hash, created_at
+- **Ad**: id, title, description, price, created_at, deleted_at, subcategory_id, user_id, location_id, image_order, click_count, last_clicked_at, has_vector
+- **AdCar**: ad_id, car_id (single table for all vehicle associations)
+- **User**: id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin
+- **ArchivedUser**: id, name, phone, token_balance, password_hash, created_at, deletion_date, is_admin
 - **TokenTransaction**: id, user_id, type, amount, related_user_id, ad_id, created_at, description, user_deleted
 - **UserSearch**: id, user_id (nullable), query_string, created_at
 - **PayoutFund**: id, balance, updated_at
 - **UserEmbedding**: id, user_id, embedding (blob), updated_at
+- **BookmarkedAd**: user_id, ad_id, bookmarked_at
+- **UserAdClick**: ad_id, user_id, click_count, last_clicked_at
+- **PhoneVerification**: id, phone, verification_code, expires_at, attempts, created_at
+
+### Data Archiving Strategy
+- **Soft Delete for Ads**: Ads are marked as archived by setting `deleted_at` timestamp instead of being moved to separate tables
+- **Unified Vehicle Data**: All vehicle associations remain in the single `AdCar` table, accessible for both active and archived ads
+- **User Archiving**: Users are moved to `ArchivedUser` table with deletion timestamp for complete separation
+- **Benefits**: 
+  - Eliminates data duplication between active and archived states
+  - Simplifies database schema and maintenance
+  - Maintains referential integrity for vehicle associations
+  - Enables easy restoration of archived content
 
 ### Vector Database (Qdrant)
 - **Ad Embeddings**: Stored with comprehensive metadata including:
@@ -366,14 +386,19 @@ The platform is built with the following technologies:
   - Engagement metrics (click_count, created_at)
   - Brand information (parent_company, parent_company_country)
 
-### Archive Tables
-- **UserDead**: id, name, phone, token_balance, password_hash, created_at, deletion_date
-- **AdDead**: id, description, price, created_at, subcategory_id, user_id, deletion_date
-- **AdCarDead**: ad_id, car_id, deletion_date
+### Technical Implementation Details
+- **Ad Archiving**: Implemented via soft delete using `deleted_at` DATETIME field in Ad table
+- **Vehicle Data Access**: Single `getAdVehicleData()` function works for both active and archived ads
+- **Query Optimization**: All ad queries automatically filter out archived ads using `WHERE deleted_at IS NULL`
+- **Admin Functions**: 
+  - `GetArchivedAds()` queries Ad table with `WHERE deleted_at IS NOT NULL`
+  - `GetArchivedAd()` uses unified `getAd()` function then loads `deleted_at` separately
+  - Archive/Restore operations use simple UPDATE statements instead of complex table operations
+- **Database Schema**: Simplified from separate `ArchivedAd`/`ArchivedAdCar` tables to single table with soft delete
 
 See `schema.sql` for full schema and indexes.
 
-**Note:** Archive tables maintain historical data for deleted users and their content, with deletion timestamps for auditing purposes.
+**Note:** The system now uses soft deletes for ads (deleted_at field) while maintaining separate ArchivedUser table for user data. This approach eliminates data duplication and simplifies maintenance.
 
 ---
 
@@ -403,10 +428,12 @@ See `schema.sql` for full schema and indexes.
 ### Admin Endpoints
 - `GET /admin/archived/users` — List archived users
 - `GET /admin/archived/users/{id}` — View specific archived user
-- `GET /admin/archived/users/{id}/ads` — View archived ads for user
+- `GET /admin/archived/users/{id}/ads` — View archived ads for user (filtered from Ad table)
 - `GET /admin/archived/search` — Search archived data
 - `GET /admin/archived/transactions` — View token transactions (including deleted users)
 - `GET /admin/archived/export` — Export archived data (CSV/JSON)
+- `POST /admin/ads/{id}/restore` — Restore an archived ad by clearing deleted_at
+- `POST /admin/users/{id}/restore` — Restore an archived user by clearing deletion_date
 
 ---
 

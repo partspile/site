@@ -15,22 +15,6 @@ import (
 	"github.com/parts-pile/site/user"
 )
 
-// Table name constants
-const (
-	TableAd            = "Ad"
-	TableArchivedAd    = "ArchivedAd"
-	TableArchivedAdCar = "ArchivedAdCar"
-	TableAdCar         = "AdCar"
-)
-
-// AdStatus represents the status of an ad
-type AdStatus string
-
-const (
-	StatusActive   AdStatus = "active"
-	StatusArchived AdStatus = "archived"
-)
-
 // SearchQuery represents a structured query for filtering ads
 type SearchQuery struct {
 	Make        string   `json:"make,omitempty"`
@@ -89,11 +73,11 @@ func (a Ad) IsArchived() bool {
 	return a.DeletedAt != nil
 }
 
-// getVehicleData retrieves vehicle information for an ad from the specified table
-func getVehicleData(adID int, adCarTable string) (makeName string, years []string, models []string, engines []string) {
-	query := fmt.Sprintf(`
+// GetVehicleData retrieves vehicle information for an ad
+func GetVehicleData(adID int) (makeName string, years []string, models []string, engines []string) {
+	query := `
 		SELECT DISTINCT m.name, y.year, mo.name, e.name
-		FROM %s ac
+		FROM AdCar ac
 		JOIN Car c ON ac.car_id = c.id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Year y ON c.year_id = y.id
@@ -101,7 +85,7 @@ func getVehicleData(adID int, adCarTable string) (makeName string, years []strin
 		JOIN Engine e ON c.engine_id = e.id
 		WHERE ac.ad_id = ?
 		ORDER BY m.name, y.year, mo.name, e.name
-	`, adCarTable)
+	`
 
 	rows, err := db.Query(query, adID)
 	if err != nil {
@@ -148,23 +132,8 @@ func getVehicleData(adID int, adCarTable string) (makeName string, years []strin
 	return makeName, years, models, engines
 }
 
-// getAdVehicleData retrieves vehicle information for an active ad
-func getAdVehicleData(adID int) (makeName string, years []string, models []string, engines []string) {
-	return getVehicleData(adID, TableAdCar)
-}
-
-// GetAdVehicleDataOnly retrieves only vehicle information without affecting other ad fields
-func GetAdVehicleDataOnly(adID int) (makeName string, years []string, models []string, engines []string) {
-	return getVehicleData(adID, TableAdCar)
-}
-
-// getArchivedAdVehicleData retrieves vehicle information for an archived ad
-func getArchivedAdVehicleData(adID int) (makeName string, years []string, models []string, engines []string) {
-	return getVehicleData(adID, TableArchivedAdCar)
-}
-
-// GetAd retrieves an ad by ID from the active ads table (without vehicle data)
-func GetAd(id int, currentUser *user.User) (Ad, bool) {
+// getAd retrieves an ad by ID from the Ad table
+func getAd(id int, currentUser *user.User) (Ad, bool) {
 	var query string
 	var args []interface{}
 
@@ -210,6 +179,7 @@ func GetAd(id int, currentUser *user.User) (Ad, bool) {
 	var latitude, longitude sql.NullFloat64
 	var createdAt string
 	var isBookmarked int
+
 	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
 		&ad.SubCategoryID, &ad.UserID, &subcategory, &category, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
 		&city, &adminArea, &country, &latitude, &longitude, &isBookmarked); err != nil {
@@ -254,6 +224,11 @@ func GetAd(id int, currentUser *user.User) (Ad, bool) {
 	return ad, true
 }
 
+// GetAd retrieves an ad by ID from the active ads table (without vehicle data)
+func GetAd(id int, currentUser *user.User) (Ad, bool) {
+	return getAd(id, currentUser)
+}
+
 // GetAdWithVehicle retrieves an ad by ID from the active ads table with vehicle data
 func GetAdWithVehicle(id int, currentUser *user.User) (Ad, bool) {
 	ad, ok := GetAd(id, currentUser)
@@ -262,7 +237,7 @@ func GetAdWithVehicle(id int, currentUser *user.User) (Ad, bool) {
 	}
 
 	// Get vehicle data
-	ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(id)
+	ad.Make, ad.Years, ad.Models, ad.Engines = GetVehicleData(id)
 
 	return ad, true
 }
@@ -351,6 +326,7 @@ func GetAllAds() ([]Ad, error) {
 		LEFT JOIN Model mo ON c.model_id = mo.id
 		LEFT JOIN Engine e ON c.engine_id = e.id
 		LEFT JOIN Location l ON a.location_id = l.id
+		WHERE a.deleted_at IS NULL
 		GROUP BY a.id
 		ORDER BY a.created_at DESC
 	`)
@@ -416,11 +392,12 @@ func GetAllAds() ([]Ad, error) {
 	return ads, nil
 }
 
-// GetAllArchivedAds returns all archived ads in the system
-func GetAllArchivedAds() ([]Ad, error) {
+// GetArchivedAds returns all archived ads in the system
+func GetArchivedAds() ([]Ad, error) {
 	rows, err := db.Query(`
 		SELECT id, title, description, price, created_at, user_id, deleted_at, location_id, image_order
-		FROM ArchivedAd
+		FROM Ad
+		WHERE deleted_at IS NOT NULL
 		ORDER BY deleted_at DESC
 	`)
 	if err != nil {
@@ -431,7 +408,7 @@ func GetAllArchivedAds() ([]Ad, error) {
 	var ads []Ad
 	for rows.Next() {
 		var ad Ad
-		var deletedAt string
+		var deletedAt sql.NullString
 		var locationID sql.NullInt64
 		var imageOrder sql.NullString
 		var createdAt string
@@ -442,8 +419,10 @@ func GetAllArchivedAds() ([]Ad, error) {
 
 		// Parse the created_at string into time.Time
 		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-		if parsedTime, err := time.Parse(time.RFC3339Nano, deletedAt); err == nil {
-			ad.DeletedAt = &parsedTime
+		if deletedAt.Valid {
+			if parsedTime, err := time.Parse(time.RFC3339Nano, deletedAt.String); err == nil {
+				ad.DeletedAt = &parsedTime
+			}
 		}
 		if locationID.Valid {
 			ad.LocationID = int(locationID.Int64)
@@ -451,13 +430,13 @@ func GetAllArchivedAds() ([]Ad, error) {
 		if imageOrder.Valid {
 			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
 		}
-		// Populate vehicle info for each archived ad
-		ad.Make, ad.Years, ad.Models, ad.Engines = getArchivedAdVehicleData(ad.ID)
+		// Populate vehicle info for each archived ad using the regular function
+		ad.Make, ad.Years, ad.Models, ad.Engines = GetVehicleData(ad.ID)
 		ads = append(ads, ad)
 	}
 
 	for i := range ads {
-		fmt.Printf("[DEBUG] GetAllArchivedAds: ad ID=%d ImageOrder=%v\n", ads[i].ID, ads[i].ImageOrder)
+		fmt.Printf("[DEBUG] GetArchivedAds: ad ID=%d ImageOrder=%v\n", ads[i].ID, ads[i].ImageOrder)
 	}
 
 	return ads, nil
@@ -465,50 +444,27 @@ func GetAllArchivedAds() ([]Ad, error) {
 
 // GetArchivedAd retrieves an archived ad by ID
 func GetArchivedAd(id int, currentUser *user.User) (Ad, bool) {
-	var query string
-	var args []interface{}
-
-	if currentUser != nil {
-		// Query with bookmark status
-		query = `
-			SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id, a.user_id, a.deleted_at, a.location_id, a.image_order,
-			       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
-			FROM ArchivedAd a
-			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
-			WHERE a.id = ?
-		`
-		args = []interface{}{currentUser.ID, id}
-	} else {
-		// Query without bookmark status (default to false)
-		query = `
-			SELECT id, title, description, price, created_at, subcategory_id, user_id, deleted_at, location_id, image_order,
-			       0 as is_bookmarked
-			FROM ArchivedAd
-			WHERE id = ?
-		`
-		args = []interface{}{id}
-	}
-
-	row := db.QueryRow(query, args...)
-
-	var ad Ad
-	var createdAt, deletedAt string
-	var isBookmarked int
-	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
-		&ad.SubCategoryID, &ad.UserID, &deletedAt, &ad.LocationID, &ad.ImageOrder, &isBookmarked); err != nil {
+	ad, ok := getAd(id, currentUser)
+	if !ok {
 		return Ad{}, false
 	}
 
-	// Parse the created_at and deleted_at strings into time.Time
-	ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-	deletedTime, _ := time.Parse(time.RFC3339Nano, deletedAt)
-	ad.DeletedAt = &deletedTime
+	// Get deleted_at field from the Ad table
+	row := db.QueryRow("SELECT deleted_at FROM Ad WHERE id = ?", id)
+	var deletedAt sql.NullString
+	if err := row.Scan(&deletedAt); err != nil {
+		return Ad{}, false
+	}
 
-	// Set bookmark status
-	ad.Bookmarked = isBookmarked == 1
+	// Parse the deleted_at string into time.Time
+	if deletedAt.Valid {
+		if deletedTime, err := time.Parse(time.RFC3339Nano, deletedAt.String); err == nil {
+			ad.DeletedAt = &deletedTime
+		}
+	}
 
-	// Get vehicle data
-	ad.Make, ad.Years, ad.Models, ad.Engines = getArchivedAdVehicleData(id)
+	// Get vehicle data using the regular function since we now use a single AdCar table
+	ad.Make, ad.Years, ad.Models, ad.Engines = GetVehicleData(id)
 
 	return ad, true
 }
@@ -544,109 +500,17 @@ func UpdateAd(ad Ad) error {
 	return tx.Commit()
 }
 
-// ArchiveAd archives an ad
+// ArchiveAd archives an ad using soft delete
 func ArchiveAd(id int) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	var imageOrder sql.NullString
-	_ = tx.QueryRow("SELECT image_order FROM Ad WHERE id = ?", id).Scan(&imageOrder)
-
-	// Archive the ad to ArchivedAd with deleted_at, title, and location
-	_, err = tx.Exec(`INSERT INTO ArchivedAd (id, title, description, price, created_at, subcategory_id, user_id, deleted_at, location_id, image_order)
-		SELECT id, title, description, price, created_at, subcategory_id, user_id, ?, location_id, ? FROM Ad WHERE id = ?`,
-		time.Now().UTC().Format(time.RFC3339Nano), imageOrder.String, id)
-	if err != nil {
-		return err
-	}
-
-	// Archive ad-car relationships to ArchivedAdCar
-	_, err = tx.Exec(`INSERT INTO ArchivedAdCar (ad_id, car_id, deleted_at)
-		SELECT ad_id, car_id, ? FROM AdCar WHERE ad_id = ?`, time.Now().UTC().Format(time.RFC3339Nano), id)
-	if err != nil {
-		return err
-	}
-
-	// Delete from AdCar
-	_, err = tx.Exec(`DELETE FROM AdCar WHERE ad_id = ?`, id)
-	if err != nil {
-		return err
-	}
-
-	// Delete from Ad
-	_, err = tx.Exec(`DELETE FROM Ad WHERE id = ?`, id)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	_, err := db.Exec("UPDATE Ad SET deleted_at = ? WHERE id = ?",
+		time.Now().UTC().Format(time.RFC3339Nano), id)
+	return err
 }
 
-// RestoreAd moves an ad from the ArchivedAd table back to the active Ad table
+// RestoreAd restores an archived ad by clearing the deleted_at field
 func RestoreAd(adID int) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	// Get ad data from archive
-	var ad Ad
-	var locationID sql.NullInt64
-	var lastClickedAt sql.NullTime
-	var imageOrder sql.NullString
-	var createdAt string
-	err = tx.QueryRow(`SELECT id, title, description, price, created_at, subcategory_id, user_id, location_id, image_order, click_count, last_clicked_at 
-		FROM ArchivedAd WHERE id = ?`, adID).Scan(
-		&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt, &ad.SubCategoryID, &ad.UserID, &locationID, &imageOrder, &ad.ClickCount, &lastClickedAt)
-	if err != nil {
-		return err
-	}
-
-	// Parse the created_at string into time.Time
-	ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-
-	if locationID.Valid {
-		ad.LocationID = int(locationID.Int64)
-	}
-	if lastClickedAt.Valid {
-		ad.LastClickedAt = &lastClickedAt.Time
-	}
-	if imageOrder.Valid {
-		_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
-	}
-
-	// Restore ad - subcategory_id is now NOT NULL so no need for complex NULL handling
-	imgOrderJSON, _ := json.Marshal(ad.ImageOrder)
-	_, err = tx.Exec(`INSERT INTO Ad (id, title, description, price, created_at, subcategory_id, user_id, location_id, image_order, click_count, last_clicked_at, has_vector)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-		ad.ID, ad.Title, ad.Description, ad.Price, ad.CreatedAt, ad.SubCategoryID, ad.UserID, ad.LocationID, string(imgOrderJSON), ad.ClickCount, ad.LastClickedAt)
-	if err != nil {
-		return err
-	}
-
-	// Restore ad-car relationships
-	_, err = tx.Exec(`INSERT INTO AdCar (ad_id, car_id)
-		SELECT ad_id, car_id
-		FROM ArchivedAdCar WHERE ad_id = ?`, adID)
-	if err != nil {
-		return err
-	}
-
-	// Delete from archive tables
-	_, err = tx.Exec(`DELETE FROM ArchivedAdCar WHERE ad_id = ?`, adID)
-	if err != nil {
-		return err
-	}
-	_, err = tx.Exec(`DELETE FROM ArchivedAd WHERE id = ?`, adID)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit()
+	_, err := db.Exec("UPDATE Ad SET deleted_at = NULL WHERE id = ?", adID)
+	return err
 }
 
 // Bookmark/unbookmark and bookmarked ads logic
@@ -714,7 +578,7 @@ func GetAdsByIDs(ids []int, userID int) ([]Ad, error) {
 		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
 		LEFT JOIN Location l ON a.location_id = l.id
 		LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
-		WHERE a.id IN (` + strings.Join(placeholders, ",") + `)`
+		WHERE a.id IN (` + strings.Join(placeholders, ",") + `) AND a.deleted_at IS NULL`
 	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -774,7 +638,7 @@ func GetAdsByIDs(ids []int, userID int) ([]Ad, error) {
 		ad.Bookmarked = isBookmarked == 1
 
 		// Get vehicle data
-		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
+		ad.Make, ad.Years, ad.Models, ad.Engines = GetVehicleData(ad.ID)
 		adMap[ad.ID] = ad
 	}
 	// Preserve order of ids
@@ -887,6 +751,7 @@ func GetMostPopularAds(n int) []Ad {
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 		LEFT JOIN Location l ON a.location_id = l.id
+		WHERE a.deleted_at IS NULL
 		ORDER BY (
 			a.click_count * 2 + 
 			COALESCE((SELECT COUNT(*) FROM BookmarkedAd ba WHERE ba.ad_id = a.id), 0) * 3 + 
@@ -944,7 +809,7 @@ func GetMostPopularAds(n int) []Ad {
 		}
 
 		// Get vehicle data
-		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
+		ad.Make, ad.Years, ad.Models, ad.Engines = GetVehicleData(ad.ID)
 		ads = append(ads, ad)
 	}
 	log.Printf("[GetMostPopularAds] Found %d ads from SQL query", rowCount)
@@ -964,7 +829,7 @@ func GetAdsWithoutVectors() ([]Ad, error) {
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 		LEFT JOIN Location l ON a.location_id = l.id
-		WHERE a.has_vector = 0
+		WHERE a.has_vector = 0 AND a.deleted_at IS NULL
 		ORDER BY a.created_at DESC
 		LIMIT 50
 	`
@@ -1021,7 +886,7 @@ func GetAdsWithoutVectors() ([]Ad, error) {
 		}
 
 		// Get vehicle data
-		ad.Make, ad.Years, ad.Models, ad.Engines = getAdVehicleData(ad.ID)
+		ad.Make, ad.Years, ad.Models, ad.Engines = GetVehicleData(ad.ID)
 		ads = append(ads, ad)
 	}
 	log.Printf("[GetAdsWithoutVectors] Found %d ads without vectors from SQL query", rowCount)
@@ -1070,7 +935,7 @@ func GetAdsByIDsOptimized(ids []int) ([]Ad, error) {
 		LEFT JOIN Year y ON c.year_id = y.id
 		LEFT JOIN Model mo ON c.model_id = mo.id
 		LEFT JOIN Engine e ON c.engine_id = e.id
-		WHERE a.id IN (` + strings.Join(placeholders, ",") + `)
+		WHERE a.id IN (` + strings.Join(placeholders, ",") + `) AND a.deleted_at IS NULL
 		GROUP BY a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
 			a.user_id, psc.name, pc.name, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
 			l.city, l.admin_area, l.country, l.latitude, l.longitude`
@@ -1196,7 +1061,7 @@ func GetAdsByIDsOptimizedWithBookmarks(ids []int, userID int) ([]Ad, error) {
 		LEFT JOIN Year y ON c.year_id = y.id
 		LEFT JOIN Model mo ON c.model_id = mo.id
 		LEFT JOIN Engine e ON c.engine_id = e.id
-		WHERE a.id IN (` + strings.Join(placeholders, ",") + `)
+		WHERE a.id IN (` + strings.Join(placeholders, ",") + `) AND a.deleted_at IS NULL
 		GROUP BY a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
 			a.user_id, psc.name, pc.name, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
 			l.city, l.admin_area, l.country, l.latitude, l.longitude, ba.ad_id`
