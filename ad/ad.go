@@ -301,52 +301,6 @@ func addAdVehicleAssociations(tx *sql.Tx, adID int, makeName string, years []str
 	return nil
 }
 
-// GetAllAds returns all ads in the system
-// This is optimized for command-line tools and avoids expensive GROUP_CONCAT operations
-func GetAllAds() ([]Ad, error) {
-	query := `
-		SELECT
-			a.id, a.title, a.description, a.price, a.created_at, a.user_id, a.location_id,
-			a.image_order
-		FROM Ad a
-		WHERE a.deleted_at IS NULL
-		ORDER BY a.created_at DESC
-	`
-
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var ads []Ad
-	for rows.Next() {
-		var ad Ad
-		var imageOrder sql.NullString
-		var createdAt string
-
-		err := rows.Scan(
-			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt, &ad.UserID, &ad.LocationID,
-			&imageOrder,
-		)
-		if err != nil {
-			continue
-		}
-
-		// Parse the created_at string into time.Time
-		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-
-		// Parse image order JSON
-		if imageOrder.Valid && imageOrder.String != "" {
-			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
-		}
-
-		ads = append(ads, ad)
-	}
-
-	return ads, nil
-}
-
 // GetArchivedAd retrieves an archived ad by ID
 func GetArchivedAd(id int, currentUser *user.User) (Ad, bool) {
 	ad, ok := GetAd(id, currentUser)
