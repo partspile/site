@@ -71,68 +71,6 @@ func TestGetAllMakes_WithParentCompany(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetAllYears(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer mockDB.Close()
-
-	db.SetForTesting(mockDB)
-
-	expectedYears := []Year{
-		{ID: 1, Year: 2020},
-		{ID: 2, Year: 2021},
-		{ID: 3, Year: 2022},
-	}
-
-	rows := sqlmock.NewRows([]string{"id", "year"})
-	for _, year := range expectedYears {
-		rows.AddRow(year.ID, year.Year)
-	}
-
-	mock.ExpectQuery("SELECT id, year FROM Year ORDER BY year").
-		WillReturnRows(rows)
-
-	years, err := GetAllYears()
-
-	assert.NoError(t, err)
-	assert.Len(t, years, 3)
-	assert.Equal(t, expectedYears[0].Year, years[0].Year)
-	assert.Equal(t, expectedYears[1].Year, years[1].Year)
-	assert.Equal(t, expectedYears[2].Year, years[2].Year)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetAllModels(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer mockDB.Close()
-
-	db.SetForTesting(mockDB)
-
-	expectedModels := []Model{
-		{ID: 1, Name: "3 Series"},
-		{ID: 2, Name: "5 Series"},
-		{ID: 3, Name: "X3"},
-	}
-
-	rows := sqlmock.NewRows([]string{"id", "name"})
-	for _, model := range expectedModels {
-		rows.AddRow(model.ID, model.Name)
-	}
-
-	mock.ExpectQuery("SELECT id, name FROM Model ORDER BY name").
-		WillReturnRows(rows)
-
-	models, err := GetAllModelsWithID()
-
-	assert.NoError(t, err)
-	assert.Len(t, models, 3)
-	assert.Equal(t, expectedModels[0].Name, models[0].Name)
-	assert.Equal(t, expectedModels[1].Name, models[1].Name)
-	assert.Equal(t, expectedModels[2].Name, models[2].Name)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
 func TestGetAllEngineSizes(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
@@ -162,38 +100,6 @@ func TestGetAllEngineSizes(t *testing.T) {
 func TestGetYearRange(t *testing.T) {
 	// Skip this test for now as it uses caching and complex query patterns
 	t.Skip("Skipping TestGetYearRange due to caching and complex query patterns")
-}
-
-func TestGetAllParentCompanies(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer mockDB.Close()
-
-	db.SetForTesting(mockDB)
-
-	expectedCompanies := []ParentCompany{
-		{ID: 1, Name: "BMW Group", Country: "Germany"},
-		{ID: 2, Name: "Daimler AG", Country: "Germany"},
-		{ID: 3, Name: "Toyota Motor Corporation", Country: "Japan"},
-	}
-
-	rows := sqlmock.NewRows([]string{"id", "name", "country"})
-	for _, company := range expectedCompanies {
-		rows.AddRow(company.ID, company.Name, company.Country)
-	}
-
-	mock.ExpectQuery("SELECT id, name, country FROM ParentCompany ORDER BY name").
-		WillReturnRows(rows)
-
-	companies, err := GetAllParentCompanies()
-
-	assert.NoError(t, err)
-	assert.Len(t, companies, 3)
-	assert.Equal(t, expectedCompanies[0].Name, companies[0].Name)
-	assert.Equal(t, expectedCompanies[0].Country, companies[0].Country)
-	assert.Equal(t, expectedCompanies[1].Name, companies[1].Name)
-	assert.Equal(t, expectedCompanies[1].Country, companies[1].Country)
-	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
 func TestAddParentCompany(t *testing.T) {

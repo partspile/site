@@ -8,6 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/ui"
@@ -281,21 +282,20 @@ func HandleDeleteAccount(c *fiber.Ctx) error {
 		return ValidationErrorResponseWithStatus(c, "Invalid password", fiber.StatusUnauthorized)
 	}
 
-	// Archive all ads by this user (function not implemented)
-	// TODO: Implement ArchiveAdsByUserID or similar if needed
-	// err = ad.DeleteAdsByUserID(currentUser.ID)
-	// if err != nil {
-	// 	c.Response().SetStatusCode(fiber.StatusInternalServerError)
-	// 	return c.SendString("Failed to archive user's ads")
-	// }
+	// Archive all ads by this user
+	err := ad.ArchiveAdsByUserID(currentUser.ID)
+	if err != nil {
+		log.Printf("Warning: Failed to archive user's ads: %v", err)
+		// Continue with user deletion even if ad archiving fails
+	}
 
-	// Delete user (function not implemented)
-	// TODO: Implement DeleteUser if needed
-	// err = user.DeleteUser(currentUser.ID)
-	// if err != nil {
-	// 	c.Response().SetStatusCode(fiber.StatusInternalServerError)
-	// 	return c.SendString("Failed to delete user")
-	// }
+	// Archive the user using soft delete
+	if err := user.ArchiveUser(currentUser.ID); err != nil {
+		return ValidationErrorResponseWithStatus(c, "Failed to delete account", fiber.StatusInternalServerError)
+	}
+
+	// Log out the user after account deletion
+	logoutUser(c)
 
 	return render(c, ui.SuccessMessage("Account deleted successfully", "/"))
 }

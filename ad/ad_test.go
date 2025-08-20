@@ -153,12 +153,6 @@ func TestGetAdsPage(t *testing.T) {
 	t.Skip("Skipping TestGetAdsPage due to complex query mocking requirements")
 }
 
-func TestGetAllAds(t *testing.T) {
-	// Skip this test for now as it requires complex mocking
-	// The function works correctly with real database
-	t.Skip("Skipping TestGetAllAds due to complex query mocking requirements")
-}
-
 func TestBookmarkAd(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)

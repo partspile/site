@@ -97,10 +97,6 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - Modern, accessible web UI using Tailwind CSS and HTMX for dynamic updates.
 - Form validation and user feedback for all actions.
 - **Ad timestamps are displayed in the user's local timezone, using browser-provided timezone information when available.**
-- On "Create New Ad" page, the current ad cost is displayed and updates dynamically as the user selects make/model/category.
-  - Green if it's a payout (user receives tokens).
-  - Red if it's an expense (user pays tokens).
-- User's token balance is shown in the navigation bar on all pages, and is clickable for exchange and transaction history.
 - **Settings Page**: Comprehensive user settings management including:
   - Notification method preferences (SMS, Email, Signal) with radio button selection
   - Conditional email address field (always visible, enabled only when email is selected)
@@ -190,35 +186,16 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - Clicks are incremented in the database each time an ad is viewed.
 - User-specific click tracking is also supported, allowing for analytics on unique user engagement, including the date/time of the last click by that user.
 
-### 3.8 Ad Cost, Token Economy, and Incentives
-- Posting an ad incurs a cost, which can be positive (user pays) or negative (user receives payout).
-- Cost is determined by:
-  - Funds available in the payout account.
-  - Dynamic weighting based on ad's vehicle make/model/category and ad density (rarer = higher payout).
-  - System encourages adoption by paying users to post in underrepresented areas.
-- Payouts start high (e.g., 5 tokens/ad), decrease as fund depletes or ad density increases.
-- **Min/Max:** Users never pay more than 5 tokens, never receive more than 5 tokens per ad.
-- If the payout fund is depleted, users can still post ads, but must pay (ad cost becomes positive).
-- Payout fund sources:
-  - Initial seed (e.g., 1M tokens from investors).
-  - Portion of positive ad costs (when users pay to post).
-  - Portion of paid ad clicks (from advertisers).
-- **Token System:**
-  - Internal, stablecoin-like (1 token ≈ $1).
-  - Users can buy tokens directly (USD, Stripe/PayPal, etc.), or receive tokens as payouts.
-  - All transactions (including direct USD payments) are recorded as token transactions for transparency and account activity.
-  - Users can transfer tokens to each other (e.g., for peer-to-peer payments).
-  - Users can cash out surplus tokens.
-  - Token balance is shown on the home page, with a link to the exchange page.
-  - Tokens may be used for payment for items in ads (see legal note below).
-- **Legal/Tax Note:**
-  - The use of tokens as a medium of exchange between users may have legal and tax implications, including but not limited to money transmission laws, KYC/AML requirements, and sales tax collection. Further legal review is required before launch.
+### 3.8 Ad Posting
+- Posting an ad is free for all users.
+- No cost or payment system is required.
+- Users can post ads without any financial barriers.
 
-### 3.8 Paid Advertising & Promotion
+### 3.9 Paid Advertising & Promotion
 - Advertisers pay for prominent placement in search results.
 - Paid ads are visually distinct (special background).
 - The first paid ad always appears at the top of search results; additional paid ads are interleaved at pagination boundaries (e.g., after each page of results).
-- Clicks on paid ads charge the advertiser; a portion of this charge is contributed to the payout fund.
+- Clicks on paid ads charge the advertiser.
 - Paid ads are intermixed with regular ads, but clearly marked.
 
 ### 3.9 LLM-based Username Moderation
@@ -264,7 +241,6 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
   - When a user deletes their account:
     - User data is archived (not deleted) for historical record keeping
     - All user's ads are archived (not deleted)
-    - User's token transactions are marked as involving a deleted user
     - The user and their ads are no longer visible in the main application
     - This action is irreversible and requires password confirmation
 
@@ -274,10 +250,9 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
   - When users or ads are "deleted", they are marked with a `deleted_at` timestamp rather than being physically removed
   - This approach preserves all data for auditing while removing it from active use
   - Archived data includes:
-    - User profiles (marked with deletion_date in ArchivedUser table)
+    - User profiles (marked with deleted_at in User table)
     - User's ads (marked with deleted_at in Ad table)
     - Vehicle associations remain intact in the single AdCar table
-    - Token transactions (marked with user_deleted flag)
   - Benefits of soft delete approach:
     - No data duplication between active and archived tables
     - Simpler database schema and maintenance
@@ -287,12 +262,12 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - **Admin Interface:**
   - Administrators can access archived data through dedicated endpoints
   - Admin features include:
-    - View archived users with deletion dates
+    - View archived users with deletion dates (filtered by deleted_at IS NOT NULL)
     - View archived ads (filtered by deleted_at IS NOT NULL)
     - Search archived data by various criteria
     - Export archived data for analysis
-    - View token transaction history, including deleted users
     - Restore archived ads by clearing the deleted_at field
+    - Restore archived users by clearing the deleted_at field
   - Admin access is restricted by role-based authentication
 
 ### 3.13 Ad Card UX (2024-06-xx)
@@ -358,11 +333,8 @@ The platform is built with the following technologies:
 - **Location**: id, raw_text, city, admin_area, country, latitude, longitude
 - **Ad**: id, title, description, price, created_at, deleted_at, subcategory_id, user_id, location_id, image_order, click_count, last_clicked_at, has_vector
 - **AdCar**: ad_id, car_id (single table for all vehicle associations)
-- **User**: id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin
-- **ArchivedUser**: id, name, phone, token_balance, password_hash, created_at, deletion_date, is_admin
-- **TokenTransaction**: id, user_id, type, amount, related_user_id, ad_id, created_at, description, user_deleted
+- **User**: id, name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin, deleted_at
 - **UserSearch**: id, user_id (nullable), query_string, created_at
-- **PayoutFund**: id, balance, updated_at
 - **UserEmbedding**: id, user_id, embedding (blob), updated_at
 - **BookmarkedAd**: user_id, ad_id, bookmarked_at
 - **UserAdClick**: ad_id, user_id, click_count, last_clicked_at
@@ -370,13 +342,14 @@ The platform is built with the following technologies:
 
 ### Data Archiving Strategy
 - **Soft Delete for Ads**: Ads are marked as archived by setting `deleted_at` timestamp instead of being moved to separate tables
+- **Soft Delete for Users**: Users are marked as archived by setting `deleted_at` timestamp instead of being moved to separate tables
 - **Unified Vehicle Data**: All vehicle associations remain in the single `AdCar` table, accessible for both active and archived ads
-- **User Archiving**: Users are moved to `ArchivedUser` table with deletion timestamp for complete separation
 - **Benefits**: 
   - Eliminates data duplication between active and archived states
   - Simplifies database schema and maintenance
   - Maintains referential integrity for vehicle associations
   - Enables easy restoration of archived content
+  - Consistent archiving approach across users and ads
 
 ### Vector Database (Qdrant)
 - **Ad Embeddings**: Stored with comprehensive metadata including:
@@ -388,17 +361,18 @@ The platform is built with the following technologies:
 
 ### Technical Implementation Details
 - **Ad Archiving**: Implemented via soft delete using `deleted_at` DATETIME field in Ad table
+- **User Archiving**: Implemented via soft delete using `deleted_at` DATETIME field in User table
 - **Vehicle Data Access**: Single `getAdVehicleData()` function works for both active and archived ads
-- **Query Optimization**: All ad queries automatically filter out archived ads using `WHERE deleted_at IS NULL`
-- **Admin Functions**: 
-  - `GetArchivedAds()` queries Ad table with `WHERE deleted_at IS NOT NULL`
+- **Query Optimization**: All ad and user queries automatically filter out archived items using `WHERE deleted_at IS NULL`
+- **Archive Functions**: 
   - `GetArchivedAd()` uses unified `getAd()` function then loads `deleted_at` separately
+  - `GetArchivedUser()` uses unified `getUser()` function then loads `deleted_at` separately
   - Archive/Restore operations use simple UPDATE statements instead of complex table operations
-- **Database Schema**: Simplified from separate `ArchivedAd`/`ArchivedAdCar` tables to single table with soft delete
+- **Database Schema**: Simplified from separate `ArchivedAd`/`ArchivedAdCar` and `ArchivedUser` tables to single tables with soft delete
 
 See `schema.sql` for full schema and indexes.
 
-**Note:** The system now uses soft deletes for ads (deleted_at field) while maintaining separate ArchivedUser table for user data. This approach eliminates data duplication and simplifies maintenance.
+**Note:** The system now uses soft deletes for both ads and users (deleted_at field), eliminating the need for separate archived tables and providing a consistent archiving approach.
 
 ---
 
@@ -426,14 +400,11 @@ See `schema.sql` for full schema and indexes.
 - `POST /api/delete-account` — Delete user account
 
 ### Admin Endpoints
-- `GET /admin/archived/users` — List archived users
-- `GET /admin/archived/users/{id}` — View specific archived user
-- `GET /admin/archived/users/{id}/ads` — View archived ads for user (filtered from Ad table)
-- `GET /admin/archived/search` — Search archived data
-- `GET /admin/archived/transactions` — View token transactions (including deleted users)
-- `GET /admin/archived/export` — Export archived data (CSV/JSON)
-- `POST /admin/ads/{id}/restore` — Restore an archived ad by clearing deleted_at
-- `POST /admin/users/{id}/restore` — Restore an archived user by clearing deletion_date
+- `GET /admin/b2-cache` — View B2 cache statistics and management
+- `POST /api/admin/b2-cache/clear` — Clear B2 cache
+- `POST /api/admin/b2-cache/refresh` — Refresh B2 download token for specific prefix
+- `GET /admin/embedding-cache` — View embedding cache statistics and management
+- `POST /api/admin/embedding-cache/clear` — Clear embedding cache
 
 ---
 
@@ -462,49 +433,15 @@ See `schema.sql` for full schema and indexes.
 - Advanced analytics and reporting
 - Internationalization/localization
 - Admin dashboard for moderation
-- Ongoing review of the sustainability model for the payout fund
-- Ongoing legal and compliance review for token use, exchange, and peer-to-peer payments
+
 
 ---
 
-## 11. Ad Cost Calculation & Payout Fund Drawdown
-- **Formula for Ad Cost:**
-  - Ad cost = base_payout × exp(-λ × total_ads) × fund_factor × weight_factor
-    - base_payout: 5 tokens (max payout)
-    - λ: decay constant, controls how quickly payout drops as ads accumulate
-    - total_ads: total number of ads posted
-    - fund_factor: function of current fund size (e.g., payout halves when fund halves)
-    - weight_factor: dynamically calculated, higher for rare makes/categories (e.g., inverse of ad count for that make/category)
-  - Payout is capped: never more than 5 tokens, never less than -5 tokens (user pays max 5 tokens).
-  - If fund = 0, payout is negative (user pays to post).
-- **Sustainability Model:**
-  - The system is designed to be self-sustaining, with the payout fund replenished by ad posting fees and paid ad clicks.
-  - If the fund is depleted, the system continues to operate with users paying to post ads, but the goal is to maintain a positive fund balance to incentivize adoption.
 
-## 12. Legal & Compliance
-- **Token Use and Exchange:**
-  - The use of tokens as a medium of exchange between users, and the ability to cash out tokens, may trigger regulatory requirements (e.g., money transmission, KYC/AML, tax reporting).
-  - Legal review and compliance measures are required before enabling peer-to-peer token transfers and cash-out functionality.
-  - The system will record all token transactions for transparency and auditability.
 
-## 13. Token and Fund Flow Diagram
 
-```mermaid
-flowchart TD
-  A[Initial Payout Fund - Seed, Ad Fees, Paid Ad Clicks] -->|Funds Available| B[Ad Cost Calculation]
-  B -->|Positive Cost| C[User Pays Tokens or USD]
-  B -->|Negative Cost| D[User Receives Tokens]
-  C --> E[Payout Fund Increases]
-  D --> F[Payout Fund Decreases]
-  G[Paid Advertiser Ad] -->|Click| E
-  H[User Buys Tokens] --> E
-  I[User Sells Tokens] --> F
-  J[Peer-to-Peer Token Transfer] --> K[Legal and Tax Review]
-  E --> B
-  F --> B
-  E --> L[Display: User Balance, Ad Cost, Transaction History]
-  F --> L
-```
+
+
 
 ---
 

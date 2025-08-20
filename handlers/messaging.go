@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -72,7 +71,7 @@ func HandleExpandConversation(c *fiber.Ctx) error {
 		return c.Status(500).SendString("Failed to load messages")
 	}
 
-	component := ui.ExpandedConversation(*currentUser, conversation, messages)
+	component := ui.ExpandedConversation(currentUser, conversation, messages)
 	return render(c, component)
 }
 
@@ -192,43 +191,8 @@ func HandleSendMessage(c *fiber.Ctx) error {
 		return render(c, ui.ErrorPage(500, "Failed to load updated messages"))
 	}
 
-	// Check if this is an inline conversation by looking at the referrer
-	referrer := c.Get("Referer")
-	isInline := strings.Contains(referrer, "/ad/detail/")
-
-	// Return the appropriate conversation editor based on context
-	if isInline {
-		// Extract ad ID and view from referrer for inline mode
-		// For now, default to tree view - this could be enhanced to extract actual view
-		view := "tree"
-		if strings.Contains(referrer, "view=grid") {
-			view = "grid"
-		} else if strings.Contains(referrer, "view=list") {
-			view = "list"
-		}
-
-		// Get ad details for inline mode
-		adObj, ok := ad.GetAd(updatedConversation.AdID, currentUser)
-		if !ok {
-			return render(c, ui.ErrorPage(500, "Failed to get ad details"))
-		}
-
-		// Get ad owner for inline mode
-		adOwner, err := user.GetUser(adObj.UserID)
-		if err != nil {
-			return render(c, ui.ErrorPage(500, "Failed to get ad owner"))
-		}
-
-		htmxTarget := fmt.Sprintf("#ad-%d", updatedConversation.AdID)
-		if view == "grid" {
-			htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", updatedConversation.AdID)
-		}
-
-		return render(c, ui.ConversationInline(updatedConversation, updatedMessages, adObj, adOwner, *currentUser, htmxTarget, view))
-	} else {
-		// Return the messages page version
-		return render(c, ui.ExpandedConversation(*currentUser, updatedConversation, updatedMessages))
-	}
+	// Return the messages page version
+	return render(c, ui.ExpandedConversation(currentUser, updatedConversation, updatedMessages))
 }
 
 // HandleMessagesAPI handles AJAX requests for messages
@@ -332,73 +296,4 @@ func HandleSSEConversationUpdate(c *fiber.Ctx) error {
 
 	// Return the updated conversation item HTML
 	return render(c, ui.ConversationListItem(conversation, currentUser.ID))
-}
-
-// HandleOpenConversationInline opens a conversation inline within an ad view
-func HandleOpenConversationInline(c *fiber.Ctx) error {
-	adID, err := c.ParamsInt("id")
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
-	}
-
-	currentUser, err := CurrentUser(c)
-	if err != nil {
-		return err
-	}
-
-	adObj, ok := ad.GetAd(adID, currentUser)
-	if !ok {
-		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
-	}
-
-	// Prevent users from messaging themselves
-	if adObj.UserID == currentUser.ID {
-		return fiber.NewError(fiber.StatusForbidden, "You cannot message yourself")
-	}
-
-	// Get or create conversation
-	convID, err := messaging.GetOrCreateConversation(currentUser.ID, adObj.UserID, adID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get or create conversation")
-	}
-
-	// Get conversation details
-	conv, err := messaging.GetConversationByID(convID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get conversation")
-	}
-
-	// Get messages for this conversation
-	messages, err := messaging.GetMessages(convID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get messages")
-	}
-
-	// Get ad owner user info
-	adOwner, err := user.GetUser(adObj.UserID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get ad owner")
-	}
-
-	// Mark conversation as read for current user
-	err = messaging.MarkConversationAsRead(convID, currentUser.ID)
-	if err != nil {
-		log.Printf("Failed to mark conversation as read: %v", err)
-	}
-
-	// Determine the view type from the referrer URL
-	referrer := c.Get("Referer")
-	view := "tree" // default
-	if strings.Contains(referrer, "view=grid") {
-		view = "grid"
-	} else if strings.Contains(referrer, "view=list") {
-		view = "list"
-	}
-
-	htmxTarget := fmt.Sprintf("#ad-%d", adID)
-	if view == "grid" {
-		htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", adID)
-	}
-
-	return render(c, ui.ConversationInline(conv, messages, adObj, adOwner, *currentUser, htmxTarget, view))
 }

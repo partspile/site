@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -19,7 +18,6 @@ func UserNav(currentUser *user.User, currentPath string) g.Node {
 			A(Href("/"), Class("text-xl font-bold"), g.Text("Parts Pile")),
 			Span(Class("flex-grow")),
 			Span(Class("font-semibold"), g.Text(currentUser.Name)),
-			Span(Class("text-green-700 font-bold"), g.Text(fmt.Sprintf("%.2f tokens", currentUser.TokenBalance))),
 		}
 		if currentUser.IsAdmin {
 			navItems = append(navItems,

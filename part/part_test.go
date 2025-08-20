@@ -40,38 +40,6 @@ func TestGetAllCategories(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestGetAllSubCategories(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer mockDB.Close()
-
-	db.SetForTesting(mockDB)
-
-	expectedSubCategories := []SubCategory{
-		{ID: 1, CategoryID: 1, Name: "Engine Block"},
-		{ID: 2, CategoryID: 1, Name: "Cylinder Head"},
-		{ID: 3, CategoryID: 2, Name: "Brake Pads"},
-	}
-
-	rows := sqlmock.NewRows([]string{"id", "category_id", "name"})
-	for _, subCategory := range expectedSubCategories {
-		rows.AddRow(subCategory.ID, subCategory.CategoryID, subCategory.Name)
-	}
-
-	mock.ExpectQuery("SELECT id, category_id, name FROM PartSubCategory ORDER BY name").
-		WillReturnRows(rows)
-
-	subCategories, err := GetAllSubCategories()
-
-	assert.NoError(t, err)
-	assert.Len(t, subCategories, 3)
-	assert.Equal(t, expectedSubCategories[0].Name, subCategories[0].Name)
-	assert.Equal(t, expectedSubCategories[0].CategoryID, subCategories[0].CategoryID)
-	assert.Equal(t, expectedSubCategories[1].Name, subCategories[1].Name)
-	assert.Equal(t, expectedSubCategories[2].Name, subCategories[2].Name)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
 func TestGetMakes_WithQuery(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)

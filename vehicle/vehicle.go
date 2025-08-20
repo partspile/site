@@ -89,58 +89,6 @@ type MakeWithParentCompany struct {
 	ParentCompanyName string
 }
 
-// GetAllMakesWithParentCompany returns all makes with their parent company names
-func GetAllMakesWithParentCompany() ([]MakeWithParentCompany, error) {
-	rows, err := db.Query(`
-		SELECT m.id, m.name, m.parent_company_id, pc.name
-		FROM Make m
-		LEFT JOIN ParentCompany pc ON m.parent_company_id = pc.id
-		ORDER BY m.name
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var makes []MakeWithParentCompany
-	for rows.Next() {
-		var make MakeWithParentCompany
-		var parentCompanyID sql.NullInt64
-		var parentCompanyName sql.NullString
-		if err := rows.Scan(&make.ID, &make.Name, &parentCompanyID, &parentCompanyName); err != nil {
-			return nil, err
-		}
-		if parentCompanyID.Valid {
-			id := int(parentCompanyID.Int64)
-			make.ParentCompanyID = &id
-		}
-		if parentCompanyName.Valid {
-			make.ParentCompanyName = parentCompanyName.String
-		} else {
-			make.ParentCompanyName = "Independent"
-		}
-		makes = append(makes, make)
-	}
-	return makes, nil
-}
-
-func GetAllYears() ([]Year, error) {
-	rows, err := db.Query("SELECT id, year FROM Year ORDER BY year")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var years []Year
-	for rows.Next() {
-		var year Year
-		if err := rows.Scan(&year.ID, &year.Year); err != nil {
-			return nil, err
-		}
-		years = append(years, year)
-	}
-	return years, nil
-}
-
 func GetYears(makeName string) []string {
 	if years, ok := yearsCache[makeName]; ok {
 		return years
@@ -181,23 +129,6 @@ func GetAllModels() []string {
 	}
 	allModelsCache = models
 	return models
-}
-
-func GetAllModelsWithID() ([]Model, error) {
-	rows, err := db.Query("SELECT id, name FROM Model ORDER BY name")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var models []Model
-	for rows.Next() {
-		var model Model
-		if err := rows.Scan(&model.ID, &model.Name); err != nil {
-			return nil, err
-		}
-		models = append(models, model)
-	}
-	return models, nil
 }
 
 func GetModelsWithAvailability(makeName string, years []string) map[string]bool {
@@ -354,24 +285,6 @@ func GetYearRange() []string {
 	}
 	yearRangeCache = years
 	return years
-}
-
-// GetAllParentCompanies returns all parent companies in the system
-func GetAllParentCompanies() ([]ParentCompany, error) {
-	rows, err := db.Query("SELECT id, name, country FROM ParentCompany ORDER BY name")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var pcs []ParentCompany
-	for rows.Next() {
-		var pc ParentCompany
-		if err := rows.Scan(&pc.ID, &pc.Name, &pc.Country); err != nil {
-			return nil, err
-		}
-		pcs = append(pcs, pc)
-	}
-	return pcs, nil
 }
 
 // AddParentCompany inserts a new parent company

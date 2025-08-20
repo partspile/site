@@ -40,24 +40,6 @@ func GetAllCategories() ([]Category, error) {
 	return categories, nil
 }
 
-func GetAllSubCategories() ([]SubCategory, error) {
-	rows, err := db.Query("SELECT id, category_id, name FROM PartSubCategory ORDER BY name")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var subCategories []SubCategory
-	for rows.Next() {
-		var sc SubCategory
-		if err := rows.Scan(&sc.ID, &sc.CategoryID, &sc.Name); err != nil {
-			return nil, err
-		}
-		subCategories = append(subCategories, sc)
-	}
-	return subCategories, nil
-}
-
 func GetSubCategoriesForCategory(categoryName string) ([]SubCategory, error) {
 	rows, err := db.Query(`
 		SELECT psc.id, psc.category_id, psc.name 

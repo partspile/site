@@ -86,7 +86,6 @@ CREATE TABLE User (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     phone TEXT NOT NULL UNIQUE,
-    token_balance REAL NOT NULL DEFAULT 0.0,
     password_hash TEXT NOT NULL,
     password_salt TEXT NOT NULL,
     password_algo TEXT NOT NULL DEFAULT 'argon2id',
@@ -95,24 +94,10 @@ CREATE TABLE User (
     notification_method TEXT NOT NULL DEFAULT 'sms',
     email_address TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    is_admin INTEGER NOT NULL DEFAULT 0
+    is_admin INTEGER NOT NULL DEFAULT 0,
+    deleted_at DATETIME
 );
-
-CREATE TABLE ArchivedUser (
-    id INTEGER PRIMARY KEY,  -- Same ID as original user
-    name TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    token_balance REAL NOT NULL,
-    password_hash TEXT NOT NULL,
-    password_salt TEXT NOT NULL,
-    password_algo TEXT NOT NULL DEFAULT 'argon2id',
-    notification_method TEXT NOT NULL DEFAULT 'sms',
-    email_address TEXT,
-    created_at DATETIME,
-    deletion_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    is_admin INTEGER NOT NULL DEFAULT 0
-);
-CREATE INDEX idx_archiveduser_deletion_date ON ArchivedUser(deletion_date);
+CREATE INDEX idx_user_deleted_at ON User(deleted_at);
 
 -- Ad tables
 CREATE TABLE Ad (
@@ -176,28 +161,7 @@ CREATE TABLE UserSearch (
 CREATE INDEX idx_usersearch_user_id ON UserSearch(user_id);
 CREATE INDEX idx_usersearch_created_at ON UserSearch(created_at);
 
--- Token/transaction tables
-CREATE TABLE TokenTransaction (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    type TEXT NOT NULL, -- e.g., 'ad_post', 'payout', 'purchase', 'transfer_in', 'transfer_out', 'cash_out', 'ad_click'
-    amount REAL NOT NULL, -- positive or negative, number of tokens
-    related_user_id INTEGER, -- nullable, for peer-to-peer transfers
-    ad_id INTEGER, -- nullable, for ad-related transactions
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    description TEXT,
-    user_deleted INTEGER DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES User(id),
-    FOREIGN KEY (related_user_id) REFERENCES User(id),
-    FOREIGN KEY (ad_id) REFERENCES Ad(id)
-);
-CREATE INDEX idx_tokentransaction_user_deleted ON TokenTransaction(user_deleted);
 
-CREATE TABLE PayoutFund (
-    id INTEGER PRIMARY KEY CHECK (id = 1),
-    balance REAL NOT NULL,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
 
 -- User embedding table for personalized vector search
 CREATE TABLE UserEmbedding (

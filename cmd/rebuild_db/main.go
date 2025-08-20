@@ -405,7 +405,7 @@ func main() {
 	var userRows, categoryRows, subcategoryRows *sql.Rows
 
 	// Populate maps
-	userRows, err = database.Query(`SELECT id FROM User`)
+	userRows, err = database.Query(`SELECT id FROM User WHERE deleted_at IS NULL`)
 	if err != nil {
 		log.Fatalf("Failed to query User: %v", err)
 	}

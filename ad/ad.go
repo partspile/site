@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -303,32 +302,18 @@ func addAdVehicleAssociations(tx *sql.Tx, adID int, makeName string, years []str
 }
 
 // GetAllAds returns all ads in the system
+// This is optimized for command-line tools and avoids expensive GROUP_CONCAT operations
 func GetAllAds() ([]Ad, error) {
-	// Print the current working directory and DB file path for debug
-	cwd, _ := os.Getwd()
-	fmt.Printf("[DEBUG] GetAllAds: cwd=%s\n", cwd)
-	fmt.Printf("[DEBUG] GetAllAds: opening DB at ./project.db\n")
-	rows, err := db.Query(`
+	query := `
 		SELECT
 			a.id, a.title, a.description, a.price, a.created_at, a.user_id, a.location_id,
-			GROUP_CONCAT(DISTINCT m.name) as make,
-			GROUP_CONCAT(DISTINCT y.year) as years,
-			GROUP_CONCAT(DISTINCT mo.name) as models,
-			GROUP_CONCAT(DISTINCT e.name) as engines,
-			a.image_order,
-			l.city, l.admin_area, l.country
+			a.image_order
 		FROM Ad a
-		LEFT JOIN AdCar ac ON a.id = ac.ad_id
-		LEFT JOIN Car c ON ac.car_id = c.id
-		LEFT JOIN Make m ON c.make_id = m.id
-		LEFT JOIN Year y ON c.year_id = y.id
-		LEFT JOIN Model mo ON c.model_id = mo.id
-		LEFT JOIN Engine e ON c.engine_id = e.id
-		LEFT JOIN Location l ON a.location_id = l.id
 		WHERE a.deleted_at IS NULL
-		GROUP BY a.id
 		ORDER BY a.created_at DESC
-	`)
+	`
+
+	rows, err := db.Query(query)
 	if err != nil {
 		return nil, err
 	}
@@ -337,105 +322,26 @@ func GetAllAds() ([]Ad, error) {
 	var ads []Ad
 	for rows.Next() {
 		var ad Ad
-		var make, years, models, engines sql.NullString
-		var locationID sql.NullInt64
-		var imageOrder sql.NullString
-		var city, adminArea, country sql.NullString
-		var createdAt string
-		if err := rows.Scan(
-			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt, &ad.UserID, &locationID,
-			&make, &years, &models, &engines, &imageOrder,
-			&city, &adminArea, &country,
-		); err != nil {
-			return nil, err
-		}
-
-		// Parse the created_at string into time.Time
-		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-
-		if locationID.Valid {
-			ad.LocationID = int(locationID.Int64)
-		}
-		if make.Valid {
-			ad.Make = make.String
-		}
-		if years.Valid {
-			ad.Years = strings.Split(years.String, ",")
-		}
-		if models.Valid {
-			ad.Models = strings.Split(models.String, ",")
-		}
-		if engines.Valid {
-			ad.Engines = strings.Split(engines.String, ",")
-		}
-		if imageOrder.Valid {
-			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
-		}
-		if city.Valid {
-			ad.City = city.String
-		}
-		if adminArea.Valid {
-			ad.AdminArea = adminArea.String
-		}
-		if country.Valid {
-			ad.Country = country.String
-		}
-
-		ads = append(ads, ad)
-	}
-
-	for i := range ads {
-		fmt.Printf("[DEBUG] GetAllAds: ad ID=%d ImageOrder=%v\n", ads[i].ID, ads[i].ImageOrder)
-	}
-
-	return ads, nil
-}
-
-// GetArchivedAds returns all archived ads in the system
-func GetArchivedAds() ([]Ad, error) {
-	rows, err := db.Query(`
-		SELECT id, title, description, price, created_at, user_id, deleted_at, location_id, image_order
-		FROM Ad
-		WHERE deleted_at IS NOT NULL
-		ORDER BY deleted_at DESC
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var ads []Ad
-	for rows.Next() {
-		var ad Ad
-		var deletedAt sql.NullString
-		var locationID sql.NullInt64
 		var imageOrder sql.NullString
 		var createdAt string
-		err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt, &ad.UserID, &deletedAt, &locationID, &imageOrder)
+
+		err := rows.Scan(
+			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt, &ad.UserID, &ad.LocationID,
+			&imageOrder,
+		)
 		if err != nil {
-			return nil, err
+			continue
 		}
 
 		// Parse the created_at string into time.Time
 		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-		if deletedAt.Valid {
-			if parsedTime, err := time.Parse(time.RFC3339Nano, deletedAt.String); err == nil {
-				ad.DeletedAt = &parsedTime
-			}
-		}
-		if locationID.Valid {
-			ad.LocationID = int(locationID.Int64)
-		}
-		if imageOrder.Valid {
+
+		// Parse image order JSON
+		if imageOrder.Valid && imageOrder.String != "" {
 			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
 		}
-		// Populate vehicle info for each archived ad using the regular function
-		ad.Make, ad.Years, ad.Models, ad.Engines = GetVehicleData(ad.ID)
-		ads = append(ads, ad)
-	}
 
-	for i := range ads {
-		fmt.Printf("[DEBUG] GetArchivedAds: ad ID=%d ImageOrder=%v\n", ads[i].ID, ads[i].ImageOrder)
+		ads = append(ads, ad)
 	}
 
 	return ads, nil
@@ -509,6 +415,13 @@ func ArchiveAd(id int) error {
 // RestoreAd restores an archived ad by clearing the deleted_at field
 func RestoreAd(adID int) error {
 	_, err := db.Exec("UPDATE Ad SET deleted_at = NULL WHERE id = ?", adID)
+	return err
+}
+
+// ArchiveAdsByUserID archives all ads for a specific user
+func ArchiveAdsByUserID(userID int) error {
+	_, err := db.Exec("UPDATE Ad SET deleted_at = ? WHERE user_id = ? AND deleted_at IS NULL",
+		time.Now().UTC().Format(time.RFC3339Nano), userID)
 	return err
 }
 

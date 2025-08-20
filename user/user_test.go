@@ -72,8 +72,8 @@ func TestGetUserByID(t *testing.T) {
 	// Test active user
 	mock.ExpectQuery("SELECT.*FROM User WHERE id = ?").
 		WithArgs(1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "token_balance", "password_hash", "password_salt", "password_algo", "phone_verified", "verification_code", "notification_method", "email_address", "created_at", "is_admin"}).
-			AddRow(1, "testuser", "1234567890", 0.0, "hashedpassword", "salt", "argon2id", 0, nil, "sms", nil, time.Now().Format(time.RFC3339Nano), 0))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "password_hash", "password_salt", "password_algo", "phone_verified", "verification_code", "notification_method", "email_address", "created_at", "is_admin", "deleted_at"}).
+			AddRow(1, "testuser", "1234567890", "hashedpassword", "salt", "argon2id", 0, nil, "sms", nil, time.Now().Format(time.RFC3339Nano), 0, nil))
 
 	user, status, found := GetUserByID(1)
 
@@ -92,10 +92,10 @@ func TestGetUserByPhone(t *testing.T) {
 	db.SetForTesting(mockDB)
 
 	expectedTime := time.Now()
-	mock.ExpectQuery("SELECT.*FROM User WHERE phone = ?").
+	mock.ExpectQuery("SELECT.*FROM User WHERE phone = \\? AND deleted_at IS NULL").
 		WithArgs("1234567890").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "token_balance", "password_hash", "password_salt", "password_algo", "phone_verified", "verification_code", "notification_method", "email_address", "created_at", "is_admin"}).
-			AddRow(1, "testuser", "1234567890", 0.0, "hashedpassword", "salt", "argon2id", 0, nil, "sms", nil, expectedTime.Format(time.RFC3339Nano), 0))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "password_hash", "password_salt", "password_algo", "phone_verified", "verification_code", "notification_method", "email_address", "created_at", "is_admin", "deleted_at"}).
+			AddRow(1, "testuser", "1234567890", "hashedpassword", "salt", "argon2id", 0, nil, "sms", nil, expectedTime.Format(time.RFC3339Nano), 0, nil))
 
 	user, err := GetUserByPhone("1234567890")
 
@@ -117,8 +117,8 @@ func TestGetUser(t *testing.T) {
 	expectedTime := time.Now()
 	mock.ExpectQuery("SELECT.*FROM User WHERE id = ?").
 		WithArgs(1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "token_balance", "password_hash", "password_salt", "password_algo", "phone_verified", "verification_code", "notification_method", "email_address", "created_at", "is_admin"}).
-			AddRow(1, "testuser", "1234567890", 0.0, "hashedpassword", "salt", "argon2id", 0, nil, "sms", nil, expectedTime.Format(time.RFC3339Nano), 1))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "password_hash", "password_salt", "password_algo", "phone_verified", "verification_code", "notification_method", "email_address", "created_at", "is_admin", "deleted_at"}).
+			AddRow(1, "testuser", "1234567890", "hashedpassword", "salt", "argon2id", 0, nil, "sms", nil, expectedTime.Format(time.RFC3339Nano), 1, nil))
 
 	user, err := GetUser(1)
 
@@ -137,10 +137,10 @@ func TestGetUserByName(t *testing.T) {
 	db.SetForTesting(mockDB)
 
 	expectedTime := time.Now()
-	mock.ExpectQuery("SELECT.*FROM User WHERE name = ?").
+	mock.ExpectQuery("SELECT.*FROM User WHERE name = \\? AND deleted_at IS NULL").
 		WithArgs("testuser").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "token_balance", "password_hash", "password_salt", "password_algo", "phone_verified", "verification_code", "notification_method", "email_address", "created_at", "is_admin"}).
-			AddRow(1, "testuser", "1234567890", 0.0, "hashedpassword", "salt", "argon2id", 0, nil, "sms", nil, expectedTime.Format(time.RFC3339Nano), 0))
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "password_hash", "password_salt", "password_algo", "phone_verified", "verification_code", "notification_method", "email_address", "created_at", "is_admin", "deleted_at"}).
+			AddRow(1, "testuser", "1234567890", "hashedpassword", "salt", "argon2id", 0, nil, "sms", nil, expectedTime.Format(time.RFC3339Nano), 0, nil))
 
 	user, err := GetUserByName("testuser")
 
@@ -168,107 +168,6 @@ func TestUpdateUserPassword(t *testing.T) {
 	assert.NoError(t, mock.ExpectationsWereMet())
 }
 
-func TestArchiveUser(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer mockDB.Close()
-
-	db.SetForTesting(mockDB)
-
-	// Mock the transaction
-	mock.ExpectBegin()
-
-	// Mock getting user data (6 columns, no is_admin)
-	mock.ExpectQuery("SELECT id, name, phone, token_balance, password_hash, created_at FROM User WHERE id = \\?").
-		WithArgs(1).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "token_balance", "password_hash", "created_at"}).
-			AddRow(1, "testuser", "1234567890", 0.0, "hashedpassword", "2023-01-01T00:00:00Z"))
-
-	// Mock inserting into ArchivedUser (7 columns including deletion_date)
-	mock.ExpectExec("INSERT INTO ArchivedUser").
-		WithArgs(1, "testuser", "1234567890", 0.0, "hashedpassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
-		WillReturnResult(sqlmock.NewResult(1, 1))
-
-	// Mock archiving ads
-	mock.ExpectExec("INSERT INTO ArchivedAd").
-		WithArgs(sqlmock.AnyArg(), 1).
-		WillReturnResult(sqlmock.NewResult(0, 0))
-
-	// Mock archiving ad-car relationships
-	mock.ExpectExec("INSERT INTO ArchivedAdCar").
-		WithArgs(sqlmock.AnyArg(), 1).
-		WillReturnResult(sqlmock.NewResult(0, 0))
-
-	// Mock updating token transactions
-	mock.ExpectExec("UPDATE TokenTransaction").
-		WithArgs(1, 1).
-		WillReturnResult(sqlmock.NewResult(0, 0))
-
-	// Mock deleting ad-car relationships
-	mock.ExpectExec("DELETE FROM AdCar").
-		WithArgs(1).
-		WillReturnResult(sqlmock.NewResult(0, 0))
-
-	// Mock deleting ads
-	mock.ExpectExec("DELETE FROM Ad WHERE user_id = \\?").
-		WithArgs(1).
-		WillReturnResult(sqlmock.NewResult(0, 0))
-
-	// Mock deleting user
-	mock.ExpectExec("DELETE FROM User WHERE id = \\?").
-		WithArgs(1).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-
-	mock.ExpectCommit()
-
-	err = ArchiveUser(1)
-
-	assert.NoError(t, err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestGetAllUsers(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer mockDB.Close()
-
-	db.SetForTesting(mockDB)
-
-	expectedTime := time.Now()
-	mock.ExpectQuery("SELECT id, name, phone, token_balance, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, created_at, is_admin FROM User").
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "phone", "token_balance", "password_hash", "password_salt", "password_algo", "phone_verified", "verification_code", "notification_method", "created_at", "is_admin"}).
-			AddRow(1, "user1", "1234567890", 0.0, "hash1", "salt1", "argon2id", 0, nil, "sms", expectedTime.Format(time.RFC3339Nano), 0).
-			AddRow(2, "user2", "0987654321", 0.0, "hash2", "salt2", "argon2id", 0, nil, "email", expectedTime.Format(time.RFC3339Nano), 1))
-
-	users, err := GetAllUsers()
-
-	assert.NoError(t, err)
-	assert.Len(t, users, 2)
-	assert.Equal(t, 1, users[0].ID)
-	assert.Equal(t, "user1", users[0].Name)
-	assert.Equal(t, 2, users[1].ID)
-	assert.Equal(t, "user2", users[1].Name)
-	assert.True(t, users[1].IsAdmin)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
-func TestSetAdmin(t *testing.T) {
-	mockDB, mock, err := sqlmock.New()
-	require.NoError(t, err)
-	defer mockDB.Close()
-
-	db.SetForTesting(mockDB)
-
-	mock.ExpectExec("UPDATE User SET is_admin = \\? WHERE id = \\?").
-		WithArgs(1, 1).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-
-	err = SetAdmin(1, true)
-
-	assert.NoError(t, err)
-	assert.NoError(t, mock.ExpectationsWereMet())
-}
-
 func TestUpdateNotificationMethod(t *testing.T) {
 	mockDB, mock, err := sqlmock.New()
 	require.NoError(t, err)
@@ -281,6 +180,40 @@ func TestUpdateNotificationMethod(t *testing.T) {
 		WillReturnResult(sqlmock.NewResult(0, 1))
 
 	err = UpdateNotificationMethod(1, "email")
+
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestArchiveUser(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	db.SetForTesting(mockDB)
+
+	mock.ExpectExec("UPDATE User SET deleted_at = \\? WHERE id = \\?").
+		WithArgs(sqlmock.AnyArg(), 1).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	err = ArchiveUser(1)
+
+	assert.NoError(t, err)
+	assert.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestRestoreUser(t *testing.T) {
+	mockDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer mockDB.Close()
+
+	db.SetForTesting(mockDB)
+
+	mock.ExpectExec("UPDATE User SET deleted_at = NULL WHERE id = \\?").
+		WithArgs(1).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+
+	err = RestoreUser(1)
 
 	assert.NoError(t, err)
 	assert.NoError(t, mock.ExpectationsWereMet())

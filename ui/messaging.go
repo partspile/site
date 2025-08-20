@@ -7,7 +7,6 @@ import (
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/messaging"
 	"github.com/parts-pile/site/user"
 )
@@ -87,9 +86,6 @@ func ConversationsList(conversations []messaging.Conversation, currentUserID int
 	}
 
 	return Div(
-		// SSE connection for real-time conversation updates
-		g.Attr("hx-ext", "sse"),
-		g.Attr("sse-connect", "/messages/sse"),
 		Class("divide-y divide-gray-200"),
 		g.Group(conversationNodes),
 	)
@@ -101,7 +97,7 @@ func ConversationsListWithExpanded(conversations []messaging.Conversation, curre
 	for _, conv := range conversations {
 		if expandedConversation != nil && conv.ID == expandedConversation.ID {
 			// Render the expanded conversation
-			conversationNodes = append(conversationNodes, ExpandedConversation(*currentUser, conv, expandedMessages))
+			conversationNodes = append(conversationNodes, ExpandedConversation(currentUser, conv, expandedMessages))
 		} else {
 			// Render the collapsed conversation
 			conversationNodes = append(conversationNodes, ConversationListItem(conv, currentUser.ID))
@@ -141,11 +137,6 @@ func ConversationListItem(conv messaging.Conversation, currentUserID int) g.Node
 
 	return Div(
 		ID(fmt.Sprintf("conversation-%d", conv.ID)),
-		// SSE trigger to update when new message arrives
-		hx.Get(fmt.Sprintf("/messages/%d/sse-update", conv.ID)),
-		hx.Trigger("sse:new_message"),
-		hx.Target(fmt.Sprintf("#conversation-%d", conv.ID)),
-		hx.Swap("outerHTML"),
 		Div(
 			Class("py-3 px-4 hover:bg-gray-50 transition-colors cursor-pointer"),
 			hx.Get(fmt.Sprintf("/messages/%d/expand", conv.ID)),
@@ -175,6 +166,52 @@ func ConversationListItem(conv messaging.Conversation, currentUserID int) g.Node
 					g.If(!conv.IsUnread, Class("text-sm text-gray-400 text-right")),
 					g.Text(timeStr),
 				),
+			),
+		),
+	)
+}
+
+// ExpandedConversation renders an expanded conversation view within the list
+func ExpandedConversation(currentUser *user.User, conversation messaging.Conversation, messages []messaging.Message) g.Node {
+	// Determine the other participant's name
+	otherUserName := conversation.User1Name
+	if currentUser.ID == conversation.User1ID {
+		otherUserName = conversation.User2Name
+	}
+
+	return Div(
+		ID(fmt.Sprintf("conversation-%d", conversation.ID)),
+		Class("bg-gray-50"),
+		Div(
+			Class("p-4"),
+			Div(
+				Class("flex items-center justify-between mb-4"),
+				Div(
+					Class("space-y-1"),
+					Div(
+						Class("text-sm text-gray-600"),
+						Span(Class("font-medium"), g.Text("To: ")),
+						g.Text(otherUserName),
+					),
+					Div(
+						Class("text-sm text-gray-600"),
+						Span(Class("font-medium"), g.Text("Subject: ")),
+						g.Text(fmt.Sprintf("Re: %s", conversation.AdTitle)),
+					),
+				),
+				Button(
+					Class("text-gray-400 hover:text-gray-600 p-1"),
+					hx.Get(fmt.Sprintf("/messages/%d/collapse", conversation.ID)),
+					hx.Target(fmt.Sprintf("#conversation-%d", conversation.ID)),
+					hx.Swap("outerHTML"),
+					Title("Close conversation"),
+					g.Text("✕"),
+				),
+			),
+			Div(
+				Class("bg-white rounded-lg border h-96 flex flex-col"),
+				MessagesList(messages, currentUser.ID),
+				MessageForm(conversation.ID),
 			),
 		),
 	)
@@ -237,11 +274,11 @@ func MessageItem(msg messaging.Message, currentUserID int) g.Node {
 }
 
 // MessageForm renders the form for sending new messages
-func MessageForm(conversationID int, targetID string) g.Node {
+func MessageForm(conversationID int) g.Node {
 	return Form(
 		Class("flex gap-3 p-4 bg-white border-t"),
 		hx.Post(fmt.Sprintf("/messages/%d/send", conversationID)),
-		hx.Target(targetID),
+		hx.Target(fmt.Sprintf("#conversation-%d", conversationID)),
 		hx.Swap("outerHTML"),
 		Input(
 			Type("text"),
@@ -252,89 +289,8 @@ func MessageForm(conversationID int, targetID string) g.Node {
 		),
 		Button(
 			Type("submit"),
-			Class("px-6 py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
+			Class("px-6 py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"),
 			g.Text("Send"),
 		),
 	)
-}
-
-// ConversationEditor is a unified component for editing conversations
-// It can be used both inline within ads and in the messages page
-func ConversationEditor(conv messaging.Conversation, messages []messaging.Message, currentUser user.User, isInline bool, htmxTarget, view string) g.Node {
-	// Get the other user's name
-	var otherUserName string
-	if conv.User1ID == currentUser.ID {
-		otherUserName = conv.User2Name
-	} else {
-		otherUserName = conv.User1Name
-	}
-
-	// Format conversation age
-	ageStr := formatAdAge(conv.CreatedAt)
-
-	// Determine close button behavior based on context
-	var closeButton g.Node
-	if isInline {
-		// Inline mode: return to expanded ad (the same view that was there before)
-		closeButton = Button(
-			Type("button"),
-			Class("absolute -top-2 -right-2 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
-			hx.Get(fmt.Sprintf("/ad/detail/%d?view=%s", conv.AdID, view)),
-			hx.Target(htmxTarget),
-			hx.Swap("outerHTML"),
-			g.Text("×"),
-		)
-	} else {
-		// Messages page mode: collapse conversation
-		closeButton = Button(
-			Type("button"),
-			Class("absolute -top-2 -right-2 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
-			hx.Get(fmt.Sprintf("/messages/%d/collapse", conv.ID)),
-			hx.Target(fmt.Sprintf("#conversation-%d", conv.ID)),
-			hx.Swap("outerHTML"),
-			g.Text("×"),
-		)
-	}
-
-	// Determine the container ID based on context
-	containerID := fmt.Sprintf("conversation-%d", conv.ID)
-	if isInline {
-		containerID = fmt.Sprintf("ad-%d", conv.AdID)
-	}
-
-	return Div(
-		ID(containerID),
-		Class("border rounded-lg shadow-lg bg-white flex flex-col relative"),
-		closeButton,
-		// Conversation header
-		Div(
-			Class("p-4 border-b bg-gray-50"),
-			Div(
-				Class("flex flex-col gap-1"),
-				Div(Class("text-sm text-gray-600"), g.Text("To: "+otherUserName)),
-				Div(Class("text-sm text-gray-600"), g.Text("Subject: Re: "+conv.AdTitle)),
-				Div(Class("text-xs text-gray-400"), g.Text("Conversation started "+ageStr)),
-			),
-		),
-		// Messages area
-		Div(
-			Class("flex-1 p-4 overflow-y-auto max-h-96"),
-			ID(fmt.Sprintf("messages-%d", conv.ID)),
-			MessagesList(messages, currentUser.ID),
-		),
-		// Message form
-		Div(Class("p-4 border-t bg-gray-50"), MessageForm(conv.ID, "#"+containerID)),
-	)
-}
-
-// ConversationInline renders a conversation inline within an ad view
-func ConversationInline(conv messaging.Conversation, messages []messaging.Message, adObj ad.Ad, adOwner user.User, currentUser user.User, htmxTarget, view string) g.Node {
-	// Use the unified conversation editor
-	return ConversationEditor(conv, messages, currentUser, true, htmxTarget, view)
-}
-
-// ExpandedConversation renders an expanded conversation in the messages page
-func ExpandedConversation(currentUser user.User, conv messaging.Conversation, messages []messaging.Message) g.Node {
-	// Use the unified conversation editor
-	return ConversationEditor(conv, messages, currentUser, false, "", "")
 }
