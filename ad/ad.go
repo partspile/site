@@ -301,6 +301,52 @@ func addAdVehicleAssociations(tx *sql.Tx, adID int, makeName string, years []str
 	return nil
 }
 
+// GetAllAds returns all ads in the system
+// This is optimized for command-line tools and avoids expensive GROUP_CONCAT operations
+func GetAllAds() ([]Ad, error) {
+	query := `
+		SELECT
+			a.id, a.title, a.description, a.price, a.created_at, a.user_id, a.location_id,
+			a.image_order
+		FROM Ad a
+		WHERE a.deleted_at IS NULL
+		ORDER BY a.created_at DESC
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ads []Ad
+	for rows.Next() {
+		var ad Ad
+		var imageOrder sql.NullString
+		var createdAt string
+
+		err := rows.Scan(
+			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt, &ad.UserID, &ad.LocationID,
+			&imageOrder,
+		)
+		if err != nil {
+			continue
+		}
+
+		// Parse the created_at string into time.Time
+		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+
+		// Parse image order JSON
+		if imageOrder.Valid && imageOrder.String != "" {
+			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
+		}
+
+		ads = append(ads, ad)
+	}
+
+	return ads, nil
+}
+
 // GetArchivedAd retrieves an archived ad by ID
 func GetArchivedAd(id int, currentUser *user.User) (Ad, bool) {
 	ad, ok := GetAd(id, currentUser)
@@ -379,48 +425,7 @@ func ArchiveAdsByUserID(userID int) error {
 	return err
 }
 
-// Bookmark/unbookmark and bookmarked ads logic
-
-// BookmarkAd bookmarks an ad for a user
-func BookmarkAd(userID, adID int) error {
-	_, err := db.Exec(`INSERT OR IGNORE INTO BookmarkedAd (user_id, ad_id) VALUES (?, ?)`, userID, adID)
-	return err
-}
-
-// UnbookmarkAd removes a bookmark for an ad by a user
-func UnbookmarkAd(userID, adID int) error {
-	_, err := db.Exec(`DELETE FROM BookmarkedAd WHERE user_id = ? AND ad_id = ?`, userID, adID)
-	return err
-}
-
-// IsAdBookmarkedByUser checks if a user has bookmarked an ad
-func IsAdBookmarkedByUser(userID, adID int) (bool, error) {
-	row := db.QueryRow(`SELECT 1 FROM BookmarkedAd WHERE user_id = ? AND ad_id = ?`, userID, adID)
-	var exists int
-	err := row.Scan(&exists)
-	if err == sql.ErrNoRows {
-		return false, nil
-	}
-	return err == nil, err
-}
-
-// GetBookmarkedAdIDsByUser returns a list of ad IDs bookmarked by the user
-func GetBookmarkedAdIDsByUser(userID int) ([]int, error) {
-	rows, err := db.Query(`SELECT ad_id FROM BookmarkedAd WHERE user_id = ? ORDER BY bookmarked_at DESC`, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var adIDs []int
-	for rows.Next() {
-		var adID int
-		if err := rows.Scan(&adID); err != nil {
-			continue
-		}
-		adIDs = append(adIDs, adID)
-	}
-	return adIDs, nil
-}
+// Bookmark functions moved to ad/bookmark.go
 
 // GetAdsByIDs returns ads for a list of IDs with bookmark status for a specific user
 func GetAdsByIDs(ids []int, userID int) ([]Ad, error) {
@@ -517,72 +522,7 @@ func GetAdsByIDs(ids []int, userID int) ([]Ad, error) {
 	return ads, nil
 }
 
-// IncrementAdClick increments the global click count for an ad
-func IncrementAdClick(adID int) error {
-	res, err := db.Exec("UPDATE Ad SET click_count = click_count + 1, last_clicked_at = ? WHERE id = ?", time.Now().UTC(), adID)
-	if err != nil {
-		fmt.Println("DEBUG IncrementAdClick error:", err)
-		return err
-	}
-	n, _ := res.RowsAffected()
-	fmt.Println("DEBUG IncrementAdClick rows affected:", n)
-	return nil
-}
-
-// IncrementAdClickForUser increments the click count for an ad for a specific user
-func IncrementAdClickForUser(adID int, userID int) error {
-	_, err := db.Exec(`INSERT INTO UserAdClick (ad_id, user_id, click_count, last_clicked_at) VALUES (?, ?, 1, ?)
-		ON CONFLICT(ad_id, user_id) DO UPDATE SET click_count = click_count + 1, last_clicked_at = ?`, adID, userID, time.Now().UTC(), time.Now().UTC())
-	return err
-}
-
-// GetAdClickCount returns the global click count for an ad
-func GetAdClickCount(adID int) (int, error) {
-	var count int
-	err := db.QueryRow("SELECT click_count FROM Ad WHERE id = ?", adID).Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
-// GetAdClickCountForUser returns the click count for an ad for a specific user
-func GetAdClickCountForUser(adID int, userID int) (int, error) {
-	var count int
-	err := db.QueryRow("SELECT click_count FROM UserAdClick WHERE ad_id = ? AND user_id = ?", adID, userID).Scan(&count)
-	if err == sql.ErrNoRows {
-		return 0, nil
-	}
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
-// GetRecentlyClickedAdIDsByUser returns ad IDs the user has clicked, most recent first.
-func GetRecentlyClickedAdIDsByUser(userID, limit int) ([]int, error) {
-	log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser called with userID=%d, limit=%d", userID, limit)
-
-	rows, err := db.Query(`SELECT ad_id FROM UserAdClick WHERE user_id = ? ORDER BY last_clicked_at DESC LIMIT ?`, userID, limit)
-	if err != nil {
-		log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser SQL error: %v", err)
-		return nil, err
-	}
-	defer rows.Close()
-
-	var adIDs []int
-	for rows.Next() {
-		var adID int
-		if err := rows.Scan(&adID); err != nil {
-			log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser row scan error: %v", err)
-			continue
-		}
-		adIDs = append(adIDs, adID)
-	}
-
-	log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser returning %d adIDs: %v", len(adIDs), adIDs)
-	return adIDs, nil
-}
+// Click functions moved to ad/click.go
 
 // GetLocationByID fetches a Location by its ID
 func GetLocationByID(id int) (city, adminArea, country, raw string, err error) {
