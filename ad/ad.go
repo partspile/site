@@ -301,33 +301,6 @@ func addAdVehicleAssociations(tx *sql.Tx, adID int, makeName string, years []str
 	return nil
 }
 
-// GetArchivedAd retrieves an archived ad by ID
-func GetArchivedAd(id int, currentUser *user.User) (Ad, bool) {
-	ad, ok := GetAd(id, currentUser)
-	if !ok {
-		return Ad{}, false
-	}
-
-	// Get deleted_at field from the Ad table
-	row := db.QueryRow("SELECT deleted_at FROM Ad WHERE id = ?", id)
-	var deletedAt sql.NullString
-	if err := row.Scan(&deletedAt); err != nil {
-		return Ad{}, false
-	}
-
-	// Parse the deleted_at string into time.Time
-	if deletedAt.Valid {
-		if deletedTime, err := time.Parse(time.RFC3339Nano, deletedAt.String); err == nil {
-			ad.DeletedAt = &deletedTime
-		}
-	}
-
-	// Get vehicle data using the regular function since we now use a single AdCar table
-	ad.Make, ad.Years, ad.Models, ad.Engines = GetVehicleData(id)
-
-	return ad, true
-}
-
 // UpdateAd updates an existing ad
 func UpdateAd(ad Ad) error {
 	tx, err := db.Begin()
@@ -379,7 +352,7 @@ func ArchiveAdsByUserID(userID int) error {
 	return err
 }
 
-// GetAdsByIDs returns ads for a list of IDs with bookmark status for a specific user
+// GetAdsByIDs returns ads for a list of IDs
 func GetAdsByIDs(ids []int, userID int) ([]Ad, error) {
 	if len(ids) == 0 {
 		return nil, nil
