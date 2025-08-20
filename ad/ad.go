@@ -135,8 +135,8 @@ func GetVehicleData(adID int) (makeName string, years []string, models []string,
 	return makeName, years, models, engines
 }
 
-// GetAd retrieves an ad by ID from the Ad table
-func GetAd(id int, currentUser *user.User) (Ad, bool) {
+// buildAdQuery builds the complete query for fetching ads with IDs and user context
+func buildAdQuery(ids []int, currentUser *user.User) (string, []interface{}) {
 	var query string
 	var args []interface{}
 
@@ -152,9 +152,9 @@ func GetAd(id int, currentUser *user.User) (Ad, bool) {
 			LEFT JOIN PartCategory pc ON psc.category_id = pc.id
 			LEFT JOIN Location l ON a.location_id = l.id
 			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
-			WHERE a.id = ?
+			WHERE a.deleted_at IS NULL
 		`
-		args = []interface{}{currentUser.ID, id}
+		args = append(args, currentUser.ID)
 	} else {
 		// Query without bookmark status (default to false)
 		query = `
@@ -166,65 +166,88 @@ func GetAd(id int, currentUser *user.User) (Ad, bool) {
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 			LEFT JOIN PartCategory pc ON psc.category_id = pc.id
 			LEFT JOIN Location l ON a.location_id = l.id
-			WHERE a.id = ?
+			WHERE a.deleted_at IS NULL
 		`
-		args = []interface{}{id}
 	}
 
-	row := db.QueryRow(query, args...)
+	placeholders := make([]string, len(ids))
+	for i := range ids {
+		placeholders[i] = "?"
+	}
+	query += " AND a.id IN (" + strings.Join(placeholders, ",") + ")"
+	for _, id := range ids {
+		args = append(args, id)
+	}
 
-	var ad Ad
-	var subcategory, category sql.NullString
-	var lastClickedAt sql.NullTime
-	var locationID sql.NullInt64
-	var imageOrder sql.NullString
-	var city, adminArea, country sql.NullString
-	var latitude, longitude sql.NullFloat64
-	var createdAt string
-	var isBookmarked int
+	return query, args
+}
 
-	if err := row.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
-		&ad.SubCategoryID, &ad.UserID, &subcategory, &category, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
-		&city, &adminArea, &country, &latitude, &longitude, &isBookmarked); err != nil {
-		fmt.Println("DEBUG getAd scan error:", err)
+// scanAdRows scans database rows into Ad structs
+func scanAdRows(rows *sql.Rows) ([]Ad, error) {
+	var ads []Ad
+	for rows.Next() {
+		var ad Ad
+		var subcategory, category sql.NullString
+		var lastClickedAt sql.NullTime
+		var locationID sql.NullInt64
+		var imageOrder sql.NullString
+		var city, adminArea, country sql.NullString
+		var latitude, longitude sql.NullFloat64
+		var createdAt string
+		var isBookmarked int
+
+		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
+			&ad.SubCategoryID, &ad.UserID, &subcategory, &category, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
+			&city, &adminArea, &country, &latitude, &longitude, &isBookmarked); err != nil {
+			continue
+		}
+
+		// Parse the created_at string into time.Time
+		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+
+		if category.Valid {
+			ad.Category = category.String
+		}
+
+		if lastClickedAt.Valid {
+			ad.LastClickedAt = &lastClickedAt.Time
+		}
+
+		if locationID.Valid {
+			ad.LocationID = int(locationID.Int64)
+			if city.Valid {
+				ad.City = city.String
+			}
+			if adminArea.Valid {
+				ad.AdminArea = adminArea.String
+			}
+			if country.Valid {
+				ad.Country = country.String
+			}
+			if latitude.Valid && longitude.Valid {
+				ad.Latitude = &latitude.Float64
+				ad.Longitude = &longitude.Float64
+			}
+		}
+
+		if imageOrder.Valid {
+			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
+		}
+
+		ad.Bookmarked = isBookmarked == 1
+
+		ads = append(ads, ad)
+	}
+	return ads, nil
+}
+
+// GetAd retrieves an ad by ID from the Ad table
+func GetAd(id int, currentUser *user.User) (Ad, bool) {
+	ads, err := GetAdsByIDs([]int{id}, currentUser)
+	if err != nil || len(ads) == 0 {
 		return Ad{}, false
 	}
-
-	// Parse the created_at string into time.Time
-	ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-
-	if category.Valid {
-		ad.Category = category.String
-	}
-
-	if lastClickedAt.Valid {
-		ad.LastClickedAt = &lastClickedAt.Time
-	}
-
-	if locationID.Valid {
-		ad.LocationID = int(locationID.Int64)
-		if city.Valid {
-			ad.City = city.String
-		}
-		if adminArea.Valid {
-			ad.AdminArea = adminArea.String
-		}
-		if country.Valid {
-			ad.Country = country.String
-		}
-		if latitude.Valid && longitude.Valid {
-			ad.Latitude = &latitude.Float64
-			ad.Longitude = &longitude.Float64
-		}
-	}
-
-	if imageOrder.Valid {
-		_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
-	}
-
-	ad.Bookmarked = isBookmarked == 1
-
-	return ad, true
+	return ads[0], true
 }
 
 // GetAdWithVehicle retrieves an ad by ID from the active ads table with vehicle data
@@ -353,105 +376,48 @@ func ArchiveAdsByUserID(userID int) error {
 }
 
 // GetAdsByIDs returns ads for a list of IDs
-func GetAdsByIDs(ids []int, userID int) ([]Ad, error) {
+func GetAdsByIDs(ids []int, currentUser *user.User) ([]Ad, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
-	// Build query with IN clause
-	placeholders := make([]string, len(ids))
-	args := make([]interface{}, len(ids))
-	for i, id := range ids {
-		placeholders[i] = "?"
-		args[i] = id
-	}
-	args = append(args, userID) // Add userID for bookmark check
-	query := `SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-		       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
-		       l.city, l.admin_area, l.country,
-		       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
-		FROM Ad a
-		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
-		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
-		LEFT JOIN Location l ON a.location_id = l.id
-		LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
-		WHERE a.id IN (` + strings.Join(placeholders, ",") + `) AND a.deleted_at IS NULL`
+
+	query, args := buildAdQuery(ids, currentUser)
+
 	rows, err := db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+
+	ads, err := scanAdRows(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	// For single ID, just return the first result directly
+	if len(ids) == 1 {
+		return ads, nil
+	}
+
+	// For multiple IDs, create a map for quick lookup and preserve order
 	adMap := make(map[int]Ad)
-	for rows.Next() {
-		var ad Ad
-		var subcategory, category sql.NullString
-		var lastClickedAt sql.NullTime
-		var locationID sql.NullInt64
-		var imageOrder sql.NullString
-		var city, adminArea, country sql.NullString
-		var createdAt string
-		var isBookmarked int
-		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
-			&ad.SubCategoryID, &ad.UserID, &subcategory, &category, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
-			&city, &adminArea, &country, &isBookmarked); err != nil {
-			continue
-		}
-
-		// Parse the created_at string into time.Time
-		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-
-		if category.Valid {
-			ad.Category = category.String
-		}
-
-		if lastClickedAt.Valid {
-			ad.LastClickedAt = &lastClickedAt.Time
-		}
-
-		if locationID.Valid {
-			ad.LocationID = int(locationID.Int64)
-			// Get coordinates for map functionality
-			_, _, _, _, lat, lon, err := GetLocationWithCoords(ad.LocationID)
-			if err == nil && lat != nil && lon != nil {
-				ad.Latitude = lat
-				ad.Longitude = lon
-			}
-		}
-
-		if imageOrder.Valid {
-			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
-		}
-		if city.Valid {
-			ad.City = city.String
-		}
-		if adminArea.Valid {
-			ad.AdminArea = adminArea.String
-		}
-		if country.Valid {
-			ad.Country = country.String
-		}
-
-		// Set bookmark status
-		ad.Bookmarked = isBookmarked == 1
-
-		// Get vehicle data
-		ad.Make, ad.Years, ad.Models, ad.Engines = GetVehicleData(ad.ID)
+	for _, ad := range ads {
 		adMap[ad.ID] = ad
 	}
+
 	// Preserve order of ids
-	ads := make([]Ad, 0, len(ids))
+	result := make([]Ad, 0, len(ids))
 	for _, id := range ids {
 		if ad, ok := adMap[id]; ok {
-			ads = append(ads, ad)
+			result = append(result, ad)
 		}
 	}
-	return ads, nil
+
+	return result, nil
 }
 
 // GetLocationByID fetches a Location by its ID
 func GetLocationByID(id int) (city, adminArea, country, raw string, err error) {
-	if id == 0 {
-		return "", "", "", "", nil
-	}
 	row := db.QueryRow("SELECT city, admin_area, country, raw_text FROM Location WHERE id = ?", id)
 	err = row.Scan(&city, &adminArea, &country, &raw)
 	return
@@ -459,9 +425,6 @@ func GetLocationByID(id int) (city, adminArea, country, raw string, err error) {
 
 // GetLocationWithCoords returns location data including coordinates
 func GetLocationWithCoords(id int) (city, adminArea, country, raw string, latitude, longitude *float64, err error) {
-	if id == 0 {
-		return "", "", "", "", nil, nil, nil
-	}
 	row := db.QueryRow("SELECT city, admin_area, country, raw_text, latitude, longitude FROM Location WHERE id = ?", id)
 	err = row.Scan(&city, &adminArea, &country, &raw, &latitude, &longitude)
 	return
