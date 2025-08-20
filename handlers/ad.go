@@ -340,7 +340,7 @@ func HandleBookmarkedAds(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ad IDs")
 	}
-	ads, err := ad.GetAdsByIDs(adIDs, currentUser.ID)
+	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ads")
 	}
