@@ -698,12 +698,12 @@ func buildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 
 	// Add location coordinates if available
 	if adObj.LocationID > 0 {
-		_, _, _, _, lat, lon, err := ad.GetLocationWithCoords(adObj.LocationID)
+		_, _, _, _, lat, lon, err := ad.GetLocation(adObj.LocationID)
 		if err == nil {
 			// Add coordinates if available
-			if lat != nil && lon != nil {
-				metadata["latitude"] = *lat
-				metadata["longitude"] = *lon
+			if lat != 0 && lon != 0 {
+				metadata["latitude"] = lat
+				metadata["longitude"] = lon
 			}
 		}
 	}

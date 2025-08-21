@@ -631,11 +631,10 @@ func BuildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 	var lat, lon float64
 	if adObj.LocationID != 0 {
 		// Get coordinates from Location table
-		var latPtr, lonPtr *float64
-		_, _, _, _, latPtr, lonPtr, err := ad.GetLocationWithCoords(adObj.LocationID)
-		if err == nil && latPtr != nil && lonPtr != nil {
-			lat = *latPtr
-			lon = *lonPtr
+		var err error
+		_, _, _, _, lat, lon, err = ad.GetLocation(adObj.LocationID)
+		if err == nil {
+			// Coordinates are now direct values, no need to dereference
 		}
 	}
 

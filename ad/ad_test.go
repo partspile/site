@@ -125,7 +125,7 @@ func TestGetAd(t *testing.T) {
 	defer mockDB.Close()
 
 	db.SetForTesting(mockDB)
-	mock.ExpectQuery("SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order, l.city, l.admin_area, l.country, l.latitude, l.longitude, 0 as is_bookmarked FROM Ad a LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id LEFT JOIN PartCategory pc ON psc.category_id = pc.id LEFT JOIN Location l ON a.location_id = l.id WHERE a.deleted_at IS NULL AND a.id = \\?").
+	mock.ExpectQuery("SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order, l.city, l.admin_area, l.country, l.latitude, l.longitude, 0 as is_bookmarked FROM Ad a LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id LEFT JOIN PartCategory pc ON psc.category_id = pc.id LEFT JOIN Location l ON a.location_id = l.id WHERE a.deleted_at IS NULL AND a.id IN \\(\\?\\)").
 		WithArgs(1).
 		WillReturnRows(sqlmock.NewRows([]string{
 			"id", "title", "description", "price", "created_at", "subcategory_id",

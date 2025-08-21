@@ -416,15 +416,8 @@ func GetAdsByIDs(ids []int, currentUser *user.User) ([]Ad, error) {
 	return result, nil
 }
 
-// GetLocationByID fetches a Location by its ID
-func GetLocationByID(id int) (city, adminArea, country, raw string, err error) {
-	row := db.QueryRow("SELECT city, admin_area, country, raw_text FROM Location WHERE id = ?", id)
-	err = row.Scan(&city, &adminArea, &country, &raw)
-	return
-}
-
-// GetLocationWithCoords returns location data including coordinates
-func GetLocationWithCoords(id int) (city, adminArea, country, raw string, latitude, longitude *float64, err error) {
+// GetLocation fetches a Location by its ID
+func GetLocation(id int) (city, adminArea, country, raw string, latitude, longitude float64, err error) {
 	row := db.QueryRow("SELECT city, admin_area, country, raw_text, latitude, longitude FROM Location WHERE id = ?", id)
 	err = row.Scan(&city, &adminArea, &country, &raw, &latitude, &longitude)
 	return

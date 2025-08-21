@@ -73,7 +73,7 @@ func getDisplayLocationAndFlag(adObj ad.Ad) (string, g.Node) {
 
 // Helper to get raw location input for an ad
 func getRawLocation(adObj ad.Ad) string {
-	_, _, _, raw, err := ad.GetLocationByID(adObj.LocationID)
+	_, _, _, raw, _, _, err := ad.GetLocation(adObj.LocationID)
 	if err != nil {
 		return ""
 	}
