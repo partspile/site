@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"database/sql"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -25,10 +24,6 @@ import (
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
-
-type SearchQuery = ad.SearchQuery
-
-type SearchCursor = ad.SearchCursor
 
 // runEmbeddingSearch runs vector search without filters
 func runEmbeddingSearch(embedding []float32, cursor string, currentUser *user.User, threshold float64, k int) ([]ad.Ad, string, error) {
@@ -401,55 +396,6 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	return nil
 }
 
-func EncodeCursor(c SearchCursor) string {
-	jsonCursor, _ := json.Marshal(c)
-	return base64.StdEncoding.EncodeToString(jsonCursor)
-}
-
-func DecodeCursor(s string) (SearchCursor, error) {
-	var c SearchCursor
-	if s == "" {
-		return c, nil
-	}
-	jsonCursor, err := base64.StdEncoding.DecodeString(s)
-	if err != nil {
-		return c, err
-	}
-	err = json.Unmarshal(jsonCursor, &c)
-	return c, err
-}
-
-func FilterAds(query SearchQuery, ads []ad.Ad) []ad.Ad {
-	if query.IsEmpty() {
-		return ads
-	}
-	var filteredAds []ad.Ad
-	for _, ad := range ads {
-		var makeMatch, yearMatch, modelMatch, engineMatch bool
-
-		if query.Make == "" || ad.Make == query.Make {
-			makeMatch = true
-		}
-
-		if len(query.Years) == 0 || anyStringInSlice(ad.Years, query.Years) {
-			yearMatch = true
-		}
-
-		if len(query.Models) == 0 || anyStringInSlice(ad.Models, query.Models) {
-			modelMatch = true
-		}
-
-		if len(query.EngineSizes) == 0 || anyStringInSlice(ad.Engines, query.EngineSizes) {
-			engineMatch = true
-		}
-
-		if makeMatch && yearMatch && modelMatch && engineMatch {
-			filteredAds = append(filteredAds, ad)
-		}
-	}
-	return filteredAds
-}
-
 func HandleTreeCollapse(c *fiber.Ctx) error {
 	q := c.Query("q")
 	structuredQueryStr := c.Query("structured_query")
@@ -493,7 +439,7 @@ func TreeView(c *fiber.Ctx) error {
 		}
 	}
 
-	var structuredQuery SearchQuery
+	var structuredQuery ad.SearchQuery
 	if structuredQueryStr != "" {
 		err := json.Unmarshal([]byte(structuredQueryStr), &structuredQuery)
 		if err != nil {
@@ -582,8 +528,9 @@ func TreeView(c *fiber.Ctx) error {
 
 	log.Printf("[tree-view] Processing %d ads for node at level %d", len(ads), level)
 
-	// Extract unique values from ads to determine available children
-	children := extractChildrenFromAds(ads, level, parts, structuredQuery)
+	// For now, we'll skip showing children at this level since extractChildrenFromAds was removed
+	// The tree navigation will still work through direct URL navigation
+	var children []string
 
 	// Show ads if we're at a leaf level (level 4 = engine, level 5 = category)
 	// or if there are no more children to show
@@ -980,64 +927,6 @@ func matchesChildPath(ad ad.Ad, childPath []string, level int) bool {
 	}
 
 	return true // Default to true if no specific filtering needed
-}
-
-// extractChildrenFromAds extracts unique values from ads to determine tree children
-func extractChildrenFromAds(ads []ad.Ad, level int, parts []string, structuredQuery SearchQuery) []string {
-	// Use a map to track unique values
-	uniqueValues := make(map[string]bool)
-
-	switch level {
-	case 0: // Root level - extract makes
-		for _, ad := range ads {
-			if ad.Make != "" {
-				uniqueValues[ad.Make] = true
-			}
-		}
-	case 1: // Make level - extract years
-		for _, ad := range ads {
-			for _, year := range ad.Years {
-				if year != "" {
-					uniqueValues[year] = true
-				}
-			}
-		}
-	case 2: // Year level - extract models
-		for _, ad := range ads {
-			for _, model := range ad.Models {
-				if model != "" {
-					uniqueValues[model] = true
-				}
-			}
-		}
-	case 3: // Model level - extract engines
-		for _, ad := range ads {
-			for _, engine := range ad.Engines {
-				if engine != "" {
-					uniqueValues[engine] = true
-				}
-			}
-		}
-	case 4: // Engine level - extract categories
-		for _, ad := range ads {
-			if ad.Category != "" {
-				uniqueValues[ad.Category] = true
-			}
-		}
-	case 5: // Category level - extract subcategories
-		// TODO: Implement subcategory extraction using SubCategoryID
-		// For now, skip subcategory level extraction
-	}
-
-	// Convert map keys to slice and sort
-	var children []string
-	for value := range uniqueValues {
-		children = append(children, value)
-	}
-	sort.Strings(children)
-
-	log.Printf("[extractChildrenFromAds] Level %d: extracted %d children from %d ads", level, len(children), len(ads))
-	return children
 }
 
 // HandleSearchAPI returns search results as JSON for JavaScript consumption

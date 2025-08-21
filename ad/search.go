@@ -1,7 +1,5 @@
 package ad
 
-import "time"
-
 // SearchQuery represents a structured query for filtering ads
 type SearchQuery struct {
 	Make        string   `json:"make,omitempty"`
@@ -15,11 +13,4 @@ type SearchQuery struct {
 func (sq SearchQuery) IsEmpty() bool {
 	return sq.Make == "" && len(sq.Years) == 0 && len(sq.Models) == 0 &&
 		len(sq.EngineSizes) == 0 && sq.Category == "" && sq.SubCategory == ""
-}
-
-// SearchCursor represents a point in the search results for pagination
-type SearchCursor struct {
-	Query      SearchQuery `json:"q"`           // The structured query
-	LastID     int         `json:"last_id"`     // Last ID seen
-	LastPosted time.Time   `json:"last_posted"` // Timestamp of last item
 }
