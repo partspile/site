@@ -194,26 +194,6 @@ func performGeoBoxSearch(userPrompt string, currentUser *user.User, cursorStr st
 	return ads, nextCursor, nil
 }
 
-// Get user ID from context
-func getUserID(c *fiber.Ctx) int {
-	currentUser, err := CurrentUser(c)
-	if err != nil {
-		log.Printf("[DEBUG] CurrentUser error: %v", err)
-	}
-	if currentUser != nil {
-		log.Printf("[DEBUG] getUserID returning userID=%d", currentUser.ID)
-		return currentUser.ID
-	}
-	log.Printf("[DEBUG] getUserID returning userID=0 (no current user)")
-	return 0
-}
-
-// Get location from context
-func getLocation(c *fiber.Ctx) *time.Location {
-	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
-	return loc
-}
-
 // Render new ad button based on user login
 func renderNewAdButton(c *fiber.Ctx) g.Node {
 	currentUser, _ := CurrentUser(c)

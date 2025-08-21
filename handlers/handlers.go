@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	g "maragu.dev/gomponents"
@@ -26,4 +27,10 @@ func anyStringInSlice(a, b []string) bool {
 
 func htmlEscape(s string) string {
 	return strings.ReplaceAll(s, `"`, `\"`)
+}
+
+// Get location from context
+func getLocation(c *fiber.Ctx) *time.Location {
+	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
+	return loc
 }
