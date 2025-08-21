@@ -416,25 +416,18 @@ func GetAdsByIDs(ids []int, currentUser *user.User) ([]Ad, error) {
 	return result, nil
 }
 
-// GetLocation fetches a Location by its ID
-func GetLocation(id int) (city, adminArea, country, raw string, latitude, longitude float64, err error) {
-	row := db.QueryRow("SELECT city, admin_area, country, raw_text, latitude, longitude FROM Location WHERE id = ?", id)
-	err = row.Scan(&city, &adminArea, &country, &raw, &latitude, &longitude)
-	return
-}
-
 // GetMostPopularAds returns the top n ads by popularity using SQL
 func GetMostPopularAds(n int) []Ad {
 	log.Printf("[GetMostPopularAds] Querying for top %d popular ads", n)
 	query := `
 		SELECT 
 			a.id, a.title, a.description, a.price, a.created_at, 
-			a.subcategory_id, a.user_id, a.location_id, a.click_count,
-			a.last_clicked_at, a.image_order,
-			psc.name as subcategory,
-			l.city, l.admin_area, l.country
+			a.subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+			l.city, l.admin_area, l.country, l.latitude, l.longitude,
+			0 as is_bookmarked
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
 		LEFT JOIN Location l ON a.location_id = l.id
 		WHERE a.deleted_at IS NULL
 		ORDER BY (
@@ -452,141 +445,19 @@ func GetMostPopularAds(n int) []Ad {
 	}
 	defer rows.Close()
 
-	var ads []Ad
-	rowCount := 0
-	for rows.Next() {
-		rowCount++
-		var ad Ad
-		var subcategory sql.NullString
-		var lastClickedAt sql.NullTime
-		var locationID sql.NullInt64
-		var imageOrder sql.NullString
-		var city, adminArea, country sql.NullString
-
-		err := rows.Scan(
-			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
-			&ad.SubCategoryID, &ad.UserID, &locationID, &ad.ClickCount,
-			&lastClickedAt, &imageOrder, &subcategory,
-			&city, &adminArea, &country,
-		)
-		if err != nil {
-			log.Printf("[GetMostPopularAds] Row scan error: %v", err)
-			continue
-		}
-
-		if lastClickedAt.Valid {
-			ad.LastClickedAt = &lastClickedAt.Time
-		}
-		if locationID.Valid {
-			ad.LocationID = int(locationID.Int64)
-		}
-		if imageOrder.Valid {
-			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
-		}
-		if city.Valid {
-			ad.City = city.String
-		}
-		if adminArea.Valid {
-			ad.AdminArea = adminArea.String
-		}
-		if country.Valid {
-			ad.Country = country.String
-		}
-
-		// Get vehicle data
-		ad.Make, ad.Years, ad.Models, ad.Engines = GetVehicleData(ad.ID)
-		ads = append(ads, ad)
+	ads, err := scanAdRows(rows)
+	if err != nil {
+		log.Printf("[GetMostPopularAds] Row scan error: %v", err)
+		return nil
 	}
-	log.Printf("[GetMostPopularAds] Found %d ads from SQL query", rowCount)
+
+	// Get vehicle data for each ad
+	for i := range ads {
+		ads[i].Make, ads[i].Years, ads[i].Models, ads[i].Engines = GetVehicleData(ads[i].ID)
+	}
+
+	log.Printf("[GetMostPopularAds] Found %d ads from SQL query", len(ads))
 	return ads
-}
-
-// GetAdsWithoutVectors returns ads that don't have vector embeddings
-func GetAdsWithoutVectors() ([]Ad, error) {
-	log.Printf("[GetAdsWithoutVectors] Querying for ads without vectors")
-	query := `
-		SELECT 
-			a.id, a.title, a.description, a.price, a.created_at, 
-			a.subcategory_id, a.user_id, a.location_id, a.click_count,
-			a.last_clicked_at, a.image_order, a.has_vector,
-			psc.name as subcategory,
-			l.city, l.admin_area, l.country
-		FROM Ad a
-		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
-		LEFT JOIN Location l ON a.location_id = l.id
-		WHERE a.has_vector = 0 AND a.deleted_at IS NULL
-		ORDER BY a.created_at DESC
-		LIMIT 50
-	`
-
-	rows, err := db.Query(query)
-	if err != nil {
-		log.Printf("[GetAdsWithoutVectors] SQL error: %v", err)
-		return nil, err
-	}
-	defer rows.Close()
-
-	var ads []Ad
-	rowCount := 0
-	for rows.Next() {
-		rowCount++
-		var ad Ad
-		var subcategory sql.NullString
-		var lastClickedAt sql.NullTime
-		var locationID sql.NullInt64
-		var imageOrder sql.NullString
-		var city, adminArea, country sql.NullString
-		var hasVector int
-
-		err := rows.Scan(
-			&ad.ID, &ad.Title, &ad.Description, &ad.Price, &ad.CreatedAt,
-			&ad.SubCategoryID, &ad.UserID, &locationID, &ad.ClickCount,
-			&lastClickedAt, &imageOrder, &hasVector, &subcategory,
-			&city, &adminArea, &country,
-		)
-		if err != nil {
-			log.Printf("[GetAdsWithoutVectors] Row scan error: %v", err)
-			continue
-		}
-
-		ad.HasVector = hasVector == 1
-
-		if lastClickedAt.Valid {
-			ad.LastClickedAt = &lastClickedAt.Time
-		}
-		if locationID.Valid {
-			ad.LocationID = int(locationID.Int64)
-		}
-		if imageOrder.Valid {
-			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
-		}
-		if city.Valid {
-			ad.City = city.String
-		}
-		if adminArea.Valid {
-			ad.AdminArea = adminArea.String
-		}
-		if country.Valid {
-			ad.Country = country.String
-		}
-
-		// Get vehicle data
-		ad.Make, ad.Years, ad.Models, ad.Engines = GetVehicleData(ad.ID)
-		ads = append(ads, ad)
-	}
-	log.Printf("[GetAdsWithoutVectors] Found %d ads without vectors from SQL query", rowCount)
-	return ads, nil
-}
-
-// MarkAdAsHavingVector marks an ad as having a vector embedding
-func MarkAdAsHavingVector(adID int) error {
-	_, err := db.Exec("UPDATE Ad SET has_vector = 1 WHERE id = ?", adID)
-	if err != nil {
-		log.Printf("[MarkAdAsHavingVector] Failed to mark ad %d as having vector: %v", adID, err)
-		return err
-	}
-	log.Printf("[MarkAdAsHavingVector] Successfully marked ad %d as having vector", adID)
-	return nil
 }
 
 // GetAdsByIDsOptimized returns ads for a list of IDs with all data in a single query
