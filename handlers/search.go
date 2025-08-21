@@ -38,39 +38,8 @@ func min(a, b int) int {
 	return b
 }
 
-// Helper to fetch ads by database IDs
-func fetchAdsByIDs(ids []int, userID int) ([]ad.Ad, error) {
-	if len(ids) == 0 {
-		return nil, nil
-	}
-
-	// Fetch all ads using the unified GetAdsByIDs function
-	var ads []ad.Ad
-	var err error
-
-	// Create a mock user object for bookmark status when we have a userID
-	var currentUser *user.User
-	if userID > 0 {
-		currentUser = &user.User{ID: userID}
-	}
-
-	ads, err = ad.GetAdsByIDs(ids, currentUser)
-	if err != nil {
-		return nil, err
-	}
-
-	log.Printf("[fetchAdsByIDs] Returning ads in order: %v", func() []int {
-		result := make([]int, len(ads))
-		for i, ad := range ads {
-			result[i] = ad.ID
-		}
-		return result
-	}())
-	return ads, nil
-}
-
 // runEmbeddingSearchWithFilter runs vector search with filters
-func runEmbeddingSearchWithFilter(embedding []float32, filter *qdrant.Filter, cursor string, userID int, threshold float64) ([]ad.Ad, string, error) {
+func runEmbeddingSearchWithFilter(embedding []float32, filter *qdrant.Filter, cursor string, currentUser *user.User, threshold float64) ([]ad.Ad, string, error) {
 	// Get results with threshold filtering at Qdrant level
 	results, nextCursor, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.QdrantSearchPageSize, cursor, threshold)
 	if err != nil {
@@ -86,13 +55,14 @@ func runEmbeddingSearchWithFilter(embedding []float32, filter *qdrant.Filter, cu
 		}
 	}
 	log.Printf("[runEmbeddingSearchWithFilter] Qdrant result IDs: %v", intIDs)
-	ads, _ := fetchAdsByIDs(intIDs, userID)
+	var ads []ad.Ad
+	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
 	log.Printf("[runEmbeddingSearchWithFilter] DB fetch returned %d ads", len(ads))
 	return ads, nextCursor, nil
 }
 
 // runEmbeddingSearch runs vector search without filters
-func runEmbeddingSearch(embedding []float32, cursor string, userID int, threshold float64) ([]ad.Ad, string, error) {
+func runEmbeddingSearch(embedding []float32, cursor string, currentUser *user.User, threshold float64) ([]ad.Ad, string, error) {
 	// Get results with threshold filtering at Qdrant level
 	results, nextCursor, err := vector.QuerySimilarAds(embedding, config.QdrantSearchPageSize, cursor, threshold)
 	if err != nil {
@@ -108,13 +78,14 @@ func runEmbeddingSearch(embedding []float32, cursor string, userID int, threshol
 		}
 	}
 	log.Printf("[runEmbeddingSearch] Qdrant result IDs: %v", intIDs)
-	ads, _ := fetchAdsByIDs(intIDs, userID)
+	var ads []ad.Ad
+	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
 	log.Printf("[runEmbeddingSearch] DB fetch returned %d ads", len(ads))
 	return ads, nextCursor, nil
 }
 
 // runEmbeddingSearchWithFilterMap runs vector search with filters for map view (200 results)
-func runEmbeddingSearchWithFilterMap(embedding []float32, filter *qdrant.Filter, cursor string, userID int, threshold float64) ([]ad.Ad, string, error) {
+func runEmbeddingSearchWithFilterMap(embedding []float32, filter *qdrant.Filter, cursor string, currentUser *user.User, threshold float64) ([]ad.Ad, string, error) {
 	// Get results with threshold filtering at Qdrant level
 	results, nextCursor, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.QdrantSearchInitialK, cursor, threshold)
 	if err != nil {
@@ -130,13 +101,14 @@ func runEmbeddingSearchWithFilterMap(embedding []float32, filter *qdrant.Filter,
 		}
 	}
 	log.Printf("[runEmbeddingSearchWithFilterMap] Qdrant result IDs: %v", intIDs)
-	ads, _ := fetchAdsByIDs(intIDs, userID)
+	var ads []ad.Ad
+	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
 	log.Printf("[runEmbeddingSearchWithFilterMap] DB fetch returned %d ads", len(ads))
 	return ads, nextCursor, nil
 }
 
 // runEmbeddingSearchMap runs vector search without filters for map view (200 results)
-func runEmbeddingSearchMap(embedding []float32, cursor string, userID int, threshold float64) ([]ad.Ad, string, error) {
+func runEmbeddingSearchMap(embedding []float32, cursor string, currentUser *user.User, threshold float64) ([]ad.Ad, string, error) {
 	// Get results with threshold filtering at Qdrant level
 	results, nextCursor, err := vector.QuerySimilarAds(embedding, config.QdrantSearchInitialK, cursor, threshold)
 	if err != nil {
@@ -152,25 +124,26 @@ func runEmbeddingSearchMap(embedding []float32, cursor string, userID int, thres
 		}
 	}
 	log.Printf("[runEmbeddingSearchMap] Qdrant result IDs: %v", intIDs)
-	ads, _ := fetchAdsByIDs(intIDs, userID)
+	var ads []ad.Ad
+	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
 	log.Printf("[runEmbeddingSearchMap] DB fetch returned %d ads", len(ads))
 	return ads, nextCursor, nil
 }
 
 // Try embedding-based search with user prompt
-func tryQueryEmbedding(userPrompt, cursor string, userID int, threshold float64) ([]ad.Ad, string, error) {
+func tryQueryEmbedding(userPrompt, cursor string, currentUser *user.User, threshold float64) ([]ad.Ad, string, error) {
 	log.Printf("[search] Generating embedding for user query: %s", userPrompt)
 	embedding, err := vector.EmbedTextCached(userPrompt)
 	if err != nil {
 		return nil, "", err
 	}
-	return runEmbeddingSearch(embedding, cursor, userID, threshold)
+	return runEmbeddingSearch(embedding, cursor, currentUser, threshold)
 }
 
 // Try embedding-based search with user embedding
-func tryUserEmbedding(userID int, cursor string, threshold float64) ([]ad.Ad, string, error) {
-	log.Printf("[DEBUG] tryUserEmbedding called with userID=%d, cursor=%s, threshold=%.2f", userID, cursor, threshold)
-	embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
+func tryUserEmbedding(currentUser *user.User, cursor string, threshold float64) ([]ad.Ad, string, error) {
+	log.Printf("[DEBUG] tryUserEmbedding called with userID=%d, cursor=%s, threshold=%.2f", currentUser.ID, cursor, threshold)
+	embedding, err := vector.GetUserPersonalizedEmbedding(currentUser.ID, false)
 	if err != nil {
 		log.Printf("[DEBUG] tryUserEmbedding GetUserPersonalizedEmbedding error: %v", err)
 		return nil, "", err
@@ -180,14 +153,18 @@ func tryUserEmbedding(userID int, cursor string, threshold float64) ([]ad.Ad, st
 		return nil, "", nil
 	}
 	log.Printf("[DEBUG] tryUserEmbedding GetUserPersonalizedEmbedding returned embedding with length=%d", len(embedding))
-	return runEmbeddingSearch(embedding, cursor, userID, threshold)
+	return runEmbeddingSearch(embedding, cursor, currentUser, threshold)
 }
 
 // Search strategy for both HandleSearch and HandleSearchPage
-func performSearch(userPrompt string, userID int, cursorStr string, threshold float64) ([]ad.Ad, string, error) {
+func performSearch(userPrompt string, currentUser *user.User, cursorStr string, threshold float64) ([]ad.Ad, string, error) {
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
 	log.Printf("[performSearch] userPrompt='%s', userID=%d, cursorStr='%s', threshold=%.2f", userPrompt, userID, cursorStr, threshold)
 	if userPrompt != "" {
-		ads, nextCursor, _ := tryQueryEmbedding(userPrompt, cursorStr, userID, threshold)
+		ads, nextCursor, _ := tryQueryEmbedding(userPrompt, cursorStr, currentUser, threshold)
 		log.Printf("[performSearch] tryQueryEmbedding: found %d ads", len(ads))
 		if len(ads) > 0 {
 			return ads, nextCursor, nil
@@ -195,7 +172,7 @@ func performSearch(userPrompt string, userID int, cursorStr string, threshold fl
 	}
 	if userPrompt == "" && userID != 0 {
 		log.Printf("[DEBUG] performSearch: userPrompt is empty, userID=%d, trying user embedding", userID)
-		ads, nextCursor, _ := tryUserEmbedding(userID, cursorStr, threshold)
+		ads, nextCursor, _ := tryUserEmbedding(currentUser, cursorStr, threshold)
 		log.Printf("[performSearch] tryUserEmbedding: found %d ads", len(ads))
 		if len(ads) > 0 {
 			return ads, nextCursor, nil
@@ -210,7 +187,7 @@ func performSearch(userPrompt string, userID int, cursorStr string, threshold fl
 				log.Printf("[performSearch] site-level vector first 5 values: %v", emb[:min(5, len(emb))])
 			}
 			log.Printf("[performSearch] About to call runEmbeddingSearch with site-level vector")
-			ads, nextCursor, _ := runEmbeddingSearch(emb, cursorStr, userID, threshold)
+			ads, nextCursor, _ := runEmbeddingSearch(emb, cursorStr, currentUser, threshold)
 			log.Printf("[performSearch] site-level vector: found %d ads", len(ads))
 			if len(ads) > 0 {
 				return ads, nextCursor, nil
@@ -228,7 +205,7 @@ func performSearch(userPrompt string, userID int, cursorStr string, threshold fl
 				log.Printf("[performSearch] site-level vector first 5 values: %v", emb[:min(5, len(emb))])
 			}
 			log.Printf("[performSearch] About to call runEmbeddingSearch with site-level vector")
-			ads, nextCursor, _ := runEmbeddingSearch(emb, cursorStr, userID, threshold)
+			ads, nextCursor, _ := runEmbeddingSearch(emb, cursorStr, currentUser, threshold)
 			log.Printf("[performSearch] site-level vector: found %d ads", len(ads))
 			if len(ads) > 0 {
 				return ads, nextCursor, nil
@@ -242,7 +219,11 @@ func performSearch(userPrompt string, userID int, cursorStr string, threshold fl
 }
 
 // performMapSearch performs search for map view using map-specific functions (200 results)
-func performMapSearch(userPrompt string, userID int, cursorStr string, threshold float64) ([]ad.Ad, string, error) {
+func performMapSearch(userPrompt string, currentUser *user.User, cursorStr string, threshold float64) ([]ad.Ad, string, error) {
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
 	log.Printf("[performMapSearch] userPrompt='%s', userID=%d, cursorStr='%s', threshold=%.2f", userPrompt, userID, cursorStr, threshold)
 	if userPrompt != "" {
 		// For map view with query, use map-specific search
@@ -251,7 +232,7 @@ func performMapSearch(userPrompt string, userID int, cursorStr string, threshold
 		if err != nil {
 			return nil, "", err
 		}
-		ads, nextCursor, _ := runEmbeddingSearchMap(embedding, cursorStr, userID, threshold)
+		ads, nextCursor, _ := runEmbeddingSearchMap(embedding, cursorStr, currentUser, threshold)
 		log.Printf("[performMapSearch] tryQueryEmbedding: found %d ads", len(ads))
 		if len(ads) > 0 {
 			return ads, nextCursor, nil
@@ -261,7 +242,7 @@ func performMapSearch(userPrompt string, userID int, cursorStr string, threshold
 		// For logged-in users with no query, try user embedding first
 		embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
 		if err == nil && embedding != nil {
-			ads, nextCursor, _ := runEmbeddingSearchMap(embedding, cursorStr, userID, threshold)
+			ads, nextCursor, _ := runEmbeddingSearchMap(embedding, cursorStr, currentUser, threshold)
 			log.Printf("[performMapSearch] tryUserEmbedding: found %d ads", len(ads))
 			if len(ads) > 0 {
 				return ads, nextCursor, nil
@@ -277,7 +258,7 @@ func performMapSearch(userPrompt string, userID int, cursorStr string, threshold
 				log.Printf("[performMapSearch] site-level vector first 5 values: %v", emb[:min(5, len(emb))])
 			}
 			log.Printf("[performMapSearch] About to call runEmbeddingSearchMap with site-level vector")
-			ads, nextCursor, _ := runEmbeddingSearchMap(emb, cursorStr, userID, threshold)
+			ads, nextCursor, _ := runEmbeddingSearchMap(emb, cursorStr, currentUser, threshold)
 			log.Printf("[performMapSearch] site-level vector: found %d ads", len(ads))
 			if len(ads) > 0 {
 				return ads, nextCursor, nil
@@ -296,7 +277,7 @@ func performMapSearch(userPrompt string, userID int, cursorStr string, threshold
 				log.Printf("[performMapSearch] site-level vector first 5 values: %v", emb[:min(5, len(emb))])
 			}
 			log.Printf("[performMapSearch] About to call runEmbeddingSearchMap with site-level vector")
-			ads, nextCursor, _ := runEmbeddingSearchMap(emb, cursorStr, userID, threshold)
+			ads, nextCursor, _ := runEmbeddingSearchMap(emb, cursorStr, currentUser, threshold)
 			log.Printf("[performMapSearch] site-level vector: found %d ads", len(ads))
 			if len(ads) > 0 {
 				return ads, nextCursor, nil
@@ -318,7 +299,11 @@ type GeoBounds struct {
 }
 
 // performGeoBoxSearch performs search with geo bounding box filtering
-func performGeoBoxSearch(userPrompt string, userID int, cursorStr string, bounds *GeoBounds, threshold float64) ([]ad.Ad, string, error) {
+func performGeoBoxSearch(userPrompt string, currentUser *user.User, cursorStr string, bounds *GeoBounds, threshold float64) ([]ad.Ad, string, error) {
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
 	log.Printf("[performGeoBoxSearch] userPrompt='%s', userID=%d, cursorStr='%s', bounds=%+v", userPrompt, userID, cursorStr, bounds)
 
 	// Build geo filter if bounds are provided
@@ -340,9 +325,9 @@ func performGeoBoxSearch(userPrompt string, userID int, cursorStr string, bounds
 		}
 		if emb != nil && len(emb) > 0 {
 			if geoFilter != nil {
-				ads, nextCursor, err = runEmbeddingSearchWithFilterMap(emb, geoFilter, cursorStr, userID, threshold)
+				ads, nextCursor, err = runEmbeddingSearchWithFilterMap(emb, geoFilter, cursorStr, currentUser, threshold)
 			} else {
-				ads, nextCursor, err = runEmbeddingSearchMap(emb, cursorStr, userID, threshold)
+				ads, nextCursor, err = runEmbeddingSearchMap(emb, cursorStr, currentUser, threshold)
 			}
 		}
 	}
@@ -355,9 +340,9 @@ func performGeoBoxSearch(userPrompt string, userID int, cursorStr string, bounds
 			return nil, "", err
 		}
 		if geoFilter != nil {
-			ads, nextCursor, err = runEmbeddingSearchWithFilterMap(embedding, geoFilter, cursorStr, userID, threshold)
+			ads, nextCursor, err = runEmbeddingSearchWithFilterMap(embedding, geoFilter, cursorStr, currentUser, threshold)
 		} else {
-			ads, nextCursor, err = runEmbeddingSearchMap(embedding, cursorStr, userID, threshold)
+			ads, nextCursor, err = runEmbeddingSearchMap(embedding, cursorStr, currentUser, threshold)
 		}
 	}
 
@@ -414,7 +399,11 @@ func HandleSearch(c *fiber.Ctx) error {
 		}
 	}
 
-	userID := getUserID(c)
+	currentUser, _ := CurrentUser(c)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
 	log.Printf("[HandleSearch] userPrompt='%s', userID=%d, threshold=%.2f", userPrompt, userID, threshold)
 
 	// Extract bounding box parameters for map view
@@ -449,12 +438,12 @@ func HandleSearch(c *fiber.Ctx) error {
 
 	// Use geo search for map view with bounds, regular search otherwise
 	if view == "map" && bounds != nil {
-		ads, nextCursor, err = performGeoBoxSearch(userPrompt, userID, "", bounds, threshold)
+		ads, nextCursor, err = performGeoBoxSearch(userPrompt, currentUser, "", bounds, threshold)
 	} else if view == "map" {
 		// For map view without bounds, use map-specific search functions
-		ads, nextCursor, err = performMapSearch(userPrompt, userID, "", threshold)
+		ads, nextCursor, err = performMapSearch(userPrompt, currentUser, "", threshold)
 	} else {
-		ads, nextCursor, err = performSearch(userPrompt, userID, "", threshold)
+		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold)
 	}
 
 	if err != nil {
@@ -520,10 +509,14 @@ func HandleSearchPage(c *fiber.Ctx) error {
 		}
 	}
 
-	userID := getUserID(c)
+	currentUser, _ := CurrentUser(c)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
 	log.Printf("[HandleSearchPage] userPrompt='%s', cursorStr='%s', userID=%d, view='%s', threshold=%.2f", userPrompt, cursorStr, userID, view, threshold)
 
-	ads, nextCursor, err := performSearch(userPrompt, userID, cursorStr, threshold)
+	ads, nextCursor, err := performSearch(userPrompt, currentUser, cursorStr, threshold)
 	if err != nil {
 		log.Printf("[HandleSearchPage] performSearch error: %v", err)
 		return err
@@ -718,11 +711,11 @@ func TreeView(c *fiber.Ctx) error {
 			}
 
 			log.Printf("[tree-view] Using vector search with metadata filtering for query: %s, tree path: %+v, threshold: %.2f", q, treePath, threshold)
-			ads, err = getTreeAdsForSearchWithFilter(q, treePath, userID, threshold)
+			ads, err = getTreeAdsForSearchWithFilter(q, treePath, currentUser, threshold)
 		} else {
 			// Use vector search with threshold-based filtering for search queries without tree path
 			log.Printf("[tree-view] Using vector search for query: %s, threshold: %.2f", q, threshold)
-			ads, err = getTreeAdsForSearch(q, userID, threshold)
+			ads, err = getTreeAdsForSearch(q, currentUser, threshold)
 		}
 	} else {
 		// Use SQL-based filtering for browse mode
@@ -862,7 +855,7 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 	var err error
 
 	// Use the same performSearch function that HandleSearch uses
-	ads, nextCursor, err = performSearch(userPrompt, userID, "", threshold)
+	ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold)
 	if err != nil {
 		log.Printf("[handleViewSwitch] performSearch error: %v", err)
 		ads = []ad.Ad{}
@@ -969,12 +962,12 @@ func handleViewSwitchWithGeo(c *fiber.Ctx, view string, bounds *GeoBounds) error
 
 	// Use geo search for map view, regular search for other views
 	if view == "map" && bounds != nil {
-		ads, nextCursor, err = performGeoBoxSearch(userPrompt, userID, "", bounds, threshold)
+		ads, nextCursor, err = performGeoBoxSearch(userPrompt, currentUser, "", bounds, threshold)
 	} else if view == "map" {
 		// For map view without bounds, use map-specific search functions
-		ads, nextCursor, err = performMapSearch(userPrompt, userID, "", threshold)
+		ads, nextCursor, err = performMapSearch(userPrompt, currentUser, "", threshold)
 	} else {
-		ads, nextCursor, err = performSearch(userPrompt, userID, "", threshold)
+		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold)
 	}
 
 	if err != nil {
@@ -1025,7 +1018,7 @@ func handleViewSwitchWithGeo(c *fiber.Ctx, view string, bounds *GeoBounds) error
 
 // getTreeAdsForSearch performs vector search with threshold-based filtering for tree view
 // Uses larger limit to build complete tree structure
-func getTreeAdsForSearch(userPrompt string, userID int, threshold float64) ([]ad.Ad, error) {
+func getTreeAdsForSearch(userPrompt string, currentUser *user.User, threshold float64) ([]ad.Ad, error) {
 	// Generate embedding for search query
 	log.Printf("[tree-search] Generating embedding for tree search query: %s", userPrompt)
 	embedding, err := vector.EmbedTextCached(userPrompt)
@@ -1048,13 +1041,18 @@ func getTreeAdsForSearch(userPrompt string, userID int, threshold float64) ([]ad
 		}
 	}
 	log.Printf("[tree-search] Qdrant result IDs: %v", intIDs)
-	ads, _ := fetchAdsByIDs(intIDs, userID)
+	var ads []ad.Ad
+	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
 	log.Printf("[tree-search] DB fetch returned %d ads", len(ads))
 	return ads, nil
 }
 
 // getTreeAdsForSearchWithFilter gets ads for tree view with filtering
-func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string, userID int, threshold float64) ([]ad.Ad, error) {
+func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string, currentUser *user.User, threshold float64) ([]ad.Ad, error) {
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
 	log.Printf("[getTreeAdsForSearchWithFilter] userPrompt='%s', treePath=%+v, userID=%d, threshold=%.2f", userPrompt, treePath, userID, threshold)
 
 	var embedding []float32
@@ -1094,7 +1092,8 @@ func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string
 		}
 	}
 	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant result IDs: %v", intIDs)
-	ads, _ := fetchAdsByIDs(intIDs, userID)
+	var ads []ad.Ad
+	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
 	log.Printf("[getTreeAdsForSearchWithFilter] DB fetch returned %d ads", len(ads))
 	return ads, nil
 }
@@ -1244,7 +1243,11 @@ func HandleSearchAPI(c *fiber.Ctx) error {
 	threshold := c.QueryFloat("threshold", 0.6)
 
 	// Get current user
-	userID := getUserID(c)
+	currentUser, _ := CurrentUser(c)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
 
 	log.Printf("[HandleSearchAPI] userPrompt='%s', userID=%d, view=%s, threshold=%.2f", userPrompt, userID, view, threshold)
 
@@ -1279,12 +1282,12 @@ func HandleSearchAPI(c *fiber.Ctx) error {
 
 	// Use geo search for map view with bounds, regular search otherwise
 	if view == "map" && bounds != nil {
-		ads, nextCursor, err = performGeoBoxSearch(userPrompt, userID, "", bounds, threshold)
+		ads, nextCursor, err = performGeoBoxSearch(userPrompt, currentUser, "", bounds, threshold)
 	} else if view == "map" {
 		// For map view without bounds, use map-specific search functions
-		ads, nextCursor, err = performMapSearch(userPrompt, userID, "", threshold)
+		ads, nextCursor, err = performMapSearch(userPrompt, currentUser, "", threshold)
 	} else {
-		ads, nextCursor, err = performSearch(userPrompt, userID, "", threshold)
+		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold)
 	}
 
 	if err != nil {

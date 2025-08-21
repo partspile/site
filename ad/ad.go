@@ -391,6 +391,13 @@ func GetAdsByIDs(ids []int, currentUser *user.User) ([]Ad, error) {
 		}
 	}
 
+	log.Printf("[GetAdsByIDs] Returning ads in order: %v", func() []int {
+		debugResult := make([]int, len(result))
+		for i, ad := range result {
+			debugResult[i] = ad.ID
+		}
+		return debugResult
+	}())
 	return result, nil
 }
 
