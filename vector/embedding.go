@@ -631,7 +631,6 @@ func BuildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 	var lat, lon float64
 	if adObj.LocationID != 0 {
 		// Get coordinates from Location table
-		var err error
 		_, _, _, _, lat, lon, _ = ad.GetLocation(adObj.LocationID)
 	}
 
