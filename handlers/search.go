@@ -25,6 +25,18 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
+// getThresholdFromQuery extracts threshold from query parameters with fallback to config default
+func getThresholdFromQuery(c *fiber.Ctx) float64 {
+	thresholdStr := c.Query("threshold")
+	threshold := config.QdrantSearchThreshold
+	if thresholdStr != "" {
+		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
+			threshold = thresholdVal
+		}
+	}
+	return threshold
+}
+
 // runEmbeddingSearch runs vector search with optional filters
 func runEmbeddingSearch(embedding []float32, cursor string, currentUser *user.User, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
 	var ids []int
@@ -153,13 +165,7 @@ func HandleSearch(c *fiber.Ctx) error {
 	}
 
 	// Get threshold from query parameter, default to config value
-	thresholdStr := c.Query("threshold")
-	threshold := config.QdrantSearchThreshold
-	if thresholdStr != "" {
-		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
-			threshold = thresholdVal
-		}
-	}
+	threshold := getThresholdFromQuery(c)
 
 	currentUser, _ := CurrentUser(c)
 	userID := getUserID(c)
@@ -260,13 +266,7 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	}
 
 	// Get threshold from query parameter, default to config value
-	thresholdStr := c.Query("threshold")
-	threshold := config.QdrantSearchThreshold
-	if thresholdStr != "" {
-		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
-			threshold = thresholdVal
-		}
-	}
+	threshold := getThresholdFromQuery(c)
 
 	currentUser, _ := CurrentUser(c)
 	userID := getUserID(c)
@@ -344,13 +344,7 @@ func HandleTreeCollapse(c *fiber.Ctx) error {
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 
 	// Get threshold from query parameter, default to config value
-	thresholdStr := c.Query("threshold")
-	threshold := config.QdrantSearchThreshold
-	if thresholdStr != "" {
-		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
-			threshold = thresholdVal
-		}
-	}
+	threshold := getThresholdFromQuery(c)
 
 	name := parts[len(parts)-1]
 	level := len(parts) - 1
@@ -369,16 +363,7 @@ func TreeView(c *fiber.Ctx) error {
 	level := len(parts)
 
 	// Get threshold from query parameter or form data, default to config value
-	thresholdStr := c.Query("threshold")
-	if thresholdStr == "" {
-		thresholdStr = c.FormValue("threshold")
-	}
-	threshold := config.QdrantSearchThreshold
-	if thresholdStr != "" {
-		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
-			threshold = thresholdVal
-		}
-	}
+	threshold := getThresholdFromQuery(c)
 
 	var structuredQuery ad.SearchQuery
 	if structuredQueryStr != "" {
@@ -540,16 +525,7 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 	}
 
 	// Get threshold from query parameter or form data, default to config value
-	thresholdStr := c.Query("threshold")
-	if thresholdStr == "" {
-		thresholdStr = c.FormValue("threshold")
-	}
-	threshold := config.QdrantSearchThreshold
-	if thresholdStr != "" {
-		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
-			threshold = thresholdVal
-		}
-	}
+	threshold := getThresholdFromQuery(c)
 
 	var ads []ad.Ad
 	var nextCursor string
@@ -642,16 +618,7 @@ func handleViewSwitchWithGeo(c *fiber.Ctx, view string, bounds *GeoBounds) error
 	}
 
 	// Get threshold from query parameter or form data, default to config value
-	thresholdStr := c.Query("threshold")
-	if thresholdStr == "" {
-		thresholdStr = c.FormValue("threshold")
-	}
-	threshold := config.QdrantSearchThreshold
-	if thresholdStr != "" {
-		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
-			threshold = thresholdVal
-		}
-	}
+	threshold := getThresholdFromQuery(c)
 
 	var ads []ad.Ad
 	var nextCursor string
@@ -860,7 +827,7 @@ func matchesChildPath(ad ad.Ad, childPath []string, level int) bool {
 func HandleSearchAPI(c *fiber.Ctx) error {
 	userPrompt := strings.TrimSpace(c.Query("q", ""))
 	view := c.Query("view", "list")
-	threshold := c.QueryFloat("threshold", 0.6)
+	threshold := getThresholdFromQuery(c)
 
 	// Get current user
 	currentUser, _ := CurrentUser(c)
