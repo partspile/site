@@ -38,20 +38,10 @@ func min(a, b int) int {
 	return b
 }
 
-// Helper to fetch ads by Qdrant result IDs
-func fetchAdsByIDs(ids []string, userID int) ([]ad.Ad, error) {
+// Helper to fetch ads by database IDs
+func fetchAdsByIDs(ids []int, userID int) ([]ad.Ad, error) {
 	if len(ids) == 0 {
 		return nil, nil
-	}
-
-	// Convert string IDs to int IDs
-	intIDs := make([]int, 0, len(ids))
-	for _, idStr := range ids {
-		id, err := strconv.Atoi(idStr)
-		if err != nil {
-			continue
-		}
-		intIDs = append(intIDs, id)
 	}
 
 	// Fetch all ads using the unified GetAdsByIDs function
@@ -64,7 +54,7 @@ func fetchAdsByIDs(ids []string, userID int) ([]ad.Ad, error) {
 		currentUser = &user.User{ID: userID}
 	}
 
-	ads, err = ad.GetAdsByIDs(intIDs, currentUser)
+	ads, err = ad.GetAdsByIDs(ids, currentUser)
 	if err != nil {
 		return nil, err
 	}
@@ -88,12 +78,15 @@ func runEmbeddingSearchWithFilter(embedding []float32, filter *qdrant.Filter, cu
 	}
 	log.Printf("[runEmbeddingSearchWithFilter] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
 
-	ids := make([]string, len(results))
+	// Convert Qdrant string IDs to int IDs
+	intIDs := make([]int, len(results))
 	for i, r := range results {
-		ids[i] = r.ID
+		if id, err := strconv.Atoi(r.ID); err == nil {
+			intIDs[i] = id
+		}
 	}
-	log.Printf("[runEmbeddingSearchWithFilter] Qdrant result IDs: %v", ids)
-	ads, _ := fetchAdsByIDs(ids, userID)
+	log.Printf("[runEmbeddingSearchWithFilter] Qdrant result IDs: %v", intIDs)
+	ads, _ := fetchAdsByIDs(intIDs, userID)
 	log.Printf("[runEmbeddingSearchWithFilter] DB fetch returned %d ads", len(ads))
 	return ads, nextCursor, nil
 }
@@ -107,12 +100,15 @@ func runEmbeddingSearch(embedding []float32, cursor string, userID int, threshol
 	}
 	log.Printf("[runEmbeddingSearch] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
 
-	ids := make([]string, len(results))
+	// Convert Qdrant string IDs to int IDs
+	intIDs := make([]int, len(results))
 	for i, r := range results {
-		ids[i] = r.ID
+		if id, err := strconv.Atoi(r.ID); err == nil {
+			intIDs[i] = id
+		}
 	}
-	log.Printf("[runEmbeddingSearch] Qdrant result IDs: %v", ids)
-	ads, _ := fetchAdsByIDs(ids, userID)
+	log.Printf("[runEmbeddingSearch] Qdrant result IDs: %v", intIDs)
+	ads, _ := fetchAdsByIDs(intIDs, userID)
 	log.Printf("[runEmbeddingSearch] DB fetch returned %d ads", len(ads))
 	return ads, nextCursor, nil
 }
@@ -126,12 +122,15 @@ func runEmbeddingSearchWithFilterMap(embedding []float32, filter *qdrant.Filter,
 	}
 	log.Printf("[runEmbeddingSearchWithFilterMap] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
 
-	ids := make([]string, len(results))
+	// Convert Qdrant string IDs to int IDs
+	intIDs := make([]int, len(results))
 	for i, r := range results {
-		ids[i] = r.ID
+		if id, err := strconv.Atoi(r.ID); err == nil {
+			intIDs[i] = id
+		}
 	}
-	log.Printf("[runEmbeddingSearchWithFilterMap] Qdrant result IDs: %v", ids)
-	ads, _ := fetchAdsByIDs(ids, userID)
+	log.Printf("[runEmbeddingSearchWithFilterMap] Qdrant result IDs: %v", intIDs)
+	ads, _ := fetchAdsByIDs(intIDs, userID)
 	log.Printf("[runEmbeddingSearchWithFilterMap] DB fetch returned %d ads", len(ads))
 	return ads, nextCursor, nil
 }
@@ -145,12 +144,15 @@ func runEmbeddingSearchMap(embedding []float32, cursor string, userID int, thres
 	}
 	log.Printf("[runEmbeddingSearchMap] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
 
-	ids := make([]string, len(results))
+	// Convert Qdrant string IDs to int IDs
+	intIDs := make([]int, len(results))
 	for i, r := range results {
-		ids[i] = r.ID
+		if id, err := strconv.Atoi(r.ID); err == nil {
+			intIDs[i] = id
+		}
 	}
-	log.Printf("[runEmbeddingSearchMap] Qdrant result IDs: %v", ids)
-	ads, _ := fetchAdsByIDs(ids, userID)
+	log.Printf("[runEmbeddingSearchMap] Qdrant result IDs: %v", intIDs)
+	ads, _ := fetchAdsByIDs(intIDs, userID)
 	log.Printf("[runEmbeddingSearchMap] DB fetch returned %d ads", len(ads))
 	return ads, nextCursor, nil
 }
@@ -1038,12 +1040,15 @@ func getTreeAdsForSearch(userPrompt string, userID int, threshold float64) ([]ad
 	}
 	log.Printf("[tree-search] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
 
-	ids := make([]string, len(results))
+	// Convert Qdrant string IDs to int IDs
+	intIDs := make([]int, len(results))
 	for i, r := range results {
-		ids[i] = r.ID
+		if id, err := strconv.Atoi(r.ID); err == nil {
+			intIDs[i] = id
+		}
 	}
-	log.Printf("[tree-search] Qdrant result IDs: %v", ids)
-	ads, _ := fetchAdsByIDs(ids, userID)
+	log.Printf("[tree-search] Qdrant result IDs: %v", intIDs)
+	ads, _ := fetchAdsByIDs(intIDs, userID)
 	log.Printf("[tree-search] DB fetch returned %d ads", len(ads))
 	return ads, nil
 }
@@ -1081,12 +1086,15 @@ func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string
 	}
 	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
 
-	ids := make([]string, len(results))
+	// Convert Qdrant string IDs to int IDs
+	intIDs := make([]int, len(results))
 	for i, r := range results {
-		ids[i] = r.ID
+		if id, err := strconv.Atoi(r.ID); err == nil {
+			intIDs[i] = id
+		}
 	}
-	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant result IDs: %v", ids)
-	ads, _ := fetchAdsByIDs(ids, userID)
+	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant result IDs: %v", intIDs)
+	ads, _ := fetchAdsByIDs(intIDs, userID)
 	log.Printf("[getTreeAdsForSearchWithFilter] DB fetch returned %d ads", len(ads))
 	return ads, nil
 }

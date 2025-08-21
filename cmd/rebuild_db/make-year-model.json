@@ -80736,6 +80736,2106 @@
     }
   },
   "JEEP": {
+    "1945": {
+      "WILLYS CJ-2A": [
+        "2.2L 134cid L4"
+      ]
+    },
+    "1946": {
+      "WILLYS CJ-2A": [
+        "2.2L 134cid L4"
+      ]
+    },
+    "1947": {
+      "WILLYS": [
+        "2.2L 134cid L4",
+        "2.4L 148cid L6",
+        "3.7L 226cid L6"
+      ]
+    },
+    "1948": {
+      "WILLYS": [
+        "2.2L 134cid L4",
+        "2.4L 148cid L6",
+        "3.7L 226cid L6"
+      ]
+    },
+    "1949": {
+      "WILLYS": [
+        "2.2L 134cid L4",
+        "2.4L 148cid L6",
+        "3.7L 226cid L6"
+      ]
+    },
+    "1950": {
+      "WILLYS": [
+        "2.2L 134cid L4",
+        "2.4L 148cid L6",
+        "2.6L 161cid L6",
+        "3.7L 226cid L6"
+      ]
+    },
+    "1951": {
+      "WILLYS": [
+        "2.2L 134cid L4",
+        "2.4L 148cid L6",
+        "2.6L 161cid L6",
+        "3.7L 226cid L6"
+      ]
+    },
+    "1952": {
+      "WILLYS": [
+        "2.2L 134cid L4",
+        "2.6L 161cid L6",
+        "3.7L 226cid L6"
+      ]
+    },
+    "1953": {
+      "WILLYS": [
+        "2.2L 134cid L4",
+        "2.6L 161cid L6",
+        "3.7L 226cid L6"
+      ]
+    },
+    "1954": {
+      "WILLYS": [
+        "2.2L 134cid L4",
+        "2.6L 161cid L6",
+        "3.7L 226cid L6"
+      ]
+    },
+    "1955": {
+      "WILLYS": [
+        "2.2L 134cid L4",
+        "2.6L 161cid L6",
+        "3.7L 225cid L6",
+        "3.7L 226cid L6"
+      ]
+    },
+    "1956": {
+      "TRUCK": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ]
+    },
+    "1957": {
+      "TRUCK": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "WILLYS": [
+        "2.2L 134cid L4"
+      ]
+    },
+    "1958": {
+      "TRUCK": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "WILLYS": [
+        "2.2L 134cid L4"
+      ]
+    },
+    "1959": {
+      "TRUCK": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ]
+    },
+    "1960": {
+      "CJ3": [
+        "2.2L 134cid L4"
+      ],
+      "CJ5": [
+        "2.2L 134cid L4"
+      ],
+      "CJ6": [
+        "2.2L 134cid L4"
+      ],
+      "DJ3": [
+        "2.2L 134cid L4"
+      ],
+      "TRUCK": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ]
+    },
+    "1961": {
+      "6-226": [
+        "3.7L 225cid L6",
+        "3.7L 226cid L6"
+      ],
+      "CJ3": [
+        "2.2L 134cid L4"
+      ],
+      "CJ5": [
+        "2.2L 134cid L4"
+      ],
+      "CJ6": [
+        "2.2L 134cid L4"
+      ],
+      "DISPATCHER": [
+        "2.2L 134cid L4"
+      ],
+      "DJ3": [
+        "2.2L 134cid L4"
+      ],
+      "F4-134": [
+        "2.2L 134cid L4"
+      ],
+      "FC150": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "FC170": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "FJ3A": [
+        "2.2L 134cid L4"
+      ],
+      "TRUCK": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "UNIVERSAL": [
+        "2.2L 134cid L4"
+      ],
+      "UNIVERSAL TRUCK": [
+        "2.2L 134cid L4"
+      ],
+      "UTILITY": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "UTILITY WAGON": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ]
+    },
+    "1962": {
+      "6-226": [
+        "3.7L 225cid L6",
+        "3.7L 226cid L6"
+      ],
+      "6-230": [
+        "3.8L 230cid L6"
+      ],
+      "CJ3": [
+        "2.2L 134cid L4"
+      ],
+      "CJ5": [
+        "2.2L 134cid L4"
+      ],
+      "CJ6": [
+        "2.2L 134cid L4"
+      ],
+      "DISPATCHER": [
+        "2.2L 134cid L4"
+      ],
+      "DJ3": [
+        "2.2L 134cid L4"
+      ],
+      "F4-134": [
+        "2.2L 134cid L4"
+      ],
+      "FC150": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "FC170": [
+        "3.7L 226cid L6"
+      ],
+      "FJ3A": [
+        "2.2L 134cid L4"
+      ],
+      "GLADIATOR": [
+        "3.8L 230cid L6"
+      ],
+      "TORNADO": [
+        "3.8L 230cid L6"
+      ],
+      "TRUCK": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6",
+        "3.8L 230cid L6"
+      ],
+      "UNIVERSAL": [
+        "2.2L 134cid L4"
+      ],
+      "UNIVERSAL TRUCK": [
+        "2.2L 134cid L4"
+      ],
+      "UTILITY": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6",
+        "3.8L 230cid L6"
+      ],
+      "UTILITY WAGON": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6",
+        "3.8L 230cid L6"
+      ]
+    },
+    "1963": {
+      "6-226": [
+        "3.7L 225cid L6",
+        "3.7L 226cid L6"
+      ],
+      "6-230": [
+        "3.8L 230cid L6"
+      ],
+      "CJ3": [
+        "2.2L 134cid L4"
+      ],
+      "CJ5": [
+        "2.2L 134cid L4"
+      ],
+      "CJ6": [
+        "2.2L 134cid L4"
+      ],
+      "DISPATCHER": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL"
+      ],
+      "DJ3": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL"
+      ],
+      "F-134": [
+        "2.2L 134cid L4"
+      ],
+      "FC150": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "FC170": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "FC170HD": [
+        "3.7L 225cid L6"
+      ],
+      "FJ3A": [
+        "2.2L 134cid L4"
+      ],
+      "GLADIATOR": [
+        "3.8L 230cid L6"
+      ],
+      "J-100": [
+        "3.8L 230cid L6"
+      ],
+      "J-200": [
+        "3.8L 230cid L6"
+      ],
+      "J-210": [
+        "3.8L 230cid L6"
+      ],
+      "J-220": [
+        "3.8L 230cid L6"
+      ],
+      "J-230": [
+        "3.8L 230cid L6"
+      ],
+      "J-2500": [
+        "3.8L 230cid L6"
+      ],
+      "J-300": [
+        "3.8L 230cid L6"
+      ],
+      "J-310": [
+        "3.8L 230cid L6"
+      ],
+      "J-320": [
+        "3.8L 230cid L6"
+      ],
+      "J-330": [
+        "3.8L 230cid L6"
+      ],
+      "TORNADO": [
+        "3.8L 230cid L6"
+      ],
+      "TRUCK": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6",
+        "3.8L 230cid L6"
+      ],
+      "UNIVERSAL": [
+        "2.2L 134cid L4"
+      ],
+      "UNIVERSAL TRUCK": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL"
+      ],
+      "UTILITY WAGON": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6",
+        "3.8L 230cid L6"
+      ],
+      "WAGONEER": [
+        "3.8L 230cid L6"
+      ]
+    },
+    "1964": {
+      "6-226": [
+        "3.7L 225cid L6",
+        "3.7L 226cid L6"
+      ],
+      "6-230": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6"
+      ],
+      "CJ3": [
+        "2.2L 134cid L4"
+      ],
+      "CJ5": [
+        "2.2L 134cid L4"
+      ],
+      "CJ6": [
+        "2.2L 134cid L4"
+      ],
+      "DISPATCHER": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL"
+      ],
+      "DJ3": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL"
+      ],
+      "F-134": [
+        "2.2L 134cid L4"
+      ],
+      "FC150": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "FC170": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "FC170HD": [
+        "3.7L 225cid L6"
+      ],
+      "FJ3": [
+        "2.2L 134cid L4"
+      ],
+      "FJ3A": [
+        "2.2L 134cid L4"
+      ],
+      "GLADIATOR": [
+        "3.8L 230cid L6"
+      ],
+      "J-100": [
+        "3.8L 230cid L6"
+      ],
+      "J-200": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6"
+      ],
+      "J-210": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6"
+      ],
+      "J-220": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6"
+      ],
+      "J-230": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6"
+      ],
+      "J-2500": [
+        "3.8L 230cid L6"
+      ],
+      "J-300": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6"
+      ],
+      "J-310": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6"
+      ],
+      "J-320": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6"
+      ],
+      "J-330": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6"
+      ],
+      "TORNADO": [
+        "3.8L 230cid L6"
+      ],
+      "TRUCK": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6",
+        "3.8L 230cid L6"
+      ],
+      "UNIVERSAL": [
+        "2.2L 134cid L4"
+      ],
+      "UNIVERSAL TRUCK": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL"
+      ],
+      "UTILITY WAGON": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6",
+        "3.8L 230cid L6"
+      ],
+      "WAGONEER": [
+        "3.8L 230cid L6"
+      ]
+    },
+    "1965": {
+      "6-230": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6"
+      ],
+      "CJ3": [
+        "2.2L 134cid L4"
+      ],
+      "CJ5": [
+        "2.2L 134cid L4"
+      ],
+      "CJ6": [
+        "2.2L 134cid L4"
+      ],
+      "DISPATCHER": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL"
+      ],
+      "DJ3": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL"
+      ],
+      "DJ5": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL"
+      ],
+      "DJ6": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL"
+      ],
+      "F-134": [
+        "2.2L 134cid L4"
+      ],
+      "FC150": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "FC170": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "FC170HD": [
+        "3.7L 225cid L6"
+      ],
+      "GLADIATOR": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-100": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-200": [
+        "3.8L 230cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-210": [
+        "3.8L 230cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-220": [
+        "3.8L 230cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-230": [
+        "3.8L 230cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2500": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2600": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2700": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2800": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-300": [
+        "3.8L 230cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-310": [
+        "3.8L 230cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-320": [
+        "3.8L 230cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-330": [
+        "3.8L 230cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3500": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3600": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3700": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3800": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "TORNADO": [
+        "3.8L 230cid L6"
+      ],
+      "TRUCK": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6",
+        "3.8L 230cid L6"
+      ],
+      "UNIVERSAL": [
+        "2.2L 134cid L4"
+      ],
+      "UNIVERSAL TRUCK": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL"
+      ],
+      "WAGONEER": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ]
+    },
+    "1966": {
+      "CJ3": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "CJ5": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "CJ5A": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "CJ6": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "CJ6A": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "COMMANDO": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "DISPATCHER": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "DJ3": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL"
+      ],
+      "DJ5": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "DJ6": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "F-134": [
+        "2.2L 134cid L4"
+      ],
+      "FC150": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6",
+        "3.7L 226cid L6"
+      ],
+      "FC170": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "FC170HD": [
+        "3.7L 225cid L6"
+      ],
+      "GLADIATOR": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-100": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2500": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2600": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2700": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2800": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3500": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3600": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3700": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3800": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "JEEPSTER": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "TRUCK": [
+        "2.2L 134cid L4",
+        "3.7L 226cid L6"
+      ],
+      "UNIVERSAL": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "UNIVERSAL TRUCK": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "WAGONEER": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ]
+    },
+    "1967": {
+      "CJ3": [
+        "2.2L 134cid L4"
+      ],
+      "CJ5": [
+        "2.2L 134cid L4",
+        "3.1L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "CJ5A": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "CJ6": [
+        "2.2L 134cid L4",
+        "3.1L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "CJ6A": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "COMMANDO": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "DISPATCHER": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "DJ5": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "DJ6": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "GLADIATOR": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-100": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2500": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2600": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2700": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2800": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3500": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3600": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3700": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3800": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "JEEPSTER": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "UNIVERSAL": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "UNIVERSAL TRUCK": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "WAGONEER": [
+        "3.8L 230cid L6",
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ]
+    },
+    "1968": {
+      "CJ3": [
+        "2.2L 134cid L4"
+      ],
+      "CJ5": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "CJ5A": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "CJ6": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "CJ6A": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "COMMANDO": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "DISPATCHER": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "DJ5": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "DJ6": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "GLADIATOR": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-100": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-2500": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2600": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2700": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-2800": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3500": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3600": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3700": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-3800": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "JEEPSTER": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "UNIVERSAL TRUCK": [
+        "2.2L 134cid L4",
+        "3.2L 192cid L4 DIESEL",
+        "3.7L 225cid V6"
+      ],
+      "WAGONEER": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ]
+    },
+    "1969": {
+      "CJ5": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "CJ6": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "COMMANDO": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "DISPATCHER": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "DJ5": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "GLADIATOR": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "J-100": [
+        "3.8L 232cid L6",
+        "5.7L 350cid V8"
+      ],
+      "J-2500": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-2600": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-2700": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-3500": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-3600": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-3700": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-3800": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "JEEPSTER": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "UNIVERSAL TRUCK": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "WAGONEER": [
+        "3.8L 232cid L6",
+        "5.7L 350cid V8"
+      ]
+    },
+    "1970": {
+      "CJ5": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "CJ6": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "COMMANDO": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "DJ5": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "J-100": [
+        "3.8L 232cid L6",
+        "5.7L 350cid V8"
+      ],
+      "J-2500": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-2600": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-2700": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-3500": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-3600": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-3700": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-3800": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-4500": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-4600": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-4700": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8",
+        "5.7L 350cid V8"
+      ],
+      "J-4800": [
+        "3.8L 232cid L6",
+        "5.3L 327cid V8"
+      ],
+      "JEEPSTER": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6"
+      ],
+      "WAGONEER": [
+        "3.8L 232cid L6",
+        "5.7L 350cid V8"
+      ]
+    },
+    "1971": {
+      "CJ5": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6",
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "CJ6": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "COMMANDO": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6",
+        "3.8L 232cid L6",
+        "5.0L 304cid V8"
+      ],
+      "DJ5": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6",
+        "3.8L 232cid L6"
+      ],
+      "J-100": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.7L 350cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-2500": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.7L 350cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-2600": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.7L 350cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-3800": [
+        "4.2L 258cid L6",
+        "5.7L 350cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-4500": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-4600": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-4700": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-4800": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "JEEPSTER": [
+        "2.2L 134cid L4",
+        "3.7L 225cid V6",
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "WAGONEER": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.7L 350cid V8",
+        "5.9L 360cid V8"
+      ]
+    },
+    "1972": {
+      "CJ5": [
+        "2.2L 134cid L4",
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "CJ6": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "COMMANDO": [
+        "2.2L 134cid L4",
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "DJ5": [
+        "3.8L 232cid L6"
+      ],
+      "J-100": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-2500": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-2600": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-4500": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-4600": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-4700": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-4800": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "JEEPSTER": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "WAGONEER": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ]
+    },
+    "1973": {
+      "CJ5": [
+        "2.2L 134cid L4",
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "CJ6": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "COMMANDO": [
+        "2.2L 134cid L4",
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "DJ5": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "J-100": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-2500": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-2600": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-4500": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-4600": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-4700": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "J-4800": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "JEEPSTER": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "WAGONEER": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ]
+    },
+    "1974": {
+      "CHEROKEE": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "CJ5": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8",
+        "5.9L 360cid V8"
+      ],
+      "CJ6": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "DJ5": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "J20": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "WAGONEER": [
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ]
+    },
+    "1975": {
+      "CHEROKEE": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "CJ5": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "CJ6": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "DJ5": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "J20": [
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "WAGONEER": [
+        "4.6L 282cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ]
+    },
+    "1976": {
+      "CHEROKEE": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "CJ5": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "CJ7": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "DJ5": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "J20": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "WAGONEER": [
+        "4.6L 282cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ]
+    },
+    "1977": {
+      "CHEROKEE": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "CJ5": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "CJ7": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "DJ5": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "J20": [
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "WAGONEER": [
+        "4.6L 282cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ]
+    },
+    "1978": {
+      "CHEROKEE": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "CJ5": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "CJ7": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "DJ5": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "J20": [
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ],
+      "WAGONEER": [
+        "4.6L 282cid L6",
+        "5.9L 360cid V8",
+        "6.6L 401cid V8"
+      ]
+    },
+    "1979": {
+      "CHEROKEE": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8"
+      ],
+      "CJ5": [
+        "3.8L 232cid L6",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "CJ7": [
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "DJ5": [
+        "4.2L 258cid L6"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ],
+      "J20": [
+        "5.9L 360cid V8"
+      ],
+      "WAGONEER": [
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ]
+    },
+    "1980": {
+      "CHEROKEE": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8"
+      ],
+      "CJ5": [
+        "2.5L 151cid L4",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "CJ7": [
+        "2.5L 151cid L4",
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.0L 304cid V8"
+      ],
+      "DJ5": [
+        "2.5L 151cid L4",
+        "4.2L 258cid L6"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ],
+      "J20": [
+        "5.9L 360cid V8"
+      ],
+      "WAGONEER": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ]
+    },
+    "1981": {
+      "CHEROKEE": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8"
+      ],
+      "CJ5": [
+        "2.5L 151cid L4",
+        "4.2L 258cid L6",
+        "5.0L 304cid V8"
+      ],
+      "CJ7": [
+        "2.5L 151cid L4",
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.0L 304cid V8"
+      ],
+      "DJ5": [
+        "2.5L 151cid L4",
+        "4.2L 258cid L6"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ],
+      "J20": [
+        "5.9L 360cid V8"
+      ],
+      "SCRAMBLER": [
+        "2.5L 151cid L4",
+        "4.2L 258cid L6"
+      ],
+      "WAGONEER": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ]
+    },
+    "1982": {
+      "CHEROKEE": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8"
+      ],
+      "CJ5": [
+        "2.5L 151cid L4",
+        "4.2L 258cid L6"
+      ],
+      "CJ7": [
+        "2.5L 151cid L4",
+        "4.2L 258cid L6",
+        "4.6L 282cid L6"
+      ],
+      "DJ5": [
+        "2.5L 151cid L4",
+        "4.2L 258cid L6"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ],
+      "J20": [
+        "5.9L 360cid V8"
+      ],
+      "SCRAMBLER": [
+        "2.5L 151cid L4",
+        "4.2L 258cid L6"
+      ],
+      "WAGONEER": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ]
+    },
+    "1983": {
+      "CHEROKEE": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8"
+      ],
+      "CJ5": [
+        "2.5L 151cid L4",
+        "4.2L 258cid L6"
+      ],
+      "CJ7": [
+        "2.5L 150cid L4",
+        "2.5L 151cid L4",
+        "4.2L 258cid L6",
+        "4.6L 282cid L6"
+      ],
+      "DJ5": [
+        "2.5L 151cid L4",
+        "4.2L 258cid L6"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8"
+      ],
+      "J20": [
+        "5.9L 360cid V8"
+      ],
+      "SCRAMBLER": [
+        "2.5L 150cid L4",
+        "2.5L 151cid L4",
+        "4.2L 258cid L6"
+      ],
+      "WAGONEER": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ]
+    },
+    "1984": {
+      "CHEROKEE": [
+        "2.5L 150cid L4",
+        "2.8L 173cid V6"
+      ],
+      "CJ7": [
+        "2.5L 150cid L4",
+        "4.2L 258cid L6",
+        "4.6L 282cid L6"
+      ],
+      "GRAND WAGONEER": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ],
+      "J20": [
+        "5.9L 360cid V8"
+      ],
+      "SCRAMBLER": [
+        "2.5L 150cid L4",
+        "4.2L 258cid L6"
+      ],
+      "WAGONEER": [
+        "2.1L L4 DIESEL Turbocharged",
+        "2.5L 150cid L4",
+        "2.8L 173cid V6",
+        "4.6L 282cid L6"
+      ]
+    },
+    "1985": {
+      "CHEROKEE": [
+        "2.1L 126cid L4 DIESEL Turbocharged",
+        "2.5L 150cid L4",
+        "2.8L 173cid V6"
+      ],
+      "CJ7": [
+        "2.5L 150cid L4",
+        "4.2L 258cid L6",
+        "4.6L 282cid L6"
+      ],
+      "GRAND WAGONEER": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ],
+      "J20": [
+        "5.9L 360cid V8"
+      ],
+      "SCRAMBLER": [
+        "2.5L 150cid L4",
+        "4.2L 258cid L6"
+      ],
+      "WAGONEER": [
+        "2.1L 126cid L4 DIESEL Turbocharged",
+        "2.5L 150cid L4",
+        "2.8L 173cid V6",
+        "4.6L 282cid L6"
+      ]
+    },
+    "1986": {
+      "CHEROKEE": [
+        "2.1L 126cid L4 DIESEL Turbocharged",
+        "2.5L 150cid L4",
+        "2.8L 173cid V6"
+      ],
+      "CJ7": [
+        "2.5L 150cid L4",
+        "4.2L 258cid L6",
+        "4.6L 282cid L6"
+      ],
+      "COMANCHE": [
+        "2.1L 126cid L4 DIESEL Turbocharged",
+        "2.5L 150cid L4",
+        "2.8L 173cid V6"
+      ],
+      "GRAND WAGONEER": [
+        "4.2L 258cid L6",
+        "5.9L 360cid V8"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ],
+      "J20": [
+        "5.9L 360cid V8"
+      ],
+      "SCRAMBLER": [
+        "2.5L 150cid L4",
+        "4.2L 258cid L6"
+      ],
+      "WAGONEER": [
+        "2.1L 126cid L4 DIESEL Turbocharged",
+        "2.5L 150cid L4",
+        "2.8L 173cid V6",
+        "4.6L 282cid L6"
+      ]
+    },
+    "1987": {
+      "CHEROKEE": [
+        "2.1L 126cid L4 DIESEL Turbocharged",
+        "2.5L 150cid L4",
+        "4.0L 242cid L6"
+      ],
+      "CJ7": [
+        "4.6L 282cid L6"
+      ],
+      "COMANCHE": [
+        "2.1L 126cid L4 DIESEL Turbocharged",
+        "2.5L 150cid L4",
+        "4.0L 242cid L6"
+      ],
+      "GRAND WAGONEER": [
+        "5.9L 360cid V8"
+      ],
+      "J10": [
+        "4.2L 258cid L6",
+        "4.6L 282cid L6",
+        "5.9L 360cid V8"
+      ],
+      "J20": [
+        "5.9L 360cid V8"
+      ],
+      "WAGONEER": [
+        "2.1L 126cid L4 DIESEL Turbocharged",
+        "2.5L 150cid L4",
+        "4.0L 242cid L6",
+        "4.6L 282cid L6"
+      ],
+      "WRANGLER": [
+        "2.5L 150cid L4",
+        "4.2L 258cid L6"
+      ]
+    },
+    "1988": {
+      "CHEROKEE": [
+        "2.5L 150cid L4",
+        "4.0L 242cid L6"
+      ],
+      "COMANCHE": [
+        "2.1L 126cid L4 DIESEL Turbocharged",
+        "2.5L 150cid L4",
+        "4.0L 242cid L6"
+      ],
+      "GRAND WAGONEER": [
+        "5.9L 360cid V8"
+      ],
+      "J10": [
+        "5.9L 360cid V8"
+      ],
+      "J20": [
+        "5.9L 360cid V8"
+      ],
+      "WAGONEER": [
+        "2.1L L4 DIESEL Turbocharged",
+        "2.5L 150cid L4",
+        "4.0L 242cid L6"
+      ],
+      "WRANGLER": [
+        "2.5L 150cid L4",
+        "4.2L 258cid L6"
+      ]
+    },
+    "1989": {
+      "CHEROKEE": [
+        "2.5L 150cid L4",
+        "4.0L 242cid L6"
+      ],
+      "COMANCHE": [
+        "2.5L 150cid L4",
+        "4.0L 242cid L6"
+      ],
+      "GRAND WAGONEER": [
+        "5.9L 360cid V8"
+      ],
+      "WAGONEER": [
+        "2.1L L4 DIESEL Turbocharged",
+        "2.5L 150cid L4",
+        "4.0L 242cid L6"
+      ],
+      "WRANGLER": [
+        "2.5L 150cid L4",
+        "4.2L 258cid L6"
+      ]
+    },
+    "1990": {
+      "CHEROKEE": [
+        "2.5L 150cid L4",
+        "4.0L 242cid L6"
+      ],
+      "COMANCHE": [
+        "2.5L 150cid L4",
+        "4.0L 242cid L6"
+      ],
+      "GRAND WAGONEER": [
+        "5.9L 360cid V8"
+      ],
+      "WAGONEER": [
+        "2.1L L4 DIESEL Turbocharged",
+        "2.5L 150cid L4",
+        "4.0L 242cid L6"
+      ],
+      "WRANGLER": [
+        "2.5L 150cid L4",
+        "4.2L 258cid L6"
+      ]
+    },
+    "1991": {
+      "CHEROKEE": [
+        "2.5L L4",
+        "4.0L L6"
+      ],
+      "COMANCHE": [
+        "2.5L L4",
+        "4.0L L6"
+      ],
+      "GRAND WAGONEER": [
+        "5.9L V8"
+      ],
+      "WAGONEER": [
+        "2.1L L4 DIESEL Turbocharged"
+      ],
+      "WRANGLER": [
+        "2.5L L4",
+        "4.0L L6"
+      ]
+    },
+    "1992": {
+      "CHEROKEE": [
+        "2.5L L4",
+        "4.0L L6"
+      ],
+      "COMANCHE": [
+        "2.5L L4",
+        "4.0L L6"
+      ],
+      "WAGONEER": [
+        "2.1L L4 DIESEL Turbocharged"
+      ],
+      "WRANGLER": [
+        "2.5L L4",
+        "4.0L L6"
+      ]
+    },
+    "1993": {
+      "CHEROKEE": [
+        "2.5L L4",
+        "4.0L L6"
+      ],
+      "GRAND CHEROKEE": [
+        "4.0L L6",
+        "5.2L V8"
+      ],
+      "WRANGLER": [
+        "2.5L L4",
+        "4.0L L6"
+      ]
+    },
+    "1994": {
+      "CHEROKEE": [
+        "2.5L L4",
+        "4.0L L6"
+      ],
+      "GRAND CHEROKEE": [
+        "4.0L L6",
+        "5.2L V8"
+      ],
+      "WAGONEER": [
+        "2.1L L4 DIESEL Turbocharged"
+      ],
+      "WRANGLER": [
+        "2.5L L4",
+        "4.0L L6"
+      ]
+    },
+    "1995": {
+      "CHEROKEE": [
+        "2.5L L4",
+        "4.0L L6"
+      ],
+      "GRAND CHEROKEE": [
+        "4.0L L6",
+        "5.2L V8"
+      ],
+      "WRANGLER": [
+        "2.5L L4",
+        "4.0L L6"
+      ]
+    },
+    "1996": {
+      "CHEROKEE": [
+        "2.5L L4",
+        "4.0L L6"
+      ],
+      "GRAND CHEROKEE": [
+        "4.0L L6",
+        "5.2L V8"
+      ]
+    },
+    "1997": {
+      "CHEROKEE": [
+        "2.5L L4",
+        "4.0L L6"
+      ],
+      "GRAND CHEROKEE": [
+        "4.0L L6",
+        "5.2L V8"
+      ],
+      "WRANGLER": [
+        "2.5L L4",
+        "4.0L L6"
+      ]
+    },
+    "1998": {
+      "CHEROKEE": [
+        "2.5L L4",
+        "4.0L L6"
+      ],
+      "GRAND CHEROKEE": [
+        "4.0L L6",
+        "5.2L V8",
+        "5.9L V8"
+      ],
+      "WRANGLER": [
+        "2.5L L4",
+        "4.0L L6"
+      ]
+    },
+    "1999": {
+      "CHEROKEE": [
+        "2.5L L4",
+        "4.0L L6"
+      ],
+      "GRAND CHEROKEE": [
+        "4.0L L6",
+        "4.7L V8"
+      ],
+      "WRANGLER": [
+        "2.5L L4",
+        "4.0L L6"
+      ]
+    },
+    "2000": {
+      "CHEROKEE": [
+        "2.5L L4",
+        "4.0L L6"
+      ],
+      "GRAND CHEROKEE": [
+        "4.0L L6",
+        "4.7L V8"
+      ],
+      "WRANGLER": [
+        "2.5L L4",
+        "4.0L L6"
+      ]
+    },
+    "2001": {
+      "CHEROKEE": [
+        "4.0L L6"
+      ],
+      "GRAND CHEROKEE": [
+        "4.0L L6",
+        "4.7L V8"
+      ],
+      "WRANGLER": [
+        "2.5L L4",
+        "4.0L L6"
+      ]
+    },
+    "2002": {
+      "GRAND CHEROKEE": [
+        "4.0L L6",
+        "4.7L V8"
+      ],
+      "LIBERTY": [
+        "2.4L L4",
+        "3.7L V6"
+      ],
+      "WRANGLER": [
+        "2.5L L4",
+        "4.0L L6"
+      ]
+    },
+    "2003": {
+      "GRAND CHEROKEE": [
+        "4.0L L6",
+        "4.7L V8"
+      ],
+      "LIBERTY": [
+        "2.4L L4",
+        "3.7L V6"
+      ],
+      "WRANGLER": [
+        "2.4L L4",
+        "4.0L L6"
+      ]
+    },
+    "2004": {
+      "GRAND CHEROKEE": [
+        "4.0L L6",
+        "4.7L V8"
+      ],
+      "LIBERTY": [
+        "2.4L L4",
+        "3.7L V6"
+      ],
+      "WRANGLER": [
+        "2.4L L4",
+        "4.0L L6"
+      ]
+    },
     "2005": {
       "GRAND CHEROKEE": [
         "3.7L V6",
@@ -81338,6 +83438,4627 @@
         "2.0L L4 Turbocharged",
         "3.6L V6",
         "6.4L V8"
+      ]
+    }
+  },
+  "JENSEN": {
+    "1949": {
+      "INTERCEPTOR": [
+        "4.0L 244cid L6"
+      ]
+    },
+    "1950": {
+      "INTERCEPTOR": [
+        "3.9L L6"
+      ]
+    },
+    "1951": {
+      "INTERCEPTOR": [
+        "3.9L L6"
+      ]
+    },
+    "1952": {
+      "INTERCEPTOR": [
+        "3.9L L6"
+      ]
+    },
+    "1953": {
+      "INTERCEPTOR": [
+        "3.9L L6"
+      ]
+    },
+    "1954": {
+      "541": [
+        "3.9L L6"
+      ],
+      "INTERCEPTOR": [
+        "3.9L L6"
+      ]
+    },
+    "1955": {
+      "541": [
+        "3.9L L6"
+      ],
+      "INTERCEPTOR": [
+        "3.9L L6"
+      ]
+    },
+    "1956": {
+      "541": [
+        "3.9L L6"
+      ],
+      "INTERCEPTOR": [
+        "3.9L L6"
+      ]
+    },
+    "1957": {
+      "541": [
+        "3.9L L6"
+      ],
+      "INTERCEPTOR": [
+        "3.9L L6"
+      ]
+    },
+    "1958": {
+      "541": [
+        "3.9L L6"
+      ],
+      "541R": [
+        "4.0L L6"
+      ],
+      "INTERCEPTOR": [
+        "3.9L L6"
+      ]
+    },
+    "1959": {
+      "541R": [
+        "3.9L L6"
+      ]
+    },
+    "1960": {
+      "541R": [
+        "3.9L L6"
+      ]
+    },
+    "1961": {
+      "541S": [
+        "3.9L L6"
+      ]
+    },
+    "1962": {
+      "541S": [
+        "3.9L L6"
+      ]
+    },
+    "1963": {
+      "C-V8": [
+        "5.9L V8"
+      ]
+    },
+    "1964": {
+      "C-V8": [
+        "6.3L V8"
+      ]
+    },
+    "1965": {
+      "C-V8": [
+        "6.3L V8"
+      ]
+    },
+    "1966": {
+      "C-V8": [
+        "6.3L V8"
+      ]
+    },
+    "1967": {
+      "INTERCEPTOR": [
+        "6.3L V8"
+      ]
+    },
+    "1968": {
+      "INTERCEPTOR": [
+        "6.3L V8"
+      ]
+    },
+    "1969": {
+      "INTERCEPTOR": [
+        "6.3L V8"
+      ]
+    },
+    "1970": {
+      "INTERCEPTOR": [
+        "6.3L V8"
+      ]
+    },
+    "1971": {
+      "INTERCEPTOR": [
+        "6.3L V8"
+      ]
+    },
+    "1972": {
+      "HEALEY": [
+        "2.0L L4"
+      ],
+      "INTERCEPTOR": [
+        "6.3L V8",
+        "7.2L V8"
+      ]
+    },
+    "1973": {
+      "HEALEY": [
+        "2.0L L4"
+      ],
+      "INTERCEPTOR": [
+        "7.2L V8"
+      ]
+    },
+    "1974": {
+      "HEALEY": [
+        "2.0L L4"
+      ],
+      "INTERCEPTOR": [
+        "7.2L V8"
+      ]
+    },
+    "1975": {
+      "HEALEY": [
+        "2.0L L4"
+      ],
+      "INTERCEPTOR": [
+        "7.2L V8"
+      ]
+    },
+    "1976": {
+      "HEALEY": [
+        "2.0L L4"
+      ],
+      "INTERCEPTOR": [
+        "7.2L V8"
+      ]
+    }
+  },
+  "JEWETT": {
+    "1922": {
+      "SIX": [
+        "All Engines"
+      ]
+    },
+    "1923": {
+      "SIX": [
+        "All Engines"
+      ]
+    },
+    "1924": {
+      "SIX": [
+        "All Engines"
+      ]
+    },
+    "1925": {
+      "SIX": [
+        "All Engines"
+      ]
+    },
+    "1926": {
+      "NEW DAY": [
+        "6cyl"
+      ]
+    },
+    "1927": {
+      "NEW DAY": [
+        "6cyl"
+      ]
+    }
+  },
+  "JMC": {
+    "2020": {
+      "VIGUS": [
+        "1.8L L4 Turbocharged"
+      ]
+    },
+    "2021": {
+      "VIGUS": [
+        "1.8L L4 Turbocharged"
+      ]
+    },
+    "2022": {
+      "VIGUS": [
+        "1.8L L4 Turbocharged"
+      ]
+    },
+    "2023": {
+      "VIGUS": [
+        "1.8L L4 Turbocharged"
+      ]
+    },
+    "2024": {
+      "GRAND AVENUE": [
+        "2.3L L4 Turbocharged"
+      ],
+      "VIGUS": [
+        "1.8L L4 Turbocharged"
+      ]
+    }
+  },
+  "JORDAN": {
+    "1917": {
+      "FOUR": [
+        "All Engines"
+      ]
+    },
+    "1918": {
+      "FOUR": [
+        "All Engines"
+      ]
+    },
+    "1919": {
+      "SIX": [
+        "All Engines"
+      ]
+    },
+    "1920": {
+      "MODEL F": [
+        "6cyl"
+      ],
+      "MODEL M": [
+        "6cyl"
+      ]
+    },
+    "1921": {
+      "MODEL F": [
+        "6cyl"
+      ],
+      "MODEL M": [
+        "6cyl"
+      ]
+    },
+    "1922": {
+      "MODEL F": [
+        "6cyl"
+      ],
+      "MODEL MX": [
+        "6cyl"
+      ]
+    },
+    "1923": {
+      "MODEL H": [
+        "6cyl"
+      ],
+      "MODEL MX": [
+        "6cyl"
+      ]
+    },
+    "1924": {
+      "MODEL H": [
+        "6cyl"
+      ],
+      "MODEL L": [
+        "6cyl"
+      ],
+      "MODEL MX": [
+        "6cyl"
+      ]
+    },
+    "1925": {
+      "LINE EIGHT": [
+        "8cyl"
+      ],
+      "MODEL K": [
+        "6cyl"
+      ],
+      "MODEL L": [
+        "6cyl"
+      ]
+    },
+    "1926": {
+      "GREAT LINE EIGHT": [
+        "8cyl"
+      ],
+      "LINE EIGHT": [
+        "8cyl"
+      ]
+    },
+    "1927": {
+      "GREAT LINE EIGHT": [
+        "8cyl"
+      ],
+      "LINE EIGHT": [
+        "8cyl"
+      ]
+    },
+    "1928": {
+      "AIR LINE EIGHT": [
+        "8cyl"
+      ],
+      "MODEL R": [
+        "6cyl"
+      ]
+    },
+    "1929": {
+      "MODEL 6RE": [
+        "6cyl"
+      ],
+      "MODEL 8JE": [
+        "8cyl"
+      ]
+    },
+    "1930": {
+      "MODEL 8G": [
+        "8cyl"
+      ],
+      "MODEL 8T": [
+        "8cyl"
+      ]
+    },
+    "1931": {
+      "MODEL 80": [
+        "8cyl"
+      ],
+      "MODEL 90": [
+        "8cyl"
+      ]
+    }
+  },
+  "JOWETT": {
+    "1950": {
+      "JAVELIN": [
+        "1.5L H4"
+      ],
+      "JUPITER": [
+        "1.5L H4"
+      ]
+    },
+    "1951": {
+      "JAVELIN": [
+        "1.5L H4"
+      ],
+      "JUPITER": [
+        "1.5L H4"
+      ]
+    },
+    "1952": {
+      "JAVELIN": [
+        "1.5L H4"
+      ],
+      "JUPITER": [
+        "1.5L H4"
+      ]
+    },
+    "1953": {
+      "JAVELIN": [
+        "1.5L H4"
+      ],
+      "JUPITER": [
+        "1.5L H4"
+      ]
+    },
+    "1954": {
+      "JAVELIN": [
+        "1.5L H4"
+      ],
+      "JUPITER": [
+        "1.5L H4"
+      ]
+    }
+  },
+  "KAISER-FRAZER": {
+    "1947": {
+      "CUSTOM": [
+        "3.7L 226cid L6"
+      ],
+      "FRAZER": [
+        "3.7L 226cid L6"
+      ],
+      "MANHATTAN": [
+        "3.7L 226cid L6"
+      ],
+      "SPECIAL": [
+        "3.7L 226cid L6"
+      ]
+    },
+    "1948": {
+      "CUSTOM": [
+        "3.7L 226cid L6"
+      ],
+      "FRAZER": [
+        "3.7L 226cid L6"
+      ],
+      "MANHATTAN": [
+        "3.7L 226cid L6"
+      ],
+      "SPECIAL": [
+        "3.7L 226cid L6"
+      ]
+    },
+    "1949": {
+      "DELUXE": [
+        "3.7L 226cid L6"
+      ],
+      "FRAZER": [
+        "3.7L 226cid L6"
+      ],
+      "MANHATTAN": [
+        "3.7L 226cid L6"
+      ],
+      "SPECIAL": [
+        "3.7L 226cid L6"
+      ],
+      "TRAVELER": [
+        "3.7L 226cid L6"
+      ],
+      "VAGABOND": [
+        "3.7L 226cid L6"
+      ],
+      "VIRGINIAN": [
+        "3.7L 226cid L6"
+      ]
+    },
+    "1950": {
+      "DELUXE": [
+        "3.7L 226cid L6"
+      ],
+      "FRAZER": [
+        "3.7L 226cid L6"
+      ],
+      "MANHATTAN": [
+        "3.7L 226cid L6"
+      ],
+      "SPECIAL": [
+        "3.7L 226cid L6"
+      ],
+      "TRAVELER": [
+        "3.7L 226cid L6"
+      ],
+      "VAGABOND": [
+        "3.7L 226cid L6"
+      ],
+      "VIRGINIAN": [
+        "3.7L 226cid L6"
+      ]
+    },
+    "1951": {
+      "DELUXE": [
+        "3.7L 226cid L6"
+      ],
+      "FRAZER": [
+        "3.7L 226cid L6"
+      ],
+      "MANHATTAN": [
+        "3.7L 226cid L6"
+      ],
+      "SPECIAL": [
+        "3.7L 226cid L6"
+      ],
+      "VIRGINIAN": [
+        "3.7L 226cid L6"
+      ]
+    },
+    "1952": {
+      "DELUXE": [
+        "3.7L 226cid L6"
+      ],
+      "MANHATTAN": [
+        "3.7L 226cid L6"
+      ],
+      "VIRGINIAN": [
+        "3.7L 226cid L6"
+      ]
+    },
+    "1953": {
+      "CAROLINA": [
+        "3.7L 226cid L6"
+      ],
+      "DELUXE": [
+        "3.7L 226cid L6"
+      ],
+      "DRAGON": [
+        "3.7L 226cid L6"
+      ],
+      "MANHATTAN": [
+        "3.7L 226cid L6"
+      ]
+    },
+    "1954": {
+      "DARRIN": [
+        "2.6L 161cid L6"
+      ],
+      "MANHATTAN": [
+        "3.7L 226cid L6 Supercharged"
+      ],
+      "SPECIAL": [
+        "3.7L 226cid L6"
+      ]
+    },
+    "1955": {
+      "DARRIN": [
+        "5.4L 331cid V8"
+      ],
+      "MANHATTAN": [
+        "3.7L 226cid L6 Supercharged"
+      ]
+    },
+    "1956": {
+      "DARRIN": [
+        "6.0L 365cid V8"
+      ]
+    },
+    "1957": {
+      "DARRIN": [
+        "6.0L 365cid V8"
+      ]
+    },
+    "1958": {
+      "DARRIN": [
+        "6.0L 365cid V8"
+      ]
+    }
+  },
+  "KARMA": {
+    "2017": {
+      "REVERO": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ]
+    },
+    "2018": {
+      "REVERO": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ]
+    },
+    "2019": {
+      "REVERO": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged"
+      ]
+    },
+    "2020": {
+      "REVERO": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged"
+      ]
+    },
+    "2021": {
+      "REVERO": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged"
+      ]
+    },
+    "2022": {
+      "GS-6": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged"
+      ]
+    },
+    "2023": {
+      "GS-6": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged"
+      ],
+      "GSE-6": [
+        "ELECTRIC"
+      ]
+    }
+  },
+  "KENWORTH": {
+    "1987": {
+      "K130": [
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1988": {
+      "13-210": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K130": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K220": [
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1989": {
+      "13-210": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "22-210": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K130": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K220": [
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1990": {
+      "K130": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K150": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K220": [
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1991": {
+      "K130": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K150": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K220": [
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1992": {
+      "K130": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K150": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K220": [
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1993": {
+      "K130": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K150": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K200": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K300": [
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1994": {
+      "K150": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K220": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "K300": [
+        "5.9L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1995": {
+      "K300": [
+        "5.9L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "T300": [
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1996": {
+      "K300": [
+        "5.9L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "T300": [
+        "5.9L L6 DIESEL Turbocharged",
+        "7.2L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1997": {
+      "K300": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "T300": [
+        "5.9L L6 DIESEL Turbocharged",
+        "7.2L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1998": {
+      "K300": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "T300": [
+        "5.9L L6 DIESEL Turbocharged",
+        "7.2L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1999": {
+      "K300": [
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "T300": [
+        "5.9L L6 DIESEL Turbocharged",
+        "7.2L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "2000": {
+      "K300": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "T300": [
+        "5.9L L6 DIESEL Turbocharged",
+        "7.2L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "2001": {
+      "K300": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "T300": [
+        "5.9L L6 DIESEL Turbocharged",
+        "7.2L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "2002": {
+      "K300": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "T300": [
+        "5.9L L6 DIESEL Turbocharged",
+        "7.2L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "2003": {
+      "K300": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "T300": [
+        "5.9L L6 DIESEL Turbocharged",
+        "7.2L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "2004": {
+      "K300": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "T300 MEDIUM DUTY": [
+        "5.9L L6 DIESEL Turbocharged",
+        "7.2L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "2005": {
+      "K300": [
+        "5.9L L6 DIESEL Turbocharged"
+      ],
+      "T300 MEDIUM DUTY": [
+        "5.9L L6 DIESEL Turbocharged",
+        "7.2L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "2006": {
+      "T300 MEDIUM DUTY": [
+        "5.9L L6 DIESEL Turbocharged",
+        "7.2L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "2007": {
+      "T300 MEDIUM DUTY": [
+        "5.9L L6 DIESEL Turbocharged",
+        "7.2L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    },
+    "2008": {
+      "T170": [
+        "6.7L L6 DIESEL Turbocharged"
+      ],
+      "T270": [
+        "6.7L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ],
+      "T370": [
+        "6.7L L6 DIESEL Turbocharged",
+        "8.3L L6 DIESEL Turbocharged"
+      ]
+    }
+  },
+  "KIA": {
+    "1993": {
+      "SEPHIA GS": [
+        "1.6L L4"
+      ],
+      "SEPHIA LS": [
+        "1.6L L4"
+      ],
+      "SEPHIA RS": [
+        "1.6L L4"
+      ]
+    },
+    "1994": {
+      "SEPHIA": [
+        "1.6L L4"
+      ]
+    },
+    "1995": {
+      "SEPHIA": [
+        "1.6L L4 DOHC",
+        "1.6L L4 SOHC",
+        "1.8L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4 DOHC",
+        "2.0L L4 SOHC"
+      ]
+    },
+    "1996": {
+      "SEPHIA": [
+        "1.6L L4",
+        "1.8L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4"
+      ]
+    },
+    "1997": {
+      "SEPHIA": [
+        "1.6L L4",
+        "1.8L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4"
+      ]
+    },
+    "1998": {
+      "SEPHIA": [
+        "1.8L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4"
+      ]
+    },
+    "1999": {
+      "SEPHIA": [
+        "1.8L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4"
+      ]
+    },
+    "2000": {
+      "SEPHIA": [
+        "1.8L L4"
+      ],
+      "SPECTRA": [
+        "1.8L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4"
+      ]
+    },
+    "2001": {
+      "MAGENTIS": [
+        "2.4L L4",
+        "2.5L V6"
+      ],
+      "OPTIMA": [
+        "2.4L L4",
+        "2.5L V6"
+      ],
+      "RIO": [
+        "1.5L L4"
+      ],
+      "SEPHIA": [
+        "1.8L L4"
+      ],
+      "SPECTRA": [
+        "1.8L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4"
+      ]
+    },
+    "2002": {
+      "MAGENTIS": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "OPTIMA": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "RIO": [
+        "1.5L L4"
+      ],
+      "SEDONA": [
+        "3.5L V6"
+      ],
+      "SPECTRA": [
+        "1.8L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4"
+      ]
+    },
+    "2003": {
+      "MAGENTIS": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "OPTIMA": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "SEDONA": [
+        "3.5L V6"
+      ],
+      "SORENTO": [
+        "3.5L V6"
+      ],
+      "SPECTRA": [
+        "1.8L L4"
+      ]
+    },
+    "2004": {
+      "AMANTI": [
+        "3.5L V6"
+      ],
+      "MAGENTIS": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "OPTIMA": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "SEDONA": [
+        "3.5L V6"
+      ],
+      "SORENTO": [
+        "3.5L V6"
+      ],
+      "SPECTRA": [
+        "1.8L L4",
+        "2.0L L4"
+      ]
+    },
+    "2005": {
+      "AMANTI": [
+        "3.5L V6"
+      ],
+      "MAGENTIS": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "OPTIMA": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "SEDONA": [
+        "3.5L V6"
+      ],
+      "SORENTO": [
+        "3.5L V6"
+      ],
+      "SPECTRA": [
+        "2.0L L4"
+      ],
+      "SPECTRA5": [
+        "2.0L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4",
+        "2.7L V6"
+      ]
+    },
+    "2006": {
+      "AMANTI": [
+        "3.5L V6"
+      ],
+      "MAGENTIS": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "OPTIMA": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "RIO5": [
+        "1.6L L4"
+      ],
+      "SEDONA": [
+        "3.8L V6"
+      ],
+      "SORENTO": [
+        "3.5L V6"
+      ],
+      "SPECTRA": [
+        "2.0L L4"
+      ],
+      "SPECTRA5": [
+        "2.0L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4",
+        "2.7L V6"
+      ]
+    },
+    "2007": {
+      "AMANTI": [
+        "3.8L V6"
+      ],
+      "MAGENTIS": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "OPTIMA": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "RIO5": [
+        "1.6L L4"
+      ],
+      "RONDO": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "SEDONA": [
+        "3.8L V6"
+      ],
+      "SORENTO": [
+        "3.8L V6"
+      ],
+      "SPECTRA": [
+        "2.0L L4"
+      ],
+      "SPECTRA5": [
+        "2.0L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4",
+        "2.7L V6"
+      ]
+    },
+    "2008": {
+      "AMANTI": [
+        "3.8L V6"
+      ],
+      "MAGENTIS": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "OPTIMA": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "RIO5": [
+        "1.6L L4"
+      ],
+      "RONDO": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "SEDONA": [
+        "3.8L V6"
+      ],
+      "SORENTO": [
+        "3.3L V6",
+        "3.8L V6"
+      ],
+      "SPECTRA": [
+        "2.0L L4"
+      ],
+      "SPECTRA5": [
+        "2.0L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4",
+        "2.7L V6"
+      ]
+    },
+    "2009": {
+      "AMANTI": [
+        "3.8L V6"
+      ],
+      "BORREGO": [
+        "3.8L V6",
+        "4.6L V8"
+      ],
+      "MAGENTIS": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "OPTIMA": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "RIO5": [
+        "1.6L L4"
+      ],
+      "RONDO": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "SEDONA": [
+        "3.8L V6"
+      ],
+      "SORENTO": [
+        "3.3L V6",
+        "3.8L V6"
+      ],
+      "SPECTRA": [
+        "2.0L L4"
+      ],
+      "SPECTRA5": [
+        "2.0L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4",
+        "2.7L V6"
+      ]
+    },
+    "2010": {
+      "BORREGO": [
+        "3.8L V6",
+        "4.6L V8"
+      ],
+      "FORTE": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "MAGENTIS": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "OPTIMA": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "RIO5": [
+        "1.6L L4"
+      ],
+      "RONDO": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "SEDONA": [
+        "3.8L V6"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "2.0L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4",
+        "2.7L V6"
+      ]
+    },
+    "2011": {
+      "BORREGO": [
+        "3.8L V6",
+        "4.6L V8"
+      ],
+      "FORTE": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "OPTIMA": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "2.4L L4 ELECTRIC/GAS"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "RIO5": [
+        "1.6L L4"
+      ],
+      "RONDO": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "SEDONA": [
+        "3.5L V6"
+      ],
+      "SORENTO": [
+        "2.4L L4",
+        "3.5L V6"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "2.0L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ]
+    },
+    "2012": {
+      "FORTE": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "FORTE5": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "OPTIMA": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "2.4L L4 ELECTRIC/GAS"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "RONDO": [
+        "2.4L L4",
+        "2.7L V6"
+      ],
+      "SEDONA": [
+        "3.5L V6"
+      ],
+      "SORENTO": [
+        "2.4L L4",
+        "3.5L V6"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "2.0L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ]
+    },
+    "2013": {
+      "FORTE": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "FORTE5": [
+        "2.0L L4",
+        "2.4L L4"
+      ],
+      "OPTIMA": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "2.4L L4 ELECTRIC/GAS"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "SORENTO": [
+        "2.4L L4",
+        "3.5L V6"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "2.0L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ]
+    },
+    "2014": {
+      "CADENZA": [
+        "3.3L V6"
+      ],
+      "FORTE": [
+        "1.6L L4 Turbocharged",
+        "1.8L L4",
+        "2.0L L4"
+      ],
+      "FORTE5": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "OPTIMA": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "2.4L L4 ELECTRIC/GAS"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "RONDO": [
+        "2.0L L4"
+      ],
+      "SEDONA": [
+        "3.5L V6"
+      ],
+      "SORENTO": [
+        "2.4L L4",
+        "3.3L V6"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "2.0L L4"
+      ],
+      "SPORTAGE": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ]
+    },
+    "2015": {
+      "CADENZA": [
+        "3.3L V6"
+      ],
+      "FORTE": [
+        "1.6L L4 Turbocharged",
+        "1.8L L4",
+        "2.0L L4"
+      ],
+      "FORTE5": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "K900": [
+        "3.8L V6",
+        "5.0L V8"
+      ],
+      "OPTIMA": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "2.4L L4 ELECTRIC/GAS"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "RONDO": [
+        "2.0L L4"
+      ],
+      "SEDONA": [
+        "3.3L V6"
+      ],
+      "SORENTO": [
+        "2.4L L4",
+        "3.3L V6"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "2.0L L4",
+        "ELECTRIC"
+      ],
+      "SPORTAGE": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ]
+    },
+    "2016": {
+      "CADENZA": [
+        "3.3L V6"
+      ],
+      "FORTE": [
+        "1.6L L4 Turbocharged",
+        "1.8L L4",
+        "2.0L L4"
+      ],
+      "FORTE5": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "K900": [
+        "3.8L V6",
+        "5.0L V8"
+      ],
+      "OPTIMA": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "2.4L L4 ELECTRIC/GAS"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "RONDO": [
+        "2.0L L4"
+      ],
+      "SEDONA": [
+        "3.3L V6"
+      ],
+      "SORENTO": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "3.3L V6"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "2.0L L4",
+        "ELECTRIC"
+      ],
+      "SPORTAGE": [
+        "2.0L L4",
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "3.3L V6"
+      ]
+    },
+    "2017": {
+      "CADENZA": [
+        "3.3L V6"
+      ],
+      "FORTE": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "FORTE5": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "K900": [
+        "3.8L V6",
+        "5.0L V8"
+      ],
+      "NIRO": [
+        "1.6L L4 ELECTRIC/GAS"
+      ],
+      "OPTIMA": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4 ELECTRIC/GAS",
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "RONDO": [
+        "2.0L L4"
+      ],
+      "SEDONA": [
+        "3.3L V6"
+      ],
+      "SORENTO": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "3.3L V6"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "1.6L L4 Turbocharged",
+        "2.0L L4",
+        "ELECTRIC"
+      ],
+      "SPORTAGE": [
+        "2.0L L4",
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ]
+    },
+    "2018": {
+      "CADENZA": [
+        "3.3L V6"
+      ],
+      "FORTE": [
+        "2.0L L4"
+      ],
+      "FORTE5": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "K900": [
+        "3.8L V6",
+        "5.0L V8"
+      ],
+      "NIRO": [
+        "1.6L L4 ELECTRIC/GAS"
+      ],
+      "OPTIMA": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4 ELECTRIC/GAS",
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "SEDONA": [
+        "3.3L V6"
+      ],
+      "SORENTO": [
+        "2.0L L4 Turbocharged",
+        "2.4L L4",
+        "3.3L V6"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "1.6L L4 Turbocharged",
+        "2.0L L4",
+        "ELECTRIC"
+      ],
+      "SPORTAGE": [
+        "2.0L L4",
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "STINGER": [
+        "2.0L L4 Turbocharged",
+        "3.3L V6 Turbocharged"
+      ]
+    },
+    "2019": {
+      "CADENZA": [
+        "3.3L V6"
+      ],
+      "FORTE": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "K900": [
+        "3.3L V6 Turbocharged"
+      ],
+      "NIRO": [
+        "1.6L L4 ELECTRIC/GAS",
+        "ELECTRIC"
+      ],
+      "OPTIMA": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4 ELECTRIC/GAS",
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "SEDONA": [
+        "3.3L V6"
+      ],
+      "SORENTO": [
+        "2.4L L4",
+        "3.3L V6"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "1.6L L4 Turbocharged",
+        "2.0L L4",
+        "ELECTRIC"
+      ],
+      "SPORTAGE": [
+        "2.0L L4",
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "STINGER": [
+        "2.0L L4 Turbocharged",
+        "3.3L V6 Turbocharged"
+      ]
+    },
+    "2020": {
+      "CADENZA": [
+        "3.3L V6"
+      ],
+      "FORTE": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "FORTE5": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "K900": [
+        "3.3L V6 Turbocharged"
+      ],
+      "NIRO": [
+        "1.6L L4 ELECTRIC/GAS",
+        "ELECTRIC"
+      ],
+      "OPTIMA": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4 ELECTRIC/GAS",
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "SEDONA": [
+        "3.3L V6"
+      ],
+      "SELTOS": [
+        "1.4L L4 Turbocharged",
+        "1.6L L4"
+      ],
+      "SORENTO": [
+        "2.4L L4",
+        "3.3L V6"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "1.6L L4 Turbocharged",
+        "2.0L L4",
+        "ELECTRIC"
+      ],
+      "SPORTAGE": [
+        "2.0L L4",
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "STINGER": [
+        "2.0L L4 Turbocharged",
+        "3.3L V6 Turbocharged"
+      ],
+      "TELLURIDE": [
+        "3.8L V6"
+      ]
+    },
+    "2021": {
+      "FORTE": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "FORTE5": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "K5": [
+        "1.6L L4 Turbocharged",
+        "2.5L L4 Turbocharged"
+      ],
+      "NIRO": [
+        "1.6L L4 ELECTRIC/GAS",
+        "ELECTRIC"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "SEDONA": [
+        "3.3L V6"
+      ],
+      "SELTOS": [
+        "1.4L L4 Turbocharged",
+        "1.6L L4",
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "SORENTO": [
+        "1.6L L4 ELECTRIC/GAS Turbocharged",
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "SOUL": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4",
+        "ELECTRIC"
+      ],
+      "SPORTAGE": [
+        "2.0L L4",
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "STINGER": [
+        "2.0L L4 Turbocharged",
+        "3.3L V6 Turbocharged"
+      ],
+      "TELLURIDE": [
+        "3.8L V6"
+      ]
+    },
+    "2022": {
+      "CARNIVAL": [
+        "3.5L V6"
+      ],
+      "EV6": [
+        "ELECTRIC"
+      ],
+      "FORTE": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "FORTE5": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "K5": [
+        "1.6L L4 Turbocharged",
+        "2.5L L4 Turbocharged"
+      ],
+      "NIRO": [
+        "1.6L L4 ELECTRIC/GAS",
+        "ELECTRIC"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "SELTOS": [
+        "1.4L L4 Turbocharged",
+        "1.6L L4",
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "SORENTO": [
+        "1.6L L4 ELECTRIC/GAS Turbocharged",
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "1.6L L4 Turbocharged",
+        "2.0L L4",
+        "ELECTRIC"
+      ],
+      "SPORTAGE": [
+        "2.0L L4",
+        "2.0L L4 Turbocharged",
+        "2.4L L4"
+      ],
+      "STINGER": [
+        "2.5L L4 Turbocharged",
+        "3.3L V6 Turbocharged"
+      ],
+      "TELLURIDE": [
+        "3.8L V6"
+      ]
+    },
+    "2023": {
+      "CARNIVAL": [
+        "3.5L V6"
+      ],
+      "EV6": [
+        "ELECTRIC"
+      ],
+      "FORTE": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "FORTE5": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "K5": [
+        "1.6L L4 Turbocharged",
+        "2.5L L4 Turbocharged"
+      ],
+      "NIRO": [
+        "1.6L L4 ELECTRIC/GAS",
+        "ELECTRIC"
+      ],
+      "RIO": [
+        "1.6L L4"
+      ],
+      "SELTOS": [
+        "1.4L L4 Turbocharged",
+        "1.6L L4",
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "SORENTO": [
+        "1.6L L4 ELECTRIC/GAS Turbocharged",
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "2.0L L4",
+        "ELECTRIC"
+      ],
+      "SPORTAGE": [
+        "1.6L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4",
+        "2.5L L4"
+      ],
+      "STINGER": [
+        "2.5L L4 Turbocharged",
+        "3.3L V6 Turbocharged"
+      ],
+      "TELLURIDE": [
+        "3.8L V6"
+      ]
+    },
+    "2024": {
+      "CARNIVAL": [
+        "3.5L V6"
+      ],
+      "EV6": [
+        "ELECTRIC"
+      ],
+      "EV9": [
+        "ELECTRIC"
+      ],
+      "FORTE": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "FORTE5": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "K3": [
+        "1.6L L4",
+        "2.0L L4"
+      ],
+      "K5": [
+        "1.6L L4 Turbocharged",
+        "2.5L L4 Turbocharged"
+      ],
+      "NIRO": [
+        "1.6L L4 ELECTRIC/GAS",
+        "ELECTRIC"
+      ],
+      "SELTOS": [
+        "1.4L L4 Turbocharged",
+        "1.5L L4",
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "SONET": [
+        "1.5L L4"
+      ],
+      "SORENTO": [
+        "1.6L L4 ELECTRIC/GAS Turbocharged",
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "SOUL": [
+        "1.6L L4",
+        "2.0L L4"
+      ],
+      "SPORTAGE": [
+        "1.6L L4 ELECTRIC/GAS Turbocharged",
+        "2.5L L4"
+      ],
+      "TELLURIDE": [
+        "3.8L V6"
+      ]
+    },
+    "2025": {
+      "CARNIVAL": [
+        "1.6L L4 ELECTRIC/GAS Turbocharged",
+        "3.5L V6"
+      ],
+      "EV6": [
+        "ELECTRIC"
+      ],
+      "EV9": [
+        "ELECTRIC"
+      ],
+      "K3": [
+        "1.6L L4",
+        "2.0L L4"
+      ],
+      "K4": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "K5": [
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "NIRO": [
+        "1.6L L4 ELECTRIC/GAS",
+        "ELECTRIC"
+      ],
+      "SELTOS": [
+        "1.4L L4 Turbocharged",
+        "1.5L L4",
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ],
+      "SORENTO": [
+        "1.6L L4 ELECTRIC/GAS Turbocharged",
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "SOUL": [
+        "2.0L L4"
+      ],
+      "SPORTAGE": [
+        "1.6L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4",
+        "2.5L L4"
+      ],
+      "TELLURIDE": [
+        "3.8L V6"
+      ]
+    },
+    "2026": {
+      "CARNIVAL": [
+        "1.6L L4 ELECTRIC/GAS Turbocharged",
+        "3.5L V6"
+      ],
+      "EV9": [
+        "ELECTRIC"
+      ],
+      "K4": [
+        "1.6L L4 Turbocharged",
+        "2.0L L4"
+      ]
+    }
+  },
+  "KISSEL": {
+    "1928": {
+      "MODEL 55": [
+        "6cyl"
+      ],
+      "MODEL 70": [
+        "6cyl"
+      ],
+      "SERIES 8-90": [
+        "8cyl"
+      ],
+      "SERIES 80": [
+        "8cyl"
+      ]
+    },
+    "1929": {
+      "SERIES 6-73": [
+        "6cyl"
+      ],
+      "SERIES 8-126": [
+        "8cyl"
+      ],
+      "SERIES 8-95": [
+        "8cyl"
+      ]
+    },
+    "1930": {
+      "SERIES 6-73": [
+        "6cyl"
+      ],
+      "SERIES 8-126": [
+        "8cyl"
+      ],
+      "SERIES 8-95": [
+        "8cyl"
+      ]
+    }
+  },
+  "KURTIS": {
+    "1954": {
+      "500M": [
+        "5.4L 331cid V8"
+      ]
+    },
+    "1955": {
+      "500M": [
+        "5.4L 331cid V8"
+      ]
+    }
+  },
+  "LADA": {
+    "1983": {
+      "1300": [
+        "1.3L L4"
+      ]
+    },
+    "1984": {
+      "NIVA": [
+        "1.6L L4"
+      ],
+      "SIGNET": [
+        "1.3L L4",
+        "1.5L L4"
+      ]
+    },
+    "1985": {
+      "NIVA": [
+        "1.6L L4"
+      ],
+      "SIGNET": [
+        "1.3L L4",
+        "1.5L L4"
+      ]
+    },
+    "1986": {
+      "NIVA": [
+        "1.6L L4"
+      ],
+      "SIGNET": [
+        "1.3L L4",
+        "1.5L L4"
+      ]
+    },
+    "1987": {
+      "NIVA": [
+        "1.6L L4"
+      ],
+      "SAMARA": [
+        "1.3L L4"
+      ],
+      "SIGNET": [
+        "1.3L L4",
+        "1.5L L4"
+      ]
+    },
+    "1988": {
+      "NIVA": [
+        "1.6L L4"
+      ],
+      "SAMARA": [
+        "1.3L L4",
+        "1.5L L4"
+      ],
+      "SIGNET": [
+        "1.5L L4"
+      ]
+    },
+    "1989": {
+      "NIVA": [
+        "1.6L L4"
+      ],
+      "SAMARA": [
+        "1.3L L4",
+        "1.5L L4"
+      ],
+      "SIGNET": [
+        "1.5L L4"
+      ]
+    },
+    "1990": {
+      "NIVA": [
+        "1.6L L4"
+      ],
+      "SAMARA": [
+        "1.3L L4",
+        "1.5L L4"
+      ],
+      "SIGNET": [
+        "1.5L L4"
+      ]
+    },
+    "1991": {
+      "NIVA": [
+        "1.6L L4"
+      ],
+      "SAMARA": [
+        "1.3L L4",
+        "1.5L L4"
+      ],
+      "SIGNET": [
+        "1.5L L4"
+      ]
+    },
+    "1992": {
+      "NIVA": [
+        "1.6L L4"
+      ],
+      "SAMARA": [
+        "1.3L L4",
+        "1.5L L4"
+      ],
+      "SIGNET": [
+        "1.5L L4"
+      ]
+    },
+    "1993": {
+      "NIVA": [
+        "1.6L L4"
+      ],
+      "SAMARA": [
+        "1.3L L4",
+        "1.5L L4"
+      ],
+      "SIGNET": [
+        "1.5L L4"
+      ]
+    },
+    "1994": {
+      "NIVA": [
+        "1.6L L4"
+      ],
+      "SAMARA": [
+        "1.3L L4",
+        "1.5L L4"
+      ],
+      "SAMARA SAGONA": [
+        "1.5L L4"
+      ]
+    },
+    "1995": {
+      "NIVA": [
+        "1.6L L4"
+      ],
+      "SAMARA": [
+        "1.3L L4",
+        "1.5L L4",
+        "2.4L L4"
+      ],
+      "SAMARA SAGONA": [
+        "1.5L L4"
+      ]
+    },
+    "1996": {
+      "NIVA": [
+        "1.7L L4"
+      ],
+      "SAMARA": [
+        "1.4L L4",
+        "1.5L L4"
+      ],
+      "SAMARA SAGONA": [
+        "1.5L L4"
+      ]
+    },
+    "1997": {
+      "NIVA": [
+        "1.7L L4"
+      ],
+      "SAMARA": [
+        "1.5L L4"
+      ],
+      "SAMARA SAGONA": [
+        "1.5L L4"
+      ]
+    }
+  },
+  "LAFORZA": {
+    "1989": {
+      "LAFORZA": [
+        "5.0L V8"
+      ]
+    },
+    "1990": {
+      "LAFORZA": [
+        "5.0L V8"
+      ]
+    },
+    "1991": {
+      "LAFORZA": [
+        "5.0L V8"
+      ]
+    },
+    "1992": {
+      "LAFORZA": [
+        "5.0L V8"
+      ]
+    },
+    "1993": {
+      "LAFORZA": [
+        "5.0L V8"
+      ]
+    },
+    "1994": {
+      "LAFORZA": [
+        "5.0L V8"
+      ]
+    },
+    "1995": {
+      "LAFORZA": [
+        "5.0L V8"
+      ]
+    },
+    "1996": {
+      "LAFORZA": [
+        "5.0L V8"
+      ]
+    },
+    "1997": {
+      "LAFORZA": [
+        "5.0L V8"
+      ]
+    },
+    "1998": {
+      "LAFORZA": [
+        "5.0L V8",
+        "5.0L V8 Supercharged",
+        "5.0L V8 Turbocharged"
+      ]
+    },
+    "1999": {
+      "LAFORZA": [
+        "5.0L V8 Supercharged",
+        "5.0L V8 Turbocharged"
+      ]
+    },
+    "2000": {
+      "LAFORZA": [
+        "5.0L V8 Supercharged",
+        "5.0L V8 Turbocharged"
+      ]
+    },
+    "2001": {
+      "LAFORZA": [
+        "5.0L V8 Supercharged",
+        "5.0L V8 Turbocharged"
+      ]
+    }
+  },
+  "LAGONDA": {
+    "1934": {
+      "M45": [
+        "All Engines"
+      ]
+    },
+    "1935": {
+      "M45": [
+        "All Engines"
+      ]
+    },
+    "1937": {
+      "LG6": [
+        "All Engines"
+      ],
+      "LG6 DHC": [
+        "All Engines"
+      ]
+    },
+    "1938": {
+      "LG6": [
+        "All Engines"
+      ],
+      "LG6 DHC": [
+        "All Engines"
+      ],
+      "TOURING": [
+        "All Engines"
+      ]
+    },
+    "1939": {
+      "LG6": [
+        "All Engines"
+      ],
+      "LG6 DHC": [
+        "All Engines"
+      ],
+      "TOURING": [
+        "All Engines"
+      ]
+    },
+    "1940": {
+      "LG6": [
+        "All Engines"
+      ],
+      "LG6 DHC": [
+        "All Engines"
+      ],
+      "TOURING": [
+        "All Engines"
+      ]
+    }
+  },
+  "LAMBORGHINI": {
+    "1964": {
+      "350GT": [
+        "3.5L V12"
+      ]
+    },
+    "1965": {
+      "350GT": [
+        "3.5L V12",
+        "4.0L V12"
+      ]
+    },
+    "1966": {
+      "350GT": [
+        "3.5L V12",
+        "3.9L V12"
+      ],
+      "400GT": [
+        "3.9L V12"
+      ],
+      "MIURA": [
+        "3.9L V12"
+      ]
+    },
+    "1967": {
+      "350GT": [
+        "3.5L V12",
+        "3.9L V12"
+      ],
+      "400GT": [
+        "3.9L V12"
+      ],
+      "MIURA": [
+        "3.9L V12"
+      ]
+    },
+    "1968": {
+      "400GT": [
+        "3.9L V12"
+      ],
+      "ESPADA": [
+        "3.9L V12"
+      ],
+      "ISLERO": [
+        "3.9L V12"
+      ],
+      "MIURA": [
+        "3.9L V12"
+      ]
+    },
+    "1969": {
+      "ESPADA": [
+        "3.9L V12"
+      ],
+      "ISLERO": [
+        "3.9L V12"
+      ],
+      "MIURA": [
+        "3.9L V12"
+      ]
+    },
+    "1970": {
+      "ESPADA": [
+        "3.9L V12"
+      ],
+      "ISLERO": [
+        "3.9L V12"
+      ],
+      "JARAMA": [
+        "3.9L V12"
+      ],
+      "MIURA": [
+        "3.9L V12"
+      ]
+    },
+    "1971": {
+      "ESPADA": [
+        "3.9L V12"
+      ],
+      "JARAMA": [
+        "3.9L V12"
+      ],
+      "MIURA": [
+        "3.9L V12"
+      ]
+    },
+    "1972": {
+      "ESPADA": [
+        "3.9L V12"
+      ],
+      "JARAMA": [
+        "3.9L V12"
+      ],
+      "MIURA": [
+        "3.9L V12"
+      ]
+    },
+    "1973": {
+      "ESPADA": [
+        "3.9L V12"
+      ],
+      "JARAMA": [
+        "3.9L V12"
+      ],
+      "MIURA": [
+        "3.9L V12"
+      ],
+      "URRACO": [
+        "2.5L V8"
+      ]
+    },
+    "1974": {
+      "COUNTACH": [
+        "3.9L V12"
+      ],
+      "ESPADA": [
+        "3.9L V12"
+      ],
+      "JARAMA": [
+        "3.9L V12"
+      ],
+      "URRACO": [
+        "2.0L V8",
+        "2.5L V8",
+        "3.0L V8"
+      ]
+    },
+    "1975": {
+      "COUNTACH": [
+        "3.9L V12"
+      ],
+      "ESPADA": [
+        "4.0L V12"
+      ],
+      "JARAMA": [
+        "4.0L V12"
+      ],
+      "URRACO": [
+        "2.0L V8",
+        "2.5L V8",
+        "3.0L V8"
+      ]
+    },
+    "1976": {
+      "COUNTACH": [
+        "3.9L V12"
+      ],
+      "ESPADA": [
+        "4.0L V12"
+      ],
+      "JARAMA": [
+        "4.0L V12"
+      ],
+      "SILHOUETTE": [
+        "3.0L V8"
+      ],
+      "URRACO": [
+        "2.0L V8",
+        "2.5L V8",
+        "3.0L V8"
+      ]
+    },
+    "1977": {
+      "ESPADA": [
+        "4.0L V12"
+      ],
+      "SILHOUETTE": [
+        "3.0L V8"
+      ]
+    },
+    "1978": {
+      "ESPADA": [
+        "4.0L V12"
+      ]
+    },
+    "1981": {
+      "COUNTACH": [
+        "3.9L V12"
+      ]
+    },
+    "1982": {
+      "COUNTACH": [
+        "3.9L V12",
+        "4.8L V12"
+      ],
+      "JALPA": [
+        "3.5L V8"
+      ]
+    },
+    "1983": {
+      "COUNTACH": [
+        "4.8L V12"
+      ],
+      "JALPA": [
+        "3.5L V8"
+      ]
+    },
+    "1984": {
+      "COUNTACH": [
+        "4.8L V12"
+      ],
+      "JALPA": [
+        "3.5L V8"
+      ]
+    },
+    "1985": {
+      "COUNTACH": [
+        "4.8L V12",
+        "5.2L V12"
+      ],
+      "JALPA": [
+        "3.5L V8"
+      ]
+    },
+    "1986": {
+      "COUNTACH": [
+        "5.2L V12"
+      ],
+      "JALPA": [
+        "3.5L V8"
+      ],
+      "LM002": [
+        "5.2L V12"
+      ]
+    },
+    "1987": {
+      "COUNTACH": [
+        "5.2L V12"
+      ],
+      "JALPA": [
+        "3.5L V8"
+      ],
+      "LM002": [
+        "5.2L V12"
+      ]
+    },
+    "1988": {
+      "COUNTACH": [
+        "5.2L V12"
+      ],
+      "JALPA": [
+        "3.5L V8"
+      ],
+      "LM002": [
+        "5.2L V12"
+      ]
+    },
+    "1989": {
+      "COUNTACH": [
+        "5.2L V12"
+      ],
+      "LM002": [
+        "5.2L V12"
+      ]
+    },
+    "1990": {
+      "DIABLO": [
+        "5.7L V12"
+      ],
+      "LM002": [
+        "5.2L V12"
+      ]
+    },
+    "1991": {
+      "DIABLO": [
+        "5.7L V12"
+      ],
+      "LM AMERICAN": [
+        "5.2L V12"
+      ]
+    },
+    "1992": {
+      "DIABLO": [
+        "5.7L V12"
+      ],
+      "LM AMERICAN": [
+        "5.2L V12"
+      ]
+    },
+    "1993": {
+      "DIABLO": [
+        "5.7L V12"
+      ],
+      "LM AMERICAN": [
+        "5.2L V12"
+      ]
+    },
+    "1994": {
+      "DIABLO": [
+        "5.7L V12"
+      ]
+    },
+    "1995": {
+      "DIABLO": [
+        "5.7L V12"
+      ]
+    },
+    "1996": {
+      "DIABLO": [
+        "5.7L V12"
+      ]
+    },
+    "1997": {
+      "DIABLO": [
+        "5.7L V12"
+      ]
+    },
+    "1998": {
+      "DIABLO": [
+        "5.7L V12"
+      ]
+    },
+    "1999": {
+      "DIABLO": [
+        "5.7L V12"
+      ]
+    },
+    "2000": {
+      "DIABLO": [
+        "5.7L V12",
+        "6.0L V12"
+      ]
+    },
+    "2001": {
+      "DIABLO": [
+        "6.0L V12"
+      ],
+      "MURCIELAGO": [
+        "6.2L V12"
+      ]
+    },
+    "2002": {
+      "MURCIELAGO": [
+        "6.2L V12"
+      ]
+    },
+    "2003": {
+      "MURCIELAGO": [
+        "6.2L V12"
+      ]
+    },
+    "2004": {
+      "GALLARDO": [
+        "5.0L V10"
+      ],
+      "MURCIELAGO": [
+        "6.2L V12"
+      ]
+    },
+    "2005": {
+      "GALLARDO": [
+        "5.0L V10"
+      ],
+      "MURCIELAGO": [
+        "6.2L V12"
+      ]
+    },
+    "2006": {
+      "GALLARDO": [
+        "5.0L V10"
+      ],
+      "MURCIELAGO": [
+        "6.2L V12",
+        "6.5L V12"
+      ]
+    },
+    "2007": {
+      "GALLARDO": [
+        "5.0L V10"
+      ],
+      "MURCIELAGO": [
+        "6.2L V12",
+        "6.5L V12"
+      ]
+    },
+    "2008": {
+      "GALLARDO": [
+        "5.0L V10"
+      ],
+      "MURCIELAGO": [
+        "6.5L V12"
+      ]
+    },
+    "2009": {
+      "GALLARDO": [
+        "5.0L V10",
+        "5.2L V10"
+      ],
+      "MURCIELAGO": [
+        "6.5L V12"
+      ]
+    },
+    "2010": {
+      "GALLARDO": [
+        "5.2L V10"
+      ],
+      "MURCIELAGO": [
+        "6.5L V12"
+      ]
+    },
+    "2011": {
+      "GALLARDO": [
+        "5.2L V10"
+      ]
+    },
+    "2012": {
+      "AVENTADOR": [
+        "6.5L V12"
+      ],
+      "GALLARDO": [
+        "5.2L V10"
+      ]
+    },
+    "2013": {
+      "AVENTADOR": [
+        "6.5L V12"
+      ],
+      "GALLARDO": [
+        "5.2L V10"
+      ]
+    },
+    "2014": {
+      "AVENTADOR": [
+        "6.5L V12"
+      ],
+      "GALLARDO": [
+        "5.2L V10"
+      ]
+    },
+    "2015": {
+      "AVENTADOR": [
+        "6.5L V12"
+      ],
+      "HURACAN": [
+        "5.2L V10"
+      ]
+    },
+    "2016": {
+      "AVENTADOR": [
+        "6.5L V12"
+      ],
+      "HURACAN": [
+        "5.2L V10"
+      ]
+    },
+    "2017": {
+      "AVENTADOR": [
+        "6.5L V12"
+      ],
+      "CENTENARIO": [
+        "6.5L V12"
+      ],
+      "HURACAN": [
+        "5.2L V10"
+      ]
+    },
+    "2018": {
+      "AVENTADOR": [
+        "6.5L V12"
+      ],
+      "CENTENARIO": [
+        "6.5L V12"
+      ],
+      "HURACAN": [
+        "5.2L V10"
+      ],
+      "URUS": [
+        "4.0L V8 Turbocharged"
+      ],
+      "VENENO": [
+        "6.5L V12"
+      ]
+    },
+    "2019": {
+      "AVENTADOR": [
+        "6.5L V12"
+      ],
+      "HURACAN": [
+        "5.2L V10"
+      ],
+      "URUS": [
+        "4.0L V8 Turbocharged"
+      ]
+    },
+    "2020": {
+      "AVENTADOR": [
+        "6.5L V12"
+      ],
+      "HURACAN": [
+        "5.2L V10"
+      ],
+      "URUS": [
+        "4.0L V8 Turbocharged"
+      ]
+    },
+    "2021": {
+      "AVENTADOR": [
+        "6.5L V12"
+      ],
+      "HURACAN": [
+        "5.2L V10"
+      ],
+      "URUS": [
+        "4.0L V8 Turbocharged"
+      ]
+    },
+    "2022": {
+      "AVENTADOR": [
+        "6.5L V12"
+      ],
+      "HURACAN": [
+        "5.2L V10"
+      ],
+      "URUS": [
+        "4.0L V8 Turbocharged"
+      ]
+    },
+    "2023": {
+      "HURACAN": [
+        "5.2L V10"
+      ],
+      "SIAN": [
+        "6.5L V12"
+      ],
+      "URUS": [
+        "4.0L V8 Turbocharged"
+      ]
+    },
+    "2024": {
+      "HURACAN": [
+        "5.2L V10"
+      ],
+      "REVUELTO": [
+        "6.5L V12 ELECTRIC/GAS"
+      ],
+      "URUS": [
+        "4.0L V8 Turbocharged"
+      ]
+    },
+    "2025": {
+      "URUS": [
+        "4.0L V8 ELECTRIC/GAS Turbocharged",
+        "4.0L V8 Turbocharged"
+      ]
+    }
+  },
+  "LANCHESTER": {
+    "1950": {
+      "TEN": [
+        "1.3L L4"
+      ]
+    },
+    "1951": {
+      "LEDA": [
+        "2.0L L4"
+      ]
+    },
+    "1952": {
+      "LEDA": [
+        "2.0L L4"
+      ]
+    },
+    "1953": {
+      "LEDA": [
+        "2.0L L4"
+      ]
+    },
+    "1954": {
+      "LEDA": [
+        "2.0L L4"
+      ]
+    }
+  },
+  "LANCIA": {
+    "1950": {
+      "AURELIA": [
+        "1.8L V6",
+        "2.0L V6"
+      ]
+    },
+    "1951": {
+      "AURELIA": [
+        "1.8L V6",
+        "2.0L V6"
+      ]
+    },
+    "1952": {
+      "AURELIA": [
+        "1.8L V6",
+        "2.0L V6"
+      ]
+    },
+    "1953": {
+      "APPIA": [
+        "1.1L V4"
+      ],
+      "AURELIA": [
+        "1.8L V6",
+        "2.0L V6",
+        "2.3L V6",
+        "2.5L V6"
+      ]
+    },
+    "1954": {
+      "APPIA": [
+        "1.1L V4"
+      ],
+      "AURELIA": [
+        "2.0L V6",
+        "2.3L V6",
+        "2.5L V6"
+      ]
+    },
+    "1955": {
+      "APPIA": [
+        "1.1L V4"
+      ],
+      "AURELIA": [
+        "2.0L V6",
+        "2.3L V6",
+        "2.5L V6"
+      ]
+    },
+    "1956": {
+      "APPIA": [
+        "1.1L V4"
+      ],
+      "AURELIA": [
+        "2.0L V6",
+        "2.3L V6",
+        "2.5L V6"
+      ]
+    },
+    "1957": {
+      "APPIA": [
+        "1.1L V4"
+      ],
+      "AURELIA": [
+        "2.5L V6"
+      ],
+      "FLAMINIA": [
+        "2.5L V6"
+      ]
+    },
+    "1958": {
+      "APPIA": [
+        "1.1L V4"
+      ],
+      "AURELIA": [
+        "2.5L V6"
+      ],
+      "FLAMINIA": [
+        "2.5L V6"
+      ]
+    },
+    "1959": {
+      "APPIA": [
+        "1.1L V4"
+      ],
+      "AURELIA": [
+        "2.5L V6"
+      ],
+      "FLAMINIA": [
+        "2.5L V6"
+      ]
+    },
+    "1960": {
+      "APPIA": [
+        "1.1L V4"
+      ],
+      "AURELIA": [
+        "2.5L V6"
+      ],
+      "FLAMINIA": [
+        "2.5L V6"
+      ]
+    },
+    "1961": {
+      "APPIA": [
+        "1.1L V4"
+      ],
+      "AURELIA": [
+        "2.5L V6"
+      ],
+      "FLAMINIA": [
+        "2.5L V6"
+      ]
+    },
+    "1962": {
+      "APPIA": [
+        "1.1L V4"
+      ],
+      "FLAMINIA": [
+        "2.5L V6"
+      ],
+      "FLAVIA": [
+        "1.5L H4"
+      ]
+    },
+    "1963": {
+      "APPIA": [
+        "1.1L V4"
+      ],
+      "FLAMINIA": [
+        "2.5L V6",
+        "2.8L V6"
+      ],
+      "FLAVIA": [
+        "1.5L H4",
+        "1.8L H4"
+      ],
+      "FULVIA": [
+        "1.1L V4"
+      ]
+    },
+    "1964": {
+      "APPIA": [
+        "1.1L V4"
+      ],
+      "FLAMINIA": [
+        "2.5L V6",
+        "2.8L V6"
+      ],
+      "FLAVIA": [
+        "1.8L H4"
+      ],
+      "FULVIA": [
+        "1.1L V4"
+      ]
+    },
+    "1965": {
+      "FLAMINIA": [
+        "2.5L V6",
+        "2.8L V6"
+      ],
+      "FLAVIA": [
+        "1.8L H4"
+      ],
+      "FULVIA": [
+        "1.1L V4",
+        "1.2L V4"
+      ]
+    },
+    "1966": {
+      "FLAMINIA": [
+        "2.5L V6",
+        "2.8L V6"
+      ],
+      "FLAVIA": [
+        "1.8L H4"
+      ],
+      "FULVIA": [
+        "1.1L V4",
+        "1.2L V4"
+      ]
+    },
+    "1967": {
+      "FLAMINIA": [
+        "2.5L V6",
+        "2.8L V6"
+      ],
+      "FLAVIA": [
+        "1.8L H4"
+      ],
+      "FULVIA": [
+        "1.1L V4",
+        "1.2L V4",
+        "1.3L V4"
+      ]
+    },
+    "1968": {
+      "FLAMINIA": [
+        "2.5L V6",
+        "2.8L V6"
+      ],
+      "FLAVIA": [
+        "1.8L H4"
+      ],
+      "FULVIA": [
+        "1.1L V4",
+        "1.3L V4"
+      ]
+    },
+    "1969": {
+      "2000": [
+        "2.0L H4"
+      ],
+      "FLAVIA": [
+        "1.8L H4"
+      ],
+      "FULVIA": [
+        "1.1L V4",
+        "1.3L V4",
+        "1.6L V4"
+      ]
+    },
+    "1970": {
+      "2000": [
+        "2.0L H4"
+      ],
+      "FULVIA": [
+        "1.3L V4",
+        "1.6L V4"
+      ]
+    },
+    "1971": {
+      "2000": [
+        "2.0L H4"
+      ],
+      "FULVIA": [
+        "1.3L V4",
+        "1.6L V4"
+      ]
+    },
+    "1972": {
+      "2000": [
+        "2.0L H4"
+      ],
+      "FULVIA": [
+        "1.3L V4",
+        "1.6L V4"
+      ]
+    },
+    "1973": {
+      "2000": [
+        "2.0L H4"
+      ],
+      "FULVIA": [
+        "1.3L V4",
+        "1.6L V4"
+      ]
+    },
+    "1974": {
+      "2000": [
+        "2.0L H4"
+      ],
+      "FULVIA": [
+        "1.3L V4",
+        "1.6L V4"
+      ],
+      "STRATOS": [
+        "2.4L V6"
+      ]
+    },
+    "1976": {
+      "BETA": [
+        "1.8L L4"
+      ],
+      "SCORPION": [
+        "1.8L L4"
+      ]
+    },
+    "1977": {
+      "BETA": [
+        "1.8L L4"
+      ]
+    },
+    "1978": {
+      "BETA": [
+        "1.8L L4"
+      ]
+    },
+    "1979": {
+      "BETA": [
+        "2.0L L4"
+      ],
+      "ZAGATO": [
+        "2.0L L4"
+      ]
+    },
+    "1981": {
+      "BETA": [
+        "2.0L L4"
+      ],
+      "ZAGATO": [
+        "2.0L L4"
+      ]
+    },
+    "1982": {
+      "ZAGATO": [
+        "2.0L L4"
+      ]
+    }
+  },
+  "LAND ROVER": {
+    "1948": {
+      "LAND ROVER": [
+        "1.6L 97cid L4"
+      ]
+    },
+    "1949": {
+      "LAND ROVER": [
+        "1.6L 97cid L4"
+      ]
+    },
+    "1950": {
+      "LAND ROVER": [
+        "1.6L L4"
+      ]
+    },
+    "1951": {
+      "LAND ROVER": [
+        "1.6L L4"
+      ]
+    },
+    "1952": {
+      "LAND ROVER": [
+        "2.0L L4"
+      ]
+    },
+    "1953": {
+      "LAND ROVER": [
+        "2.0L L4"
+      ]
+    },
+    "1954": {
+      "LAND ROVER": [
+        "2.0L L4"
+      ]
+    },
+    "1955": {
+      "LAND ROVER": [
+        "2.0L L4"
+      ]
+    },
+    "1956": {
+      "LAND ROVER": [
+        "2.0L L4"
+      ]
+    },
+    "1957": {
+      "LAND ROVER": [
+        "2.0L L4",
+        "2.1L L4 DIESEL",
+        "2.3L L4",
+        "2.3L L4 DIESEL"
+      ]
+    },
+    "1958": {
+      "LAND ROVER": [
+        "2.1L L4 DIESEL",
+        "2.3L L4",
+        "2.3L L4 DIESEL"
+      ]
+    },
+    "1959": {
+      "LAND ROVER": [
+        "2.1L L4 DIESEL",
+        "2.3L L4",
+        "2.3L L4 DIESEL"
+      ]
+    },
+    "1960": {
+      "LAND ROVER": [
+        "2.1L L4 DIESEL",
+        "2.3L L4",
+        "2.3L L4 DIESEL"
+      ]
+    },
+    "1961": {
+      "LAND ROVER": [
+        "2.1L L4 DIESEL",
+        "2.3L L4",
+        "2.3L L4 DIESEL"
+      ]
+    },
+    "1962": {
+      "LAND ROVER": [
+        "2.3L L4",
+        "2.3L L4 DIESEL"
+      ]
+    },
+    "1963": {
+      "LAND ROVER": [
+        "2.3L L4",
+        "2.3L L4 DIESEL"
+      ]
+    },
+    "1964": {
+      "LAND ROVER": [
+        "2.3L L4",
+        "2.3L L4 DIESEL"
+      ]
+    },
+    "1965": {
+      "LAND ROVER": [
+        "2.3L L4",
+        "2.3L L4 DIESEL"
+      ]
+    },
+    "1966": {
+      "LAND ROVER": [
+        "2.3L L4",
+        "2.3L L4 DIESEL"
+      ]
+    },
+    "1967": {
+      "LAND ROVER": [
+        "2.3L L4",
+        "2.3L L4 DIESEL",
+        "2.6L L6"
+      ]
+    },
+    "1968": {
+      "LAND ROVER": [
+        "2.3L L4",
+        "2.3L L4 DIESEL",
+        "2.6L L6"
+      ]
+    },
+    "1969": {
+      "LAND ROVER": [
+        "2.3L L4",
+        "2.3L L4 DIESEL",
+        "2.6L L6"
+      ]
+    },
+    "1970": {
+      "LAND ROVER": [
+        "2.3L L4",
+        "2.3L L4 DIESEL",
+        "2.6L L6"
+      ],
+      "RANGE ROVER": [
+        "3.5L V8"
+      ]
+    },
+    "1971": {
+      "LAND ROVER": [
+        "2.3L L4",
+        "2.3L L4 DIESEL",
+        "2.6L L6"
+      ],
+      "RANGE ROVER": [
+        "3.5L V8"
+      ]
+    },
+    "1972": {
+      "LAND ROVER": [
+        "2.3L L4",
+        "2.3L L4 DIESEL",
+        "2.6L L6"
+      ],
+      "RANGE ROVER": [
+        "3.5L V8"
+      ]
+    },
+    "1973": {
+      "LAND ROVER": [
+        "2.3L L4",
+        "2.3L L4 DIESEL",
+        "2.6L L6"
+      ],
+      "RANGE ROVER": [
+        "3.5L V8"
+      ]
+    },
+    "1974": {
+      "LAND ROVER": [
+        "2.3L L4",
+        "2.3L L4 DIESEL",
+        "2.6L L6"
+      ],
+      "RANGE ROVER": [
+        "3.5L V8"
+      ]
+    },
+    "1987": {
+      "RANGE ROVER": [
+        "3.5L V8"
+      ]
+    },
+    "1988": {
+      "RANGE ROVER": [
+        "3.5L V8"
+      ]
+    },
+    "1989": {
+      "RANGE ROVER": [
+        "3.9L V8"
+      ]
+    },
+    "1990": {
+      "RANGE ROVER": [
+        "3.9L V8"
+      ]
+    },
+    "1991": {
+      "RANGE ROVER": [
+        "3.9L V8"
+      ]
+    },
+    "1992": {
+      "RANGE ROVER": [
+        "3.9L V8"
+      ]
+    },
+    "1993": {
+      "DEFENDER 110": [
+        "3.9L V8"
+      ],
+      "RANGE ROVER": [
+        "3.9L V8",
+        "4.2L V8"
+      ]
+    },
+    "1994": {
+      "DEFENDER 90": [
+        "3.9L V8"
+      ],
+      "DISCOVERY": [
+        "3.9L V8"
+      ],
+      "RANGE ROVER": [
+        "3.9L V8",
+        "4.2L V8"
+      ]
+    },
+    "1995": {
+      "DEFENDER 90": [
+        "3.9L V8"
+      ],
+      "DISCOVERY": [
+        "3.9L V8"
+      ],
+      "RANGE ROVER": [
+        "3.9L V8",
+        "4.2L V8"
+      ]
+    },
+    "1996": {
+      "DISCOVERY": [
+        "4.0L V8"
+      ],
+      "RANGE ROVER": [
+        "4.0L V8",
+        "4.6L V8"
+      ]
+    },
+    "1997": {
+      "DEFENDER 90": [
+        "4.0L V8"
+      ],
+      "DISCOVERY": [
+        "4.0L V8"
+      ],
+      "RANGE ROVER": [
+        "4.0L V8",
+        "4.6L V8"
+      ]
+    },
+    "1998": {
+      "DISCOVERY": [
+        "4.0L V8"
+      ],
+      "RANGE ROVER": [
+        "4.0L V8",
+        "4.6L V8"
+      ]
+    },
+    "1999": {
+      "DISCOVERY": [
+        "4.0L V8"
+      ],
+      "FREELANDER": [
+        "1.8L L4"
+      ],
+      "RANGE ROVER": [
+        "4.0L V8",
+        "4.6L V8"
+      ]
+    },
+    "2000": {
+      "DISCOVERY": [
+        "4.0L V8"
+      ],
+      "FREELANDER": [
+        "1.8L L4"
+      ],
+      "RANGE ROVER": [
+        "4.0L V8",
+        "4.6L V8"
+      ]
+    },
+    "2001": {
+      "DISCOVERY": [
+        "4.0L V8"
+      ],
+      "FREELANDER": [
+        "1.8L L4",
+        "2.5L V6"
+      ],
+      "RANGE ROVER": [
+        "4.6L V8"
+      ]
+    },
+    "2002": {
+      "DISCOVERY": [
+        "4.0L V8"
+      ],
+      "FREELANDER": [
+        "2.5L V6"
+      ],
+      "RANGE ROVER": [
+        "4.6L V8"
+      ]
+    },
+    "2003": {
+      "DISCOVERY": [
+        "4.6L V8"
+      ],
+      "FREELANDER": [
+        "2.5L V6"
+      ],
+      "RANGE ROVER": [
+        "4.4L V8"
+      ]
+    },
+    "2004": {
+      "DISCOVERY": [
+        "4.6L V8"
+      ],
+      "FREELANDER": [
+        "2.5L V6"
+      ],
+      "RANGE ROVER": [
+        "4.4L V8"
+      ]
+    },
+    "2005": {
+      "FREELANDER": [
+        "2.5L V6"
+      ],
+      "LR3": [
+        "4.0L V6",
+        "4.4L V8"
+      ],
+      "RANGE ROVER": [
+        "4.4L V8"
+      ]
+    },
+    "2006": {
+      "FREELANDER": [
+        "2.5L V6"
+      ],
+      "LR3": [
+        "4.0L V6",
+        "4.4L V8"
+      ],
+      "RANGE ROVER": [
+        "4.2L V8 Supercharged",
+        "4.4L V8"
+      ],
+      "RANGE ROVER SPORT": [
+        "4.2L V8 Supercharged",
+        "4.4L V8"
+      ]
+    },
+    "2007": {
+      "LR3": [
+        "4.0L V6",
+        "4.4L V8"
+      ],
+      "RANGE ROVER": [
+        "4.2L V8 Supercharged",
+        "4.4L V8"
+      ],
+      "RANGE ROVER SPORT": [
+        "4.2L V8 Supercharged",
+        "4.4L V8"
+      ]
+    },
+    "2008": {
+      "LR2": [
+        "3.2L L6"
+      ],
+      "LR3": [
+        "4.0L V6",
+        "4.4L V8"
+      ],
+      "RANGE ROVER": [
+        "4.2L V8 Supercharged",
+        "4.4L V8"
+      ],
+      "RANGE ROVER SPORT": [
+        "4.2L V8 Supercharged",
+        "4.4L V8"
+      ]
+    },
+    "2009": {
+      "LR2": [
+        "3.2L L6"
+      ],
+      "LR3": [
+        "4.0L V6",
+        "4.4L V8"
+      ],
+      "RANGE ROVER": [
+        "4.2L V8 Supercharged",
+        "4.4L V8"
+      ],
+      "RANGE ROVER SPORT": [
+        "4.2L V8 Supercharged",
+        "4.4L V8"
+      ]
+    },
+    "2010": {
+      "LR2": [
+        "3.2L L6"
+      ],
+      "LR4": [
+        "5.0L V8"
+      ],
+      "RANGE ROVER": [
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2011": {
+      "DEFENDER": [
+        "2.4L L4 DIESEL Turbocharged"
+      ],
+      "LR2": [
+        "3.2L L6"
+      ],
+      "LR4": [
+        "5.0L V8"
+      ],
+      "RANGE ROVER": [
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2012": {
+      "DEFENDER": [
+        "2.2L L4 DIESEL Turbocharged",
+        "2.4L L4 DIESEL Turbocharged"
+      ],
+      "LR2": [
+        "3.2L L6"
+      ],
+      "LR4": [
+        "5.0L V8"
+      ],
+      "RANGE ROVER": [
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2013": {
+      "DEFENDER": [
+        "2.2L L4 DIESEL Turbocharged"
+      ],
+      "LR2": [
+        "2.0L L4 Turbocharged"
+      ],
+      "LR4": [
+        "5.0L V8"
+      ],
+      "RANGE ROVER": [
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "5.0L V8",
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2014": {
+      "DEFENDER": [
+        "2.2L L4 DIESEL Turbocharged"
+      ],
+      "DISCOVERY": [
+        "3.0L V6 Supercharged"
+      ],
+      "LR2": [
+        "2.0L L4 Turbocharged"
+      ],
+      "LR4": [
+        "3.0L V6 Supercharged"
+      ],
+      "RANGE ROVER": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2015": {
+      "DEFENDER": [
+        "2.2L L4 DIESEL Turbocharged"
+      ],
+      "DISCOVERY": [
+        "3.0L V6 Supercharged"
+      ],
+      "DISCOVERY SPORT": [
+        "2.0L L4 Turbocharged"
+      ],
+      "LR2": [
+        "2.0L L4 Turbocharged"
+      ],
+      "LR4": [
+        "3.0L V6 Supercharged"
+      ],
+      "RANGE ROVER": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2016": {
+      "DEFENDER": [
+        "2.2L L4 DIESEL Turbocharged"
+      ],
+      "DISCOVERY": [
+        "3.0L V6 Supercharged"
+      ],
+      "DISCOVERY SPORT": [
+        "2.0L L4 Turbocharged"
+      ],
+      "LR4": [
+        "3.0L V6 Supercharged"
+      ],
+      "RANGE ROVER": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2017": {
+      "DISCOVERY": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Supercharged"
+      ],
+      "DISCOVERY SPORT": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2018": {
+      "DISCOVERY": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Supercharged"
+      ],
+      "DISCOVERY SPORT": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER VELAR": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged"
+      ]
+    },
+    "2019": {
+      "DISCOVERY": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Supercharged"
+      ],
+      "DISCOVERY SPORT": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER VELAR": [
+        "2.0L L4 DIESEL Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged"
+      ]
+    },
+    "2020": {
+      "DEFENDER 110": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "DEFENDER 90": [
+        "2.0L L4 Turbocharged"
+      ],
+      "DISCOVERY": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Supercharged"
+      ],
+      "DISCOVERY SPORT": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "3.0L V6 DIESEL Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "3.0L V6 DIESEL Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER VELAR": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Supercharged",
+        "5.0L V8 Supercharged"
+      ]
+    },
+    "2021": {
+      "DEFENDER 110": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "DEFENDER 90": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "DISCOVERY": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "DISCOVERY SPORT": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "3.0L V6 DIESEL Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "3.0L V6 DIESEL Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER VELAR": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2022": {
+      "DEFENDER 110": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "DEFENDER 90": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "DISCOVERY": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "DISCOVERY SPORT": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "1.5L L3 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "3.0L V6 DIESEL Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "RANGE ROVER VELAR": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2023": {
+      "DEFENDER 110": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "DEFENDER 130": [
+        "3.0L L6 Turbocharged"
+      ],
+      "DEFENDER 90": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "DISCOVERY": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "DISCOVERY SPORT": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "RANGE ROVER VELAR": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2024": {
+      "DEFENDER 110": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "DEFENDER 130": [
+        "3.0L L6 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "DEFENDER 90": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "DISCOVERY": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "DISCOVERY SPORT": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "RANGE ROVER VELAR": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ]
+    },
+    "2025": {
+      "DEFENDER 110": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "DEFENDER 130": [
+        "3.0L L6 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "DEFENDER 90": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged",
+        "5.0L V8 Supercharged"
+      ],
+      "DISCOVERY": [
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ],
+      "DISCOVERY SPORT": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "RANGE ROVER EVOQUE": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RANGE ROVER SPORT": [
+        "3.0L L6 ELECTRIC/GAS Turbocharged",
+        "3.0L L6 Turbocharged",
+        "4.4L V8 Turbocharged"
+      ],
+      "RANGE ROVER VELAR": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged",
+        "3.0L L6 Turbocharged"
+      ]
+    }
+  },
+  "LASALLE": {
+    "1927": {
+      "SERIES 303": [
+        "303cid V8"
+      ]
+    },
+    "1928": {
+      "SERIES 303": [
+        "303cid V8"
+      ]
+    },
+    "1929": {
+      "SERIES 328": [
+        "328cid V8"
+      ]
+    },
+    "1930": {
+      "FLEETCLIFFE": [
+        "340cid V8"
+      ],
+      "FLEETLANDS": [
+        "340cid V8"
+      ],
+      "FLEETWAY": [
+        "340cid V8"
+      ],
+      "FLEETWIND": [
+        "340cid V8"
+      ],
+      "SERIES 340": [
+        "5.6L 340cid V8"
+      ]
+    },
+    "1931": {
+      "SERIES 345A": [
+        "5.8L 353cid V8"
+      ]
+    },
+    "1932": {
+      "SERIES 345B": [
+        "5.8L 353cid V8"
+      ]
+    },
+    "1933": {
+      "SERIES 345C": [
+        "5.8L 353cid V8"
+      ]
+    },
+    "1934": {
+      "SERIES 350": [
+        "3.9L 240cid L8",
+        "5.8L 353cid V8"
+      ]
+    },
+    "1935": {
+      "SERIES 50": [
+        "4.1L 248cid L8",
+        "5.8L 353cid V8"
+      ]
+    },
+    "1936": {
+      "SERIES 50": [
+        "4.1L 248cid L8"
+      ]
+    },
+    "1937": {
+      "SERIES 50": [
+        "5.3L 322cid V8"
+      ]
+    },
+    "1938": {
+      "SERIES 50": [
+        "5.3L 322cid V8"
+      ]
+    },
+    "1939": {
+      "SERIES 50": [
+        "5.3L 322cid V8"
+      ]
+    },
+    "1940": {
+      "SERIES 50": [
+        "5.3L 322cid V8"
+      ],
+      "SPECIAL SERIES 52": [
+        "5.3L 322cid V8"
+      ]
+    }
+  },
+  "LEA-FRANCIS": {
+    "1950": {
+      "EIGHTEEN": [
+        "2.5L L4"
+      ],
+      "FOURTEEN": [
+        "1.8L L4"
+      ]
+    },
+    "1951": {
+      "EIGHTEEN": [
+        "2.5L L4"
+      ],
+      "FOURTEEN": [
+        "1.8L L4"
+      ]
+    },
+    "1952": {
+      "EIGHTEEN": [
+        "2.5L L4"
+      ],
+      "FOURTEEN": [
+        "1.8L L4"
+      ]
+    },
+    "1953": {
+      "EIGHTEEN": [
+        "2.5L L4"
+      ],
+      "FOURTEEN": [
+        "1.8L L4"
+      ]
+    },
+    "1954": {
+      "EIGHTEEN": [
+        "2.5L L4"
+      ],
+      "FOURTEEN": [
+        "1.8L L4"
+      ]
+    }
+  },
+  "LEXINGTON": {
+    "1923": {
+      "MODEL 23": [
+        "6cyl"
+      ]
+    },
+    "1924": {
+      "CONCORD": [
+        "6cyl"
+      ],
+      "MINUTE MAN": [
+        "6cyl"
+      ]
+    },
+    "1925": {
+      "CONCORD": [
+        "6cyl"
+      ],
+      "MINUTE MAN": [
+        "6cyl"
+      ]
+    },
+    "1926": {
+      "MODEL 6-50": [
+        "6cyl"
+      ]
+    },
+    "1927": {
+      "MODEL 6-50": [
+        "6cyl"
+      ]
+    }
+  },
+  "LEXUS": {
+    "2021": {
+      "ES250": [
+        "2.5L L4"
+      ],
+      "ES300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "IS300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LC500": [
+        "5.0L V8"
+      ],
+      "LC500H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LS500": [
+        "3.5L V6 Turbocharged"
+      ],
+      "LS500H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LX570": [
+        "5.7L V8"
+      ],
+      "NX300": [
+        "2.0L L4 Turbocharged"
+      ],
+      "NX300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "RC F": [
+        "5.0L V8"
+      ],
+      "RC300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "RC350": [
+        "3.5L V6"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "RX450HL": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "UX200": [
+        "2.0L L4"
+      ]
+    },
+    "2022": {
+      "ES250": [
+        "2.5L L4"
+      ],
+      "ES300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "IS300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "IS500": [
+        "5.0L V8"
+      ],
+      "LC500": [
+        "5.0L V8"
+      ],
+      "LC500H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LS500": [
+        "3.5L V6 Turbocharged"
+      ],
+      "LS500H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LX600": [
+        "3.5L V6 Turbocharged"
+      ],
+      "NX250": [
+        "2.5L L4"
+      ],
+      "NX350": [
+        "2.4L L4 Turbocharged"
+      ],
+      "NX350H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "NX450H+": [],
+      "RC F": [
+        "5.0L V8"
+      ],
+      "RC300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "RC350": [
+        "3.5L V6"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "RX450HL": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "UX200": [
+        "2.0L L4"
+      ],
+      "UX250H": [
+        "2.0L L4 ELECTRIC/GAS"
+      ]
+    },
+    "2023": {
+      "ES250": [
+        "2.5L L4"
+      ],
+      "ES300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "IS300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "IS500": [
+        "5.0L V8"
+      ],
+      "LC500": [
+        "5.0L V8"
+      ],
+      "LC500H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LS500": [
+        "3.5L V6 Turbocharged"
+      ],
+      "LS500H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LX600": [
+        "3.5L V6 Turbocharged"
+      ],
+      "NX250": [
+        "2.5L L4"
+      ],
+      "NX350": [
+        "2.4L L4 Turbocharged"
+      ],
+      "NX350H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "NX450H+": [],
+      "RC F": [
+        "5.0L V8"
+      ],
+      "RC300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "RC350": [
+        "3.5L V6"
+      ],
+      "RX350": [
+        "2.4L L4 Turbocharged"
+      ],
+      "RX350H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "RX500H": [
+        "2.4L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "RZ450E": [
+        "ELECTRIC"
+      ],
+      "UX250H": [
+        "2.0L L4 ELECTRIC/GAS"
+      ]
+    },
+    "2024": {
+      "ES250": [
+        "2.5L L4"
+      ],
+      "ES300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GX550": [
+        "3.4L V6 Turbocharged"
+      ],
+      "IS300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "IS500": [
+        "5.0L V8"
+      ],
+      "LC500": [
+        "5.0L V8"
+      ],
+      "LC500H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LS500": [
+        "3.4L V6 Turbocharged"
+      ],
+      "LS500H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LX600": [
+        "3.4L V6 Turbocharged"
+      ],
+      "NX250": [
+        "2.5L L4"
+      ],
+      "NX350": [
+        "2.4L L4 Turbocharged"
+      ],
+      "NX350H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "NX450H+": [],
+      "RC F": [
+        "5.0L V8"
+      ],
+      "RC300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "RC350": [
+        "3.5L V6"
+      ],
+      "RX350": [
+        "2.4L L4 Turbocharged"
+      ],
+      "RX350H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "RX450H+": [],
+      "RX500H": [
+        "2.4L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "RZ300E": [
+        "ELECTRIC"
+      ],
+      "RZ450E": [
+        "ELECTRIC"
+      ],
+      "TX350": [
+        "2.4L L4 Turbocharged"
+      ],
+      "TX500H": [
+        "2.4L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "TX550H+": [],
+      "UX250H": [
+        "2.0L L4 ELECTRIC/GAS"
+      ]
+    },
+    "2025": {
+      "ES250": [
+        "2.5L L4"
+      ],
+      "ES300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GX550": [
+        "3.4L V6 Turbocharged"
+      ],
+      "IS300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "IS500": [
+        "5.0L V8"
+      ],
+      "LC500": [
+        "5.0L V8"
+      ],
+      "LC500H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LS500": [
+        "3.4L V6 Turbocharged"
+      ],
+      "LS500H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LX600": [
+        "3.4L V6 Turbocharged"
+      ],
+      "LX700H": [
+        "3.4L V6 ELECTRIC/GAS Turbocharged"
+      ],
+      "NX250": [
+        "2.5L L4"
+      ],
+      "NX350": [
+        "2.4L L4 Turbocharged"
+      ],
+      "NX350H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "NX450H+": [],
+      "RC F": [
+        "5.0L V8"
+      ],
+      "RC300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "RC350": [
+        "3.5L V6"
+      ],
+      "RX350": [
+        "2.4L L4 Turbocharged"
+      ],
+      "RX350H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "RX450H+": [],
+      "RX500H": [
+        "2.4L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "RZ300E": [
+        "ELECTRIC"
+      ],
+      "RZ450E": [
+        "ELECTRIC"
+      ],
+      "TX350": [
+        "2.4L L4 Turbocharged"
+      ],
+      "TX500H": [
+        "2.4L L4 ELECTRIC/GAS Turbocharged"
+      ],
+      "TX550H+": [],
+      "UX250H": [
+        "2.0L L4 ELECTRIC/GAS"
+      ],
+      "UX300H": [
+        "2.0L L4 ELECTRIC/GAS"
       ]
     }
   }
