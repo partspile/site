@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/user"
 	g "maragu.dev/gomponents"
 )
 
@@ -33,4 +34,23 @@ func htmlEscape(s string) string {
 func getLocation(c *fiber.Ctx) *time.Location {
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
 	return loc
+}
+
+// getUserID extracts the user ID from the current user context
+// Returns 0 if no user is logged in, otherwise returns the user's ID
+func getUserID(c *fiber.Ctx) int {
+	currentUser, _ := CurrentUser(c)
+	if currentUser != nil {
+		return currentUser.ID
+	}
+	return 0
+}
+
+// getUserIDFromUser extracts the user ID from a user object
+// Returns 0 if the user is nil, otherwise returns the user's ID
+func getUserIDFromUser(currentUser *user.User) int {
+	if currentUser != nil {
+		return currentUser.ID
+	}
+	return 0
 }

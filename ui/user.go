@@ -102,13 +102,9 @@ func BookmarkedAdsSection(currentUser *user.User, ads []ad.Ad) g.Node {
 
 func BuildAdListNodesFromSlice(currentUser *user.User, ads []ad.Ad) []g.Node {
 	loc := time.Local
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
 	nodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
-		nodes = append(nodes, AdCardCompactList(ad, loc, userID))
+		nodes = append(nodes, AdCardCompactList(ad, loc, currentUser))
 	}
 	return nodes
 }

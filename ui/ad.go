@@ -214,7 +214,7 @@ func AdGridWrapper(ad ad.Ad, content g.Node, expanded bool) g.Node {
 }
 
 // AdCardExpandable renders an ad card with a clickable area for details and a bookmark button
-func AdCardExpandable(ad ad.Ad, loc *time.Location, userID int, view ...string) g.Node {
+func AdCardExpandable(ad ad.Ad, loc *time.Location, currentUser *user.User, view ...string) g.Node {
 	isGrid := len(view) > 0 && view[0] == "grid"
 	htmxTarget := fmt.Sprintf("#ad-%d", ad.ID)
 	if isGrid {
@@ -229,7 +229,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, userID int, view ...string) 
 	sortedEngines := append([]string{}, ad.Engines...)
 	sort.Strings(sortedEngines)
 	bookmarkBtn := g.Node(nil)
-	if userID > 0 {
+	if currentUser != nil {
 		if ad.Bookmarked {
 			bookmarkBtn = Button(
 				Type("button"),
@@ -271,7 +271,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, userID int, view ...string) 
 		// Minimal grid card: image, price badge, title/bookmark, age/location
 		locationStr, flagNode := getDisplayLocationAndFlag(ad)
 		bookmarkBtnGrid := g.Node(nil)
-		if userID > 0 {
+		if currentUser != nil {
 			if ad.Bookmarked {
 				bookmarkBtnGrid = Button(
 					Type("button"),
@@ -617,8 +617,8 @@ func AdDetailPartial(ad ad.Ad, userID int, view ...string) g.Node {
 }
 
 // Update AdCardWithBookmark to use AdCardExpandable for in-place expand/collapse
-func AdCardWithBookmark(ad ad.Ad, loc *time.Location, userID int) g.Node {
-	return AdCardExpandable(ad, loc, userID)
+func AdCardWithBookmark(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
+	return AdCardExpandable(ad, loc, currentUser)
 }
 
 func AdListContainer(children ...g.Node) g.Node {
@@ -1083,7 +1083,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 
 // For compatibility, keep the original AdCard
 func AdCard(ad ad.Ad, loc *time.Location) g.Node {
-	return AdCardWithBookmark(ad, loc, 0)
+	return AdCardWithBookmark(ad, loc, nil)
 }
 
 // BookmarkButton returns the bookmark toggle button for HTMX swaps
@@ -1190,12 +1190,12 @@ func AdCardTreeView(ad ad.Ad, loc *time.Location, userID int) g.Node {
 }
 
 // AdCardCompactTree renders a compact single-line ad card for tree view (collapsed state)
-func AdCardCompactTree(ad ad.Ad, loc *time.Location, userID int) g.Node {
+func AdCardCompactTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
 	posted := ad.CreatedAt.In(loc)
 
 	// Bookmark button
 	bookmarkBtn := g.Node(nil)
-	if userID > 0 {
+	if currentUser != nil {
 		if ad.Bookmarked {
 			bookmarkBtn = Button(
 				Type("button"),
@@ -1265,12 +1265,12 @@ func AdCardCompactTree(ad ad.Ad, loc *time.Location, userID int) g.Node {
 }
 
 // AdCardExpandedTree renders an expanded ad card for tree view (with close button)
-func AdCardExpandedTree(ad ad.Ad, loc *time.Location, userID int) g.Node {
+func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
 	// Create the expanded content similar to AdDetailUnified but without close button
 	htmxTarget := fmt.Sprintf("#ad-tree-%d", ad.ID)
 
 	bookmarkBtn := g.Node(nil)
-	if userID > 0 {
+	if currentUser != nil {
 		if ad.Bookmarked {
 			bookmarkBtn = Button(
 				Type("button"),
@@ -1298,7 +1298,7 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, userID int) g.Node {
 
 	deleteBtn := g.Node(nil)
 	editBtn := g.Node(nil)
-	if userID == ad.UserID {
+	if currentUser != nil && currentUser.ID == ad.UserID {
 		deleteBtn = Button(
 			Type("button"),
 			Class("ml-2 focus:outline-none z-20"),
@@ -1389,7 +1389,7 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, userID int) g.Node {
 				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
 					bookmarkBtn,
-					MessageButton(ad.ID, ad.UserID, userID, "tree"),
+					MessageButton(ad.ID, ad.UserID, currentUser.ID, "tree"),
 					editBtn,
 					deleteBtn,
 				),
@@ -1616,12 +1616,12 @@ func AdDetailUnified(ad ad.Ad, userID int, view string) g.Node {
 }
 
 // AdCardCompactList renders a compact single-line ad card for list view
-func AdCardCompactList(ad ad.Ad, loc *time.Location, userID int) g.Node {
+func AdCardCompactList(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
 	posted := ad.CreatedAt.In(loc)
 
 	// Bookmark button
 	bookmarkBtn := g.Node(nil)
-	if userID > 0 {
+	if currentUser != nil {
 		if ad.Bookmarked {
 			bookmarkBtn = Button(
 				Type("button"),

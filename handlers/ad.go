@@ -369,18 +369,14 @@ func HandleAdCardPartial(c *fiber.Ctx) error {
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
 	loc := c.Context().Time().Location()
 	view := c.Query("view", "list")
 	if view == "list" {
-		return render(c, ui.AdCardCompactList(adObj, loc, userID))
+		return render(c, ui.AdCardCompactList(adObj, loc, currentUser))
 	} else if view == "tree" {
-		return render(c, ui.AdCardCompactTree(adObj, loc, userID))
+		return render(c, ui.AdCardCompactTree(adObj, loc, currentUser))
 	}
-	return render(c, ui.AdCardExpandable(adObj, loc, userID, view))
+	return render(c, ui.AdCardExpandable(adObj, loc, currentUser, view))
 }
 
 // Handler for ad detail partial (expand)
@@ -404,10 +400,7 @@ func HandleAdDetailPartial(c *fiber.Ctx) error {
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
+	userID := getUserID(c)
 	view := c.Query("view", "list")
 	return render(c, ui.AdDetailPartial(adObj, userID, view))
 }
@@ -737,10 +730,6 @@ func HandleExpandAdTree(c *fiber.Ctx) error {
 	}
 
 	currentUser, _ := GetCurrentUser(c)
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
 
 	// Get ad from either active or archived tables with bookmark status
 	adObj, ok := ad.GetAd(adID, currentUser)
@@ -749,7 +738,7 @@ func HandleExpandAdTree(c *fiber.Ctx) error {
 	}
 
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
-	return render(c, ui.AdCardExpandedTree(adObj, loc, userID))
+	return render(c, ui.AdCardExpandedTree(adObj, loc, currentUser))
 }
 
 // HandleCollapseAdTree collapses an ad in tree view from detailed to compact view
@@ -760,10 +749,6 @@ func HandleCollapseAdTree(c *fiber.Ctx) error {
 	}
 
 	currentUser, _ := GetCurrentUser(c)
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
 
 	// Get ad from either active or archived tables with bookmark status
 	adObj, ok := ad.GetAd(adID, currentUser)
@@ -772,5 +757,5 @@ func HandleCollapseAdTree(c *fiber.Ctx) error {
 	}
 
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
-	return render(c, ui.AdCardCompactTree(adObj, loc, userID))
+	return render(c, ui.AdCardCompactTree(adObj, loc, currentUser))
 }

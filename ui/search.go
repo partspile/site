@@ -10,6 +10,7 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/user"
 )
 
 type SearchSchema ad.SearchQuery
@@ -172,20 +173,20 @@ func SearchWidget(newAdButton g.Node, view string, query string, threshold strin
 	)
 }
 
-func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, ads []ad.Ad, _ interface{}, userID int, loc *time.Location, view string, query string, loaderURL string, threshold string) g.Node {
-	return SearchResultsContainer(newAdButton, ads, userID, loc, view, query, loaderURL, threshold)
+func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, ads []ad.Ad, _ interface{}, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold string) g.Node {
+	return SearchResultsContainer(newAdButton, ads, currentUser, loc, view, query, loaderURL, threshold)
 }
 
-func SearchResultsContainer(newAdButton g.Node, ads []ad.Ad, userID int, loc *time.Location, view string, query string, loaderURL string, threshold string) g.Node {
+func SearchResultsContainer(newAdButton g.Node, ads []ad.Ad, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold string) g.Node {
 	return Div(
 		ID("searchResults"),
 		SearchWidget(newAdButton, view, query, threshold),
 		ViewToggleButtons(view),
-		createViewWithInfiniteScroll(ads, userID, loc, view, query, loaderURL, threshold),
+		createViewWithInfiniteScroll(ads, currentUser, loc, view, query, loaderURL, threshold),
 	)
 }
 
-func createViewWithInfiniteScroll(ads []ad.Ad, userID int, loc *time.Location, view string, query string, loaderURL string, threshold string) g.Node {
+func createViewWithInfiniteScroll(ads []ad.Ad, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold string) g.Node {
 	var viewContent g.Node
 
 	// Handle no results for list and grid views
@@ -206,12 +207,12 @@ func createViewWithInfiniteScroll(ads []ad.Ad, userID int, loc *time.Location, v
 			viewContent = TreeViewWithQueryAndThreshold(query, string(structuredQueryJSON), threshold)
 		case "grid":
 			if loaderURL != "" {
-				viewContent = GridViewWithTrigger(ads, loc, userID, loaderURL)
+				viewContent = GridViewWithTrigger(ads, loc, currentUser, loaderURL)
 			} else {
-				viewContent = GridView(ads, loc, userID)
+				viewContent = GridView(ads, loc, currentUser)
 			}
 		default: // list
-			viewContent = ListViewFromSlice(ads, userID, loc)
+			viewContent = ListViewFromSlice(ads, currentUser, loc)
 		}
 	}
 
@@ -239,8 +240,8 @@ func createInfiniteScrollTrigger(loaderURL string) g.Node {
 	)
 }
 
-func ListViewFromSlice(ads []ad.Ad, userID int, loc *time.Location) g.Node {
-	adNodes := buildAdListNodesFromSlice(ads, userID, loc)
+func ListViewFromSlice(ads []ad.Ad, currentUser *user.User, loc *time.Location) g.Node {
+	adNodes := buildAdListNodesFromSlice(ads, currentUser, loc)
 
 	return Div(
 		ID("list-view"),
@@ -250,10 +251,10 @@ func ListViewFromSlice(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 	)
 }
 
-func buildAdListNodesFromSlice(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
+func buildAdListNodesFromSlice(ads []ad.Ad, currentUser *user.User, loc *time.Location) []g.Node {
 	nodes := make([]g.Node, 0, len(ads)*2) // *2 because we'll add separators between ads
 	for _, ad := range ads {
-		nodes = append(nodes, AdCardCompactList(ad, loc, userID))
+		nodes = append(nodes, AdCardCompactList(ad, loc, currentUser))
 
 		// Add separator after each ad
 		nodes = append(nodes, Div(
@@ -263,12 +264,12 @@ func buildAdListNodesFromSlice(ads []ad.Ad, userID int, loc *time.Location) []g.
 	return nodes
 }
 
-func GridView(ads []ad.Ad, loc *time.Location, userID int) g.Node {
+func GridView(ads []ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
 	// Preserve original order from backend (Qdrant order)
 	adNodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
 		adNodes = append(adNodes,
-			AdCardExpandable(ad, loc, userID, "grid"),
+			AdCardExpandable(ad, loc, currentUser, "grid"),
 		)
 	}
 
@@ -279,12 +280,12 @@ func GridView(ads []ad.Ad, loc *time.Location, userID int) g.Node {
 	)
 }
 
-func GridViewWithTrigger(ads []ad.Ad, loc *time.Location, userID int, loaderURL string) g.Node {
+func GridViewWithTrigger(ads []ad.Ad, loc *time.Location, currentUser *user.User, loaderURL string) g.Node {
 	// Preserve original order from backend (Qdrant order)
 	adNodes := make([]g.Node, 0, len(ads)+1) // +1 for trigger
 	for _, ad := range ads {
 		adNodes = append(adNodes,
-			AdCardExpandable(ad, loc, userID, "grid"),
+			AdCardExpandable(ad, loc, currentUser, "grid"),
 		)
 	}
 
