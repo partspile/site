@@ -632,10 +632,7 @@ func BuildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 	if adObj.LocationID != 0 {
 		// Get coordinates from Location table
 		var err error
-		_, _, _, _, lat, lon, err = ad.GetLocation(adObj.LocationID)
-		if err == nil {
-			// Coordinates are now direct values, no need to dereference
-		}
+		_, _, _, _, lat, lon, _ = ad.GetLocation(adObj.LocationID)
 	}
 
 	// Get tree path data for navigation filtering

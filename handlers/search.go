@@ -19,6 +19,7 @@ import (
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/search"
 	"github.com/parts-pile/site/ui"
+	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vector"
 	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
@@ -53,16 +54,17 @@ func fetchAdsByIDs(ids []string, userID int) ([]ad.Ad, error) {
 		intIDs = append(intIDs, id)
 	}
 
-	// Fetch all ads in a single optimized query
+	// Fetch all ads using the unified GetAdsByIDs function
 	var ads []ad.Ad
 	var err error
+
+	// Create a mock user object for bookmark status when we have a userID
+	var currentUser *user.User
 	if userID > 0 {
-		// Use the optimized function that includes bookmark status
-		ads, err = ad.GetAdsByIDsOptimizedWithBookmarks(intIDs, userID)
-	} else {
-		// Use the optimized function for anonymous users
-		ads, err = ad.GetAdsByIDsOptimized(intIDs)
+		currentUser = &user.User{ID: userID}
 	}
+
+	ads, err = ad.GetAdsByIDs(intIDs, currentUser)
 	if err != nil {
 		return nil, err
 	}
