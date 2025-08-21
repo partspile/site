@@ -508,14 +508,6 @@ func TreeView(c *fiber.Ctx) error {
 	return render(c, ui.ExpandedTreeNodeWithThreshold(name, "/"+path, q, structuredQueryStr, fmt.Sprintf("%.1f", threshold), level, g.Group(childNodes)))
 }
 
-func HandleListView(c *fiber.Ctx) error {
-	return handleViewSwitch(c, "list")
-}
-
-func HandleTreeViewContent(c *fiber.Ctx) error {
-	return handleViewSwitch(c, "tree")
-}
-
 // handleViewSwitch is a unified handler for switching between list and tree views
 func handleViewSwitch(c *fiber.Ctx, view string) error {
 	currentUser, _ := CurrentUser(c)
@@ -574,8 +566,17 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, selectedView, userPrompt, loaderURL, fmt.Sprintf("%.1f", threshold)))
 }
 
+// View handler functions - all use handleViewSwitch for consistency
+func HandleListView(c *fiber.Ctx) error {
+	return handleViewSwitch(c, "list")
+}
+
 func HandleGridView(c *fiber.Ctx) error {
 	return handleViewSwitch(c, "grid")
+}
+
+func HandleTreeView(c *fiber.Ctx) error {
+	return handleViewSwitch(c, "tree")
 }
 
 func HandleMapView(c *fiber.Ctx) error {

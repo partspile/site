@@ -184,11 +184,11 @@ func main() {
 
 	// Views for HTMX/direct navigation
 	app.Get("/view/list", handlers.HandleListView)
-	app.Get("/view/tree", handlers.HandleTreeViewContent)
+	app.Get("/view/tree", handlers.HandleTreeView)
 	app.Get("/view/grid", handlers.HandleGridView)
 	app.Get("/view/map", handlers.HandleMapView)
 	app.Post("/view/list", handlers.HandleListView)
-	app.Post("/view/tree", handlers.HandleTreeViewContent)
+	app.Post("/view/tree", handlers.HandleTreeView)
 	app.Post("/view/grid", handlers.HandleGridView)
 	app.Post("/view/map", handlers.HandleMapView)
 
