@@ -13,7 +13,7 @@ import (
 func TestAdResult_Structure(t *testing.T) {
 	// Test that AdResult can be created with proper structure
 	result := AdResult{
-		ID:    "test-id",
+		ID:    123,
 		Score: 0.95,
 		Metadata: map[string]interface{}{
 			"title": "Test Ad",
@@ -21,7 +21,7 @@ func TestAdResult_Structure(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, "test-id", result.ID)
+	assert.Equal(t, 123, result.ID)
 	assert.Equal(t, float32(0.95), result.Score)
 	assert.Len(t, result.Metadata, 2)
 	assert.Equal(t, "Test Ad", result.Metadata["title"])

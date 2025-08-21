@@ -30,31 +30,16 @@ type SearchQuery = ad.SearchQuery
 
 type SearchCursor = ad.SearchCursor
 
-// Helper function for min
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 // runEmbeddingSearchWithFilter runs vector search with filters
 func runEmbeddingSearchWithFilter(embedding []float32, filter *qdrant.Filter, cursor string, currentUser *user.User, threshold float64) ([]ad.Ad, string, error) {
 	// Get results with threshold filtering at Qdrant level
-	results, nextCursor, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.QdrantSearchPageSize, cursor, threshold)
+	intIDs, nextCursor, err := vector.QuerySimilarAdIDsWithFilter(embedding, filter, config.QdrantSearchPageSize, cursor, threshold)
 	if err != nil {
 		return nil, "", err
 	}
-	log.Printf("[runEmbeddingSearchWithFilter] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
-
-	// Convert Qdrant string IDs to int IDs
-	intIDs := make([]int, len(results))
-	for i, r := range results {
-		if id, err := strconv.Atoi(r.ID); err == nil {
-			intIDs[i] = id
-		}
-	}
+	log.Printf("[runEmbeddingSearchWithFilter] Qdrant returned %d results (threshold: %.2f)", len(intIDs), threshold)
 	log.Printf("[runEmbeddingSearchWithFilter] Qdrant result IDs: %v", intIDs)
+
 	var ads []ad.Ad
 	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
 	log.Printf("[runEmbeddingSearchWithFilter] DB fetch returned %d ads", len(ads))
@@ -64,20 +49,13 @@ func runEmbeddingSearchWithFilter(embedding []float32, filter *qdrant.Filter, cu
 // runEmbeddingSearch runs vector search without filters
 func runEmbeddingSearch(embedding []float32, cursor string, currentUser *user.User, threshold float64) ([]ad.Ad, string, error) {
 	// Get results with threshold filtering at Qdrant level
-	results, nextCursor, err := vector.QuerySimilarAds(embedding, config.QdrantSearchPageSize, cursor, threshold)
+	intIDs, nextCursor, err := vector.QuerySimilarAdIDs(embedding, config.QdrantSearchPageSize, cursor, threshold)
 	if err != nil {
 		return nil, "", err
 	}
-	log.Printf("[runEmbeddingSearch] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
-
-	// Convert Qdrant string IDs to int IDs
-	intIDs := make([]int, len(results))
-	for i, r := range results {
-		if id, err := strconv.Atoi(r.ID); err == nil {
-			intIDs[i] = id
-		}
-	}
+	log.Printf("[runEmbeddingSearch] Qdrant returned %d results (threshold: %.2f)", len(intIDs), threshold)
 	log.Printf("[runEmbeddingSearch] Qdrant result IDs: %v", intIDs)
+
 	var ads []ad.Ad
 	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
 	log.Printf("[runEmbeddingSearch] DB fetch returned %d ads", len(ads))
@@ -87,20 +65,13 @@ func runEmbeddingSearch(embedding []float32, cursor string, currentUser *user.Us
 // runEmbeddingSearchWithFilterMap runs vector search with filters for map view (200 results)
 func runEmbeddingSearchWithFilterMap(embedding []float32, filter *qdrant.Filter, cursor string, currentUser *user.User, threshold float64) ([]ad.Ad, string, error) {
 	// Get results with threshold filtering at Qdrant level
-	results, nextCursor, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.QdrantSearchInitialK, cursor, threshold)
+	intIDs, nextCursor, err := vector.QuerySimilarAdIDsWithFilter(embedding, filter, config.QdrantSearchInitialK, cursor, threshold)
 	if err != nil {
 		return nil, "", err
 	}
-	log.Printf("[runEmbeddingSearchWithFilterMap] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
-
-	// Convert Qdrant string IDs to int IDs
-	intIDs := make([]int, len(results))
-	for i, r := range results {
-		if id, err := strconv.Atoi(r.ID); err == nil {
-			intIDs[i] = id
-		}
-	}
+	log.Printf("[runEmbeddingSearchWithFilterMap] Qdrant returned %d results (threshold: %.2f)", len(intIDs), threshold)
 	log.Printf("[runEmbeddingSearchWithFilterMap] Qdrant result IDs: %v", intIDs)
+
 	var ads []ad.Ad
 	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
 	log.Printf("[runEmbeddingSearchWithFilterMap] DB fetch returned %d ads", len(ads))
@@ -110,20 +81,13 @@ func runEmbeddingSearchWithFilterMap(embedding []float32, filter *qdrant.Filter,
 // runEmbeddingSearchMap runs vector search without filters for map view (200 results)
 func runEmbeddingSearchMap(embedding []float32, cursor string, currentUser *user.User, threshold float64) ([]ad.Ad, string, error) {
 	// Get results with threshold filtering at Qdrant level
-	results, nextCursor, err := vector.QuerySimilarAds(embedding, config.QdrantSearchInitialK, cursor, threshold)
+	intIDs, nextCursor, err := vector.QuerySimilarAdIDs(embedding, config.QdrantSearchInitialK, cursor, threshold)
 	if err != nil {
 		return nil, "", err
 	}
-	log.Printf("[runEmbeddingSearchMap] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
-
-	// Convert Qdrant string IDs to int IDs
-	intIDs := make([]int, len(results))
-	for i, r := range results {
-		if id, err := strconv.Atoi(r.ID); err == nil {
-			intIDs[i] = id
-		}
-	}
+	log.Printf("[runEmbeddingSearchMap] Qdrant returned %d results (threshold: %.2f)", len(intIDs), threshold)
 	log.Printf("[runEmbeddingSearchMap] Qdrant result IDs: %v", intIDs)
+
 	var ads []ad.Ad
 	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
 	log.Printf("[runEmbeddingSearchMap] DB fetch returned %d ads", len(ads))
@@ -1027,19 +991,11 @@ func getTreeAdsForSearch(userPrompt string, currentUser *user.User, threshold fl
 	}
 
 	// Get results with threshold filtering at Qdrant level (larger limit for tree building)
-	results, _, err := vector.QuerySimilarAds(embedding, config.QdrantSearchInitialK, "", threshold)
+	intIDs, _, err := vector.QuerySimilarAdIDs(embedding, config.QdrantSearchInitialK, "", threshold)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Qdrant: %w", err)
 	}
-	log.Printf("[tree-search] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
-
-	// Convert Qdrant string IDs to int IDs
-	intIDs := make([]int, len(results))
-	for i, r := range results {
-		if id, err := strconv.Atoi(r.ID); err == nil {
-			intIDs[i] = id
-		}
-	}
+	log.Printf("[tree-search] Qdrant returned %d results (threshold: %.2f)", len(intIDs), threshold)
 	log.Printf("[tree-search] Qdrant result IDs: %v", intIDs)
 	var ads []ad.Ad
 	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
@@ -1078,19 +1034,11 @@ func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string
 	}
 
 	// Get results with filtering at Qdrant level (larger limit for tree building)
-	results, _, err := vector.QuerySimilarAdsWithFilter(embedding, filter, config.QdrantSearchInitialK, "", threshold)
+	intIDs, _, err := vector.QuerySimilarAdIDsWithFilter(embedding, filter, config.QdrantSearchInitialK, "", threshold)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Qdrant with filter: %w", err)
 	}
-	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant returned %d results (threshold: %.2f)", len(results), threshold)
-
-	// Convert Qdrant string IDs to int IDs
-	intIDs := make([]int, len(results))
-	for i, r := range results {
-		if id, err := strconv.Atoi(r.ID); err == nil {
-			intIDs[i] = id
-		}
-	}
+	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant returned %d results (threshold: %.2f)", len(intIDs), threshold)
 	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant result IDs: %v", intIDs)
 	var ads []ad.Ad
 	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
