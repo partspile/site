@@ -257,36 +257,10 @@ func TestArchiveAd(t *testing.T) {
 	// Mock the queries for ArchiveAd
 	adID := 123
 
-	// Mock transaction begin
-	mock.ExpectBegin()
-
-	// Mock SELECT for image_order
-	mock.ExpectQuery("SELECT image_order FROM Ad WHERE id = ?").
-		WithArgs(adID).
-		WillReturnRows(sqlmock.NewRows([]string{"image_order"}).AddRow("[]"))
-
-	// Mock INSERT into ArchivedAd
-	mock.ExpectExec("INSERT INTO ArchivedAd").
-		WithArgs(sqlmock.AnyArg(), "[]", adID).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-
-	// Mock INSERT into ArchivedAdCar
-	mock.ExpectExec("INSERT INTO ArchivedAdCar").
+	// Mock UPDATE to set deleted_at (soft delete)
+	mock.ExpectExec("UPDATE Ad SET deleted_at = \\? WHERE id = \\?").
 		WithArgs(sqlmock.AnyArg(), adID).
 		WillReturnResult(sqlmock.NewResult(0, 1))
-
-	// Mock DELETE from AdCar
-	mock.ExpectExec("DELETE FROM AdCar WHERE ad_id = ?").
-		WithArgs(adID).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-
-	// Mock DELETE from Ad
-	mock.ExpectExec("DELETE FROM Ad WHERE id = ?").
-		WithArgs(adID).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-
-	// Mock transaction commit
-	mock.ExpectCommit()
 
 	// Call ArchiveAd
 	err = ArchiveAd(adID)
