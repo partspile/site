@@ -270,8 +270,8 @@ func renderInfiniteScrollTrigger(c *fiber.Ctx, nextPageURL, view string) {
 	))
 }
 
-func HandleSearch(c *fiber.Ctx) error {
-	view, err := NewView(c, c.Query("view", "list"))
+func handleSearch(c *fiber.Ctx, viewType string) error {
+	view, err := NewView(c, viewType)
 	if err != nil {
 		return err
 	}
@@ -284,6 +284,10 @@ func HandleSearch(c *fiber.Ctx) error {
 	view.SaveUserSearch()
 
 	return view.RenderSearchResults(ads, nextCursor)
+}
+
+func HandleSearch(c *fiber.Ctx) error {
+	return handleSearch(c, c.Query("view", "list"))
 }
 
 func HandleSearchPage(c *fiber.Ctx) error {
@@ -477,160 +481,20 @@ func HandleTreeViewNavigation(c *fiber.Ctx) error {
 	return render(c, ui.ExpandedTreeNodeWithThreshold(name, "/"+path, q, structuredQueryStr, fmt.Sprintf("%.1f", threshold), level, g.Group(childNodes)))
 }
 
-// handleViewSwitch is a unified handler for switching between views
-func handleViewSwitch(c *fiber.Ctx, viewType string) error {
-	currentUser, _ := CurrentUser(c)
-	userPrompt, _, threshold, _, _ := extractSearchParams(c)
-
-	// Create the appropriate view implementation
-	view, err := NewView(c, viewType)
-	if err != nil {
-		return err
-	}
-
-	// Get ads using the view's search strategy
-	ads, nextCursor, err := view.GetAds()
-	if err != nil {
-		log.Printf("[handleViewSwitch] performSearch error: %v", err)
-		ads = []ad.Ad{}
-	}
-
-	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
-
-	var newAdButton g.Node
-	if currentUser != nil {
-		newAdButton = ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
-	} else {
-		newAdButton = ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
-	}
-
-	selectedView := c.FormValue("selected_view")
-	if selectedView == "" {
-		selectedView = viewType
-	}
-	c.Cookie(&fiber.Cookie{
-		Name:     "last_view",
-		Value:    selectedView,
-		Expires:  time.Now().Add(30 * 24 * time.Hour),
-		HTTPOnly: false,
-		Path:     "/",
-	})
-
-	// Create loader URL if there are more results
-	var loaderURL string
-	if nextCursor != "" {
-		threshold := getThresholdFromQuery(c)
-		loaderURL = createLoaderURL(userPrompt, nextCursor, selectedView, threshold, nil)
-	}
-
-	// Check if we should show no-results message
-	if len(ads) == 0 && view.ShouldShowNoResults() {
-		render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, currentUser, loc, selectedView, userPrompt, "", fmt.Sprintf("%.1f", threshold)))
-		return nil
-	}
-
-	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, selectedView, userPrompt, loaderURL, fmt.Sprintf("%.1f", threshold)))
-}
-
 func HandleListView(c *fiber.Ctx) error {
-	return handleViewSwitch(c, "list")
+	return handleSearch(c, "list")
 }
 
 func HandleGridView(c *fiber.Ctx) error {
-	return handleViewSwitch(c, "grid")
+	return handleSearch(c, "grid")
 }
 
 func HandleTreeView(c *fiber.Ctx) error {
-	return handleViewSwitch(c, "tree")
+	return handleSearch(c, "tree")
 }
 
 func HandleMapView(c *fiber.Ctx) error {
-	// Extract bounding box parameters
-	minLatStr := c.Query("minLat")
-	maxLatStr := c.Query("maxLat")
-	minLonStr := c.Query("minLon")
-	maxLonStr := c.Query("maxLon")
-
-	// Parse bounding box if provided
-	var bounds *GeoBounds
-	if minLatStr != "" && maxLatStr != "" && minLonStr != "" && maxLonStr != "" {
-		minLat, err1 := strconv.ParseFloat(minLatStr, 64)
-		maxLat, err2 := strconv.ParseFloat(maxLatStr, 64)
-		minLon, err3 := strconv.ParseFloat(minLonStr, 64)
-		maxLon, err4 := strconv.ParseFloat(maxLonStr, 64)
-
-		if err1 == nil && err2 == nil && err3 == nil && err4 == nil {
-			bounds = &GeoBounds{
-				MinLat: minLat,
-				MaxLat: maxLat,
-				MinLon: minLon,
-				MaxLon: maxLon,
-			}
-			log.Printf("[HandleMapView] Using bounding box: %+v", bounds)
-		} else {
-			log.Printf("[HandleMapView] Error parsing bounding box: %v, %v, %v, %v", err1, err2, err3, err4)
-		}
-	}
-
-	return handleViewSwitchWithGeo(c, "map", bounds)
-}
-
-// handleViewSwitchWithGeo is a unified handler for switching between views with geo filtering
-func handleViewSwitchWithGeo(c *fiber.Ctx, viewType string, bounds *GeoBounds) error {
-	currentUser, _ := CurrentUser(c)
-	userPrompt, _, threshold, _, _ := extractSearchParams(c)
-
-	// Get threshold from query parameter, default to config value
-	threshold = getThresholdFromQuery(c)
-
-	// Create the appropriate view implementation
-	view, err := NewView(c, viewType)
-	if err != nil {
-		return err
-	}
-
-	// Get ads using the view's search strategy
-	ads, nextCursor, err := view.GetAds()
-	if err != nil {
-		log.Printf("[handleViewSwitchWithGeo] search error: %v", err)
-		ads = []ad.Ad{}
-	}
-
-	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
-
-	var newAdButton g.Node
-	if currentUser != nil {
-		newAdButton = ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
-	} else {
-		newAdButton = ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
-	}
-
-	selectedView := c.FormValue("selected_view")
-	if selectedView == "" {
-		selectedView = viewType
-	}
-	c.Cookie(&fiber.Cookie{
-		Name:     "last_view",
-		Value:    selectedView,
-		Expires:  time.Now().Add(30 * 24 * time.Hour),
-		HTTPOnly: false,
-		Path:     "/",
-	})
-
-	// Create loader URL if there are more results
-	var loaderURL string
-	if nextCursor != "" {
-		threshold := getThresholdFromQuery(c)
-		loaderURL = createLoaderURL(userPrompt, nextCursor, selectedView, threshold, nil)
-	}
-
-	// Check if we should show no-results message
-	if len(ads) == 0 && view.ShouldShowNoResults() {
-		render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, currentUser, loc, selectedView, userPrompt, "", fmt.Sprintf("%.1f", threshold)))
-		return nil
-	}
-
-	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, selectedView, userPrompt, loaderURL, fmt.Sprintf("%.1f", threshold)))
+	return handleSearch(c, "map")
 }
 
 // getTreeAdsForSearch performs vector search with threshold-based filtering for tree view
