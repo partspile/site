@@ -34,9 +34,6 @@ type View interface {
 
 	// ShouldShowNoResults determines if this view should show a no-results message
 	ShouldShowNoResults() bool
-
-	// GetSearchK returns the appropriate k value for search
-	GetSearchK() int
 }
 
 // ListView implements the View interface for list view
@@ -124,10 +121,6 @@ func (v *ListView) ShouldShowNoResults() bool {
 	return true
 }
 
-func (v *ListView) GetSearchK() int {
-	return config.QdrantSearchPageSize
-}
-
 // GridView implements the View interface for grid view
 type GridView struct {
 	ctx *fiber.Ctx
@@ -209,10 +202,6 @@ func (v *GridView) SaveUserSearch() {
 
 func (v *GridView) ShouldShowNoResults() bool {
 	return true
-}
-
-func (v *GridView) GetSearchK() int {
-	return config.QdrantSearchPageSize
 }
 
 // MapView implements the View interface for map view
@@ -318,10 +307,6 @@ func (v *MapView) ShouldShowNoResults() bool {
 	return false // Map view continues to show empty map
 }
 
-func (v *MapView) GetSearchK() int {
-	return config.QdrantSearchInitialK
-}
-
 // TreeView implements the View interface for tree view
 type TreeView struct {
 	ctx *fiber.Ctx
@@ -405,10 +390,6 @@ func (v *TreeView) SaveUserSearch() {
 
 func (v *TreeView) ShouldShowNoResults() bool {
 	return true
-}
-
-func (v *TreeView) GetSearchK() int {
-	return config.QdrantSearchPageSize
 }
 
 // extractMapBounds extracts geographic bounding box parameters for map view
