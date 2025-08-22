@@ -149,16 +149,6 @@ func performGeoBoxSearch(userPrompt string, currentUser *user.User, cursorStr st
 	return performSearch(userPrompt, currentUser, cursorStr, threshold, config.QdrantSearchInitialK, geoFilter)
 }
 
-// performMapSearch handles search for map view with optional geo filtering
-func performMapSearch(userPrompt string, currentUser *user.User, cursorStr string, threshold float64, bounds *GeoBounds) ([]ad.Ad, string, error) {
-	if bounds != nil {
-		return performGeoBoxSearch(userPrompt, currentUser, cursorStr, bounds, threshold)
-	}
-
-	// Fall back to regular search with map-specific k value
-	return performSearch(userPrompt, currentUser, cursorStr, threshold, config.QdrantSearchInitialK, nil)
-}
-
 // Render new ad button based on user login
 func renderNewAdButton(userID int) g.Node {
 	if userID != 0 {
@@ -232,24 +222,6 @@ func createLoaderURL(userPrompt, nextCursor, view string, threshold float64, bou
 	}
 
 	return loaderURL
-}
-
-// renderListViewAds renders ads in list view format
-func renderListViewAds(c *fiber.Ctx, ads []ad.Ad, loc *time.Location, currentUser *user.User) {
-	log.Printf("[renderListViewAds] Rendering %d ads in list view", len(ads))
-	for _, ad := range ads {
-		render(c, ui.AdCardCompactList(ad, loc, currentUser))
-		// Add separator after each ad
-		render(c, Div(Class("border-b border-gray-200")))
-	}
-}
-
-// renderGridViewAds renders ads in grid view format
-func renderGridViewAds(c *fiber.Ctx, ads []ad.Ad, loc *time.Location, currentUser *user.User) {
-	log.Printf("[renderGridViewAds] Rendering %d ads in grid view", len(ads))
-	for _, ad := range ads {
-		render(c, ui.AdCardExpandable(ad, loc, currentUser, "grid"))
-	}
 }
 
 // renderInfiniteScrollTrigger renders the infinite scroll trigger for pagination
