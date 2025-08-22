@@ -61,6 +61,10 @@ func queryEmbedding(userPrompt string, currentUser *user.User, cursor string, th
 
 // Embedding-based search with user embedding
 func userEmbedding(currentUser *user.User, cursor string, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
+	if currentUser == nil {
+		log.Printf("[userEmbedding] currentUser is nil, falling back to site embedding")
+		return siteEmbedding(currentUser, cursor, threshold, k, filter)
+	}
 	log.Printf("[userEmbedding] called with userID=%d, cursor=%s, threshold=%.2f", currentUser.ID, cursor, threshold)
 	embedding, err := vector.GetUserPersonalizedEmbedding(currentUser.ID, false)
 	if err != nil {
@@ -76,7 +80,11 @@ func userEmbedding(currentUser *user.User, cursor string, threshold float64, k i
 
 // Embedding-based search with site-level vector
 func siteEmbedding(currentUser *user.User, cursor string, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
-	log.Printf("[siteEmbedding] called with userID=%d, cursor=%s, threshold=%.2f", currentUser.ID, cursor, threshold)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
+	log.Printf("[siteEmbedding] called with userID=%d, cursor=%s, threshold=%.2f", userID, cursor, threshold)
 	embedding, err := vector.GetSiteLevelVector()
 	if err != nil {
 		log.Printf("[siteEmbedding] GetSiteLevelVector error: %v", err)
