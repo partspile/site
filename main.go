@@ -182,11 +182,7 @@ func main() {
 	app.Get("/messages/start/:adID", handlers.AuthRequired, handlers.HandleStartConversation)
 	api.Get("/messages/:action", handlers.AuthRequired, handlers.HandleMessagesAPI)
 
-	// Views for HTMX/direct navigation
-	app.Get("/view/list", handlers.HandleListView)
-	app.Get("/view/tree", handlers.HandleTreeView)
-	app.Get("/view/grid", handlers.HandleGridView)
-	app.Get("/view/map", handlers.HandleMapView)
+	// Views for HTMX view switching
 	app.Post("/view/list", handlers.HandleListView)
 	app.Post("/view/tree", handlers.HandleTreeView)
 	app.Post("/view/grid", handlers.HandleGridView)

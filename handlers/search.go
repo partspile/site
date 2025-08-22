@@ -163,10 +163,7 @@ func HandleSearch(c *fiber.Ctx) error {
 	if view == "" {
 		view = "list"
 	}
-
-	// Get threshold from query parameter, default to config value
 	threshold := getThresholdFromQuery(c)
-
 	currentUser, _ := CurrentUser(c)
 	userID := getUserID(c)
 	log.Printf("[HandleSearch] userPrompt='%s', userID=%d, threshold=%.2f", userPrompt, userID, threshold)
@@ -206,9 +203,9 @@ func HandleSearch(c *fiber.Ctx) error {
 		ads, nextCursor, err = performGeoBoxSearch(userPrompt, currentUser, "", bounds, threshold)
 	} else if view == "map" {
 		// For map view without bounds, use map-specific search functions
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchInitialK)
+		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchInitialK, nil)
 	} else {
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchPageSize)
+		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchPageSize, nil)
 	}
 
 	if err != nil {
@@ -512,11 +509,6 @@ func TreeView(c *fiber.Ctx) error {
 func handleViewSwitch(c *fiber.Ctx, view string) error {
 	currentUser, _ := CurrentUser(c)
 	userPrompt := c.FormValue("q")
-	if userPrompt == "" {
-		userPrompt = c.Query("q")
-	}
-
-	// Get threshold from query parameter or form data, default to config value
 	threshold := getThresholdFromQuery(c)
 
 	var ads []ad.Ad
@@ -566,7 +558,6 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 	return render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, selectedView, userPrompt, loaderURL, fmt.Sprintf("%.1f", threshold)))
 }
 
-// View handler functions - all use handleViewSwitch for consistency
 func HandleListView(c *fiber.Ctx) error {
 	return handleViewSwitch(c, "list")
 }
@@ -614,11 +605,8 @@ func HandleMapView(c *fiber.Ctx) error {
 func handleViewSwitchWithGeo(c *fiber.Ctx, view string, bounds *GeoBounds) error {
 	currentUser, _ := CurrentUser(c)
 	userPrompt := c.FormValue("q")
-	if userPrompt == "" {
-		userPrompt = c.Query("q")
-	}
 
-	// Get threshold from query parameter or form data, default to config value
+	// Get threshold from query parameter, default to config value
 	threshold := getThresholdFromQuery(c)
 
 	var ads []ad.Ad
@@ -870,9 +858,9 @@ func HandleSearchAPI(c *fiber.Ctx) error {
 		ads, nextCursor, err = performGeoBoxSearch(userPrompt, currentUser, "", bounds, threshold)
 	} else if view == "map" {
 		// For map view without bounds, use map-specific search functions
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchInitialK)
+		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchInitialK, nil)
 	} else {
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchPageSize)
+		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchPageSize, nil)
 	}
 
 	if err != nil {
