@@ -11,6 +11,8 @@ import (
 	"github.com/parts-pile/site/ui"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
+	"github.com/parts-pile/site/user"
+	"github.com/parts-pile/site/vector"
 )
 
 // View interface defines the contract for different view implementations
@@ -468,6 +470,22 @@ func renderInfiniteScrollTrigger(c *fiber.Ctx, nextPageURL, view string) {
 		g.Attr("hx-trigger", "revealed"),
 		g.Attr("hx-swap", "outerHTML"),
 	))
+}
+
+// performGeoBoxSearch performs search with geo bounding box filtering
+func performGeoBoxSearch(userPrompt string, currentUser *user.User, cursorStr string, bounds *GeoBounds, threshold float64) ([]ad.Ad, string, error) {
+	if bounds == nil {
+		return nil, "", fmt.Errorf("bounds cannot be nil for geo box search")
+	}
+
+	userID := getUserIDFromUser(currentUser)
+	log.Printf("[performGeoBoxSearch] userPrompt='%s', userID=%d, cursorStr='%s', bounds=%+v", userPrompt, userID, cursorStr, bounds)
+
+	// Build geo filter
+	geoFilter := vector.BuildBoundingBoxGeoFilter(bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
+
+	// Use performSearch with the geo filter
+	return performSearch(userPrompt, currentUser, cursorStr, threshold, config.QdrantSearchInitialK, geoFilter)
 }
 
 // NewView creates the appropriate view implementation based on view type

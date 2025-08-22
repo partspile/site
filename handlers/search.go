@@ -118,21 +118,7 @@ type GeoBounds struct {
 	MaxLon float64
 }
 
-// performGeoBoxSearch performs search with geo bounding box filtering
-func performGeoBoxSearch(userPrompt string, currentUser *user.User, cursorStr string, bounds *GeoBounds, threshold float64) ([]ad.Ad, string, error) {
-	if bounds == nil {
-		return nil, "", fmt.Errorf("bounds cannot be nil for geo box search")
-	}
 
-	userID := getUserIDFromUser(currentUser)
-	log.Printf("[performGeoBoxSearch] userPrompt='%s', userID=%d, cursorStr='%s', bounds=%+v", userPrompt, userID, cursorStr, bounds)
-
-	// Build geo filter
-	geoFilter := vector.BuildBoundingBoxGeoFilter(bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
-
-	// Use performSearch with the geo filter
-	return performSearch(userPrompt, currentUser, cursorStr, threshold, config.QdrantSearchInitialK, geoFilter)
-}
 
 // Render new ad button based on user login
 func renderNewAdButton(userID int) g.Node {
