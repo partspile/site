@@ -13,6 +13,8 @@ import (
 	"github.com/parts-pile/site/vector"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
+	"github.com/parts-pile/site/search"
+	"database/sql"
 )
 
 // View interface defines the contract for different view implementations
@@ -478,6 +480,17 @@ func renderNewAdButton(userID int) g.Node {
 		return ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
 	}
 	return ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
+}
+
+// saveUserSearchAndQueue saves user search and queues user for embedding update
+func saveUserSearchAndQueue(userPrompt string, userID int) {
+	if userPrompt != "" {
+		_ = search.SaveUserSearch(sql.NullInt64{Int64: int64(userID), Valid: userID != 0}, userPrompt)
+		if userID != 0 {
+			// Queue user for background embedding update
+			vector.GetEmbeddingQueue().QueueUserForUpdate(userID)
+		}
+	}
 }
 
 // performGeoBoxSearch performs search with geo bounding box filtering

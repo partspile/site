@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -14,7 +13,6 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/part"
-	"github.com/parts-pile/site/search"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vector"
@@ -119,17 +117,6 @@ type GeoBounds struct {
 }
 
 
-
-// saveUserSearchAndQueue saves user search and queues user for embedding update
-func saveUserSearchAndQueue(userPrompt string, userID int) {
-	if userPrompt != "" {
-		_ = search.SaveUserSearch(sql.NullInt64{Int64: int64(userID), Valid: userID != 0}, userPrompt)
-		if userID != 0 {
-			// Queue user for background embedding update
-			vector.GetEmbeddingQueue().QueueUserForUpdate(userID)
-		}
-	}
-}
 
 func handleSearch(c *fiber.Ctx, viewType string) error {
 	view, err := NewView(c, viewType)
