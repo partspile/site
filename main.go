@@ -103,8 +103,8 @@ func main() {
 	app.Get("/search", handlers.HandleSearch)
 	app.Get("/search-page", handlers.HandleSearchPage)
 	app.Get("/api/search", handlers.HandleSearchAPI)
-	app.Get("/tree", handlers.TreeView)
-	app.Get("/tree/*", handlers.TreeView)
+	app.Get("/tree", handlers.HandleTreeViewNavigation)
+	app.Get("/tree/*", handlers.HandleTreeViewNavigation)
 	app.Get("/tree-collapsed/*", handlers.HandleTreeCollapse)
 
 	// Ad in-place expand/collapse partials for htmx
