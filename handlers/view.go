@@ -9,10 +9,10 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/ui"
-	g "maragu.dev/gomponents"
-	. "maragu.dev/gomponents/html"
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vector"
+	g "maragu.dev/gomponents"
+	. "maragu.dev/gomponents/html"
 )
 
 // View interface defines the contract for different view implementations
@@ -505,33 +505,4 @@ func NewView(ctx *fiber.Ctx, viewType string) (View, error) {
 	}
 }
 
-// HandleSearchAPI returns search results as JSON for JavaScript consumption
-func HandleSearchAPI(c *fiber.Ctx) error {
-	view, err := NewView(c, c.Query("view", "list"))
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"error": fmt.Sprintf("Invalid view type: %s", c.Query("view", "list")),
-			"ads":   []ad.Ad{},
-		})
-	}
 
-	ads, nextCursor, err := view.GetAds()
-	if err != nil {
-		log.Printf("[HandleSearchAPI] Search error: %v", err)
-		return c.Status(500).JSON(fiber.Map{
-			"error": "Search failed",
-			"ads":   []ad.Ad{},
-		})
-	}
-
-	view.SaveUserSearch()
-
-	log.Printf("[HandleSearchAPI] ads returned: %d", len(ads))
-
-	// Return JSON response
-	return c.JSON(fiber.Map{
-		"ads":        ads,
-		"nextCursor": nextCursor,
-		"count":      len(ads),
-	})
-}

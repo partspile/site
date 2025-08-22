@@ -118,8 +118,6 @@ type GeoBounds struct {
 	MaxLon float64
 }
 
-
-
 // Render new ad button based on user login
 func renderNewAdButton(userID int) g.Node {
 	if userID != 0 {
@@ -153,6 +151,37 @@ func handleSearch(c *fiber.Ctx, viewType string) error {
 	view.SaveUserSearch()
 
 	return view.RenderSearchResults(ads, nextCursor)
+}
+
+// HandleSearchAPI returns search results as JSON for JavaScript consumption
+func HandleSearchAPI(c *fiber.Ctx) error {
+	view, err := NewView(c, c.Query("view", "list"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"error": fmt.Sprintf("Invalid view type: %s", c.Query("view", "list")),
+			"ads":   []ad.Ad{},
+		})
+	}
+
+	ads, nextCursor, err := view.GetAds()
+	if err != nil {
+		log.Printf("[HandleSearchAPI] Search error: %v", err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Search failed",
+			"ads":   []ad.Ad{},
+		})
+	}
+
+	view.SaveUserSearch()
+
+	log.Printf("[HandleSearchAPI] ads returned: %d", len(ads))
+
+	// Return JSON response
+	return c.JSON(fiber.Map{
+		"ads":        ads,
+		"nextCursor": nextCursor,
+		"count":      len(ads),
+	})
 }
 
 func HandleListView(c *fiber.Ctx) error {
