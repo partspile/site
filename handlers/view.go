@@ -472,6 +472,14 @@ func renderInfiniteScrollTrigger(c *fiber.Ctx, nextPageURL, view string) {
 	))
 }
 
+// Render new ad button based on user login
+func renderNewAdButton(userID int) g.Node {
+	if userID != 0 {
+		return ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
+	}
+	return ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
+}
+
 // performGeoBoxSearch performs search with geo bounding box filtering
 func performGeoBoxSearch(userPrompt string, currentUser *user.User, cursorStr string, bounds *GeoBounds, threshold float64) ([]ad.Ad, string, error) {
 	if bounds == nil {
@@ -504,5 +512,3 @@ func NewView(ctx *fiber.Ctx, viewType string) (View, error) {
 		return nil, fmt.Errorf("invalid view type: %s", viewType)
 	}
 }
-
-

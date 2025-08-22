@@ -118,13 +118,7 @@ type GeoBounds struct {
 	MaxLon float64
 }
 
-// Render new ad button based on user login
-func renderNewAdButton(userID int) g.Node {
-	if userID != 0 {
-		return ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
-	}
-	return ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
-}
+
 
 // saveUserSearchAndQueue saves user search and queues user for embedding update
 func saveUserSearchAndQueue(userPrompt string, userID int) {
