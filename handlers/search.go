@@ -159,10 +159,7 @@ func renderNewAdButton(c *fiber.Ctx) g.Node {
 
 func HandleSearch(c *fiber.Ctx) error {
 	userPrompt := c.Query("q")
-	view := c.FormValue("view")
-	if view == "" {
-		view = "list"
-	}
+	view := c.FormValue("view", "list")
 	threshold := getThresholdFromQuery(c)
 	currentUser, _ := CurrentUser(c)
 	userID := getUserID(c)
@@ -257,14 +254,8 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	c.Set("Content-Type", "text/html")
 	userPrompt := c.Query("q")
 	cursorStr := c.Query("cursor")
-	view := c.Query("view")
-	if view == "" {
-		view = "list"
-	}
-
-	// Get threshold from query parameter, default to config value
+	view := c.Query("view", "list")
 	threshold := getThresholdFromQuery(c)
-
 	currentUser, _ := CurrentUser(c)
 	userID := getUserID(c)
 	log.Printf("[HandleSearchPage] userPrompt='%s', cursorStr='%s', userID=%d, view='%s', threshold=%.2f", userPrompt, cursorStr, userID, view, threshold)
