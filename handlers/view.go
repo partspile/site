@@ -3,11 +3,13 @@ package handlers
 import (
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/ui"
+	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
 
@@ -39,15 +41,13 @@ type ListView struct {
 
 // NewListView creates a new list view
 func NewListView(ctx *fiber.Ctx) *ListView {
-	return &ListView{
-		ctx: ctx,
-	}
+	return &ListView{ctx: ctx}
 }
 
 func (v *ListView) GetAds() ([]ad.Ad, string, error) {
 	userPrompt := v.ctx.Query("q")
 	cursor := v.ctx.Query("cursor")
-	threshold := getThresholdFromQuery(v.ctx)
+	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 	currentUser, _ := CurrentUser(v.ctx)
 	ads, nextCursor, err := performSearch(userPrompt, currentUser, cursor, threshold, config.QdrantSearchPageSize, nil)
 	if err == nil {
@@ -69,7 +69,7 @@ func (v *ListView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	userPrompt := v.ctx.Query("q")
 	userID := getUserID(v.ctx)
 	newAdButton := renderNewAdButton(userID)
-	threshold := getThresholdFromQuery(v.ctx)
+	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 
 	// Check if we should show no results message
 	if len(ads) == 0 && v.ShouldShowNoResults() {
@@ -99,7 +99,7 @@ func (v *ListView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	// Add infinite scroll trigger if there are more results
 	if nextCursor != "" {
 		userPrompt := v.ctx.Query("q")
-		threshold := getThresholdFromQuery(v.ctx)
+		threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 		nextPageURL := createLoaderURL(userPrompt, nextCursor, "list", threshold, nil)
 		if nextPageURL != "" {
 			renderInfiniteScrollTrigger(v.ctx, nextPageURL, "list")
@@ -130,15 +130,13 @@ type GridView struct {
 
 // NewGridView creates a new grid view
 func NewGridView(ctx *fiber.Ctx) *GridView {
-	return &GridView{
-		ctx: ctx,
-	}
+	return &GridView{ctx: ctx}
 }
 
 func (v *GridView) GetAds() ([]ad.Ad, string, error) {
 	userPrompt := v.ctx.Query("q")
 	cursor := v.ctx.Query("cursor")
-	threshold := getThresholdFromQuery(v.ctx)
+	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 	currentUser, _ := CurrentUser(v.ctx)
 	ads, nextCursor, err := performSearch(userPrompt, currentUser, cursor, threshold, config.QdrantSearchPageSize, nil)
 	if err == nil {
@@ -160,7 +158,7 @@ func (v *GridView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	userPrompt := v.ctx.Query("q")
 	userID := getUserID(v.ctx)
 	newAdButton := renderNewAdButton(userID)
-	threshold := getThresholdFromQuery(v.ctx)
+	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 
 	// Check if we should show no results message
 	if len(ads) == 0 && v.ShouldShowNoResults() {
@@ -188,7 +186,7 @@ func (v *GridView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	// Add infinite scroll trigger if there are more results
 	if nextCursor != "" {
 		userPrompt := v.ctx.Query("q")
-		threshold := getThresholdFromQuery(v.ctx)
+		threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 		nextPageURL := createLoaderURL(userPrompt, nextCursor, "grid", threshold, nil)
 		if nextPageURL != "" {
 			renderInfiniteScrollTrigger(v.ctx, nextPageURL, "grid")
@@ -220,16 +218,13 @@ type MapView struct {
 
 // NewMapView creates a new map view
 func NewMapView(ctx *fiber.Ctx, bounds *GeoBounds) *MapView {
-	return &MapView{
-		ctx:    ctx,
-		bounds: bounds,
-	}
+	return &MapView{ctx: ctx, bounds: bounds}
 }
 
 func (v *MapView) GetAds() ([]ad.Ad, string, error) {
 	userPrompt := v.ctx.Query("q")
 	cursor := v.ctx.Query("cursor")
-	threshold := getThresholdFromQuery(v.ctx)
+	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 	currentUser, _ := CurrentUser(v.ctx)
 	var ads []ad.Ad
 	var nextCursor string
@@ -258,7 +253,7 @@ func (v *MapView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	userPrompt := v.ctx.Query("q")
 	userID := getUserID(v.ctx)
 	newAdButton := renderNewAdButton(userID)
-	threshold := getThresholdFromQuery(v.ctx)
+	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 
 	// Check if we should show no results message
 	if len(ads) == 0 && v.ShouldShowNoResults() {
@@ -293,7 +288,7 @@ func (v *MapView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	// Add infinite scroll trigger if there are more results
 	if nextCursor != "" {
 		userPrompt := v.ctx.Query("q")
-		threshold := getThresholdFromQuery(v.ctx)
+		threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 		nextPageURL := createLoaderURL(userPrompt, nextCursor, "map", threshold, v.bounds)
 		// Add bounding box to loader URL for map view
 		if v.bounds != nil {
@@ -329,15 +324,13 @@ type TreeView struct {
 
 // NewTreeView creates a new tree view
 func NewTreeView(ctx *fiber.Ctx) *TreeView {
-	return &TreeView{
-		ctx: ctx,
-	}
+	return &TreeView{ctx: ctx}
 }
 
 func (v *TreeView) GetAds() ([]ad.Ad, string, error) {
 	userPrompt := v.ctx.Query("q")
 	cursor := v.ctx.Query("cursor")
-	threshold := getThresholdFromQuery(v.ctx)
+	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 	currentUser, _ := CurrentUser(v.ctx)
 	ads, nextCursor, err := performSearch(userPrompt, currentUser, cursor, threshold, config.QdrantSearchPageSize, nil)
 	if err == nil {
@@ -359,7 +352,7 @@ func (v *TreeView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	userPrompt := v.ctx.Query("q")
 	userID := getUserID(v.ctx)
 	newAdButton := renderNewAdButton(userID)
-	threshold := getThresholdFromQuery(v.ctx)
+	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 
 	// Check if we should show no results message
 	if len(ads) == 0 && v.ShouldShowNoResults() {
@@ -389,7 +382,7 @@ func (v *TreeView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	// Add infinite scroll trigger if there are more results
 	if nextCursor != "" {
 		userPrompt := v.ctx.Query("q")
-		threshold := getThresholdFromQuery(v.ctx)
+		threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 		nextPageURL := createLoaderURL(userPrompt, nextCursor, "tree", threshold, nil)
 		if nextPageURL != "" {
 			renderInfiniteScrollTrigger(v.ctx, nextPageURL, "tree")
@@ -413,6 +406,70 @@ func (v *TreeView) GetSearchK() int {
 	return config.QdrantSearchPageSize
 }
 
+// extractMapBounds extracts geographic bounding box parameters for map view
+func extractMapBounds(c *fiber.Ctx) *GeoBounds {
+	minLatStr := c.Query("minLat")
+	maxLatStr := c.Query("maxLat")
+	minLonStr := c.Query("minLon")
+	maxLonStr := c.Query("maxLon")
+
+	if minLatStr == "" || maxLatStr == "" || minLonStr == "" || maxLonStr == "" {
+		return nil
+	}
+
+	minLat, err1 := strconv.ParseFloat(minLatStr, 64)
+	maxLat, err2 := strconv.ParseFloat(maxLatStr, 64)
+	minLon, err3 := strconv.ParseFloat(minLonStr, 64)
+	maxLon, err4 := strconv.ParseFloat(maxLonStr, 64)
+
+	if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
+		return nil
+	}
+
+	return &GeoBounds{
+		MinLat: minLat,
+		MaxLat: maxLat,
+		MinLon: minLon,
+		MaxLon: maxLon,
+	}
+}
+
+// createLoaderURL creates the loader URL for pagination
+func createLoaderURL(userPrompt, nextCursor, view string, threshold float64, bounds *GeoBounds) string {
+	if nextCursor == "" {
+		return ""
+	}
+
+	loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s&threshold=%.1f",
+		htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view), threshold)
+
+	// Add bounding box to loader URL for map view
+	if view == "map" && bounds != nil {
+		loaderURL += fmt.Sprintf("&minLat=%.6f&maxLat=%.6f&minLon=%.6f&maxLon=%.6f",
+			bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
+	}
+
+	return loaderURL
+}
+
+// renderInfiniteScrollTrigger renders the infinite scroll trigger for pagination
+func renderInfiniteScrollTrigger(c *fiber.Ctx, nextPageURL, view string) {
+	if nextPageURL == "" {
+		log.Printf("[renderInfiniteScrollTrigger] No infinite scroll trigger - no more results")
+		return
+	}
+
+	log.Printf("[renderInfiniteScrollTrigger] Adding infinite scroll trigger with URL: %s", nextPageURL)
+
+	// Create trigger that matches the view style
+	render(c, Div(
+		Class("h-4"),
+		g.Attr("hx-get", nextPageURL),
+		g.Attr("hx-trigger", "revealed"),
+		g.Attr("hx-swap", "outerHTML"),
+	))
+}
+
 // NewView creates the appropriate view implementation based on view type
 func NewView(ctx *fiber.Ctx, viewType string) (View, error) {
 	switch viewType {
@@ -428,4 +485,35 @@ func NewView(ctx *fiber.Ctx, viewType string) (View, error) {
 	default:
 		return nil, fmt.Errorf("invalid view type: %s", viewType)
 	}
+}
+
+// HandleSearchAPI returns search results as JSON for JavaScript consumption
+func HandleSearchAPI(c *fiber.Ctx) error {
+	view, err := NewView(c, c.Query("view", "list"))
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"error": fmt.Sprintf("Invalid view type: %s", c.Query("view", "list")),
+			"ads":   []ad.Ad{},
+		})
+	}
+
+	ads, nextCursor, err := view.GetAds()
+	if err != nil {
+		log.Printf("[HandleSearchAPI] Search error: %v", err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Search failed",
+			"ads":   []ad.Ad{},
+		})
+	}
+
+	view.SaveUserSearch()
+
+	log.Printf("[HandleSearchAPI] ads returned: %d", len(ads))
+
+	// Return JSON response
+	return c.JSON(fiber.Map{
+		"ads":        ads,
+		"nextCursor": nextCursor,
+		"count":      len(ads),
+	})
 }

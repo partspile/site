@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"strconv"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
@@ -22,20 +20,7 @@ import (
 	"github.com/parts-pile/site/vector"
 	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
-	. "maragu.dev/gomponents/html"
 )
-
-// getThresholdFromQuery extracts threshold from query parameters with fallback to config default
-func getThresholdFromQuery(c *fiber.Ctx) float64 {
-	thresholdStr := c.Query("threshold")
-	threshold := config.QdrantSearchThreshold
-	if thresholdStr != "" {
-		if thresholdVal, err := strconv.ParseFloat(thresholdStr, 32); err == nil {
-			threshold = thresholdVal
-		}
-	}
-	return threshold
-}
 
 // runEmbeddingSearch runs vector search with optional filters
 func runEmbeddingSearch(embedding []float32, cursor string, currentUser *user.User, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
@@ -157,44 +142,6 @@ func renderNewAdButton(userID int) g.Node {
 	return ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
 }
 
-// extractSearchParams extracts common search parameters from the request
-func extractSearchParams(c *fiber.Ctx) (string, string, float64, *user.User, int) {
-	userPrompt := c.Query("q")
-	view := c.Query("view", "list")
-	threshold := getThresholdFromQuery(c)
-	currentUser, _ := CurrentUser(c)
-	userID := getUserID(c)
-	return userPrompt, view, threshold, currentUser, userID
-}
-
-// extractMapBounds extracts geographic bounding box parameters for map view
-func extractMapBounds(c *fiber.Ctx) *GeoBounds {
-	minLatStr := c.Query("minLat")
-	maxLatStr := c.Query("maxLat")
-	minLonStr := c.Query("minLon")
-	maxLonStr := c.Query("maxLon")
-
-	if minLatStr == "" || maxLatStr == "" || minLonStr == "" || maxLonStr == "" {
-		return nil
-	}
-
-	minLat, err1 := strconv.ParseFloat(minLatStr, 64)
-	maxLat, err2 := strconv.ParseFloat(maxLatStr, 64)
-	minLon, err3 := strconv.ParseFloat(minLonStr, 64)
-	maxLon, err4 := strconv.ParseFloat(maxLonStr, 64)
-
-	if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
-		return nil
-	}
-
-	return &GeoBounds{
-		MinLat: minLat,
-		MaxLat: maxLat,
-		MinLon: minLon,
-		MaxLon: maxLon,
-	}
-}
-
 // saveUserSearchAndQueue saves user search and queues user for embedding update
 func saveUserSearchAndQueue(userPrompt string, userID int) {
 	if userPrompt != "" {
@@ -204,42 +151,6 @@ func saveUserSearchAndQueue(userPrompt string, userID int) {
 			vector.GetEmbeddingQueue().QueueUserForUpdate(userID)
 		}
 	}
-}
-
-// createLoaderURL creates the loader URL for pagination
-func createLoaderURL(userPrompt, nextCursor, view string, threshold float64, bounds *GeoBounds) string {
-	if nextCursor == "" {
-		return ""
-	}
-
-	loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s&threshold=%.1f",
-		htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view), threshold)
-
-	// Add bounding box to loader URL for map view
-	if view == "map" && bounds != nil {
-		loaderURL += fmt.Sprintf("&minLat=%.6f&maxLat=%.6f&minLon=%.6f&maxLon=%.6f",
-			bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
-	}
-
-	return loaderURL
-}
-
-// renderInfiniteScrollTrigger renders the infinite scroll trigger for pagination
-func renderInfiniteScrollTrigger(c *fiber.Ctx, nextPageURL, view string) {
-	if nextPageURL == "" {
-		log.Printf("[renderInfiniteScrollTrigger] No infinite scroll trigger - no more results")
-		return
-	}
-
-	log.Printf("[renderInfiniteScrollTrigger] Adding infinite scroll trigger with URL: %s", nextPageURL)
-
-	// Create trigger that matches the view style
-	render(c, Div(
-		Class("h-4"),
-		g.Attr("hx-get", nextPageURL),
-		g.Attr("hx-trigger", "revealed"),
-		g.Attr("hx-swap", "outerHTML"),
-	))
 }
 
 func handleSearch(c *fiber.Ctx, viewType string) error {
@@ -256,6 +167,22 @@ func handleSearch(c *fiber.Ctx, viewType string) error {
 	view.SaveUserSearch()
 
 	return view.RenderSearchResults(ads, nextCursor)
+}
+
+func HandleListView(c *fiber.Ctx) error {
+	return handleSearch(c, "list")
+}
+
+func HandleGridView(c *fiber.Ctx) error {
+	return handleSearch(c, "grid")
+}
+
+func HandleTreeView(c *fiber.Ctx) error {
+	return handleSearch(c, "tree")
+}
+
+func HandleMapView(c *fiber.Ctx) error {
+	return handleSearch(c, "map")
 }
 
 func HandleSearch(c *fiber.Ctx) error {
@@ -288,8 +215,7 @@ func HandleTreeCollapse(c *fiber.Ctx) error {
 	path := c.Params("*")
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 
-	// Get threshold from query parameter, default to config value
-	threshold := getThresholdFromQuery(c)
+	threshold := c.QueryFloat("threshold", config.QdrantSearchThreshold)
 
 	name := parts[len(parts)-1]
 	level := len(parts) - 1
@@ -307,8 +233,7 @@ func HandleTreeViewNavigation(c *fiber.Ctx) error {
 	}
 	level := len(parts)
 
-	// Get threshold from query parameter or form data, default to config value
-	threshold := getThresholdFromQuery(c)
+	threshold := c.QueryFloat("threshold", config.QdrantSearchThreshold)
 
 	var structuredQuery ad.SearchQuery
 	if structuredQueryStr != "" {
@@ -453,22 +378,6 @@ func HandleTreeViewNavigation(c *fiber.Ctx) error {
 	return render(c, ui.ExpandedTreeNodeWithThreshold(name, "/"+path, q, structuredQueryStr, fmt.Sprintf("%.1f", threshold), level, g.Group(childNodes)))
 }
 
-func HandleListView(c *fiber.Ctx) error {
-	return handleSearch(c, "list")
-}
-
-func HandleGridView(c *fiber.Ctx) error {
-	return handleSearch(c, "grid")
-}
-
-func HandleTreeView(c *fiber.Ctx) error {
-	return handleSearch(c, "tree")
-}
-
-func HandleMapView(c *fiber.Ctx) error {
-	return handleSearch(c, "map")
-}
-
 // getTreeAdsForSearch performs vector search with threshold-based filtering for tree view
 // Uses larger limit to build complete tree structure
 func getTreeAdsForSearch(userPrompt string, currentUser *user.User, threshold float64) ([]ad.Ad, error) {
@@ -610,39 +519,4 @@ func matchesChildPath(ad ad.Ad, childPath []string, level int) bool {
 	}
 
 	return true // Default to true if no specific filtering needed
-}
-
-// HandleSearchAPI returns search results as JSON for JavaScript consumption
-func HandleSearchAPI(c *fiber.Ctx) error {
-	userPrompt, viewType, threshold, _, userID := extractSearchParams(c)
-
-	log.Printf("[HandleSearchAPI] userPrompt='%s', userID=%d, view=%s, threshold=%.2f", userPrompt, userID, viewType, threshold)
-
-	// Create the appropriate view implementation
-	view, err := NewView(c, viewType)
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"error": fmt.Sprintf("Invalid view type: %s", viewType),
-			"ads":   []ad.Ad{},
-		})
-	}
-
-	// Get ads using the view's search strategy
-	ads, nextCursor, err := view.GetAds()
-	if err != nil {
-		log.Printf("[HandleSearchAPI] Search error: %v", err)
-		return c.Status(500).JSON(fiber.Map{
-			"error": "Search failed",
-			"ads":   []ad.Ad{},
-		})
-	}
-
-	log.Printf("[HandleSearchAPI] ads returned: %d", len(ads))
-
-	// Return JSON response
-	return c.JSON(fiber.Map{
-		"ads":        ads,
-		"nextCursor": nextCursor,
-		"count":      len(ads),
-	})
 }
