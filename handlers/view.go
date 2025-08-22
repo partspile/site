@@ -5,16 +5,17 @@ import (
 	"log"
 	"strconv"
 
+	"database/sql"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/search"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vector"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
-	"github.com/parts-pile/site/search"
-	"database/sql"
 )
 
 // View interface defines the contract for different view implementations

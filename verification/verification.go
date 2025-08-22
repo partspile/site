@@ -185,7 +185,7 @@ func TrackFailedVerification(phone string) error {
 		SELECT COUNT(*) FROM PhoneVerification 
 		WHERE phone = ? AND created_at > ?
 	`, phone, time.Now().Add(-VerificationWindow).Format(time.RFC3339)).Scan(&count)
-	
+
 	if err != nil {
 		return fmt.Errorf("failed to count failed verifications for %s: %w", phone, err)
 	}

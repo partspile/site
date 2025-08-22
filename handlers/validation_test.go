@@ -422,7 +422,7 @@ func TestCheckboxValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Test the checkbox validation logic
 			offersValid := tt.offers == "true"
-			
+
 			if tt.expectError {
 				assert.False(t, offersValid)
 			} else {
