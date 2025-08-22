@@ -347,8 +347,6 @@ func HandleSearchPage(c *fiber.Ctx) error {
 		ads, nextCursor, err = performSearch(userPrompt, currentUser, cursorStr, threshold, config.QdrantSearchPageSize, nil)
 	case "grid":
 		ads, nextCursor, err = performSearch(userPrompt, currentUser, cursorStr, threshold, config.QdrantSearchPageSize, nil)
-	case "map":
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, cursorStr, threshold, config.QdrantSearchPageSize, nil)
 	default:
 		return fmt.Errorf("invalid view type: %s", view)
 	}
@@ -378,11 +376,6 @@ func HandleSearchPage(c *fiber.Ctx) error {
 		renderListViewAds(c, ads, loc, currentUser)
 	case "grid":
 		renderGridViewAds(c, ads, loc, currentUser)
-	case "map":
-		// Map view pagination - render ads in the same format as the main map view
-		renderGridViewAds(c, ads, loc, currentUser)
-	default:
-		return fmt.Errorf("invalid view type: %s", view)
 	}
 
 	// Add infinite scroll trigger if there are more results
