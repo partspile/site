@@ -75,12 +75,8 @@ func userEmbedding(currentUser *user.User, cursor string, threshold float64, k i
 }
 
 // Embedding-based search with site-level vector
-func siteEmbedding(currentUser *user.User, cursor string, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
-	log.Printf("[siteEmbedding] called with userID=%d, cursor=%s, threshold=%.2f", userID, cursor, threshold)
+func siteEmbedding(cursor string, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
+	log.Printf("[siteEmbedding] called with cursor=%s, threshold=%.2f", cursor, threshold)
 	embedding, err := vector.GetSiteLevelVector()
 	if err != nil {
 		log.Printf("[siteEmbedding] GetSiteLevelVector error: %v", err)
@@ -90,7 +86,7 @@ func siteEmbedding(currentUser *user.User, cursor string, threshold float64, k i
 		log.Printf("[siteEmbedding] GetSiteLevelVector returned nil embedding")
 		return nil, "", nil
 	}
-	return runEmbeddingSearch(embedding, cursor, currentUser, threshold, k, filter)
+	return runEmbeddingSearch(embedding, cursor, nil, threshold, k, filter)
 }
 
 // Search strategy for both HandleSearch and HandleSearchPage
@@ -107,7 +103,7 @@ func performSearch(userPrompt string, currentUser *user.User, cursorStr string, 
 	}
 
 	if userPrompt == "" && userID == 0 {
-		return siteEmbedding(currentUser, cursorStr, threshold, k, filter)
+		return siteEmbedding(cursorStr, threshold, k, filter)
 	}
 
 	// This should never be reached, but provide a default return
