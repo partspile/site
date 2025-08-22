@@ -271,117 +271,39 @@ func renderInfiniteScrollTrigger(c *fiber.Ctx, nextPageURL, view string) {
 }
 
 func HandleSearch(c *fiber.Ctx) error {
-	userPrompt, view, threshold, currentUser, userID := extractSearchParams(c)
-	log.Printf("[HandleSearch] userPrompt='%s', userID=%d, threshold=%.2f", userPrompt, userID, threshold)
-
-	var ads []ad.Ad
-	var nextCursor string
-	var err error
-	var bounds *GeoBounds
-
-	switch view {
-	case "list":
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchPageSize, nil)
-	case "grid":
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchPageSize, nil)
-	case "map":
-		bounds = extractMapBounds(c)
-		log.Printf("[HandleSearch] Using bounding box: %+v", bounds)
-		ads, nextCursor, err = performMapSearch(userPrompt, currentUser, "", threshold, bounds)
-	default:
-		return fmt.Errorf("invalid view type: %s", view)
-	}
-
+	view, err := NewView(c, c.Query("view", "list"))
 	if err != nil {
 		return err
 	}
 
-	loc := getLocation(c)
-	newAdButton := renderNewAdButton(userID)
-
-	if len(ads) == 0 {
-		switch view {
-		case "list", "grid":
-			render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, currentUser, loc, view, userPrompt, "", fmt.Sprintf("%.1f", threshold)))
-			return nil
-		case "map":
-			// Map view with no results - continue to render empty map
-		}
+	ads, nextCursor, err := view.GetAds()
+	if err != nil {
+		return err
 	}
 
-	log.Printf("[HandleSearch] ads returned: %d", len(ads))
-	log.Printf("[HandleSearch] Final ad order: %v", func() []int {
-		result := make([]int, len(ads))
-		for i, ad := range ads {
-			result[i] = ad.ID
-		}
-		return result
-	}())
+	view.SaveUserSearch()
 
-	saveUserSearchAndQueue(userPrompt, userID)
-
-	// Create loader URL if there are more results
-	var loaderURL string
-	if nextCursor != "" {
-		loaderURL = createLoaderURL(htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view), threshold, bounds)
-	}
-
-	render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, view, userPrompt, loaderURL, fmt.Sprintf("%.1f", threshold)))
-
-	return nil
+	return view.RenderSearchResults(ads, nextCursor)
 }
 
 func HandleSearchPage(c *fiber.Ctx) error {
 	c.Set("Content-Type", "text/html")
-	userPrompt, view, threshold, currentUser, userID := extractSearchParams(c)
-	cursorStr := c.Query("cursor")
-	log.Printf("[HandleSearchPage] userPrompt='%s', cursorStr='%s', userID=%d, view='%s', threshold=%.2f", userPrompt, cursorStr, userID, view, threshold)
 
-	var ads []ad.Ad
-	var nextCursor string
-	var err error
-
-	// Use switch statement to call appropriate view handler
-	switch view {
-	case "list":
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, cursorStr, threshold, config.QdrantSearchPageSize, nil)
-	case "grid":
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, cursorStr, threshold, config.QdrantSearchPageSize, nil)
-	default:
-		return fmt.Errorf("invalid view type: %s", view)
-	}
-
+	view, err := NewView(c, c.Query("view", "list"))
 	if err != nil {
-		log.Printf("[HandleSearchPage] performSearch error: %v", err)
 		return err
 	}
-	log.Printf("[HandleSearchPage] Found %d ads, nextCursor='%s'", len(ads), nextCursor)
 
-	loc := getLocation(c)
-
-	// Determine if there are more results for infinite scroll
-	var nextPageURL string
-	if nextCursor != "" {
-		nextPageURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view))
+	ads, nextCursor, err := view.GetAds()
+	if err != nil {
+		return err
 	}
 
-	// Show no results message if no ads found, but only for list/grid views
-	if (view == "list" || view == "grid") && len(ads) == 0 {
+	if len(ads) == 0 && view.ShouldShowNoResults() {
 		return nil
 	}
 
-	// Render ads based on view type
-	switch view {
-	case "list":
-		renderListViewAds(c, ads, loc, currentUser)
-	case "grid":
-		renderGridViewAds(c, ads, loc, currentUser)
-	}
-
-	// Add infinite scroll trigger if there are more results
-	renderInfiniteScrollTrigger(c, nextPageURL, view)
-
-	return nil
+	return view.RenderSearchPage(ads, nextCursor)
 }
 
 func HandleTreeCollapse(c *fiber.Ctx) error {
@@ -399,7 +321,7 @@ func HandleTreeCollapse(c *fiber.Ctx) error {
 	return render(c, ui.CollapsedTreeNodeWithThreshold(name, "/"+path, q, structuredQueryStr, fmt.Sprintf("%.1f", threshold), level))
 }
 
-func TreeView(c *fiber.Ctx) error {
+func HandleTreeViewNavigation(c *fiber.Ctx) error {
 	q := c.Query("q")
 	structuredQueryStr := c.Query("structured_query")
 	path := c.Params("*")
@@ -555,17 +477,19 @@ func TreeView(c *fiber.Ctx) error {
 	return render(c, ui.ExpandedTreeNodeWithThreshold(name, "/"+path, q, structuredQueryStr, fmt.Sprintf("%.1f", threshold), level, g.Group(childNodes)))
 }
 
-// handleViewSwitch is a unified handler for switching between list and tree views
-func handleViewSwitch(c *fiber.Ctx, view string) error {
+// handleViewSwitch is a unified handler for switching between views
+func handleViewSwitch(c *fiber.Ctx, viewType string) error {
 	currentUser, _ := CurrentUser(c)
 	userPrompt, _, threshold, _, _ := extractSearchParams(c)
 
-	var ads []ad.Ad
-	var nextCursor string
-	var err error
+	// Create the appropriate view implementation
+	view, err := NewView(c, viewType)
+	if err != nil {
+		return err
+	}
 
-	// Use the same performSearch function that HandleSearch uses
-	ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchPageSize, nil)
+	// Get ads using the view's search strategy
+	ads, nextCursor, err := view.GetAds()
 	if err != nil {
 		log.Printf("[handleViewSwitch] performSearch error: %v", err)
 		ads = []ad.Ad{}
@@ -582,7 +506,7 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 
 	selectedView := c.FormValue("selected_view")
 	if selectedView == "" {
-		selectedView = view
+		selectedView = viewType
 	}
 	c.Cookie(&fiber.Cookie{
 		Name:     "last_view",
@@ -595,11 +519,12 @@ func handleViewSwitch(c *fiber.Ctx, view string) error {
 	// Create loader URL if there are more results
 	var loaderURL string
 	if nextCursor != "" {
-		loaderURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s&threshold=%.1f", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(selectedView), threshold)
+		threshold := getThresholdFromQuery(c)
+		loaderURL = createLoaderURL(userPrompt, nextCursor, selectedView, threshold, nil)
 	}
 
-	// Only show no-results message for list and grid views
-	if (view == "list" || view == "grid") && len(ads) == 0 {
+	// Check if we should show no-results message
+	if len(ads) == 0 && view.ShouldShowNoResults() {
 		render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, currentUser, loc, selectedView, userPrompt, "", fmt.Sprintf("%.1f", threshold)))
 		return nil
 	}
@@ -651,27 +576,21 @@ func HandleMapView(c *fiber.Ctx) error {
 }
 
 // handleViewSwitchWithGeo is a unified handler for switching between views with geo filtering
-func handleViewSwitchWithGeo(c *fiber.Ctx, view string, bounds *GeoBounds) error {
+func handleViewSwitchWithGeo(c *fiber.Ctx, viewType string, bounds *GeoBounds) error {
 	currentUser, _ := CurrentUser(c)
 	userPrompt, _, threshold, _, _ := extractSearchParams(c)
 
 	// Get threshold from query parameter, default to config value
 	threshold = getThresholdFromQuery(c)
 
-	var ads []ad.Ad
-	var nextCursor string
-	var err error
-
-	// Use geo search for map view, regular search for other views
-	if view == "map" && bounds != nil {
-		ads, nextCursor, err = performGeoBoxSearch(userPrompt, currentUser, "", bounds, threshold)
-	} else if view == "map" {
-		// For map view without bounds, use map-specific search functions
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchInitialK, nil)
-	} else {
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchPageSize, nil)
+	// Create the appropriate view implementation
+	view, err := NewView(c, viewType)
+	if err != nil {
+		return err
 	}
 
+	// Get ads using the view's search strategy
+	ads, nextCursor, err := view.GetAds()
 	if err != nil {
 		log.Printf("[handleViewSwitchWithGeo] search error: %v", err)
 		ads = []ad.Ad{}
@@ -688,7 +607,7 @@ func handleViewSwitchWithGeo(c *fiber.Ctx, view string, bounds *GeoBounds) error
 
 	selectedView := c.FormValue("selected_view")
 	if selectedView == "" {
-		selectedView = view
+		selectedView = viewType
 	}
 	c.Cookie(&fiber.Cookie{
 		Name:     "last_view",
@@ -701,16 +620,12 @@ func handleViewSwitchWithGeo(c *fiber.Ctx, view string, bounds *GeoBounds) error
 	// Create loader URL if there are more results
 	var loaderURL string
 	if nextCursor != "" {
-		loaderURL = fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s&threshold=%.1f", htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(selectedView), threshold)
-		// Add bounding box to loader URL for map view
-		if view == "map" && bounds != nil {
-			loaderURL += fmt.Sprintf("&minLat=%.6f&maxLat=%.6f&minLon=%.6f&maxLon=%.6f",
-				bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
-		}
+		threshold := getThresholdFromQuery(c)
+		loaderURL = createLoaderURL(userPrompt, nextCursor, selectedView, threshold, nil)
 	}
 
-	// Only show no-results message for list and grid views
-	if (view == "list" || view == "grid") && len(ads) == 0 {
+	// Check if we should show no-results message
+	if len(ads) == 0 && view.ShouldShowNoResults() {
 		render(c, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, currentUser, loc, selectedView, userPrompt, "", fmt.Sprintf("%.1f", threshold)))
 		return nil
 	}
@@ -863,49 +778,21 @@ func matchesChildPath(ad ad.Ad, childPath []string, level int) bool {
 
 // HandleSearchAPI returns search results as JSON for JavaScript consumption
 func HandleSearchAPI(c *fiber.Ctx) error {
-	userPrompt, view, threshold, currentUser, userID := extractSearchParams(c)
+	userPrompt, viewType, threshold, _, userID := extractSearchParams(c)
 
-	log.Printf("[HandleSearchAPI] userPrompt='%s', userID=%d, view=%s, threshold=%.2f", userPrompt, userID, view, threshold)
+	log.Printf("[HandleSearchAPI] userPrompt='%s', userID=%d, view=%s, threshold=%.2f", userPrompt, userID, viewType, threshold)
 
-	// Parse bounding box parameters
-	var bounds *GeoBounds
-	if minLatStr := c.Query("minLat"); minLatStr != "" {
-		if maxLatStr := c.Query("maxLat"); maxLatStr != "" {
-			if minLonStr := c.Query("minLon"); minLonStr != "" {
-				if maxLonStr := c.Query("maxLon"); maxLonStr != "" {
-					minLat, err1 := strconv.ParseFloat(minLatStr, 64)
-					maxLat, err2 := strconv.ParseFloat(maxLatStr, 64)
-					minLon, err3 := strconv.ParseFloat(minLonStr, 64)
-					maxLon, err4 := strconv.ParseFloat(maxLonStr, 64)
-					if err1 == nil && err2 == nil && err3 == nil && err4 == nil {
-						bounds = &GeoBounds{
-							MinLat: minLat,
-							MaxLat: maxLat,
-							MinLon: minLon,
-							MaxLon: maxLon,
-						}
-						log.Printf("[HandleSearchAPI] Using bounding box: %+v", bounds)
-					}
-				}
-			}
-		}
+	// Create the appropriate view implementation
+	view, err := NewView(c, viewType)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"error": fmt.Sprintf("Invalid view type: %s", viewType),
+			"ads":   []ad.Ad{},
+		})
 	}
 
-	// Perform search
-	var ads []ad.Ad
-	var nextCursor string
-	var err error
-
-	// Use geo search for map view with bounds, regular search otherwise
-	if view == "map" && bounds != nil {
-		ads, nextCursor, err = performGeoBoxSearch(userPrompt, currentUser, "", bounds, threshold)
-	} else if view == "map" {
-		// For map view without bounds, use map-specific search functions
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchInitialK, nil)
-	} else {
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, "", threshold, config.QdrantSearchPageSize, nil)
-	}
-
+	// Get ads using the view's search strategy
+	ads, nextCursor, err := view.GetAds()
 	if err != nil {
 		log.Printf("[HandleSearchAPI] Search error: %v", err)
 		return c.Status(500).JSON(fiber.Map{
