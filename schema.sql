@@ -205,3 +205,33 @@ CREATE INDEX idx_message_conversation_id ON Message(conversation_id);
 CREATE INDEX idx_message_sender_id ON Message(sender_id);
 CREATE INDEX idx_message_created_at ON Message(created_at);
 CREATE INDEX idx_message_read_at ON Message(read_at);
+
+-- Rock system tables
+CREATE TABLE UserRock (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    rock_count INTEGER NOT NULL DEFAULT 3,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES User(id),
+    UNIQUE (user_id)
+);
+CREATE INDEX idx_userrock_user_id ON UserRock(user_id);
+
+CREATE TABLE AdRock (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ad_id INTEGER NOT NULL,
+    thrower_id INTEGER NOT NULL,
+    conversation_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    resolved_at DATETIME,
+    resolved_by INTEGER,
+    FOREIGN KEY (ad_id) REFERENCES Ad(id),
+    FOREIGN KEY (thrower_id) REFERENCES User(id),
+    FOREIGN KEY (conversation_id) REFERENCES Conversation(id),
+    FOREIGN KEY (resolved_by) REFERENCES User(id)
+);
+CREATE INDEX idx_adrock_ad_id ON AdRock(ad_id);
+CREATE INDEX idx_adrock_thrower_id ON AdRock(thrower_id);
+CREATE INDEX idx_adrock_conversation_id ON AdRock(conversation_id);
+CREATE INDEX idx_adrock_resolved_at ON AdRock(resolved_at);

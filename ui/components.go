@@ -8,6 +8,7 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/rock"
 )
 
 // ---- Layout Components ----
@@ -179,4 +180,159 @@ func NoSearchResultsMessage() g.Node {
 // EmptyResponse returns an empty div for HTMX responses that don't need content
 func EmptyResponse() g.Node {
 	return Div()
+}
+
+// ---- Rock Components ----
+
+func RockIcon(count int, resolved bool) g.Node {
+	if resolved {
+		return Span(
+			Class("inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"),
+			g.Text("🪨"),
+			Span(Class("ml-1"), g.Text(fmt.Sprintf("%d", count))),
+		)
+	}
+	return Span(
+		Class("inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800"),
+		g.Text("🪨"),
+		Span(Class("ml-1"), g.Text(fmt.Sprintf("%d", count))),
+	)
+}
+
+func RockButton(adID int, canThrow bool, rockCount int) g.Node {
+	if canThrow {
+		return Button(
+			Type("button"),
+			Class("inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 hover:bg-red-200 transition-colors"),
+			hx.Post(fmt.Sprintf("/api/throw-rock/%d", adID)),
+			hx.Target(fmt.Sprintf("#rock-section-%d", adID)),
+			hx.Swap("outerHTML"),
+			g.Text("🪨"),
+			Span(Class("ml-1"), g.Text("Throw Rock")),
+		)
+	}
+	return Span(
+		Class("inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500 cursor-not-allowed"),
+		g.Text("🪨"),
+		Span(Class("ml-1"), g.Text("No Rocks")),
+	)
+}
+
+func RockSection(adID, rockCount int, canThrow bool, userRockCount int) g.Node {
+	if rockCount == 0 && !canThrow {
+		return Div()
+	}
+
+	nodes := []g.Node{}
+
+	// Show existing rocks
+	if rockCount > 0 {
+		nodes = append(nodes,
+			Div(
+				Class("flex items-center gap-2 mb-2"),
+				RockIcon(rockCount, false),
+				Button(
+					Type("button"),
+					Class("text-xs text-blue-600 hover:underline"),
+					hx.Get(fmt.Sprintf("/api/ad-rocks/%d/conversations", adID)),
+					hx.Target(fmt.Sprintf("#rock-conversations-%d", adID)),
+					hx.Swap("innerHTML"),
+					g.Text("View Conversations"),
+				),
+			),
+			Div(
+				ID(fmt.Sprintf("rock-conversations-%d", adID)),
+				Class("hidden"),
+			),
+		)
+	}
+
+	// Show rock button if user can throw
+	if canThrow {
+		nodes = append(nodes,
+			Div(
+				Class("flex items-center gap-2"),
+				RockButton(adID, canThrow, userRockCount),
+				Span(
+					Class("text-xs text-gray-500"),
+					g.Text(fmt.Sprintf("You have %d rocks", userRockCount)),
+				),
+			),
+		)
+	}
+
+	return Div(
+		Class("border-t pt-2 mt-2"),
+		g.Group(nodes),
+	)
+}
+
+func RockConversations(adID int, rocks []rock.AdRock) g.Node {
+	if len(rocks) == 0 {
+		return Div(
+			Class("text-sm text-gray-500"),
+			g.Text("No rocks thrown at this ad."),
+		)
+	}
+
+	var conversationNodes []g.Node
+	for _, rock := range rocks {
+		status := "Active"
+		statusClass := "bg-red-100 text-red-800"
+		if rock.ResolvedAt != nil {
+			status = "Resolved"
+			statusClass = "bg-green-100 text-green-800"
+		}
+
+		conversationNodes = append(conversationNodes,
+			Div(
+				Class("border rounded p-3 mb-2"),
+				Div(
+					Class("flex items-center justify-between mb-2"),
+					Span(
+						Class("text-sm font-medium"),
+						g.Text(fmt.Sprintf("Rock by %s", rock.ThrowerName)),
+					),
+					Span(
+						Class(fmt.Sprintf("inline-flex items-center px-2 py-1 rounded-full text-xs font-medium %s", statusClass)),
+						g.Text(status),
+					),
+				),
+				Div(
+					Class("text-xs text-gray-500 mb-2"),
+					g.Text(fmt.Sprintf("Thrown on %s", rock.CreatedAt.Format("Jan 2, 2006"))),
+				),
+				Div(
+					Class("flex items-center gap-2"),
+					Button(
+						Type("button"),
+						Class("text-xs text-blue-600 hover:underline"),
+						hx.Get(fmt.Sprintf("/conversation/%d", rock.ConversationID)),
+						hx.Target("#conversation-content"),
+						hx.Swap("innerHTML"),
+						g.Text("View Conversation"),
+					),
+					g.If(rock.ResolvedAt == nil,
+						Button(
+							Type("button"),
+							Class("text-xs text-green-600 hover:underline"),
+							hx.Post(fmt.Sprintf("/api/resolve-rock/%d", rock.ID)),
+							hx.Target(fmt.Sprintf("#rock-section-%d", adID)),
+							hx.Swap("outerHTML"),
+							g.Text("Resolve & Return Rock"),
+						),
+					),
+				),
+			),
+		)
+	}
+
+	return Div(
+		Class("space-y-2"),
+		H4(
+			Class("text-sm font-medium mb-2"),
+			g.Text("Rock Conversations"),
+		),
+		g.Group(conversationNodes),
+	)
 }

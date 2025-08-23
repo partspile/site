@@ -92,8 +92,21 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
   - `POST /messages/:id/send` - Send a new message in a conversation
   - `GET /messages/start/:adID` - Start a new conversation about an ad
   - `GET /api/messages/:action` - API for conversations and unread counts
+- **Rock System Endpoints**:
+  - `GET /api/ad-rocks/:id` - Get rock information for an ad
+  - `POST /api/throw-rock/:id` - Throw a rock at an ad
+  - `GET /api/ad-rocks/:id/conversations` - View rock conversations for an ad
+  - `POST /api/resolve-rock/:id` - Resolve a rock dispute and return the rock
 
-### 3.7 Modern UI/UX
+### 3.7 Rock System for Dispute Resolution
+- **User Rock Inventory**: New users receive 3 rocks upon account verification. Rocks are a limited resource for marking disputes or complaints about ads.
+- **Rock Throwing**: Users can throw rocks at ads they believe violate policies or have quality issues. Each rock creates a conversation with the ad owner.
+- **Rock Management**: Once thrown, a rock is attached to the ad and the user's rock count decreases. Rocks can only be returned by the ad owner after dispute resolution.
+- **Dispute Resolution**: Rock conversations are publicly viewable, allowing transparency in dispute resolution. Ad owners can work with rock throwers to resolve issues.
+- **Search Penalties**: Ads with rocks are penalized in search results, with more rocks resulting in heavier penalties. This encourages quality maintenance.
+- **Rock UI**: Rocks are displayed as icons on ads with counts. Users can view rock conversations and resolve disputes through the messaging system.
+
+### 3.8 Modern UI/UX
 - Modern, accessible web UI using Tailwind CSS and HTMX for dynamic updates.
 - Form validation and user feedback for all actions.
 - **Ad timestamps are displayed in the user's local timezone, using browser-provided timezone information when available.**
@@ -339,6 +352,8 @@ The platform is built with the following technologies:
 - **BookmarkedAd**: user_id, ad_id, bookmarked_at
 - **UserAdClick**: ad_id, user_id, click_count, last_clicked_at
 - **PhoneVerification**: id, phone, verification_code, expires_at, attempts, created_at
+- **UserRock**: id, user_id, rock_count, created_at, updated_at
+- **AdRock**: id, ad_id, thrower_id, conversation_id, created_at, resolved_at, resolved_by
 
 ### Data Archiving Strategy
 - **Soft Delete for Ads**: Ads are marked as archived by setting `deleted_at` timestamp instead of being moved to separate tables
@@ -398,6 +413,12 @@ See `schema.sql` for full schema and indexes.
 - `GET /settings` — User settings page (change password, delete account)
 - `POST /api/change-password` — Change user password
 - `POST /api/delete-account` — Delete user account
+
+### Rock System Endpoints
+- `GET /api/ad-rocks/:id` — Get rock information for an ad
+- `POST /api/throw-rock/:id` — Throw a rock at an ad
+- `GET /api/ad-rocks/:id/conversations` — View rock conversations for an ad
+- `POST /api/resolve-rock/:id` — Resolve a rock dispute and return the rock
 
 ### Admin Endpoints
 - `GET /admin/b2-cache` — View B2 cache statistics and management

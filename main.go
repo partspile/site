@@ -137,6 +137,12 @@ func main() {
 	api.Get("/subcategories", handlers.HandleSubCategories)
 	api.Get("/ad-image-url/:adID", handlers.HandleAdImageSignedURL)
 
+	// Rock system (API)
+	api.Get("/ad-rocks/:id", handlers.OptionalAuth, handlers.HandleAdRocks)
+	api.Post("/throw-rock/:id", handlers.AuthRequired, handlers.HandleThrowRock)
+	api.Get("/ad-rocks/:id/conversations", handlers.HandleViewRockConversations)
+	api.Post("/resolve-rock/:id", handlers.AuthRequired, handlers.HandleResolveRock)
+
 	// Admin dashboard and management
 	admin := app.Group("/admin", handlers.AdminRequired)
 	admin.Get("/", handlers.HandleAdminDashboard)
@@ -155,6 +161,7 @@ func main() {
 	app.Get("/register/verify", handlers.HandleRegistrationVerification)
 	api.Post("/register/verify", handlers.HandleRegistrationStep2Submission)
 	api.Post("/sms/webhook", handlers.HandleSMSWebhook)
+	app.Get("/rocks", handlers.HandleRocksPage)
 	app.Get("/login", handlers.HandleLogin)
 	api.Post("/login", handlers.HandleLoginSubmission)
 	app.Post("/logout", handlers.HandleLogout)

@@ -318,3 +318,65 @@ func PrivacyPolicyPage(currentUser *user.User, path string) g.Node {
 		},
 	)
 }
+
+func RocksPage(currentUser *user.User, path string) g.Node {
+	return Page(
+		"Your Rocks - Parts Pile",
+		currentUser,
+		path,
+		[]g.Node{
+			PageHeader("Your Rocks"),
+			ContentContainer(
+				Div(
+					Class("text-center mb-8"),
+					H2(
+						Class("text-3xl font-bold text-gray-900 mb-4"),
+						g.Text("🎯 Welcome to Parts Pile!"),
+					),
+					P(
+						Class("text-lg text-gray-600 mb-6"),
+						g.Text("You've been given 3 rocks to help maintain quality on our platform."),
+					),
+					Div(
+						Class("bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6"),
+						H3(
+							Class("text-xl font-semibold text-blue-900 mb-3"),
+							g.Text("How Rocks Work"),
+						),
+						Ul(
+							Class("text-blue-800 space-y-2 text-left"),
+							Li(g.Text("• Throw rocks at ads that violate our policies or have issues")),
+							Li(g.Text("• Each rock creates a conversation with the ad owner")),
+							Li(g.Text("• Work together to resolve the dispute")),
+							Li(g.Text("• Once resolved, the seller can return your rock")),
+							Li(g.Text("• Rocks are limited - use them wisely!")),
+						),
+					),
+					Div(
+						Class("bg-green-50 border border-green-200 rounded-lg p-6 mb-8"),
+						H3(
+							Class("text-xl font-semibold text-green-900 mb-3"),
+							g.Text("Your Rock Inventory"),
+						),
+						Div(
+							Class("flex justify-center items-center space-x-4 text-2xl font-bold text-green-800"),
+							Span(g.Text("🪨")),
+							Span(g.Text("🪨")),
+							Span(g.Text("🪨")),
+						),
+						P(
+							Class("text-green-700 mt-2"),
+							g.Text("You have 3 rocks available"),
+						),
+					),
+					Div(
+						Class("text-center"),
+						StyledLink("Continue to Login", "/login", ButtonPrimary,
+							Class("text-lg px-8 py-3"),
+						),
+					),
+				),
+			),
+		},
+	)
+}
