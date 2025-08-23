@@ -34,6 +34,7 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 						g.Text("Enter your information below. We'll send a verification code to your phone number to complete registration."),
 					),
 				),
+
 				FormContainer("registerForm",
 					FormGroup("Username", "name",
 						Input(
@@ -66,7 +67,7 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 					),
 					Div(
 						Class("text-xs text-gray-600 bg-gray-50 p-3 rounded border"),
-						g.Text("By providing your phone number you agree to receive informational text messages from Parts Pile. Consent is not a condition of purchase. Message frequency will vary. Msg & data rates may apply. Reply HELP for help or STOP to cancel."),
+						g.Text("By providing your phone number you agree to receive informational text messages from Parts Pile. Message frequency will vary. Msg & data rates may apply. Reply HELP for help or STOP to cancel. We only use your phone for essential communications and verification."),
 					),
 					ActionButtons(
 						StyledButton("Send Verification Code", ButtonPrimary,
@@ -74,6 +75,33 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 							hx.Target("#result"),
 							hx.Indicator("#registerForm"),
 						),
+					),
+				),
+				Div(
+					Class("bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6"),
+					H3(
+						Class("text-lg font-semibold text-blue-900 mb-2"),
+						g.Text("Privacy First"),
+					),
+					P(
+						Class("text-blue-800 text-sm leading-relaxed"),
+						g.Text("At parts-pile, we believe your privacy is important. We collect only the minimal personal information needed to operate our service:"),
+					),
+					Ul(
+						Class("text-blue-800 text-sm mt-2 space-y-1"),
+						Li(g.Text("• Phone number (required) - for verification and communication")),
+						Li(g.Text("• Username (required) - to identify you on the platform")),
+						Li(g.Text("• Email (optional) - only if you choose email notifications in settings")),
+					),
+					P(
+						Class("text-blue-800 text-sm mt-2 leading-relaxed"),
+						g.Text("We don't collect real names, addresses, credit card information, or any other personal details. Your phone number requires verification to prevent abuse and ensure legitimate users. "),
+						A(
+							Href("/privacy"),
+							Class("text-blue-600 hover:text-blue-800 underline font-medium"),
+							g.Text("Learn more in our Privacy Policy"),
+						),
+						g.Text("."),
 					),
 				),
 				ResultContainer(),
@@ -230,10 +258,22 @@ func PrivacyPolicyPage(currentUser *user.User, path string) g.Node {
 					P(Class("mb-4"), g.Text("Last updated: December 2024")),
 
 					H3(Class("text-lg font-semibold mb-2"), g.Text("1. Information We Collect")),
-					P(Class("mb-4"), g.Text("We collect information you provide directly to us, such as when you create an account, post ads, or contact us. This may include your name, phone number, email address, and any other information you choose to provide.")),
+					P(Class("mb-4"), g.Text("We collect only the minimal personal information necessary to operate our service. This includes:")),
+					Ul(Class("ml-4 mb-4 space-y-2"),
+						Li(g.Text("• Username (required) - to identify you on the platform")),
+						Li(g.Text("• Phone number (required) - for verification and essential communications")),
+						Li(g.Text("• Email address (optional) - only if you choose email notifications in settings")),
+					),
+					P(Class("mb-4"), g.Text("We do not collect real names, addresses, credit card information, or any other personal details. We believe in collecting as little personal information as possible while still providing a secure and functional service.")),
 
 					H3(Class("text-lg font-semibold mb-2"), g.Text("2. How We Use Your Information")),
-					P(Class("mb-4"), g.Text("We use the information we collect to provide, maintain, and improve our services, to communicate with you, and to develop new features.")),
+					P(Class("mb-4"), g.Text("We use the minimal information we collect solely for:")),
+					Ul(Class("ml-4 mb-4 space-y-2"),
+						Li(g.Text("• Account verification and security")),
+						Li(g.Text("• Essential service communications")),
+						Li(g.Text("• Platform functionality and user identification")),
+					),
+					P(Class("mb-4"), g.Text("We do not use your information for marketing, advertising, or any other purposes beyond what is necessary to operate the service.")),
 
 					H3(Class("text-lg font-semibold mb-2"), g.Text("3. Information Sharing")),
 					P(Class("mb-4"), g.Text("We do not sell, trade, or otherwise transfer your personal information to third parties without your consent, except as described in this policy.")),
@@ -245,14 +285,14 @@ func PrivacyPolicyPage(currentUser *user.User, path string) g.Node {
 					P(Class("mb-4"), g.Text("By providing your phone number, you consent to receive informational text messages from Parts Pile. Message frequency will vary. You may opt out at any time by replying STOP.")),
 
 					H3(Class("text-lg font-semibold mb-2"), g.Text("6. Cookies and Tracking")),
-					P(Class("mb-4"), g.Text("We use cookies and similar tracking technologies to enhance your experience on our website and to analyze how our services are used.")),
+					P(Class("mb-4"), g.Text("We use a minimal set of cookies solely for essential website functionality. We do not use cookies for analytics, advertising, or tracking user behavior beyond what is necessary for the service to operate.")),
 
 					H4(Class("text-md font-semibold mb-2"), g.Text("Cookies We Use:")),
 
 					Div(Class("ml-4 mb-4"),
 						H5(Class("text-sm font-semibold mb-1"), g.Text("last_view")),
-						P(Class("text-sm mb-2"), g.Text("Purpose: Saves your last viewed page layout (list, grid, tree, or map) for a seamless browsing experience.")),
-						P(Class("text-sm mb-2"), g.Text("Data collected: View preference (e.g., 'list', 'grid', 'tree', 'map').")),
+						P(Class("text-sm mb-2"), g.Text("Purpose: Saves your preferred view layout (list, grid, tree, or map) for a seamless browsing experience.")),
+						P(Class("text-sm mb-2"), g.Text("Data collected: Single view preference value (e.g., 'list', 'grid', 'tree', 'map').")),
 						P(Class("text-sm mb-2"), g.Text("Retention: Expires after 30 days.")),
 						P(Class("text-sm mb-2"), g.Text("Third parties: None.")),
 					),
@@ -260,7 +300,7 @@ func PrivacyPolicyPage(currentUser *user.User, path string) g.Node {
 					Div(Class("ml-4 mb-4"),
 						H5(Class("text-sm font-semibold mb-1"), g.Text("Session Cookies")),
 						P(Class("text-sm mb-2"), g.Text("Purpose: Maintains your login session and authentication state while using the website.")),
-						P(Class("text-sm mb-2"), g.Text("Data collected: User ID and session identifier.")),
+						P(Class("text-sm mb-2"), g.Text("Data collected: User ID and session identifier for authentication.")),
 						P(Class("text-sm mb-2"), g.Text("Retention: Expires when you close your browser or log out.")),
 						P(Class("text-sm mb-2"), g.Text("Third parties: None.")),
 					),
@@ -273,6 +313,68 @@ func PrivacyPolicyPage(currentUser *user.User, path string) g.Node {
 
 					H3(Class("text-lg font-semibold mb-2"), g.Text("9. Contact Us")),
 					P(Class("mb-4"), g.Text("If you have any questions about this privacy policy, please contact us through our website.")),
+				),
+			),
+		},
+	)
+}
+
+func RocksPage(currentUser *user.User, path string) g.Node {
+	return Page(
+		"Your Rocks - Parts Pile",
+		currentUser,
+		path,
+		[]g.Node{
+			PageHeader("Your Rocks"),
+			ContentContainer(
+				Div(
+					Class("text-center mb-8"),
+					H2(
+						Class("text-3xl font-bold text-gray-900 mb-4"),
+						g.Text("🎯 Welcome to Parts Pile!"),
+					),
+					P(
+						Class("text-lg text-gray-600 mb-6"),
+						g.Text("You've been given 3 rocks to help maintain quality on our platform."),
+					),
+					Div(
+						Class("bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6"),
+						H3(
+							Class("text-xl font-semibold text-blue-900 mb-3"),
+							g.Text("How Rocks Work"),
+						),
+						Ul(
+							Class("text-blue-800 space-y-2 text-left"),
+							Li(g.Text("• Throw rocks at ads that violate our policies or have issues")),
+							Li(g.Text("• Each rock creates a conversation with the ad owner")),
+							Li(g.Text("• Work together to resolve the dispute")),
+							Li(g.Text("• Once resolved, the seller can return your rock")),
+							Li(g.Text("• Rocks are limited - use them wisely!")),
+						),
+					),
+					Div(
+						Class("bg-green-50 border border-green-200 rounded-lg p-6 mb-8"),
+						H3(
+							Class("text-xl font-semibold text-green-900 mb-3"),
+							g.Text("Your Rock Inventory"),
+						),
+						Div(
+							Class("flex justify-center items-center space-x-4 text-2xl font-bold text-green-800"),
+							Span(g.Text("🪨")),
+							Span(g.Text("🪨")),
+							Span(g.Text("🪨")),
+						),
+						P(
+							Class("text-green-700 mt-2"),
+							g.Text("You have 3 rocks available"),
+						),
+					),
+					Div(
+						Class("text-center"),
+						StyledLink("Continue to Login", "/login", ButtonPrimary,
+							Class("text-lg px-8 py-3"),
+						),
+					),
 				),
 			),
 		},

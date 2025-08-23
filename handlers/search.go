@@ -13,6 +13,7 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/part"
+	"github.com/parts-pile/site/rock"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vector"
@@ -44,6 +45,10 @@ func runEmbeddingSearch(embedding []float32, cursor string, currentUser *user.Us
 		return nil, "", err
 	}
 	log.Printf("[runEmbeddingSearch] DB fetch returned %d ads", len(ads))
+
+	// Apply rock penalties to reorder results
+	ads = applyRockPenalties(ads)
+
 	return ads, nextCursor, nil
 }
 
@@ -513,4 +518,33 @@ func matchesChildPath(ad ad.Ad, childPath []string, level int) bool {
 	}
 
 	return true // Default to true if no specific filtering needed
+}
+
+// applyRockPenalties reorders search results to penalize ads with rocks
+func applyRockPenalties(ads []ad.Ad) []ad.Ad {
+	if len(ads) == 0 {
+		return ads
+	}
+
+	// Create a copy to avoid modifying the original slice
+	result := make([]ad.Ad, len(ads))
+	copy(result, ads)
+
+	// Sort by rock count (ascending) and then by creation date (descending)
+	// This pushes ads with more rocks down in the results
+	sort.Slice(result, func(i, j int) bool {
+		// Get rock counts
+		rockCountI, _ := rock.GetAdRockCount(result[i].ID)
+		rockCountJ, _ := rock.GetAdRockCount(result[j].ID)
+
+		// If rock counts are different, sort by rock count (ascending)
+		if rockCountI != rockCountJ {
+			return rockCountI < rockCountJ
+		}
+
+		// If rock counts are the same, sort by creation date (newer first)
+		return result[i].CreatedAt.After(result[j].CreatedAt)
+	})
+
+	return result
 }

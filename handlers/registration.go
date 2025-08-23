@@ -287,5 +287,14 @@ func HandleRegistrationStep2Submission(c *fiber.Ctx) error {
 		// Don't fail registration for session cleanup errors
 	}
 
-	return render(c, ui.SuccessMessage("Registration successful! Your phone number has been verified.", "/login"))
+	// Return HTMX response that redirects to rocks page
+	c.Set("HX-Redirect", "/rocks")
+	return c.SendString("Registration successful! Redirecting to rocks page...")
+}
+
+// HandleRocksPage displays the rocks page for newly verified users
+func HandleRocksPage(c *fiber.Ctx) error {
+	// This page should only be accessible to newly verified users
+	// For now, we'll allow access but in production you might want to add session checks
+	return render(c, ui.RocksPage(nil, c.Path()))
 }

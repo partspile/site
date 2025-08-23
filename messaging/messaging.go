@@ -85,6 +85,21 @@ func GetOrCreateConversation(user1ID, user2ID, adID int) (int, error) {
 	return CreateConversation(user1ID, user2ID, adID)
 }
 
+// CreateConversationWithTx creates a new conversation between two users about an ad within a transaction
+func CreateConversationWithTx(tx *sql.Tx, user1ID, user2ID, adID int) (int, error) {
+	// Ensure user1ID is always the smaller ID for consistent ordering
+	if user1ID > user2ID {
+		user1ID, user2ID = user2ID, user1ID
+	}
+
+	res, err := tx.Exec(`INSERT INTO Conversation (user1_id, user2_id, ad_id) VALUES (?, ?, ?)`, user1ID, user2ID, adID)
+	if err != nil {
+		return 0, err
+	}
+	id, _ := res.LastInsertId()
+	return int(id), nil
+}
+
 // GetConversationByID retrieves a conversation by ID
 func GetConversationByID(id int) (Conversation, error) {
 	row := db.QueryRow(`SELECT id, user1_id, user2_id, ad_id, created_at, updated_at, user1_read, user2_read FROM Conversation WHERE id = ?`, id)
@@ -310,6 +325,16 @@ func AddMessage(conversationID, senderID int, content string) (int, error) {
 	NotifyConversationUpdate(conversationID, "new_message", &msg)
 
 	return int(messageID), nil
+}
+
+// AddMessageWithTx adds a new message to a conversation within a transaction
+func AddMessageWithTx(tx *sql.Tx, conversationID, senderID int, content string) (int, error) {
+	res, err := tx.Exec(`INSERT INTO Message (conversation_id, sender_id, content) VALUES (?, ?, ?)`, conversationID, senderID, content)
+	if err != nil {
+		return 0, err
+	}
+	id, _ := res.LastInsertId()
+	return int(id), nil
 }
 
 // GetMessages retrieves all messages for a conversation

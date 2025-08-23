@@ -49,13 +49,33 @@ func (u User) IsArchived() bool {
 	return u.DeletedAt != nil
 }
 
-// CreateUser inserts a new user into the database
+// CreateUser inserts a new user into the database and initializes their rock inventory
 func CreateUser(name, phone, passwordHash, passwordSalt, passwordAlgo string) (int, error) {
-	res, err := db.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo, phone_verified, notification_method) VALUES (?, ?, ?, ?, ?, 0, ?)`, name, phone, passwordHash, passwordSalt, passwordAlgo, NotificationMethodSMS)
+	// Start transaction
+	tx, err := db.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	// Create user
+	res, err := tx.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo, phone_verified, notification_method) VALUES (?, ?, ?, ?, ?, 0, ?)`, name, phone, passwordHash, passwordSalt, passwordAlgo, NotificationMethodSMS)
 	if err != nil {
 		return 0, err
 	}
 	id, _ := res.LastInsertId()
+
+	// Initialize rock inventory
+	_, err = tx.Exec(`INSERT INTO UserRock (user_id, rock_count) VALUES (?, 3)`, id)
+	if err != nil {
+		return 0, err
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
 	return int(id), nil
 }
 

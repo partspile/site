@@ -346,6 +346,13 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, currentUser *user.User, view
 				bookmarkBtn,
 			),
 		),
+		// Rock section - will be populated by HTMX
+		Div(
+			ID(fmt.Sprintf("rock-section-%d", ad.ID)),
+			Class("mt-2"),
+			hx.Get(fmt.Sprintf("/api/ad-rocks/%d", ad.ID)),
+			hx.Trigger("load"),
+		),
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", sortedYears))),
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", sortedModels))),
 		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Engines: %v", sortedEngines))),
