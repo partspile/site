@@ -68,6 +68,11 @@ func userEmbedding(currentUser *user.User, cursor string, threshold float64, k i
 	embedding, err := vector.GetUserPersonalizedEmbedding(currentUser.ID, false)
 	if err != nil {
 		log.Printf("[userEmbedding] GetUserPersonalizedEmbedding error: %v", err)
+		// If user has no activity, fall back to site-level embedding
+		if err.Error() == "no user activity to aggregate" {
+			log.Printf("[userEmbedding] User has no activity, falling back to site-level embedding")
+			return siteEmbedding(cursor, threshold, k, filter)
+		}
 		return nil, "", err
 	}
 	if embedding == nil {
