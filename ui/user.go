@@ -67,15 +67,29 @@ func UserNav(currentUser *user.User, currentPath string) g.Node {
 			A(Href("/"), Class("text-xl font-bold"), g.Text("Parts Pile")),
 			Span(Class("flex-grow")),
 		}
-		if currentPath != "/login" {
+
+		// Special handling for different unauthenticated pages
+		switch currentPath {
+		case "/register/verify":
+			// Verification page - no navigation links needed
+			break
+		case "/rocks":
+			// Rocks page - only show login (user just completed registration)
 			navItems = append(navItems,
 				A(Href("/login"), Class("text-blue-500 hover:underline"), g.Text("Login")),
 			)
-		}
-		if currentPath != "/register" {
-			navItems = append(navItems,
-				A(Href("/register"), Class("text-blue-500 hover:underline"), g.Text("Register")),
-			)
+		default:
+			// Other pages - show both login and register
+			if currentPath != "/login" {
+				navItems = append(navItems,
+					A(Href("/login"), Class("text-blue-500 hover:underline"), g.Text("Login")),
+				)
+			}
+			if currentPath != "/register" {
+				navItems = append(navItems,
+					A(Href("/register"), Class("text-blue-500 hover:underline"), g.Text("Register")),
+				)
+			}
 		}
 	}
 

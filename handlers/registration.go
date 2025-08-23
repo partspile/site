@@ -287,9 +287,8 @@ func HandleRegistrationStep2Submission(c *fiber.Ctx) error {
 		// Don't fail registration for session cleanup errors
 	}
 
-	// Return HTMX response that redirects to rocks page
-	c.Set("HX-Redirect", "/rocks")
-	return c.SendString("Registration successful! Redirecting to rocks page...")
+	// Return success response with delay before redirecting to rocks page
+	return render(c, ui.SuccessMessage("Registration successful! Redirecting to rocks page...", "/rocks"))
 }
 
 // HandleRocksPage displays the rocks page for newly verified users

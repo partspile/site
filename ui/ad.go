@@ -838,6 +838,13 @@ func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad) g.Node {
 			),
 			statusIndicator,
 			AdDetails(adObj),
+			// Rock section - will be populated by HTMX
+			Div(
+				ID(fmt.Sprintf("rock-section-%d", adObj.ID)),
+				Class("mt-4"),
+				hx.Get(fmt.Sprintf("/api/ad-rocks/%d", adObj.ID)),
+				hx.Trigger("load"),
+			),
 			ActionButtons(
 				BackToListingsButton(),
 			),
@@ -1414,6 +1421,13 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 			),
 			// Description
 			Div(Class("text-base mt-2"), g.Text(ad.Description)),
+			// Rock section - will be populated by HTMX
+			Div(
+				ID(fmt.Sprintf("rock-section-%d", ad.ID)),
+				Class("mt-2"),
+				hx.Get(fmt.Sprintf("/api/ad-rocks/%d", ad.ID)),
+				hx.Trigger("load"),
+			),
 		),
 	)
 
@@ -1576,6 +1590,13 @@ func AdDetailUnified(ad ad.Ad, userID int, view string) g.Node {
 				),
 				// Description
 				Div(Class("text-base mt-2"), g.Text(ad.Description)),
+				// Rock section - will be populated by HTMX
+				Div(
+					ID(fmt.Sprintf("rock-section-%d", ad.ID)),
+					Class("mt-2"),
+					hx.Get(fmt.Sprintf("/api/ad-rocks/%d", ad.ID)),
+					hx.Trigger("load"),
+				),
 			),
 		)
 	} else {
@@ -1611,6 +1632,13 @@ func AdDetailUnified(ad ad.Ad, userID int, view string) g.Node {
 				),
 				// Description
 				Div(Class("text-base mt-2"), g.Text(ad.Description)),
+				// Rock section - will be populated by HTMX
+				Div(
+					ID(fmt.Sprintf("rock-section-%d", ad.ID)),
+					Class("mt-2"),
+					hx.Get(fmt.Sprintf("/api/ad-rocks/%d", ad.ID)),
+					hx.Trigger("load"),
+				),
 			),
 		)
 	}
