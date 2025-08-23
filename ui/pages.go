@@ -66,7 +66,7 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 					),
 					Div(
 						Class("text-xs text-gray-600 bg-gray-50 p-3 rounded border"),
-						g.Text("By providing your phone number you agree to receive informational text messages from Parts Pile. Consent is not a condition of purchase. Message frequency will vary. Msg & data rates may apply. Reply HELP for help or STOP to cancel."),
+						g.Text("By providing your phone number you agree to receive informational text messages from Parts Pile. Message frequency will vary. Msg & data rates may apply. Reply HELP for help or STOP to cancel."),
 					),
 					ActionButtons(
 						StyledButton("Send Verification Code", ButtonPrimary,
