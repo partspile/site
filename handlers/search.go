@@ -97,7 +97,7 @@ func siteEmbedding(cursor string, threshold float64, k int, filter *qdrant.Filte
 	return runEmbeddingSearch(embedding, cursor, nil, threshold, k, filter)
 }
 
-// Search strategy for both HandleSearch and HandleSearchPage
+// performSearch performs the search based on the user prompt and current user
 func performSearch(userPrompt string, currentUser *user.User, cursorStr string, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
 	userID := 0
 	if currentUser != nil {
