@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/rock"
 	"github.com/parts-pile/site/ui"
 )
@@ -135,4 +137,33 @@ func HandleResolveRock(c *fiber.Ctx) error {
 	}
 
 	return c.SendString("Rock resolved successfully")
+}
+
+// applyRockPenalties reorders search results to penalize ads with rocks
+func applyRockPenalties(ads []ad.Ad) []ad.Ad {
+	if len(ads) == 0 {
+		return ads
+	}
+
+	// Create a copy to avoid modifying the original slice
+	result := make([]ad.Ad, len(ads))
+	copy(result, ads)
+
+	// Sort by rock count (ascending) and then by creation date (descending)
+	// This pushes ads with more rocks down in the results
+	sort.Slice(result, func(i, j int) bool {
+		// Get rock counts
+		rockCountI, _ := rock.GetAdRockCount(result[i].ID)
+		rockCountJ, _ := rock.GetAdRockCount(result[j].ID)
+
+		// If rock counts are different, sort by rock count (ascending)
+		if rockCountI != rockCountJ {
+			return rockCountI < rockCountJ
+		}
+
+		// If rock counts are the same, sort by creation date (newer first)
+		return result[i].CreatedAt.After(result[j].CreatedAt)
+	})
+
+	return result
 }

@@ -46,7 +46,3 @@ func GetBookmarkedAdIDsByUser(userID int) ([]int, error) {
 	}
 	return adIDs, nil
 }
-
-// GetAdsByIDs moved back to ad.go (core ad functionality)
-
-// GetAdsByIDsOptimizedWithBookmarks moved back to ad.go (core ad functionality)
