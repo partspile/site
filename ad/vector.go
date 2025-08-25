@@ -20,8 +20,6 @@ func GetAdsWithoutVectors() ([]Ad, error) {
 		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
 		LEFT JOIN Location l ON a.location_id = l.id
 		WHERE a.has_vector = 0 AND a.deleted_at IS NULL
-		ORDER BY a.created_at DESC
-		LIMIT 50
 	`
 
 	rows, err := db.Query(query)

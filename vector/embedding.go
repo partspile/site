@@ -834,56 +834,6 @@ func geocodeLocation(locationText string) (float64, float64) {
 	return 0, 0
 }
 
-// StartBackgroundVectorProcessor starts a background goroutine that processes ads without vectors
-func StartBackgroundVectorProcessor() {
-	go func() {
-		log.Printf("[BackgroundVectorProcessor] Starting background vector processor")
-		for {
-			// Get ads without vectors (database already filters them)
-			ads, err := ad.GetAdsWithoutVectors()
-			if err != nil {
-				log.Printf("[BackgroundVectorProcessor] Failed to get ads: %v", err)
-				time.Sleep(30 * time.Second)
-				continue
-			}
-
-			if len(ads) == 0 {
-				log.Printf("[BackgroundVectorProcessor] No ads without vectors to process, sleeping for 15 minutes")
-				time.Sleep(15 * time.Minute)
-				continue
-			}
-
-			log.Printf("[BackgroundVectorProcessor] Found %d ads without vectors to process", len(ads))
-
-			// Process each ad
-			processed := 0
-			for i, adObj := range ads {
-				log.Printf("[BackgroundVectorProcessor] Processing ad %d/%d: %s", i+1, len(ads), adObj.Title)
-
-				// Build embedding
-				err := BuildAdEmbedding(adObj)
-				if err != nil {
-					log.Printf("[BackgroundVectorProcessor] Failed to build embedding for ad %d: %v", adObj.ID, err)
-					continue
-				}
-
-				processed++
-
-				// Sleep to avoid rate limits
-				time.Sleep(config.QdrantProcessingSleepInterval)
-			}
-
-			if processed > 0 {
-				log.Printf("[BackgroundVectorProcessor] Processed %d ads, sleeping for 5 minutes", processed)
-				time.Sleep(5 * time.Minute)
-			} else {
-				log.Printf("[BackgroundVectorProcessor] No ads needed processing, sleeping for 15 minutes")
-				time.Sleep(15 * time.Minute)
-			}
-		}
-	}()
-}
-
 // QuerySimilarAdsWithFilter queries Qdrant with filters
 func QuerySimilarAdsWithFilter(embedding []float32, filter *qdrant.Filter, topK int, cursor string, threshold float64) ([]AdResult, string, error) {
 	if qdrantClient == nil {
