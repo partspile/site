@@ -400,7 +400,7 @@ func HandleAdDetailPartial(c *fiber.Ctx) error {
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	userID := getUserID(c)
+	_, userID := getUser(c)
 	view := c.Query("view", "list")
 	return render(c, ui.AdDetailPartial(adObj, userID, view))
 }

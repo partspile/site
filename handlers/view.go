@@ -67,9 +67,8 @@ func (v *ListView) GetAds() ([]ad.Ad, string, error) {
 
 func (v *ListView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	loc := getLocation(v.ctx)
-	currentUser, _ := CurrentUser(v.ctx)
+	currentUser, userID := getUser(v.ctx)
 	userPrompt := v.ctx.Query("q")
-	userID := getUserID(v.ctx)
 	newAdButton := renderNewAdButton(userID)
 	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 
@@ -113,7 +112,7 @@ func (v *ListView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 
 func (v *ListView) SaveUserSearch() {
 	userPrompt := v.ctx.Query("q")
-	userID := getUserID(v.ctx)
+	_, userID := getUser(v.ctx)
 	saveUserSearchAndQueue(userPrompt, userID)
 }
 
@@ -152,9 +151,8 @@ func (v *GridView) GetAds() ([]ad.Ad, string, error) {
 
 func (v *GridView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	loc := getLocation(v.ctx)
-	currentUser, _ := CurrentUser(v.ctx)
+	currentUser, userID := getUser(v.ctx)
 	userPrompt := v.ctx.Query("q")
-	userID := getUserID(v.ctx)
 	newAdButton := renderNewAdButton(userID)
 	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 
@@ -196,7 +194,7 @@ func (v *GridView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 
 func (v *GridView) SaveUserSearch() {
 	userPrompt := v.ctx.Query("q")
-	userID := getUserID(v.ctx)
+	_, userID := getUser(v.ctx)
 	saveUserSearchAndQueue(userPrompt, userID)
 }
 
@@ -245,7 +243,7 @@ func (v *MapView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	loc := getLocation(v.ctx)
 	currentUser, _ := CurrentUser(v.ctx)
 	userPrompt := v.ctx.Query("q")
-	userID := getUserID(v.ctx)
+	_, userID := getUser(v.ctx)
 	newAdButton := renderNewAdButton(userID)
 	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 
@@ -299,7 +297,7 @@ func (v *MapView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 
 func (v *MapView) SaveUserSearch() {
 	userPrompt := v.ctx.Query("q")
-	userID := getUserID(v.ctx)
+	_, userID := getUser(v.ctx)
 	saveUserSearchAndQueue(userPrompt, userID)
 }
 
@@ -340,7 +338,7 @@ func (v *TreeView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	loc := getLocation(v.ctx)
 	currentUser, _ := CurrentUser(v.ctx)
 	userPrompt := v.ctx.Query("q")
-	userID := getUserID(v.ctx)
+	_, userID := getUser(v.ctx)
 	newAdButton := renderNewAdButton(userID)
 	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 
@@ -384,7 +382,7 @@ func (v *TreeView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 
 func (v *TreeView) SaveUserSearch() {
 	userPrompt := v.ctx.Query("q")
-	userID := getUserID(v.ctx)
+	_, userID := getUser(v.ctx)
 	saveUserSearchAndQueue(userPrompt, userID)
 }
 
@@ -481,7 +479,10 @@ func performGeoBoxSearch(userPrompt string, currentUser *user.User, cursorStr st
 		return nil, "", fmt.Errorf("bounds cannot be nil for geo box search")
 	}
 
-	userID := getUserIDFromUser(currentUser)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
 	log.Printf("[performGeoBoxSearch] userPrompt='%s', userID=%d, cursorStr='%s', bounds=%+v", userPrompt, userID, cursorStr, bounds)
 
 	// Build geo filter

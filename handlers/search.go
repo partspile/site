@@ -46,8 +46,8 @@ func runEmbeddingSearch(embedding []float32, cursor string, currentUser *user.Us
 	}
 	log.Printf("[runEmbeddingSearch] DB fetch returned %d ads", len(ads))
 
-	// Apply rock penalties to reorder results
-	ads = applyRockPenalties(ads)
+	// Rock count is now incorporated into embeddings, no need for post-processing
+	// ads = applyRockPenalties(ads)
 
 	return ads, nextCursor, nil
 }
@@ -99,7 +99,10 @@ func siteEmbedding(cursor string, threshold float64, k int, filter *qdrant.Filte
 
 // Search strategy for both HandleSearch and HandleSearchPage
 func performSearch(userPrompt string, currentUser *user.User, cursorStr string, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
-	userID := getUserIDFromUser(currentUser)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
 	log.Printf("[performSearch] userPrompt='%s', userID=%d, cursorStr='%s', threshold=%.2f, k=%d, filter=%v", userPrompt, userID, cursorStr, threshold, k, filter)
 
 	if userPrompt != "" {
@@ -251,8 +254,7 @@ func HandleTreeViewNavigation(c *fiber.Ctx) error {
 	var err error
 
 	// Get ads for the current node
-	currentUser, _ := CurrentUser(c)
-	userID := getUserID(c)
+	currentUser, userID := getUser(c)
 
 	var ads []ad.Ad
 	if q != "" {
@@ -407,7 +409,10 @@ func getTreeAdsForSearch(userPrompt string, currentUser *user.User, threshold fl
 
 // getTreeAdsForSearchWithFilter gets ads for tree view with filtering
 func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string, currentUser *user.User, threshold float64) ([]ad.Ad, error) {
-	userID := getUserIDFromUser(currentUser)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
 	log.Printf("[getTreeAdsForSearchWithFilter] userPrompt='%s', treePath=%+v, userID=%d, threshold=%.2f", userPrompt, treePath, userID, threshold)
 
 	var embedding []float32

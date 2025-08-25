@@ -13,6 +13,7 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/cache"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/rock"
 	"github.com/parts-pile/site/vehicle"
 	"github.com/qdrant/go-client/qdrant"
 	genai "google.golang.org/genai"
@@ -580,6 +581,18 @@ func CalculateSiteLevelVector() ([]float32, error) {
 	if result == nil {
 		return nil, fmt.Errorf("AggregateEmbeddings returned nil")
 	}
+
+	// Enhance site-level vector with rock preference for anonymous users
+	rockPreferencePrompt := "Show me high-quality ads with fewer reported issues (rocks thrown). I prefer reliable, trustworthy listings."
+	rockPreferenceEmbedding, err := EmbedTextCached(rockPreferencePrompt)
+	if err == nil && rockPreferenceEmbedding != nil {
+		// Blend the site-level vector with rock preference
+		enhancedVectors := [][]float32{result, rockPreferenceEmbedding}
+		enhancedWeights := []float32{1.0, 1.5} // Site-level gets weight 1.0, rock preference gets 1.5
+		result = AggregateEmbeddings(enhancedVectors, enhancedWeights)
+		log.Printf("[site-level] Enhanced site-level vector with rock preference")
+	}
+
 	return result, nil
 }
 
@@ -685,7 +698,23 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 		}
 	}
 
-	return fmt.Sprintf(`Encode the following ad for semantic search. Focus on what the part is, what vehicles it fits, and any relevant details for a buyer. Return only the embedding vector.\n\nTitle: %s\nDescription: %s\nMake: %s\nParent Company: %s\nParent Company Country: %s\nYears: %s\nModels: %s\nEngines: %s\nCategory: %s\nLocation: %s, %s, %s`,
+	// Get rock count for this ad
+	rockCount := 0
+	if count, err := rock.GetAdRockCount(adObj.ID); err == nil {
+		rockCount = count
+	}
+
+	// Include rock count in the embedding - ads with fewer rocks should rank higher
+	rockContext := ""
+	if rockCount == 0 {
+		rockContext = "This ad has no reported issues (0 rocks thrown)."
+	} else if rockCount == 1 {
+		rockContext = "This ad has 1 reported issue (1 rock thrown)."
+	} else {
+		rockContext = fmt.Sprintf("This ad has %d reported issues (%d rocks thrown).", rockCount, rockCount)
+	}
+
+	return fmt.Sprintf(`Encode the following ad for semantic search. Focus on what the part is, what vehicles it fits, and any relevant details for a buyer. Return only the embedding vector.\n\nTitle: %s\nDescription: %s\nMake: %s\nParent Company: %s\nParent Company Country: %s\nYears: %s\nModels: %s\nEngines: %s\nCategory: %s\nLocation: %s, %s, %s\nQuality Indicator: %s`,
 		adObj.Title,
 		adObj.Description,
 		adObj.Make,
@@ -698,6 +727,7 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 		adObj.City,
 		adObj.AdminArea,
 		adObj.Country,
+		rockContext,
 	)
 }
 
@@ -729,6 +759,12 @@ func BuildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 		// TODO: Look up subcategory name from SubCategoryID if needed
 	}
 
+	// Get rock count for this ad
+	rockCount := 0
+	if count, err := rock.GetAdRockCount(adObj.ID); err == nil {
+		rockCount = count
+	}
+
 	metadata := map[string]interface{}{
 		// Tree navigation (string values for filtering)
 		"make":        make,
@@ -740,6 +776,9 @@ func BuildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 
 		// Price for filtering/sorting
 		"price": adObj.Price,
+
+		// Rock count for quality-based ranking
+		"rock_count": rockCount,
 	}
 
 	// Add geo payload if we have coordinates

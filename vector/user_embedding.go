@@ -157,6 +157,17 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 		log.Printf("[embedding][warn] userID=%d: No vectors could be aggregated from user activity", userID)
 		return nil, fmt.Errorf("no user activity to aggregate")
 	}
+
+	// Add a rock preference vector to favor ads with fewer rocks
+	rockPreferencePrompt := "Show me high-quality ads with fewer reported issues (rocks thrown). I prefer reliable, trustworthy listings."
+	rockPreferenceEmbedding, err := EmbedTextCached(rockPreferencePrompt)
+	if err == nil && rockPreferenceEmbedding != nil {
+		// Add rock preference with high weight to ensure it influences results
+		vectors = append(vectors, rockPreferenceEmbedding)
+		weights = append(weights, 2.0) // Higher weight for rock preference
+		log.Printf("[embedding][debug] userID=%d: Added rock preference vector", userID)
+	}
+
 	emb := AggregateEmbeddings(vectors, weights)
 	err = SaveUserEmbeddingToDB(userID, emb)
 	if err != nil {

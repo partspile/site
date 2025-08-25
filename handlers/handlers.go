@@ -36,21 +36,12 @@ func getLocation(c *fiber.Ctx) *time.Location {
 	return loc
 }
 
-// getUserID extracts the user ID from the current user context
-// Returns 0 if no user is logged in, otherwise returns the user's ID
-func getUserID(c *fiber.Ctx) int {
+// getUser gets the current user and their ID
+func getUser(c *fiber.Ctx) (*user.User, int) {
 	currentUser, _ := CurrentUser(c)
+	userID := 0
 	if currentUser != nil {
-		return currentUser.ID
+		userID = currentUser.ID
 	}
-	return 0
-}
-
-// getUserIDFromUser extracts the user ID from a user object
-// Returns 0 if the user is nil, otherwise returns the user's ID
-func getUserIDFromUser(currentUser *user.User) int {
-	if currentUser != nil {
-		return currentUser.ID
-	}
-	return 0
+	return currentUser, userID
 }
