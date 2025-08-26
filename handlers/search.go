@@ -68,13 +68,13 @@ func userEmbedding(currentUser *user.User, cursor string, threshold float64, k i
 // Embedding-based search with site-level vector
 func siteEmbedding(cursor string, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
 	log.Printf("[siteEmbedding] called with cursor=%s, threshold=%.2f", cursor, threshold)
-	embedding, err := vector.GetSiteLevelVector()
+	embedding, err := vector.GetSiteEmbedding("default")
 	if err != nil {
-		log.Printf("[siteEmbedding] GetSiteLevelVector error: %v", err)
+		log.Printf("[siteEmbedding] GetSiteEmbedding error: %v", err)
 		return nil, "", err
 	}
 	if embedding == nil {
-		log.Printf("[siteEmbedding] GetSiteLevelVector returned nil embedding")
+		log.Printf("[siteEmbedding] GetSiteEmbedding returned nil embedding")
 		return nil, "", fmt.Errorf("site-level vector unavailable")
 	}
 	return runEmbeddingSearch(embedding, cursor, nil, threshold, k, filter)

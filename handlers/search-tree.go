@@ -227,7 +227,7 @@ func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string
 			return nil, fmt.Errorf("failed to generate embedding: %w", err)
 		}
 	} else {
-		embedding, err = vector.GetSiteLevelVector()
+		embedding, err = vector.GetSiteEmbedding("default")
 		if err != nil {
 			return nil, fmt.Errorf("failed to get site-level vector: %w", err)
 		}

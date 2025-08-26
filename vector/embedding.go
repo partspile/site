@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/parts-pile/site/ad"
@@ -163,7 +162,7 @@ func GetSiteEmbedding(campaignKey string) ([]float32, error) {
 	}
 
 	log.Printf("[embedding][site-cache] Cache miss for campaign %s, generating embedding", campaignKey)
-	embedding, err := CalculateSiteLevelVector()
+	embedding, err := calculateSiteLevelVector()
 	if err != nil {
 		return nil, err
 	}
@@ -620,23 +619,12 @@ func AggregateEmbeddings(vectors [][]float32, weights []float32) []float32 {
 	return result
 }
 
-// Site-level vector for anonymous default feed
-var (
-	siteLevelVector         []float32
-	siteLevelVectorLastCalc time.Time
-	siteLevelVectorTTL      = config.QdrantTTL
-	siteLevelVectorMutex    sync.RWMutex
-)
 
-// GetSiteLevelVector returns the cached site-level vector, recalculating if needed
-// TODO: This function now uses the new site cache but maintains backward compatibility
-func GetSiteLevelVector() ([]float32, error) {
-	// Use default campaign key for now
-	return GetSiteEmbedding("default")
-}
 
-// CalculateSiteLevelVector averages the embeddings of the most popular ads
-func CalculateSiteLevelVector() ([]float32, error) {
+
+
+// calculateSiteLevelVector averages the embeddings of the most popular ads
+func calculateSiteLevelVector() ([]float32, error) {
 	ads := ad.GetMostPopularAds(50)
 	log.Printf("[site-level] Calculating site-level vector from %d popular ads", len(ads))
 	log.Printf("[site-level] Popular ads being used:")

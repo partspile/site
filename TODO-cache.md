@@ -151,7 +151,7 @@
 ## **Phase 6: Remove Old In-Memory Site Vector Code**
 
 ### **6.1 Update vector/embedding.go**
-- [ ] **Remove site-level vector variables**:
+- [x] **Remove site-level vector variables**:
   ```go
   // Remove these variables
   var (
@@ -162,15 +162,15 @@
   )
   ```
 
-- [ ] **Remove old functions**:
-  - [ ] `GetSiteLevelVector()` (replaced by `GetSiteEmbedding()`)
-  - [ ] `CalculateSiteLevelVector()` (move logic to new function)
+- [x] **Remove old functions**:
+  - [x] `GetSiteLevelVector()` (replaced by `GetSiteEmbedding()`)
+  - [x] `CalculateSiteLevelVector()` (move logic to new function)
 
-- [ ] **Clean up imports** - remove unused `sync` import
+- [x] **Clean up imports** - remove unused `sync` import
 
 ### **6.2 Update config**
-- [ ] **Remove QdrantTTL** if no longer used elsewhere
-- [ ] **Add new config options** for cache TTLs if needed
+- [x] **Remove QdrantTTL** if no longer used elsewhere
+- [x] **Add new config options** for cache TTLs if needed
 
 ---
 
@@ -240,7 +240,7 @@
 **Phase 3:** 6/6 tasks completed ✅
 **Phase 4:** 6/6 tasks completed ✅
 **Phase 5:** 6/6 tasks completed ✅
-**Phase 6:** 0/6 tasks completed
+**Phase 6:** 6/6 tasks completed ✅
 **Phase 7:** 0/12 tasks completed
 
-**Overall Progress:** 33/55 tasks completed (60%)
+**Overall Progress:** 39/55 tasks completed (71%)
