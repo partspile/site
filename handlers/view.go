@@ -36,12 +36,6 @@ type View interface {
 
 	// RenderSearchPage renders just the ads and infinite scroll for pagination
 	RenderSearchPage(ads []ad.Ad, nextCursor string) error
-
-	// SaveUserSearch saves user search and queues user for embedding update
-	SaveUserSearch()
-
-	// ShouldShowNoResults determines if this view should show a no-results message
-	ShouldShowNoResults() bool
 }
 
 // ListView implements the View interface for list view
@@ -81,8 +75,8 @@ func (v *ListView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 
 	// Check if we should show no results message
-	if len(ads) == 0 && v.ShouldShowNoResults() {
-		return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, currentUser, loc, "list", userPrompt, "", fmt.Sprintf("%.1f", threshold)))
+	if len(ads) == 0 {
+		return render(v.ctx, ui.SearchResultsEmpty("list", userPrompt, fmt.Sprintf("%.1f", threshold), newAdButton))
 	}
 
 	// Create loader URL if there are more results
@@ -116,16 +110,6 @@ func (v *ListView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	}
 
 	return nil
-}
-
-func (v *ListView) SaveUserSearch() {
-	userPrompt := v.ctx.Query("q")
-	_, userID := getUser(v.ctx)
-	saveUserSearchAndQueue(userPrompt, userID)
-}
-
-func (v *ListView) ShouldShowNoResults() bool {
-	return true
 }
 
 // GridView implements the View interface for grid view
@@ -165,8 +149,8 @@ func (v *GridView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 
 	// Check if we should show no results message
-	if len(ads) == 0 && v.ShouldShowNoResults() {
-		return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, currentUser, loc, "grid", userPrompt, "", fmt.Sprintf("%.1f", threshold)))
+	if len(ads) == 0 {
+		return render(v.ctx, ui.SearchResultsEmpty("grid", userPrompt, fmt.Sprintf("%.1f", threshold), newAdButton))
 	}
 
 	// Create loader URL if there are more results
@@ -198,16 +182,6 @@ func (v *GridView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	}
 
 	return nil
-}
-
-func (v *GridView) SaveUserSearch() {
-	userPrompt := v.ctx.Query("q")
-	_, userID := getUser(v.ctx)
-	saveUserSearchAndQueue(userPrompt, userID)
-}
-
-func (v *GridView) ShouldShowNoResults() bool {
-	return true
 }
 
 // MapView implements the View interface for map view
@@ -256,8 +230,8 @@ func (v *MapView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 
 	// Check if we should show no results message
-	if len(ads) == 0 && v.ShouldShowNoResults() {
-		return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, currentUser, loc, "map", userPrompt, "", fmt.Sprintf("%.1f", threshold)))
+	if len(ads) == 0 {
+		return render(v.ctx, ui.SearchResultsEmpty("map", userPrompt, fmt.Sprintf("%.1f", threshold), newAdButton))
 	}
 
 	// Create loader URL if there are more results
@@ -303,16 +277,6 @@ func (v *MapView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	return nil
 }
 
-func (v *MapView) SaveUserSearch() {
-	userPrompt := v.ctx.Query("q")
-	_, userID := getUser(v.ctx)
-	saveUserSearchAndQueue(userPrompt, userID)
-}
-
-func (v *MapView) ShouldShowNoResults() bool {
-	return false // Map view continues to show empty map
-}
-
 // TreeView implements the View interface for tree view
 type TreeView struct {
 	ctx *fiber.Ctx
@@ -351,8 +315,8 @@ func (v *TreeView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	threshold := v.ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 
 	// Check if we should show no results message
-	if len(ads) == 0 && v.ShouldShowNoResults() {
-		return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), nil, nil, currentUser, loc, "tree", userPrompt, "", fmt.Sprintf("%.1f", threshold)))
+	if len(ads) == 0 {
+		return render(v.ctx, ui.SearchResultsEmpty("tree", userPrompt, fmt.Sprintf("%.1f", threshold), newAdButton))
 	}
 
 	// Create loader URL if there are more results
@@ -386,16 +350,6 @@ func (v *TreeView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	}
 
 	return nil
-}
-
-func (v *TreeView) SaveUserSearch() {
-	userPrompt := v.ctx.Query("q")
-	_, userID := getUser(v.ctx)
-	saveUserSearchAndQueue(userPrompt, userID)
-}
-
-func (v *TreeView) ShouldShowNoResults() bool {
-	return true
 }
 
 // extractMapBounds extracts geographic bounding box parameters for map view

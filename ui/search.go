@@ -186,6 +186,18 @@ func SearchResultsContainer(newAdButton g.Node, ads []ad.Ad, currentUser *user.U
 	)
 }
 
+func SearchResultsEmpty(viewType string, query string, threshold string, newAdButton g.Node) g.Node {
+	return Div(
+		ID("searchResults"),
+		SearchWidget(newAdButton, viewType, query, threshold),
+		ViewToggleButtons(viewType),
+		Div(
+			ID("view-wrapper"),
+			NoSearchResultsMessage(),
+		),
+	)
+}
+
 func createViewWithInfiniteScroll(ads []ad.Ad, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold string) g.Node {
 	var viewContent g.Node
 

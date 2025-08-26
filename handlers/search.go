@@ -122,7 +122,7 @@ func handleSearch(c *fiber.Ctx, viewType string) error {
 		return err
 	}
 
-	view.SaveUserSearch()
+	saveUserSearch(c)
 
 	return view.RenderSearchResults(ads, nextCursor)
 }
@@ -138,10 +138,6 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	ads, nextCursor, err := view.GetAds()
 	if err != nil {
 		return err
-	}
-
-	if len(ads) == 0 && view.ShouldShowNoResults() {
-		return nil
 	}
 
 	return view.RenderSearchPage(ads, nextCursor)
@@ -186,7 +182,7 @@ func HandleSearchAPI(c *fiber.Ctx) error {
 		})
 	}
 
-	view.SaveUserSearch()
+	saveUserSearch(c)
 
 	log.Printf("[HandleSearchAPI] ads returned: %d", len(ads))
 
@@ -196,4 +192,11 @@ func HandleSearchAPI(c *fiber.Ctx) error {
 		"nextCursor": nextCursor,
 		"count":      len(ads),
 	})
+}
+
+// saveUserSearch saves user search and queues user for embedding update
+func saveUserSearch(c *fiber.Ctx) {
+	userPrompt := c.Query("q")
+	_, userID := getUser(c)
+	saveUserSearchAndQueue(userPrompt, userID)
 }
