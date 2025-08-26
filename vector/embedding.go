@@ -121,7 +121,7 @@ func GetQueryEmbedding(text string) ([]float32, error) {
 	return embedding, nil
 }
 
-// GetUserEmbedding retrieves or generates a user's personalized embedding using the user cache
+// GetUserEmbedding retrieves a user's personalized embedding from the user cache
 func GetUserEmbedding(userID int) ([]float32, error) {
 	if userEmbeddingCache == nil {
 		return nil, fmt.Errorf("user embedding cache not initialized")
@@ -133,18 +133,21 @@ func GetUserEmbedding(userID int) ([]float32, error) {
 		return cached, nil
 	}
 
-	// Cache miss - generate the embedding
-	log.Printf("[embedding][user-cache] Cache miss for user %d, generating embedding", userID)
-	embedding, err := GetUserPersonalizedEmbedding(userID, false)
-	if err != nil {
-		return nil, err
+	log.Printf("[embedding][user-cache] Cache miss for user %d", userID)
+	return nil, fmt.Errorf("user embedding not found in cache")
+}
+
+// SetUserEmbedding stores a user's personalized embedding in the user cache
+func SetUserEmbedding(userID int, embedding []float32) error {
+	if userEmbeddingCache == nil {
+		return fmt.Errorf("user embedding cache not initialized")
 	}
 
-	// Cache the result with 24 hour TTL
+	key := fmt.Sprintf("user_%d", userID)
+	// Cache with 24 hour TTL
 	userEmbeddingCache.SetWithTTL(key, embedding, int64(len(embedding)*4), 24*time.Hour)
 	log.Printf("[embedding][user-cache] Cached embedding for user %d", userID)
-
-	return embedding, nil
+	return nil
 }
 
 // GetSiteEmbedding retrieves a site-level embedding from the site cache

@@ -88,6 +88,12 @@ func TestNewHelperFunctions(t *testing.T) {
 		t.Error("Expected error when user embedding cache is nil")
 	}
 
+	// Test SetUserEmbedding with nil cache
+	err = SetUserEmbedding(123, []float32{1.0, 2.0, 3.0})
+	if err == nil {
+		t.Error("Expected error when user embedding cache is nil")
+	}
+
 	// Test GetSiteEmbedding with nil cache
 	_, err = GetSiteEmbedding("test-campaign")
 	if err == nil {

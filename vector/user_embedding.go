@@ -64,18 +64,30 @@ func math32tobytes(f float32) uint32 {
 	return math.Float32bits(f)
 }
 
-// GetUserPersonalizedEmbedding loads from DB unless forceRecompute is true or not found.
+// GetUserPersonalizedEmbedding loads from cache first, then DB unless forceRecompute is true or not found.
 func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, error) {
 	log.Printf("[DEBUG] GetUserPersonalizedEmbedding called with userID=%d, forceRecompute=%v", userID, forceRecompute)
 
 	if !forceRecompute {
+		// Try cache first
+		cached, err := GetUserEmbedding(userID)
+		if err == nil && cached != nil {
+			log.Printf("[DEBUG] Cache hit for userID=%d", userID)
+			return cached, nil
+		}
+
+		// Cache miss, try DB
 		emb, err := LoadUserEmbeddingFromDB(userID)
 		if err != nil {
 			log.Printf("[DEBUG] LoadUserEmbeddingFromDB error: %v", err)
 			return nil, err
 		}
 		if emb != nil {
-			log.Printf("[DEBUG] Returning cached embedding for userID=%d", userID)
+			log.Printf("[DEBUG] DB hit for userID=%d, caching result", userID)
+			// Cache the DB result for future use
+			if err := SetUserEmbedding(userID, emb); err != nil {
+				log.Printf("[warn] failed to cache user embedding from DB: %v", err)
+			}
 			return emb, nil
 		}
 	}
@@ -169,10 +181,18 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 	}
 
 	emb := AggregateEmbeddings(vectors, weights)
+
+	// Save to DB for backward compatibility during migration
 	err = SaveUserEmbeddingToDB(userID, emb)
 	if err != nil {
-		log.Printf("[embedding][warn] failed to save user embedding for userID=%d: %v", userID, err)
+		log.Printf("[embedding][warn] failed to save user embedding to DB for userID=%d: %v", userID, err)
 	}
+
+	// Cache the result for future use
+	if err := SetUserEmbedding(userID, emb); err != nil {
+		log.Printf("[embedding][warn] failed to cache user embedding for userID=%d: %v", userID, err)
+	}
+
 	log.Printf("[embedding][info] userID=%d: Successfully created user embedding from %d vectors (bookmarks: %d, clicks: %d, searches: %d)",
 		userID, len(vectors), len(bookmarkIDs), len(clickedIDs), len(searches))
 	return emb, nil
