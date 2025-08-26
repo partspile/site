@@ -65,14 +65,17 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 
 ### 3.5 Caching System
 - **B2 Token Cache:** Caches Backblaze B2 download authorization tokens to reduce API calls and improve performance when serving ad images. Tokens are cached by directory prefix (e.g., "22/") and automatically expire based on B2's token expiry settings.
-- **Embedding Query Cache:** Caches vector embeddings for user search queries to improve search performance and reduce API calls to Google Gemini. This cache stores the embedding vectors themselves and uses memory-based cost calculation (4 bytes per float32).
-- **Cache Implementation:** Both caches use a unified cache abstraction that provides:
+- **Specialized Embedding Caches:** The system now uses three specialized caches for different embedding types:
+  - **Query Cache (1 hour TTL):** Caches vector embeddings for user search queries to improve search performance and reduce API calls to Google Gemini. This cache stores the embedding vectors themselves and uses memory-based cost calculation (4 bytes per float32).
+  - **User Cache (24 hour TTL):** Caches personalized user embeddings generated from their search history, clicked ads, and bookmarks. This eliminates the need for database storage and provides fast access to user preferences.
+  - **Site Cache (6 hour TTL):** Caches site-level embeddings calculated from popular ads to provide anonymous users with relevant default search results.
+- **Cache Implementation:** All caches use a unified cache abstraction that provides:
   - Generic type-safe cache operations (Get, Set, Clear, Wait)
   - Standardized cache statistics for admin monitoring (hits, misses, hit rate, memory usage)
   - Consistent configuration across all cache instances
   - Clean abstraction that doesn't leak underlying implementation details
-- **Cache Management:** Admin interface provides real-time cache statistics and the ability to clear caches for maintenance purposes.
-- **Performance Benefits:** Caching significantly reduces API latency and costs while improving user experience through faster response times.
+- **Cache Management:** Admin interface provides real-time statistics for all three caches and the ability to clear caches for maintenance purposes.
+- **Performance Benefits:** Specialized caching significantly reduces API latency and costs while improving user experience through faster response times. The three-cache architecture ensures optimal TTL settings for each embedding type.
 
 ### 3.6 API Endpoints
 - RESTful endpoints for CRUD operations on ads and for fetching vehicle/part data for dynamic forms.

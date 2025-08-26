@@ -31,17 +31,15 @@ var (
 	geminiClient     *genai.Client
 	qdrantClient     *qdrant.Client
 	qdrantCollection string
-	embeddingCache   *cache.Cache[[]float32] // Keep for backward compatibility during migration
 
-	// New specialized caches
+	// Specialized caches for different embedding types
 	queryEmbeddingCache *cache.Cache[[]float32] // String keys, 1 hour TTL
 	userEmbeddingCache  *cache.Cache[[]float32] // User ID keys, 24 hour TTL
 	siteEmbeddingCache  *cache.Cache[[]float32] // Campaign keys, 6 hour TTL
 )
 
-// InitEmbeddingCache initializes the embedding cache. This should be called during application startup.
-// TODO: This function will be renamed to InitEmbeddingCaches in Phase 7
-func InitEmbeddingCache() error {
+// InitEmbeddingCaches initializes the specialized embedding caches. This should be called during application startup.
+func InitEmbeddingCaches() error {
 	var err error
 
 	// Initialize query cache (1 hour TTL, smaller size)
@@ -68,25 +66,37 @@ func InitEmbeddingCache() error {
 		return fmt.Errorf("failed to initialize site embedding cache: %w", err)
 	}
 
-	// Keep existing embeddingCache initialization for backward compatibility during migration
-	embeddingCache, err = cache.New[[]float32](func(value []float32) int64 {
-		return int64(len(value) * 4) // 4 bytes per float32
-	}, "Embedding Query Cache")
-	if err != nil {
-		return fmt.Errorf("failed to initialize legacy embedding cache: %w", err)
-	}
-
 	return nil
 }
 
 // GetEmbeddingCacheStats returns cache statistics for admin monitoring
 func GetEmbeddingCacheStats() map[string]interface{} {
-	return embeddingCache.Stats()
+	stats := make(map[string]interface{})
+
+	if queryEmbeddingCache != nil {
+		stats["query"] = queryEmbeddingCache.Stats()
+	}
+	if userEmbeddingCache != nil {
+		stats["user"] = userEmbeddingCache.Stats()
+	}
+	if siteEmbeddingCache != nil {
+		stats["site"] = siteEmbeddingCache.Stats()
+	}
+
+	return stats
 }
 
 // ClearEmbeddingCache clears all cached embeddings
 func ClearEmbeddingCache() {
-	embeddingCache.Clear()
+	if queryEmbeddingCache != nil {
+		queryEmbeddingCache.Clear()
+	}
+	if userEmbeddingCache != nil {
+		userEmbeddingCache.Clear()
+	}
+	if siteEmbeddingCache != nil {
+		siteEmbeddingCache.Clear()
+	}
 }
 
 // GetQueryEmbedding retrieves or generates an embedding for the given text using the query cache
@@ -618,10 +628,6 @@ func AggregateEmbeddings(vectors [][]float32, weights []float32) []float32 {
 	}
 	return result
 }
-
-
-
-
 
 // calculateSiteLevelVector averages the embeddings of the most popular ads
 func calculateSiteLevelVector() ([]float32, error) {

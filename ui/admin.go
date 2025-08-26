@@ -261,92 +261,200 @@ func AdminEmbeddingCacheSection(stats map[string]interface{}) g.Node {
 		H1(g.Text("Embedding Cache Management")),
 		Div(
 			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Statistics")),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Query Cache Statistics")),
 			Div(
 				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Hits: ")),
-					g.Textf("%d", stats["hits"]),
+					g.Textf("%d", stats["query"].(map[string]interface{})["hits"]),
 				),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Misses: ")),
-					g.Textf("%d", stats["misses"]),
+					g.Textf("%d", stats["query"].(map[string]interface{})["misses"]),
 				),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Hit Rate: ")),
-					g.Textf("%.1f%%", stats["hit_rate"]),
+					g.Textf("%.1f%%", stats["query"].(map[string]interface{})["hit_rate"]),
 				),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Sets: ")),
-					g.Textf("%d", stats["sets"]),
+					g.Textf("%d", stats["query"].(map[string]interface{})["sets"]),
 				),
 			),
 		),
 		Div(
 			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Memory Usage")),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("User Cache Statistics")),
+			Div(
+				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Hits: ")),
+					g.Textf("%d", stats["user"].(map[string]interface{})["hits"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Misses: ")),
+					g.Textf("%d", stats["user"].(map[string]interface{})["misses"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Hit Rate: ")),
+					g.Textf("%.1f%%", stats["user"].(map[string]interface{})["hit_rate"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Sets: ")),
+					g.Textf("%d", stats["user"].(map[string]interface{})["sets"]),
+				),
+			),
+		),
+		Div(
+			Class("bg-gray-100 p-4 rounded-lg mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Site Cache Statistics")),
+			Div(
+				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Hits: ")),
+					g.Textf("%d", stats["site"].(map[string]interface{})["hits"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Misses: ")),
+					g.Textf("%d", stats["site"].(map[string]interface{})["misses"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Hit Rate: ")),
+					g.Textf("%.1f%%", stats["site"].(map[string]interface{})["hit_rate"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Sets: ")),
+					g.Textf("%d", stats["site"].(map[string]interface{})["sets"]),
+				),
+			),
+		),
+		Div(
+			Class("bg-gray-100 p-4 rounded-lg mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Query Cache Memory Usage")),
 			Div(
 				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Memory Used: ")),
-					g.Textf("%.2f MB", stats["memory_used_mb"]),
+					g.Textf("%.2f MB", stats["query"].(map[string]interface{})["memory_used_mb"]),
 				),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Total Added: ")),
-					g.Textf("%.2f MB", stats["total_added_mb"]),
+					g.Textf("%.2f MB", stats["query"].(map[string]interface{})["total_added_mb"]),
 				),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Total Evicted: ")),
-					g.Textf("%.2f MB", stats["total_evicted_mb"]),
+					g.Textf("%.2f MB", stats["query"].(map[string]interface{})["total_evicted_mb"]),
 				),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Memory Used (bytes): ")),
-					g.Textf("%d", stats["memory_used"]),
+					g.Textf("%d", stats["query"].(map[string]interface{})["memory_used"]),
 				),
 			),
 		),
 		Div(
 			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Metrics")),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("User Cache Memory Usage")),
+			Div(
+				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Memory Used: ")),
+					g.Textf("%.2f MB", stats["user"].(map[string]interface{})["memory_used_mb"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Total Added: ")),
+					g.Textf("%.2f MB", stats["user"].(map[string]interface{})["total_added_mb"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Total Evicted: ")),
+					g.Textf("%.2f MB", stats["user"].(map[string]interface{})["total_evicted_mb"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Memory Used (bytes): ")),
+					g.Textf("%d", stats["user"].(map[string]interface{})["memory_used"]),
+				),
+			),
+		),
+		Div(
+			Class("bg-gray-100 p-4 rounded-lg mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Site Cache Memory Usage")),
+			Div(
+				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Memory Used: ")),
+					g.Textf("%.2f MB", stats["site"].(map[string]interface{})["memory_used_mb"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Total Added: ")),
+					g.Textf("%.2f MB", stats["site"].(map[string]interface{})["total_added_mb"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Total Evicted: ")),
+					g.Textf("%.2f MB", stats["site"].(map[string]interface{})["total_evicted_mb"]),
+				),
+				Div(
+					Class("bg-white p-3 rounded border"),
+					Strong(g.Text("Memory Used (bytes): ")),
+					g.Textf("%d", stats["site"].(map[string]interface{})["memory_used"]),
+				),
+			),
+		),
+		Div(
+			Class("bg-gray-100 p-4 rounded-lg mb-4"),
+			H2(Class("text-lg font-semibold mb-2"), g.Text("Query Cache Metrics")),
 			Div(
 				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Cost Added: ")),
-					g.Textf("%d", stats["cost_added"]),
+					g.Textf("%d", stats["query"].(map[string]interface{})["cost_added"]),
 				),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Cost Evicted: ")),
-					g.Textf("%d", stats["cost_evicted"]),
+					g.Textf("%d", stats["query"].(map[string]interface{})["cost_evicted"]),
 				),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Gets Dropped: ")),
-					g.Textf("%d", stats["gets_dropped"]),
+					g.Textf("%d", stats["query"].(map[string]interface{})["gets_dropped"]),
 				),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Gets Kept: ")),
-					g.Textf("%d", stats["gets_kept"]),
+					g.Textf("%d", stats["query"].(map[string]interface{})["gets_kept"]),
 				),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Sets Dropped: ")),
-					g.Textf("%d", stats["sets_dropped"]),
+					g.Textf("%d", stats["query"].(map[string]interface{})["sets_dropped"]),
 				),
 				Div(
 					Class("bg-white p-3 rounded border"),
 					Strong(g.Text("Sets Rejected: ")),
-					g.Textf("%d", stats["sets_rejected"]),
+					g.Textf("%d", stats["query"].(map[string]interface{})["sets_rejected"]),
 				),
 			),
 		),
@@ -356,9 +464,10 @@ func AdminEmbeddingCacheSection(stats map[string]interface{}) g.Node {
 			Div(
 				Class("bg-white border border-gray-300 rounded-lg p-4"),
 				P(Class("text-gray-600"),
-					g.Text("The cache doesn't expose individual items for security reasons. "),
-					g.Text("The cache automatically manages memory usage and eviction based on cost. "),
-					g.Text("This cache stores embedding vectors for user search queries to improve performance."),
+					g.Text("The system now uses three specialized caches for different embedding types: "),
+					g.Text("Query Cache (1 hour TTL), User Cache (24 hour TTL), and Site Cache (6 hour TTL). "),
+					g.Text("Each cache automatically manages memory usage and eviction based on cost. "),
+					g.Text("These caches store embedding vectors to improve search performance."),
 				),
 			),
 		),

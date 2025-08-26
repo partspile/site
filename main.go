@@ -29,9 +29,9 @@ func main() {
 		log.Fatalf("Failed to initialize B2 cache: %v", err)
 	}
 
-	// Initialize embedding cache
-	if err := vector.InitEmbeddingCache(); err != nil {
-		log.Fatalf("Failed to initialize embedding cache: %v", err)
+	// Initialize embedding caches
+	if err := vector.InitEmbeddingCaches(); err != nil {
+		log.Fatalf("Failed to initialize embedding caches: %v", err)
 	}
 
 	// Initialize Gemini client
