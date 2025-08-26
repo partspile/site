@@ -32,16 +32,52 @@ var (
 	geminiClient     *genai.Client
 	qdrantClient     *qdrant.Client
 	qdrantCollection string
-	embeddingCache   *cache.Cache[[]float32]
+	embeddingCache   *cache.Cache[[]float32] // Keep for backward compatibility during migration
+
+	// New specialized caches
+	queryEmbeddingCache *cache.Cache[[]float32] // String keys, 1 hour TTL
+	userEmbeddingCache  *cache.Cache[[]float32] // User ID keys, 24 hour TTL
+	siteEmbeddingCache  *cache.Cache[[]float32] // Campaign keys, 6 hour TTL
 )
 
 // InitEmbeddingCache initializes the embedding cache. This should be called during application startup.
+// TODO: This function will be renamed to InitEmbeddingCaches in Phase 7
 func InitEmbeddingCache() error {
 	var err error
+
+	// Initialize query cache (1 hour TTL, smaller size)
+	queryEmbeddingCache, err = cache.New[[]float32](func(value []float32) int64 {
+		return int64(len(value) * 4) // 4 bytes per float32
+	}, "Query Embedding Cache")
+	if err != nil {
+		return fmt.Errorf("failed to initialize query embedding cache: %w", err)
+	}
+
+	// Initialize user cache (24 hour TTL, larger size)
+	userEmbeddingCache, err = cache.New[[]float32](func(value []float32) int64 {
+		return int64(len(value) * 4) // 4 bytes per float32
+	}, "User Embedding Cache")
+	if err != nil {
+		return fmt.Errorf("failed to initialize user embedding cache: %w", err)
+	}
+
+	// Initialize site cache (6 hour TTL, medium size)
+	siteEmbeddingCache, err = cache.New[[]float32](func(value []float32) int64 {
+		return int64(len(value) * 4) // 4 bytes per float32
+	}, "Site Embedding Cache")
+	if err != nil {
+		return fmt.Errorf("failed to initialize site embedding cache: %w", err)
+	}
+
+	// Keep existing embeddingCache initialization for backward compatibility during migration
 	embeddingCache, err = cache.New[[]float32](func(value []float32) int64 {
 		return int64(len(value) * 4) // 4 bytes per float32
 	}, "Embedding Query Cache")
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to initialize legacy embedding cache: %w", err)
+	}
+
+	return nil
 }
 
 // GetEmbeddingCacheStats returns cache statistics for admin monitoring
@@ -54,19 +90,21 @@ func ClearEmbeddingCache() {
 	embeddingCache.Clear()
 }
 
-// EmbedTextCached generates an embedding for the given text using Gemini, with caching
-func EmbedTextCached(text string) ([]float32, error) {
-	if embeddingCache == nil {
-		return EmbedText(text)
+// GetQueryEmbedding retrieves or generates an embedding for the given text using the query cache
+func GetQueryEmbedding(text string) ([]float32, error) {
+	if queryEmbeddingCache == nil {
+		return nil, fmt.Errorf("query embedding cache not initialized")
 	}
 
-	if strings.TrimSpace(text) == "" {
+	// Trim whitespace and check for empty
+	text = strings.TrimSpace(text)
+	if text == "" {
 		return nil, fmt.Errorf("cannot embed empty text")
 	}
 
 	// Check cache first
-	if cached, found := embeddingCache.Get(text); found {
-		log.Printf("[embedding][cache] Cache hit for query: %.80q", text)
+	if cached, found := queryEmbeddingCache.Get(text); found {
+		log.Printf("[embedding][query-cache] Cache hit for query: %.80q", text)
 		return cached, nil
 	}
 
@@ -76,11 +114,69 @@ func EmbedTextCached(text string) ([]float32, error) {
 		return nil, err
 	}
 
-	// Cache the result
-	embeddingCache.Set(text, embedding, int64(len(embedding)*4))
-	log.Printf("[embedding][cache] Cached embedding for query: %.80q", text)
+	// Cache the result with 1 hour TTL
+	queryEmbeddingCache.SetWithTTL(text, embedding, int64(len(embedding)*4), time.Hour)
+	log.Printf("[embedding][query-cache] Cached embedding for query: %.80q", text)
 
 	return embedding, nil
+}
+
+// GetUserEmbedding retrieves or generates a user's personalized embedding using the user cache
+func GetUserEmbedding(userID int) ([]float32, error) {
+	if userEmbeddingCache == nil {
+		return nil, fmt.Errorf("user embedding cache not initialized")
+	}
+
+	key := fmt.Sprintf("user_%d", userID)
+	if cached, found := userEmbeddingCache.Get(key); found {
+		log.Printf("[embedding][user-cache] Cache hit for user %d", userID)
+		return cached, nil
+	}
+
+	// Cache miss - generate the embedding
+	log.Printf("[embedding][user-cache] Cache miss for user %d, generating embedding", userID)
+	embedding, err := GetUserPersonalizedEmbedding(userID, false)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the result with 24 hour TTL
+	userEmbeddingCache.SetWithTTL(key, embedding, int64(len(embedding)*4), 24*time.Hour)
+	log.Printf("[embedding][user-cache] Cached embedding for user %d", userID)
+
+	return embedding, nil
+}
+
+// GetSiteEmbedding retrieves a site-level embedding from the site cache
+func GetSiteEmbedding(campaignKey string) ([]float32, error) {
+	if siteEmbeddingCache == nil {
+		return nil, fmt.Errorf("site embedding cache not initialized")
+	}
+
+	key := fmt.Sprintf("site_%s", campaignKey)
+	if cached, found := siteEmbeddingCache.Get(key); found {
+		log.Printf("[embedding][site-cache] Cache hit for campaign %s", campaignKey)
+		return cached, nil
+	}
+
+	log.Printf("[embedding][site-cache] Cache miss for campaign %s, generating embedding", campaignKey)
+	embedding, err := CalculateSiteLevelVector()
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the result with 6 hour TTL
+	siteEmbeddingCache.SetWithTTL(key, embedding, int64(len(embedding)*4), 6*time.Hour)
+	log.Printf("[embedding][site-cache] Cached embedding for campaign %s", campaignKey)
+
+	return embedding, nil
+}
+
+// EmbedTextCached generates an embedding for the given text using Gemini, with caching
+// TODO: This function now uses the new query cache internally but maintains backward compatibility
+func EmbedTextCached(text string) ([]float32, error) {
+	// Use the new query cache for better performance and TTL management
+	return GetQueryEmbedding(text)
 }
 
 // InitGeminiClient initializes the Gemini embedding client
