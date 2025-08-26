@@ -111,14 +111,6 @@ func performSearch(userPrompt string, currentUser *user.User, cursorStr string, 
 	return nil, "", nil
 }
 
-// GeoBounds represents a geographic bounding box
-type GeoBounds struct {
-	MinLat float64
-	MaxLat float64
-	MinLon float64
-	MaxLon float64
-}
-
 func handleSearch(c *fiber.Ctx, viewType string) error {
 	view, err := NewView(c, viewType)
 	if err != nil {
@@ -133,26 +125,6 @@ func handleSearch(c *fiber.Ctx, viewType string) error {
 	view.SaveUserSearch()
 
 	return view.RenderSearchResults(ads, nextCursor)
-}
-
-func HandleListView(c *fiber.Ctx) error {
-	return handleSearch(c, "list")
-}
-
-func HandleGridView(c *fiber.Ctx) error {
-	return handleSearch(c, "grid")
-}
-
-func HandleTreeView(c *fiber.Ctx) error {
-	return handleSearch(c, "tree")
-}
-
-func HandleMapView(c *fiber.Ctx) error {
-	return handleSearch(c, "map")
-}
-
-func HandleSearch(c *fiber.Ctx) error {
-	return handleSearch(c, c.Query("view", "list"))
 }
 
 func HandleSearchPage(c *fiber.Ctx) error {
@@ -173,6 +145,26 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	}
 
 	return view.RenderSearchPage(ads, nextCursor)
+}
+
+func HandleListView(c *fiber.Ctx) error {
+	return handleSearch(c, "list")
+}
+
+func HandleGridView(c *fiber.Ctx) error {
+	return handleSearch(c, "grid")
+}
+
+func HandleTreeView(c *fiber.Ctx) error {
+	return handleSearch(c, "tree")
+}
+
+func HandleMapView(c *fiber.Ctx) error {
+	return handleSearch(c, "map")
+}
+
+func HandleSearch(c *fiber.Ctx) error {
+	return handleSearch(c, c.Query("view", "list"))
 }
 
 // HandleSearchAPI returns search results as JSON for JavaScript consumption

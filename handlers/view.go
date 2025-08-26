@@ -18,6 +18,14 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
+// GeoBounds represents a geographic bounding box
+type GeoBounds struct {
+	MinLat float64
+	MaxLat float64
+	MinLon float64
+	MaxLon float64
+}
+
 // View interface defines the contract for different view implementations
 type View interface {
 	// GetAds retrieves ads for this view with appropriate search strategy
