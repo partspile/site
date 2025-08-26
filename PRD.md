@@ -348,7 +348,7 @@ The platform is built with the following technologies:
 - **AdCar**: ad_id, car_id (single table for all vehicle associations)
 - **User**: id, name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin, deleted_at
 - **UserSearch**: id, user_id (nullable), query_string, created_at
-- **UserEmbedding**: id, user_id, embedding (blob), updated_at
+
 - **BookmarkedAd**: user_id, ad_id, bookmarked_at
 - **UserAdClick**: ad_id, user_id, click_count, last_clicked_at
 - **PhoneVerification**: id, phone, verification_code, expires_at, attempts, created_at

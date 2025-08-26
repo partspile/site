@@ -163,13 +163,7 @@ CREATE INDEX idx_usersearch_created_at ON UserSearch(created_at);
 
 
 
--- User embedding table for personalized vector search
-CREATE TABLE UserEmbedding (
-    user_id INTEGER PRIMARY KEY,
-    embedding BLOB NOT NULL,
-    updated_at DATETIME NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES User(id)
-);
+
 
 -- Messaging system tables
 CREATE TABLE Conversation (

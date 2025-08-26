@@ -131,20 +131,20 @@
 ## **Phase 5: Remove Database Storage for User Embeddings**
 
 ### **5.1 Update vector/user_embedding.go**
-- [ ] **Remove LoadUserEmbeddingFromDB()** function
-- [ ] **Remove SaveUserEmbeddingToDB()** function
-- [ ] **Remove math32frombytes()** and `math32tobytes()` helper functions
-- [ ] **Update GetUserPersonalizedEmbedding()** to only use cache
+- [x] **Remove LoadUserEmbeddingFromDB()** function
+- [x] **Remove SaveUserEmbeddingToDB()** function
+- [x] **Remove math32frombytes()** and `math32tobytes()` helper functions
+- [x] **Update GetUserPersonalizedEmbedding()** to only use cache
 
 ### **5.2 Update database schema**
-- [ ] **Remove UserEmbedding table** from schema.sql
-- [ ] **Add migration script** to drop existing table
-- [ ] **Update PRD.md** to reflect schema changes
+- [x] **Remove UserEmbedding table** from schema.sql
+- [x] **Add migration script** to drop existing table (skipped as requested)
+- [x] **Update PRD.md** to reflect schema changes
 
 ### **5.3 Test user embedding persistence**
-- [ ] **Verify cache persistence** across application restarts
-- [ ] **Test user embedding regeneration** when cache is cleared
-- [ ] **Verify background processing** still works
+- [x] **Verify cache persistence** across application restarts
+- [x] **Test user embedding regeneration** when cache is cleared
+- [x] **Verify background processing** still works
 
 ---
 
@@ -239,8 +239,8 @@
 **Phase 2:** 7/7 tasks completed ✅  
 **Phase 3:** 6/6 tasks completed ✅
 **Phase 4:** 6/6 tasks completed ✅
-**Phase 5:** 0/6 tasks completed
+**Phase 5:** 6/6 tasks completed ✅
 **Phase 6:** 0/6 tasks completed
 **Phase 7:** 0/12 tasks completed
 
-**Overall Progress:** 27/55 tasks completed (49%)
+**Overall Progress:** 33/55 tasks completed (60%)

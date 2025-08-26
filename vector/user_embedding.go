@@ -2,69 +2,17 @@ package vector
 
 import (
 	"context"
-	"database/sql"
-	"encoding/binary"
 	"fmt"
 	"log"
-	"math"
 	"strings"
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
-	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/search"
 	"github.com/qdrant/go-client/qdrant"
 )
 
-// LoadUserEmbeddingFromDB loads the user's embedding from the UserEmbedding table.
-func LoadUserEmbeddingFromDB(userID int) ([]float32, error) {
-	row := db.QueryRow(`SELECT embedding FROM UserEmbedding WHERE user_id = ?`, userID)
-	var blob []byte
-	err := row.Scan(&blob)
-	if err == sql.ErrNoRows {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	if len(blob)%4 != 0 {
-		return nil, fmt.Errorf("invalid embedding blob length")
-	}
-	vec := make([]float32, len(blob)/4)
-	for i := range vec {
-		vec[i] = math32frombytes(blob[i*4 : (i+1)*4])
-	}
-	return vec, nil
-}
-
-// SaveUserEmbeddingToDB upserts the user's embedding into the UserEmbedding table.
-func SaveUserEmbeddingToDB(userID int, embedding []float32) error {
-	if len(embedding) == 0 {
-		return fmt.Errorf("embedding is empty")
-	}
-	blob := make([]byte, 4*len(embedding))
-	for i, v := range embedding {
-		binary.LittleEndian.PutUint32(blob[i*4:(i+1)*4], math32tobytes(v))
-	}
-	_, err := db.Exec(`INSERT INTO UserEmbedding (user_id, embedding, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
-		ON CONFLICT(user_id) DO UPDATE SET embedding=excluded.embedding, updated_at=CURRENT_TIMESTAMP`, userID, blob)
-	if err == nil {
-		log.Printf("[embedding][info] Saved user embedding for userID=%d", userID)
-	}
-	return err
-}
-
-// math32frombytes converts 4 bytes to float32
-func math32frombytes(b []byte) float32 {
-	return float32(binary.LittleEndian.Uint32(b))
-}
-
-// math32tobytes converts float32 to uint32 for storage
-func math32tobytes(f float32) uint32 {
-	return math.Float32bits(f)
-}
-
-// GetUserPersonalizedEmbedding loads from cache first, then DB unless forceRecompute is true or not found.
+// GetUserPersonalizedEmbedding loads from cache first, then generates new embedding if not found.
 func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, error) {
 	log.Printf("[DEBUG] GetUserPersonalizedEmbedding called with userID=%d, forceRecompute=%v", userID, forceRecompute)
 
@@ -76,20 +24,8 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 			return cached, nil
 		}
 
-		// Cache miss, try DB
-		emb, err := LoadUserEmbeddingFromDB(userID)
-		if err != nil {
-			log.Printf("[DEBUG] LoadUserEmbeddingFromDB error: %v", err)
-			return nil, err
-		}
-		if emb != nil {
-			log.Printf("[DEBUG] DB hit for userID=%d, caching result", userID)
-			// Cache the DB result for future use
-			if err := SetUserEmbedding(userID, emb); err != nil {
-				log.Printf("[warn] failed to cache user embedding from DB: %v", err)
-			}
-			return emb, nil
-		}
+		// Cache miss, will generate new embedding below
+		log.Printf("[DEBUG] Cache miss for userID=%d, will generate new embedding", userID)
 	}
 	log.Printf("[embedding] Calculating personalized user embedding for userID=%d", userID)
 	const (
@@ -181,12 +117,6 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 	}
 
 	emb := AggregateEmbeddings(vectors, weights)
-
-	// Save to DB for backward compatibility during migration
-	err = SaveUserEmbeddingToDB(userID, emb)
-	if err != nil {
-		log.Printf("[embedding][warn] failed to save user embedding to DB for userID=%d: %v", userID, err)
-	}
 
 	// Cache the result for future use
 	if err := SetUserEmbedding(userID, emb); err != nil {
