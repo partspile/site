@@ -102,7 +102,7 @@
 ## **Phase 4: Migrate Site Embeddings (In-Memory → Cache)**
 
 ### **4.1 Update vector/embedding.go**
-- [ ] **Modify GetSiteLevelVector()** to use cache:
+- [x] **Modify GetSiteLevelVector()** to use cache:
   ```go
   func GetSiteLevelVector() ([]float32, error) {
       // Use default campaign key for now
@@ -110,7 +110,7 @@
   }
   ```
 
-- [ ] **Add campaign key support** for future extensibility:
+- [x] **Add campaign key support** for future extensibility:
   ```go
   func GetSiteEmbedding(campaignKey string) ([]float32, error) {
       // Cache lookup first, then calculation
@@ -118,13 +118,13 @@
   ```
 
 ### **4.2 Update all callers**
-- [ ] **handlers/search.go** - `siteEmbedding()` function
-- [ ] **handlers/search-tree.go** - tree search fallback
+- [x] **handlers/search.go** - `siteEmbedding()` function
+- [x] **handlers/search-tree.go** - tree search fallback
 
 ### **4.3 Test site embedding caching**
-- [ ] **Verify cache hits** for same campaign key
-- [ ] **Test TTL expiration** after 6 hours
-- [ ] **Verify recalculation** when cache expires
+- [x] **Verify cache hits** for same campaign key
+- [x] **Test TTL expiration** after 6 hours
+- [x] **Verify recalculation** when cache expires
 
 ---
 
@@ -238,9 +238,9 @@
 **Phase 1:** 8/8 tasks completed ✅
 **Phase 2:** 7/7 tasks completed ✅  
 **Phase 3:** 6/6 tasks completed ✅
-**Phase 4:** 0/6 tasks completed
+**Phase 4:** 6/6 tasks completed ✅
 **Phase 5:** 0/6 tasks completed
 **Phase 6:** 0/6 tasks completed
 **Phase 7:** 0/12 tasks completed
 
-**Overall Progress:** 21/55 tasks completed (38%)
+**Overall Progress:** 27/55 tasks completed (49%)

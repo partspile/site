@@ -629,32 +629,10 @@ var (
 )
 
 // GetSiteLevelVector returns the cached site-level vector, recalculating if needed
+// TODO: This function now uses the new site cache but maintains backward compatibility
 func GetSiteLevelVector() ([]float32, error) {
-	// Try read lock first for better performance
-	siteLevelVectorMutex.RLock()
-	if siteLevelVector != nil && time.Since(siteLevelVectorLastCalc) < siteLevelVectorTTL {
-		vec := siteLevelVector
-		siteLevelVectorMutex.RUnlock()
-		return vec, nil
-	}
-	siteLevelVectorMutex.RUnlock()
-
-	// Need write lock for calculation
-	siteLevelVectorMutex.Lock()
-	defer siteLevelVectorMutex.Unlock()
-
-	// Double-check after acquiring write lock
-	if siteLevelVector != nil && time.Since(siteLevelVectorLastCalc) < siteLevelVectorTTL {
-		return siteLevelVector, nil
-	}
-
-	vec, err := CalculateSiteLevelVector()
-	if err != nil {
-		return nil, err
-	}
-	siteLevelVector = vec
-	siteLevelVectorLastCalc = time.Now()
-	return vec, nil
+	// Use default campaign key for now
+	return GetSiteEmbedding("default")
 }
 
 // CalculateSiteLevelVector averages the embeddings of the most popular ads
