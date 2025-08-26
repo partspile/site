@@ -18,11 +18,7 @@ func runEmbeddingSearch(embedding []float32, cursor string, currentUser *user.Us
 	var err error
 
 	// Get results with threshold filtering at Qdrant level
-	if filter != nil {
-		ids, nextCursor, err = vector.QuerySimilarAdIDsWithFilter(embedding, filter, k, cursor, threshold)
-	} else {
-		ids, nextCursor, err = vector.QuerySimilarAdIDs(embedding, k, cursor, threshold)
-	}
+	ids, nextCursor, err = vector.QuerySimilarAdIDs(embedding, filter, k, cursor, threshold)
 
 	if err != nil {
 		return nil, "", err
@@ -35,9 +31,6 @@ func runEmbeddingSearch(embedding []float32, cursor string, currentUser *user.Us
 		return nil, "", err
 	}
 	log.Printf("[runEmbeddingSearch] DB fetch returned %d ads", len(ads))
-
-	// Rock count is now incorporated into embeddings, no need for post-processing
-	// ads = applyRockPenalties(ads) // Function moved to handlers/rock.go
 
 	return ads, nextCursor, nil
 }
@@ -67,7 +60,7 @@ func userEmbedding(currentUser *user.User, cursor string, threshold float64, k i
 	}
 	if embedding == nil {
 		log.Printf("[userEmbedding] GetUserPersonalizedEmbedding returned nil embedding")
-		return nil, "", nil
+		return nil, "", fmt.Errorf("user personalized vector unavailable")
 	}
 	return runEmbeddingSearch(embedding, cursor, currentUser, threshold, k, filter)
 }
@@ -82,7 +75,7 @@ func siteEmbedding(cursor string, threshold float64, k int, filter *qdrant.Filte
 	}
 	if embedding == nil {
 		log.Printf("[siteEmbedding] GetSiteLevelVector returned nil embedding")
-		return nil, "", nil
+		return nil, "", fmt.Errorf("site-level vector unavailable")
 	}
 	return runEmbeddingSearch(embedding, cursor, nil, threshold, k, filter)
 }

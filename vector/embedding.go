@@ -318,7 +318,8 @@ func DeleteAdEmbedding(adID int) error {
 
 // QuerySimilarAdIDs queries Qdrant for similar ad IDs given an embedding
 // Returns a list of ad IDs, and a cursor for pagination
-func QuerySimilarAdIDs(embedding []float32, topK int, cursor string, threshold float64) ([]int, string, error) {
+// If filter is provided, it will be applied to the search
+func QuerySimilarAdIDs(embedding []float32, filter *qdrant.Filter, topK int, cursor string, threshold float64) ([]int, string, error) {
 	if qdrantClient == nil {
 		return nil, "", fmt.Errorf("Qdrant client not initialized")
 	}
@@ -346,6 +347,7 @@ func QuerySimilarAdIDs(embedding []float32, topK int, cursor string, threshold f
 	queryRequest := &qdrant.QueryPoints{
 		CollectionName: qdrantCollection,
 		Query:          qdrant.NewQueryDense(embedding),
+		Filter:         filter,
 		Limit:          &limit,
 		Offset:         &offset,
 		ScoreThreshold: &scoreThreshold,
@@ -359,6 +361,9 @@ func QuerySimilarAdIDs(embedding []float32, topK int, cursor string, threshold f
 
 	resp, err := qdrantClient.Query(ctx, queryRequest)
 	if err != nil {
+		if filter != nil {
+			return nil, "", fmt.Errorf("failed to query Qdrant with filter: %w", err)
+		}
 		return nil, "", fmt.Errorf("failed to query Qdrant: %w", err)
 	}
 	log.Printf("[qdrant] Query returned %d results (requested %d, offset %d)", len(resp), topK, offset)
@@ -856,41 +861,17 @@ func QuerySimilarAdsWithFilter(embedding []float32, filter *qdrant.Filter, topK 
 
 	limit := uint64(topK)
 
-	// Check if this is a dummy embedding (all zeros) for pure metadata filtering
-	isDummyEmbedding := true
-	for _, val := range embedding {
-		if val != 0 {
-			isDummyEmbedding = false
-			break
-		}
-	}
-
-	var queryRequest *qdrant.QueryPoints
-	if isDummyEmbedding {
-		// For pure metadata filtering, don't use similarity threshold
-		log.Printf("[qdrant] Using pure metadata filtering (no similarity threshold)")
-		queryRequest = &qdrant.QueryPoints{
-			CollectionName: qdrantCollection,
-			Query:          qdrant.NewQueryDense(embedding),
-			Filter:         filter,
-			Limit:          &limit,
-			Offset:         &offset,
-			WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
-			WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
-		}
-	} else {
-		// For similarity search, use the threshold
-		scoreThreshold := float32(threshold)
-		queryRequest = &qdrant.QueryPoints{
-			CollectionName: qdrantCollection,
-			Query:          qdrant.NewQueryDense(embedding),
-			Filter:         filter,
-			Limit:          &limit,
-			Offset:         &offset,
-			ScoreThreshold: &scoreThreshold,
-			WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
-			WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
-		}
+	// Always use similarity threshold for vector search
+	scoreThreshold := float32(threshold)
+	queryRequest := &qdrant.QueryPoints{
+		CollectionName: qdrantCollection,
+		Query:          qdrant.NewQueryDense(embedding),
+		Filter:         filter,
+		Limit:          &limit,
+		Offset:         &offset,
+		ScoreThreshold: &scoreThreshold,
+		WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
+		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
 	}
 
 	resp, err := qdrantClient.Query(ctx, queryRequest)
@@ -937,88 +918,6 @@ func QuerySimilarAdsWithFilter(embedding []float32, filter *qdrant.Filter, topK 
 			Metadata: metadata,
 		}
 		results = append(results, adResult)
-	}
-
-	// Generate next cursor
-	var nextCursor string
-	if len(results) > 0 {
-		nextOffset := offset + uint64(len(results))
-		nextCursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d", nextOffset)))
-	}
-
-	return results, nextCursor, nil
-}
-
-// QuerySimilarAdIDsWithFilter queries Qdrant with filters and returns just the ad IDs
-// Returns a list of ad IDs, and a cursor for pagination
-func QuerySimilarAdIDsWithFilter(embedding []float32, filter *qdrant.Filter, topK int, cursor string, threshold float64) ([]int, string, error) {
-	if qdrantClient == nil {
-		return nil, "", fmt.Errorf("Qdrant client not initialized")
-	}
-
-	ctx := context.Background()
-
-	// Parse cursor if provided
-	var offset uint64 = 0
-	if cursor != "" {
-		cursorBytes, err := base64.StdEncoding.DecodeString(cursor)
-		if err == nil {
-			cursorStr := string(cursorBytes)
-			if offsetVal, err := strconv.ParseUint(cursorStr, 10, 64); err == nil {
-				offset = offsetVal
-			}
-		}
-	}
-
-	limit := uint64(topK)
-
-	// Check if this is a dummy embedding (all zeros) for pure metadata filtering
-	isDummyEmbedding := true
-	for _, val := range embedding {
-		if val != 0 {
-			isDummyEmbedding = false
-			break
-		}
-	}
-
-	var queryRequest *qdrant.QueryPoints
-	if isDummyEmbedding {
-		// For pure metadata filtering, don't use similarity threshold
-		log.Printf("[qdrant] Using pure metadata filtering (no similarity threshold)")
-		queryRequest = &qdrant.QueryPoints{
-			CollectionName: qdrantCollection,
-			Query:          qdrant.NewQueryDense(embedding),
-			Filter:         filter,
-			Limit:          &limit,
-			Offset:         &offset,
-			WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
-			WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
-		}
-	} else {
-		// For similarity search, use the threshold
-		scoreThreshold := float32(threshold)
-		queryRequest = &qdrant.QueryPoints{
-			CollectionName: qdrantCollection,
-			Query:          qdrant.NewQueryDense(embedding),
-			Filter:         filter,
-			Limit:          &limit,
-			Offset:         &offset,
-			ScoreThreshold: &scoreThreshold,
-			WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
-			WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
-		}
-	}
-
-	resp, err := qdrantClient.Query(ctx, queryRequest)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to query Qdrant with filter: %w", err)
-	}
-
-	var results []int
-	for _, result := range resp {
-		adID := int(result.Id.GetNum())
-		results = append(results, adID)
-		log.Printf("[qdrant] Added result with ID: %d, Score: %f", adID, result.Score)
 	}
 
 	// Generate next cursor

@@ -198,7 +198,7 @@ func getTreeAdsForSearch(userPrompt string, currentUser *user.User, threshold fl
 	}
 
 	// Get results with threshold filtering at Qdrant level (larger limit for tree building)
-	intIDs, _, err := vector.QuerySimilarAdIDs(embedding, config.QdrantSearchInitialK, "", threshold)
+	intIDs, _, err := vector.QuerySimilarAdIDs(embedding, nil, config.QdrantSearchInitialK, "", threshold)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Qdrant: %w", err)
 	}
@@ -241,7 +241,7 @@ func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string
 	}
 
 	// Get results with filtering at Qdrant level (larger limit for tree building)
-	intIDs, _, err := vector.QuerySimilarAdIDsWithFilter(embedding, filter, config.QdrantSearchInitialK, "", threshold)
+	intIDs, _, err := vector.QuerySimilarAdIDs(embedding, filter, config.QdrantSearchInitialK, "", threshold)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query Qdrant with filter: %w", err)
 	}
