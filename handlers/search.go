@@ -59,8 +59,8 @@ func userEmbedding(currentUser *user.User, cursor string, threshold float64, k i
 		return nil, "", err
 	}
 	if embedding == nil {
-		log.Printf("[userEmbedding] GetUserPersonalizedEmbedding returned nil embedding")
-		return nil, "", fmt.Errorf("user personalized vector unavailable")
+		log.Printf("[userEmbedding] GetUserPersonalizedEmbedding returned nil embedding, falling back to site-level embedding")
+		return siteEmbedding(cursor, threshold, k, filter)
 	}
 	return runEmbeddingSearch(embedding, cursor, currentUser, threshold, k, filter)
 }
