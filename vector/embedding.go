@@ -293,7 +293,8 @@ func EmbedText(text string) ([]float32, error) {
 	if geminiClient == nil {
 		return nil, fmt.Errorf("Gemini client not initialized")
 	}
-	if strings.TrimSpace(text) == "" {
+	text = strings.TrimSpace(text)
+	if text == "" {
 		return nil, fmt.Errorf("cannot embed empty text")
 	}
 	log.Printf("[embedding] Calculating embedding vector for text: %.80q", text)

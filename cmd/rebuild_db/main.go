@@ -515,10 +515,9 @@ func main() {
 		}
 		adID, _ := res.LastInsertId()
 
-		// Generate and upload images for this ad
-		if err := uploadAdImagesToB2(int(adID), numImages, ad.Title); err != nil {
-			log.Printf("Failed to upload images for ad %d: %v", adID, err)
-		}
+		// Skip image generation for seed ads - only generate images for new user-created ads
+		// Seed ads will show missing.svg placeholder when viewed
+		log.Printf("Skipping image generation for seed ad %d: %s", adID, ad.Title)
 
 		// Create AdCar relationships for all combinations
 		for _, year := range ad.Years {

@@ -1128,12 +1128,27 @@ func BookmarkButton(ad ad.Ad) g.Node {
 
 // Helper to generate signed B2 image URLs for an ad
 func AdImageURLs(adID int, order []int) []string {
-	prefix := fmt.Sprintf("%d/", adID)
-	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
 	urls := []string{}
-	if err != nil || token == "" {
+
+	// First check if this ad actually has images on B2
+	if !b2util.CheckIfAdHasImagesOnB2(adID) {
+		// Return missing.svg for all images when no images exist on B2 (e.g., seed ads)
+		for range order {
+			urls = append(urls, "/images/missing.svg")
+		}
 		return urls
 	}
+
+	prefix := fmt.Sprintf("%d/", adID)
+	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
+	if err != nil || token == "" {
+		// Return missing.svg for all images when B2 images aren't available
+		for range order {
+			urls = append(urls, "/images/missing.svg")
+		}
+		return urls
+	}
+
 	for _, idx := range order {
 		// Use 160w size for gallery thumbnails
 		urls = append(urls, fmt.Sprintf(
@@ -1146,11 +1161,22 @@ func AdImageURLs(adID int, order []int) []string {
 
 // Helper to generate signed B2 image URLs for an ad and all sizes
 func AdImageSrcSet(adID int, idx int, context string) (src, srcset string) {
+	// First check if this ad actually has images on B2
+	hasImages := b2util.CheckIfAdHasImagesOnB2(adID)
+	fmt.Printf("[DEBUG] AdImageSrcSet: ad %d, idx %d, hasImages=%v\n", adID, idx, hasImages)
+	if !hasImages {
+		// Return missing.svg when no images exist on B2 (e.g., seed ads)
+		fmt.Printf("[DEBUG] AdImageSrcSet: ad %d returning missing.svg\n", adID)
+		return "/images/missing.svg", ""
+	}
+
 	prefix := fmt.Sprintf("%d/", adID)
 	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
 	if err != nil || token == "" {
-		return "/no-image.svg", ""
+		// Return missing.svg when B2 images aren't available
+		return "/images/missing.svg", ""
 	}
+
 	base := fmt.Sprintf("https://f004.backblazeb2.com/file/parts-pile/%d/%d", adID, idx)
 	src160 := fmt.Sprintf("%s-160w.webp?Authorization=%s 160w", base, token)
 	src480 := fmt.Sprintf("%s-480w.webp?Authorization=%s 480w", base, token)
