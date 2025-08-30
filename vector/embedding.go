@@ -184,13 +184,6 @@ func GetSiteEmbedding(campaignKey string) ([]float32, error) {
 	return embedding, nil
 }
 
-// EmbedTextCached generates an embedding for the given text using Gemini, with caching
-// TODO: This function now uses the new query cache internally but maintains backward compatibility
-func EmbedTextCached(text string) ([]float32, error) {
-	// Use the new query cache for better performance and TTL management
-	return GetQueryEmbedding(text)
-}
-
 // InitGeminiClient initializes the Gemini embedding client
 func InitGeminiClient() error {
 	apiKey := config.GeminiAPIKey
@@ -574,7 +567,7 @@ func calculateSiteLevelVector() ([]float32, error) {
 
 	// Enhance site-level vector with rock preference for anonymous users
 	rockPreferencePrompt := "Show me high-quality ads with fewer reported issues (rocks thrown). I prefer reliable, trustworthy listings."
-	rockPreferenceEmbedding, err := EmbedTextCached(rockPreferencePrompt)
+	rockPreferenceEmbedding, err := GetQueryEmbedding(rockPreferencePrompt)
 	if err == nil && rockPreferenceEmbedding != nil {
 		// Blend the site-level vector with rock preference
 		enhancedVectors := [][]float32{result, rockPreferenceEmbedding}

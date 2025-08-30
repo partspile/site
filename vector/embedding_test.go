@@ -62,7 +62,7 @@ func TestEmbeddingCacheWithNilCache(t *testing.T) {
 
 	testQuery := "test query with nil cache"
 	// This should not panic and should return an error about cache not initialized
-	_, err := EmbedTextCached(testQuery)
+	_, err := GetQueryEmbedding(testQuery)
 	if err == nil {
 		t.Error("Expected error when query cache is nil")
 	}

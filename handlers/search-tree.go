@@ -192,7 +192,7 @@ func HandleTreeViewNavigation(c *fiber.Ctx) error {
 func getTreeAdsForSearch(userPrompt string, currentUser *user.User, threshold float64) ([]ad.Ad, error) {
 	// Generate embedding for search query
 	log.Printf("[tree-search] Generating embedding for tree search query: %s", userPrompt)
-	embedding, err := vector.EmbedTextCached(userPrompt)
+	embedding, err := vector.GetQueryEmbedding(userPrompt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate embedding: %w", err)
 	}
@@ -222,7 +222,7 @@ func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string
 	var err error
 
 	if userPrompt != "" {
-		embedding, err = vector.EmbedTextCached(userPrompt)
+		embedding, err = vector.GetQueryEmbedding(userPrompt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate embedding: %w", err)
 		}

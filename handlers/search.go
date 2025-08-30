@@ -38,7 +38,7 @@ func runEmbeddingSearch(embedding []float32, cursor string, currentUser *user.Us
 // Embedding-based search with user query
 func queryEmbedding(userPrompt string, currentUser *user.User, cursor string, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
 	log.Printf("[queryEmbedding] Generating embedding for user query: %s", userPrompt)
-	embedding, err := vector.EmbedTextCached(userPrompt)
+	embedding, err := vector.GetQueryEmbedding(userPrompt)
 	if err != nil {
 		return nil, "", err
 	}

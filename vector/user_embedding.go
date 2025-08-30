@@ -89,7 +89,7 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 			continue
 		}
 		log.Printf("[embedding][debug] Generating embedding for user search query: %s", s.QueryString)
-		emb, err := EmbedTextCached(s.QueryString)
+		emb, err := GetQueryEmbedding(s.QueryString)
 		if err != nil {
 			log.Printf("[embedding][debug] Gemini embedding error for query=%q: %v", s.QueryString, err)
 		}
@@ -108,7 +108,7 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 
 	// Add a rock preference vector to favor ads with fewer rocks
 	rockPreferencePrompt := "Show me high-quality ads with fewer reported issues (rocks thrown). I prefer reliable, trustworthy listings."
-	rockPreferenceEmbedding, err := EmbedTextCached(rockPreferencePrompt)
+	rockPreferenceEmbedding, err := GetQueryEmbedding(rockPreferencePrompt)
 	if err == nil && rockPreferenceEmbedding != nil {
 		// Add rock preference with high weight to ensure it influences results
 		vectors = append(vectors, rockPreferenceEmbedding)
