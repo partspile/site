@@ -135,19 +135,15 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	}
 	uploadAdImagesToB2(adID, imageFiles)
 
-	// --- VECTOR EMBEDDING GENERATION (ASYNC) ---
-	go func(adID int) {
-		// Fetch the newly created ad from database to get proper timestamp
-		adObj, ok := ad.GetAd(adID, nil)
-		if !ok {
-			log.Printf("[embedding] Failed to fetch ad %d from database", adID)
-			return
-		}
-
-		log.Printf("[embedding] Queuing ad %d for vector processing", adObj.ID)
-		vector.GetVectorProcessor().QueueAd(adObj)
-	}(adID)
-	// --- END VECTOR EMBEDDING ---
+	// Attempt inline vector processing, fallback to queue if it fails
+	log.Printf("[embedding] Attempting inline vector processing for ad %d", adID)
+	err = vector.BuildAdEmbedding(newAd)
+	if err != nil {
+		log.Printf("[embedding] Inline processing failed for ad %d: %v, queuing for background processing", adID, err)
+		vector.QueueAd(newAd)
+	} else {
+		log.Printf("[embedding] Successfully processed ad %d inline", adID)
+	}
 
 	return render(c, ui.SuccessMessage("Ad created successfully", "/"))
 }
@@ -266,19 +262,15 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	}
 	uploadAdImagesToB2(updatedAd.ID, imageFiles)
 
-	// --- VECTOR EMBEDDING GENERATION (ASYNC) ---
-	go func(adID int) {
-		// Fetch the updated ad from database to get proper timestamp
-		adObj, ok := ad.GetAd(adID, nil)
-		if !ok {
-			log.Printf("[embedding] Failed to fetch updated ad %d from database", adID)
-			return
-		}
-
-		log.Printf("[embedding] Queuing updated ad %d for vector processing", adObj.ID)
-		vector.GetVectorProcessor().QueueAd(adObj)
-	}(adID)
-	// --- END VECTOR EMBEDDING ---
+	// Attempt inline vector processing, fallback to queue if it fails
+	log.Printf("[embedding] Attempting inline vector processing for updated ad %d", adID)
+	err = vector.BuildAdEmbedding(updatedAd)
+	if err != nil {
+		log.Printf("[embedding] Inline processing failed for ad %d: %v, queuing for background processing", adID, err)
+		vector.QueueAd(updatedAd)
+	} else {
+		log.Printf("[embedding] Successfully processed updated ad %d inline", adID)
+	}
 
 	if c.Get("HX-Request") != "" {
 		// For htmx, return the updated detail partial

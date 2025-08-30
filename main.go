@@ -64,10 +64,10 @@ func main() {
 	vector.GetEmbeddingQueue().StartBackgroundProcessor()
 
 	// Start background vector processor for ads
-	vector.GetVectorProcessor().StartBackgroundProcessor()
+	vector.StartBackgroundProcessor()
 
 	// Initially populate the queue with existing ads without vectors
-	vector.GetVectorProcessor().QueueAdsWithoutVectors()
+	vector.QueueAdsWithoutVectors()
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: customErrorHandler,
