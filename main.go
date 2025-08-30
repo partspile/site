@@ -53,13 +53,6 @@ func main() {
 		log.Fatalf("Failed to setup payload indexes: %v", err)
 	}
 
-	// Test that payload indexes are working
-	if err := vector.TestPayloadIndexes(); err != nil {
-		log.Printf("Warning: Payload index test failed: %v", err)
-	} else {
-		log.Printf("Payload indexes verified and working correctly")
-	}
-
 	// Start background user embedding processor
 	vector.GetEmbeddingQueue().StartBackgroundProcessor()
 
