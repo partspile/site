@@ -1130,15 +1130,6 @@ func BookmarkButton(ad ad.Ad) g.Node {
 func AdImageURLs(adID int, order []int) []string {
 	urls := []string{}
 
-	// First check if this ad actually has images on B2
-	if !b2util.CheckIfAdHasImagesOnB2(adID) {
-		// Return missing.svg for all images when no images exist on B2 (e.g., seed ads)
-		for range order {
-			urls = append(urls, "/images/missing.svg")
-		}
-		return urls
-	}
-
 	prefix := fmt.Sprintf("%d/", adID)
 	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
 	if err != nil || token == "" {
@@ -1161,15 +1152,6 @@ func AdImageURLs(adID int, order []int) []string {
 
 // Helper to generate signed B2 image URLs for an ad and all sizes
 func AdImageSrcSet(adID int, idx int, context string) (src, srcset string) {
-	// First check if this ad actually has images on B2
-	hasImages := b2util.CheckIfAdHasImagesOnB2(adID)
-	fmt.Printf("[DEBUG] AdImageSrcSet: ad %d, idx %d, hasImages=%v\n", adID, idx, hasImages)
-	if !hasImages {
-		// Return missing.svg when no images exist on B2 (e.g., seed ads)
-		fmt.Printf("[DEBUG] AdImageSrcSet: ad %d returning missing.svg\n", adID)
-		return "/images/missing.svg", ""
-	}
-
 	prefix := fmt.Sprintf("%d/", adID)
 	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
 	if err != nil || token == "" {

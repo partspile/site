@@ -627,11 +627,6 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 	}
 
 	log.Printf("[B2] Upload complete for ad %d: %d/%d files uploaded successfully", adID, successCount, totalExpected)
-
-	// Clear the file exists cache for this ad since we just uploaded files
-	b2util.ClearFileExistsCacheForAd(adID)
-	// Force a refresh to ensure the cache is properly invalidated
-	b2util.ForceRefreshFileExistsCache(adID)
 }
 
 // Handler to get a signed B2 download URL for all images under an ad (prefix)
