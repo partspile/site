@@ -516,7 +516,7 @@ func main() {
 		adID, _ := res.LastInsertId()
 
 		// Skip image generation for seed ads - only generate images for new user-created ads
-		// Seed ads will show missing.svg placeholder when viewed
+		// Seed ads will show broken images when viewed (no images uploaded to B2)
 		log.Printf("Skipping image generation for seed ad %d: %s", adID, ad.Title)
 
 		// Create AdCar relationships for all combinations

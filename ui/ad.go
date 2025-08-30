@@ -1133,9 +1133,9 @@ func AdImageURLs(adID int, order []int) []string {
 	prefix := fmt.Sprintf("%d/", adID)
 	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
 	if err != nil || token == "" {
-		// Return missing.svg for all images when B2 images aren't available
+		// Return empty strings when B2 images aren't available - browser will show broken images
 		for range order {
-			urls = append(urls, "/images/missing.svg")
+			urls = append(urls, "")
 		}
 		return urls
 	}
@@ -1155,8 +1155,8 @@ func AdImageSrcSet(adID int, idx int, context string) (src, srcset string) {
 	prefix := fmt.Sprintf("%d/", adID)
 	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
 	if err != nil || token == "" {
-		// Return missing.svg when B2 images aren't available
-		return "/images/missing.svg", ""
+		// Return empty strings when B2 images aren't available - browser will show broken image
+		return "", ""
 	}
 
 	base := fmt.Sprintf("https://f004.backblazeb2.com/file/parts-pile/%d/%d", adID, idx)
