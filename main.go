@@ -54,7 +54,7 @@ func main() {
 	}
 
 	// Start background user embedding processor
-	vector.GetEmbeddingQueue().StartBackgroundProcessor()
+	vector.StartUserBackgroundProcessor()
 
 	// Start background vector processor for ads
 	vector.StartBackgroundProcessor()

@@ -77,10 +77,11 @@ func TreeViewWithQuery(query, structuredQuery string) g.Node {
 	)
 }
 
-func TreeViewWithQueryAndThreshold(query, structuredQuery, threshold string) g.Node {
+func TreeViewWithQueryAndThreshold(query, structuredQuery string, threshold float64) g.Node {
+	thresholdStr := fmt.Sprintf("%.1f", threshold)
 	return Div(
 		ID("tree-view"),
-		hx.Get("/tree?q="+query+"&structured_query="+structuredQuery+"&threshold="+threshold),
+		hx.Get("/tree?q="+query+"&structured_query="+structuredQuery+"&threshold="+thresholdStr),
 		hx.Trigger("load"),
 		hx.Swap("innerHTML"),
 	)
@@ -98,7 +99,9 @@ func InitialSearchResults(view string) g.Node {
 	)
 }
 
-func SearchWidget(newAdButton g.Node, view string, query string, threshold string) g.Node {
+func SearchWidget(newAdButton g.Node, view string, query string, threshold float64) g.Node {
+	thresholdStr := fmt.Sprintf("%.1f", threshold)
+
 	// Create bounding box inputs for map view
 	var boundingBoxInputs []g.Node
 	if view == "map" {
@@ -144,7 +147,7 @@ func SearchWidget(newAdButton g.Node, view string, query string, threshold strin
 						Min("0.0"),
 						Max("1.0"),
 						Step("0.1"),
-						Value(threshold),
+						Value(thresholdStr),
 						Class("flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"),
 						hx.Get("/search"),
 						hx.Target("#searchResults"),
@@ -156,7 +159,7 @@ func SearchWidget(newAdButton g.Node, view string, query string, threshold strin
 					Span(
 						ID("thresholdValue"),
 						Class("text-sm text-gray-600 min-w-[3rem]"),
-						g.Text(threshold),
+						g.Text(thresholdStr),
 					),
 				)),
 			),
@@ -173,11 +176,11 @@ func SearchWidget(newAdButton g.Node, view string, query string, threshold strin
 	)
 }
 
-func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, ads []ad.Ad, _ interface{}, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold string) g.Node {
+func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, ads []ad.Ad, _ interface{}, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold float64) g.Node {
 	return SearchResultsContainer(newAdButton, ads, currentUser, loc, view, query, loaderURL, threshold)
 }
 
-func SearchResultsContainer(newAdButton g.Node, ads []ad.Ad, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold string) g.Node {
+func SearchResultsContainer(newAdButton g.Node, ads []ad.Ad, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold float64) g.Node {
 	return Div(
 		ID("searchResults"),
 		SearchWidget(newAdButton, view, query, threshold),
@@ -186,7 +189,7 @@ func SearchResultsContainer(newAdButton g.Node, ads []ad.Ad, currentUser *user.U
 	)
 }
 
-func SearchResultsEmpty(viewType string, query string, threshold string, newAdButton g.Node) g.Node {
+func SearchResultsEmpty(viewType string, query string, threshold float64, newAdButton g.Node) g.Node {
 	return Div(
 		ID("searchResults"),
 		SearchWidget(newAdButton, viewType, query, threshold),
@@ -198,7 +201,7 @@ func SearchResultsEmpty(viewType string, query string, threshold string, newAdBu
 	)
 }
 
-func createViewWithInfiniteScroll(ads []ad.Ad, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold string) g.Node {
+func createViewWithInfiniteScroll(ads []ad.Ad, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold float64) g.Node {
 	var viewContent g.Node
 
 	// Handle no results for list and grid views

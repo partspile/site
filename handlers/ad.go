@@ -294,7 +294,7 @@ func HandleBookmarkAd(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to bookmark ad")
 	}
 	// Queue user for background embedding update
-	vector.GetEmbeddingQueue().QueueUserForUpdate(currentUser.ID)
+	vector.QueueUserForUpdate(currentUser.ID)
 	// Get the updated ad with bookmark status
 	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
@@ -318,7 +318,7 @@ func HandleUnbookmarkAd(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to unbookmark ad")
 	}
 	// Queue user for background embedding update
-	vector.GetEmbeddingQueue().QueueUserForUpdate(currentUser.ID)
+	vector.QueueUserForUpdate(currentUser.ID)
 	// Get the updated ad with bookmark status
 	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
@@ -391,7 +391,7 @@ func HandleAdDetailPartial(c *fiber.Ctx) error {
 	if currentUser != nil {
 		_ = ad.IncrementAdClickForUser(adID, currentUser.ID)
 		// Queue user for background embedding update
-		vector.GetEmbeddingQueue().QueueUserForUpdate(currentUser.ID)
+		vector.QueueUserForUpdate(currentUser.ID)
 	}
 
 	adObj, ok := ad.GetAd(adID, currentUser)

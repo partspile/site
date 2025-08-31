@@ -76,7 +76,7 @@ func (v *ListView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 
 	// Check if we should show no results message
 	if len(ads) == 0 {
-		return render(v.ctx, ui.SearchResultsEmpty("list", userPrompt, fmt.Sprintf("%.1f", threshold), newAdButton))
+		return render(v.ctx, ui.SearchResultsEmpty("list", userPrompt, threshold, newAdButton))
 	}
 
 	// Create loader URL if there are more results
@@ -85,7 +85,7 @@ func (v *ListView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 		loaderURL = createLoaderURL(userPrompt, nextCursor, "list", threshold, nil)
 	}
 
-	return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, "list", userPrompt, loaderURL, fmt.Sprintf("%.1f", threshold)))
+	return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, "list", userPrompt, loaderURL, threshold))
 }
 
 func (v *ListView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
@@ -150,7 +150,7 @@ func (v *GridView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 
 	// Check if we should show no results message
 	if len(ads) == 0 {
-		return render(v.ctx, ui.SearchResultsEmpty("grid", userPrompt, fmt.Sprintf("%.1f", threshold), newAdButton))
+		return render(v.ctx, ui.SearchResultsEmpty("grid", userPrompt, threshold, newAdButton))
 	}
 
 	// Create loader URL if there are more results
@@ -159,7 +159,7 @@ func (v *GridView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 		loaderURL = createLoaderURL(userPrompt, nextCursor, "grid", threshold, nil)
 	}
 
-	return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, "grid", userPrompt, loaderURL, fmt.Sprintf("%.1f", threshold)))
+	return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, "grid", userPrompt, loaderURL, threshold))
 }
 
 func (v *GridView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
@@ -231,7 +231,7 @@ func (v *MapView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 
 	// Check if we should show no results message
 	if len(ads) == 0 {
-		return render(v.ctx, ui.SearchResultsEmpty("map", userPrompt, fmt.Sprintf("%.1f", threshold), newAdButton))
+		return render(v.ctx, ui.SearchResultsEmpty("map", userPrompt, threshold, newAdButton))
 	}
 
 	// Create loader URL if there are more results
@@ -245,7 +245,7 @@ func (v *MapView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 		}
 	}
 
-	return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, "map", userPrompt, loaderURL, fmt.Sprintf("%.1f", threshold)))
+	return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, "map", userPrompt, loaderURL, threshold))
 }
 
 func (v *MapView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
@@ -316,7 +316,7 @@ func (v *TreeView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 
 	// Check if we should show no results message
 	if len(ads) == 0 {
-		return render(v.ctx, ui.SearchResultsEmpty("tree", userPrompt, fmt.Sprintf("%.1f", threshold), newAdButton))
+		return render(v.ctx, ui.SearchResultsEmpty("tree", userPrompt, threshold, newAdButton))
 	}
 
 	// Create loader URL if there are more results
@@ -325,7 +325,7 @@ func (v *TreeView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 		loaderURL = createLoaderURL(userPrompt, nextCursor, "tree", threshold, nil)
 	}
 
-	return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, "tree", userPrompt, loaderURL, fmt.Sprintf("%.1f", threshold)))
+	return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, "tree", userPrompt, loaderURL, threshold))
 }
 
 func (v *TreeView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
@@ -430,7 +430,7 @@ func saveUserSearchAndQueue(userPrompt string, userID int) {
 		_ = search.SaveUserSearch(sql.NullInt64{Int64: int64(userID), Valid: userID != 0}, userPrompt)
 		if userID != 0 {
 			// Queue user for background embedding update
-			vector.GetEmbeddingQueue().QueueUserForUpdate(userID)
+			vector.QueueUserForUpdate(userID)
 		}
 	}
 }
