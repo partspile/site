@@ -176,10 +176,6 @@ func SearchWidget(newAdButton g.Node, view string, query string, threshold float
 	)
 }
 
-func SearchResultsContainerWithFlags(newAdButton g.Node, filters SearchSchema, ads []ad.Ad, _ interface{}, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold float64) g.Node {
-	return SearchResultsContainer(newAdButton, ads, currentUser, loc, view, query, loaderURL, threshold)
-}
-
 func SearchResultsContainer(newAdButton g.Node, ads []ad.Ad, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold float64) g.Node {
 	return Div(
 		ID("searchResults"),

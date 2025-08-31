@@ -85,7 +85,7 @@ func (v *ListView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 		loaderURL = createLoaderURL(userPrompt, nextCursor, "list", threshold, nil)
 	}
 
-	return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, "list", userPrompt, loaderURL, threshold))
+	return render(v.ctx, ui.SearchResultsContainer(newAdButton, ads, currentUser, loc, "list", userPrompt, loaderURL, threshold))
 }
 
 func (v *ListView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
@@ -159,7 +159,7 @@ func (v *GridView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 		loaderURL = createLoaderURL(userPrompt, nextCursor, "grid", threshold, nil)
 	}
 
-	return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, "grid", userPrompt, loaderURL, threshold))
+	return render(v.ctx, ui.SearchResultsContainer(newAdButton, ads, currentUser, loc, "grid", userPrompt, loaderURL, threshold))
 }
 
 func (v *GridView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
@@ -245,7 +245,7 @@ func (v *MapView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 		}
 	}
 
-	return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, "map", userPrompt, loaderURL, threshold))
+	return render(v.ctx, ui.SearchResultsContainer(newAdButton, ads, currentUser, loc, "map", userPrompt, loaderURL, threshold))
 }
 
 func (v *MapView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
@@ -325,7 +325,7 @@ func (v *TreeView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 		loaderURL = createLoaderURL(userPrompt, nextCursor, "tree", threshold, nil)
 	}
 
-	return render(v.ctx, ui.SearchResultsContainerWithFlags(newAdButton, ui.SearchSchema(ad.SearchQuery{}), ads, nil, currentUser, loc, "tree", userPrompt, loaderURL, threshold))
+	return render(v.ctx, ui.SearchResultsContainer(newAdButton, ads, currentUser, loc, "tree", userPrompt, loaderURL, threshold))
 }
 
 func (v *TreeView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
