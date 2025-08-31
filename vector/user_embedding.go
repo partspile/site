@@ -43,16 +43,27 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 		return nil, fmt.Errorf("fetch bookmarks: %w", err)
 	}
 	log.Printf("[embedding][debug] userID=%d bookmarks: %v (count=%d)", userID, bookmarkIDs, len(bookmarkIDs))
-	for _, adID := range bookmarkIDs {
-		emb, err := GetAdEmbeddingFromQdrant(adID)
+
+	// Batch fetch bookmark embeddings
+	var bookmarkEmbeddings [][]float32
+	if len(bookmarkIDs) > 0 {
+		embeddings, err := GetAdEmbeddings(bookmarkIDs)
 		if err != nil {
-			log.Printf("[embedding][debug] Qdrant embedding missing for bookmarked adID=%d: %v", adID, err)
+			log.Printf("[embedding][debug] Batch bookmark embedding error: %v", err)
+		} else {
+			bookmarkEmbeddings = embeddings
 		}
-		if err == nil && emb != nil {
-			for i := 0; i < bookmarkWeight; i++ {
+	}
+
+	for i, adID := range bookmarkIDs {
+		if i < len(bookmarkEmbeddings) && bookmarkEmbeddings[i] != nil {
+			emb := bookmarkEmbeddings[i]
+			for j := 0; j < bookmarkWeight; j++ {
 				vectors = append(vectors, emb)
 				weights = append(weights, 1)
 			}
+		} else {
+			log.Printf("[embedding][debug] Qdrant embedding missing for bookmarked adID=%d", adID)
 		}
 		if len(vectors) >= limit*bookmarkWeight {
 			break
@@ -66,16 +77,27 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 		return nil, fmt.Errorf("fetch clicks: %w", err)
 	}
 	log.Printf("[embedding][debug] userID=%d clicked: %v (count=%d)", userID, clickedIDs, len(clickedIDs))
-	for _, adID := range clickedIDs {
-		emb, err := GetAdEmbeddingFromQdrant(adID)
+
+	// Batch fetch click embeddings
+	var clickEmbeddings [][]float32
+	if len(clickedIDs) > 0 {
+		embeddings, err := GetAdEmbeddings(clickedIDs)
 		if err != nil {
-			log.Printf("[embedding][debug] Qdrant embedding missing for clicked adID=%d: %v", adID, err)
+			log.Printf("[embedding][debug] Batch click embedding error: %v", err)
+		} else {
+			clickEmbeddings = embeddings
 		}
-		if err == nil && emb != nil {
-			for i := 0; i < clickWeight; i++ {
+	}
+
+	for i, adID := range clickedIDs {
+		if i < len(clickEmbeddings) && clickEmbeddings[i] != nil {
+			emb := clickEmbeddings[i]
+			for j := 0; j < clickWeight; j++ {
 				vectors = append(vectors, emb)
 				weights = append(weights, 1)
 			}
+		} else {
+			log.Printf("[embedding][debug] Qdrant embedding missing for clicked adID=%d", adID)
 		}
 	}
 	searches, err := search.GetRecentUserSearches(userID, limit)

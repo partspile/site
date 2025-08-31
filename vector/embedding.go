@@ -217,7 +217,7 @@ func GetQueryEmbeddings(texts []string) ([][]float32, error) {
 	newIdx := 0
 
 	for i := range validTexts {
-		if cachedIdx < len(cachedEmbeddings) && i == uncachedIndices[newIdx] {
+		if newIdx < len(uncachedIndices) && i == uncachedIndices[newIdx] {
 			// This was a cache miss, use new embedding
 			result[i] = newEmbeddings[newIdx]
 			newIdx++
@@ -631,21 +631,4 @@ func joinStrings(ss []string) string {
 		return ""
 	}
 	return fmt.Sprintf("%s", ss)
-}
-
-// Helper function to check if slice contains string
-func contains(slice []string, item string) bool {
-	for _, s := range slice {
-		if s == item {
-			return true
-		}
-	}
-	return false
-}
-
-// geocodeLocation converts location text to lat/lon coordinates
-func geocodeLocation(locationText string) (float64, float64) {
-	// TODO: Implement geocoding service
-	// For now, return default coordinates
-	return 0, 0
 }
