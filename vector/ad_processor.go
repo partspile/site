@@ -16,15 +16,35 @@ func StartBackgroundProcessor() {
 	go func() {
 		log.Printf("[vector] Background vector processor started (queue-based)")
 
-		for {
-			adObj := <-adQueue
-			log.Printf("[vector] Processing ad from queue: %d - %s", adObj.ID, adObj.Title)
+		const chunkSize = 50
 
-			err := BuildAdEmbedding(adObj)
+		for {
+			// Collect ads up to chunk size
+			var ads []ad.Ad
+
+			// Get the first ad (blocking)
+			adObj := <-adQueue
+			ads = append(ads, adObj)
+
+			// Collect additional ads up to chunk size
+			for i := 1; i < chunkSize; i++ {
+				select {
+				case adObj := <-adQueue:
+					ads = append(ads, adObj)
+				default:
+					// No more ads available, break out of the inner loop
+					goto processChunk
+				}
+			}
+
+		processChunk:
+			log.Printf("[vector] Processing chunk of %d ads from queue", len(ads))
+
+			err := BuildAdEmbeddings(ads)
 			if err != nil {
-				log.Printf("[vector] Error building embedding for ad %d: %v", adObj.ID, err)
+				log.Printf("[vector] Error building embeddings for chunk: %v", err)
 			} else {
-				log.Printf("[vector] Successfully processed ad %d", adObj.ID)
+				log.Printf("[vector] Successfully processed chunk of %d ads", len(ads))
 			}
 
 			// Sleep to avoid rate limits
@@ -36,11 +56,10 @@ func StartBackgroundProcessor() {
 // QueueAd adds an ad to the processing queue
 func QueueAd(adObj ad.Ad) {
 	adQueue <- adObj
-	log.Printf("[vector] Queued ad %d for processing", adObj.ID)
 }
 
-// QueueAdsWithoutVectors loads ads without vectors and processes them in batch
-func QueueAdsWithoutVectors() {
+// ProcessAdsWithoutVectors loads ads without vectors and queues them for processing
+func ProcessAdsWithoutVectors() {
 	ads, err := ad.GetAdsWithoutVectors()
 	if err != nil {
 		log.Printf("[vector] Error getting ads without vectors: %v", err)
@@ -48,16 +67,14 @@ func QueueAdsWithoutVectors() {
 	}
 
 	if len(ads) == 0 {
+		log.Printf("[vector] No ads without vectors found")
 		return
 	}
 
-	log.Printf("[vector] Processing %d ads without vectors in batch", len(ads))
+	log.Printf("[vector] Queueing %d ads without vectors for processing", len(ads))
 
-	// Process all ads in a single batch
-	err = BuildAdEmbeddings(ads)
-	if err != nil {
-		log.Printf("[vector] Error building embeddings for batch: %v", err)
-	} else {
-		log.Printf("[vector] Successfully processed batch of %d ads", len(ads))
+	// Queue all ads for background processing
+	for _, adObj := range ads {
+		QueueAd(adObj)
 	}
 }

@@ -59,8 +59,8 @@ func main() {
 	// Start background vector processor for ads
 	vector.StartBackgroundProcessor()
 
-	// Initially populate the queue with existing ads without vectors
-	vector.QueueAdsWithoutVectors()
+	// Initially process existing ads without vectors
+	vector.ProcessAdsWithoutVectors()
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: customErrorHandler,
