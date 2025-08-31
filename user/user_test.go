@@ -51,9 +51,21 @@ func TestCreateUser(t *testing.T) {
 
 	db.SetForTesting(mockDB)
 
+	// Expect transaction begin
+	mock.ExpectBegin()
+	
+	// Expect user insert
 	mock.ExpectExec("INSERT INTO User").
 		WithArgs("testuser", "1234567890", "hashedpassword", "somesalt", "argon2id", "sms").
 		WillReturnResult(sqlmock.NewResult(1, 1))
+	
+	// Expect rock inventory insert
+	mock.ExpectExec("INSERT INTO UserRock").
+		WithArgs(1).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	
+	// Expect transaction commit
+	mock.ExpectCommit()
 
 	userID, err := CreateUser("testuser", "1234567890", "hashedpassword", "somesalt", "argon2id")
 
