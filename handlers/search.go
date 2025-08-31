@@ -189,7 +189,7 @@ func HandleSearchAPI(c *fiber.Ctx) error {
 
 // saveUserSearch saves user search and queues user for embedding update
 func saveUserSearch(c *fiber.Ctx) {
-	userPrompt := c.Query("q")
+	userPrompt := getQueryParam(c, "q")
 	_, userID := getUser(c)
 	saveUserSearchAndQueue(userPrompt, userID)
 }
