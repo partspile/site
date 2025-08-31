@@ -38,6 +38,40 @@ var (
 	siteEmbeddingCache  *cache.Cache[[]float32] // Campaign keys, 6 hour TTL
 )
 
+// EncodeCursor encodes an offset into a base64-encoded cursor string
+func EncodeCursor(offset uint64) string {
+	if offset == 0 {
+		return ""
+	}
+	offsetStr := strconv.FormatUint(offset, 10)
+	return base64.StdEncoding.EncodeToString([]byte(offsetStr))
+}
+
+// DecodeCursor decodes a base64-encoded cursor string into an offset
+func DecodeCursor(cursor string) uint64 {
+	if cursor == "" {
+		log.Printf("[qdrant] No cursor provided, starting from beginning")
+		return 0
+	}
+
+	// Decode cursor: format is "offset" base64 encoded
+	cursorBytes, err := base64.StdEncoding.DecodeString(cursor)
+	if err != nil {
+		log.Printf("[qdrant] Failed to decode cursor: %v", err)
+		return 0
+	}
+
+	cursorStr := string(cursorBytes)
+	offsetVal, err := strconv.ParseUint(cursorStr, 10, 64)
+	if err != nil {
+		log.Printf("[qdrant] Failed to parse cursor offset: %v", err)
+		return 0
+	}
+
+	log.Printf("[qdrant] Parsed cursor: offset=%d", offsetVal)
+	return offsetVal
+}
+
 // InitEmbeddingCaches initializes the specialized embedding caches. This should be called during application startup.
 func InitEmbeddingCaches() error {
 	var err error
@@ -206,6 +240,9 @@ func InitQdrantClient() error {
 		return fmt.Errorf("missing Qdrant host")
 	}
 	apiKey := config.QdrantAPIKey
+	if apiKey == "" {
+		return fmt.Errorf("missing Qdrant API key")
+	}
 	collection := config.QdrantCollection
 	if collection == "" {
 		return fmt.Errorf("missing Qdrant collection name")
@@ -239,44 +276,6 @@ func InitQdrantClient() error {
 	}
 	qdrantClient = client
 	qdrantCollection = collection
-
-	// Check if collection exists, create if not
-	ctx := context.Background()
-
-	// Try to list collections first to test connection
-	collections, err := client.ListCollections(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to connect to Qdrant: %w", err)
-	}
-
-	collectionExists := false
-	for _, col := range collections {
-		if col == collection {
-			collectionExists = true
-			break
-		}
-	}
-
-	if !collectionExists {
-		log.Printf("[qdrant] Creating collection: %s", collection)
-		err = client.CreateCollection(ctx, &qdrant.CreateCollection{
-			CollectionName: collection,
-			VectorsConfig: &qdrant.VectorsConfig{
-				Config: &qdrant.VectorsConfig_Params{
-					Params: &qdrant.VectorParams{
-						Size:     768, // Gemini embedding size
-						Distance: qdrant.Distance_Cosine,
-					},
-				},
-			},
-		})
-		if err != nil {
-			return fmt.Errorf("failed to create collection: %w", err)
-		}
-		log.Printf("[qdrant] Successfully created collection: %s", collection)
-	} else {
-		log.Printf("[qdrant] Collection already exists: %s", collection)
-	}
 
 	return nil
 }
@@ -428,20 +427,7 @@ func QuerySimilarAdIDs(embedding []float32, filter *qdrant.Filter, topK int, cur
 	ctx := context.Background()
 
 	// Parse cursor if provided
-	var offset uint64 = 0
-	if cursor != "" {
-		// Decode cursor: format is "offset" base64 encoded
-		cursorBytes, err := base64.StdEncoding.DecodeString(cursor)
-		if err == nil {
-			cursorStr := string(cursorBytes)
-			if offsetVal, err := strconv.ParseUint(cursorStr, 10, 64); err == nil {
-				offset = offsetVal
-			}
-		}
-		log.Printf("[qdrant] Parsed cursor: offset=%d", offset)
-	} else {
-		log.Printf("[qdrant] No cursor provided, starting from beginning")
-	}
+	offset := DecodeCursor(cursor)
 
 	// Create search request using Query method
 	limit := uint64(topK)
@@ -482,7 +468,7 @@ func QuerySimilarAdIDs(embedding []float32, filter *qdrant.Filter, topK int, cur
 	var nextCursor string
 	if len(results) > 0 {
 		nextOffset := offset + uint64(len(results))
-		nextCursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d", nextOffset)))
+		nextCursor = EncodeCursor(nextOffset)
 		log.Printf("[qdrant] Generated next cursor: %s (offset: %d)", nextCursor, nextOffset)
 	} else {
 		log.Printf("[qdrant] No results, no next cursor generated")
@@ -809,16 +795,7 @@ func QuerySimilarAdsWithFilter(embedding []float32, filter *qdrant.Filter, topK 
 	ctx := context.Background()
 
 	// Parse cursor if provided
-	var offset uint64 = 0
-	if cursor != "" {
-		cursorBytes, err := base64.StdEncoding.DecodeString(cursor)
-		if err == nil {
-			cursorStr := string(cursorBytes)
-			if offsetVal, err := strconv.ParseUint(cursorStr, 10, 64); err == nil {
-				offset = offsetVal
-			}
-		}
-	}
+	offset := DecodeCursor(cursor)
 
 	limit := uint64(topK)
 
@@ -885,7 +862,7 @@ func QuerySimilarAdsWithFilter(embedding []float32, filter *qdrant.Filter, topK 
 	var nextCursor string
 	if len(results) > 0 {
 		nextOffset := offset + uint64(len(results))
-		nextCursor = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d", nextOffset)))
+		nextCursor = EncodeCursor(nextOffset)
 	}
 
 	return results, nextCursor, nil

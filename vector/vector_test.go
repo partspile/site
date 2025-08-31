@@ -1,10 +1,6 @@
 package vector
 
 import (
-	"encoding/base64"
-	"fmt"
-	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -142,15 +138,10 @@ func TestCursorEncodingDecoding(t *testing.T) {
 	offset := uint64(10)
 
 	// Encode cursor
-	cursorData := fmt.Sprintf("%d", offset)
-	encodedCursor := base64.StdEncoding.EncodeToString([]byte(cursorData))
+	encodedCursor := EncodeCursor(offset)
 
 	// Decode cursor
-	cursorBytes, err := base64.StdEncoding.DecodeString(encodedCursor)
-	assert.NoError(t, err)
-
-	decodedOffset, err := strconv.ParseUint(string(cursorBytes), 10, 64)
-	assert.NoError(t, err)
+	decodedOffset := DecodeCursor(encodedCursor)
 	assert.Equal(t, offset, decodedOffset)
 }
 
@@ -158,27 +149,7 @@ func TestCursorWithInvalidData(t *testing.T) {
 	// Test cursor handling with invalid data
 	invalidCursor := "invalid-base64"
 
-	cursorBytes, err := base64.StdEncoding.DecodeString(invalidCursor)
-	assert.Error(t, err)
-
-	// Should handle gracefully
-	var offset uint64 = 0
-	var score float32 = 0
-
-	if err == nil {
-		cursorStr := string(cursorBytes)
-		parts := strings.Split(cursorStr, ":")
-		if len(parts) == 2 {
-			if offsetVal, err := strconv.ParseUint(parts[0], 10, 64); err == nil {
-				offset = offsetVal
-			}
-			if scoreVal, err := strconv.ParseFloat(parts[1], 32); err == nil {
-				score = float32(scoreVal)
-			}
-		}
-	}
-
-	// Should default to zero values
+	// Should handle gracefully and return 0
+	offset := DecodeCursor(invalidCursor)
 	assert.Equal(t, uint64(0), offset)
-	assert.Equal(t, float32(0), score)
 }
