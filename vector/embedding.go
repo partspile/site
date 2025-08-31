@@ -1,22 +1,17 @@
 package vector
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"log"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/cache"
-	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/rock"
 	"github.com/parts-pile/site/vehicle"
-	"github.com/qdrant/go-client/qdrant"
-	genai "google.golang.org/genai"
 )
 
 // AdResult represents a search result from Qdrant
@@ -28,10 +23,6 @@ type AdResult struct {
 }
 
 var (
-	geminiClient     *genai.Client
-	qdrantClient     *qdrant.Client
-	qdrantCollection string
-
 	// Specialized caches for different embedding types
 	queryEmbeddingCache *cache.Cache[[]float32] // String keys, 1 hour TTL
 	userEmbeddingCache  *cache.Cache[[]float32] // User ID keys, 24 hour TTL
@@ -164,6 +155,84 @@ func GetQueryEmbedding(text string) ([]float32, error) {
 	return embedding, nil
 }
 
+// GetQueryEmbeddings retrieves or generates embeddings for multiple texts using the query cache
+// This function optimizes by batching uncached texts into a single API call
+func GetQueryEmbeddings(texts []string) ([][]float32, error) {
+	if queryEmbeddingCache == nil {
+		return nil, fmt.Errorf("query embedding cache not initialized")
+	}
+
+	if len(texts) == 0 {
+		return nil, fmt.Errorf("cannot embed empty text array")
+	}
+
+	// Trim whitespace and validate all texts
+	var validTexts []string
+	var textIndices []int // Track original indices for result ordering
+	for i, text := range texts {
+		text = strings.TrimSpace(text)
+		if text == "" {
+			return nil, fmt.Errorf("cannot embed empty text at index %d", i)
+		}
+		validTexts = append(validTexts, text)
+		textIndices = append(textIndices, i)
+	}
+
+	// Check cache for each text and collect uncached ones
+	var cachedEmbeddings [][]float32
+	var uncachedTexts []string
+	var uncachedIndices []int
+
+	for i, text := range validTexts {
+		if cached, found := queryEmbeddingCache.Get(text); found {
+			log.Printf("[embedding][query-cache] Cache hit for query: %.80q", text)
+			cachedEmbeddings = append(cachedEmbeddings, cached)
+		} else {
+			uncachedTexts = append(uncachedTexts, text)
+			uncachedIndices = append(uncachedIndices, i)
+		}
+	}
+
+	// Generate embeddings for uncached texts in batch
+	var newEmbeddings [][]float32
+	if len(uncachedTexts) > 0 {
+		log.Printf("[embedding][query-cache] Cache miss for %d queries, generating batch embeddings", len(uncachedTexts))
+		embeddings, err := EmbedTexts(uncachedTexts)
+		if err != nil {
+			return nil, err
+		}
+
+		// Cache the new embeddings
+		for i, embedding := range embeddings {
+			text := uncachedTexts[i]
+			queryEmbeddingCache.SetWithTTL(text, embedding, int64(len(embedding)*4), time.Hour)
+			log.Printf("[embedding][query-cache] Cached embedding for query: %.80q", text)
+		}
+		newEmbeddings = embeddings
+	}
+
+	// Combine cached and new embeddings in the correct order
+	result := make([][]float32, len(validTexts))
+	cachedIdx := 0
+	newIdx := 0
+
+	for i := range validTexts {
+		if cachedIdx < len(cachedEmbeddings) && i == uncachedIndices[newIdx] {
+			// This was a cache miss, use new embedding
+			result[i] = newEmbeddings[newIdx]
+			newIdx++
+		} else {
+			// This was a cache hit, use cached embedding
+			result[i] = cachedEmbeddings[cachedIdx]
+			cachedIdx++
+		}
+	}
+
+	log.Printf("[embedding][query-cache] Batch processed %d queries (%d cached, %d generated)",
+		len(validTexts), len(cachedEmbeddings), len(newEmbeddings))
+	return result, nil
+}
+
 // GetUserEmbedding retrieves a user's personalized embedding from the user cache
 func GetUserEmbedding(userID int) ([]float32, error) {
 	if userEmbeddingCache == nil {
@@ -218,265 +287,6 @@ func GetSiteEmbedding(campaignKey string) ([]float32, error) {
 	return embedding, nil
 }
 
-// InitGeminiClient initializes the Gemini embedding client
-func InitGeminiClient() error {
-	apiKey := config.GeminiAPIKey
-	if apiKey == "" {
-		return fmt.Errorf("missing Gemini API key")
-	}
-	// The client gets the API key from the environment variable `GEMINI_API_KEY`
-	client, err := genai.NewClient(context.Background(), nil)
-	if err != nil {
-		return err
-	}
-	geminiClient = client
-	return nil
-}
-
-// InitQdrantClient initializes the Qdrant client and collection
-func InitQdrantClient() error {
-	host := config.QdrantHost
-	if host == "" {
-		return fmt.Errorf("missing Qdrant host")
-	}
-	apiKey := config.QdrantAPIKey
-	if apiKey == "" {
-		return fmt.Errorf("missing Qdrant API key")
-	}
-	collection := config.QdrantCollection
-	if collection == "" {
-		return fmt.Errorf("missing Qdrant collection name")
-	}
-
-	log.Printf("[qdrant] Initializing client with host: %s, collection: %s", host, collection)
-
-	// Create Qdrant client configuration
-	clientConfig := &qdrant.Config{
-		APIKey:                 apiKey,
-		UseTLS:                 true, // Qdrant Cloud requires TLS
-		SkipCompatibilityCheck: true, // Skip version check for cloud service
-	}
-	log.Printf("[qdrant] Client config - Host: %s, Port: %d, UseTLS: %v", clientConfig.Host, clientConfig.Port, clientConfig.UseTLS)
-	if host != "" {
-		// For Qdrant Cloud, the host should be just the hostname without protocol
-		// Remove any protocol prefix if present
-		if strings.HasPrefix(host, "https://") {
-			host = strings.TrimPrefix(host, "https://")
-		} else if strings.HasPrefix(host, "http://") {
-			host = strings.TrimPrefix(host, "http://")
-		}
-		clientConfig.Host = host
-		clientConfig.Port = config.QdrantPort // Qdrant Cloud uses port 6334 for gRPC
-	}
-
-	// Create Qdrant client
-	client, err := qdrant.NewClient(clientConfig)
-	if err != nil {
-		return err
-	}
-	qdrantClient = client
-	qdrantCollection = collection
-
-	return nil
-}
-
-// EmbedText generates an embedding for the given text using Gemini
-func EmbedText(text string) ([]float32, error) {
-	if geminiClient == nil {
-		return nil, fmt.Errorf("Gemini client not initialized")
-	}
-	text = strings.TrimSpace(text)
-	if text == "" {
-		return nil, fmt.Errorf("cannot embed empty text")
-	}
-	log.Printf("[embedding] Calculating embedding vector for text: %.80q", text)
-	ctx := context.Background()
-	resp, err := geminiClient.Models.EmbedContent(ctx, config.GeminiEmbeddingModel, genai.Text(text), nil)
-	if err != nil {
-		return nil, fmt.Errorf("Gemini embedding API error: %w", err)
-	}
-	if resp == nil || len(resp.Embeddings) == 0 || resp.Embeddings[0] == nil {
-		return nil, fmt.Errorf("no embedding returned from Gemini API")
-	}
-	return resp.Embeddings[0].Values, nil
-}
-
-// UpsertAdEmbedding upserts an ad's embedding and metadata into Qdrant
-func UpsertAdEmbedding(adID int, embedding []float32, metadata map[string]interface{}) error {
-	if qdrantClient == nil {
-		return fmt.Errorf("Qdrant client not initialized")
-	}
-	log.Printf("[qdrant] Upserting vector for ad %d", adID)
-
-	// Convert metadata to Qdrant format
-	var qdrantMetadata map[string]*qdrant.Value
-	if metadata != nil {
-		qdrantMetadata = make(map[string]*qdrant.Value)
-		for k, v := range metadata {
-			switch val := v.(type) {
-			case string:
-				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: val}}
-			case int:
-				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(val)}}
-			case float64:
-				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_DoubleValue{DoubleValue: val}}
-			case bool:
-				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_BoolValue{BoolValue: val}}
-			case []string:
-				// Handle array of strings (years, models, engines)
-				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_ListValue{ListValue: &qdrant.ListValue{
-					Values: func() []*qdrant.Value {
-						result := make([]*qdrant.Value, len(val))
-						for i, s := range val {
-							result[i] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: s}}
-						}
-						return result
-					}(),
-				}}}
-			case map[string]interface{}:
-				// Handle geo metadata (lat/lon coordinates)
-				if k == "location" {
-					geoStruct := &qdrant.Struct{Fields: make(map[string]*qdrant.Value)}
-					for geoKey, geoVal := range val {
-						if geoFloat, ok := geoVal.(float64); ok {
-							geoStruct.Fields[geoKey] = &qdrant.Value{Kind: &qdrant.Value_DoubleValue{DoubleValue: geoFloat}}
-						}
-					}
-					qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StructValue{StructValue: geoStruct}}
-				} else {
-					// Convert other maps to string
-					qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: fmt.Sprintf("%v", val)}}
-				}
-			default:
-				// Convert to string for other types
-				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: fmt.Sprintf("%v", val)}}
-			}
-		}
-		log.Printf("[qdrant] Metadata prepared for ad %d", adID)
-	}
-
-	// Create Qdrant point with numeric ID instead of UUID
-	point := &qdrant.PointStruct{
-		Id: &qdrant.PointId{
-			PointIdOptions: &qdrant.PointId_Num{Num: uint64(adID)},
-		},
-		Vectors: &qdrant.Vectors{
-			VectorsOptions: &qdrant.Vectors_Vector{
-				Vector: &qdrant.Vector{
-					Vector: &qdrant.Vector_Dense{
-						Dense: &qdrant.DenseVector{
-							Data: embedding,
-						},
-					},
-				},
-			},
-		},
-		Payload: qdrantMetadata,
-	}
-
-	log.Printf("[qdrant] Upserting vector for ad %d", adID)
-
-	ctx := context.Background()
-	_, err := qdrantClient.Upsert(ctx, &qdrant.UpsertPoints{
-		CollectionName: qdrantCollection,
-		Points:         []*qdrant.PointStruct{point},
-	})
-	if err != nil {
-		return fmt.Errorf("failed to upsert vector: %w", err)
-	}
-
-	log.Printf("[qdrant] Successfully upserted vector for ad %d", adID)
-	return nil
-}
-
-// DeleteAdEmbedding deletes an ad's embedding from Qdrant
-func DeleteAdEmbedding(adID int) error {
-	if qdrantClient == nil {
-		return fmt.Errorf("Qdrant client not initialized")
-	}
-	log.Printf("[qdrant] Deleting vector for ad %d", adID)
-
-	ctx := context.Background()
-	pointID := qdrant.NewIDNum(uint64(adID))
-	_, err := qdrantClient.Delete(ctx, &qdrant.DeletePoints{
-		CollectionName: qdrantCollection,
-		Points: &qdrant.PointsSelector{
-			PointsSelectorOneOf: &qdrant.PointsSelector_Points{
-				Points: &qdrant.PointsIdsList{
-					Ids: []*qdrant.PointId{pointID},
-				},
-			},
-		},
-	})
-	if err != nil {
-		log.Printf("[qdrant] Failed to delete vector for ad %d: %v", adID, err)
-		return fmt.Errorf("failed to delete vector: %w", err)
-	}
-
-	log.Printf("[qdrant] Successfully deleted vector for ad %d", adID)
-	return nil
-}
-
-// QuerySimilarAdIDs queries Qdrant for similar ad IDs given an embedding
-// Returns a list of ad IDs, and a cursor for pagination
-// If filter is provided, it will be applied to the search
-func QuerySimilarAdIDs(embedding []float32, filter *qdrant.Filter, topK int, cursor string, threshold float64) ([]int, string, error) {
-	if qdrantClient == nil {
-		return nil, "", fmt.Errorf("Qdrant client not initialized")
-	}
-	ctx := context.Background()
-
-	// Parse cursor if provided
-	offset := DecodeCursor(cursor)
-
-	// Create search request using Query method
-	limit := uint64(topK)
-	scoreThreshold := float32(threshold)
-	queryRequest := &qdrant.QueryPoints{
-		CollectionName: qdrantCollection,
-		Query:          qdrant.NewQueryDense(embedding),
-		Filter:         filter,
-		Limit:          &limit,
-		Offset:         &offset,
-		ScoreThreshold: &scoreThreshold,
-		WithPayload: &qdrant.WithPayloadSelector{
-			SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true},
-		},
-		WithVectors: &qdrant.WithVectorsSelector{
-			SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false},
-		},
-	}
-
-	resp, err := qdrantClient.Query(ctx, queryRequest)
-	if err != nil {
-		if filter != nil {
-			return nil, "", fmt.Errorf("failed to query Qdrant with filter: %w", err)
-		}
-		return nil, "", fmt.Errorf("failed to query Qdrant: %w", err)
-	}
-	log.Printf("[qdrant] Query returned %d results (requested %d, offset %d)", len(resp), topK, offset)
-
-	var results []int
-	for _, result := range resp {
-		// Extract ID
-		adID := int(result.Id.GetNum())
-		results = append(results, adID)
-		log.Printf("[qdrant] Added result with ID: %d, Score: %f", adID, result.Score)
-	}
-
-	// Generate next cursor if we have results
-	var nextCursor string
-	if len(results) > 0 {
-		nextOffset := offset + uint64(len(results))
-		nextCursor = EncodeCursor(nextOffset)
-		log.Printf("[qdrant] Generated next cursor: %s (offset: %d)", nextCursor, nextOffset)
-	} else {
-		log.Printf("[qdrant] No results, no next cursor generated")
-	}
-
-	return results, nextCursor, nil
-}
-
 // AggregateEmbeddings computes a weighted mean of multiple embeddings
 func AggregateEmbeddings(vectors [][]float32, weights []float32) []float32 {
 	if len(vectors) == 0 || len(weights) == 0 || len(vectors) != len(weights) {
@@ -519,19 +329,35 @@ func calculateSiteLevelVector() ([]float32, error) {
 	if len(ads) > 5 {
 		log.Printf("[site-level]   ... and %d more ads", len(ads)-5)
 	}
+
+	// Extract ad IDs for batch retrieval
+	var adIDs []int
+	for _, adObj := range ads {
+		adIDs = append(adIDs, adObj.ID)
+	}
+
+	// Fetch all embeddings in batch
+	log.Printf("[site-level] Fetching embeddings for %d ads in batch", len(adIDs))
+	embeddings, err := GetAdEmbeddings(adIDs)
+	if err != nil {
+		log.Printf("[site-level] Batch fetch error: %v", err)
+		return nil, err
+	}
+
+	// Process results
 	var vectors [][]float32
 	var missingIDs []int
-	for _, adObj := range ads {
-		log.Printf("[site-level] Fetching existing embedding for ad %d (title: %s)", adObj.ID, adObj.Title)
-		emb, err := GetAdEmbedding(adObj.ID)
-		if err != nil || emb == nil {
-			missingIDs = append(missingIDs, adObj.ID)
-			log.Printf("[site-level] Missing embedding for ad %d: %v", adObj.ID, err)
+	for i, embedding := range embeddings {
+		adID := adIDs[i]
+		if embedding == nil {
+			missingIDs = append(missingIDs, adID)
+			log.Printf("[site-level] Missing embedding for ad %d", adID)
 			continue
 		}
-		log.Printf("[site-level] Found embedding for ad %d (length=%d)", adObj.ID, len(emb))
-		vectors = append(vectors, emb)
+		log.Printf("[site-level] Found embedding for ad %d (length=%d)", adID, len(embedding))
+		vectors = append(vectors, embedding)
 	}
+
 	log.Printf("[site-level] Found embeddings for %d ads, missing for %d ads", len(vectors), len(missingIDs))
 	if len(missingIDs) > 0 {
 		log.Printf("[site-level] Missing embeddings for ad IDs: %v", missingIDs)
@@ -539,6 +365,7 @@ func calculateSiteLevelVector() ([]float32, error) {
 	if len(vectors) == 0 {
 		return nil, fmt.Errorf("no embeddings found for popular ads")
 	}
+
 	// Use unweighted mean for now
 	weights := make([]float32, len(vectors))
 	for i := range weights {
@@ -563,62 +390,6 @@ func calculateSiteLevelVector() ([]float32, error) {
 	}
 
 	return result, nil
-}
-
-// GetAdEmbedding retrieves the embedding for a given ad ID from Qdrant
-func GetAdEmbedding(adID int) ([]float32, error) {
-	if qdrantClient == nil {
-		return nil, fmt.Errorf("Qdrant client not initialized")
-	}
-	log.Printf("[qdrant] Fetching vector for ad %d", adID)
-
-	ctx := context.Background()
-	pointID := qdrant.NewIDNum(uint64(adID))
-	resp, err := qdrantClient.Get(ctx, &qdrant.GetPoints{
-		CollectionName: qdrantCollection,
-		Ids:            []*qdrant.PointId{pointID},
-		WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
-		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: true}},
-	})
-	if err != nil {
-		log.Printf("[qdrant] Fetch error for ad %d: %v", adID, err)
-		return nil, err
-	}
-
-	log.Printf("[qdrant] Fetch response for ad %d: found %d points", adID, len(resp))
-	if len(resp) == 0 {
-		log.Printf("[qdrant] No points found for ad %d", adID)
-		return nil, fmt.Errorf("no embedding found for ad %d", adID)
-	}
-
-	point := resp[0]
-	log.Printf("[qdrant] Point structure for ad %d: Vectors=%v", adID, point.Vectors != nil)
-
-	if point.Vectors == nil {
-		log.Printf("[qdrant] Vector values are nil for ad %d", adID)
-		return nil, fmt.Errorf("no embedding found for ad %d", adID)
-	}
-
-	// Extract vector data
-	var vectorData []float32
-	if point.Vectors != nil {
-		if vectorOutput := point.Vectors.GetVector(); vectorOutput != nil {
-			// Try to get the vector data directly from VectorOutput
-			if data := vectorOutput.GetData(); len(data) > 0 {
-				vectorData = data
-			} else if dense := vectorOutput.GetDense(); dense != nil {
-				vectorData = dense.Data
-			}
-		}
-	}
-
-	if vectorData == nil {
-		log.Printf("[qdrant] No vector data found for ad %d", adID)
-		return nil, fmt.Errorf("no embedding found for ad %d", adID)
-	}
-
-	log.Printf("[qdrant] Successfully retrieved vector for ad %d with length %d", adID, len(vectorData))
-	return vectorData, nil
 }
 
 // BuildAdEmbedding builds and stores an embedding for a single ad
@@ -653,6 +424,99 @@ func BuildAdEmbedding(adObj ad.Ad) error {
 	}
 
 	log.Printf("[BuildAdEmbedding] Successfully built and stored embedding for ad %d", adObj.ID)
+	return nil
+}
+
+// BuildAdEmbeddings builds and stores embeddings for multiple ads in batch
+func BuildAdEmbeddings(ads []ad.Ad) error {
+	if len(ads) == 0 {
+		return nil
+	}
+
+	log.Printf("[BuildAdEmbeddings] Building embeddings for %d ads in batch", len(ads))
+
+	// Build prompts for all ads
+	var prompts []string
+	var validAds []ad.Ad
+	for _, adObj := range ads {
+		prompt := buildAdEmbeddingPrompt(adObj)
+		if prompt != "" {
+			prompts = append(prompts, prompt)
+			validAds = append(validAds, adObj)
+		} else {
+			log.Printf("[BuildAdEmbeddings] Skipping ad %d due to empty prompt", adObj.ID)
+		}
+	}
+
+	if len(prompts) == 0 {
+		return fmt.Errorf("no valid prompts generated for any ads")
+	}
+
+	// Generate embeddings in batch
+	log.Printf("[BuildAdEmbeddings] Generating batch embeddings for %d ads", len(validAds))
+	embeddings, err := EmbedTexts(prompts)
+	if err != nil {
+		log.Printf("[BuildAdEmbeddings] Failed to generate batch embeddings: %v", err)
+		return err
+	}
+
+	// Process each ad with its embedding
+	var successCount, errorCount int
+	var adIDs []int
+	var adEmbeddings [][]float32
+	var adMetadatas []map[string]interface{}
+
+	for i, adObj := range validAds {
+		if i >= len(embeddings) {
+			log.Printf("[BuildAdEmbeddings] Missing embedding for ad %d", adObj.ID)
+			errorCount++
+			continue
+		}
+
+		embedding := embeddings[i]
+		if embedding == nil {
+			log.Printf("[BuildAdEmbeddings] Nil embedding for ad %d", adObj.ID)
+			errorCount++
+			continue
+		}
+
+		// Build metadata
+		meta := BuildAdEmbeddingMetadata(adObj)
+
+		// Collect for batch upsert
+		adIDs = append(adIDs, adObj.ID)
+		adEmbeddings = append(adEmbeddings, embedding)
+		adMetadatas = append(adMetadatas, meta)
+	}
+
+	// Batch upsert to Qdrant
+	if len(adIDs) > 0 {
+		err := UpsertAdEmbeddings(adIDs, adEmbeddings, adMetadatas)
+		if err != nil {
+			log.Printf("[BuildAdEmbeddings] Failed to batch upsert vectors: %v", err)
+			errorCount += len(adIDs)
+		} else {
+			successCount += len(adIDs)
+			log.Printf("[BuildAdEmbeddings] Successfully batch upserted %d vectors", len(adIDs))
+		}
+	}
+
+	// Mark ads as having vectors in database
+	for _, adID := range adIDs {
+		err := ad.MarkAdAsHavingVector(adID)
+		if err != nil {
+			log.Printf("[BuildAdEmbeddings] Failed to mark ad %d as having vector: %v", adID, err)
+			errorCount++
+		} else {
+			log.Printf("[BuildAdEmbeddings] Successfully processed ad %d", adID)
+		}
+	}
+
+	log.Printf("[BuildAdEmbeddings] Batch processing complete: %d successful, %d errors", successCount, errorCount)
+
+	if errorCount > 0 {
+		return fmt.Errorf("batch processing completed with %d errors", errorCount)
+	}
 	return nil
 }
 
@@ -784,226 +648,4 @@ func geocodeLocation(locationText string) (float64, float64) {
 	// TODO: Implement geocoding service
 	// For now, return default coordinates
 	return 0, 0
-}
-
-// QuerySimilarAdsWithFilter queries Qdrant with filters
-func QuerySimilarAdsWithFilter(embedding []float32, filter *qdrant.Filter, topK int, cursor string, threshold float64) ([]AdResult, string, error) {
-	if qdrantClient == nil {
-		return nil, "", fmt.Errorf("Qdrant client not initialized")
-	}
-
-	ctx := context.Background()
-
-	// Parse cursor if provided
-	offset := DecodeCursor(cursor)
-
-	limit := uint64(topK)
-
-	// Always use similarity threshold for vector search
-	scoreThreshold := float32(threshold)
-	queryRequest := &qdrant.QueryPoints{
-		CollectionName: qdrantCollection,
-		Query:          qdrant.NewQueryDense(embedding),
-		Filter:         filter,
-		Limit:          &limit,
-		Offset:         &offset,
-		ScoreThreshold: &scoreThreshold,
-		WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
-		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: false}},
-	}
-
-	resp, err := qdrantClient.Query(ctx, queryRequest)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to query Qdrant: %w", err)
-	}
-
-	var results []AdResult
-	for _, result := range resp {
-		metadata := make(map[string]interface{})
-		for k, v := range result.Payload {
-			switch val := v.Kind.(type) {
-			case *qdrant.Value_StringValue:
-				metadata[k] = val.StringValue
-			case *qdrant.Value_IntegerValue:
-				metadata[k] = val.IntegerValue
-			case *qdrant.Value_DoubleValue:
-				metadata[k] = val.DoubleValue
-			case *qdrant.Value_BoolValue:
-				metadata[k] = val.BoolValue
-			default:
-				metadata[k] = fmt.Sprintf("%v", val)
-			}
-		}
-
-		var adID int
-		if numID := result.Id.GetNum(); numID != 0 {
-			adID = int(numID)
-		} else {
-			// Fallback to string ID if somehow we get a UUID
-			if uuidStr := result.Id.GetUuid(); uuidStr != "" {
-				// Try to parse as int if it's numeric
-				if parsedID, err := strconv.Atoi(uuidStr); err == nil {
-					adID = parsedID
-				} else {
-					adID = 0 // Invalid ID
-				}
-			}
-		}
-
-		adResult := AdResult{
-			ID:       adID,
-			Score:    float32(result.Score),
-			Metadata: metadata,
-		}
-		results = append(results, adResult)
-	}
-
-	// Generate next cursor
-	var nextCursor string
-	if len(results) > 0 {
-		nextOffset := offset + uint64(len(results))
-		nextCursor = EncodeCursor(nextOffset)
-	}
-
-	return results, nextCursor, nil
-}
-
-// BuildTreeFilter creates a filter for tree navigation
-func BuildTreeFilter(treePath map[string]string) *qdrant.Filter {
-	var conditions []*qdrant.Condition
-
-	if make, ok := treePath["make"]; ok && make != "" {
-		// URL decode the make value
-		decodedMake, err := url.QueryUnescape(make)
-		if err != nil {
-			decodedMake = make // fallback to original if decoding fails
-		}
-		conditions = append(conditions, &qdrant.Condition{
-			ConditionOneOf: &qdrant.Condition_Field{
-				Field: &qdrant.FieldCondition{
-					Key:   "make",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: decodedMake}},
-				},
-			},
-		})
-	}
-
-	if year, ok := treePath["year"]; ok && year != "" {
-		// URL decode the year value
-		decodedYear, err := url.QueryUnescape(year)
-		if err != nil {
-			decodedYear = year // fallback to original if decoding fails
-		}
-		conditions = append(conditions, &qdrant.Condition{
-			ConditionOneOf: &qdrant.Condition_Field{
-				Field: &qdrant.FieldCondition{
-					Key:   "years",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keywords{Keywords: &qdrant.RepeatedStrings{Strings: []string{decodedYear}}}},
-				},
-			},
-		})
-	}
-
-	if model, ok := treePath["model"]; ok && model != "" {
-		// URL decode the model value
-		decodedModel, err := url.QueryUnescape(model)
-		if err != nil {
-			decodedModel = model // fallback to original if decoding fails
-		}
-		conditions = append(conditions, &qdrant.Condition{
-			ConditionOneOf: &qdrant.Condition_Field{
-				Field: &qdrant.FieldCondition{
-					Key:   "models",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keywords{Keywords: &qdrant.RepeatedStrings{Strings: []string{decodedModel}}}},
-				},
-			},
-		})
-	}
-
-	if engine, ok := treePath["engine"]; ok && engine != "" {
-		// URL decode the engine value
-		decodedEngine, err := url.QueryUnescape(engine)
-		if err != nil {
-			decodedEngine = engine // fallback to original if decoding fails
-		}
-		conditions = append(conditions, &qdrant.Condition{
-			ConditionOneOf: &qdrant.Condition_Field{
-				Field: &qdrant.FieldCondition{
-					Key:   "engines",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keywords{Keywords: &qdrant.RepeatedStrings{Strings: []string{decodedEngine}}}},
-				},
-			},
-		})
-	}
-
-	if category, ok := treePath["category"]; ok && category != "" {
-		// URL decode the category value
-		decodedCategory, err := url.QueryUnescape(category)
-		if err != nil {
-			decodedCategory = category // fallback to original if decoding fails
-		}
-		conditions = append(conditions, &qdrant.Condition{
-			ConditionOneOf: &qdrant.Condition_Field{
-				Field: &qdrant.FieldCondition{
-					Key:   "category",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: decodedCategory}},
-				},
-			},
-		})
-	}
-
-	if subcategory, ok := treePath["subcategory"]; ok && subcategory != "" {
-		// URL decode the subcategory value
-		decodedSubCategory, err := url.QueryUnescape(subcategory)
-		if err != nil {
-			decodedSubCategory = subcategory // fallback to original if decoding fails
-		}
-		conditions = append(conditions, &qdrant.Condition{
-			ConditionOneOf: &qdrant.Condition_Field{
-				Field: &qdrant.FieldCondition{
-					Key:   "subcategory",
-					Match: &qdrant.Match{MatchValue: &qdrant.Match_Keyword{Keyword: decodedSubCategory}},
-				},
-			},
-		})
-	}
-
-	if len(conditions) == 0 {
-		return nil
-	}
-
-	return &qdrant.Filter{
-		Must: conditions,
-	}
-}
-
-// BuildGeoFilter creates a geo filter for location-based search
-// Note: This is a placeholder - geo filtering may require different Qdrant API calls
-func BuildGeoFilter(lat, lon float64, radiusMeters float64) *qdrant.Filter {
-	// TODO: Implement proper geo filtering when we understand the Qdrant API
-	log.Printf("[vector] Geo filtering not yet implemented")
-	return nil
-}
-
-// BuildBoundingBoxGeoFilter creates a geo filter for bounding box search
-func BuildBoundingBoxGeoFilter(minLat, maxLat, minLon, maxLon float64) *qdrant.Filter {
-	log.Printf("[vector] Building bounding box filter: lat[%.6f,%.6f], lon[%.6f,%.6f]", minLat, maxLat, minLon, maxLon)
-
-	// Create geo bounding box filter using Qdrant's native geo filtering
-	// Note: The order is topLeft.lat, topLeft.lon, bottomRight.lat, bottomRight.lon
-	// topLeft = maxLat, minLon (northwest corner)
-	// bottomRight = minLat, maxLon (southeast corner)
-	geoCondition := qdrant.NewGeoBoundingBox("location", maxLat, minLon, minLat, maxLon)
-
-	conditions := []*qdrant.Condition{
-		geoCondition,
-	}
-
-	// Create filter with conditions
-	filter := &qdrant.Filter{
-		Must: conditions,
-	}
-
-	log.Printf("[vector] Created Qdrant geo bounding box filter")
-	return filter
 }

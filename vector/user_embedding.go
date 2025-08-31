@@ -83,23 +83,44 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 		return nil, fmt.Errorf("fetch searches: %w", err)
 	}
 	log.Printf("[embedding][debug] userID=%d recent searches: %v (count=%d)", userID, searches, len(searches))
+
+	// Collect valid search queries for batch processing
+	var searchQueries []string
+	var validSearches []search.UserSearch
 	for _, s := range searches {
-		if strings.TrimSpace(s.QueryString) == "" {
+		if strings.TrimSpace(s.QueryString) != "" {
+			searchQueries = append(searchQueries, s.QueryString)
+			validSearches = append(validSearches, s)
+		} else {
 			log.Printf("[embedding][debug] Skipping empty search query")
-			continue
 		}
-		log.Printf("[embedding][debug] Generating embedding for user search query: %s", s.QueryString)
-		emb, err := GetQueryEmbedding(s.QueryString)
+	}
+
+	// Generate embeddings for all search queries in batch
+	var searchEmbeddings [][]float32
+	if len(searchQueries) > 0 {
+		log.Printf("[embedding][debug] Generating batch embeddings for %d user search queries", len(searchQueries))
+		embeddings, err := GetQueryEmbeddings(searchQueries)
 		if err != nil {
-			log.Printf("[embedding][debug] Gemini embedding error for query=%q: %v", s.QueryString, err)
+			log.Printf("[embedding][debug] Batch embedding error for user searches: %v", err)
+		} else {
+			searchEmbeddings = embeddings
 		}
-		if err == nil && emb != nil {
-			for i := 0; i < searchWeight; i++ {
+	}
+
+	// Add search embeddings to vectors with appropriate weights
+	for i, emb := range searchEmbeddings {
+		if emb != nil {
+			for j := 0; j < searchWeight; j++ {
 				vectors = append(vectors, emb)
 				weights = append(weights, 1)
 			}
+			log.Printf("[embedding][debug] Added embedding for search query: %s", validSearches[i].QueryString)
+		} else {
+			log.Printf("[embedding][debug] Failed to generate embedding for search query: %s", validSearches[i].QueryString)
 		}
 	}
+
 	log.Printf("[embedding][debug] userID=%d vectors aggregated: %d, weights: %d", userID, len(vectors), len(weights))
 	if len(vectors) == 0 {
 		log.Printf("[embedding][warn] userID=%d: No vectors could be aggregated from user activity", userID)
