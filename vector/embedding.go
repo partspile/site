@@ -15,7 +15,6 @@ import (
 )
 
 // AdResult represents a search result from Qdrant
-// TODO: Fill in fields as needed
 type AdResult struct {
 	ID       int
 	Score    float32
