@@ -496,21 +496,21 @@ func BuildAdEmbeddings(ads []ad.Ad) error {
 			log.Printf("[BuildAdEmbeddings] Failed to batch upsert vectors: %v", err)
 			errorCount += len(adIDs)
 		} else {
-			successCount += len(adIDs)
 			log.Printf("[BuildAdEmbeddings] Successfully batch upserted %d vectors", len(adIDs))
 		}
 	}
 
-	// Mark ads as having vectors in database
-	for _, adID := range adIDs {
-		err := ad.MarkAdAsHavingVector(adID)
-		if err != nil {
-			log.Printf("[BuildAdEmbeddings] Failed to mark ad %d as having vector: %v", adID, err)
-			errorCount++
-		} else {
-			log.Printf("[BuildAdEmbeddings] Successfully processed ad %d", adID)
-		}
+	// Mark ads as having vectors in database (batch operation)
+	err = ad.MarkAdsAsHavingVector(adIDs)
+	if err != nil {
+		log.Printf("[BuildAdEmbeddings] Failed to mark ads as having vector: %v", err)
+		errorCount += len(adIDs)
+	} else {
+		log.Printf("[BuildAdEmbeddings] Successfully marked %d ads as having vector", len(adIDs))
 	}
+
+	// Calculate final success count (ads that were successfully processed)
+	successCount = len(adIDs) - errorCount
 
 	log.Printf("[BuildAdEmbeddings] Batch processing complete: %d successful, %d errors", successCount, errorCount)
 

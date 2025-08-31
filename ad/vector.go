@@ -2,6 +2,7 @@ package ad
 
 import (
 	"log"
+	"strings"
 
 	"github.com/parts-pile/site/db"
 )
@@ -48,11 +49,30 @@ func GetAdsWithoutVectors() ([]Ad, error) {
 
 // MarkAdAsHavingVector marks an ad as having a vector embedding
 func MarkAdAsHavingVector(adID int) error {
-	_, err := db.Exec("UPDATE Ad SET has_vector = 1 WHERE id = ?", adID)
+	return MarkAdsAsHavingVector([]int{adID})
+}
+
+// MarkAdsAsHavingVector marks multiple ads as having vector embeddings in a single SQL call
+func MarkAdsAsHavingVector(adIDs []int) error {
+	if len(adIDs) == 0 {
+		return nil
+	}
+
+	// Build the SQL query with placeholders for all ad IDs
+	placeholders := make([]string, len(adIDs))
+	args := make([]interface{}, len(adIDs))
+	for i, adID := range adIDs {
+		placeholders[i] = "?"
+		args[i] = adID
+	}
+
+	query := "UPDATE Ad SET has_vector = 1 WHERE id IN (" + strings.Join(placeholders, ",") + ")"
+
+	_, err := db.Exec(query, args...)
 	if err != nil {
-		log.Printf("[MarkAdAsHavingVector] Failed to mark ad %d as having vector: %v", adID, err)
+		log.Printf("[MarkAdsAsHavingVector] Failed to mark %d ads as having vector: %v", len(adIDs), err)
 		return err
 	}
-	log.Printf("[MarkAdAsHavingVector] Successfully marked ad %d as having vector", adID)
+	log.Printf("[MarkAdsAsHavingVector] Successfully marked %d ads as having vector", len(adIDs))
 	return nil
 }

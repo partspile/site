@@ -39,7 +39,7 @@ func QueueAd(adObj ad.Ad) {
 	log.Printf("[vector] Queued ad %d for processing", adObj.ID)
 }
 
-// QueueAdsWithoutVectors loads ads without vectors and queues them for processing
+// QueueAdsWithoutVectors loads ads without vectors and processes them in batch
 func QueueAdsWithoutVectors() {
 	ads, err := ad.GetAdsWithoutVectors()
 	if err != nil {
@@ -51,9 +51,13 @@ func QueueAdsWithoutVectors() {
 		return
 	}
 
-	log.Printf("[vector] Queuing %d ads for vector generation", len(ads))
+	log.Printf("[vector] Processing %d ads without vectors in batch", len(ads))
 
-	for _, adObj := range ads {
-		QueueAd(adObj)
+	// Process all ads in a single batch
+	err = BuildAdEmbeddings(ads)
+	if err != nil {
+		log.Printf("[vector] Error building embeddings for batch: %v", err)
+	} else {
+		log.Printf("[vector] Successfully processed batch of %d ads", len(ads))
 	}
 }
