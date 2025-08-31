@@ -104,6 +104,10 @@
     "country": "FR"
   },
   {
+    "name": "CNH Industrial",
+    "country": "IT"
+  },
+  {
     "name": "Case Corporation",
     "country": "US"
   },
@@ -132,7 +136,7 @@
     "country": "IT"
   },
   {
-    "name": "Citroën",
+    "name": "Citro\u00ebn",
     "country": "FR"
   },
   {
@@ -164,12 +168,20 @@
     "country": "ES"
   },
   {
-    "name": "Daewoo Motors",
-    "country": "KR"
-  },
-  {
     "name": "DAF Trucks",
     "country": "NL"
+  },
+  {
+    "name": "DFSK Motor",
+    "country": "CN"
+  },
+  {
+    "name": "DKW",
+    "country": "DE"
+  },
+  {
+    "name": "Daewoo Motors",
+    "country": "KR"
   },
   {
     "name": "Daihatsu Motor Company",
@@ -192,7 +204,15 @@
     "country": "US"
   },
   {
+    "name": "De Tomaso",
+    "country": "IT"
+  },
+  {
     "name": "De Vaux Motors",
+    "country": "US"
+  },
+  {
+    "name": "DeLorean Motor Company",
     "country": "US"
   },
   {
@@ -208,32 +228,16 @@
     "country": "GB"
   },
   {
-    "name": "DeLorean Motor Company",
-    "country": "US"
-  },
-  {
     "name": "Denzel Automobil",
     "country": "AT"
-  },
-  {
-    "name": "De Tomaso",
-    "country": "IT"
   },
   {
     "name": "Deutsch-Bonnet",
     "country": "FR"
   },
   {
-    "name": "DFSK Motor",
-    "country": "CN"
-  },
-  {
     "name": "Diana Motor Company",
     "country": "GB"
-  },
-  {
-    "name": "DKW",
-    "country": "DE"
   },
   {
     "name": "Doretti Cars",
@@ -276,6 +280,10 @@
     "country": "US"
   },
   {
+    "name": "FAW Group",
+    "country": "CN"
+  },
+  {
     "name": "Facel Vega",
     "country": "FR"
   },
@@ -290,10 +298,6 @@
   {
     "name": "Fargo Trucks",
     "country": "US"
-  },
-  {
-    "name": "FAW Group",
-    "country": "CN"
   },
   {
     "name": "Ferrari",
@@ -324,16 +328,16 @@
     "country": "GB"
   },
   {
+    "name": "Geely Holding Group",
+    "country": "CN"
+  },
+  {
     "name": "General Motors",
     "country": "US"
   },
   {
     "name": "General Motors Canada",
     "country": "CA"
-  },
-  {
-    "name": "Geely Holding Group",
-    "country": "CN"
   },
   {
     "name": "Giant Motors",
@@ -364,16 +368,20 @@
     "country": "CN"
   },
   {
+    "name": "HCS",
+    "country": "GB"
+  },
+  {
+    "name": "HRG Engineering",
+    "country": "GB"
+  },
+  {
     "name": "Hawker Siddeley Group",
     "country": "GB"
   },
   {
     "name": "Haynes",
     "country": "US"
-  },
-  {
-    "name": "HCS",
-    "country": "GB"
   },
   {
     "name": "Henry J",
@@ -400,10 +408,6 @@
     "country": "FR"
   },
   {
-    "name": "HRG Engineering",
-    "country": "GB"
-  },
-  {
     "name": "Hudson Motor Car Company",
     "country": "US"
   },
@@ -422,6 +426,94 @@
   {
     "name": "International Harvester",
     "country": "US"
+  },
+  {
+    "name": "Isotta Fraschini",
+    "country": "IT"
+  },
+  {
+    "name": "Isuzu Motors",
+    "country": "JP"
+  },
+  {
+    "name": "JAC Motors",
+    "country": "CN"
+  },
+  {
+    "name": "Jaguar Land Rover",
+    "country": "GB"
+  },
+  {
+    "name": "Lincoln Motor Company",
+    "country": "US"
+  },
+  {
+    "name": "Locomobile Company of America",
+    "country": "US"
+  },
+  {
+    "name": "Lordstown Motors Corporation",
+    "country": "US"
+  },
+  {
+    "name": "Lotus Cars",
+    "country": "GB"
+  },
+  {
+    "name": "Lucid Motors",
+    "country": "US"
+  },
+  {
+    "name": "Mack Trucks",
+    "country": "US"
+  },
+  {
+    "name": "Maico",
+    "country": "DE"
+  },
+  {
+    "name": "Marathon Motor Works",
+    "country": "US"
+  },
+  {
+    "name": "Marauder Motor Company",
+    "country": "US"
+  },
+  {
+    "name": "Marcos Engineering",
+    "country": "GB"
+  },
+  {
+    "name": "Marmon Motor Car Company",
+    "country": "US"
+  },
+  {
+    "name": "Marquette Motor Company",
+    "country": "US"
+  },
+  {
+    "name": "Maserati S.p.A.",
+    "country": "IT"
+  },
+  {
+    "name": "Mastretta",
+    "country": "MX"
+  },
+  {
+    "name": "Matra",
+    "country": "FR"
+  },
+  {
+    "name": "Maxwell Motor Company",
+    "country": "US"
+  },
+  {
+    "name": "Maybach",
+    "country": "DE"
+  },
+  {
+    "name": "Mazda Motor Corporation",
+    "country": "JP"
   },
   {
     "name": "Nissan Motor Company",
@@ -444,6 +536,10 @@
     "country": "US"
   },
   {
+    "name": "Stellantis",
+    "country": "NL"
+  },
+  {
     "name": "Studebaker-Packard Corporation",
     "country": "US"
   },
@@ -454,29 +550,5 @@
   {
     "name": "Volkswagen Group",
     "country": "DE"
-  },
-  {
-    "name": "Isotta Fraschini",
-    "country": "IT"
-  },
-  {
-    "name": "Isuzu Motors",
-    "country": "JP"
-  },
-  {
-    "name": "CNH Industrial",
-    "country": "IT"
-  },
-  {
-    "name": "JAC Motors",
-    "country": "CN"
-  },
-  {
-    "name": "Jaguar Land Rover",
-    "country": "GB"
-  },
-  {
-    "name": "Stellantis",
-    "country": "NL"
   }
-] 
+]

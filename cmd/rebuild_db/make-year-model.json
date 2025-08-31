@@ -87673,6 +87673,1130 @@
     }
   },
   "LEXUS": {
+    "1990": {
+      "ES250": [
+        "2.5L V6"
+      ],
+      "LS400": [
+        "4.0L V8"
+      ]
+    },
+    "1991": {
+      "ES250": [
+        "2.5L V6"
+      ],
+      "LS400": [
+        "4.0L V8"
+      ]
+    },
+    "1992": {
+      "ES300": [
+        "3.0L V6"
+      ],
+      "LS400": [
+        "4.0L V8"
+      ],
+      "SC300": [
+        "3.0L L6"
+      ],
+      "SC400": [
+        "4.0L V8"
+      ]
+    },
+    "1993": {
+      "ES300": [
+        "3.0L V6"
+      ],
+      "GS300": [
+        "3.0L L6"
+      ],
+      "LS400": [
+        "4.0L V8"
+      ],
+      "SC300": [
+        "3.0L L6"
+      ],
+      "SC400": [
+        "4.0L V8"
+      ]
+    },
+    "1994": {
+      "ES300": [
+        "3.0L V6"
+      ],
+      "GS300": [
+        "3.0L L6"
+      ],
+      "LS400": [
+        "4.0L V8"
+      ],
+      "SC300": [
+        "3.0L L6"
+      ],
+      "SC400": [
+        "4.0L V8"
+      ]
+    },
+    "1995": {
+      "ES300": [
+        "3.0L V6"
+      ],
+      "GS300": [
+        "3.0L L6"
+      ],
+      "LS400": [
+        "4.0L V8"
+      ],
+      "SC300": [
+        "3.0L L6"
+      ],
+      "SC400": [
+        "4.0L V8"
+      ]
+    },
+    "1996": {
+      "ES300": [
+        "3.0L V6"
+      ],
+      "GS300": [
+        "3.0L L6"
+      ],
+      "LS400": [
+        "4.0L V8"
+      ],
+      "LX450": [
+        "4.5L L6"
+      ],
+      "SC300": [
+        "3.0L L6"
+      ],
+      "SC400": [
+        "4.0L V8"
+      ]
+    },
+    "1997": {
+      "ES300": [
+        "3.0L V6"
+      ],
+      "GS300": [
+        "3.0L L6"
+      ],
+      "LS400": [
+        "4.0L V8"
+      ],
+      "LX450": [
+        "4.5L L6"
+      ],
+      "SC300": [
+        "3.0L L6"
+      ],
+      "SC400": [
+        "4.0L V8"
+      ]
+    },
+    "1998": {
+      "ES300": [
+        "3.0L V6"
+      ],
+      "GS300": [
+        "3.0L L6"
+      ],
+      "GS400": [
+        "4.0L V8"
+      ],
+      "LS400": [
+        "4.0L V8"
+      ],
+      "LX470": [
+        "4.7L V8"
+      ],
+      "SC300": [
+        "3.0L L6"
+      ],
+      "SC400": [
+        "4.0L V8"
+      ]
+    },
+    "1999": {
+      "ES300": [
+        "3.0L V6"
+      ],
+      "GS300": [
+        "3.0L L6"
+      ],
+      "GS400": [
+        "4.0L V8"
+      ],
+      "LS400": [
+        "4.0L V8"
+      ],
+      "LX470": [
+        "4.7L V8"
+      ],
+      "RX300": [
+        "3.0L V6"
+      ],
+      "SC300": [
+        "3.0L L6"
+      ],
+      "SC400": [
+        "4.0L V8"
+      ]
+    },
+    "2000": {
+      "ES300": [
+        "3.0L V6"
+      ],
+      "GS300": [
+        "3.0L L6"
+      ],
+      "GS400": [
+        "4.0L V8"
+      ],
+      "LS400": [
+        "4.0L V8"
+      ],
+      "LX470": [
+        "4.7L V8"
+      ],
+      "RX300": [
+        "3.0L V6"
+      ],
+      "SC300": [
+        "3.0L L6"
+      ],
+      "SC400": [
+        "4.0L V8"
+      ]
+    },
+    "2001": {
+      "ES300": [
+        "3.0L V6"
+      ],
+      "GS300": [
+        "3.0L L6"
+      ],
+      "GS430": [
+        "4.3L V8"
+      ],
+      "IS300": [
+        "3.0L L6"
+      ],
+      "LS430": [
+        "4.3L V8"
+      ],
+      "LX470": [
+        "4.7L V8"
+      ],
+      "RX300": [
+        "3.0L V6"
+      ]
+    },
+    "2002": {
+      "ES300": [
+        "3.0L V6"
+      ],
+      "GS300": [
+        "3.0L L6"
+      ],
+      "GS430": [
+        "4.3L V8"
+      ],
+      "IS300": [
+        "3.0L L6"
+      ],
+      "LS430": [
+        "4.3L V8"
+      ],
+      "LX470": [
+        "4.7L V8"
+      ],
+      "RX300": [
+        "3.0L V6"
+      ],
+      "SC430": [
+        "4.3L V8"
+      ]
+    },
+    "2003": {
+      "ES300": [
+        "3.0L V6"
+      ],
+      "GS300": [
+        "3.0L L6"
+      ],
+      "GS430": [
+        "4.3L V8"
+      ],
+      "GX470": [
+        "4.7L V8"
+      ],
+      "IS300": [
+        "3.0L L6"
+      ],
+      "LS430": [
+        "4.3L V8"
+      ],
+      "LX470": [
+        "4.7L V8"
+      ],
+      "RX300": [
+        "3.0L V6"
+      ],
+      "SC430": [
+        "4.3L V8"
+      ]
+    },
+    "2004": {
+      "ES330": [
+        "3.3L V6"
+      ],
+      "GS300": [
+        "3.0L L6"
+      ],
+      "GS430": [
+        "4.3L V8"
+      ],
+      "GX470": [
+        "4.7L V8"
+      ],
+      "IS300": [
+        "3.0L L6"
+      ],
+      "LS430": [
+        "4.3L V8"
+      ],
+      "LX470": [
+        "4.7L V8"
+      ],
+      "RX330": [
+        "3.3L V6"
+      ],
+      "SC430": [
+        "4.3L V8"
+      ]
+    },
+    "2005": {
+      "ES330": [
+        "3.3L V6"
+      ],
+      "GS300": [
+        "3.0L L6"
+      ],
+      "GS430": [
+        "4.3L V8"
+      ],
+      "GX470": [
+        "4.7L V8"
+      ],
+      "IS300": [
+        "3.0L L6"
+      ],
+      "LS430": [
+        "4.3L V8"
+      ],
+      "LX470": [
+        "4.7L V8"
+      ],
+      "RX330": [
+        "3.3L V6"
+      ],
+      "SC430": [
+        "4.3L V8"
+      ]
+    },
+    "2006": {
+      "ES330": [
+        "3.3L V6"
+      ],
+      "GS300": [
+        "3.0L V6"
+      ],
+      "GS430": [
+        "4.3L V8"
+      ],
+      "GX470": [
+        "4.7L V8"
+      ],
+      "IS250": [
+        "2.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LS430": [
+        "4.3L V8"
+      ],
+      "LX470": [
+        "4.7L V8"
+      ],
+      "RX330": [
+        "3.3L V6"
+      ],
+      "RX400H": [
+        "3.3L V6 ELECTRIC/GAS"
+      ],
+      "SC430": [
+        "4.3L V8"
+      ]
+    },
+    "2007": {
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GS350": [
+        "3.5L V6"
+      ],
+      "GS430": [
+        "4.3L V8"
+      ],
+      "GS450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "GX470": [
+        "4.7L V8"
+      ],
+      "IS250": [
+        "2.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LS460": [
+        "4.6L V8"
+      ],
+      "LX470": [
+        "4.7L V8"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX400H": [
+        "3.3L V6 ELECTRIC/GAS"
+      ],
+      "SC430": [
+        "4.3L V8"
+      ]
+    },
+    "2008": {
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GS350": [
+        "3.5L V6"
+      ],
+      "GS450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "GS460": [
+        "4.6L V8"
+      ],
+      "GX470": [
+        "4.7L V8"
+      ],
+      "IS F": [
+        "5.0L V8"
+      ],
+      "IS250": [
+        "2.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LS460": [
+        "4.6L V8"
+      ],
+      "LS600H": [
+        "5.0L V8 ELECTRIC/GAS"
+      ],
+      "LX570": [
+        "5.7L V8"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX400H": [
+        "3.3L V6 ELECTRIC/GAS"
+      ],
+      "SC430": [
+        "4.3L V8"
+      ]
+    },
+    "2009": {
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GS350": [
+        "3.5L V6"
+      ],
+      "GS450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "GS460": [
+        "4.6L V8"
+      ],
+      "GX470": [
+        "4.7L V8"
+      ],
+      "IS F": [
+        "5.0L V8"
+      ],
+      "IS250": [
+        "2.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LS460": [
+        "4.6L V8"
+      ],
+      "LS600H": [
+        "5.0L V8 ELECTRIC/GAS"
+      ],
+      "LX570": [
+        "5.7L V8"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "SC430": [
+        "4.3L V8"
+      ]
+    },
+    "2010": {
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GS350": [
+        "3.5L V6"
+      ],
+      "GS450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "GS460": [
+        "4.6L V8"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "HS250H": [
+        "2.4L L4 ELECTRIC/GAS"
+      ],
+      "IS F": [
+        "5.0L V8"
+      ],
+      "IS250": [
+        "2.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LS460": [
+        "4.6L V8"
+      ],
+      "LS600H": [
+        "5.0L V8 ELECTRIC/GAS"
+      ],
+      "LX570": [
+        "5.7L V8"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "SC430": [
+        "4.3L V8"
+      ]
+    },
+    "2011": {
+      "CT200H": [
+        "1.8L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GS350": [
+        "3.5L V6"
+      ],
+      "GS450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "GS460": [
+        "4.6L V8"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "HS250H": [
+        "2.4L L4 ELECTRIC/GAS"
+      ],
+      "IS F": [
+        "5.0L V8"
+      ],
+      "IS250": [
+        "2.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LS460": [
+        "4.6L V8"
+      ],
+      "LS600H": [
+        "5.0L V8 ELECTRIC/GAS"
+      ],
+      "LX570": [
+        "5.7L V8"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ]
+    },
+    "2012": {
+      "CT200H": [
+        "1.8L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "HS250H": [
+        "2.4L L4 ELECTRIC/GAS"
+      ],
+      "IS F": [
+        "5.0L V8"
+      ],
+      "IS250": [
+        "2.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LFA": [
+        "4.8L V10"
+      ],
+      "LS460": [
+        "4.6L V8"
+      ],
+      "LS600H": [
+        "5.0L V8 ELECTRIC/GAS"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ]
+    },
+    "2013": {
+      "CT200H": [
+        "1.8L L4 ELECTRIC/GAS"
+      ],
+      "ES300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GS350": [
+        "3.5L V6"
+      ],
+      "GS450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "IS F": [
+        "5.0L V8"
+      ],
+      "IS250": [
+        "2.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LS460": [
+        "4.6L V8"
+      ],
+      "LS600H": [
+        "5.0L V8 ELECTRIC/GAS"
+      ],
+      "LX570": [
+        "5.7L V8"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ]
+    },
+    "2014": {
+      "CT200H": [
+        "1.8L L4 ELECTRIC/GAS"
+      ],
+      "ES300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GS350": [
+        "3.5L V6"
+      ],
+      "GS450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "IS F": [
+        "5.0L V8"
+      ],
+      "IS250": [
+        "2.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LS460": [
+        "4.6L V8"
+      ],
+      "LS600H": [
+        "5.0L V8 ELECTRIC/GAS"
+      ],
+      "LX570": [
+        "5.7L V8"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ]
+    },
+    "2015": {
+      "CT200H": [
+        "1.8L L4 ELECTRIC/GAS"
+      ],
+      "ES300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GS350": [
+        "3.5L V6"
+      ],
+      "GS450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "IS250": [
+        "2.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LS460": [
+        "4.6L V8"
+      ],
+      "LS600H": [
+        "5.0L V8 ELECTRIC/GAS"
+      ],
+      "LX570": [
+        "5.7L V8"
+      ],
+      "NX200T": [
+        "2.0L L4 Turbocharged"
+      ],
+      "NX300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "RC F": [
+        "5.0L V8"
+      ],
+      "RC350": [
+        "3.5L V6"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ]
+    },
+    "2016": {
+      "CT200H": [
+        "1.8L L4 ELECTRIC/GAS"
+      ],
+      "ES300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GS F": [
+        "5.0L V8"
+      ],
+      "GS200T": [
+        "2.0L L4 Turbocharged"
+      ],
+      "GS350": [
+        "3.5L V6"
+      ],
+      "GS450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "IS200T": [
+        "2.0L L4 Turbocharged"
+      ],
+      "IS300": [
+        "3.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LS460": [
+        "4.6L V8"
+      ],
+      "LS600H": [
+        "5.0L V8 ELECTRIC/GAS"
+      ],
+      "LX570": [
+        "5.7L V8"
+      ],
+      "NX200T": [
+        "2.0L L4 Turbocharged"
+      ],
+      "NX300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "RC F": [
+        "5.0L V8"
+      ],
+      "RC200T": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RC300": [
+        "3.5L V6"
+      ],
+      "RC350": [
+        "3.5L V6"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ]
+    },
+    "2017": {
+      "CT200H": [
+        "1.8L L4 ELECTRIC/GAS"
+      ],
+      "ES300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GS F": [
+        "5.0L V8"
+      ],
+      "GS TURBO": [
+        "2.0L L4 Turbocharged"
+      ],
+      "GS200T": [
+        "2.0L L4 Turbocharged"
+      ],
+      "GS350": [
+        "3.5L V6"
+      ],
+      "GS450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "IS TURBO": [
+        "2.0L L4 Turbocharged"
+      ],
+      "IS200T": [
+        "2.0L L4 Turbocharged"
+      ],
+      "IS300": [
+        "3.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LS460": [
+        "4.6L V8"
+      ],
+      "LX570": [
+        "5.7L V8"
+      ],
+      "NX200T": [
+        "2.0L L4 Turbocharged"
+      ],
+      "NX300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "RC F": [
+        "5.0L V8"
+      ],
+      "RC TURBO": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RC200T": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RC300": [
+        "3.5L V6"
+      ],
+      "RC350": [
+        "3.5L V6"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ]
+    },
+    "2018": {
+      "ES300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GS F": [
+        "5.0L V8"
+      ],
+      "GS TURBO": [
+        "2.0L L4 Turbocharged"
+      ],
+      "GS300": [
+        "2.0L L4 Turbocharged"
+      ],
+      "GS350": [
+        "3.5L V6"
+      ],
+      "GS450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "IS TURBO": [
+        "2.0L L4 Turbocharged"
+      ],
+      "IS300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LC500": [
+        "5.0L V8"
+      ],
+      "LC500H": [
+        "3.5L V6",
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LS500": [
+        "3.5L V6 Turbocharged"
+      ],
+      "LS500H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LX570": [
+        "5.7L V8"
+      ],
+      "NX300": [
+        "2.0L L4 Turbocharged"
+      ],
+      "NX300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "RC F": [
+        "5.0L V8"
+      ],
+      "RC TURBO": [
+        "2.0L L4 Turbocharged"
+      ],
+      "RC300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "RC350": [
+        "3.5L V6"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX350L": [
+        "3.5L V6"
+      ],
+      "RX450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ]
+    },
+    "2019": {
+      "ES300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GS F": [
+        "5.0L V8"
+      ],
+      "GS300": [
+        "2.0L L4 Turbocharged"
+      ],
+      "GS350": [
+        "3.5L V6"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "IS300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LC500": [
+        "5.0L V8"
+      ],
+      "LC500H": [
+        "3.5L V6",
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LS500": [
+        "3.5L V6 Turbocharged"
+      ],
+      "LS500H": [
+        "3.5L V6",
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LX570": [
+        "5.7L V8"
+      ],
+      "NX300": [
+        "2.0L L4 Turbocharged"
+      ],
+      "NX300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "RC F": [
+        "5.0L V8"
+      ],
+      "RC300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "RC350": [
+        "3.5L V6"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "UX200": [
+        "2.0L L4"
+      ],
+      "UX250H": [
+        "2.0L L4 ELECTRIC/GAS"
+      ]
+    },
+    "2020": {
+      "ES300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "ES350": [
+        "3.5L V6"
+      ],
+      "GS F": [
+        "5.0L V8"
+      ],
+      "GS350": [
+        "3.5L V6"
+      ],
+      "GX460": [
+        "4.6L V8"
+      ],
+      "IS300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "IS350": [
+        "3.5L V6"
+      ],
+      "LC500": [
+        "5.0L V8"
+      ],
+      "LC500H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LS500": [
+        "3.5L V6 Turbocharged"
+      ],
+      "LS500H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "LX570": [
+        "5.7L V8"
+      ],
+      "NX300": [
+        "2.0L L4 Turbocharged"
+      ],
+      "NX300H": [
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "RC F": [
+        "5.0L V8"
+      ],
+      "RC300": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6"
+      ],
+      "RC350": [
+        "3.5L V6"
+      ],
+      "RX350": [
+        "3.5L V6"
+      ],
+      "RX450H": [
+        "3.5L V6 ELECTRIC/GAS"
+      ],
+      "UX200": [
+        "2.0L L4"
+      ],
+      "UX250H": [
+        "2.0L L4 ELECTRIC/GAS"
+      ]
+    },
     "2021": {
       "ES250": [
         "2.5L L4"
@@ -87735,6 +88859,9 @@
       ],
       "UX200": [
         "2.0L L4"
+      ],
+      "UX250H": [
+        "2.0L L4 ELECTRIC/GAS"
       ]
     },
     "2022": {
@@ -88059,6 +89186,4033 @@
       ],
       "UX300H": [
         "2.0L L4 ELECTRIC/GAS"
+      ]
+    }
+  },
+  "LINCOLN": {
+    "1920": {
+      "MODEL L": [
+        "All Engines"
+      ]
+    },
+    "1921": {
+      "MODEL L": [
+        "5.9L 358cid V8"
+      ]
+    },
+    "1922": {
+      "MODEL L": [
+        "5.9L 358cid V8"
+      ]
+    },
+    "1923": {
+      "MODEL L": [
+        "5.9L 358cid V8"
+      ]
+    },
+    "1924": {
+      "MODEL L": [
+        "5.9L 358cid V8"
+      ]
+    },
+    "1925": {
+      "MODEL L": [
+        "5.9L 358cid V8"
+      ]
+    },
+    "1926": {
+      "MODEL L": [
+        "5.9L 358cid V8"
+      ]
+    },
+    "1927": {
+      "MODEL L": [
+        "5.9L 358cid V8",
+        "6.3L 385cid V8"
+      ]
+    },
+    "1928": {
+      "MODEL L": [
+        "6.3L 385cid V8"
+      ]
+    },
+    "1929": {
+      "MODEL L": [
+        "6.3L 385cid V8"
+      ]
+    },
+    "1930": {
+      "MODEL L": [
+        "6.3L 385cid V8"
+      ]
+    },
+    "1931": {
+      "MODEL K": [
+        "6.3L 385cid V8"
+      ]
+    },
+    "1932": {
+      "MODEL KA": [
+        "6.3L 385cid V8"
+      ],
+      "MODEL KB": [
+        "6.3L 385cid V8",
+        "7.3L 448cid V12"
+      ]
+    },
+    "1933": {
+      "MODEL KA": [
+        "382cid V12"
+      ],
+      "MODEL KB": [
+        "7.3L 448cid V12"
+      ]
+    },
+    "1934": {
+      "MODEL KA": [
+        "6.8L 414cid V12"
+      ],
+      "MODEL KB": [
+        "6.8L 414cid V12"
+      ]
+    },
+    "1935": {
+      "MODEL K": [
+        "6.8L 414cid V12"
+      ]
+    },
+    "1936": {
+      "MODEL K": [
+        "6.8L 414cid V12"
+      ],
+      "ZEPHYR": [
+        "4.4L 267cid V12"
+      ]
+    },
+    "1937": {
+      "MODEL K": [
+        "6.8L 414cid V12"
+      ],
+      "ZEPHYR": [
+        "4.4L 267cid V12"
+      ]
+    },
+    "1938": {
+      "MODEL K": [
+        "6.8L 414cid V12"
+      ],
+      "ZEPHYR": [
+        "4.4L 267cid V12"
+      ]
+    },
+    "1939": {
+      "SERIES K": [
+        "6.8L 414cid V12"
+      ],
+      "ZEPHYR": [
+        "4.4L 267cid V12"
+      ]
+    },
+    "1940": {
+      "CONTINENTAL": [
+        "4.8L 292cid V12"
+      ],
+      "SERIES K": [
+        "6.8L 414cid V12"
+      ],
+      "ZEPHYR": [
+        "4.8L 292cid V12"
+      ]
+    },
+    "1941": {
+      "CONTINENTAL": [
+        "4.8L 292cid V12"
+      ],
+      "CUSTOM": [
+        "4.8L 292cid V12"
+      ],
+      "ZEPHYR": [
+        "4.8L 292cid V12"
+      ]
+    },
+    "1942": {
+      "CONTINENTAL": [
+        "4.8L 292cid V12",
+        "5.0L 305cid V12"
+      ],
+      "CUSTOM": [
+        "4.8L 292cid V12",
+        "5.0L 305cid V12"
+      ],
+      "ZEPHYR": [
+        "4.8L 292cid V12",
+        "5.0L 305cid V12"
+      ]
+    },
+    "1946": {
+      "66H SERIES": [
+        "4.8L 292cid V12"
+      ],
+      "CONTINENTAL": [
+        "292cid V12"
+      ]
+    },
+    "1947": {
+      "76H SERIES": [
+        "4.8L 292cid V12"
+      ],
+      "CONTINENTAL": [
+        "292cid V12"
+      ]
+    },
+    "1948": {
+      "876H SERIES": [
+        "4.8L 292cid V12"
+      ],
+      "CONTINENTAL": [
+        "292cid V12"
+      ]
+    },
+    "1949": {
+      "9EL SERIES": [
+        "5.5L 337cid V8"
+      ],
+      "COSMOPOLITAN": [
+        "5.5L 337cid V8"
+      ]
+    },
+    "1950": {
+      "COSMOPOLITAN": [
+        "5.5L 337cid V8"
+      ],
+      "LINCOLN": [
+        "5.5L 337cid V8"
+      ]
+    },
+    "1951": {
+      "COSMOPOLITAN": [
+        "5.5L 337cid V8"
+      ],
+      "LINCOLN": [
+        "5.5L 337cid V8"
+      ]
+    },
+    "1952": {
+      "CAPRI": [
+        "5.2L 318cid V8"
+      ],
+      "COSMOPOLITAN": [
+        "5.2L 318cid V8"
+      ]
+    },
+    "1953": {
+      "CAPRI": [
+        "5.2L 318cid V8"
+      ],
+      "COSMOPOLITAN": [
+        "5.2L 318cid V8"
+      ]
+    },
+    "1954": {
+      "CAPRI": [
+        "5.2L 318cid V8"
+      ],
+      "COSMOPOLITAN": [
+        "5.2L 318cid V8"
+      ]
+    },
+    "1955": {
+      "CAPRI": [
+        "5.6L 341cid V8"
+      ],
+      "CUSTOM": [
+        "5.6L 341cid V8"
+      ]
+    },
+    "1956": {
+      "CAPRI": [
+        "6.0L 368cid V8"
+      ],
+      "MARK II": [
+        "6.0L 368cid V8"
+      ],
+      "PREMIER": [
+        "6.0L 368cid V8"
+      ]
+    },
+    "1957": {
+      "CAPRI": [
+        "6.0L 368cid V8"
+      ],
+      "MARK II": [
+        "6.0L 368cid V8"
+      ],
+      "PREMIER": [
+        "6.0L 368cid V8"
+      ]
+    },
+    "1958": {
+      "CAPRI": [
+        "7.0L 430cid V8"
+      ],
+      "CONTINENTAL": [
+        "7.0L 430cid V8"
+      ],
+      "PREMIER": [
+        "7.0L 430cid V8"
+      ]
+    },
+    "1959": {
+      "CAPRI": [
+        "7.0L 430cid V8"
+      ],
+      "CONTINENTAL": [
+        "7.0L 430cid V8"
+      ],
+      "PREMIER": [
+        "7.0L 430cid V8"
+      ]
+    },
+    "1960": {
+      "CONTINENTAL": [
+        "7.0L 430cid V8"
+      ],
+      "LINCOLN SERIES": [
+        "7.0L 430cid V8"
+      ],
+      "PREMIER": [
+        "7.0L 430cid V8"
+      ]
+    },
+    "1961": {
+      "CONTINENTAL": [
+        "7.0L 430cid V8"
+      ]
+    },
+    "1962": {
+      "CONTINENTAL": [
+        "7.0L 430cid V8"
+      ]
+    },
+    "1963": {
+      "CONTINENTAL": [
+        "7.0L 430cid V8"
+      ]
+    },
+    "1964": {
+      "CONTINENTAL": [
+        "7.0L 430cid V8"
+      ]
+    },
+    "1965": {
+      "CONTINENTAL": [
+        "7.0L 430cid V8"
+      ]
+    },
+    "1966": {
+      "CONTINENTAL": [
+        "7.6L 462cid V8"
+      ]
+    },
+    "1967": {
+      "CONTINENTAL": [
+        "7.6L 462cid V8"
+      ]
+    },
+    "1968": {
+      "CONTINENTAL": [
+        "7.0L 429cid V8",
+        "7.5L 460cid V8",
+        "7.6L 462cid V8"
+      ],
+      "MARK III": [
+        "7.5L 460cid V8",
+        "7.6L 462cid V8"
+      ]
+    },
+    "1969": {
+      "CONTINENTAL": [
+        "7.5L 460cid V8"
+      ],
+      "MARK III": [
+        "7.5L 460cid V8"
+      ]
+    },
+    "1970": {
+      "CONTINENTAL": [
+        "7.5L 460cid V8"
+      ],
+      "MARK III": [
+        "7.5L 460cid V8"
+      ]
+    },
+    "1971": {
+      "CONTINENTAL": [
+        "7.5L 460cid V8"
+      ],
+      "MARK III": [
+        "7.5L 460cid V8"
+      ]
+    },
+    "1972": {
+      "CONTINENTAL": [
+        "7.5L 460cid V8"
+      ],
+      "MARK IV": [
+        "7.5L 460cid V8"
+      ]
+    },
+    "1973": {
+      "CONTINENTAL": [
+        "7.5L 460cid V8"
+      ],
+      "MARK IV": [
+        "7.5L 460cid V8"
+      ]
+    },
+    "1974": {
+      "CONTINENTAL": [
+        "7.5L 460cid V8"
+      ],
+      "MARK IV": [
+        "7.5L 460cid V8"
+      ]
+    },
+    "1975": {
+      "CONTINENTAL": [
+        "7.5L 460cid V8"
+      ],
+      "MARK IV": [
+        "7.5L 460cid V8"
+      ]
+    },
+    "1976": {
+      "CONTINENTAL": [
+        "7.5L 460cid V8"
+      ],
+      "MARK IV": [
+        "7.5L 460cid V8"
+      ]
+    },
+    "1977": {
+      "CONTINENTAL": [
+        "6.6L 400cid V8",
+        "7.5L 460cid V8"
+      ],
+      "MARK V": [
+        "6.6L 400cid V8",
+        "7.5L 460cid V8"
+      ],
+      "VERSAILLES": [
+        "5.0L 302cid V8",
+        "5.8L 351cid V8"
+      ]
+    },
+    "1978": {
+      "CONTINENTAL": [
+        "6.6L 400cid V8",
+        "7.5L 460cid V8"
+      ],
+      "MARK V": [
+        "6.6L 400cid V8",
+        "7.5L 460cid V8"
+      ],
+      "VERSAILLES": [
+        "5.0L 302cid V8"
+      ]
+    },
+    "1979": {
+      "CONTINENTAL": [
+        "6.6L 400cid V8"
+      ],
+      "MARK V": [
+        "6.6L 400cid V8"
+      ],
+      "VERSAILLES": [
+        "5.0L 302cid V8"
+      ]
+    },
+    "1980": {
+      "CONTINENTAL": [
+        "5.0L 302cid V8",
+        "5.8L 351cid V8"
+      ],
+      "MARK VI": [
+        "5.0L 302cid V8",
+        "5.8L 351cid V8"
+      ],
+      "VERSAILLES": [
+        "5.0L 302cid V8"
+      ]
+    },
+    "1981": {
+      "MARK VI": [
+        "5.0L 302cid V8"
+      ],
+      "TOWN CAR": [
+        "5.0L 302cid V8"
+      ]
+    },
+    "1982": {
+      "CONTINENTAL": [
+        "3.8L 232cid V6",
+        "5.0L 302cid V8"
+      ],
+      "MARK VI": [
+        "5.0L 302cid V8"
+      ],
+      "TOWN CAR": [
+        "5.0L 302cid V8"
+      ]
+    },
+    "1983": {
+      "CONTINENTAL": [
+        "5.0L 302cid V8"
+      ],
+      "MARK VI": [
+        "5.0L 302cid V8"
+      ],
+      "TOWN CAR": [
+        "5.0L 302cid V8"
+      ]
+    },
+    "1984": {
+      "CONTINENTAL": [
+        "2.4L 146cid L6 DIESEL Turbocharged",
+        "5.0L 302cid V8"
+      ],
+      "MARK VII": [
+        "2.4L 146cid L6 DIESEL Turbocharged",
+        "5.0L 302cid V8"
+      ],
+      "TOWN CAR": [
+        "5.0L 302cid V8"
+      ]
+    },
+    "1985": {
+      "CONTINENTAL": [
+        "2.4L 146cid L6 DIESEL Turbocharged",
+        "5.0L 302cid V8"
+      ],
+      "MARK VII": [
+        "2.4L 146cid L6 DIESEL Turbocharged",
+        "5.0L 302cid V8"
+      ],
+      "TOWN CAR": [
+        "5.0L 302cid V8"
+      ]
+    },
+    "1986": {
+      "CONTINENTAL": [
+        "5.0L 302cid V8"
+      ],
+      "MARK VII": [
+        "5.0L 302cid V8"
+      ],
+      "TOWN CAR": [
+        "5.0L 302cid V8"
+      ]
+    },
+    "1987": {
+      "CONTINENTAL": [
+        "5.0L 302cid V8"
+      ],
+      "MARK VII": [
+        "5.0L 302cid V8"
+      ],
+      "TOWN CAR": [
+        "5.0L 302cid V8"
+      ]
+    },
+    "1988": {
+      "CONTINENTAL": [
+        "3.8L 232cid V6"
+      ],
+      "MARK VII": [
+        "5.0L 302cid V8"
+      ],
+      "TOWN CAR": [
+        "5.0L 302cid V8"
+      ]
+    },
+    "1989": {
+      "CONTINENTAL": [
+        "3.8L 232cid V6"
+      ],
+      "MARK VII": [
+        "5.0L 302cid V8"
+      ],
+      "TOWN CAR": [
+        "5.0L 302cid V8"
+      ]
+    },
+    "1990": {
+      "CONTINENTAL": [
+        "3.8L 232cid V6"
+      ],
+      "MARK VII": [
+        "5.0L 302cid V8"
+      ],
+      "TOWN CAR": [
+        "5.0L 302cid V8"
+      ]
+    },
+    "1991": {
+      "CONTINENTAL": [
+        "3.8L V6"
+      ],
+      "MARK VII": [
+        "5.0L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "1992": {
+      "CONTINENTAL": [
+        "3.8L V6"
+      ],
+      "MARK VII": [
+        "5.0L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "1993": {
+      "CONTINENTAL": [
+        "3.8L V6"
+      ],
+      "MARK VIII": [
+        "4.6L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "1994": {
+      "CONTINENTAL": [
+        "3.8L V6"
+      ],
+      "MARK VIII": [
+        "4.6L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "1995": {
+      "CONTINENTAL": [
+        "4.6L V8"
+      ],
+      "MARK VIII": [
+        "4.6L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "1996": {
+      "CONTINENTAL": [
+        "4.6L V8"
+      ],
+      "MARK VIII": [
+        "4.6L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "1997": {
+      "CONTINENTAL": [
+        "4.6L V8"
+      ],
+      "MARK VIII": [
+        "4.6L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "1998": {
+      "CONTINENTAL": [
+        "4.6L V8"
+      ],
+      "MARK VIII": [
+        "4.6L V8"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "1999": {
+      "CONTINENTAL": [
+        "4.6L V8"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8 DOHC",
+        "5.4L V8 SOHC"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "2000": {
+      "CONTINENTAL": [
+        "4.6L V8"
+      ],
+      "LS": [
+        "3.0L V6",
+        "3.9L V8"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "2001": {
+      "CONTINENTAL": [
+        "4.6L V8"
+      ],
+      "LS": [
+        "3.0L V6",
+        "3.9L V8"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "2002": {
+      "BLACKWOOD": [
+        "5.4L V8"
+      ],
+      "CONTINENTAL": [
+        "4.6L V8"
+      ],
+      "LS": [
+        "3.0L V6",
+        "3.9L V8"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "2003": {
+      "AVIATOR": [
+        "4.6L V8"
+      ],
+      "BLACKWOOD": [
+        "5.4L V8"
+      ],
+      "LS": [
+        "3.0L V6",
+        "3.9L V8"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "2004": {
+      "AVIATOR": [
+        "4.6L V8"
+      ],
+      "LS": [
+        "3.0L V6",
+        "3.9L V8"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "2005": {
+      "AVIATOR": [
+        "4.6L V8"
+      ],
+      "LS": [
+        "3.0L V6",
+        "3.9L V8"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8 DOHC",
+        "5.4L V8 SOHC"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "2006": {
+      "LS": [
+        "3.9L V8"
+      ],
+      "MARK LT": [
+        "5.4L V8"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ],
+      "ZEPHYR": [
+        "3.0L V6"
+      ]
+    },
+    "2007": {
+      "MARK LT": [
+        "5.4L V8"
+      ],
+      "MKX": [
+        "3.5L V6"
+      ],
+      "MKZ": [
+        "3.5L V6"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "2008": {
+      "MARK LT": [
+        "5.4L V8"
+      ],
+      "MKX": [
+        "3.5L V6"
+      ],
+      "MKZ": [
+        "3.5L V6"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "2009": {
+      "MKS": [
+        "3.7L V6"
+      ],
+      "MKX": [
+        "3.5L V6"
+      ],
+      "MKZ": [
+        "3.5L V6"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "2010": {
+      "MARK LT": [
+        "5.4L V8"
+      ],
+      "MKS": [
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKT": [
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKX": [
+        "3.5L V6"
+      ],
+      "MKZ": [
+        "3.5L V6"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "2011": {
+      "MARK LT": [
+        "5.0L V8"
+      ],
+      "MKS": [
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKT": [
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKX": [
+        "3.7L V6"
+      ],
+      "MKZ": [
+        "2.5L L4 ELECTRIC/GAS",
+        "3.5L V6"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ],
+      "TOWN CAR": [
+        "4.6L V8"
+      ]
+    },
+    "2012": {
+      "MARK LT": [
+        "5.0L V8"
+      ],
+      "MKS": [
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKT": [
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKX": [
+        "3.7L V6"
+      ],
+      "MKZ": [
+        "2.5L L4 ELECTRIC/GAS",
+        "3.5L V6"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ]
+    },
+    "2013": {
+      "MARK LT": [
+        "5.0L V8"
+      ],
+      "MKS": [
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKT": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKX": [
+        "3.7L V6"
+      ],
+      "MKZ": [
+        "2.0L L4 ELECTRIC/GAS",
+        "2.0L L4 Turbocharged",
+        "3.7L V6"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ]
+    },
+    "2014": {
+      "MARK LT": [
+        "5.0L V8"
+      ],
+      "MKS": [
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKT": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKX": [
+        "3.7L V6"
+      ],
+      "MKZ": [
+        "2.0L L4 ELECTRIC/GAS",
+        "2.0L L4 Turbocharged",
+        "3.7L V6"
+      ],
+      "NAVIGATOR": [
+        "5.4L V8"
+      ]
+    },
+    "2015": {
+      "MKC": [
+        "2.0L L4 Turbocharged",
+        "2.3L L4 Turbocharged"
+      ],
+      "MKS": [
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKT": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKX": [
+        "3.7L V6"
+      ],
+      "MKZ": [
+        "2.0L L4 ELECTRIC/GAS",
+        "2.0L L4 Turbocharged",
+        "3.7L V6"
+      ],
+      "NAVIGATOR": [
+        "3.5L V6 Turbocharged"
+      ]
+    },
+    "2016": {
+      "MKC": [
+        "2.0L L4 Turbocharged",
+        "2.3L L4 Turbocharged"
+      ],
+      "MKS": [
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKT": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKX": [
+        "2.7L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKZ": [
+        "2.0L L4 ELECTRIC/GAS",
+        "2.0L L4 Turbocharged",
+        "3.7L V6"
+      ],
+      "NAVIGATOR": [
+        "3.5L V6 Turbocharged"
+      ]
+    },
+    "2017": {
+      "CONTINENTAL": [
+        "2.7L V6 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKC": [
+        "2.0L L4 Turbocharged",
+        "2.3L L4 Turbocharged"
+      ],
+      "MKT": [
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKX": [
+        "2.7L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKZ": [
+        "2.0L L4 ELECTRIC/GAS",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "NAVIGATOR": [
+        "3.5L V6 Turbocharged"
+      ]
+    },
+    "2018": {
+      "CONTINENTAL": [
+        "2.7L V6 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKC": [
+        "2.0L L4 Turbocharged",
+        "2.3L L4 Turbocharged"
+      ],
+      "MKT": [
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKX": [
+        "2.7L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKZ": [
+        "2.0L L4 ELECTRIC/GAS",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "NAVIGATOR": [
+        "3.5L V6 Turbocharged"
+      ]
+    },
+    "2019": {
+      "CONTINENTAL": [
+        "2.7L V6 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKC": [
+        "2.0L L4 Turbocharged",
+        "2.3L L4 Turbocharged"
+      ],
+      "MKT": [
+        "3.5L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "MKZ": [
+        "2.0L L4 ELECTRIC/GAS",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "NAUTILUS": [
+        "2.0L L4 Turbocharged",
+        "2.7L V6 Turbocharged"
+      ],
+      "NAVIGATOR": [
+        "3.5L V6 Turbocharged"
+      ]
+    },
+    "2020": {
+      "AVIATOR": [
+        "3.0L V6 ELECTRIC/GAS Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "CONTINENTAL": [
+        "2.7L V6 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.7L V6"
+      ],
+      "CORSAIR": [
+        "2.0L L4 Turbocharged",
+        "2.3L L4 Turbocharged"
+      ],
+      "MKZ": [
+        "2.0L L4 ELECTRIC/GAS",
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "NAUTILUS": [
+        "2.0L L4 Turbocharged",
+        "2.7L V6 Turbocharged"
+      ],
+      "NAVIGATOR": [
+        "3.5L V6 Turbocharged"
+      ]
+    },
+    "2021": {
+      "AVIATOR": [
+        "3.0L V6 ELECTRIC/GAS Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "CORSAIR": [
+        "2.0L L4 Turbocharged",
+        "2.3L L4 Turbocharged",
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "NAUTILUS": [
+        "2.0L L4 Turbocharged",
+        "2.7L V6 Turbocharged"
+      ],
+      "NAVIGATOR": [
+        "3.5L V6 Turbocharged"
+      ]
+    },
+    "2022": {
+      "AVIATOR": [
+        "3.0L V6 ELECTRIC/GAS Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "CORSAIR": [
+        "2.0L L4 Turbocharged",
+        "2.3L L4 Turbocharged",
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "NAUTILUS": [
+        "2.0L L4 Turbocharged",
+        "2.7L V6 Turbocharged"
+      ],
+      "NAVIGATOR": [
+        "3.5L V6 Turbocharged"
+      ]
+    },
+    "2023": {
+      "AVIATOR": [
+        "3.0L V6 ELECTRIC/GAS Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "CORSAIR": [
+        "2.0L L4 Turbocharged",
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "NAUTILUS": [
+        "2.0L L4 Turbocharged",
+        "2.7L V6 Turbocharged"
+      ],
+      "NAVIGATOR": [
+        "3.5L V6 Turbocharged"
+      ]
+    },
+    "2024": {
+      "AVIATOR": [
+        "3.0L V6 Turbocharged"
+      ],
+      "CORSAIR": [
+        "2.0L L4 Turbocharged",
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "NAUTILUS": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "NAVIGATOR": [
+        "3.5L V6 Turbocharged"
+      ]
+    },
+    "2025": {
+      "AVIATOR": [
+        "3.0L V6 Turbocharged"
+      ],
+      "CORSAIR": [
+        "2.0L L4 Turbocharged",
+        "2.5L L4 ELECTRIC/GAS"
+      ],
+      "NAUTILUS": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "2.0L L4 Turbocharged"
+      ],
+      "NAVIGATOR": [
+        "3.5L V6 Turbocharged"
+      ]
+    }
+  },
+  "LOCOMOBILE": {
+    "1908": {
+      "MODEL I": [
+        "4cyl"
+      ]
+    },
+    "1909": {
+      "MODEL 30": [
+        "4cyl"
+      ],
+      "MODEL 40": [
+        "4cyl"
+      ]
+    },
+    "1910": {
+      "MODEL 30": [
+        "All Engines"
+      ],
+      "MODEL 40": [
+        "All Engines"
+      ]
+    },
+    "1911": {
+      "MODEL 30": [
+        "4cyl"
+      ],
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1912": {
+      "MODEL 30": [
+        "4cyl"
+      ],
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1913": {
+      "MODEL 30": [
+        "4cyl"
+      ]
+    },
+    "1914": {
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1915": {
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1916": {
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1917": {
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1918": {
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1919": {
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1920": {
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1921": {
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1922": {
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1923": {
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1924": {
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1925": {
+      "JUNIOR 8": [
+        "8cyl"
+      ],
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1926": {
+      "JUNIOR 8": [
+        "8cyl"
+      ],
+      "MODEL 48": [
+        "6cyl"
+      ],
+      "MODEL 90": [
+        "6cyl"
+      ]
+    },
+    "1927": {
+      "JUNIOR 8": [
+        "8cyl"
+      ],
+      "MODEL 48": [
+        "6cyl"
+      ],
+      "MODEL 8-80": [
+        "8cyl"
+      ],
+      "MODEL 90": [
+        "6cyl"
+      ]
+    },
+    "1928": {
+      "MODEL 48": [
+        "6cyl"
+      ],
+      "MODEL 8-70": [
+        "8cyl"
+      ],
+      "MODEL 8-80": [
+        "8cyl"
+      ],
+      "MODEL 90": [
+        "6cyl"
+      ]
+    },
+    "1929": {
+      "MODEL 48": [
+        "6cyl"
+      ],
+      "MODEL 88": [
+        "8cyl"
+      ],
+      "MODEL 90": [
+        "6cyl"
+      ]
+    }
+  },
+  "LORDSTOWN MOTORS": {
+    "2023": {
+      "ENDURANCE": [
+        "ELECTRIC"
+      ]
+    }
+  },
+  "LOTUS": {
+    "1957": {
+      "ELEVEN": [
+        "1.1L L4",
+        "1.2L L4"
+      ],
+      "SEVEN": [
+        "1.2L L4"
+      ]
+    },
+    "1958": {
+      "ELITE": [
+        "1.2L L4"
+      ],
+      "SEVEN": [
+        "1.1L L4",
+        "1.2L L4",
+        "948cc L4"
+      ],
+      "SUPER SEVEN": [
+        "1.1L L4"
+      ]
+    },
+    "1959": {
+      "ELITE": [
+        "1.2L L4"
+      ],
+      "SEVEN": [
+        "1.1L L4",
+        "1.2L L4",
+        "948cc L4"
+      ],
+      "SUPER SEVEN": [
+        "1.1L L4"
+      ]
+    },
+    "1960": {
+      "ELITE": [
+        "1.2L L4"
+      ],
+      "SEVEN": [
+        "1.1L L4",
+        "1.2L L4",
+        "948cc L4"
+      ],
+      "SUPER SEVEN": [
+        "1.1L L4"
+      ]
+    },
+    "1961": {
+      "ELITE": [
+        "1.2L L4"
+      ],
+      "SEVEN": [
+        "1.1L L4",
+        "1.2L L4",
+        "1.3L L4",
+        "948cc L4",
+        "997cc L4"
+      ],
+      "SUPER SEVEN": [
+        "1.1L L4",
+        "1.3L L4"
+      ]
+    },
+    "1962": {
+      "ELAN": [
+        "1.5L L4",
+        "1.6L L4"
+      ],
+      "ELITE": [
+        "1.2L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.5L L4",
+        "997cc L4"
+      ],
+      "SUPER SEVEN": [
+        "1.3L L4",
+        "1.5L L4"
+      ]
+    },
+    "1963": {
+      "ELAN": [
+        "1.6L L4"
+      ],
+      "ELITE": [
+        "1.2L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.5L L4",
+        "997cc L4"
+      ],
+      "SUPER SEVEN": [
+        "1.3L L4",
+        "1.5L L4"
+      ]
+    },
+    "1964": {
+      "ELAN": [
+        "1.6L L4"
+      ],
+      "ELITE": [
+        "1.2L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.5L L4",
+        "997cc L4"
+      ],
+      "SUPER SEVEN": [
+        "1.3L L4",
+        "1.5L L4"
+      ]
+    },
+    "1965": {
+      "ELAN": [
+        "1.6L L4"
+      ],
+      "ELITE": [
+        "1.2L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.5L L4",
+        "997cc L4"
+      ],
+      "SUPER SEVEN": [
+        "1.3L L4",
+        "1.5L L4"
+      ]
+    },
+    "1966": {
+      "ELAN": [
+        "1.6L L4"
+      ],
+      "ELITE": [
+        "1.2L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.5L L4",
+        "997cc L4"
+      ],
+      "SUPER SEVEN": [
+        "1.3L L4",
+        "1.5L L4"
+      ]
+    },
+    "1967": {
+      "ELAN": [
+        "1.6L L4"
+      ],
+      "EUROPA": [
+        "1.5L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.5L L4",
+        "997cc L4"
+      ],
+      "SUPER SEVEN": [
+        "1.3L L4",
+        "1.5L L4"
+      ]
+    },
+    "1968": {
+      "ELAN": [
+        "1.6L L4"
+      ],
+      "EUROPA": [
+        "1.5L L4",
+        "1.6L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.5L L4",
+        "997cc L4"
+      ],
+      "SUPER SEVEN": [
+        "1.3L L4",
+        "1.5L L4"
+      ]
+    },
+    "1969": {
+      "ELAN": [
+        "1.6L L4"
+      ],
+      "EUROPA": [
+        "1.5L L4",
+        "1.6L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.6L L4"
+      ]
+    },
+    "1970": {
+      "ELAN": [
+        "1.6L L4"
+      ],
+      "EUROPA": [
+        "1.5L L4",
+        "1.6L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.6L L4"
+      ]
+    },
+    "1971": {
+      "ELAN": [
+        "1.6L L4"
+      ],
+      "EUROPA": [
+        "1.5L L4",
+        "1.6L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.6L L4"
+      ]
+    },
+    "1972": {
+      "ELAN": [
+        "1.6L L4"
+      ],
+      "EUROPA": [
+        "1.6L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.6L L4"
+      ]
+    },
+    "1973": {
+      "ELAN": [
+        "1.6L L4"
+      ],
+      "EUROPA": [
+        "1.6L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.6L L4"
+      ]
+    },
+    "1974": {
+      "ELAN": [
+        "1.6L L4"
+      ],
+      "ELITE": [
+        "2.0L L4"
+      ],
+      "EUROPA": [
+        "1.6L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.6L L4"
+      ]
+    },
+    "1975": {
+      "ELAN": [
+        "1.6L L4"
+      ],
+      "ELITE": [
+        "2.0L L4"
+      ],
+      "EUROPA": [
+        "1.6L L4"
+      ],
+      "SEVEN": [
+        "1.3L L4",
+        "1.6L L4"
+      ]
+    },
+    "1976": {
+      "ECLAT": [
+        "2.0L L4"
+      ],
+      "ELITE": [
+        "2.0L L4"
+      ],
+      "ESPRIT": [
+        "2.0L L4"
+      ]
+    },
+    "1977": {
+      "ECLAT": [
+        "2.0L L4"
+      ],
+      "ELITE": [
+        "2.0L L4"
+      ],
+      "ESPRIT": [
+        "2.0L L4"
+      ]
+    },
+    "1978": {
+      "ECLAT": [
+        "2.0L L4"
+      ],
+      "ELITE": [
+        "2.0L L4"
+      ],
+      "ESPRIT": [
+        "2.0L L4"
+      ]
+    },
+    "1979": {
+      "ECLAT": [
+        "2.0L L4"
+      ],
+      "ELITE": [
+        "2.0L L4"
+      ],
+      "ESPRIT": [
+        "2.0L L4"
+      ]
+    },
+    "1980": {
+      "ECLAT": [
+        "2.0L L4"
+      ],
+      "ELITE": [
+        "2.0L L4"
+      ],
+      "ESPRIT": [
+        "2.2L L4"
+      ]
+    },
+    "1981": {
+      "ESPRIT": [
+        "2.2L L4",
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1982": {
+      "ESPRIT": [
+        "2.2L L4",
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1983": {
+      "ESPRIT": [
+        "2.2L L4",
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1984": {
+      "ESPRIT": [
+        "2.2L L4",
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1985": {
+      "ESPRIT": [
+        "2.2L L4",
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1986": {
+      "ESPRIT": [
+        "2.2L L4",
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1987": {
+      "ESPRIT": [
+        "2.2L L4",
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1988": {
+      "ESPRIT": [
+        "2.2L L4",
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1989": {
+      "ESPRIT": [
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1990": {
+      "ELAN": [
+        "1.6L L4 Turbocharged"
+      ],
+      "ESPRIT": [
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1991": {
+      "ELAN": [
+        "1.6L L4 Turbocharged"
+      ],
+      "ESPRIT": [
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1992": {
+      "ELAN": [
+        "1.6L L4",
+        "1.6L L4 Turbocharged"
+      ],
+      "ESPRIT": [
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1993": {
+      "ESPRIT": [
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1994": {
+      "ESPRIT": [
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1995": {
+      "ESPRIT": [
+        "2.2L L4 Turbocharged"
+      ]
+    },
+    "1997": {
+      "ESPRIT": [
+        "3.5L V8 Turbocharged"
+      ]
+    },
+    "1998": {
+      "ESPRIT": [
+        "3.5L V8 Turbocharged"
+      ]
+    },
+    "1999": {
+      "ESPRIT": [
+        "3.5L V8 Turbocharged"
+      ]
+    },
+    "2000": {
+      "ESPRIT": [
+        "3.5L V8 Turbocharged"
+      ]
+    },
+    "2001": {
+      "ESPRIT": [
+        "3.5L V8 Turbocharged"
+      ]
+    },
+    "2002": {
+      "ESPRIT": [
+        "3.5L V8 Turbocharged"
+      ]
+    },
+    "2003": {
+      "ESPRIT": [
+        "3.5L V8 Turbocharged"
+      ]
+    },
+    "2004": {
+      "ESPRIT": [
+        "3.5L V8 Turbocharged"
+      ]
+    },
+    "2005": {
+      "ELISE": [
+        "1.8L L4"
+      ],
+      "EXIGE": [
+        "1.8L L4"
+      ]
+    },
+    "2006": {
+      "ELISE": [
+        "1.8L L4"
+      ],
+      "EXIGE": [
+        "1.8L L4"
+      ]
+    },
+    "2007": {
+      "ELISE": [
+        "1.8L L4"
+      ],
+      "EXIGE": [
+        "1.8L L4",
+        "1.8L L4 Supercharged"
+      ]
+    },
+    "2008": {
+      "ELISE": [
+        "1.8L L4",
+        "1.8L L4 Supercharged"
+      ],
+      "EXIGE": [
+        "1.8L L4 Supercharged"
+      ]
+    },
+    "2009": {
+      "ELISE": [
+        "1.8L L4",
+        "1.8L L4 Supercharged"
+      ],
+      "EXIGE": [
+        "1.8L L4 Supercharged"
+      ]
+    },
+    "2010": {
+      "ELISE": [
+        "1.8L L4",
+        "1.8L L4 Supercharged"
+      ],
+      "EVORA": [
+        "3.5L V6"
+      ],
+      "EXIGE": [
+        "1.8L L4 Supercharged"
+      ]
+    },
+    "2011": {
+      "ELISE": [
+        "1.8L L4",
+        "1.8L L4 Supercharged"
+      ],
+      "EVORA": [
+        "3.5L V6"
+      ],
+      "EXIGE": [
+        "1.8L L4 Supercharged"
+      ]
+    },
+    "2012": {
+      "EVORA": [
+        "3.5L V6",
+        "3.5L V6 Supercharged"
+      ]
+    },
+    "2013": {
+      "EVORA": [
+        "3.5L V6",
+        "3.5L V6 Supercharged"
+      ]
+    },
+    "2014": {
+      "EVORA": [
+        "3.5L V6",
+        "3.5L V6 Supercharged"
+      ]
+    },
+    "2016": {
+      "EVORA": [
+        "3.5L V6 Supercharged"
+      ]
+    },
+    "2017": {
+      "EVORA": [
+        "3.5L V6 Supercharged"
+      ]
+    },
+    "2018": {
+      "EVORA": [
+        "3.5L V6 Supercharged"
+      ]
+    },
+    "2019": {
+      "EVORA": [
+        "3.5L V6 Supercharged"
+      ]
+    },
+    "2020": {
+      "EVORA GT": [
+        "3.5L V6 Supercharged"
+      ]
+    },
+    "2021": {
+      "EVORA GT": [
+        "3.5L V6 Supercharged"
+      ]
+    },
+    "2023": {
+      "EMIRA": [
+        "2.0L L4 Turbocharged",
+        "3.5L V6 Supercharged"
+      ]
+    },
+    "2024": {
+      "ELETRE": [
+        "ELECTRIC"
+      ],
+      "EMIRA": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2025": {
+      "EMIRA": [
+        "2.0L L4 Turbocharged"
+      ]
+    }
+  },
+  "LUCID": {
+    "2022": {
+      "AIR": [
+        "ELECTRIC"
+      ]
+    },
+    "2023": {
+      "AIR": [
+        "ELECTRIC"
+      ]
+    },
+    "2024": {
+      "AIR": [
+        "ELECTRIC"
+      ]
+    },
+    "2025": {
+      "AIR": [
+        "ELECTRIC"
+      ]
+    }
+  },
+  "MACK": {
+    "1980": {
+      "MS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1981": {
+      "MS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1982": {
+      "MS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1983": {
+      "MS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1984": {
+      "MS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1985": {
+      "MS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1986": {
+      "CS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "CS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1987": {
+      "CS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "CS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1988": {
+      "CS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "CS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1989": {
+      "CS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "CS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1990": {
+      "CS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "CS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "8.8L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1991": {
+      "CS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged",
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged",
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged",
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "CS300T MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged",
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged",
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "5.5L L6 DIESEL Turbocharged",
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged",
+        "8.8L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged",
+        "8.8L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1992": {
+      "CS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300T MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1993": {
+      "CS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300T MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1994": {
+      "CS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300T MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1995": {
+      "CS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300T MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1996": {
+      "CS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300T MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300T MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1997": {
+      "CS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300T MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1998": {
+      "CS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ]
+    },
+    "1999": {
+      "CS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ]
+    },
+    "2000": {
+      "CS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ]
+    },
+    "2001": {
+      "CS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "CS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS200P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS250P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ],
+      "MS300P MID-LINER": [
+        "6.2L L6 DIESEL Turbocharged"
+      ]
+    }
+  },
+  "MAICO": {
+    "1955": {
+      "500": [
+        "452cc L2"
+      ],
+      "700": [
+        "452cc L2"
+      ]
+    },
+    "1956": {
+      "500": [
+        "452cc L2"
+      ],
+      "700": [
+        "452cc L2"
+      ]
+    },
+    "1957": {
+      "500": [
+        "452cc L2"
+      ],
+      "700": [
+        "452cc L2"
+      ]
+    },
+    "1958": {
+      "500": [
+        "452cc L2"
+      ],
+      "700": [
+        "452cc L2"
+      ]
+    },
+    "1959": {
+      "500": [
+        "452cc L2"
+      ],
+      "700": [
+        "452cc L2"
+      ]
+    },
+    "1960": {
+      "500": [
+        "452cc L2"
+      ],
+      "700": [
+        "452cc L2"
+      ]
+    }
+  },
+  "MARATHON": {
+    "1953": {
+      "CORSAIRE": [
+        "850cc H2"
+      ],
+      "PIRATE": [
+        "850cc H2"
+      ]
+    },
+    "1954": {
+      "CORSAIRE": [
+        "850cc H2"
+      ],
+      "PIRATE": [
+        "850cc H2"
+      ]
+    },
+    "1955": {
+      "CORSAIRE": [
+        "850cc H2"
+      ],
+      "PIRATE": [
+        "850cc H2"
+      ]
+    },
+    "1956": {
+      "CORSAIRE": [
+        "850cc H2"
+      ],
+      "PIRATE": [
+        "850cc H2"
+      ]
+    }
+  },
+  "MARAUDER": {
+    "1950": {
+      "MODEL 100": [
+        "2.4L L6"
+      ],
+      "MODEL A": [
+        "2.1L L6"
+      ]
+    },
+    "1951": {
+      "MODEL 100": [
+        "2.4L L6"
+      ],
+      "MODEL A": [
+        "2.1L L6"
+      ]
+    },
+    "1952": {
+      "MODEL 100": [
+        "2.4L L6"
+      ],
+      "MODEL A": [
+        "2.1L L6"
+      ]
+    }
+  },
+  "MARCOS": {
+    "1970": {
+      "GT": [
+        "3.0L L6"
+      ]
+    },
+    "1971": {
+      "GT": [
+        "3.0L L6"
+      ]
+    },
+    "1972": {
+      "GT": [
+        "3.0L L6"
+      ]
+    }
+  },
+  "MARMON": {
+    "1909": {
+      "MODEL 32": [
+        "4cyl"
+      ]
+    },
+    "1910": {
+      "MODEL 32": [
+        "4cyl"
+      ]
+    },
+    "1911": {
+      "MODEL 32": [
+        "4cyl"
+      ]
+    },
+    "1912": {
+      "MODEL 32": [
+        "4cyl"
+      ]
+    },
+    "1913": {
+      "MODEL 32": [
+        "4cyl"
+      ],
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1914": {
+      "MODEL 32": [
+        "4cyl"
+      ],
+      "MODEL 41": [
+        "6cyl"
+      ],
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1915": {
+      "MODEL 41": [
+        "6cyl"
+      ],
+      "MODEL 48": [
+        "6cyl"
+      ]
+    },
+    "1916": {
+      "MODEL 34": [
+        "6cyl"
+      ],
+      "MODEL 41": [
+        "6cyl"
+      ]
+    },
+    "1917": {
+      "MODEL 34": [
+        "6cyl"
+      ]
+    },
+    "1918": {
+      "MODEL 34": [
+        "6cyl"
+      ]
+    },
+    "1919": {
+      "MODEL 34": [
+        "6cyl"
+      ]
+    },
+    "1920": {
+      "MODEL 34": [
+        "6cyl"
+      ]
+    },
+    "1921": {
+      "MODEL 34": [
+        "6cyl"
+      ]
+    },
+    "1922": {
+      "MODEL 34": [
+        "6cyl"
+      ]
+    },
+    "1923": {
+      "MODEL 34": [
+        "6cyl"
+      ]
+    },
+    "1924": {
+      "MODEL 34": [
+        "6cyl"
+      ]
+    },
+    "1925": {
+      "MODEL D-74": [
+        "6cyl"
+      ]
+    },
+    "1926": {
+      "MODEL D-74": [
+        "6cyl"
+      ]
+    },
+    "1927": {
+      "E-75 SERIES": [
+        "6cyl"
+      ],
+      "LITTLE MARMON SERIES": [
+        "8cyl"
+      ]
+    },
+    "1928": {
+      "SERIES 68": [
+        "8cyl"
+      ],
+      "SERIES 75": [
+        "6cyl"
+      ],
+      "SERIES 78": [
+        "8cyl"
+      ]
+    },
+    "1929": {
+      "ROOSEVELT": [
+        "8cyl"
+      ],
+      "SERIES 68": [
+        "8cyl"
+      ],
+      "SERIES 78": [
+        "8cyl"
+      ]
+    },
+    "1930": {
+      "BIG EIGHT": [
+        "315cid L8"
+      ],
+      "MODEL 8-69": [
+        "211cid L8"
+      ],
+      "MODEL 8-79": [
+        "303cid L8"
+      ],
+      "ROOSEVELT": [
+        "8cyl"
+      ]
+    },
+    "1931": {
+      "BIG EIGHT": [
+        "315cid L8"
+      ],
+      "MODEL 70": [
+        "211cid L8"
+      ],
+      "MODEL 8-69": [
+        "211cid L8"
+      ],
+      "MODEL 8-79": [
+        "303cid L8"
+      ],
+      "MODEL 88": [
+        "315cid L8"
+      ],
+      "ROOSEVELT": [
+        "8cyl"
+      ],
+      "SERIES 16": [
+        "491cid V16"
+      ]
+    },
+    "1932": {
+      "SERIES 125": [
+        "315cid L8"
+      ],
+      "SERIES 16": [
+        "491cid V16"
+      ],
+      "SERIES 70": [
+        "211cid L8"
+      ]
+    },
+    "1933": {
+      "SERIES 16": [
+        "491cid V16"
+      ]
+    }
+  },
+  "MARQUETTE": {
+    "1930": {
+      "SERIES 30": [
+        "6cyl"
+      ]
+    }
+  },
+  "MASERATI": {
+    "1950": {
+      "A6/1500": [
+        "1.5L L6"
+      ]
+    },
+    "1951": {
+      "A6G": [
+        "2.0L L6"
+      ]
+    },
+    "1952": {
+      "A6G": [
+        "2.0L L6"
+      ]
+    },
+    "1953": {
+      "A6G": [
+        "2.0L L6"
+      ]
+    },
+    "1954": {
+      "A6G": [
+        "2.0L L6"
+      ]
+    },
+    "1955": {
+      "A6G/2000": [
+        "2.0L L6"
+      ]
+    },
+    "1956": {
+      "A6G/2000": [
+        "2.0L L6"
+      ]
+    },
+    "1957": {
+      "3500GT": [
+        "3.5L L6"
+      ],
+      "A6G/2000": [
+        "2.0L L6"
+      ]
+    },
+    "1958": {
+      "3500GT": [
+        "3.5L L6"
+      ],
+      "A6G/2000": [
+        "2.0L L6"
+      ]
+    },
+    "1959": {
+      "3500GT": [
+        "3.5L L6"
+      ],
+      "A6G/2000": [
+        "2.0L L6"
+      ]
+    },
+    "1960": {
+      "3500GT": [
+        "3.5L L6"
+      ],
+      "A6G/2000": [
+        "2.0L L6"
+      ]
+    },
+    "1961": {
+      "3500GT": [
+        "3.5L L6"
+      ],
+      "A6G/2000": [
+        "2.0L L6"
+      ]
+    },
+    "1962": {
+      "3500GTI": [
+        "3.5L L6"
+      ],
+      "SEBRING": [
+        "3.5L L6"
+      ]
+    },
+    "1963": {
+      "3500GTI": [
+        "3.5L L6"
+      ],
+      "MISTRAL": [
+        "3.5L L6"
+      ],
+      "QUATTROPORTE": [
+        "4.1L V8"
+      ],
+      "SEBRING": [
+        "3.5L L6"
+      ]
+    },
+    "1964": {
+      "3500GTI": [
+        "3.5L L6"
+      ],
+      "MISTRAL": [
+        "3.5L L6"
+      ],
+      "QUATTROPORTE": [
+        "4.1L V8"
+      ],
+      "SEBRING": [
+        "3.5L L6"
+      ]
+    },
+    "1965": {
+      "MISTRAL": [
+        "3.5L L6",
+        "3.7L L6"
+      ],
+      "QUATTROPORTE": [
+        "4.1L V8"
+      ],
+      "SEBRING": [
+        "3.7L L6",
+        "4.0L L6"
+      ]
+    },
+    "1966": {
+      "MEXICO": [
+        "4.1L V8",
+        "4.7L V8"
+      ],
+      "MISTRAL": [
+        "3.7L L6",
+        "4.0L L6"
+      ],
+      "QUATTROPORTE": [
+        "4.1L V8"
+      ],
+      "SEBRING": [
+        "3.7L L6",
+        "4.0L L6"
+      ]
+    },
+    "1967": {
+      "GHIBLI": [
+        "4.7L V8"
+      ],
+      "MEXICO": [
+        "4.1L V8",
+        "4.7L V8"
+      ],
+      "MISTRAL": [
+        "3.7L L6",
+        "4.0L L6"
+      ],
+      "QUATTROPORTE": [
+        "4.1L V8"
+      ]
+    },
+    "1968": {
+      "GHIBLI": [
+        "4.7L V8"
+      ],
+      "MEXICO": [
+        "4.1L V8",
+        "4.7L V8"
+      ],
+      "MISTRAL": [
+        "3.7L L6",
+        "4.0L L6"
+      ],
+      "QUATTROPORTE": [
+        "4.1L V8",
+        "4.7L V8"
+      ]
+    },
+    "1969": {
+      "GHIBLI": [
+        "4.7L V8",
+        "4.9L V8"
+      ],
+      "INDY": [
+        "4.1L V8"
+      ],
+      "MEXICO": [
+        "4.1L V8",
+        "4.7L V8"
+      ],
+      "MISTRAL": [
+        "3.7L L6",
+        "4.0L L6"
+      ],
+      "QUATTROPORTE": [
+        "4.1L V8",
+        "4.7L V8"
+      ]
+    },
+    "1970": {
+      "GHIBLI": [
+        "4.7L V8",
+        "4.9L V8"
+      ],
+      "INDY": [
+        "4.1L V8"
+      ],
+      "MEXICO": [
+        "4.1L V8",
+        "4.7L V8"
+      ],
+      "MISTRAL": [
+        "3.7L L6",
+        "4.0L L6"
+      ],
+      "QUATTROPORTE": [
+        "4.1L V8",
+        "4.7L V8"
+      ]
+    },
+    "1971": {
+      "BORA": [
+        "4.7L V8"
+      ],
+      "GHIBLI": [
+        "4.7L V8",
+        "4.9L V8"
+      ],
+      "INDY": [
+        "4.1L V8"
+      ],
+      "MEXICO": [
+        "4.1L V8",
+        "4.7L V8"
+      ]
+    },
+    "1972": {
+      "BORA": [
+        "4.7L V8"
+      ],
+      "GHIBLI": [
+        "4.9L V8"
+      ],
+      "INDY": [
+        "4.1L V8",
+        "4.7L V8",
+        "4.9L V8"
+      ],
+      "MERAK": [
+        "3.0L V6"
+      ],
+      "MEXICO": [
+        "4.7L V8"
+      ]
+    },
+    "1973": {
+      "BORA": [
+        "4.7L V8",
+        "4.9L V8"
+      ],
+      "GHIBLI": [
+        "4.9L V8"
+      ],
+      "INDY": [
+        "4.1L V8",
+        "4.7L V8",
+        "4.9L V8"
+      ],
+      "MERAK": [
+        "3.0L V6"
+      ],
+      "MEXICO": [
+        "4.7L V8"
+      ]
+    },
+    "1974": {
+      "BORA": [
+        "4.7L V8",
+        "4.9L V8"
+      ],
+      "INDY": [
+        "4.7L V8",
+        "4.9L V8"
+      ],
+      "KHAMSIN": [
+        "4.9L V8"
+      ],
+      "MERAK": [
+        "3.0L V6"
+      ]
+    },
+    "1975": {
+      "BORA": [
+        "4.9L V8"
+      ],
+      "KHAMSIN": [
+        "4.9L V8"
+      ],
+      "MERAK": [
+        "3.0L V6"
+      ]
+    },
+    "1976": {
+      "BORA": [
+        "4.9L V8"
+      ],
+      "KHAMSIN": [
+        "4.9L V8"
+      ],
+      "MERAK": [
+        "3.0L V6"
+      ]
+    },
+    "1977": {
+      "BORA": [
+        "4.9L V8"
+      ],
+      "KHAMSIN": [
+        "4.9L V8"
+      ],
+      "MERAK": [
+        "3.0L V6"
+      ]
+    },
+    "1978": {
+      "BORA": [
+        "4.9L V8"
+      ],
+      "KHAMSIN": [
+        "4.9L V8"
+      ],
+      "MERAK": [
+        "3.0L V6"
+      ]
+    },
+    "1979": {
+      "BORA": [
+        "4.9L V8"
+      ],
+      "KHAMSIN": [
+        "4.9L V8"
+      ],
+      "MERAK": [
+        "3.0L V6"
+      ],
+      "QUATTROPORTE": [
+        "4.9L V8"
+      ]
+    },
+    "1980": {
+      "BORA": [
+        "4.9L V8"
+      ],
+      "MERAK": [
+        "3.0L V6"
+      ],
+      "QUATTROPORTE": [
+        "4.9L V8"
+      ]
+    },
+    "1981": {
+      "BORA": [
+        "4.9L V8"
+      ],
+      "MERAK": [
+        "3.0L V6"
+      ],
+      "QUATTROPORTE": [
+        "4.9L V8"
+      ]
+    },
+    "1982": {
+      "BORA": [
+        "4.9L V8"
+      ],
+      "MERAK": [
+        "3.0L V6"
+      ],
+      "QUATTROPORTE": [
+        "4.9L V8"
+      ]
+    },
+    "1983": {
+      "BITURBO": [
+        "2.0L V6 Turbocharged"
+      ],
+      "BORA": [
+        "4.9L V8"
+      ],
+      "QUATTROPORTE": [
+        "4.9L V8"
+      ]
+    },
+    "1984": {
+      "BITURBO": [
+        "2.5L V6 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "4.9L V8"
+      ]
+    },
+    "1985": {
+      "BITURBO": [
+        "2.5L V6 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "4.9L V8"
+      ]
+    },
+    "1986": {
+      "425": [
+        "2.5L V6 Turbocharged"
+      ],
+      "BITURBO": [
+        "2.5L V6 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "4.9L V8"
+      ],
+      "SPYDER": [
+        "2.5L V6 Turbocharged"
+      ]
+    },
+    "1987": {
+      "425": [
+        "2.5L V6 Turbocharged"
+      ],
+      "BITURBO": [
+        "2.5L V6 Turbocharged"
+      ],
+      "SPYDER": [
+        "2.5L V6 Turbocharged"
+      ]
+    },
+    "1989": {
+      "228": [
+        "2.8L V6 Turbocharged"
+      ],
+      "228I": [
+        "2.8L V6 Turbocharged"
+      ],
+      "430I": [
+        "2.8L V6 Turbocharged"
+      ],
+      "SPYDER": [
+        "2.8L V6 Turbocharged"
+      ]
+    },
+    "1990": {
+      "228I": [
+        "2.8L V6 Turbocharged"
+      ],
+      "430I": [
+        "2.8L V6 Turbocharged"
+      ],
+      "SPYDER": [
+        "2.8L V6 Turbocharged"
+      ]
+    },
+    "1991": {
+      "SPYDER": [
+        "2.8L V6 Turbocharged"
+      ]
+    },
+    "1999": {
+      "3200 GT": [
+        "3.2L V8 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "3.2L V8 Turbocharged"
+      ]
+    },
+    "2000": {
+      "3200 GT": [
+        "3.2L V8 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "3.2L V8 Turbocharged"
+      ]
+    },
+    "2001": {
+      "3200 GT": [
+        "3.2L V8 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "3.2L V8 Turbocharged"
+      ]
+    },
+    "2002": {
+      "3200 GT": [
+        "3.2L V8 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "3.2L V8 Turbocharged"
+      ],
+      "SPYDER": [
+        "4.2L V8"
+      ]
+    },
+    "2003": {
+      "3200 GT": [
+        "3.2L V8 Turbocharged"
+      ],
+      "COUPE": [
+        "4.2L V8"
+      ],
+      "QUATTROPORTE": [
+        "3.2L V8 Turbocharged"
+      ],
+      "SPYDER": [
+        "4.2L V8"
+      ]
+    },
+    "2004": {
+      "4200": [
+        "4.2L V8"
+      ],
+      "COUPE": [
+        "4.2L V8"
+      ],
+      "QUATTROPORTE": [
+        "3.2L V8 Turbocharged",
+        "4.2L V8"
+      ],
+      "SPYDER": [
+        "4.2L V8"
+      ]
+    },
+    "2005": {
+      "COUPE": [
+        "4.2L V8"
+      ],
+      "GRANSPORT": [
+        "4.2L V8"
+      ],
+      "QUATTROPORTE": [
+        "4.2L V8"
+      ],
+      "SPYDER": [
+        "4.2L V8"
+      ]
+    },
+    "2006": {
+      "COUPE": [
+        "4.2L V8"
+      ],
+      "GRANSPORT": [
+        "4.2L V8"
+      ],
+      "QUATTROPORTE": [
+        "4.2L V8"
+      ],
+      "SPYDER": [
+        "4.2L V8"
+      ]
+    },
+    "2007": {
+      "COUPE": [
+        "4.2L V8"
+      ],
+      "GRANSPORT": [
+        "4.2L V8"
+      ],
+      "QUATTROPORTE": [
+        "4.2L V8"
+      ]
+    },
+    "2008": {
+      "GRANSPORT": [
+        "4.3L V8"
+      ],
+      "GRANTURISMO": [
+        "4.2L V8"
+      ],
+      "QUATTROPORTE": [
+        "4.2L V8"
+      ]
+    },
+    "2009": {
+      "GRANTURISMO": [
+        "4.2L V8",
+        "4.7L V8"
+      ],
+      "QUATTROPORTE": [
+        "4.2L V8",
+        "4.7L V8"
+      ]
+    },
+    "2010": {
+      "GRANCABRIO": [
+        "4.7L V8"
+      ],
+      "GRANTURISMO": [
+        "4.2L V8",
+        "4.7L V8"
+      ],
+      "QUATTROPORTE": [
+        "4.2L V8",
+        "4.7L V8"
+      ]
+    },
+    "2011": {
+      "GRANCABRIO": [
+        "4.7L V8"
+      ],
+      "GRANTURISMO": [
+        "4.2L V8",
+        "4.7L V8"
+      ],
+      "QUATTROPORTE": [
+        "4.2L V8",
+        "4.7L V8"
+      ]
+    },
+    "2012": {
+      "GRANTURISMO": [
+        "4.7L V8"
+      ],
+      "QUATTROPORTE": [
+        "4.7L V8"
+      ]
+    },
+    "2013": {
+      "GRANCABRIO": [
+        "4.7L V8"
+      ],
+      "GRANTURISMO": [
+        "4.2L V8",
+        "4.7L V8"
+      ]
+    },
+    "2014": {
+      "GHIBLI": [
+        "3.0L V6 Turbocharged"
+      ],
+      "GRANCABRIO": [
+        "4.7L V8"
+      ],
+      "GRANTURISMO": [
+        "4.2L V8",
+        "4.7L V8"
+      ],
+      "QUATTROPORTE": [
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ]
+    },
+    "2015": {
+      "GHIBLI": [
+        "3.0L V6 Turbocharged"
+      ],
+      "GRANCABRIO": [
+        "4.7L V8"
+      ],
+      "GRANTURISMO": [
+        "4.2L V8",
+        "4.7L V8"
+      ],
+      "QUATTROPORTE": [
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ]
+    },
+    "2016": {
+      "GHIBLI": [
+        "3.0L V6 Turbocharged"
+      ],
+      "GRANCABRIO": [
+        "4.7L V8"
+      ],
+      "GRANTURISMO": [
+        "4.2L V8",
+        "4.7L V8"
+      ],
+      "QUATTROPORTE": [
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ]
+    },
+    "2017": {
+      "GHIBLI": [
+        "3.0L V6 Turbocharged"
+      ],
+      "GRANCABRIO": [
+        "3.8L V8 Turbocharged",
+        "4.7L V8"
+      ],
+      "GRANTURISMO": [
+        "4.2L V8",
+        "4.7L V8"
+      ],
+      "LEVANTE": [
+        "3.0L V6 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ]
+    },
+    "2018": {
+      "GHIBLI": [
+        "3.0L V6 Turbocharged"
+      ],
+      "GRANTURISMO": [
+        "4.7L V8"
+      ],
+      "LEVANTE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ]
+    },
+    "2019": {
+      "GHIBLI": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "GRANCABRIO": [
+        "4.7L V8"
+      ],
+      "GRANTURISMO": [
+        "4.7L V8"
+      ],
+      "LEVANTE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ]
+    },
+    "2020": {
+      "GHIBLI": [
+        "3.0L V6 Turbocharged"
+      ],
+      "LEVANTE": [
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ]
+    },
+    "2021": {
+      "GHIBLI": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ],
+      "LEVANTE": [
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "3.0L V6 DIESEL Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ]
+    },
+    "2022": {
+      "GHIBLI": [
+        "2.0L L4 ELECTRIC/GAS Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ],
+      "LEVANTE": [
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ],
+      "MC20": [
+        "3.0L V6 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ]
+    },
+    "2023": {
+      "GHIBLI": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ],
+      "GRECALE": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "LEVANTE": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ],
+      "MC20": [
+        "3.0L V6 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ]
+    },
+    "2024": {
+      "GHIBLI": [
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ],
+      "GRANTURISMO": [
+        "3.0L V6 Turbocharged",
+        "ELECTRIC"
+      ],
+      "GRECALE": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged"
+      ],
+      "LEVANTE": [
+        "3.0L V6 Turbocharged",
+        "3.8L V8 Turbocharged"
+      ],
+      "MC20": [
+        "3.0L V6 Turbocharged"
+      ],
+      "QUATTROPORTE": [
+        "3.0L V6 Turbocharged"
+      ]
+    },
+    "2025": {
+      "GRANTURISMO": [
+        "3.0L V6 Turbocharged"
+      ],
+      "GRECALE": [
+        "2.0L L4 Turbocharged",
+        "3.0L V6 Turbocharged"
+      ]
+    }
+  },
+  "MASTRETTA": {
+    "2011": {
+      "MXT": [
+        "2.0L L4 Turbocharged"
+      ]
+    },
+    "2014": {
+      "MXT": [
+        "2.0L L4 Turbocharged"
+      ]
+    }
+  },
+  "MATRA": {
+    "1965": {
+      "DJET5": [
+        "1.1L L4"
+      ],
+      "DJET6 LUXE": [
+        "1.3L L4"
+      ]
+    },
+    "1966": {
+      "DJET5": [
+        "1.1L L4"
+      ],
+      "DJET6 LUXE": [
+        "1.3L L4"
+      ]
+    },
+    "1967": {
+      "530 LX": [
+        "1.7L V4"
+      ],
+      "530 SX": [
+        "1.7L V4"
+      ],
+      "DJET5": [
+        "1.1L L4"
+      ],
+      "DJET6 LUXE": [
+        "1.3L L4"
+      ]
+    },
+    "1968": {
+      "530 LX": [
+        "1.7L V4"
+      ],
+      "530 SX": [
+        "1.7L V4"
+      ],
+      "DJET5": [
+        "1.1L L4"
+      ],
+      "DJET6 LUXE": [
+        "1.3L L4"
+      ]
+    },
+    "1969": {
+      "530 LX": [
+        "1.7L V4"
+      ],
+      "530 SX": [
+        "1.7L V4"
+      ]
+    }
+  },
+  "MAXWELL": {
+    "1913": {
+      "MODEL 22": [
+        "4cyl"
+      ],
+      "MODEL 30": [
+        "4cyl"
+      ],
+      "MODEL 40": [
+        "4cyl"
+      ],
+      "SIX": [
+        "6cyl"
+      ]
+    },
+    "1914": {
+      "MODEL 25": [
+        "4cyl"
+      ],
+      "MODEL 35": [
+        "4cyl"
+      ],
+      "MODEL 50": [
+        "6cyl"
+      ]
+    },
+    "1915": {
+      "MODEL 25": [
+        "4cyl"
+      ]
+    },
+    "1916": {
+      "MODEL 25": [
+        "4cyl"
+      ]
+    },
+    "1917": {
+      "MODEL 25": [
+        "4cyl"
+      ]
+    },
+    "1918": {
+      "MODEL 25": [
+        "4cyl"
+      ]
+    },
+    "1919": {
+      "MODEL 25": [
+        "4cyl"
+      ]
+    },
+    "1920": {
+      "MODEL 25": [
+        "4cyl"
+      ]
+    },
+    "1921": {
+      "MODEL 25": [
+        "4cyl"
+      ]
+    },
+    "1922": {
+      "MODEL 25": [
+        "4cyl"
+      ]
+    },
+    "1923": {
+      "MODEL 25": [
+        "4cyl"
+      ]
+    },
+    "1924": {
+      "MODEL 25": [
+        "4cyl"
+      ]
+    },
+    "1925": {
+      "MODEL 25-C": [
+        "4cyl"
+      ]
+    }
+  },
+  "MAYBACH": {
+    "2003": {
+      "57": [
+        "5.5L V12 Turbocharged"
+      ],
+      "62": [
+        "5.5L V12 Turbocharged"
+      ]
+    },
+    "2004": {
+      "57": [
+        "5.5L V12 Turbocharged"
+      ],
+      "62": [
+        "5.5L V12 Turbocharged"
+      ]
+    },
+    "2005": {
+      "57": [
+        "5.5L V12 Turbocharged"
+      ],
+      "62": [
+        "5.5L V12 Turbocharged"
+      ]
+    },
+    "2006": {
+      "57": [
+        "5.5L V12 Turbocharged",
+        "6.0L V12 Turbocharged"
+      ],
+      "62": [
+        "5.5L V12 Turbocharged"
+      ]
+    },
+    "2007": {
+      "57": [
+        "5.5L V12 Turbocharged",
+        "6.0L V12 Turbocharged"
+      ],
+      "62": [
+        "5.5L V12 Turbocharged",
+        "6.0L V12 Turbocharged"
+      ]
+    },
+    "2008": {
+      "57": [
+        "5.5L V12 Turbocharged",
+        "6.0L V12 Turbocharged"
+      ],
+      "62": [
+        "5.5L V12 Turbocharged",
+        "6.0L V12 Turbocharged"
+      ]
+    },
+    "2009": {
+      "57": [
+        "5.5L V12 Turbocharged",
+        "6.0L V12 Turbocharged"
+      ],
+      "62": [
+        "5.5L V12 Turbocharged",
+        "6.0L V12 Turbocharged"
+      ]
+    },
+    "2010": {
+      "57": [
+        "5.5L V12 Turbocharged",
+        "6.0L V12 Turbocharged"
+      ],
+      "62": [
+        "5.5L V12 Turbocharged",
+        "6.0L V12 Turbocharged"
+      ]
+    },
+    "2011": {
+      "57": [
+        "5.5L V12 Turbocharged",
+        "6.0L V12 Turbocharged"
+      ],
+      "62": [
+        "5.5L V12 Turbocharged",
+        "6.0L V12 Turbocharged"
+      ]
+    },
+    "2012": {
+      "57": [
+        "5.5L V12 Turbocharged",
+        "6.0L V12 Turbocharged"
+      ],
+      "62": [
+        "5.5L V12 Turbocharged",
+        "6.0L V12 Turbocharged"
+      ]
+    }
+  },
+  "MAZDA": {
+    "2021": {
+      "2": [
+        "1.5L L4"
+      ],
+      "3": [
+        "2.0L L4",
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "6": [
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-3": [
+        "2.0L L4"
+      ],
+      "CX-30": [
+        "2.0L L4",
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ]
+    },
+    "2022": {
+      "2": [
+        "1.5L L4"
+      ],
+      "3": [
+        "2.0L L4",
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-3": [
+        "2.0L L4"
+      ],
+      "CX-30": [
+        "2.0L L4",
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-5": [
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-9": [
+        "2.5L L4 Turbocharged"
+      ],
+      "MX-30 EV": [
+        "ELECTRIC"
+      ],
+      "MX-5 MIATA": [
+        "2.0L L4"
+      ]
+    },
+    "2023": {
+      "2": [
+        "1.5L L4"
+      ],
+      "3": [
+        "2.0L L4",
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-3": [
+        "2.0L L4"
+      ],
+      "CX-30": [
+        "2.0L L4",
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-5": [
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-50": [
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-9": [
+        "2.5L L4 Turbocharged"
+      ],
+      "MX-30 EV": [
+        "ELECTRIC"
+      ],
+      "MX-5 MIATA": [
+        "2.0L L4"
+      ]
+    },
+    "2024": {
+      "2": [
+        "1.5L L4"
+      ],
+      "3": [
+        "2.0L L4",
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-3": [
+        "2.0L L4"
+      ],
+      "CX-30": [
+        "2.0L L4",
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-5": [
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-50": [
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-90": [
+        "2.5L L4 ELECTRIC/GAS",
+        "3.3L L6 Turbocharged"
+      ],
+      "MX-5 MIATA": [
+        "2.0L L4"
+      ]
+    },
+    "2025": {
+      "2": [
+        "1.5L L4",
+        "2.0L L4"
+      ],
+      "3": [
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-3": [
+        "2.0L L4"
+      ],
+      "CX-30": [
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-5": [
+        "2.5L L4",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-50": [
+        "2.5L L4",
+        "2.5L L4 ELECTRIC/GAS",
+        "2.5L L4 Turbocharged"
+      ],
+      "CX-70": [
+        "2.5L L4 ELECTRIC/GAS",
+        "3.3L L6 Turbocharged"
+      ],
+      "CX-90": [
+        "2.5L L4 ELECTRIC/GAS",
+        "3.3L L6 Turbocharged"
+      ],
+      "MX-5 MIATA": [
+        "2.0L L4"
       ]
     }
   }

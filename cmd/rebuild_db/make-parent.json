@@ -193,7 +193,7 @@
   },
   {
     "make": "CITROEN",
-    "parent_company": "Citroën"
+    "parent_company": "Citro\u00ebn"
   },
   {
     "make": "CLEVELAND",
@@ -562,5 +562,77 @@
   {
     "make": "JEEP",
     "parent_company": "Stellantis"
+  },
+  {
+    "make": "LINCOLN",
+    "parent_company": "Lincoln Motor Company"
+  },
+  {
+    "make": "LOCOMOBILE",
+    "parent_company": "Locomobile Company of America"
+  },
+  {
+    "make": "LORDSTOWN MOTORS",
+    "parent_company": "Lordstown Motors Corporation"
+  },
+  {
+    "make": "LOTUS",
+    "parent_company": "Lotus Cars"
+  },
+  {
+    "make": "LUCID",
+    "parent_company": "Lucid Motors"
+  },
+  {
+    "make": "MACK",
+    "parent_company": "Mack Trucks"
+  },
+  {
+    "make": "MAICO",
+    "parent_company": "Maico"
+  },
+  {
+    "make": "MARATHON",
+    "parent_company": "Marathon Motor Works"
+  },
+  {
+    "make": "MARAUDER",
+    "parent_company": "Marauder Motor Company"
+  },
+  {
+    "make": "MARCOS",
+    "parent_company": "Marcos Engineering"
+  },
+  {
+    "make": "MARMON",
+    "parent_company": "Marmon Motor Car Company"
+  },
+  {
+    "make": "MARQUETTE",
+    "parent_company": "Marquette Motor Company"
+  },
+  {
+    "make": "MASERATI",
+    "parent_company": "Maserati S.p.A."
+  },
+  {
+    "make": "MASTRETTA",
+    "parent_company": "Mastretta"
+  },
+  {
+    "make": "MATRA",
+    "parent_company": "Matra"
+  },
+  {
+    "make": "MAXWELL",
+    "parent_company": "Maxwell Motor Company"
+  },
+  {
+    "make": "MAYBACH",
+    "parent_company": "Maybach"
+  },
+  {
+    "make": "MAZDA",
+    "parent_company": "Mazda Motor Corporation"
   }
-] 
+]
