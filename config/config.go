@@ -9,7 +9,7 @@ const (
 	// Server configuration
 	ServerUploadLimit   = 20 * 1024 * 1024 // 20 MB
 	ServerRedirectDelay = 1 * time.Second
-	ServerRateLimitMax  = 60
+	ServerRateLimitMax  = 600
 	ServerRateLimitExp  = 1 * time.Minute
 
 	// Backblaze B2 configuration
