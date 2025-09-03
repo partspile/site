@@ -1690,46 +1690,29 @@ func AdCardCompactList(ad ad.Ad, loc *time.Location, currentUser *user.User) g.N
 		}
 	}
 
-	// Check if ad has images
-	hasImages := len(ad.ImageOrder) > 0
-	picLink := g.Node(nil)
-	if hasImages {
-		picLink = Span(
-			Class("text-orange-500 hover:text-orange-700 cursor-pointer"),
-			g.Text("pic"),
-		)
-	}
-
 	return Div(
 		ID(fmt.Sprintf("ad-%d", ad.ID)),
 		Class("flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer"),
 		hx.Get(fmt.Sprintf("/ad/detail/%d?view=list", ad.ID)),
 		hx.Target(fmt.Sprintf("#ad-%d", ad.ID)),
 		hx.Swap("outerHTML"),
-		// Bookmark icon
 		bookmarkBtn,
-		// Description (blue text)
 		Div(
 			Class("flex-1 text-blue-600 hover:text-blue-800"),
 			g.Text(ad.Title),
 		),
-		// Location with flag (using new helper function)
 		Div(
 			Class("mr-4"),
 			LocationDisplayWithFlag(ad),
 		),
-		// Time posted (using new helper function)
 		Div(
 			Class("mr-4"),
 			AgeDisplay(posted),
 		),
-		// Price (green text)
 		Div(
 			Class("text-green-600 font-semibold mr-4"),
 			g.Text(fmt.Sprintf("$%.0f", ad.Price)),
 		),
-		// Pic link (orange text)
-		picLink,
 	)
 }
 
