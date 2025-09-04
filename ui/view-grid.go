@@ -11,21 +11,20 @@ import (
 	"github.com/parts-pile/site/user"
 )
 
-func GridViewRenderEmpty(query string, threshold float64, userID int) g.Node {
-	return Div(
-		ID("searchResults"),
-		SearchWidget(userID, "grid", query, threshold),
-		ViewToggleButtons("grid"),
-		NoSearchResultsMessage(),
-	)
-}
-
 func GridViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
+	// Create the main search results container
 	var viewContent g.Node
-	if loaderURL != "" {
-		viewContent = GridViewWithTrigger(ads, loc, userID, loaderURL)
+	
+	if len(ads) == 0 {
+		// Show empty state
+		viewContent = NoSearchResultsMessage()
 	} else {
-		viewContent = GridViewContainer(ads, loc, userID)
+		// Show ads with infinite scroll
+		if loaderURL != "" {
+			viewContent = GridViewWithTrigger(ads, loc, userID, loaderURL)
+		} else {
+			viewContent = GridViewContainer(ads, loc, userID)
+		}
 	}
 
 	return Div(

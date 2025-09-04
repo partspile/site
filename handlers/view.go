@@ -14,8 +14,7 @@ import (
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vector"
-	g "maragu.dev/gomponents"
-	. "maragu.dev/gomponents/html"
+	"github.com/qdrant/go-client/qdrant"
 )
 
 // GeoBounds represents a geographic bounding box
@@ -49,33 +48,13 @@ func NewListView(ctx *fiber.Ctx) *ListView {
 }
 
 func (v *ListView) GetAds() ([]ad.Ad, string, error) {
-	userPrompt := getQueryParam(v.ctx, "q")
-	cursor := getQueryParam(v.ctx, "cursor")
-	threshold := getThreshold(v.ctx)
-	currentUser, _ := CurrentUser(v.ctx)
-	ads, nextCursor, err := performSearch(userPrompt, currentUser, cursor, threshold, config.QdrantSearchPageSize, nil)
-	if err == nil {
-		log.Printf("[ListView.GetAds] ads returned: %d", len(ads))
-		log.Printf("[ListView.GetAds] Final ad order: %v", func() []int {
-			result := make([]int, len(ads))
-			for i, ad := range ads {
-				result[i] = ad.ID
-			}
-			return result
-		}())
-	}
-	return ads, nextCursor, err
+	return getAds(v.ctx, nil)
 }
 
 func (v *ListView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
 	threshold := getThreshold(v.ctx)
 	_, userID := getUser(v.ctx)
-
-	// Check if we should show no results message
-	if len(ads) == 0 {
-		return render(v.ctx, ui.ListViewRenderEmpty())
-	}
 
 	// Create loader URL for infinite scroll
 	loaderURL := ui.ListViewCreateLoaderURL(userPrompt, nextCursor, threshold)
@@ -107,33 +86,13 @@ func NewGridView(ctx *fiber.Ctx) *GridView {
 }
 
 func (v *GridView) GetAds() ([]ad.Ad, string, error) {
-	userPrompt := getQueryParam(v.ctx, "q")
-	cursor := getQueryParam(v.ctx, "cursor")
-	threshold := getThreshold(v.ctx)
-	currentUser, _ := CurrentUser(v.ctx)
-	ads, nextCursor, err := performSearch(userPrompt, currentUser, cursor, threshold, config.QdrantSearchPageSize, nil)
-	if err == nil {
-		log.Printf("[GridView.GetAds] ads returned: %d", len(ads))
-		log.Printf("[GridView.GetAds] Final ad order: %v", func() []int {
-			result := make([]int, len(ads))
-			for i, ad := range ads {
-				result[i] = ad.ID
-			}
-			return result
-		}())
-	}
-	return ads, nextCursor, err
+	return getAds(v.ctx, nil)
 }
 
 func (v *GridView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
 	threshold := getThreshold(v.ctx)
 	_, userID := getUser(v.ctx)
-
-	// Check if we should show no results message
-	if len(ads) == 0 {
-		return render(v.ctx, ui.GridViewRenderEmpty(userPrompt, threshold, userID))
-	}
 
 	// Create loader URL if there are more results
 	loaderURL := ui.GridViewCreateLoaderURL(userPrompt, nextCursor, threshold)
@@ -170,40 +129,17 @@ func NewMapView(ctx *fiber.Ctx, bounds *ui.GeoBounds) *MapView {
 }
 
 func (v *MapView) GetAds() ([]ad.Ad, string, error) {
-	userPrompt := getQueryParam(v.ctx, "q")
-	cursor := getQueryParam(v.ctx, "cursor")
-	threshold := getThreshold(v.ctx)
-	currentUser, _ := CurrentUser(v.ctx)
-	var ads []ad.Ad
-	var nextCursor string
-	var err error
 	if v.bounds != nil {
-		ads, nextCursor, err = performGeoBoxSearch(userPrompt, currentUser, cursor, v.bounds, threshold)
-	} else {
-		ads, nextCursor, err = performSearch(userPrompt, currentUser, cursor, threshold, config.QdrantSearchInitialK, nil)
+		geoFilter := vector.BuildBoundingBoxGeoFilter(v.bounds.MinLat, v.bounds.MaxLat, v.bounds.MinLon, v.bounds.MaxLon)
+		return getAds(v.ctx, geoFilter)
 	}
-	if err == nil {
-		log.Printf("[MapView.GetAds] ads returned: %d", len(ads))
-		log.Printf("[MapView.GetAds] Final ad order: %v", func() []int {
-			result := make([]int, len(ads))
-			for i, ad := range ads {
-				result[i] = ad.ID
-			}
-			return result
-		}())
-	}
-	return ads, nextCursor, err
+	return getAds(v.ctx, nil)
 }
 
 func (v *MapView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
 	threshold := getThreshold(v.ctx)
 	_, userID := getUser(v.ctx)
-
-	// Check if we should show no results message
-	if len(ads) == 0 {
-		return render(v.ctx, ui.MapViewRenderEmpty(userPrompt, threshold, userID))
-	}
 
 	// Create loader URL if there are more results
 	loaderURL := ui.MapViewCreateLoaderURL(userPrompt, nextCursor, threshold, v.bounds)
@@ -239,33 +175,13 @@ func NewTreeView(ctx *fiber.Ctx) *TreeView {
 }
 
 func (v *TreeView) GetAds() ([]ad.Ad, string, error) {
-	userPrompt := getQueryParam(v.ctx, "q")
-	cursor := getQueryParam(v.ctx, "cursor")
-	threshold := getThreshold(v.ctx)
-	currentUser, _ := CurrentUser(v.ctx)
-	ads, nextCursor, err := performSearch(userPrompt, currentUser, cursor, threshold, config.QdrantSearchPageSize, nil)
-	if err == nil {
-		log.Printf("[TreeView.GetAds] ads returned: %d", len(ads))
-		log.Printf("[TreeView.GetAds] Final ad order: %v", func() []int {
-			result := make([]int, len(ads))
-			for i, ad := range ads {
-				result[i] = ad.ID
-			}
-			return result
-		}())
-	}
-	return ads, nextCursor, err
+	return getAds(v.ctx, nil)
 }
 
 func (v *TreeView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
 	threshold := getThreshold(v.ctx)
 	_, userID := getUser(v.ctx)
-
-	// Check if we should show no results message
-	if len(ads) == 0 {
-		return render(v.ctx, ui.TreeViewRenderEmpty(userPrompt, threshold, userID))
-	}
 
 	// Create loader URL if there are more results
 	loaderURL := ui.TreeViewCreateLoaderURL(userPrompt, nextCursor, threshold)
@@ -336,32 +252,6 @@ func createLoaderURL(userPrompt, nextCursor, view string, threshold float64, bou
 	return loaderURL
 }
 
-// renderInfiniteScrollTrigger renders the infinite scroll trigger for pagination
-func renderInfiniteScrollTrigger(c *fiber.Ctx, nextPageURL, view string) {
-	if nextPageURL == "" {
-		log.Printf("[renderInfiniteScrollTrigger] No infinite scroll trigger - no more results")
-		return
-	}
-
-	log.Printf("[renderInfiniteScrollTrigger] Adding infinite scroll trigger with URL: %s", nextPageURL)
-
-	// Create trigger that matches the view style
-	render(c, Div(
-		Class("h-4"),
-		g.Attr("hx-get", nextPageURL),
-		g.Attr("hx-trigger", "revealed"),
-		g.Attr("hx-swap", "outerHTML"),
-	))
-}
-
-// Render new ad button based on user login
-func renderNewAdButton(userID int) g.Node {
-	if userID != 0 {
-		return ui.StyledLink("New Ad", "/new-ad", ui.ButtonPrimary)
-	}
-	return ui.StyledLinkDisabled("New Ad", ui.ButtonPrimary)
-}
-
 // saveUserSearchAndQueue saves user search and queues user for embedding update
 func saveUserSearchAndQueue(userPrompt string, userID int) {
 	if userPrompt != "" {
@@ -390,6 +280,38 @@ func performGeoBoxSearch(userPrompt string, currentUser *user.User, cursorStr st
 
 	// Use performSearch with the geo filter
 	return performSearch(userPrompt, currentUser, cursorStr, threshold, config.QdrantSearchInitialK, geoFilter)
+}
+
+// getAds performs the common ad retrieval logic
+func getAds(ctx *fiber.Ctx, geoFilter *qdrant.Filter) ([]ad.Ad, string, error) {
+	userPrompt := getQueryParam(ctx, "q")
+	cursor := getQueryParam(ctx, "cursor")
+	threshold := getThreshold(ctx)
+	currentUser, _ := CurrentUser(ctx)
+
+	var ads []ad.Ad
+	var nextCursor string
+	var err error
+
+	// Use QdrantSearchInitialK for geo searches, QdrantSearchPageSize for regular searches
+	limit := config.QdrantSearchPageSize
+	if geoFilter != nil {
+		limit = config.QdrantSearchInitialK
+	}
+
+	ads, nextCursor, err = performSearch(userPrompt, currentUser, cursor, threshold, limit, geoFilter)
+
+	if err == nil {
+		log.Printf("[getAdsCommon] ads returned: %d", len(ads))
+		log.Printf("[getAdsCommon] Final ad order: %v", func() []int {
+			result := make([]int, len(ads))
+			for i, ad := range ads {
+				result[i] = ad.ID
+			}
+			return result
+		}())
+	}
+	return ads, nextCursor, err
 }
 
 // NewView creates the appropriate view implementation based on view type

@@ -12,18 +12,18 @@ import (
 	"github.com/parts-pile/site/ad"
 )
 
-func TreeViewRenderEmpty(query string, threshold float64, userID int) g.Node {
-	return Div(
-		ID("searchResults"),
-		SearchWidget(userID, "tree", query, threshold),
-		ViewToggleButtons("tree"),
-		NoSearchResultsMessage(),
-	)
-}
-
 func TreeViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
-	structuredQueryJSON, _ := json.Marshal(SearchSchema{})
-	viewContent := TreeViewWithQueryAndThreshold(query, string(structuredQueryJSON), threshold)
+	// Create the main search results container
+	var viewContent g.Node
+
+	if len(ads) == 0 {
+		// Show empty state
+		viewContent = NoSearchResultsMessage()
+	} else {
+		// Show tree view
+		structuredQueryJSON, _ := json.Marshal(SearchSchema{})
+		viewContent = TreeViewWithQueryAndThreshold(query, string(structuredQueryJSON), threshold)
+	}
 
 	return Div(
 		ID("searchResults"),

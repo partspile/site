@@ -10,22 +10,21 @@ import (
 	"github.com/parts-pile/site/ad"
 )
 
-func MapViewRenderEmpty(query string, threshold float64, userID int) g.Node {
-	return Div(
-		ID("searchResults"),
-		SearchWidget(userID, "map", query, threshold),
-		ViewToggleButtons("map"),
-		NoSearchResultsMessage(),
-	)
-}
-
 func MapViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
-	// For map view, always show the map (even if empty)
-	adsMap := make(map[int]ad.Ad, len(ads))
-	for _, ad := range ads {
-		adsMap[ad.ID] = ad
+	// Create the main search results container
+	var viewContent g.Node
+	
+	if len(ads) == 0 {
+		// Show empty state
+		viewContent = NoSearchResultsMessage()
+	} else {
+		// Show map with ads
+		adsMap := make(map[int]ad.Ad, len(ads))
+		for _, ad := range ads {
+			adsMap[ad.ID] = ad
+		}
+		viewContent = MapViewContainer(adsMap, loc)
 	}
-	viewContent := MapViewContainer(adsMap, loc)
 
 	return Div(
 		ID("searchResults"),

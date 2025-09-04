@@ -10,24 +10,23 @@ import (
 	"github.com/parts-pile/site/ad"
 )
 
-func ListViewRenderEmpty() g.Node {
-	return Div(
-		ID("searchResults"),
-		ViewToggleButtons("list"),
-		NoSearchResultsMessage(),
-	)
-}
-
 func ListViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	adNodes := renderAdListNodes(ads, userID, loc)
+	var viewContent g.Node
+
+	if len(ads) == 0 {
+		viewContent = NoSearchResultsMessage()
+	} else {
+		adNodes := renderAdListNodes(ads, userID, loc)
+		viewContent = Div(
+			ID("list-view"),
+			g.Group(append(adNodes, createInfiniteScrollTrigger(loaderURL))),
+		)
+	}
+
 	return Div(
 		ID("searchResults"),
 		ViewToggleButtons("list"),
-		Div(
-			ID("list-view"),
-			g.Group(append(adNodes,
-				createInfiniteScrollTrigger(loaderURL))),
-		),
+		viewContent,
 	)
 }
 
