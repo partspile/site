@@ -77,7 +77,7 @@ func (v *ListView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 		return render(v.ctx, ui.RenderListViewEmpty(userPrompt, threshold, userID))
 	}
 
-	// Create loader URL if there are more results
+	// Create loader URL for infinite scroll
 	loaderURL := ui.CreateListViewLoaderURL(userPrompt, nextCursor, threshold)
 
 	loc := getLocation(v.ctx)
@@ -85,27 +85,15 @@ func (v *ListView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 }
 
 func (v *ListView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
+	userPrompt := v.ctx.Query("q")
+	threshold := getThreshold(v.ctx)
+	_, userID := getUser(v.ctx)
 	loc := getLocation(v.ctx)
-	currentUser, _ := CurrentUser(v.ctx)
 
-	// Render ads in list view format
-	for _, ad := range ads {
-		render(v.ctx, ui.AdCardCompactList(ad, loc, currentUser))
-		// Add separator after each ad
-		render(v.ctx, Div(Class("border-b border-gray-200")))
-	}
+	// Create loader URL for infinite scroll
+	loaderURL := ui.CreateListViewLoaderURL(userPrompt, nextCursor, threshold)
 
-	// Add infinite scroll trigger if there are more results
-	if nextCursor != "" {
-		userPrompt := v.ctx.Query("q")
-		threshold := getThreshold(v.ctx)
-		nextPageURL := createLoaderURL(userPrompt, nextCursor, "list", threshold, nil)
-		if nextPageURL != "" {
-			renderInfiniteScrollTrigger(v.ctx, nextPageURL, "list")
-		}
-	}
-
-	return nil
+	return render(v.ctx, ui.RenderListViewPage(ads, userID, loc, loaderURL))
 }
 
 // GridView implements the View interface for grid view
@@ -156,23 +144,18 @@ func (v *GridView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 
 func (v *GridView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	loc := getLocation(v.ctx)
+	_, userID := getUser(v.ctx)
 
-	// Render ads in grid view format
-	for _, ad := range ads {
-		render(v.ctx, ui.AdCardExpandable(ad, loc, nil, "grid"))
-	}
-
-	// Add infinite scroll trigger if there are more results
+	// Create loader URL for infinite scroll
+	var loaderURL string
 	if nextCursor != "" {
 		userPrompt := getQueryParam(v.ctx, "q")
 		threshold := getThreshold(v.ctx)
-		nextPageURL := createLoaderURL(userPrompt, nextCursor, "grid", threshold, nil)
-		if nextPageURL != "" {
-			renderInfiniteScrollTrigger(v.ctx, nextPageURL, "grid")
-		}
+		loaderURL = ui.CreateGridViewLoaderURL(userPrompt, nextCursor, threshold)
 	}
 
-	return nil
+	// Render the page content using UI function
+	return render(v.ctx, ui.RenderGridViewPage(ads, userID, loc, loaderURL))
 }
 
 // MapView implements the View interface for map view
@@ -231,26 +214,18 @@ func (v *MapView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 
 func (v *MapView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	loc := getLocation(v.ctx)
-	currentUser, _ := CurrentUser(v.ctx)
+	_, userID := getUser(v.ctx)
 
-	// Render ads in map view format (same as list for now)
-	for _, ad := range ads {
-		render(v.ctx, ui.AdCardCompactList(ad, loc, currentUser))
-		// Add separator after each ad
-		render(v.ctx, Div(Class("border-b border-gray-200")))
-	}
-
-	// Add infinite scroll trigger if there are more results
+	// Create loader URL for infinite scroll
+	var loaderURL string
 	if nextCursor != "" {
 		userPrompt := getQueryParam(v.ctx, "q")
 		threshold := getThreshold(v.ctx)
-		nextPageURL := ui.CreateMapViewLoaderURL(userPrompt, nextCursor, threshold, v.bounds)
-		if nextPageURL != "" {
-			renderInfiniteScrollTrigger(v.ctx, nextPageURL, "map")
-		}
+		loaderURL = ui.CreateMapViewLoaderURL(userPrompt, nextCursor, threshold, v.bounds)
 	}
 
-	return nil
+	// Render the page content using UI function
+	return render(v.ctx, ui.RenderMapViewPage(ads, userID, loc, loaderURL))
 }
 
 // TreeView implements the View interface for tree view
@@ -301,26 +276,18 @@ func (v *TreeView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 
 func (v *TreeView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	loc := getLocation(v.ctx)
-	currentUser, _ := CurrentUser(v.ctx)
+	_, userID := getUser(v.ctx)
 
-	// Render ads in tree view format (same as list for now)
-	for _, ad := range ads {
-		render(v.ctx, ui.AdCardCompactTree(ad, loc, currentUser))
-		// Add separator after each ad
-		render(v.ctx, Div(Class("border-b border-gray-200")))
-	}
-
-	// Add infinite scroll trigger if there are more results
+	// Create loader URL for infinite scroll
+	var loaderURL string
 	if nextCursor != "" {
 		userPrompt := getQueryParam(v.ctx, "q")
 		threshold := getThreshold(v.ctx)
-		nextPageURL := createLoaderURL(userPrompt, nextCursor, "tree", threshold, nil)
-		if nextPageURL != "" {
-			renderInfiniteScrollTrigger(v.ctx, nextPageURL, "tree")
-		}
+		loaderURL = ui.CreateTreeViewLoaderURL(userPrompt, nextCursor, threshold)
 	}
 
-	return nil
+	// Render the page content using UI function
+	return render(v.ctx, ui.RenderTreeViewPage(ads, userID, loc, loaderURL))
 }
 
 // extractMapBounds extracts geographic bounding box parameters for map view
