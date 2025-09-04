@@ -228,32 +228,6 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, currentUser *user.User, view
 	sort.Strings(sortedModels)
 	sortedEngines := append([]string{}, ad.Engines...)
 	sort.Strings(sortedEngines)
-	bookmarkBtn := g.Node(nil)
-	if currentUser != nil {
-		if ad.Bookmarked {
-			bookmarkBtn = Button(
-				Type("button"),
-				Class("ml-2 focus:outline-none z-20"),
-				hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-				g.Attr("onclick", "event.stopPropagation()"),
-				BookmarkIcon(true),
-			)
-		} else {
-			bookmarkBtn = Button(
-				Type("button"),
-				Class("ml-2 focus:outline-none z-20"),
-				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-				g.Attr("onclick", "event.stopPropagation()"),
-				BookmarkIcon(false),
-			)
-		}
-	}
 	// In AdCardExpandable, show the first image
 	firstIdx := 1
 	if len(ad.ImageOrder) > 0 {
@@ -270,32 +244,6 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, currentUser *user.User, view
 	if isGrid {
 		// Minimal grid card: image, price badge, title/bookmark, age/location
 		locationStr, flagNode := getDisplayLocationAndFlag(ad)
-		bookmarkBtnGrid := g.Node(nil)
-		if currentUser != nil {
-			if ad.Bookmarked {
-				bookmarkBtnGrid = Button(
-					Type("button"),
-					Class("focus:outline-none mr-1 align-middle"),
-					hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
-					hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-					hx.Swap("outerHTML"),
-					ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-					g.Attr("onclick", "event.stopPropagation()"),
-					BookmarkIcon(true),
-				)
-			} else {
-				bookmarkBtnGrid = Button(
-					Type("button"),
-					Class("focus:outline-none mr-1 align-middle"),
-					hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
-					hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-					hx.Swap("outerHTML"),
-					ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-					g.Attr("onclick", "event.stopPropagation()"),
-					BookmarkIcon(false),
-				)
-			}
-		}
 		return Div(
 			ID(fmt.Sprintf("ad-grid-wrap-%d", ad.ID)),
 			Class("border rounded-lg shadow-sm bg-white flex flex-col cursor-pointer hover:shadow-md transition-shadow"),
@@ -312,7 +260,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, currentUser *user.User, view
 				Div(
 					Class("flex flex-row items-center justify-between"),
 					Div(Class("font-semibold text-base truncate"), g.Text(ad.Title)),
-					bookmarkBtnGrid,
+					g.If(currentUser != nil, BookmarkButton(ad)),
 				),
 				// Age and location row
 				Div(
@@ -343,7 +291,7 @@ func AdCardExpandable(ad ad.Ad, loc *time.Location, currentUser *user.User, view
 			Div(
 				Class("flex flex-row items-center gap-2"),
 				imageNode,
-				bookmarkBtn,
+				g.If(currentUser != nil, BookmarkButton(ad)),
 			),
 		),
 		// Rock section - will be populated by HTMX
@@ -779,39 +727,15 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 }
 
 func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad) g.Node {
-	bookmarkBtn := g.Node(nil)
 	userID := 0
 	if currentUser != nil {
 		userID = currentUser.ID
 	}
 	// Action buttons: bookmark, delete (edit removed)
-	actionButtons := []g.Node{bookmarkBtn}
+	actionButtons := []g.Node{}
 	isArchivedAd := adObj.IsArchived()
 	if userID > 0 {
-		if adObj.Bookmarked {
-			bookmarkBtn = Button(
-				Type("button"),
-				Class("ml-2 focus:outline-none z-20"),
-				hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", adObj.ID)),
-				hx.Target(fmt.Sprintf("#bookmark-btn-%d", adObj.ID)),
-				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("bookmark-btn-%d", adObj.ID)),
-				g.Attr("onclick", "event.stopPropagation()"),
-				BookmarkIcon(true),
-			)
-		} else {
-			bookmarkBtn = Button(
-				Type("button"),
-				Class("ml-2 focus:outline-none z-20"),
-				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", adObj.ID)),
-				hx.Target(fmt.Sprintf("#bookmark-btn-%d", adObj.ID)),
-				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("bookmark-btn-%d", adObj.ID)),
-				g.Attr("onclick", "event.stopPropagation()"),
-				BookmarkIcon(false),
-			)
-		}
-		actionButtons[0] = bookmarkBtn
+		actionButtons = append(actionButtons, BookmarkButton(adObj))
 		if currentUser.ID == adObj.UserID && !isArchivedAd {
 			deleteButton := DeleteButton(adObj.ID)
 			actionButtons = append(actionButtons, deleteButton)
@@ -1102,27 +1026,22 @@ func AdCard(ad ad.Ad, loc *time.Location) g.Node {
 
 // BookmarkButton returns the bookmark toggle button for HTMX swaps
 func BookmarkButton(ad ad.Ad) g.Node {
+	var hxMethod g.Node
 	if ad.Bookmarked {
-		return Button(
-			Type("button"),
-			Class("ml-2 focus:outline-none z-20"),
-			hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
-			hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-			hx.Swap("outerHTML"),
-			ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-			g.Attr("onclick", "event.stopPropagation()"),
-			BookmarkIcon(true),
-		)
+		hxMethod = hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID))
+	} else {
+		hxMethod = hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID))
 	}
+
 	return Button(
 		Type("button"),
-		Class("ml-2 focus:outline-none z-20"),
-		hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
+		Class("focus:outline-none"),
+		hxMethod,
 		hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
 		hx.Swap("outerHTML"),
 		ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
 		g.Attr("onclick", "event.stopPropagation()"),
-		BookmarkIcon(false),
+		BookmarkIcon(ad.Bookmarked),
 	)
 }
 
@@ -1215,34 +1134,6 @@ func AdCardTreeView(ad ad.Ad, loc *time.Location, userID int) g.Node {
 func AdCardCompactTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
 	posted := ad.CreatedAt.In(loc)
 
-	// Bookmark button
-	bookmarkBtn := g.Node(nil)
-	if currentUser != nil {
-		if ad.Bookmarked {
-			bookmarkBtn = Button(
-				Type("button"),
-				Class("focus:outline-none mr-2"),
-				hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-				g.Attr("onclick", "event.stopPropagation()"),
-				BookmarkIcon(true),
-			)
-		} else {
-			bookmarkBtn = Button(
-				Type("button"),
-				Class("focus:outline-none mr-2"),
-				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-				g.Attr("onclick", "event.stopPropagation()"),
-				BookmarkIcon(false),
-			)
-		}
-	}
-
 	// Check if ad has images
 	hasImages := len(ad.ImageOrder) > 0
 	picLink := g.Node(nil)
@@ -1260,7 +1151,7 @@ func AdCardCompactTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.N
 		hx.Target(fmt.Sprintf("#ad-tree-%d", ad.ID)),
 		hx.Swap("outerHTML"),
 		// Bookmark icon
-		bookmarkBtn,
+		g.If(currentUser != nil, BookmarkButton(ad)),
 		// Description (blue text)
 		Div(
 			Class("flex-1 text-blue-600 hover:text-blue-800"),
@@ -1290,33 +1181,6 @@ func AdCardCompactTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.N
 func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
 	// Create the expanded content similar to AdDetailUnified but without close button
 	htmxTarget := fmt.Sprintf("#ad-tree-%d", ad.ID)
-
-	bookmarkBtn := g.Node(nil)
-	if currentUser != nil {
-		if ad.Bookmarked {
-			bookmarkBtn = Button(
-				Type("button"),
-				Class("ml-2 focus:outline-none z-20"),
-				hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-				g.Attr("onclick", "event.stopPropagation()"),
-				BookmarkIcon(true),
-			)
-		} else {
-			bookmarkBtn = Button(
-				Type("button"),
-				Class("ml-2 focus:outline-none z-20"),
-				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-				g.Attr("onclick", "event.stopPropagation()"),
-				BookmarkIcon(false),
-			)
-		}
-	}
 
 	deleteBtn := g.Node(nil)
 	editBtn := g.Node(nil)
@@ -1410,7 +1274,7 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 				Class("flex flex-row items-center justify-between mb-2"),
 				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
-					bookmarkBtn,
+					g.If(currentUser != nil, BookmarkButton(ad)),
 					MessageButton(ad.ID, ad.UserID, currentUser.ID, "tree"),
 					editBtn,
 					deleteBtn,
@@ -1454,33 +1318,6 @@ func AdDetailUnified(ad ad.Ad, userID int, view string) g.Node {
 		htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", ad.ID)
 	}
 	// For tree and list views, use the same ID as the content (#ad-{id})
-
-	bookmarkBtn := g.Node(nil)
-	if userID > 0 {
-		if ad.Bookmarked {
-			bookmarkBtn = Button(
-				Type("button"),
-				Class("ml-2 focus:outline-none z-20"),
-				hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-				g.Attr("onclick", "event.stopPropagation()"),
-				BookmarkIcon(true),
-			)
-		} else {
-			bookmarkBtn = Button(
-				Type("button"),
-				Class("ml-2 focus:outline-none z-20"),
-				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-				g.Attr("onclick", "event.stopPropagation()"),
-				BookmarkIcon(false),
-			)
-		}
-	}
 
 	deleteBtn := g.Node(nil)
 	editBtn := g.Node(nil)
@@ -1579,7 +1416,7 @@ func AdDetailUnified(ad ad.Ad, userID int, view string) g.Node {
 					Class("flex flex-row items-center justify-between mb-2"),
 					Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
 					Div(Class("flex flex-row items-center gap-2 ml-2"),
-						bookmarkBtn,
+						g.If(userID > 0, BookmarkButton(ad)),
 						MessageButton(ad.ID, ad.UserID, userID, view),
 						editBtn,
 						deleteBtn,
@@ -1621,7 +1458,7 @@ func AdDetailUnified(ad ad.Ad, userID int, view string) g.Node {
 					Class("flex flex-row items-center justify-between mb-2"),
 					Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
 					Div(Class("flex flex-row items-center gap-2 ml-2"),
-						bookmarkBtn,
+						g.If(userID > 0, BookmarkButton(ad)),
 						MessageButton(ad.ID, ad.UserID, userID, view),
 						editBtn,
 						deleteBtn,
@@ -1658,45 +1495,15 @@ func AdDetailUnified(ad ad.Ad, userID int, view string) g.Node {
 	return content
 }
 
-// AdCardCompactList renders a compact single-line ad card for list view
-func AdCardCompactList(ad ad.Ad, loc *time.Location, userID int) g.Node {
-	posted := ad.CreatedAt.In(loc)
-
-	// Bookmark button
-	bookmarkBtn := g.Node(nil)
-	if userID != 0 {
-		if ad.Bookmarked {
-			bookmarkBtn = Button(
-				Type("button"),
-				Class("focus:outline-none mr-2"),
-				hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-				g.Attr("onclick", "event.stopPropagation(); event.preventDefault();"),
-				BookmarkIcon(true),
-			)
-		} else {
-			bookmarkBtn = Button(
-				Type("button"),
-				Class("focus:outline-none mr-2"),
-				hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID)),
-				hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-				hx.Swap("outerHTML"),
-				ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-				g.Attr("onclick", "event.stopPropagation(); event.preventDefault();"),
-				BookmarkIcon(false),
-			)
-		}
-	}
-
+// AdCompactNode renders a compact single-line ad card for list view
+func AdCompactNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
 	return Div(
 		ID(fmt.Sprintf("ad-%d", ad.ID)),
 		Class("flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer"),
 		hx.Get(fmt.Sprintf("/ad/detail/%d?view=list", ad.ID)),
 		hx.Target(fmt.Sprintf("#ad-%d", ad.ID)),
 		hx.Swap("outerHTML"),
-		bookmarkBtn,
+		g.If(userID != 0, BookmarkButton(ad)),
 		Div(
 			Class("flex-1 text-blue-600 hover:text-blue-800"),
 			g.Text(ad.Title),
@@ -1707,7 +1514,7 @@ func AdCardCompactList(ad ad.Ad, loc *time.Location, userID int) g.Node {
 		),
 		Div(
 			Class("mr-4"),
-			AgeDisplay(posted),
+			AgeDisplay(ad.CreatedAt.In(loc)),
 		),
 		Div(
 			Class("text-green-600 font-semibold mr-4"),

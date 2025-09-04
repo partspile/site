@@ -118,7 +118,7 @@ func BuildAdListNodesFromSlice(currentUser *user.User, ads []ad.Ad) []g.Node {
 	loc := time.Local
 	nodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
-		nodes = append(nodes, AdCardCompactList(ad, loc, currentUser.ID))
+		nodes = append(nodes, AdCompactNode(ad, loc, currentUser.ID))
 	}
 	return nodes
 }

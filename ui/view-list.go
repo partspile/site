@@ -39,8 +39,7 @@ func ListViewRenderPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL s
 func renderAdListNodes(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
 	nodes := make([]g.Node, 0, len(ads)*2) // *2 because we'll add separators between ads
 	for _, ad := range ads {
-		nodes = append(nodes, AdCardCompactList(ad, loc, userID))
-
+		nodes = append(nodes, AdCompactNode(ad, loc, userID))
 		// Add separator after each ad
 		nodes = append(nodes, Div(
 			Class("border-b border-gray-200"),
@@ -49,16 +48,6 @@ func renderAdListNodes(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
 	return nodes
 }
 
-func ListViewFromMap(ads map[int]ad.Ad, loc *time.Location) g.Node {
-	return Div(
-		ID("list-view"),
-		AdCompactListContainer(
-			g.Group(BuildAdListNodes(ads, loc)),
-		),
-	)
-}
-
-// View-specific loader URL creation function
 func ListViewCreateLoaderURL(userPrompt, nextCursor string, threshold float64) string {
 	if nextCursor == "" {
 		return ""
