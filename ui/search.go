@@ -3,6 +3,7 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -14,6 +15,19 @@ import (
 )
 
 type SearchSchema ad.SearchQuery
+
+// GeoBounds represents a geographic bounding box
+type GeoBounds struct {
+	MinLat float64
+	MaxLat float64
+	MinLon float64
+	MaxLon float64
+}
+
+// htmlEscape escapes HTML special characters
+func htmlEscape(s string) string {
+	return strings.ReplaceAll(s, `"`, `\"`)
+}
 
 func ViewToggleButtons(activeView string) g.Node {
 	icon := func(name, alt string) g.Node {
@@ -36,8 +50,7 @@ func ViewToggleButtons(activeView string) g.Node {
 			hx.Post("/view/"+view),
 			hx.Target("#searchResults"),
 			hx.Indicator("#searchWaiting"),
-			hx.Include("[name='q'],[name='structured_query'],[name='view'],[name='threshold']"),
-			hx.Vals(fmt.Sprintf(`{"selected_view":"%s"}`, view)),
+			hx.Include("[name='q'],[name='threshold']"),
 			icon(view, alt),
 		)
 	}
@@ -99,7 +112,7 @@ func InitialSearchResults(view string) g.Node {
 	)
 }
 
-func SearchWidget(newAdButton g.Node, view string, query string, threshold float64) g.Node {
+func SearchWidget(userID int, view string, query string, threshold float64) g.Node {
 	thresholdStr := fmt.Sprintf("%.1f", threshold)
 
 	// Create bounding box inputs for map view
@@ -115,7 +128,7 @@ func SearchWidget(newAdButton g.Node, view string, query string, threshold float
 
 	return Div(
 		Class("flex items-start gap-4"),
-		newAdButton,
+		renderNewAdButton(userID),
 		Div(
 			Class("flex-1 flex flex-col gap-4 relative"),
 			Form(
@@ -176,24 +189,21 @@ func SearchWidget(newAdButton g.Node, view string, query string, threshold float
 	)
 }
 
-func SearchResultsContainer(newAdButton g.Node, ads []ad.Ad, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold float64) g.Node {
+func SearchResultsContainer(userID int, ads []ad.Ad, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold float64) g.Node {
 	return Div(
 		ID("searchResults"),
-		SearchWidget(newAdButton, view, query, threshold),
+		SearchWidget(userID, view, query, threshold),
 		ViewToggleButtons(view),
 		createViewWithInfiniteScroll(ads, currentUser, loc, view, query, loaderURL, threshold),
 	)
 }
 
-func SearchResultsEmpty(viewType string, query string, threshold float64, newAdButton g.Node) g.Node {
+func SearchResultsEmpty(userID int, viewType string, query string, threshold float64) g.Node {
 	return Div(
 		ID("searchResults"),
-		SearchWidget(newAdButton, viewType, query, threshold),
+		SearchWidget(userID, viewType, query, threshold),
 		ViewToggleButtons(viewType),
-		Div(
-			ID("view-wrapper"),
-			NoSearchResultsMessage(),
-		),
+		NoSearchResultsMessage(),
 	)
 }
 
@@ -217,54 +227,56 @@ func createViewWithInfiniteScroll(ads []ad.Ad, currentUser *user.User, loc *time
 			structuredQueryJSON, _ := json.Marshal(SearchSchema{})
 			viewContent = TreeViewWithQueryAndThreshold(query, string(structuredQueryJSON), threshold)
 		case "grid":
+			userID := 0
+			if currentUser != nil {
+				userID = currentUser.ID
+			}
 			if loaderURL != "" {
-				viewContent = GridViewWithTrigger(ads, loc, currentUser, loaderURL)
+				viewContent = GridViewWithTrigger(ads, loc, userID, loaderURL)
 			} else {
-				viewContent = GridView(ads, loc, currentUser)
+				viewContent = GridView(ads, loc, userID)
 			}
 		default: // list
-			viewContent = ListViewFromSlice(ads, currentUser, loc)
+			userID := 0
+			if currentUser != nil {
+				userID = currentUser.ID
+			}
+			viewContent = ListViewContainer(ads, userID, loc, loaderURL)
 		}
 	}
 
-	// Add infinite scroll trigger for list view only (grid has it built-in)
-	if view == "list" && loaderURL != "" {
-		return Div(
-			ID("view-wrapper"),
-			viewContent,
-			createInfiniteScrollTrigger(loaderURL),
-		)
-	}
-
-	return Div(
-		ID("view-wrapper"),
-		viewContent,
-	)
+	return viewContent
 }
 
 func createInfiniteScrollTrigger(loaderURL string) g.Node {
-	return Div(
+	return g.If(loaderURL != "", Div(
 		Class("h-4"),
 		g.Attr("hx-get", loaderURL),
 		g.Attr("hx-trigger", "revealed"),
 		g.Attr("hx-swap", "outerHTML"),
-	)
+	))
 }
 
-func ListViewFromSlice(ads []ad.Ad, currentUser *user.User, loc *time.Location) g.Node {
-	adNodes := buildAdListNodesFromSlice(ads, currentUser, loc)
+func ListViewContainer(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+	adNodes := buildAdListNodesFromSlice(ads, userID, loc)
 
 	return Div(
 		ID("list-view"),
 		AdCompactListContainer(
 			g.Group(adNodes),
 		),
+		createInfiniteScrollTrigger(loaderURL),
 	)
 }
 
-func buildAdListNodesFromSlice(ads []ad.Ad, currentUser *user.User, loc *time.Location) []g.Node {
+func buildAdListNodesFromSlice(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
 	nodes := make([]g.Node, 0, len(ads)*2) // *2 because we'll add separators between ads
 	for _, ad := range ads {
+		// Create minimal user object for compatibility
+		var currentUser *user.User
+		if userID != 0 {
+			currentUser = &user.User{ID: userID}
+		}
 		nodes = append(nodes, AdCardCompactList(ad, loc, currentUser))
 
 		// Add separator after each ad
@@ -275,10 +287,15 @@ func buildAdListNodesFromSlice(ads []ad.Ad, currentUser *user.User, loc *time.Lo
 	return nodes
 }
 
-func GridView(ads []ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
+func GridView(ads []ad.Ad, loc *time.Location, userID int) g.Node {
 	// Preserve original order from backend (Qdrant order)
 	adNodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
+		// Create minimal user object for compatibility
+		var currentUser *user.User
+		if userID != 0 {
+			currentUser = &user.User{ID: userID}
+		}
 		adNodes = append(adNodes,
 			AdCardExpandable(ad, loc, currentUser, "grid"),
 		)
@@ -291,10 +308,15 @@ func GridView(ads []ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
 	)
 }
 
-func GridViewWithTrigger(ads []ad.Ad, loc *time.Location, currentUser *user.User, loaderURL string) g.Node {
+func GridViewWithTrigger(ads []ad.Ad, loc *time.Location, userID int, loaderURL string) g.Node {
 	// Preserve original order from backend (Qdrant order)
 	adNodes := make([]g.Node, 0, len(ads)+1) // +1 for trigger
 	for _, ad := range ads {
+		// Create minimal user object for compatibility
+		var currentUser *user.User
+		if userID != 0 {
+			currentUser = &user.User{ID: userID}
+		}
 		adNodes = append(adNodes,
 			AdCardExpandable(ad, loc, currentUser, "grid"),
 		)
@@ -351,4 +373,162 @@ func MapView(ads map[int]ad.Ad, loc *time.Location) g.Node {
 		// Hidden ad data elements
 		g.Group(adDataElements),
 	)
+}
+
+func RenderListViewEmpty(query string, threshold float64, userID int) g.Node {
+	return Div(
+		ID("searchResults"),
+		SearchWidget(userID, "list", query, threshold),
+		ViewToggleButtons("list"),
+		NoSearchResultsMessage(),
+	)
+}
+
+func RenderListViewResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
+	return Div(
+		ID("searchResults"),
+		SearchWidget(userID, "list", query, threshold),
+		ViewToggleButtons("list"),
+		ListViewContainer(ads, userID, loc, loaderURL),
+	)
+}
+
+func RenderListViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+	// For pagination, we return the ads to be rendered by the handler
+	// The handler will call the appropriate rendering functions
+	return nil
+}
+
+// Grid view functions
+func RenderGridViewEmpty(query string, threshold float64, userID int) g.Node {
+	return Div(
+		ID("searchResults"),
+		SearchWidget(userID, "grid", query, threshold),
+		ViewToggleButtons("grid"),
+		NoSearchResultsMessage(),
+	)
+}
+
+func RenderGridViewResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
+	var viewContent g.Node
+	if loaderURL != "" {
+		viewContent = GridViewWithTrigger(ads, loc, userID, loaderURL)
+	} else {
+		viewContent = GridView(ads, loc, userID)
+	}
+
+	return Div(
+		ID("searchResults"),
+		SearchWidget(userID, "grid", query, threshold),
+		ViewToggleButtons("grid"),
+		viewContent,
+	)
+}
+
+func RenderGridViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+	return nil
+}
+
+// Map view functions
+func RenderMapViewEmpty(query string, threshold float64, userID int) g.Node {
+	return Div(
+		ID("searchResults"),
+		SearchWidget(userID, "map", query, threshold),
+		ViewToggleButtons("map"),
+		NoSearchResultsMessage(),
+	)
+}
+
+func RenderMapViewResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
+	// For map view, always show the map (even if empty)
+	adsMap := make(map[int]ad.Ad, len(ads))
+	for _, ad := range ads {
+		adsMap[ad.ID] = ad
+	}
+	viewContent := MapView(adsMap, loc)
+
+	return Div(
+		ID("searchResults"),
+		SearchWidget(userID, "map", query, threshold),
+		ViewToggleButtons("map"),
+		viewContent,
+	)
+}
+
+func RenderMapViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+	return nil
+}
+
+// Tree view functions
+func RenderTreeViewEmpty(query string, threshold float64, userID int) g.Node {
+	return Div(
+		ID("searchResults"),
+		SearchWidget(userID, "tree", query, threshold),
+		ViewToggleButtons("tree"),
+		NoSearchResultsMessage(),
+	)
+}
+
+func RenderTreeViewResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
+	structuredQueryJSON, _ := json.Marshal(SearchSchema{})
+	viewContent := TreeViewWithQueryAndThreshold(query, string(structuredQueryJSON), threshold)
+
+	return Div(
+		ID("searchResults"),
+		SearchWidget(userID, "tree", query, threshold),
+		ViewToggleButtons("tree"),
+		viewContent,
+	)
+}
+
+func RenderTreeViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+	return nil
+}
+
+// Helper function to render new ad button based on user login
+func renderNewAdButton(userID int) g.Node {
+	if userID != 0 {
+		return StyledLink("New Ad", "/new-ad", ButtonPrimary)
+	}
+	return StyledLinkDisabled("New Ad", ButtonPrimary)
+}
+
+// View-specific loader URL creation functions
+func CreateListViewLoaderURL(userPrompt, nextCursor string, threshold float64) string {
+	if nextCursor == "" {
+		return ""
+	}
+	return fmt.Sprintf("/search-page?q=%s&cursor=%s&view=list&threshold=%.1f",
+		htmlEscape(userPrompt), htmlEscape(nextCursor), threshold)
+}
+
+func CreateGridViewLoaderURL(userPrompt, nextCursor string, threshold float64) string {
+	if nextCursor == "" {
+		return ""
+	}
+	return fmt.Sprintf("/search-page?q=%s&cursor=%s&view=grid&threshold=%.1f",
+		htmlEscape(userPrompt), htmlEscape(nextCursor), threshold)
+}
+
+func CreateMapViewLoaderURL(userPrompt, nextCursor string, threshold float64, bounds *GeoBounds) string {
+	if nextCursor == "" {
+		return ""
+	}
+	loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s&view=map&threshold=%.1f",
+		htmlEscape(userPrompt), htmlEscape(nextCursor), threshold)
+
+	// Add bounding box to loader URL for map view
+	if bounds != nil {
+		loaderURL += fmt.Sprintf("&minLat=%.6f&maxLat=%.6f&minLon=%.6f&maxLon=%.6f",
+			bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
+	}
+	return loaderURL
+}
+
+func CreateTreeViewLoaderURL(userPrompt, nextCursor string, threshold float64) string {
+	if nextCursor == "" {
+		return ""
+	}
+	return fmt.Sprintf("/search-page?q=%s&cursor=%s&view=tree&threshold=%.1f",
+		htmlEscape(userPrompt), htmlEscape(nextCursor), threshold)
 }

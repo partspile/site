@@ -25,7 +25,7 @@ func HandleTreeCollapse(c *fiber.Ctx) error {
 	path := c.Params("*")
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 
-	threshold := c.QueryFloat("threshold", config.QdrantSearchThreshold)
+	threshold := getThreshold(c)
 
 	name := parts[len(parts)-1]
 	level := len(parts) - 1
@@ -43,7 +43,7 @@ func HandleTreeViewNavigation(c *fiber.Ctx) error {
 	}
 	level := len(parts)
 
-	threshold := c.QueryFloat("threshold", config.QdrantSearchThreshold)
+	threshold := getThreshold(c)
 
 	var structuredQuery ad.SearchQuery
 	if structuredQueryStr != "" {
