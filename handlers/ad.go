@@ -369,8 +369,12 @@ func HandleAdCardPartial(c *fiber.Ctx) error {
 	}
 	loc := c.Context().Time().Location()
 	view := c.Query("view", "list")
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
 	if view == "list" {
-		return render(c, ui.AdCardCompactList(adObj, loc, currentUser))
+		return render(c, ui.AdCardCompactList(adObj, loc, userID))
 	} else if view == "tree" {
 		return render(c, ui.AdCardCompactTree(adObj, loc, currentUser))
 	}

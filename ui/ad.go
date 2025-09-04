@@ -1659,12 +1659,12 @@ func AdDetailUnified(ad ad.Ad, userID int, view string) g.Node {
 }
 
 // AdCardCompactList renders a compact single-line ad card for list view
-func AdCardCompactList(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
+func AdCardCompactList(ad ad.Ad, loc *time.Location, userID int) g.Node {
 	posted := ad.CreatedAt.In(loc)
 
 	// Bookmark button
 	bookmarkBtn := g.Node(nil)
-	if currentUser != nil {
+	if userID != 0 {
 		if ad.Bookmarked {
 			bookmarkBtn = Button(
 				Type("button"),

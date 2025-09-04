@@ -8,7 +8,6 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/user"
 )
 
 func ListViewRenderEmpty() g.Node {
@@ -20,7 +19,7 @@ func ListViewRenderEmpty() g.Node {
 }
 
 func ListViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	adNodes := buildAdListNodesFromSlice(ads, userID, loc)
+	adNodes := renderAdListNodes(ads, userID, loc)
 	return Div(
 		ID("searchResults"),
 		ViewToggleButtons("list"),
@@ -33,19 +32,14 @@ func ListViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, loaderUR
 }
 
 func ListViewRenderPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	adNodes := buildAdListNodesFromSlice(ads, userID, loc)
+	adNodes := renderAdListNodes(ads, userID, loc)
 	return g.Group(append(adNodes, createInfiniteScrollTrigger(loaderURL)))
 }
 
-func buildAdListNodesFromSlice(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
+func renderAdListNodes(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
 	nodes := make([]g.Node, 0, len(ads)*2) // *2 because we'll add separators between ads
 	for _, ad := range ads {
-		// Create minimal user object for compatibility
-		var currentUser *user.User
-		if userID != 0 {
-			currentUser = &user.User{ID: userID}
-		}
-		nodes = append(nodes, AdCardCompactList(ad, loc, currentUser))
+		nodes = append(nodes, AdCardCompactList(ad, loc, userID))
 
 		// Add separator after each ad
 		nodes = append(nodes, Div(
@@ -61,17 +55,6 @@ func ListViewFromMap(ads map[int]ad.Ad, loc *time.Location) g.Node {
 		AdCompactListContainer(
 			g.Group(BuildAdListNodes(ads, loc)),
 		),
-	)
-}
-
-func ListViewContainer(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	adNodes := buildAdListNodesFromSlice(ads, userID, loc)
-	return Div(
-		ID("list-view"),
-		AdCompactListContainer(
-			g.Group(adNodes),
-		),
-		createInfiniteScrollTrigger(loaderURL),
 	)
 }
 

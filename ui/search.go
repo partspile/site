@@ -1,17 +1,14 @@
 package ui
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/user"
 )
 
 type SearchSchema ad.SearchQuery
@@ -152,47 +149,6 @@ func SearchWidget(userID int, view string, query string, threshold float64) g.No
 			),
 		),
 	)
-}
-
-func createViewWithInfiniteScroll(ads []ad.Ad, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold float64) g.Node {
-	var viewContent g.Node
-
-	// Handle no results for list and grid views
-	if len(ads) == 0 && (view == "list" || view == "grid") {
-		viewContent = NoSearchResultsMessage()
-	} else if view == "map" {
-		// For map view, always show the map (even if empty)
-		adsMap := make(map[int]ad.Ad, len(ads))
-		for _, ad := range ads {
-			adsMap[ad.ID] = ad
-		}
-		viewContent = MapViewContainer(adsMap, loc)
-	} else {
-		// Create the appropriate view
-		switch view {
-		case "tree":
-			structuredQueryJSON, _ := json.Marshal(SearchSchema{})
-			viewContent = TreeViewWithQueryAndThreshold(query, string(structuredQueryJSON), threshold)
-		case "grid":
-			userID := 0
-			if currentUser != nil {
-				userID = currentUser.ID
-			}
-			if loaderURL != "" {
-				viewContent = GridViewWithTrigger(ads, loc, userID, loaderURL)
-			} else {
-				viewContent = GridViewContainer(ads, loc, userID)
-			}
-		default: // list
-			userID := 0
-			if currentUser != nil {
-				userID = currentUser.ID
-			}
-			viewContent = ListViewContainer(ads, userID, loc, loaderURL)
-		}
-	}
-
-	return viewContent
 }
 
 func createInfiniteScrollTrigger(loaderURL string) g.Node {
