@@ -10,7 +10,7 @@ import (
 	"github.com/parts-pile/site/ad"
 )
 
-func RenderMapViewEmpty(query string, threshold float64, userID int) g.Node {
+func MapViewRenderEmpty(query string, threshold float64, userID int) g.Node {
 	return Div(
 		ID("searchResults"),
 		SearchWidget(userID, "map", query, threshold),
@@ -19,13 +19,13 @@ func RenderMapViewEmpty(query string, threshold float64, userID int) g.Node {
 	)
 }
 
-func RenderMapViewResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
+func MapViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
 	// For map view, always show the map (even if empty)
 	adsMap := make(map[int]ad.Ad, len(ads))
 	for _, ad := range ads {
 		adsMap[ad.ID] = ad
 	}
-	viewContent := MapView(adsMap, loc)
+	viewContent := MapViewContainer(adsMap, loc)
 
 	return Div(
 		ID("searchResults"),
@@ -35,7 +35,7 @@ func RenderMapViewResults(ads []ad.Ad, userID int, loc *time.Location, query str
 	)
 }
 
-func RenderMapViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+func MapViewRenderPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
 	// For map view pagination, we need to add new ads to the existing map
 	// This would typically involve JavaScript to add markers to the existing map
 	// For now, we'll return the hidden data elements for the new ads
@@ -70,7 +70,7 @@ func RenderMapViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL st
 	return g.Group(adDataElements)
 }
 
-func MapView(ads map[int]ad.Ad, loc *time.Location) g.Node {
+func MapViewContainer(ads map[int]ad.Ad, loc *time.Location) g.Node {
 	// Create hidden data elements for each ad with coordinates
 	var adDataElements []g.Node
 	for _, ad := range ads {
@@ -108,7 +108,7 @@ func MapView(ads map[int]ad.Ad, loc *time.Location) g.Node {
 }
 
 // View-specific loader URL creation function
-func CreateMapViewLoaderURL(userPrompt, nextCursor string, threshold float64, bounds *GeoBounds) string {
+func MapViewCreateLoaderURL(userPrompt, nextCursor string, threshold float64, bounds *GeoBounds) string {
 	if nextCursor == "" {
 		return ""
 	}

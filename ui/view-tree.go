@@ -12,7 +12,7 @@ import (
 	"github.com/parts-pile/site/ad"
 )
 
-func RenderTreeViewEmpty(query string, threshold float64, userID int) g.Node {
+func TreeViewRenderEmpty(query string, threshold float64, userID int) g.Node {
 	return Div(
 		ID("searchResults"),
 		SearchWidget(userID, "tree", query, threshold),
@@ -21,7 +21,7 @@ func RenderTreeViewEmpty(query string, threshold float64, userID int) g.Node {
 	)
 }
 
-func RenderTreeViewResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
+func TreeViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
 	structuredQueryJSON, _ := json.Marshal(SearchSchema{})
 	viewContent := TreeViewWithQueryAndThreshold(query, string(structuredQueryJSON), threshold)
 
@@ -33,7 +33,7 @@ func RenderTreeViewResults(ads []ad.Ad, userID int, loc *time.Location, query st
 	)
 }
 
-func RenderTreeViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+func TreeViewRenderPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
 	// For tree view pagination, we would typically add new nodes to the existing tree
 	// Since tree view is loaded via HTMX, we'll return a trigger to reload the tree
 	// with the new data
@@ -54,7 +54,7 @@ func RenderTreeViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL s
 	return g.Group(nodes)
 }
 
-func TreeView() g.Node {
+func TreeViewContainer() g.Node {
 	return Div(
 		ID("tree-view"),
 		hx.Get("/tree"),
@@ -83,7 +83,7 @@ func TreeViewWithQueryAndThreshold(query, structuredQuery string, threshold floa
 }
 
 // View-specific loader URL creation function
-func CreateTreeViewLoaderURL(userPrompt, nextCursor string, threshold float64) string {
+func TreeViewCreateLoaderURL(userPrompt, nextCursor string, threshold float64) string {
 	if nextCursor == "" {
 		return ""
 	}

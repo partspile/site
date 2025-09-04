@@ -11,7 +11,7 @@ import (
 	"github.com/parts-pile/site/user"
 )
 
-func RenderGridViewEmpty(query string, threshold float64, userID int) g.Node {
+func GridViewRenderEmpty(query string, threshold float64, userID int) g.Node {
 	return Div(
 		ID("searchResults"),
 		SearchWidget(userID, "grid", query, threshold),
@@ -20,12 +20,12 @@ func RenderGridViewEmpty(query string, threshold float64, userID int) g.Node {
 	)
 }
 
-func RenderGridViewResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
+func GridViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
 	var viewContent g.Node
 	if loaderURL != "" {
 		viewContent = GridViewWithTrigger(ads, loc, userID, loaderURL)
 	} else {
-		viewContent = GridView(ads, loc, userID)
+		viewContent = GridViewContainer(ads, loc, userID)
 	}
 
 	return Div(
@@ -36,7 +36,7 @@ func RenderGridViewResults(ads []ad.Ad, userID int, loc *time.Location, query st
 	)
 }
 
-func RenderGridViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+func GridViewRenderPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
 	// For pagination, render just the ads and infinite scroll trigger
 	adNodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
@@ -64,7 +64,7 @@ func RenderGridViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL s
 	return g.Group(adNodes)
 }
 
-func GridView(ads []ad.Ad, loc *time.Location, userID int) g.Node {
+func GridViewContainer(ads []ad.Ad, loc *time.Location, userID int) g.Node {
 	// Preserve original order from backend (Qdrant order)
 	adNodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
@@ -116,7 +116,7 @@ func GridViewWithTrigger(ads []ad.Ad, loc *time.Location, userID int, loaderURL 
 }
 
 // View-specific loader URL creation function
-func CreateGridViewLoaderURL(userPrompt, nextCursor string, threshold float64) string {
+func GridViewCreateLoaderURL(userPrompt, nextCursor string, threshold float64) string {
 	if nextCursor == "" {
 		return ""
 	}

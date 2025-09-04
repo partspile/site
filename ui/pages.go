@@ -9,12 +9,16 @@ import (
 )
 
 func HomePage(currentUser *user.User, path string, view string) g.Node {
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
 	return Page(
-		"Parts Pile - Auto Parts and Sales",
+		"Parts Pile",
 		currentUser,
 		path,
 		[]g.Node{
-			InitialSearchResults(view),
+			InitialSearchResults(userID, view),
 		},
 	)
 }

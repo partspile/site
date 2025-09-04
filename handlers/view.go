@@ -74,14 +74,14 @@ func (v *ListView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 
 	// Check if we should show no results message
 	if len(ads) == 0 {
-		return render(v.ctx, ui.RenderListViewEmpty(userPrompt, threshold, userID))
+		return render(v.ctx, ui.ListViewRenderEmpty())
 	}
 
 	// Create loader URL for infinite scroll
-	loaderURL := ui.CreateListViewLoaderURL(userPrompt, nextCursor, threshold)
+	loaderURL := ui.ListViewCreateLoaderURL(userPrompt, nextCursor, threshold)
 
 	loc := getLocation(v.ctx)
-	return render(v.ctx, ui.RenderListViewResults(ads, userID, loc, userPrompt, loaderURL, threshold))
+	return render(v.ctx, ui.ListViewRenderResults(ads, userID, loc, loaderURL))
 }
 
 func (v *ListView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
@@ -91,9 +91,9 @@ func (v *ListView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	loc := getLocation(v.ctx)
 
 	// Create loader URL for infinite scroll
-	loaderURL := ui.CreateListViewLoaderURL(userPrompt, nextCursor, threshold)
+	loaderURL := ui.ListViewCreateLoaderURL(userPrompt, nextCursor, threshold)
 
-	return render(v.ctx, ui.RenderListViewPage(ads, userID, loc, loaderURL))
+	return render(v.ctx, ui.ListViewRenderPage(ads, userID, loc, loaderURL))
 }
 
 // GridView implements the View interface for grid view
@@ -132,14 +132,14 @@ func (v *GridView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 
 	// Check if we should show no results message
 	if len(ads) == 0 {
-		return render(v.ctx, ui.RenderGridViewEmpty(userPrompt, threshold, userID))
+		return render(v.ctx, ui.GridViewRenderEmpty(userPrompt, threshold, userID))
 	}
 
 	// Create loader URL if there are more results
-	loaderURL := ui.CreateGridViewLoaderURL(userPrompt, nextCursor, threshold)
+	loaderURL := ui.GridViewCreateLoaderURL(userPrompt, nextCursor, threshold)
 
 	loc := getLocation(v.ctx)
-	return render(v.ctx, ui.RenderGridViewResults(ads, userID, loc, userPrompt, loaderURL, threshold))
+	return render(v.ctx, ui.GridViewRenderResults(ads, userID, loc, userPrompt, loaderURL, threshold))
 }
 
 func (v *GridView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
@@ -151,11 +151,11 @@ func (v *GridView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	if nextCursor != "" {
 		userPrompt := getQueryParam(v.ctx, "q")
 		threshold := getThreshold(v.ctx)
-		loaderURL = ui.CreateGridViewLoaderURL(userPrompt, nextCursor, threshold)
+		loaderURL = ui.GridViewCreateLoaderURL(userPrompt, nextCursor, threshold)
 	}
 
 	// Render the page content using UI function
-	return render(v.ctx, ui.RenderGridViewPage(ads, userID, loc, loaderURL))
+	return render(v.ctx, ui.GridViewRenderPage(ads, userID, loc, loaderURL))
 }
 
 // MapView implements the View interface for map view
@@ -202,14 +202,14 @@ func (v *MapView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 
 	// Check if we should show no results message
 	if len(ads) == 0 {
-		return render(v.ctx, ui.RenderMapViewEmpty(userPrompt, threshold, userID))
+		return render(v.ctx, ui.MapViewRenderEmpty(userPrompt, threshold, userID))
 	}
 
 	// Create loader URL if there are more results
-	loaderURL := ui.CreateMapViewLoaderURL(userPrompt, nextCursor, threshold, v.bounds)
+	loaderURL := ui.MapViewCreateLoaderURL(userPrompt, nextCursor, threshold, v.bounds)
 
 	loc := getLocation(v.ctx)
-	return render(v.ctx, ui.RenderMapViewResults(ads, userID, loc, userPrompt, loaderURL, threshold))
+	return render(v.ctx, ui.MapViewRenderResults(ads, userID, loc, userPrompt, loaderURL, threshold))
 }
 
 func (v *MapView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
@@ -221,11 +221,11 @@ func (v *MapView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	if nextCursor != "" {
 		userPrompt := getQueryParam(v.ctx, "q")
 		threshold := getThreshold(v.ctx)
-		loaderURL = ui.CreateMapViewLoaderURL(userPrompt, nextCursor, threshold, v.bounds)
+		loaderURL = ui.MapViewCreateLoaderURL(userPrompt, nextCursor, threshold, v.bounds)
 	}
 
 	// Render the page content using UI function
-	return render(v.ctx, ui.RenderMapViewPage(ads, userID, loc, loaderURL))
+	return render(v.ctx, ui.MapViewRenderPage(ads, userID, loc, loaderURL))
 }
 
 // TreeView implements the View interface for tree view
@@ -264,14 +264,14 @@ func (v *TreeView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 
 	// Check if we should show no results message
 	if len(ads) == 0 {
-		return render(v.ctx, ui.RenderTreeViewEmpty(userPrompt, threshold, userID))
+		return render(v.ctx, ui.TreeViewRenderEmpty(userPrompt, threshold, userID))
 	}
 
 	// Create loader URL if there are more results
-	loaderURL := ui.CreateTreeViewLoaderURL(userPrompt, nextCursor, threshold)
+	loaderURL := ui.TreeViewCreateLoaderURL(userPrompt, nextCursor, threshold)
 
 	loc := getLocation(v.ctx)
-	return render(v.ctx, ui.RenderTreeViewResults(ads, userID, loc, userPrompt, loaderURL, threshold))
+	return render(v.ctx, ui.TreeViewRenderResults(ads, userID, loc, userPrompt, loaderURL, threshold))
 }
 
 func (v *TreeView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
@@ -283,11 +283,11 @@ func (v *TreeView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
 	if nextCursor != "" {
 		userPrompt := getQueryParam(v.ctx, "q")
 		threshold := getThreshold(v.ctx)
-		loaderURL = ui.CreateTreeViewLoaderURL(userPrompt, nextCursor, threshold)
+		loaderURL = ui.TreeViewCreateLoaderURL(userPrompt, nextCursor, threshold)
 	}
 
 	// Render the page content using UI function
-	return render(v.ctx, ui.RenderTreeViewPage(ads, userID, loc, loaderURL))
+	return render(v.ctx, ui.TreeViewRenderPage(ads, userID, loc, loaderURL))
 }
 
 // extractMapBounds extracts geographic bounding box parameters for map view

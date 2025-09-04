@@ -49,6 +49,7 @@ func ViewToggleButtons(activeView string) g.Node {
 			Class(cls),
 			hx.Post("/view/"+view),
 			hx.Target("#searchResults"),
+			hx.Swap("outerHTML"),
 			hx.Indicator("#searchWaiting"),
 			hx.Include("[name='q'],[name='threshold']"),
 			icon(view, alt),
@@ -63,14 +64,15 @@ func ViewToggleButtons(activeView string) g.Node {
 	)
 }
 
-func InitialSearchResults(view string) g.Node {
+func InitialSearchResults(userID int, view string) g.Node {
 	return Div(
-		ID("searchResults"),
+		SearchWidget(userID, view, "", 0),
 		Div(
 			hx.Get("/search?q=&view="+view),
 			hx.Trigger("load"),
 			hx.Target("this"),
 			hx.Swap("outerHTML"),
+			hx.Indicator("#searchWaiting"),
 		),
 	)
 }
@@ -152,24 +154,6 @@ func SearchWidget(userID int, view string, query string, threshold float64) g.No
 	)
 }
 
-func SearchResultsContainer(userID int, ads []ad.Ad, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold float64) g.Node {
-	return Div(
-		ID("searchResults"),
-		SearchWidget(userID, view, query, threshold),
-		ViewToggleButtons(view),
-		createViewWithInfiniteScroll(ads, currentUser, loc, view, query, loaderURL, threshold),
-	)
-}
-
-func SearchResultsEmpty(userID int, viewType string, query string, threshold float64) g.Node {
-	return Div(
-		ID("searchResults"),
-		SearchWidget(userID, viewType, query, threshold),
-		ViewToggleButtons(viewType),
-		NoSearchResultsMessage(),
-	)
-}
-
 func createViewWithInfiniteScroll(ads []ad.Ad, currentUser *user.User, loc *time.Location, view string, query string, loaderURL string, threshold float64) g.Node {
 	var viewContent g.Node
 
@@ -182,7 +166,7 @@ func createViewWithInfiniteScroll(ads []ad.Ad, currentUser *user.User, loc *time
 		for _, ad := range ads {
 			adsMap[ad.ID] = ad
 		}
-		viewContent = MapView(adsMap, loc)
+		viewContent = MapViewContainer(adsMap, loc)
 	} else {
 		// Create the appropriate view
 		switch view {
@@ -197,7 +181,7 @@ func createViewWithInfiniteScroll(ads []ad.Ad, currentUser *user.User, loc *time
 			if loaderURL != "" {
 				viewContent = GridViewWithTrigger(ads, loc, userID, loaderURL)
 			} else {
-				viewContent = GridView(ads, loc, userID)
+				viewContent = GridViewContainer(ads, loc, userID)
 			}
 		default: // list
 			userID := 0

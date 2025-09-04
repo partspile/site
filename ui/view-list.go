@@ -11,41 +11,30 @@ import (
 	"github.com/parts-pile/site/user"
 )
 
-func RenderListViewEmpty(query string, threshold float64, userID int) g.Node {
+func ListViewRenderEmpty() g.Node {
 	return Div(
 		ID("searchResults"),
-		SearchWidget(userID, "list", query, threshold),
 		ViewToggleButtons("list"),
 		NoSearchResultsMessage(),
 	)
 }
 
-func RenderListViewResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
+func ListViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+	adNodes := buildAdListNodesFromSlice(ads, userID, loc)
 	return Div(
 		ID("searchResults"),
-		SearchWidget(userID, "list", query, threshold),
 		ViewToggleButtons("list"),
-		ListViewContainer(ads, userID, loc, loaderURL),
-	)
-}
-
-func RenderListViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	// For pagination, render just the ads and infinite scroll trigger
-	adNodes := buildAdListNodesFromSlice(ads, userID, loc)
-
-	return g.Group(append(adNodes, createInfiniteScrollTrigger(loaderURL)))
-}
-
-func ListViewContainer(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	adNodes := buildAdListNodesFromSlice(ads, userID, loc)
-
-	return Div(
-		ID("list-view"),
-		AdCompactListContainer(
-			g.Group(adNodes),
+		Div(
+			ID("list-view"),
+			g.Group(append(adNodes,
+				createInfiniteScrollTrigger(loaderURL))),
 		),
-		createInfiniteScrollTrigger(loaderURL),
 	)
+}
+
+func ListViewRenderPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+	adNodes := buildAdListNodesFromSlice(ads, userID, loc)
+	return g.Group(append(adNodes, createInfiniteScrollTrigger(loaderURL)))
 }
 
 func buildAdListNodesFromSlice(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
@@ -75,8 +64,19 @@ func ListViewFromMap(ads map[int]ad.Ad, loc *time.Location) g.Node {
 	)
 }
 
+func ListViewContainer(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+	adNodes := buildAdListNodesFromSlice(ads, userID, loc)
+	return Div(
+		ID("list-view"),
+		AdCompactListContainer(
+			g.Group(adNodes),
+		),
+		createInfiniteScrollTrigger(loaderURL),
+	)
+}
+
 // View-specific loader URL creation function
-func CreateListViewLoaderURL(userPrompt, nextCursor string, threshold float64) string {
+func ListViewCreateLoaderURL(userPrompt, nextCursor string, threshold float64) string {
 	if nextCursor == "" {
 		return ""
 	}
