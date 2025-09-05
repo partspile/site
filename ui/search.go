@@ -160,6 +160,24 @@ func createInfiniteScrollTrigger(loaderURL string) g.Node {
 	))
 }
 
+// SearchCreateLoaderURL creates the loader URL for pagination
+func SearchCreateLoaderURL(userPrompt, nextCursor, view string, threshold float64, bounds *GeoBounds) string {
+	if nextCursor == "" {
+		return ""
+	}
+
+	loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s&threshold=%.1f",
+		htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view), threshold)
+
+	// Add bounding box to loader URL for map view
+	if view == "map" && bounds != nil {
+		loaderURL += fmt.Sprintf("&minLat=%.6f&maxLat=%.6f&minLon=%.6f&maxLon=%.6f",
+			bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
+	}
+
+	return loaderURL
+}
+
 // Helper function to render new ad button based on user login
 func renderNewAdButton(userID int) g.Node {
 	if userID != 0 {

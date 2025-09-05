@@ -13,7 +13,7 @@ import (
 func MapViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
 	// Create the main search results container
 	var viewContent g.Node
-	
+
 	if len(ads) == 0 {
 		// Show empty state
 		viewContent = NoSearchResultsMessage()
@@ -104,20 +104,4 @@ func MapViewContainer(ads map[int]ad.Ad, loc *time.Location) g.Node {
 		// Hidden ad data elements
 		g.Group(adDataElements),
 	)
-}
-
-// View-specific loader URL creation function
-func MapViewCreateLoaderURL(userPrompt, nextCursor string, threshold float64, bounds *GeoBounds) string {
-	if nextCursor == "" {
-		return ""
-	}
-	loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s&view=map&threshold=%.1f",
-		htmlEscape(userPrompt), htmlEscape(nextCursor), threshold)
-
-	// Add bounding box to loader URL for map view
-	if bounds != nil {
-		loaderURL += fmt.Sprintf("&minLat=%.6f&maxLat=%.6f&minLon=%.6f&maxLon=%.6f",
-			bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
-	}
-	return loaderURL
 }

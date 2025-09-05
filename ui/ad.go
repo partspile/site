@@ -31,11 +31,9 @@ func formatLocationDisplay(city, adminArea, country string) (string, g.Node) {
 	country = strings.TrimSpace(country)
 
 	flag := countryFlag(country)
-	var flagNode g.Node
+	var flagNode g.Node = nil
 	if flag != "" {
 		flagNode = Span(Style("font-size: 1.5em; vertical-align: middle;"), g.Text(flag))
-	} else {
-		flagNode = nil
 	}
 
 	if city == "" && adminArea == "" && country == "" {
@@ -140,6 +138,51 @@ func LocationDisplayWithFlag(adObj ad.Ad) g.Node {
 	)
 }
 
+// getLocationNode returns a single node containing both flag and location text
+func getLocationNode(ad ad.Ad) g.Node {
+	city := strings.TrimSpace(ad.City)
+	adminArea := strings.TrimSpace(ad.AdminArea)
+	country := strings.TrimSpace(ad.Country)
+
+	flag := countryFlag(country)
+	var flagNode g.Node = nil
+	if flag != "" {
+		flagNode = Span(Style("font-size: 1.5em; vertical-align: middle;"), g.Text(flag))
+	}
+
+	// Build location text
+	var locationText string
+	if city == "" && adminArea == "" && country == "" {
+		return nil
+	}
+	if city == "" && adminArea == "" && country != "" {
+		locationText = ""
+	} else if city == "" && adminArea != "" && country == "" {
+		locationText = adminArea
+	} else if city == "" && adminArea != "" && country != "" {
+		locationText = adminArea
+	} else if city != "" && adminArea == "" && country == "" {
+		locationText = city
+	} else if city != "" && adminArea == "" && country != "" {
+		locationText = city
+	} else if city != "" && adminArea != "" && country == "" {
+		locationText = city + ", " + adminArea
+	} else if city != "" && adminArea != "" && country != "" {
+		locationText = city + ", " + adminArea
+	}
+
+	// Return combined node if we have either flag or text
+	if flagNode != nil || locationText != "" {
+		return Div(
+			Class("flex flex-row items-center gap-1"),
+			flagNode,
+			g.If(locationText != "", Div(Class("text-xs text-gray-500"), g.Text(locationText))),
+		)
+	}
+
+	return nil
+}
+
 // Helper function to return age div with text-xs
 func AgeDisplay(posted time.Time) g.Node {
 	agoStr := formatAdAge(posted)
@@ -211,111 +254,6 @@ func AdGridWrapper(ad ad.Ad, content g.Node, expanded bool) g.Node {
 		Class(className),
 		content,
 	)
-}
-
-// AdCardExpandable renders an ad card with a clickable area for details and a bookmark button
-func AdCardExpandable(ad ad.Ad, loc *time.Location, currentUser *user.User, view ...string) g.Node {
-	isGrid := len(view) > 0 && view[0] == "grid"
-	htmxTarget := fmt.Sprintf("#ad-%d", ad.ID)
-	if isGrid {
-		htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", ad.ID)
-	}
-	posted := ad.CreatedAt.In(loc)
-	agoStr := formatAdAge(posted)
-	sortedYears := append([]string{}, ad.Years...)
-	sort.Strings(sortedYears)
-	sortedModels := append([]string{}, ad.Models...)
-	sort.Strings(sortedModels)
-	sortedEngines := append([]string{}, ad.Engines...)
-	sort.Strings(sortedEngines)
-	// In AdCardExpandable, show the first image
-	firstIdx := 1
-	if len(ad.ImageOrder) > 0 {
-		firstIdx = ad.ImageOrder[0]
-	}
-	imageNode := Div(
-		Class("relative w-full h-48 bg-gray-100 overflow-hidden"),
-		AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title, "grid"),
-		Div(
-			Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
-			g.Text(fmt.Sprintf("$%.0f", ad.Price)),
-		),
-	)
-	if isGrid {
-		// Minimal grid card: image, price badge, title/bookmark, age/location
-		locationStr, flagNode := getDisplayLocationAndFlag(ad)
-		return Div(
-			ID(fmt.Sprintf("ad-grid-wrap-%d", ad.ID)),
-			Class("border rounded-lg shadow-sm bg-white flex flex-col cursor-pointer hover:shadow-md transition-shadow"),
-			hx.Get(fmt.Sprintf("/ad/detail/%d?view=grid", ad.ID)),
-			hx.Target(fmt.Sprintf("#ad-grid-wrap-%d", ad.ID)),
-			hx.Swap("outerHTML"),
-			Div(
-				Class("rounded-t-lg overflow-hidden"),
-				imageNode,
-			),
-			Div(
-				Class("p-2 flex flex-col gap-1"),
-				// Title and bookmark row
-				Div(
-					Class("flex flex-row items-center justify-between"),
-					Div(Class("font-semibold text-base truncate"), g.Text(ad.Title)),
-					g.If(currentUser != nil, BookmarkButton(ad)),
-				),
-				// Age and location row
-				Div(
-					Class("flex flex-row items-center justify-between text-xs text-gray-500"),
-					Div(Class("text-gray-400"), g.Text(agoStr)),
-					Div(Class("flex flex-row items-center gap-1"),
-						flagNode,
-						g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
-					),
-				),
-			),
-		)
-	}
-	card := Div(
-		ID(fmt.Sprintf("ad-%d", ad.ID)),
-		Class("block border p-4 mb-4 rounded hover:bg-gray-50 relative cursor-pointer group bg-white"),
-		hx.Get(fmt.Sprintf("/ad/detail/%d?view=%s", ad.ID, func() string {
-			if len(view) > 0 {
-				return view[0]
-			}
-			return "list"
-		}())),
-		hx.Target(htmxTarget),
-		hx.Swap("outerHTML"),
-		Div(
-			Class("flex items-center justify-between relative z-10"),
-			H3(Class("text-xl font-bold"), g.Text(ad.Title)),
-			Div(
-				Class("flex flex-row items-center gap-2"),
-				imageNode,
-				g.If(currentUser != nil, BookmarkButton(ad)),
-			),
-		),
-		// Rock section - will be populated by HTMX
-		Div(
-			ID(fmt.Sprintf("rock-section-%d", ad.ID)),
-			Class("mt-2"),
-			hx.Get(fmt.Sprintf("/api/ad-rocks/%d", ad.ID)),
-			hx.Trigger("load"),
-		),
-		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Years: %v", sortedYears))),
-		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Models: %v", sortedModels))),
-		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Engines: %v", sortedEngines))),
-		P(Class("text-gray-600"), g.Text(fmt.Sprintf("Clicks: %d", ad.ClickCount))),
-		P(Class("mt-2"), g.Text(ad.Description)),
-		P(Class("text-xl font-bold mt-2"), g.Text(fmt.Sprintf("$%.2f", ad.Price))),
-		P(
-			Class("text-xs text-gray-400 mt-4"),
-			g.Text(fmt.Sprintf("ID: %d • Posted: %s", ad.ID, posted.Format("Jan 2, 2006 3:04:05 PM MST"))),
-		),
-	)
-	if isGrid {
-		return AdGridWrapper(ad, card, false)
-	}
-	return card
 }
 
 // AdEditPartial renders the ad edit form for inline editing
@@ -573,7 +511,11 @@ func AdDetailPartial(ad ad.Ad, userID int, view ...string) g.Node {
 
 // Update AdCardWithBookmark to use AdCardExpandable for in-place expand/collapse
 func AdCardWithBookmark(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
-	return AdCardExpandable(ad, loc, currentUser)
+	userID := 0
+	if currentUser != nil {
+		userID = currentUser.ID
+	}
+	return AdGridNode(ad, loc, userID)
 }
 
 func AdListContainer(children ...g.Node) g.Node {
@@ -1088,8 +1030,6 @@ func AdImageSrcSet(adID int, idx int, context string) (src, srcset string) {
 	switch context {
 	case "thumbnail":
 		src = fmt.Sprintf("%s-160w.webp?Authorization=%s", base, token)
-	case "grid":
-		src = fmt.Sprintf("%s-480w.webp?Authorization=%s", base, token)
 	case "carousel":
 		src = fmt.Sprintf("%s-1200w.webp?Authorization=%s", base, token)
 	default:
@@ -1107,8 +1047,6 @@ func AdImageWithFallbackSrcSet(adID int, idx int, alt string, context string) g.
 	switch context {
 	case "thumbnail":
 		sizes = "64px"
-	case "grid":
-		sizes = "(max-width: 640px) 160px, (max-width: 768px) 200px, (max-width: 1024px) 240px, 300px"
 	case "carousel":
 		sizes = "(max-width: 640px) 300px, (max-width: 768px) 400px, (max-width: 1024px) 500px, 600px"
 	default:
@@ -1493,34 +1431,6 @@ func AdDetailUnified(ad ad.Ad, userID int, view string) g.Node {
 		return AdGridWrapper(ad, content, true)
 	}
 	return content
-}
-
-// AdCompactNode renders a compact single-line ad card for list view
-func AdCompactNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
-	return Div(
-		ID(fmt.Sprintf("ad-%d", ad.ID)),
-		Class("flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer"),
-		hx.Get(fmt.Sprintf("/ad/detail/%d?view=list", ad.ID)),
-		hx.Target(fmt.Sprintf("#ad-%d", ad.ID)),
-		hx.Swap("outerHTML"),
-		g.If(userID != 0, BookmarkButton(ad)),
-		Div(
-			Class("flex-1 text-blue-600 hover:text-blue-800"),
-			g.Text(ad.Title),
-		),
-		Div(
-			Class("mr-4"),
-			LocationDisplayWithFlag(ad),
-		),
-		Div(
-			Class("mr-4"),
-			AgeDisplay(ad.CreatedAt.In(loc)),
-		),
-		Div(
-			Class("text-green-600 font-semibold mr-4"),
-			g.Text(fmt.Sprintf("$%.0f", ad.Price)),
-		),
-	)
 }
 
 // MessageButton renders a message button for an ad

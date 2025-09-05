@@ -374,11 +374,11 @@ func HandleAdCardPartial(c *fiber.Ctx) error {
 		userID = currentUser.ID
 	}
 	if view == "list" {
-		return render(c, ui.AdCompactNode(adObj, loc, userID))
+		return render(c, ui.AdListNode(adObj, loc, userID))
 	} else if view == "tree" {
 		return render(c, ui.AdCardCompactTree(adObj, loc, currentUser))
 	}
-	return render(c, ui.AdCardExpandable(adObj, loc, currentUser, view))
+	return render(c, ui.AdGridNode(adObj, loc, userID))
 }
 
 // Handler for ad detail partial (expand)

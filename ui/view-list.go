@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -10,16 +9,15 @@ import (
 	"github.com/parts-pile/site/ad"
 )
 
-func ListViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	var viewContent g.Node
+func ListViewResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+	var viewContent = NoSearchResultsMessage()
 
-	if len(ads) == 0 {
-		viewContent = NoSearchResultsMessage()
-	} else {
-		adNodes := renderAdListNodes(ads, userID, loc)
+	if len(ads) > 0 {
+		adNodes := adListNodes(ads, userID, loc)
 		viewContent = Div(
 			ID("list-view"),
-			g.Group(append(adNodes, createInfiniteScrollTrigger(loaderURL))),
+			g.Group(append(adNodes,
+				createInfiniteScrollTrigger(loaderURL))),
 		)
 	}
 
@@ -30,27 +28,19 @@ func ListViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, loaderUR
 	)
 }
 
-func ListViewRenderPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	adNodes := renderAdListNodes(ads, userID, loc)
+func ListViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+	adNodes := adListNodes(ads, userID, loc)
 	return g.Group(append(adNodes, createInfiniteScrollTrigger(loaderURL)))
 }
 
-func renderAdListNodes(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
+func adListNodes(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
 	nodes := make([]g.Node, 0, len(ads)*2) // *2 because we'll add separators between ads
 	for _, ad := range ads {
-		nodes = append(nodes, AdCompactNode(ad, loc, userID))
+		nodes = append(nodes, AdListNode(ad, loc, userID))
 		// Add separator after each ad
 		nodes = append(nodes, Div(
 			Class("border-b border-gray-200"),
 		))
 	}
 	return nodes
-}
-
-func ListViewCreateLoaderURL(userPrompt, nextCursor string, threshold float64) string {
-	if nextCursor == "" {
-		return ""
-	}
-	return fmt.Sprintf("/search-page?q=%s&cursor=%s&view=list&threshold=%.1f",
-		htmlEscape(userPrompt), htmlEscape(nextCursor), threshold)
 }

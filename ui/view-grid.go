@@ -1,124 +1,43 @@
 package ui
 
 import (
-	"fmt"
 	"time"
 
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/user"
 )
 
-func GridViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
-	// Create the main search results container
-	var viewContent g.Node
-	
-	if len(ads) == 0 {
-		// Show empty state
-		viewContent = NoSearchResultsMessage()
-	} else {
-		// Show ads with infinite scroll
-		if loaderURL != "" {
-			viewContent = GridViewWithTrigger(ads, loc, userID, loaderURL)
-		} else {
-			viewContent = GridViewContainer(ads, loc, userID)
-		}
+func GridViewResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+	var viewContent = NoSearchResultsMessage()
+
+	if len(ads) > 0 {
+		adNodes := adGridNodes(ads, userID, loc)
+		viewContent = Div(
+			ID("grid-view"),
+			Class("grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"),
+			g.Group(append(adNodes,
+				createInfiniteScrollTrigger(loaderURL))),
+		)
 	}
 
 	return Div(
 		ID("searchResults"),
-		SearchWidget(userID, "grid", query, threshold),
 		ViewToggleButtons("grid"),
 		viewContent,
 	)
 }
 
-func GridViewRenderPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	// For pagination, render just the ads and infinite scroll trigger
-	adNodes := make([]g.Node, 0, len(ads))
-	for _, ad := range ads {
-		// Create minimal user object for compatibility
-		var currentUser *user.User
-		if userID != 0 {
-			currentUser = &user.User{ID: userID}
-		}
-		adNodes = append(adNodes,
-			AdCardExpandable(ad, loc, currentUser, "grid"),
-		)
-	}
-
-	// Add infinite scroll trigger if there are more results
-	if loaderURL != "" {
-		trigger := Div(
-			Class("h-4"),
-			g.Attr("hx-get", loaderURL),
-			g.Attr("hx-trigger", "revealed"),
-			g.Attr("hx-swap", "outerHTML"),
-		)
-		adNodes = append(adNodes, trigger)
-	}
-
-	return g.Group(adNodes)
+func GridViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+	adNodes := adGridNodes(ads, userID, loc)
+	return g.Group(append(adNodes, createInfiniteScrollTrigger(loaderURL)))
 }
 
-func GridViewContainer(ads []ad.Ad, loc *time.Location, userID int) g.Node {
-	// Preserve original order from backend (Qdrant order)
-	adNodes := make([]g.Node, 0, len(ads))
+func adGridNodes(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
+	nodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
-		// Create minimal user object for compatibility
-		var currentUser *user.User
-		if userID != 0 {
-			currentUser = &user.User{ID: userID}
-		}
-		adNodes = append(adNodes,
-			AdCardExpandable(ad, loc, currentUser, "grid"),
-		)
+		nodes = append(nodes, AdGridNode(ad, loc, userID))
 	}
-
-	return Div(
-		ID("grid-view"),
-		Class("grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"),
-		g.Group(adNodes),
-	)
-}
-
-func GridViewWithTrigger(ads []ad.Ad, loc *time.Location, userID int, loaderURL string) g.Node {
-	// Preserve original order from backend (Qdrant order)
-	adNodes := make([]g.Node, 0, len(ads)+1) // +1 for trigger
-	for _, ad := range ads {
-		// Create minimal user object for compatibility
-		var currentUser *user.User
-		if userID != 0 {
-			currentUser = &user.User{ID: userID}
-		}
-		adNodes = append(adNodes,
-			AdCardExpandable(ad, loc, currentUser, "grid"),
-		)
-	}
-
-	// Add the trigger as a grid item
-	trigger := Div(
-		Class("h-4"),
-		g.Attr("hx-get", loaderURL),
-		g.Attr("hx-trigger", "revealed"),
-		g.Attr("hx-swap", "outerHTML"),
-	)
-	adNodes = append(adNodes, trigger)
-
-	return Div(
-		ID("grid-view"),
-		Class("grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"),
-		g.Group(adNodes),
-	)
-}
-
-// View-specific loader URL creation function
-func GridViewCreateLoaderURL(userPrompt, nextCursor string, threshold float64) string {
-	if nextCursor == "" {
-		return ""
-	}
-	return fmt.Sprintf("/search-page?q=%s&cursor=%s&view=grid&threshold=%.1f",
-		htmlEscape(userPrompt), htmlEscape(nextCursor), threshold)
+	return nodes
 }

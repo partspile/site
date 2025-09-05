@@ -81,12 +81,3 @@ func TreeViewWithQueryAndThreshold(query, structuredQuery string, threshold floa
 		hx.Swap("innerHTML"),
 	)
 }
-
-// View-specific loader URL creation function
-func TreeViewCreateLoaderURL(userPrompt, nextCursor string, threshold float64) string {
-	if nextCursor == "" {
-		return ""
-	}
-	return fmt.Sprintf("/search-page?q=%s&cursor=%s&view=tree&threshold=%.1f",
-		htmlEscape(userPrompt), htmlEscape(nextCursor), threshold)
-}
