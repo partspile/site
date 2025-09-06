@@ -657,7 +657,7 @@ func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad) g.Node {
 	if userID > 0 {
 		actionButtons = append(actionButtons, BookmarkButton(adObj))
 		if currentUser.ID == adObj.UserID && !isArchivedAd {
-			deleteButton := DeleteButton(adObj, userID)
+			deleteButton := deleteButton(adObj, userID)
 			actionButtons = append(actionButtons, deleteButton)
 		}
 	}
@@ -1185,7 +1185,7 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
 					g.If(currentUser != nil, BookmarkButton(ad)),
-					MessageButton(ad, currentUser.ID),
+					messageButton(ad, currentUser.ID),
 					editBtn,
 					deleteBtn,
 				),
