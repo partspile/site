@@ -6,14 +6,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func getLastView(c *fiber.Ctx) string {
+func getCookieLastView(c *fiber.Ctx) string {
 	return c.Cookies("last_view", "list") // default to list
 }
 
-func saveLastView(c *fiber.Ctx, viewType string) {
+func saveCookieLastView(c *fiber.Ctx, view string) {
 	c.Cookie(&fiber.Cookie{
 		Name:     "last_view",
-		Value:    viewType,
+		Value:    view,
 		Expires:  time.Now().Add(30 * 24 * time.Hour),
 		HTTPOnly: false,
 		Path:     "/",

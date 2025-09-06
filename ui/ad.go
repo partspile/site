@@ -1261,6 +1261,10 @@ func AdID(ad ad.Ad) string {
 	return fmt.Sprintf("ad-%d", ad.ID)
 }
 
+func AdTarget(ad ad.Ad) string {
+	return fmt.Sprintf("#ad-%d", ad.ID)
+}
+
 func MessageButton(ad ad.Ad, userID int) g.Node {
 	// Don't show message button if user is viewing their own ad
 	if userID == ad.UserID {
@@ -1277,7 +1281,7 @@ func MessageButton(ad ad.Ad, userID int) g.Node {
 		Class("ml-2 focus:outline-none z-20"),
 		Title("Message seller"),
 		hx.Get(fmt.Sprintf("/messages/inline/%d?view=%s", ad.ID, "tree")),
-		hx.Target(AdID(ad)),
+		hx.Target(AdTarget(ad)),
 		hx.Swap("outerHTML"),
 		Img(
 			Src("/images/message.svg"),
@@ -1296,7 +1300,7 @@ func DeleteButton(ad ad.Ad, userID int) g.Node {
 		Type("button"),
 		Class("ml-2 focus:outline-none"),
 		hx.Delete(fmt.Sprintf("/delete-ad/%d", ad.ID)),
-		hx.Target(AdID(ad)),
+		hx.Target(AdTarget(ad)),
 		hx.Swap("delete"),
 		hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
 		Img(
@@ -1316,7 +1320,7 @@ func EditButton(ad ad.Ad, userID int) g.Node {
 		Type("button"),
 		Class("ml-2 focus:outline-none"),
 		hx.Get(fmt.Sprintf("/ad/edit-partial/%d", ad.ID)),
-		hx.Target(AdID(ad)),
+		hx.Target(AdTarget(ad)),
 		hx.Swap("outerHTML"),
 		Img(
 			Src("/images/edit.svg"),
@@ -1331,7 +1335,7 @@ func CloseButton(ad ad.Ad, view string) g.Node {
 		Type("button"),
 		Class("absolute -top-2 -right-2 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
 		hx.Get(fmt.Sprintf("/ad/card/%d?view=%s", ad.ID, view)),
-		hx.Target(AdID(ad)),
+		hx.Target(AdTarget(ad)),
 		hx.Swap("outerHTML"),
 		g.Text("×"),
 	)
