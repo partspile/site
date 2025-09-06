@@ -355,29 +355,26 @@ func HandleArchiveAd(c *fiber.Ctx) error {
 	return render(c, ui.SuccessMessage("Ad archived successfully", "/"))
 }
 
-// Handler for ad card partial (collapse)
-func HandleAdCardPartial(c *fiber.Ctx) error {
+// Handler for ad card (collapse)
+func HandleAdCard(c *fiber.Ctx) error {
 	adID, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
-	currentUser, _ := CurrentUser(c)
+	currentUser, userID := getUser(c)
 	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 	loc := getLocation(c)
-	view := c.Query("view", "list")
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
-	if view == "list" {
+	view := getView(c)
+	switch view {
+	case "list":
 		return render(c, ui.AdListNode(adObj, loc, userID))
-	} else if view == "tree" {
-		return render(c, ui.AdCardCompactTree(adObj, loc, currentUser))
+	case "grid":
+		return render(c, ui.AdGridNode(adObj, loc, userID))
 	}
-	return render(c, ui.AdGridNode(adObj, loc, userID))
+	return nil
 }
 
 // Handler for ad detail (expanded view)
