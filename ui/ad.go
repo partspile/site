@@ -1218,7 +1218,7 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 	)
 }
 
-func Image(ad ad.Ad, userID int) g.Node {
+func Image(ad ad.Ad) g.Node {
 	firstIdx := 1
 	if len(ad.ImageOrder) > 0 {
 		firstIdx = ad.ImageOrder[0]
@@ -1237,7 +1237,7 @@ func Image(ad ad.Ad, userID int) g.Node {
 	)
 }
 
-func Thumbnails(ad ad.Ad, userID int) g.Node {
+func Thumbnails(ad ad.Ad) g.Node {
 	return Div(
 		Class("flex flex-row gap-2 mt-2 px-4 justify-center"),
 		g.Group(func() []g.Node {
@@ -1257,51 +1257,8 @@ func Thumbnails(ad ad.Ad, userID int) g.Node {
 	)
 }
 
-func CloseButton(ad ad.Ad) g.Node {
-	return Button(
-		Type("button"),
-		Class("absolute -top-2 -right-2 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
-		hx.Get(fmt.Sprintf("/ad/card/%d?view=%s", ad.ID, "tree")),
-		hx.Target(AdID(ad)),
-		hx.Swap("outerHTML"),
-		g.Text("×"),
-	)
-}
-
 func AdID(ad ad.Ad) string {
 	return fmt.Sprintf("ad-%d", ad.ID)
-}
-
-func AdDetail(ad ad.Ad, loc *time.Location, userID int) g.Node {
-	return Div(
-		ID(AdID(ad)),
-		Class("border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2"),
-		CloseButton(ad),
-		Image(ad, userID),
-		Thumbnails(ad, userID),
-		Div(
-			Class("p-4 flex flex-col gap-2"),
-			// Title and buttons row
-			Div(
-				Class("flex flex-row items-center justify-between mb-2"),
-				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
-				Div(Class("flex flex-row items-center gap-2 ml-2"),
-					g.If(userID != 0, BookmarkButton(ad)),
-					MessageButton(ad, userID),
-					EditButton(ad, userID),
-					DeleteButton(ad, userID),
-				),
-			),
-			// Age and location row
-			Div(
-				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
-				AgeDisplay(ad.CreatedAt.In(loc)),
-				LocationDisplayWithFlag(ad),
-			),
-			// Description
-			Div(Class("text-base mt-2"), g.Text(ad.Description)),
-		),
-	)
 }
 
 func MessageButton(ad ad.Ad, userID int) g.Node {
@@ -1365,6 +1322,49 @@ func EditButton(ad ad.Ad, userID int) g.Node {
 			Src("/images/edit.svg"),
 			Alt("Edit"),
 			Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
+		),
+	)
+}
+
+func CloseButton(ad ad.Ad, view string) g.Node {
+	return Button(
+		Type("button"),
+		Class("absolute -top-2 -right-2 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
+		hx.Get(fmt.Sprintf("/ad/card/%d?view=%s", ad.ID, view)),
+		hx.Target(AdID(ad)),
+		hx.Swap("outerHTML"),
+		g.Text("×"),
+	)
+}
+
+func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
+	return Div(
+		ID(AdID(ad)),
+		Class("border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2"),
+		CloseButton(ad, view),
+		Image(ad),
+		Thumbnails(ad),
+		Div(
+			Class("p-4 flex flex-col gap-2"),
+			// Title and buttons row
+			Div(
+				Class("flex flex-row items-center justify-between mb-2"),
+				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
+				Div(Class("flex flex-row items-center gap-2 ml-2"),
+					g.If(userID != 0, BookmarkButton(ad)),
+					MessageButton(ad, userID),
+					EditButton(ad, userID),
+					DeleteButton(ad, userID),
+				),
+			),
+			// Age and location row
+			Div(
+				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
+				AgeDisplay(ad.CreatedAt.In(loc)),
+				LocationDisplayWithFlag(ad),
+			),
+			// Description
+			Div(Class("text-base mt-2"), g.Text(ad.Description)),
 		),
 	)
 }

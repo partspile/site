@@ -274,7 +274,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 
 	if c.Get("HX-Request") != "" {
 		// For htmx, return the updated detail partial
-		return render(c, ui.AdDetail(updatedAd, getLocation(c), currentUser.ID))
+		return render(c, ui.AdDetail(updatedAd, getLocation(c), currentUser.ID, getView(c)))
 	}
 	return render(c, ui.SuccessMessage("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
 }
@@ -402,7 +402,8 @@ func HandleAdDetail(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 	loc := getLocation(c)
-	return render(c, ui.AdDetail(adObj, loc, userID))
+	view := getView(c)
+	return render(c, ui.AdDetail(adObj, loc, userID, view))
 }
 
 // Add this handler for deleting an ad

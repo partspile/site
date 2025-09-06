@@ -45,7 +45,6 @@ func processAllQueuedUsers() {
 	for {
 		userID := getAndRemoveNextUser()
 		if userID == 0 {
-			log.Printf("[queue] No more users to process")
 			return
 		}
 

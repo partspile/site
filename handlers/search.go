@@ -116,6 +116,7 @@ func handleSearch(c *fiber.Ctx, viewType string) error {
 	}
 
 	saveUserSearch(c)
+	saveLastView(c, viewType)
 
 	return view.RenderSearchResults(ads, nextCursor)
 }

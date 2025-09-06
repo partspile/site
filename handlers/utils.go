@@ -36,6 +36,9 @@ func getLocation(c *fiber.Ctx) *time.Location {
 	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
 	return loc
 }
+func getView(c *fiber.Ctx) string {
+	return c.Query("view", "list")
+}
 
 // getUser gets the current user and their ID
 func getUser(c *fiber.Ctx) (*user.User, int) {

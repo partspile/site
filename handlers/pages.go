@@ -7,7 +7,7 @@ import (
 
 func HandleHome(c *fiber.Ctx) error {
 	currentUser, _ := CurrentUser(c)
-	view := c.Cookies("last_view", "list") // default to list
+	view := getLastView(c)
 	return render(c, ui.HomePage(currentUser, c.Path(), view))
 }
 
