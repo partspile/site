@@ -1344,7 +1344,7 @@ func CloseButton(ad ad.Ad, view string) g.Node {
 func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 	return Div(
 		ID(AdID(ad)),
-		Class("border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2"),
+		Class("border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2 col-span-full"),
 		CloseButton(ad, view),
 		Image(ad),
 		Thumbnails(ad),
