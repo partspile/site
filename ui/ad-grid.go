@@ -36,7 +36,7 @@ func AdGridNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
 	locationNode := getLocationNode(ad)
 
 	return Div(
-		ID(fmt.Sprintf("ad-%d", ad.ID)),
+		ID(AdID(ad)),
 		Class("border rounded-lg shadow-sm bg-white flex flex-col cursor-pointer hover:shadow-md transition-shadow"),
 
 		hx.Get(fmt.Sprintf("/ad/detail/%d?view=grid", ad.ID)),

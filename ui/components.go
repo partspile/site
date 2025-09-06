@@ -83,14 +83,6 @@ func StyledLinkDisabled(text string, variant ButtonVariant) g.Node {
 	)
 }
 
-func DeleteButton(id int) g.Node {
-	return StyledButton("Delete Ad", ButtonDanger,
-		hx.Delete(fmt.Sprintf("/delete-ad/%d", id)),
-		hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
-		hx.Target("#result"),
-	)
-}
-
 func BackToListingsButton() g.Node {
 	return A(
 		Href("/"),

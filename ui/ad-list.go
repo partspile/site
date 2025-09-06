@@ -14,7 +14,7 @@ import (
 // AdListNode renders a list view of ad
 func AdListNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
 	return Div(
-		ID(fmt.Sprintf("ad-%d", ad.ID)),
+		ID(AdID(ad)),
 		Class("flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer"),
 
 		hx.Get(fmt.Sprintf("/ad/detail/%d?view=list", ad.ID)),

@@ -11,20 +11,21 @@ import (
 
 // IncrementAdClick increments the global click count for an ad
 func IncrementAdClick(adID int) error {
-	res, err := db.Exec("UPDATE Ad SET click_count = click_count + 1, last_clicked_at = ? WHERE id = ?", time.Now().UTC(), adID)
+	_, err := db.Exec("UPDATE Ad SET click_count = click_count + 1, last_clicked_at = ? WHERE id = ?",
+		time.Now().UTC(), adID)
 	if err != nil {
 		fmt.Println("DEBUG IncrementAdClick error:", err)
 		return err
 	}
-	n, _ := res.RowsAffected()
-	fmt.Println("DEBUG IncrementAdClick rows affected:", n)
 	return nil
 }
 
 // IncrementAdClickForUser increments the click count for an ad for a specific user
 func IncrementAdClickForUser(adID int, userID int) error {
+	now := time.Now().UTC()
 	_, err := db.Exec(`INSERT INTO UserAdClick (ad_id, user_id, click_count, last_clicked_at) VALUES (?, ?, 1, ?)
-		ON CONFLICT(ad_id, user_id) DO UPDATE SET click_count = click_count + 1, last_clicked_at = ?`, adID, userID, time.Now().UTC(), time.Now().UTC())
+		ON CONFLICT(ad_id, user_id) DO UPDATE SET click_count = click_count + 1, last_clicked_at = ?`,
+		adID, userID, now, now)
 	return err
 }
 

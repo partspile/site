@@ -274,8 +274,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 
 	if c.Get("HX-Request") != "" {
 		// For htmx, return the updated detail partial
-		view := c.Query("view", "list")
-		return render(c, ui.AdDetailPartial(updatedAd, currentUser.ID, view))
+		return render(c, ui.AdDetail(updatedAd, getLocation(c), currentUser.ID))
 	}
 	return render(c, ui.SuccessMessage("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
 }
@@ -367,7 +366,7 @@ func HandleAdCardPartial(c *fiber.Ctx) error {
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	loc := c.Context().Time().Location()
+	loc := getLocation(c)
 	view := c.Query("view", "list")
 	userID := 0
 	if currentUser != nil {
@@ -381,8 +380,8 @@ func HandleAdCardPartial(c *fiber.Ctx) error {
 	return render(c, ui.AdGridNode(adObj, loc, userID))
 }
 
-// Handler for ad detail partial (expand)
-func HandleAdDetailPartial(c *fiber.Ctx) error {
+// Handler for ad detail (expanded view)
+func HandleAdDetail(c *fiber.Ctx) error {
 	adID, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -391,20 +390,19 @@ func HandleAdDetailPartial(c *fiber.Ctx) error {
 	// Increment global click count
 	_ = ad.IncrementAdClick(adID)
 
-	currentUser, _ := GetCurrentUser(c)
-	if currentUser != nil {
-		_ = ad.IncrementAdClickForUser(adID, currentUser.ID)
+	currentUser, userID := getUser(c)
+	if userID != 0 {
+		_ = ad.IncrementAdClickForUser(adID, userID)
 		// Queue user for background embedding update
-		vector.QueueUserForUpdate(currentUser.ID)
+		vector.QueueUserForUpdate(userID)
 	}
 
 	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	_, userID := getUser(c)
-	view := c.Query("view", "list")
-	return render(c, ui.AdDetailPartial(adObj, userID, view))
+	loc := getLocation(c)
+	return render(c, ui.AdDetail(adObj, loc, userID))
 }
 
 // Add this handler for deleting an ad
@@ -788,7 +786,7 @@ func HandleExpandAdTree(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
+	loc := getLocation(c)
 	return render(c, ui.AdCardExpandedTree(adObj, loc, currentUser))
 }
 
@@ -807,6 +805,6 @@ func HandleCollapseAdTree(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
+	loc := getLocation(c)
 	return render(c, ui.AdCardCompactTree(adObj, loc, currentUser))
 }

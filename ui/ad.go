@@ -125,7 +125,6 @@ func LocationDisplayWithFlag(adObj ad.Ad) g.Node {
 		return nil
 	}
 
-	// Create smaller flag icon (same size as grid view)
 	var smallFlagNode g.Node
 	if flagNode != nil {
 		smallFlagNode = Span(Style("font-size: 1em; vertical-align: middle;"), g.Text(countryFlag(adObj.Country)))
@@ -189,18 +188,6 @@ func AgeDisplay(posted time.Time) g.Node {
 	return Div(
 		Class("text-xs text-gray-400"),
 		g.Text(agoStr),
-	)
-}
-
-// formatCategoryDisplay formats the category for display
-func formatCategoryDisplay(ad ad.Ad) g.Node {
-	if ad.Category == "" {
-		return g.Node(nil)
-	}
-
-	return Div(
-		Class("text-sm text-gray-500 -mt-1 mb-3"),
-		g.Text(ad.Category),
 	)
 }
 
@@ -500,15 +487,6 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 	return editForm
 }
 
-// AdDetailPartial renders the ad detail view (with collapse button)
-func AdDetailPartial(ad ad.Ad, userID int, view ...string) g.Node {
-	viewType := "list"
-	if len(view) > 0 {
-		viewType = view[0]
-	}
-	return AdDetailUnified(ad, userID, viewType)
-}
-
 // Update AdCardWithBookmark to use AdCardExpandable for in-place expand/collapse
 func AdCardWithBookmark(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
 	userID := 0
@@ -679,7 +657,7 @@ func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad) g.Node {
 	if userID > 0 {
 		actionButtons = append(actionButtons, BookmarkButton(adObj))
 		if currentUser.ID == adObj.UserID && !isArchivedAd {
-			deleteButton := DeleteButton(adObj.ID)
+			deleteButton := DeleteButton(adObj, userID)
 			actionButtons = append(actionButtons, deleteButton)
 		}
 	}
@@ -1062,12 +1040,6 @@ func AdImageWithFallbackSrcSet(adID int, idx int, alt string, context string) g.
 	)
 }
 
-// AdCardTreeView renders an ad card in tree view format (same as grid expanded but without close button)
-func AdCardTreeView(ad ad.Ad, loc *time.Location, userID int) g.Node {
-	// Use the unified function with "tree" view (no close button)
-	return AdDetailUnified(ad, userID, "tree")
-}
-
 // AdCardCompactTree renders a compact single-line ad card for tree view (collapsed state)
 func AdCardCompactTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
 	posted := ad.CreatedAt.In(loc)
@@ -1213,13 +1185,11 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
 					g.If(currentUser != nil, BookmarkButton(ad)),
-					MessageButton(ad.ID, ad.UserID, currentUser.ID, "tree"),
+					MessageButton(ad, currentUser.ID),
 					editBtn,
 					deleteBtn,
 				),
 			),
-			// Category display
-			formatCategoryDisplay(ad),
 			// Age and location row
 			Div(
 				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
@@ -1248,55 +1218,13 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 	)
 }
 
-// AdDetailUnified renders the ad detail view for all three views (expanded grid, list, tree)
-// Uses the expanded grid view layout as reference, with close button only for grid view
-func AdDetailUnified(ad ad.Ad, userID int, view string) g.Node {
-	htmxTarget := fmt.Sprintf("#ad-%d", ad.ID)
-	if view == "grid" {
-		htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", ad.ID)
-	}
-	// For tree and list views, use the same ID as the content (#ad-{id})
-
-	deleteBtn := g.Node(nil)
-	editBtn := g.Node(nil)
-	if userID == ad.UserID {
-		deleteBtn = Button(
-			Type("button"),
-			Class("ml-2 focus:outline-none z-20"),
-			hx.Delete(fmt.Sprintf("/delete-ad/%d", ad.ID)),
-			hx.Target(htmxTarget),
-			hx.Swap("delete"),
-			hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
-			Img(
-				Src("/images/trashcan.svg"),
-				Alt("Delete"),
-				Class("w-6 h-6 inline align-middle text-red-500 hover:text-red-700"),
-			),
-		)
-		editBtn = Button(
-			Type("button"),
-			Class("ml-2 focus:outline-none z-20"),
-			hx.Get(fmt.Sprintf("/ad/edit-partial/%d?view=%s", ad.ID, view)),
-			hx.Target(htmxTarget),
-			hx.Swap("outerHTML"),
-			Img(
-				Src("/images/edit.svg"),
-				Alt("Edit"),
-				Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
-			),
-		)
-	}
-
-	// Use tile view layout for all views (expanded grid, list, tree)
+func Image(ad ad.Ad, userID int) g.Node {
 	firstIdx := 1
 	if len(ad.ImageOrder) > 0 {
 		firstIdx = ad.ImageOrder[0]
 	}
-	agoStr := formatAdAge(ad.CreatedAt)
-	locationStr, flagNode := getDisplayLocationAndFlag(ad)
-
 	// Carousel main image area (HTMX target is the child, not the container)
-	mainImageArea := Div(
+	return Div(
 		Class("relative w-full aspect-square bg-gray-100 overflow-hidden rounded-t-lg flex items-center justify-center"),
 		Div(
 			ID(fmt.Sprintf("ad-carousel-img-%d", ad.ID)),
@@ -1307,9 +1235,10 @@ func AdDetailUnified(ad ad.Ad, userID int, view string) g.Node {
 			),
 		),
 	)
+}
 
-	// Carousel thumbnails
-	thumbnails := Div(
+func Thumbnails(ad ad.Ad, userID int) g.Node {
+	return Div(
 		Class("flex flex-row gap-2 mt-2 px-4 justify-center"),
 		g.Group(func() []g.Node {
 			nodes := []g.Node{}
@@ -1326,141 +1255,115 @@ func AdDetailUnified(ad ad.Ad, userID int, view string) g.Node {
 			return nodes
 		}()),
 	)
+}
 
-	// Show close button for all views (grid, list, and tree)
-	var closeBtn g.Node
-	closeBtn = Button(
+func CloseButton(ad ad.Ad) g.Node {
+	return Button(
 		Type("button"),
 		Class("absolute -top-2 -right-2 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
-		hx.Get(fmt.Sprintf("/ad/card/%d?view=%s", ad.ID, view)),
-		hx.Target(htmxTarget),
+		hx.Get(fmt.Sprintf("/ad/card/%d?view=%s", ad.ID, "tree")),
+		hx.Target(AdID(ad)),
 		hx.Swap("outerHTML"),
 		g.Text("×"),
 	)
-
-	// For grid view, don't add ID to content since wrapper has it
-	// For list view, add ID to content so close button can target it
-	var content g.Node
-	if view == "grid" {
-		content = Div(
-			Class("border rounded-lg shadow-lg bg-white flex flex-col relative"),
-			closeBtn,
-			mainImageArea,
-			thumbnails,
-			Div(
-				Class("p-4 flex flex-col gap-2"),
-				// Title and buttons row
-				Div(
-					Class("flex flex-row items-center justify-between mb-2"),
-					Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
-					Div(Class("flex flex-row items-center gap-2 ml-2"),
-						g.If(userID > 0, BookmarkButton(ad)),
-						MessageButton(ad.ID, ad.UserID, userID, view),
-						editBtn,
-						deleteBtn,
-					),
-				),
-				// Category display
-				formatCategoryDisplay(ad),
-				// Age and location row
-				Div(
-					Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
-					Div(Class("text-gray-400"), g.Text(agoStr)),
-					Div(Class("flex flex-row items-center gap-1"),
-						flagNode,
-						g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
-					),
-				),
-				// Description
-				Div(Class("text-base mt-2"), g.Text(ad.Description)),
-				// Rock section - will be populated by HTMX
-				Div(
-					ID(fmt.Sprintf("rock-section-%d", ad.ID)),
-					Class("mt-2"),
-					hx.Get(fmt.Sprintf("/api/ad-rocks/%d", ad.ID)),
-					hx.Trigger("load"),
-				),
-			),
-		)
-	} else {
-		content = Div(
-			ID(fmt.Sprintf("ad-%d", ad.ID)),
-			Class("border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2"),
-			closeBtn,
-			mainImageArea,
-			thumbnails,
-			Div(
-				Class("p-4 flex flex-col gap-2"),
-				// Title and buttons row
-				Div(
-					Class("flex flex-row items-center justify-between mb-2"),
-					Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
-					Div(Class("flex flex-row items-center gap-2 ml-2"),
-						g.If(userID > 0, BookmarkButton(ad)),
-						MessageButton(ad.ID, ad.UserID, userID, view),
-						editBtn,
-						deleteBtn,
-					),
-				),
-				// Category display
-				formatCategoryDisplay(ad),
-				// Age and location row
-				Div(
-					Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
-					Div(Class("text-gray-400"), g.Text(agoStr)),
-					Div(Class("flex flex-row items-center gap-1"),
-						flagNode,
-						g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
-					),
-				),
-				// Description
-				Div(Class("text-base mt-2"), g.Text(ad.Description)),
-				// Rock section - will be populated by HTMX
-				Div(
-					ID(fmt.Sprintf("rock-section-%d", ad.ID)),
-					Class("mt-2"),
-					hx.Get(fmt.Sprintf("/api/ad-rocks/%d", ad.ID)),
-					hx.Trigger("load"),
-				),
-			),
-		)
-	}
-
-	// Only wrap in AdGridWrapper for grid view
-	if view == "grid" {
-		return AdGridWrapper(ad, content, true)
-	}
-	return content
 }
 
-// MessageButton renders a message button for an ad
-func MessageButton(adID, adUserID, currentUserID int, view ...string) g.Node {
+func AdID(ad ad.Ad) string {
+	return fmt.Sprintf("ad-%d", ad.ID)
+}
+
+func AdDetail(ad ad.Ad, loc *time.Location, userID int) g.Node {
+	return Div(
+		ID(AdID(ad)),
+		Class("border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2"),
+		CloseButton(ad),
+		Image(ad, userID),
+		Thumbnails(ad, userID),
+		Div(
+			Class("p-4 flex flex-col gap-2"),
+			// Title and buttons row
+			Div(
+				Class("flex flex-row items-center justify-between mb-2"),
+				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
+				Div(Class("flex flex-row items-center gap-2 ml-2"),
+					g.If(userID != 0, BookmarkButton(ad)),
+					MessageButton(ad, userID),
+					EditButton(ad, userID),
+					DeleteButton(ad, userID),
+				),
+			),
+			// Age and location row
+			Div(
+				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
+				AgeDisplay(ad.CreatedAt.In(loc)),
+				LocationDisplayWithFlag(ad),
+			),
+			// Description
+			Div(Class("text-base mt-2"), g.Text(ad.Description)),
+		),
+	)
+}
+
+func MessageButton(ad ad.Ad, userID int) g.Node {
 	// Don't show message button if user is viewing their own ad
-	if currentUserID == adUserID {
+	if userID == ad.UserID {
 		return g.Node(nil)
 	}
 
 	// Don't show message button if user is not logged in
-	if currentUserID == 0 {
+	if userID == 0 {
 		return g.Node(nil)
-	}
-
-	// Default to tree view if not specified
-	viewType := "tree"
-	if len(view) > 0 {
-		viewType = view[0]
 	}
 
 	return Button(
 		Type("button"),
 		Class("ml-2 focus:outline-none z-20"),
 		Title("Message seller"),
-		hx.Get(fmt.Sprintf("/messages/inline/%d?view=%s", adID, viewType)),
-		hx.Target(fmt.Sprintf("#ad-%d", adID)),
+		hx.Get(fmt.Sprintf("/messages/inline/%d?view=%s", ad.ID, "tree")),
+		hx.Target(AdID(ad)),
 		hx.Swap("outerHTML"),
 		Img(
 			Src("/images/message.svg"),
 			Alt("Message"),
+			Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
+		),
+	)
+}
+
+func DeleteButton(ad ad.Ad, userID int) g.Node {
+	if userID != ad.UserID {
+		return g.Node(nil)
+	}
+
+	return Button(
+		Type("button"),
+		Class("ml-2 focus:outline-none"),
+		hx.Delete(fmt.Sprintf("/delete-ad/%d", ad.ID)),
+		hx.Target(AdID(ad)),
+		hx.Swap("delete"),
+		hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
+		Img(
+			Src("/images/trashcan.svg"),
+			Alt("Delete"),
+			Class("w-6 h-6 inline align-middle text-red-500 hover:text-red-700"),
+		),
+	)
+}
+
+func EditButton(ad ad.Ad, userID int) g.Node {
+	if userID != ad.UserID {
+		return g.Node(nil)
+	}
+
+	return Button(
+		Type("button"),
+		Class("ml-2 focus:outline-none"),
+		hx.Get(fmt.Sprintf("/ad/edit-partial/%d", ad.ID)),
+		hx.Target(AdID(ad)),
+		hx.Swap("outerHTML"),
+		Img(
+			Src("/images/edit.svg"),
+			Alt("Edit"),
 			Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
 		),
 	)
