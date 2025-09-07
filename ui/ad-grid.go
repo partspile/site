@@ -21,26 +21,21 @@ func AdGridNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
 		firstIdx = ad.ImageOrder[0]
 	}
 
-	posted := ad.CreatedAt.In(loc)
-	agoStr := formatAdAge(posted)
-
 	imageNode := Div(
 		Class("relative w-full h-48 bg-gray-100 overflow-hidden"),
 		adGridImage(ad.ID, firstIdx, ad.Title),
 		Div(
 			Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
-			g.Text(fmt.Sprintf("$%.0f", ad.Price)),
+			priceNode(ad),
 		),
 	)
 
-	locationNode := getLocationNode(ad)
-
 	return Div(
-		ID(AdID(ad)),
+		ID(adID(ad)),
 		Class("border rounded-lg shadow-sm bg-white flex flex-col cursor-pointer hover:shadow-md transition-shadow"),
 
 		hx.Get(fmt.Sprintf("/ad/detail/%d?view=grid", ad.ID)),
-		hx.Target(fmt.Sprintf("#ad-%d", ad.ID)),
+		hx.Target(adTarget(ad)),
 		hx.Swap("outerHTML"),
 
 		Div(
@@ -52,14 +47,14 @@ func AdGridNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
 			// Title and bookmark row
 			Div(
 				Class("flex flex-row items-center justify-between"),
-				Div(Class("font-semibold text-base truncate"), g.Text(ad.Title)),
+				Div(Class("font-semibold text-base truncate"), titleNode(ad)),
 				g.If(userID != 0, BookmarkButton(ad)),
 			),
 			// Age and location row
 			Div(
 				Class("flex flex-row items-center justify-between text-xs text-gray-500"),
-				Div(Class("text-gray-400"), g.Text(agoStr)),
-				locationNode,
+				Div(Class("text-gray-400"), ageNode(ad, loc)),
+				locationFlagNode(ad),
 			),
 		),
 	)

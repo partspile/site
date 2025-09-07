@@ -15,7 +15,7 @@ import (
 
 func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 	return Div(
-		ID(AdID(ad)),
+		ID(adID(ad)),
 		Class("border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2 col-span-full"),
 		closeButton(ad, view),
 		mainImage(ad),
@@ -25,7 +25,7 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 			// Title and buttons row
 			Div(
 				Class("flex flex-row items-center justify-between mb-2"),
-				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
+				Div(Class("font-semibold text-xl truncate"), titleNode(ad)),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
 					g.If(userID != 0, BookmarkButton(ad)),
 					messageButton(ad, userID),
@@ -36,8 +36,8 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 			// Age and location row
 			Div(
 				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
-				AgeDisplay(ad.CreatedAt.In(loc)),
-				LocationDisplayWithFlag(ad),
+				Div(Class("text-gray-400"), ageNode(ad, loc)),
+				locationFlagNode(ad),
 			),
 			// Description
 			Div(Class("text-base mt-2"), g.Text(ad.Description)),
@@ -50,7 +50,7 @@ func closeButton(ad ad.Ad, view string) g.Node {
 		Type("button"),
 		Class("absolute -top-2 -right-2 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
 		hx.Get(fmt.Sprintf("/ad/card/%d?view=%s", ad.ID, view)),
-		hx.Target(AdTarget(ad)),
+		hx.Target(adTarget(ad)),
 		hx.Swap("outerHTML"),
 		g.Text("×"),
 	)
@@ -94,7 +94,7 @@ func mainImage(ad ad.Ad) g.Node {
 			adCarouselImage(ad),
 			Div(
 				Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
-				g.Text(fmt.Sprintf("$%.0f", ad.Price)),
+				priceNode(ad),
 			),
 		),
 	)
@@ -160,7 +160,7 @@ func messageButton(ad ad.Ad, userID int) g.Node {
 		Class("ml-2 focus:outline-none z-20"),
 		Title("Message seller"),
 		hx.Get(fmt.Sprintf("/messages/inline/%d?view=%s", ad.ID, "tree")),
-		hx.Target(AdTarget(ad)),
+		hx.Target(adTarget(ad)),
 		hx.Swap("outerHTML"),
 		Img(
 			Src("/images/message.svg"),
@@ -179,7 +179,7 @@ func deleteButton(ad ad.Ad, userID int) g.Node {
 		Type("button"),
 		Class("ml-2 focus:outline-none"),
 		hx.Delete(fmt.Sprintf("/delete-ad/%d", ad.ID)),
-		hx.Target(AdTarget(ad)),
+		hx.Target(adTarget(ad)),
 		hx.Swap("delete"),
 		hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
 		Img(
@@ -199,7 +199,7 @@ func editButton(ad ad.Ad, userID int) g.Node {
 		Type("button"),
 		Class("ml-2 focus:outline-none"),
 		hx.Get(fmt.Sprintf("/ad/edit-partial/%d", ad.ID)),
-		hx.Target(AdTarget(ad)),
+		hx.Target(adTarget(ad)),
 		hx.Swap("outerHTML"),
 		Img(
 			Src("/images/edit.svg"),

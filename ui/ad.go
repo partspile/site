@@ -15,6 +15,24 @@ import (
 	"github.com/parts-pile/site/user"
 )
 
+func adID(ad ad.Ad) string {
+	return fmt.Sprintf("ad-%d", ad.ID)
+}
+
+func adTarget(ad ad.Ad) string {
+	return fmt.Sprintf("#ad-%d", ad.ID)
+}
+
+// priceNode returns price text
+func priceNode(ad ad.Ad) g.Node {
+	return g.Text(fmt.Sprintf("$%.0f", ad.Price))
+}
+
+// titleNode returns title text without styling
+func titleNode(ad ad.Ad) g.Node {
+	return g.Text(ad.Title)
+}
+
 // Returns the Unicode flag for a given country code (e.g., "US" -> 🇺🇸)
 func countryFlag(country string) string {
 	if len(country) != 2 {
@@ -24,58 +42,33 @@ func countryFlag(country string) string {
 	return string(rune(int32(code[0])-'A'+0x1F1E6)) + string(rune(int32(code[1])-'A'+0x1F1E6))
 }
 
-// Returns the display string and flag for a location, per the table
-func formatLocationDisplay(city, adminArea, country string) (string, g.Node) {
-	city = strings.TrimSpace(city)
-	adminArea = strings.TrimSpace(adminArea)
-	country = strings.TrimSpace(country)
+// locationFlagNode returns a Div containing flag and location text
+func locationFlagNode(ad ad.Ad) g.Node {
+	city := ad.City
+	adminArea := ad.AdminArea
+	country := ad.Country
 
-	flag := countryFlag(country)
-	var flagNode g.Node = nil
-	if flag != "" {
-		flagNode = Span(Style("font-size: 1.5em; vertical-align: middle;"), g.Text(flag))
-	}
-
+	// Return nil if no location data
 	if city == "" && adminArea == "" && country == "" {
-		return "", nil
+		return nil
 	}
-	if city == "" && adminArea == "" && country != "" {
-		return "", flagNode
-	}
-	if city == "" && adminArea != "" && country == "" {
-		return adminArea, nil
-	}
-	if city == "" && adminArea != "" && country != "" {
-		return adminArea, flagNode
-	}
-	if city != "" && adminArea == "" && country == "" {
-		return city, nil
-	}
-	if city != "" && adminArea == "" && country != "" {
-		return city, flagNode
-	}
-	if city != "" && adminArea != "" && country == "" {
-		return city + ", " + adminArea, nil
-	}
-	if city != "" && adminArea != "" && country != "" {
-		return city + ", " + adminArea, flagNode
-	}
-	return "", nil
-}
 
-// Helper to get display location string and flag for an ad
-func getDisplayLocationAndFlag(adObj ad.Ad) (string, g.Node) {
-	// Use the fields directly from adObj instead of DB lookup
-	return formatLocationDisplay(adObj.City, adObj.AdminArea, adObj.Country)
-}
-
-// Helper to get raw location input for an ad
-func getRawLocation(adObj ad.Ad) string {
-	_, _, _, raw, _, _, err := ad.GetLocation(adObj.LocationID)
-	if err != nil {
-		return ""
+	// Build location text
+	var locationText string
+	if city != "" && adminArea != "" {
+		locationText = city + ", " + adminArea
+	} else if city != "" {
+		locationText = city
+	} else if adminArea != "" {
+		locationText = adminArea
 	}
-	return raw
+
+	// Return Div with flag and location text
+	return Div(
+		Class("flex items-center"),
+		g.Text(countryFlag(country)),
+		Span(Class("ml-1"), g.Text(locationText)),
+	)
 }
 
 // Helper to format ad age as Xm, Xh, Xd, Xmo, or Xy Xmo
@@ -118,77 +111,10 @@ func formatAdAge(t time.Time) string {
 	return fmt.Sprintf("%dmo", months)
 }
 
-// Helper function to return flag icon and country text in a div with text-xs
-func LocationDisplayWithFlag(adObj ad.Ad) g.Node {
-	locationStr, flagNode := getDisplayLocationAndFlag(adObj)
-	if locationStr == "" && flagNode == nil {
-		return nil
-	}
-
-	var smallFlagNode g.Node
-	if flagNode != nil {
-		smallFlagNode = Span(Style("font-size: 1em; vertical-align: middle;"), g.Text(countryFlag(adObj.Country)))
-	}
-
-	return Div(
-		Class("text-xs text-gray-500 flex items-center gap-1"),
-		smallFlagNode,
-		g.If(locationStr != "" || smallFlagNode != nil, g.Text(locationStr)),
-	)
-}
-
-// getLocationNode returns a single node containing both flag and location text
-func getLocationNode(ad ad.Ad) g.Node {
-	city := strings.TrimSpace(ad.City)
-	adminArea := strings.TrimSpace(ad.AdminArea)
-	country := strings.TrimSpace(ad.Country)
-
-	flag := countryFlag(country)
-	var flagNode g.Node = nil
-	if flag != "" {
-		flagNode = Span(Style("font-size: 1.5em; vertical-align: middle;"), g.Text(flag))
-	}
-
-	// Build location text
-	var locationText string
-	if city == "" && adminArea == "" && country == "" {
-		return nil
-	}
-	if city == "" && adminArea == "" && country != "" {
-		locationText = ""
-	} else if city == "" && adminArea != "" && country == "" {
-		locationText = adminArea
-	} else if city == "" && adminArea != "" && country != "" {
-		locationText = adminArea
-	} else if city != "" && adminArea == "" && country == "" {
-		locationText = city
-	} else if city != "" && adminArea == "" && country != "" {
-		locationText = city
-	} else if city != "" && adminArea != "" && country == "" {
-		locationText = city + ", " + adminArea
-	} else if city != "" && adminArea != "" && country != "" {
-		locationText = city + ", " + adminArea
-	}
-
-	// Return combined node if we have either flag or text
-	if flagNode != nil || locationText != "" {
-		return Div(
-			Class("flex flex-row items-center gap-1"),
-			flagNode,
-			g.If(locationText != "", Div(Class("text-xs text-gray-500"), g.Text(locationText))),
-		)
-	}
-
-	return nil
-}
-
-// Helper function to return age div with text-xs
-func AgeDisplay(posted time.Time) g.Node {
-	agoStr := formatAdAge(posted)
-	return Div(
-		Class("text-xs text-gray-400"),
-		g.Text(agoStr),
-	)
+// ageNode returns age text
+func ageNode(ad ad.Ad, loc *time.Location) g.Node {
+	agoStr := formatAdAge(ad.CreatedAt.In(loc))
+	return g.Text(agoStr)
 }
 
 // ---- Ad Components ----
@@ -201,19 +127,10 @@ func AdDetails(adObj ad.Ad) g.Node {
 	sort.Strings(sortedModels)
 	sort.Strings(sortedEngines)
 
-	locationStr, flagNode := getDisplayLocationAndFlag(adObj)
-	var locationNode g.Node = nil
-	if locationStr != "" || flagNode != nil {
-		locationNode = P(Class("text-gray-600"),
-			Span(Class("inline-flex items-center gap-1"), flagNode, g.Text(locationStr)),
-		)
-	}
-
 	return Div(
 		Class("mb-4"),
 		P(Class("mt-4"), g.Text(adObj.Description)),
 		P(Class("text-2xl font-bold mt-4"), g.Text(fmt.Sprintf("$%.2f", adObj.Price))),
-		locationNode,
 	)
 }
 
@@ -230,22 +147,8 @@ func BookmarkIcon(bookmarked bool) g.Node {
 	)
 }
 
-// AdGridWrapper wraps ad content in a grid item wrapper for grid view, applying col-span-full if expanded
-func AdGridWrapper(ad ad.Ad, content g.Node, expanded bool) g.Node {
-	className := "grid-item-wrapper"
-	if expanded {
-		className += " col-span-full"
-	}
-	return Div(
-		ID(fmt.Sprintf("ad-grid-wrap-%d", ad.ID)),
-		Class(className),
-		content,
-	)
-}
-
 // AdEditPartial renders the ad edit form for inline editing
 func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engineAvailability map[string]bool, categories, subcategories []string, cancelTarget, htmxTarget string, view ...string) g.Node {
-	isGrid := len(view) > 0 && view[0] == "grid"
 	editForm := Div(
 		ID(fmt.Sprintf("ad-%d", adObj.ID)),
 		Class("border p-4 mb-4 rounded bg-white shadow-lg relative"),
@@ -462,7 +365,6 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 					Name("location"),
 					Class("w-full p-2 border rounded"),
 					Placeholder("(Optional)"),
-					Value(getRawLocation(adObj)),
 				),
 			),
 			Div(
@@ -481,27 +383,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 			),
 		),
 	)
-	if isGrid {
-		return AdGridWrapper(adObj, editForm, true)
-	}
 	return editForm
-}
-
-// Update AdCardWithBookmark to use AdCardExpandable for in-place expand/collapse
-func AdCardWithBookmark(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
-	return AdGridNode(ad, loc, userID)
-}
-
-func AdListContainer(children ...g.Node) g.Node {
-	return Div(
-		ID("adsList"),
-		Class("space-y-4"),
-		g.Group(children),
-	)
 }
 
 // AdCompactListContainer provides a container for the compact list view
@@ -511,27 +393,6 @@ func AdCompactListContainer(children ...g.Node) g.Node {
 		Class("bg-white"),
 		g.Group(children),
 	)
-}
-
-func BuildAdListNodes(ads map[int]ad.Ad, loc *time.Location) []g.Node {
-	// Convert map to slice
-	adSlice := make([]ad.Ad, 0, len(ads))
-	for _, ad := range ads {
-		adSlice = append(adSlice, ad)
-	}
-	// Sort by CreatedAt DESC, ID DESC
-	sort.Slice(adSlice, func(i, j int) bool {
-		if adSlice[i].CreatedAt.Equal(adSlice[j].CreatedAt) {
-			return adSlice[i].ID > adSlice[j].ID
-		}
-		return adSlice[i].CreatedAt.After(adSlice[j].CreatedAt)
-	})
-	// Build nodes
-	adsList := []g.Node{}
-	for _, ad := range adSlice {
-		adsList = append(adsList, AdCard(ad, loc))
-	}
-	return adsList
 }
 
 // ---- Ad Pages ----
@@ -926,7 +787,6 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 						Name("location"),
 						Class("w-full p-2 border rounded"),
 						Placeholder("Optional zipcode, e.g. 90210"),
-						Value(getRawLocation(currentAd)),
 					),
 				),
 				StyledButton("Submit", ButtonPrimary,
@@ -937,11 +797,6 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 			),
 		},
 	)
-}
-
-// For compatibility, keep the original AdCard
-func AdCard(ad ad.Ad, loc *time.Location) g.Node {
-	return AdCardWithBookmark(ad, loc, nil)
 }
 
 // BookmarkButton returns the bookmark toggle button for HTMX swaps
@@ -1042,8 +897,6 @@ func AdImageWithFallbackSrcSet(adID int, idx int, alt string, context string) g.
 
 // AdCardCompactTree renders a compact single-line ad card for tree view (collapsed state)
 func AdCardCompactTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
-	posted := ad.CreatedAt.In(loc)
-
 	// Check if ad has images
 	hasImages := len(ad.ImageOrder) > 0
 	picLink := g.Node(nil)
@@ -1065,22 +918,22 @@ func AdCardCompactTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.N
 		// Description (blue text)
 		Div(
 			Class("flex-1 text-blue-600 hover:text-blue-800"),
-			g.Text(ad.Title),
+			titleNode(ad),
 		),
 		// Location with flag (using new helper function)
 		Div(
 			Class("mr-4"),
-			LocationDisplayWithFlag(ad),
+			locationFlagNode(ad),
 		),
 		// Time posted (using new helper function)
 		Div(
-			Class("mr-4"),
-			AgeDisplay(posted),
+			Class("mr-4 text-xs text-gray-400"),
+			ageNode(ad, loc),
 		),
 		// Price (green text)
 		Div(
 			Class("text-green-600 font-semibold mr-4"),
-			g.Text(fmt.Sprintf("$%.0f", ad.Price)),
+			priceNode(ad),
 		),
 		// Pic link (orange text)
 		picLink,
@@ -1127,8 +980,6 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 	if len(ad.ImageOrder) > 0 {
 		firstIdx = ad.ImageOrder[0]
 	}
-	agoStr := formatAdAge(ad.CreatedAt)
-	locationStr, flagNode := getDisplayLocationAndFlag(ad)
 
 	// Carousel main image area
 	mainImageArea := Div(
@@ -1138,7 +989,7 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 			AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title, "carousel"),
 			Div(
 				Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
-				g.Text(fmt.Sprintf("$%.0f", ad.Price)),
+				priceNode(ad),
 			),
 		),
 	)
@@ -1182,7 +1033,7 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 			// Title and buttons row
 			Div(
 				Class("flex flex-row items-center justify-between mb-2"),
-				Div(Class("font-semibold text-xl truncate"), g.Text(ad.Title)),
+				Div(Class("font-semibold text-xl truncate"), titleNode(ad)),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
 					g.If(currentUser != nil, BookmarkButton(ad)),
 					messageButton(ad, currentUser.ID),
@@ -1193,10 +1044,9 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 			// Age and location row
 			Div(
 				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
-				Div(Class("text-gray-400"), g.Text(agoStr)),
+				Div(Class("text-gray-400"), ageNode(ad, loc)),
 				Div(Class("flex flex-row items-center gap-1"),
-					flagNode,
-					g.If(locationStr != "" || flagNode != nil, Div(Class("text-xs text-gray-500"), g.Text(locationStr+""))),
+					locationFlagNode(ad),
 				),
 			),
 			// Description
@@ -1216,12 +1066,4 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 		Class("relative my-4 mx-2"),
 		content,
 	)
-}
-
-func AdID(ad ad.Ad) string {
-	return fmt.Sprintf("ad-%d", ad.ID)
-}
-
-func AdTarget(ad ad.Ad) string {
-	return fmt.Sprintf("#ad-%d", ad.ID)
 }
