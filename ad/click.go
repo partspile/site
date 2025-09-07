@@ -56,23 +56,10 @@ func GetAdClickCountForUser(adID int, userID int) (int, error) {
 func GetRecentlyClickedAdIDsByUser(userID, limit int) ([]int, error) {
 	log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser called with userID=%d, limit=%d", userID, limit)
 
-	rows, err := db.Query(`SELECT ad_id FROM UserAdClick WHERE user_id = ? ORDER BY last_clicked_at DESC LIMIT ?`, userID, limit)
-	if err != nil {
-		log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser SQL error: %v", err)
-		return nil, err
-	}
-	defer rows.Close()
-
+	query := `SELECT ad_id FROM UserAdClick WHERE user_id = ? ORDER BY last_clicked_at DESC LIMIT ?`
 	var adIDs []int
-	for rows.Next() {
-		var adID int
-		if err := rows.Scan(&adID); err != nil {
-			log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser row scan error: %v", err)
-			continue
-		}
-		adIDs = append(adIDs, adID)
-	}
+	err := db.Select(&adIDs, query, userID, limit)
 
 	log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser returning %d adIDs: %v", len(adIDs), adIDs)
-	return adIDs, nil
+	return adIDs, err
 }

@@ -34,8 +34,8 @@ This document outlines the step-by-step migration from `database/sql` to `sqlx` 
 ### 2.1 Simple Array Queries (Low Risk, High Impact)
 **Files**: `ad/bookmark.go`, `ad/click.go`, `search/search.go`
 
-- [ ] **ad/bookmark.go**: `GetBookmarkedAdIDs()` - Convert to `db.Select(&adIDs, query)`
-- [ ] **ad/click.go**: Similar pattern queries
+- [X] **ad/bookmark.go**: `GetBookmarkedAdIDs()` - Convert to `db.Select(&adIDs, query)`
+- [X] **ad/click.go**: Similar pattern queries
 - [ ] **search/search.go**: 
   - [ ] `GetUserSearches()` - Convert to `db.Select()`
   - [ ] `GetPopularSearches()` - Convert to `db.Select()`
