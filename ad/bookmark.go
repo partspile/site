@@ -31,22 +31,12 @@ func IsAdBookmarkedByUser(userID, adID int) (bool, error) {
 
 // GetBookmarkedAdIDs returns a list of ad IDs bookmarked by the user
 func GetBookmarkedAdIDs(userID int) ([]int, error) {
-	rows, err := db.Query(`SELECT ba.ad_id FROM BookmarkedAd ba 
+	query := `SELECT ba.ad_id FROM BookmarkedAd ba 
 		JOIN Ad a ON ba.ad_id = a.id 
 		WHERE ba.user_id = ? AND a.deleted_at IS NULL 
-		ORDER BY ba.bookmarked_at DESC`, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+		ORDER BY ba.bookmarked_at DESC`
 
 	var adIDs []int
-	for rows.Next() {
-		var adID int
-		if err := rows.Scan(&adID); err != nil {
-			continue
-		}
-		adIDs = append(adIDs, adID)
-	}
-	return adIDs, nil
+	err := db.Select(&adIDs, query, userID)
+	return adIDs, err
 }

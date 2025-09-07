@@ -27,8 +27,7 @@ This document outlines the step-by-step migration from `database/sql` to `sqlx` 
   - [X] `NamedQuery(query string, arg interface{}) (*sqlx.Rows, error)`
 
 ### 1.3 Update Imports Across Codebase
-- [ ] Update all files importing `database/sql` to also import `github.com/jmoiron/sqlx`
-- [ ] Update all files using `db` package to use new sqlx methods
+- [X] Update all files using `db` package to use new sqlx methods
 
 ## Phase 2: High-Impact Migrations (Priority Order)
 
