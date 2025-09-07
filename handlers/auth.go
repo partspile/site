@@ -65,7 +65,7 @@ func HandleLogout(c *fiber.Ctx) error {
 	if err := logoutUser(c); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to log you out.")
 	}
-	return render(c, ui.SuccessMessage("You have been logged out", "/"))
+	return render(c, ui.LoginPage(nil, "/login"))
 }
 
 func GetCurrentUser(c *fiber.Ctx) (*user.User, error) {
@@ -334,4 +334,9 @@ func RequireOwnership(c *fiber.Ctx, resourceUserID int) (*user.User, error) {
 		return nil, fiber.NewError(fiber.StatusForbidden, "not resource owner")
 	}
 	return u, nil
+}
+
+func HandleUserMenu(c *fiber.Ctx) error {
+	currentUser := c.Locals("user").(*user.User)
+	return render(c, ui.UserMenuPopup(currentUser, c.Path()))
 }

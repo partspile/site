@@ -59,12 +59,8 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 			Div(
 				Class("container mx-auto px-4 py-8"),
 				hx.Headers(`js:{'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone}`),
-				Div(
-					Class("mb-8 border-b pb-4 flex items-center justify-between"),
-					UserNav(currentUser, currentPath),
-				),
+				navigation(currentUser, currentPath),
 				g.Group(content),
-				ResultContainer(),
 			),
 		},
 	})

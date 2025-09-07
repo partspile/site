@@ -158,6 +158,7 @@ func main() {
 	app.Get("/login", handlers.HandleLogin)
 	api.Post("/login", handlers.HandleLoginSubmission)
 	app.Post("/logout", handlers.HandleLogout)
+	app.Get("/user-menu", handlers.AuthRequired, handlers.HandleUserMenu)
 
 	// Legal pages
 	app.Get("/terms", handlers.HandleTermsOfService)
