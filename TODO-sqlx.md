@@ -43,18 +43,18 @@ This document outlines the step-by-step migration from `database/sql` to `sqlx` 
 ### 2.2 Vehicle Data Queries (Medium Risk, High Impact)
 **File**: `vehicle/vehicle.go`
 
-- [ ] **Make queries** (lines 53-69):
-  - [ ] `GetMakes()` - Convert to `db.Select()`
-  - [ ] `GetMakeByName()` - Convert to `db.Get()`
-- [ ] **Year queries** (lines 106-125):
-  - [ ] `GetYears()` - Convert to `db.Select()`
-  - [ ] `GetYearByValue()` - Convert to `db.Get()`
-- [ ] **Model queries** (lines 160-222):
-  - [ ] `GetModels()` - Convert to `db.Select()`
-  - [ ] `GetModelByName()` - Convert to `db.Get()`
-- [ ] **Engine queries** (lines 268-320):
-  - [ ] `GetEngines()` - Convert to `db.Select()`
-  - [ ] `GetEngineByName()` - Convert to `db.Get()`
+- [X] **Make queries** (lines 53-69):
+  - [X] `GetMakes()` - Convert to `db.Select()`
+  - [X] `GetMakeByName()` - Convert to `db.Get()`
+- [X] **Year queries** (lines 106-125):
+  - [X] `GetYears()` - Convert to `db.Select()`
+  - [X] `GetYearByValue()` - Convert to `db.Get()`
+- [X] **Model queries** (lines 160-222):
+  - [X] `GetModels()` - Convert to `db.Select()`
+  - [X] `GetModelByName()` - Convert to `db.Get()`
+- [X] **Engine queries** (lines 268-320):
+  - [X] `GetEngines()` - Convert to `db.Select()`
+  - [X] `GetEngineByName()` - Convert to `db.Get()`
 
 ### 2.3 Part Category Queries (Low Risk, Medium Impact)
 **File**: `part/part.go`

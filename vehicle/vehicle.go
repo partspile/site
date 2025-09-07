@@ -1,7 +1,6 @@
 package vehicle
 
 import (
-	"database/sql"
 	"strconv"
 	"strings"
 	"time"
@@ -10,26 +9,26 @@ import (
 )
 
 type Make struct {
-	ID              int
-	Name            string
-	ParentCompanyID *int
+	ID              int    `db:"id"`
+	Name            string `db:"name"`
+	ParentCompanyID *int   `db:"parent_company_id"`
 }
 
 type Model struct {
-	ID   int
-	Name string
+	ID   int    `db:"id"`
+	Name string `db:"name"`
 }
 
 type Year struct {
-	ID   int
-	Year int
+	ID   int `db:"id"`
+	Year int `db:"year"`
 }
 
 // ParentCompany represents a parent company of a make
 type ParentCompany struct {
-	ID      int
-	Name    string
-	Country string
+	ID      int    `db:"id"`
+	Name    string `db:"name"`
+	Country string `db:"country"`
 }
 
 var (
@@ -44,49 +43,29 @@ func GetMakes() []string {
 	if makesCache != nil {
 		return makesCache
 	}
-	rows, err := db.Query("SELECT name FROM Make ORDER BY name")
+	query := "SELECT name FROM Make ORDER BY name"
+	var makes []string
+	err := db.Select(&makes, query)
 	if err != nil {
 		return nil
-	}
-	defer rows.Close()
-	var makes []string
-	for rows.Next() {
-		var make string
-		rows.Scan(&make)
-		makes = append(makes, make)
 	}
 	makesCache = makes
 	return makes
 }
 
 func GetAllMakes() ([]Make, error) {
-	rows, err := db.Query("SELECT id, name, parent_company_id FROM Make ORDER BY name")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+	query := "SELECT id, name, parent_company_id FROM Make ORDER BY name"
 	var makes []Make
-	for rows.Next() {
-		var make Make
-		var parentCompanyID sql.NullInt64
-		if err := rows.Scan(&make.ID, &make.Name, &parentCompanyID); err != nil {
-			return nil, err
-		}
-		if parentCompanyID.Valid {
-			id := int(parentCompanyID.Int64)
-			make.ParentCompanyID = &id
-		}
-		makes = append(makes, make)
-	}
-	return makes, nil
+	err := db.Select(&makes, query)
+	return makes, err
 }
 
 // MakeWithParentCompany represents a make with its parent company information
 type MakeWithParentCompany struct {
-	ID                int
-	Name              string
-	ParentCompanyID   *int
-	ParentCompanyName string
+	ID                int    `db:"id"`
+	Name              string `db:"name"`
+	ParentCompanyID   *int   `db:"parent_company_id"`
+	ParentCompanyName string `db:"parent_company_name"`
 }
 
 func GetYears(makeName string) []string {
@@ -97,15 +76,13 @@ func GetYears(makeName string) []string {
 	JOIN Make ON Car.make_id = Make.id
 	JOIN Year ON Car.year_id = Year.id
 	WHERE Make.name = ? ORDER BY Year.year`
-	rows, err := db.Query(query, makeName)
+	var yearInts []int
+	err := db.Select(&yearInts, query, makeName)
 	if err != nil {
 		return nil
 	}
-	defer rows.Close()
 	var years []string
-	for rows.Next() {
-		var year int
-		rows.Scan(&year)
+	for _, year := range yearInts {
 		years = append(years, strconv.Itoa(year))
 	}
 	yearsCache[makeName] = years
@@ -116,16 +93,11 @@ func GetAllModels() []string {
 	if allModelsCache != nil {
 		return allModelsCache
 	}
-	rows, err := db.Query("SELECT DISTINCT name FROM Model ORDER BY name")
+	query := "SELECT DISTINCT name FROM Model ORDER BY name"
+	var models []string
+	err := db.Select(&models, query)
 	if err != nil {
 		return nil
-	}
-	defer rows.Close()
-	var models []string
-	for rows.Next() {
-		var model string
-		rows.Scan(&model)
-		models = append(models, model)
 	}
 	allModelsCache = models
 	return models
@@ -259,16 +231,11 @@ func GetAllEngineSizes() []string {
 	if allEngineSizesCache != nil {
 		return allEngineSizesCache
 	}
-	rows, err := db.Query("SELECT DISTINCT name FROM Engine ORDER BY name")
+	query := "SELECT DISTINCT name FROM Engine ORDER BY name"
+	var engines []string
+	err := db.Select(&engines, query)
 	if err != nil {
 		return nil
-	}
-	defer rows.Close()
-	var engines []string
-	for rows.Next() {
-		var engine string
-		rows.Scan(&engine)
-		engines = append(engines, engine)
 	}
 	allEngineSizesCache = engines
 	return engines
