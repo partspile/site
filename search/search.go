@@ -10,10 +10,16 @@ import (
 
 // UserSearch represents a user's search query
 type UserSearch struct {
-	ID          int           `json:"id"`
-	UserID      sql.NullInt64 `json:"user_id"`
-	QueryString string        `json:"query_string"`
-	CreatedAt   time.Time     `json:"created_at"`
+	ID          int           `json:"id" db:"id"`
+	UserID      sql.NullInt64 `json:"user_id" db:"user_id"`
+	QueryString string        `json:"query_string" db:"query_string"`
+	CreatedAt   time.Time     `json:"created_at" db:"created_at"`
+}
+
+// TopSearch represents a popular search query with its count
+type TopSearch struct {
+	QueryString string `json:"query_string" db:"query_string"`
+	Count       int    `json:"count" db:"count"`
 }
 
 // SaveUserSearch saves a user's search query to the database
@@ -28,26 +34,10 @@ func SaveUserSearch(userID sql.NullInt64, queryString string) error {
 
 // GetRecentUserSearches returns a list of recent search queries for a user
 func GetRecentUserSearches(userID int, limit int) ([]UserSearch, error) {
-	rows, err := db.Query("SELECT id, user_id, query_string, created_at FROM UserSearch WHERE user_id = ? ORDER BY created_at DESC LIMIT ?", userID, limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
+	query := "SELECT id, user_id, query_string, created_at FROM UserSearch WHERE user_id = ? ORDER BY created_at DESC LIMIT ?"
 	var searches []UserSearch
-	for rows.Next() {
-		var s UserSearch
-		var userID sql.NullInt64
-		var createdAt string
-		if err := rows.Scan(&s.ID, &userID, &s.QueryString, &createdAt); err != nil {
-			log.Printf("Error scanning user search: %v", err)
-			continue
-		}
-		s.UserID = userID
-		s.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-		searches = append(searches, s)
-	}
-	return searches, nil
+	err := db.Select(&searches, query, userID, limit)
+	return searches, err
 }
 
 // DeleteUserSearch deletes a specific user search entry
@@ -71,30 +61,9 @@ func DeleteAllUserSearches(userID int) error {
 }
 
 // GetTopSearches returns the most frequent search queries across all users
-func GetTopSearches(limit int) ([]struct {
-	QueryString string
-	Count       int
-}, error) {
-	rows, err := db.Query("SELECT query_string, COUNT(*) as count FROM UserSearch GROUP BY query_string ORDER BY count DESC LIMIT ?", limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var topSearches []struct {
-		QueryString string
-		Count       int
-	}
-	for rows.Next() {
-		var s struct {
-			QueryString string
-			Count       int
-		}
-		if err := rows.Scan(&s.QueryString, &s.Count); err != nil {
-			log.Printf("Error scanning top search: %v", err)
-			continue
-		}
-		topSearches = append(topSearches, s)
-	}
-	return topSearches, nil
+func GetTopSearches(limit int) ([]TopSearch, error) {
+	query := "SELECT query_string, COUNT(*) as count FROM UserSearch GROUP BY query_string ORDER BY count DESC LIMIT ?"
+	var topSearches []TopSearch
+	err := db.Select(&topSearches, query, limit)
+	return topSearches, err
 }

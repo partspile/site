@@ -36,9 +36,9 @@ This document outlines the step-by-step migration from `database/sql` to `sqlx` 
 
 - [X] **ad/bookmark.go**: `GetBookmarkedAdIDs()` - Convert to `db.Select(&adIDs, query)`
 - [X] **ad/click.go**: Similar pattern queries
-- [ ] **search/search.go**: 
-  - [ ] `GetUserSearches()` - Convert to `db.Select()`
-  - [ ] `GetPopularSearches()` - Convert to `db.Select()`
+- [X] **search/search.go**: 
+  - [X] `GetUserSearches()` - Convert to `db.Select()`
+  - [X] `GetPopularSearches()` - Convert to `db.Select()`
 
 ### 2.2 Vehicle Data Queries (Medium Risk, High Impact)
 **File**: `vehicle/vehicle.go`
