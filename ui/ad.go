@@ -150,22 +150,18 @@ func BookmarkButton(ad ad.Ad) g.Node {
 	)
 }
 
-// ---- Ad Components ----
-
-func AdDetails(adObj ad.Ad) g.Node {
-	sortedYears := append([]string{}, adObj.Years...)
-	sortedModels := append([]string{}, adObj.Models...)
-	sortedEngines := append([]string{}, adObj.Engines...)
-	sort.Strings(sortedYears)
-	sort.Strings(sortedModels)
-	sort.Strings(sortedEngines)
-
-	return Div(
-		Class("mb-4"),
-		P(Class("mt-4"), g.Text(adObj.Description)),
-		P(Class("text-2xl font-bold mt-4"), g.Text(fmt.Sprintf("$%.2f", adObj.Price))),
+func AdPage(adObj ad.Ad, currentUser *user.User, userID int, path string, loc *time.Location, view string) g.Node {
+	return Page(
+		fmt.Sprintf("Ad %d - Parts Pile", adObj.ID),
+		currentUser,
+		path,
+		[]g.Node{
+			AdDetail(adObj, loc, userID, view),
+		},
 	)
 }
+
+// ---- Ad Components ----
 
 // AdEditPartial renders the ad edit form for inline editing
 func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engineAvailability map[string]bool, categories, subcategories []string, cancelTarget, htmxTarget string, view ...string) g.Node {
@@ -523,17 +519,6 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 				),
 				g.Raw(`<script src="/js/image-preview.js" defer></script>`),
 			),
-		},
-	)
-}
-
-func AdPage(adObj ad.Ad, currentUser *user.User, userID int, path string, loc *time.Location, view string) g.Node {
-	return Page(
-		fmt.Sprintf("Ad %d - Parts Pile", adObj.ID),
-		currentUser,
-		path,
-		[]g.Node{
-			AdDetail(adObj, loc, userID, view),
 		},
 	)
 }

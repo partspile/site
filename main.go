@@ -165,11 +165,11 @@ func main() {
 
 	// User settings
 	app.Get("/settings", handlers.AuthRequired, handlers.HandleSettings)
+	app.Get("/settings/bookmarked-ads", handlers.AuthRequired, handlers.HandleBookmarkedAds)
 	api.Post("/change-password", handlers.AuthRequired, handlers.HandleChangePassword)
 	api.Post("/update-notification-method", handlers.AuthRequired, handlers.HandleUpdateNotificationMethod)
 	api.Post("/notification-method-changed", handlers.AuthRequired, handlers.HandleNotificationMethodChanged)
 	api.Post("/delete-account", handlers.AuthRequired, handlers.HandleDeleteAccount)
-	app.Get("/settings/bookmarked-ads", handlers.AuthRequired, handlers.HandleBookmarkedAds)
 
 	// Messaging system
 	app.Get("/messages", handlers.AuthRequired, handlers.HandleMessagesPage)
