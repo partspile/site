@@ -12,64 +12,40 @@ import (
 )
 
 type Category struct {
-	ID   int
-	Name string
+	ID   int    `db:"id"`
+	Name string `db:"name"`
 }
 
 type SubCategory struct {
-	ID         int
-	CategoryID int
-	Name       string
+	ID         int    `db:"id"`
+	CategoryID int    `db:"category_id"`
+	Name       string `db:"name"`
 }
 
 func GetAllCategories() ([]Category, error) {
-	rows, err := db.Query("SELECT id, name FROM PartCategory ORDER BY name")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
+	query := "SELECT id, name FROM PartCategory ORDER BY name"
 	var categories []Category
-	for rows.Next() {
-		var c Category
-		if err := rows.Scan(&c.ID, &c.Name); err != nil {
-			return nil, err
-		}
-		categories = append(categories, c)
-	}
-	return categories, nil
+	err := db.Select(&categories, query)
+	return categories, err
 }
 
 func GetSubCategoriesForCategory(categoryName string) ([]SubCategory, error) {
-	rows, err := db.Query(`
+	query := `
 		SELECT psc.id, psc.category_id, psc.name 
 		FROM PartSubCategory psc
 		JOIN PartCategory pc ON psc.category_id = pc.id
 		WHERE pc.name = ?
 		ORDER BY psc.name
-	`, categoryName)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
+	`
 	var subCategories []SubCategory
-	for rows.Next() {
-		var sc SubCategory
-		if err := rows.Scan(&sc.ID, &sc.CategoryID, &sc.Name); err != nil {
-			return nil, err
-		}
-		subCategories = append(subCategories, sc)
-	}
-	return subCategories, nil
+	err := db.Select(&subCategories, query, categoryName)
+	return subCategories, err
 }
 
 func GetMakes(query string) ([]string, error) {
 	// If there's a search query, filter makes based on matching ads
 	if query != "" {
-		// Parse the query to get structured search criteria
-		// For now, we'll do a simple text search on ad descriptions
-		rows, err := db.Query(`
+		querySQL := `
 			SELECT DISTINCT m.name
 			FROM Make m
 			JOIN Car c ON m.id = c.make_id
@@ -77,52 +53,30 @@ func GetMakes(query string) ([]string, error) {
 			JOIN Ad a ON ac.ad_id = a.id
 			WHERE a.description LIKE ?
 			ORDER BY m.name
-		`, "%"+query+"%")
-		if err != nil {
-			return nil, err
-		}
-		defer rows.Close()
-
+		`
 		var makes []string
-		for rows.Next() {
-			var make string
-			if err := rows.Scan(&make); err != nil {
-				return nil, err
-			}
-			makes = append(makes, make)
-		}
-		return makes, nil
+		err := db.Select(&makes, querySQL, "%"+query+"%")
+		return makes, err
 	}
 
 	// If no query, return all makes
-	rows, err := db.Query(`
+	querySQL := `
 		SELECT DISTINCT m.name
 		FROM Make m
 		JOIN Car c ON m.id = c.make_id
 		JOIN AdCar ac ON c.id = ac.car_id
 		ORDER BY m.name
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
+	`
 	var makes []string
-	for rows.Next() {
-		var make string
-		if err := rows.Scan(&make); err != nil {
-			return nil, err
-		}
-		makes = append(makes, make)
-	}
-	return makes, nil
+	err := db.Select(&makes, querySQL)
+	return makes, err
 }
 
 func GetYearsForMake(makeName string, query string) ([]string, error) {
 	makeName, _ = url.QueryUnescape(makeName)
 	// If there's a search query, filter years based on matching ads
 	if query != "" {
-		rows, err := db.Query(`
+		querySQL := `
 			SELECT DISTINCT y.year
 			FROM Year y
 			JOIN Car c ON y.id = c.year_id
@@ -131,25 +85,21 @@ func GetYearsForMake(makeName string, query string) ([]string, error) {
 			JOIN Ad a ON ac.ad_id = a.id
 			WHERE m.name = ? AND a.description LIKE ?
 			ORDER BY y.year DESC
-		`, makeName, "%"+query+"%")
+		`
+		var yearInts []int
+		err := db.Select(&yearInts, querySQL, makeName, "%"+query+"%")
 		if err != nil {
 			return nil, err
 		}
-		defer rows.Close()
-
 		var years []string
-		for rows.Next() {
-			var year string
-			if err := rows.Scan(&year); err != nil {
-				return nil, err
-			}
-			years = append(years, year)
+		for _, year := range yearInts {
+			years = append(years, fmt.Sprintf("%d", year))
 		}
 		return years, nil
 	}
 
 	// If no query, return all years for the make
-	rows, err := db.Query(`
+	querySQL := `
 		SELECT DISTINCT y.year
 		FROM Year y
 		JOIN Car c ON y.id = c.year_id
@@ -157,19 +107,15 @@ func GetYearsForMake(makeName string, query string) ([]string, error) {
 		JOIN AdCar ac ON c.id = ac.car_id
 		WHERE m.name = ?
 		ORDER BY y.year DESC
-	`, makeName)
+	`
+	var yearInts []int
+	err := db.Select(&yearInts, querySQL, makeName)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
 	var years []string
-	for rows.Next() {
-		var year string
-		if err := rows.Scan(&year); err != nil {
-			return nil, err
-		}
-		years = append(years, year)
+	for _, year := range yearInts {
+		years = append(years, fmt.Sprintf("%d", year))
 	}
 	return years, nil
 }

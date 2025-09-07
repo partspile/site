@@ -59,11 +59,11 @@ This document outlines the step-by-step migration from `database/sql` to `sqlx` 
 ### 2.3 Part Category Queries (Low Risk, Medium Impact)
 **File**: `part/part.go`
 
-- [ ] **Category queries** (lines 33-57):
-  - [ ] `GetCategories()` - Convert to `db.Select()`
-  - [ ] `GetSubCategories()` - Convert to `db.Select()`
-- [ ] **Simple lookup queries** (lines 87-425):
-  - [ ] Various `Get*ByParent()` functions - Convert to `db.Select()`
+- [X] **Category queries** (lines 33-57):
+  - [X] `GetCategories()` - Convert to `db.Select()`
+  - [X] `GetSubCategories()` - Convert to `db.Select()`
+- [X] **Simple lookup queries** (lines 87-425):
+  - [X] Various `Get*ByParent()` functions - Convert to `db.Select()`
 
 ## Phase 3: Complex Struct Migrations (Higher Risk)
 
