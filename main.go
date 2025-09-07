@@ -158,7 +158,6 @@ func main() {
 	app.Get("/login", handlers.HandleLogin)
 	api.Post("/login", handlers.HandleLoginSubmission)
 	app.Post("/logout", handlers.HandleLogout)
-	app.Get("/user-menu", handlers.AuthRequired, handlers.HandleUserMenu)
 
 	// Legal pages
 	app.Get("/terms", handlers.HandleTermsOfService)
@@ -166,11 +165,12 @@ func main() {
 
 	// User settings
 	app.Get("/settings", handlers.AuthRequired, handlers.HandleSettings)
-	app.Get("/settings/bookmarked-ads", handlers.AuthRequired, handlers.HandleBookmarkedAds)
+	app.Get("/bookmarks", handlers.AuthRequired, handlers.HandleBookmarksPage)
 	api.Post("/change-password", handlers.AuthRequired, handlers.HandleChangePassword)
 	api.Post("/update-notification-method", handlers.AuthRequired, handlers.HandleUpdateNotificationMethod)
 	api.Post("/notification-method-changed", handlers.AuthRequired, handlers.HandleNotificationMethodChanged)
 	api.Post("/delete-account", handlers.AuthRequired, handlers.HandleDeleteAccount)
+	app.Get("/user-menu", handlers.AuthRequired, handlers.HandleUserMenu) // x
 
 	// Messaging system
 	app.Get("/messages", handlers.AuthRequired, handlers.HandleMessagesPage)
@@ -184,10 +184,10 @@ func main() {
 	api.Get("/messages/:action", handlers.AuthRequired, handlers.HandleMessagesAPI)
 
 	// Views for HTMX view switching
-	app.Post("/view/list", handlers.HandleListView)
-	app.Post("/view/tree", handlers.HandleTreeView)
-	app.Post("/view/grid", handlers.HandleGridView)
-	app.Post("/view/map", handlers.HandleMapView)
+	app.Post("/view/list", handlers.HandleListView) // x
+	app.Post("/view/tree", handlers.HandleTreeView) // x
+	app.Post("/view/grid", handlers.HandleGridView) // x
+	app.Post("/view/map", handlers.HandleMapView)   // x
 
 	fmt.Printf("Starting server on port %s...\n", config.ServerPort)
 	log.Fatal(app.Listen(":" + config.ServerPort))

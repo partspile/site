@@ -93,6 +93,14 @@ func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
 
 	menuItems = append(menuItems,
 		A(
+			Href("/bookmarks"),
+			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"),
+			g.Text("🔖 Bookmarks"),
+		),
+	)
+
+	menuItems = append(menuItems,
+		A(
 			Href("/settings"),
 			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"),
 			g.Text("⚙️ Settings"),

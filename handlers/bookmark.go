@@ -49,8 +49,7 @@ func HandleUnbookmarkAd(c *fiber.Ctx) error {
 	return render(c, ui.BookmarkButton(adObj))
 }
 
-// Handler to get bookmarked ads for the current user (for settings page)
-func HandleBookmarkedAds(c *fiber.Ctx) error {
+func HandleBookmarksPage(c *fiber.Ctx) error {
 	currentUser, userID := getUser(c)
 	adIDs, err := ad.GetBookmarkedAdIDsByUser(userID)
 	if err != nil {
@@ -60,5 +59,5 @@ func HandleBookmarkedAds(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ads")
 	}
-	return render(c, ui.BookmarkedAdsSection(currentUser, ads))
+	return render(c, ui.BookmarksPage(currentUser, ads))
 }
