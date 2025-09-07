@@ -109,7 +109,7 @@ func main() {
 	app.Get("/ad/collapse-tree/:id", handlers.HandleCollapseAdTree)
 
 	// Ad management
-	app.Get("/ad/:id", handlers.OptionalAuth, handlers.HandleViewAd)
+	app.Get("/ad/:id", handlers.OptionalAuth, handlers.HandleAdPage) // x
 	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd)
 	app.Get("/edit-ad/:id", handlers.AuthRequired, handlers.HandleEditAd)
 	app.Delete("/delete-ad/:id", handlers.AuthRequired, handlers.HandleDeleteAd)

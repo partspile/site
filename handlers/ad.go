@@ -148,29 +148,24 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	return render(c, ui.SuccessMessage("Ad created successfully", "/"))
 }
 
-func HandleViewAd(c *fiber.Ctx) error {
+func HandleAdPage(c *fiber.Ctx) error {
 	adID, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	currentUser, _ := GetCurrentUser(c)
+	currentUser, _ := getUser(c)
 
-	// Get ad from either active or archived tables with bookmark status
-	adObj, ok := ad.GetAdWithVehicle(adID, currentUser)
+	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	return render(c, ui.ViewAdPage(currentUser, c.Path(), adObj))
+	return render(c, ui.AdPage(adObj, currentUser, c.Path()))
 }
 
 func HandleEditAd(c *fiber.Ctx) error {
-	currentUser, err := CurrentUser(c)
-	if err != nil {
-		return err
-	}
-
+	currentUser, _ := getUser(c)
 	adID, err := ParseIntParam(c, "id")
 	if err != nil {
 		return err
@@ -277,71 +272,6 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		return render(c, ui.AdDetail(updatedAd, getLocation(c), currentUser.ID, getView(c)))
 	}
 	return render(c, ui.SuccessMessage("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
-}
-
-// Handler to bookmark an ad
-func HandleBookmarkAd(c *fiber.Ctx) error {
-	currentUser, err := CurrentUser(c)
-	if err != nil {
-		return err
-	}
-	adID, err := ParseIntParam(c, "id")
-	if err != nil {
-		return err
-	}
-	if err := ad.BookmarkAd(currentUser.ID, adID); err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to bookmark ad")
-	}
-	// Queue user for background embedding update
-	vector.QueueUserForUpdate(currentUser.ID)
-	// Get the updated ad with bookmark status
-	adObj, ok := ad.GetAd(adID, currentUser)
-	if !ok {
-		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
-	}
-	// Return the bookmarked button HTML for HTMX swap
-	return render(c, ui.BookmarkButton(adObj))
-}
-
-// Handler to unbookmark an ad
-func HandleUnbookmarkAd(c *fiber.Ctx) error {
-	currentUser, err := CurrentUser(c)
-	if err != nil {
-		return err
-	}
-	adID, err := ParseIntParam(c, "id")
-	if err != nil {
-		return err
-	}
-	if err := ad.UnbookmarkAd(currentUser.ID, adID); err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to unbookmark ad")
-	}
-	// Queue user for background embedding update
-	vector.QueueUserForUpdate(currentUser.ID)
-	// Get the updated ad with bookmark status
-	adObj, ok := ad.GetAd(adID, currentUser)
-	if !ok {
-		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
-	}
-	// Return the unbookmarked button HTML for HTMX swap
-	return render(c, ui.BookmarkButton(adObj))
-}
-
-// Handler to get bookmarked ads for the current user (for settings page)
-func HandleBookmarkedAds(c *fiber.Ctx) error {
-	currentUser, err := CurrentUser(c)
-	if err != nil {
-		return err
-	}
-	adIDs, err := ad.GetBookmarkedAdIDsByUser(currentUser.ID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ad IDs")
-	}
-	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ads")
-	}
-	return render(c, ui.BookmarkedAdsSection(currentUser, ads))
 }
 
 func HandleArchiveAd(c *fiber.Ctx) error {

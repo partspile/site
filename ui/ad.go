@@ -117,6 +117,39 @@ func ageNode(ad ad.Ad, loc *time.Location) g.Node {
 	return g.Text(agoStr)
 }
 
+func bookmarkIcon(bookmarked bool) g.Node {
+	icon := "/images/bookmark-false.svg"
+	if bookmarked {
+		icon = "/images/bookmark-true.svg"
+	}
+	return Img(
+		Src(icon),
+		Class("inline w-6 h-6 align-middle"),
+		Alt("Bookmark"),
+	)
+}
+
+// BookmarkButton returns the bookmark toggle button
+func BookmarkButton(ad ad.Ad) g.Node {
+	var hxMethod g.Node
+	if ad.Bookmarked {
+		hxMethod = hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID))
+	} else {
+		hxMethod = hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID))
+	}
+
+	return Button(
+		Type("button"),
+		Class("focus:outline-none"),
+		hxMethod,
+		hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
+		hx.Swap("outerHTML"),
+		ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
+		g.Attr("onclick", "event.stopPropagation()"),
+		bookmarkIcon(ad.Bookmarked),
+	)
+}
+
 // ---- Ad Components ----
 
 func AdDetails(adObj ad.Ad) g.Node {
@@ -131,19 +164,6 @@ func AdDetails(adObj ad.Ad) g.Node {
 		Class("mb-4"),
 		P(Class("mt-4"), g.Text(adObj.Description)),
 		P(Class("text-2xl font-bold mt-4"), g.Text(fmt.Sprintf("$%.2f", adObj.Price))),
-	)
-}
-
-// Add a bookmark icon SVG component
-func BookmarkIcon(bookmarked bool) g.Node {
-	icon := "/images/bookmark-false.svg"
-	if bookmarked {
-		icon = "/images/bookmark-true.svg"
-	}
-	return Img(
-		Src(icon),
-		Class("inline w-6 h-6 align-middle"),
-		Alt("Bookmark"),
 	)
 }
 
@@ -507,20 +527,17 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 	)
 }
 
-func ViewAdPage(currentUser *user.User, path string, adObj ad.Ad) g.Node {
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
+func AdPage(adObj ad.Ad, currentUser *user.User, path string) g.Node {
 	// Action buttons: bookmark, delete (edit removed)
 	actionButtons := []g.Node{}
 	isArchivedAd := adObj.IsArchived()
-	if userID > 0 {
-		actionButtons = append(actionButtons, BookmarkButton(adObj))
-		if currentUser.ID == adObj.UserID && !isArchivedAd {
+	if currentUser != nil {
+		userID := currentUser.ID
+		if userID == adObj.UserID {
 			deleteButton := deleteButton(adObj, userID)
 			actionButtons = append(actionButtons, deleteButton)
 		}
+		actionButtons = append(actionButtons, BookmarkButton(adObj))
 	}
 	statusIndicator := g.Node(nil)
 	if isArchivedAd {
@@ -796,27 +813,6 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 				g.Raw(`<script src="/js/image-edit.js" defer></script>`),
 			),
 		},
-	)
-}
-
-// BookmarkButton returns the bookmark toggle button for HTMX swaps
-func BookmarkButton(ad ad.Ad) g.Node {
-	var hxMethod g.Node
-	if ad.Bookmarked {
-		hxMethod = hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID))
-	} else {
-		hxMethod = hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID))
-	}
-
-	return Button(
-		Type("button"),
-		Class("focus:outline-none"),
-		hxMethod,
-		hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
-		hx.Swap("outerHTML"),
-		ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
-		g.Attr("onclick", "event.stopPropagation()"),
-		BookmarkIcon(ad.Bookmarked),
 	)
 }
 
