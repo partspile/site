@@ -154,14 +154,14 @@ func HandleAdPage(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	currentUser, _ := getUser(c)
+	currentUser, userID := getUser(c)
 
 	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	return render(c, ui.AdPage(adObj, currentUser, c.Path()))
+	return render(c, ui.AdPage(adObj, currentUser, userID, c.Path(), getLocation(c), getView(c)))
 }
 
 func HandleEditAd(c *fiber.Ctx) error {

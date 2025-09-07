@@ -527,50 +527,13 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 	)
 }
 
-func AdPage(adObj ad.Ad, currentUser *user.User, path string) g.Node {
-	// Action buttons: bookmark, delete (edit removed)
-	actionButtons := []g.Node{}
-	isArchivedAd := adObj.IsArchived()
-	if currentUser != nil {
-		userID := currentUser.ID
-		if userID == adObj.UserID {
-			deleteButton := deleteButton(adObj, userID)
-			actionButtons = append(actionButtons, deleteButton)
-		}
-		actionButtons = append(actionButtons, BookmarkButton(adObj))
-	}
-	statusIndicator := g.Node(nil)
-	if isArchivedAd {
-		statusIndicator = Div(
-			Class("bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded mb-4"),
-			g.Text("ARCHIVED - This ad has been archived"),
-		)
-	}
+func AdPage(adObj ad.Ad, currentUser *user.User, userID int, path string, loc *time.Location, view string) g.Node {
 	return Page(
 		fmt.Sprintf("Ad %d - Parts Pile", adObj.ID),
 		currentUser,
 		path,
 		[]g.Node{
-			Div(
-				Class("flex items-center justify-between mb-4"),
-				H2(Class("text-2xl font-bold"), g.Text(adObj.Title)),
-				Div(
-					append([]g.Node{Class("flex flex-row items-center gap-2")}, actionButtons...)...,
-				),
-			),
-			statusIndicator,
-			AdDetails(adObj),
-			// Rock section - will be populated by HTMX
-			Div(
-				ID(fmt.Sprintf("rock-section-%d", adObj.ID)),
-				Class("mt-4"),
-				hx.Get(fmt.Sprintf("/api/ad-rocks/%d", adObj.ID)),
-				hx.Trigger("load"),
-			),
-			ActionButtons(
-				BackToListingsButton(),
-			),
-			g.Raw(`<script src="/js/image-preview.js" defer></script>`),
+			AdDetail(adObj, loc, userID, view),
 		},
 	)
 }
