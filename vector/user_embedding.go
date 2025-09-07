@@ -38,7 +38,7 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 
 	var vectors [][]float32
 	var weights []float32
-	bookmarkIDs, err := ad.GetBookmarkedAdIDsByUser(userID)
+	bookmarkIDs, err := ad.GetBookmarkedAdIDs(userID)
 	if err != nil {
 		return nil, fmt.Errorf("fetch bookmarks: %w", err)
 	}

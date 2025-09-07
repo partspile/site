@@ -5,28 +5,14 @@ import (
 	"github.com/parts-pile/site/ui"
 )
 
-func HandleHome(c *fiber.Ctx) error {
-	currentUser, _ := getUser(c)
-	view := getCookieLastView(c)
-	return render(c, ui.HomePage(currentUser, c.Path(), view))
-}
-
-func HandleSettings(c *fiber.Ctx) error {
-	currentUser, err := CurrentUser(c)
-	if err != nil {
-		return err
-	}
-	return render(c, ui.SettingsPage(currentUser, c.Path()))
-}
-
 // HandleTermsOfService displays the Terms of Service page
 func HandleTermsOfService(c *fiber.Ctx) error {
-	currentUser, _ := GetCurrentUser(c)
+	currentUser, _ := getUser(c)
 	return render(c, ui.TermsOfServicePage(currentUser, c.Path()))
 }
 
 // HandlePrivacyPolicy displays the Privacy Policy page
 func HandlePrivacyPolicy(c *fiber.Ctx) error {
-	currentUser, _ := GetCurrentUser(c)
+	currentUser, _ := getUser(c)
 	return render(c, ui.PrivacyPolicyPage(currentUser, c.Path()))
 }

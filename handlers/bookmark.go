@@ -51,7 +51,7 @@ func HandleUnbookmarkAd(c *fiber.Ctx) error {
 
 func HandleBookmarksPage(c *fiber.Ctx) error {
 	currentUser, userID := getUser(c)
-	adIDs, err := ad.GetBookmarkedAdIDsByUser(userID)
+	adIDs, err := ad.GetBookmarkedAdIDs(userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ad IDs")
 	}
