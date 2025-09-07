@@ -5,11 +5,12 @@ import (
 	"log"
 	"sync"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
-	db   *sql.DB
+	db   *sqlx.DB
 	once sync.Once
 )
 
@@ -17,7 +18,7 @@ var (
 func Init(databaseURL string) error {
 	var err error
 	once.Do(func() {
-		db, err = sql.Open("sqlite3", databaseURL)
+		db, err = sqlx.Open("sqlite3", databaseURL)
 		if err != nil {
 			log.Printf("Failed to open database: %v", err)
 			return
@@ -35,7 +36,7 @@ func Init(databaseURL string) error {
 }
 
 // Get returns the database connection
-func Get() *sql.DB {
+func Get() *sqlx.DB {
 	if db == nil {
 		panic("Database not initialized. Call db.Init() first.")
 	}
@@ -43,7 +44,7 @@ func Get() *sql.DB {
 }
 
 // SetForTesting sets the database connection for testing
-func SetForTesting(database *sql.DB) {
+func SetForTesting(database *sqlx.DB) {
 	db = database
 }
 
@@ -75,4 +76,24 @@ func Exec(query string, args ...interface{}) (sql.Result, error) {
 // Begin starts a new transaction
 func Begin() (*sql.Tx, error) {
 	return Get().Begin()
+}
+
+// Select executes a query and scans the results into dest (slice)
+func Select(dest interface{}, query string, args ...interface{}) error {
+	return Get().Select(dest, query, args...)
+}
+
+// GetRow executes a query and scans the result into dest (single struct)
+func GetRow(dest interface{}, query string, args ...interface{}) error {
+	return Get().Get(dest, query, args...)
+}
+
+// NamedExec executes a named query that doesn't return rows
+func NamedExec(query string, arg interface{}) (sql.Result, error) {
+	return Get().NamedExec(query, arg)
+}
+
+// NamedQuery executes a named query that returns rows
+func NamedQuery(query string, arg interface{}) (*sqlx.Rows, error) {
+	return Get().NamedQuery(query, arg)
 }

@@ -11,20 +11,20 @@ This document outlines the step-by-step migration from `database/sql` to `sqlx` 
 ## Phase 1: Foundation Setup
 
 ### 1.1 Add SQLX Dependency
-- [ ] Add `github.com/jmoiron/sqlx` to `go.mod`
-- [ ] Run `go mod tidy` to update dependencies
-- [ ] Verify sqlx is properly imported
+- [X] Add `github.com/jmoiron/sqlx` to `go.mod`
+- [X] Run `go mod tidy` to update dependencies
+- [X] Verify sqlx is properly imported
 
 ### 1.2 Update Database Package (`db/db.go`)
-- [ ] Change `var db *sql.DB` to `var db *sqlx.DB`
-- [ ] Update `Init()` function to use `sqlx.Open()` instead of `sql.Open()`
-- [ ] Update `Get()` function to return `*sqlx.DB`
-- [ ] Update `SetForTesting()` to accept `*sqlx.DB`
-- [ ] Add sqlx convenience methods:
-  - [ ] `Select(dest interface{}, query string, args ...interface{}) error`
-  - [ ] `Get(dest interface{}, query string, args ...interface{}) error`
-  - [ ] `NamedExec(query string, arg interface{}) (sql.Result, error)`
-  - [ ] `NamedQuery(query string, arg interface{}) (*sqlx.Rows, error)`
+- [X] Change `var db *sql.DB` to `var db *sqlx.DB`
+- [X] Update `Init()` function to use `sqlx.Open()` instead of `sql.Open()`
+- [X] Update `Get()` function to return `*sqlx.DB`
+- [X] Update `SetForTesting()` to accept `*sqlx.DB`
+- [X] Add sqlx convenience methods:
+  - [X] `Select(dest interface{}, query string, args ...interface{}) error`
+  - [X] `Get(dest interface{}, query string, args ...interface{}) error`
+  - [X] `NamedExec(query string, arg interface{}) (sql.Result, error)`
+  - [X] `NamedQuery(query string, arg interface{}) (*sqlx.Rows, error)`
 
 ### 1.3 Update Imports Across Codebase
 - [ ] Update all files importing `database/sql` to also import `github.com/jmoiron/sqlx`
