@@ -164,8 +164,8 @@ func main() {
 	app.Get("/privacy", handlers.HandlePrivacyPolicy)
 
 	// User settings
-	app.Get("/settings", handlers.AuthRequired, handlers.HandleSettings)
-	app.Get("/bookmarks", handlers.AuthRequired, handlers.HandleBookmarksPage)
+	app.Get("/settings", handlers.AuthRequired, handlers.HandleSettings)       // x
+	app.Get("/bookmarks", handlers.AuthRequired, handlers.HandleBookmarksPage) // x
 	api.Post("/change-password", handlers.AuthRequired, handlers.HandleChangePassword)
 	api.Post("/update-notification-method", handlers.AuthRequired, handlers.HandleUpdateNotificationMethod)
 	api.Post("/notification-method-changed", handlers.AuthRequired, handlers.HandleNotificationMethodChanged)

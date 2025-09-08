@@ -416,8 +416,8 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 	return editForm
 }
 
-// AdCompactListContainer provides a container for the compact list view
-func AdCompactListContainer(children ...g.Node) g.Node {
+// adCompactListContainer provides a container for the compact list view
+func adCompactListContainer(children ...g.Node) g.Node {
 	return Div(
 		ID("adsList"),
 		Class("bg-white"),

@@ -59,5 +59,6 @@ func HandleBookmarksPage(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ads")
 	}
-	return render(c, ui.BookmarksPage(currentUser, ads))
+
+	return render(c, ui.BookmarksPage(ads, currentUser, c.Path(), getLocation(c)))
 }
