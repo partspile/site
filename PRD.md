@@ -319,7 +319,7 @@ The platform is built with the following technologies:
 - **HTML Generation:** Uses Gomponents for type-safe, composable UI components in Go.
 - **Frontend:** Tailwind CSS and HTMX for responsive, dynamic user interfaces.
 - **Vector Search:** Google Gemini (gemini-embedding-001) for semantic embeddings and Qdrant vector database for similarity search and filtering.
-- **Database:** SQLite with comprehensive schema for vehicle data, user management, and transaction tracking.
+- **Database:** SQLite with comprehensive schema for vehicle data, user management, and transaction tracking. Database operations use [sqlx](https://github.com/jmoiron/sqlx) for enhanced type safety and reduced boilerplate code.
 - **Background Processing:** Go goroutines for vector embedding generation and user personalization updates.
 
 ---
@@ -387,6 +387,11 @@ The platform is built with the following technologies:
   - `GetArchivedUser()` uses unified `getUser()` function then loads `deleted_at` separately
   - Archive/Restore operations use simple UPDATE statements instead of complex table operations
 - **Database Schema**: Simplified from separate `ArchivedAd`/`ArchivedAdCar` and `ArchivedUser` tables to single tables with soft delete
+
+### Database Layer Implementation (sqlx)
+- **sqlx Integration**: The system uses [sqlx](https://github.com/jmoiron/sqlx) for enhanced database operations with automatic struct scanning and reduced boilerplate code.
+- **Struct Tags**: All database models use `db` struct tags for automatic field mapping (e.g., `db:"id"`, `db:"created_at"`).
+- **Query Methods**: Database operations leverage sqlx's `Select()`, `Get()`, and `NamedExec()` methods for type-safe operations.
 
 See `schema.sql` for full schema and indexes.
 
