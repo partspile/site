@@ -10,16 +10,16 @@ import (
 
 // UserSearch represents a user's search query
 type UserSearch struct {
-	ID          int           `json:"id" db:"id"`
-	UserID      sql.NullInt64 `json:"user_id" db:"user_id"`
-	QueryString string        `json:"query_string" db:"query_string"`
-	CreatedAt   time.Time     `json:"created_at" db:"created_at"`
+	ID          int           `db:"id"`
+	UserID      sql.NullInt64 `db:"user_id"`
+	QueryString string        `db:"query_string"`
+	CreatedAt   time.Time     `db:"created_at"`
 }
 
 // TopSearch represents a popular search query with its count
 type TopSearch struct {
-	QueryString string `json:"query_string" db:"query_string"`
-	Count       int    `json:"count" db:"count"`
+	QueryString string `db:"query_string"`
+	Count       int    `db:"count"`
 }
 
 // SaveUserSearch saves a user's search query to the database

@@ -10,26 +10,26 @@ import (
 
 // UserRock represents a user's rock inventory
 type UserRock struct {
-	ID        int       `json:"id" db:"id"`
-	UserID    int       `json:"user_id" db:"user_id"`
-	RockCount int       `json:"rock_count" db:"rock_count"`
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+	ID        int       `db:"id"`
+	UserID    int       `db:"user_id"`
+	RockCount int       `db:"rock_count"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }
 
 // AdRock represents a rock thrown at an ad
 type AdRock struct {
-	ID             int        `json:"id" db:"id"`
-	AdID           int        `json:"ad_id" db:"ad_id"`
-	ThrowerID      int        `json:"thrower_id" db:"thrower_id"`
-	ConversationID int        `json:"conversation_id" db:"conversation_id"`
-	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
-	ResolvedAt     *time.Time `json:"resolved_at,omitempty" db:"resolved_at"`
-	ResolvedBy     *int       `json:"resolved_by,omitempty" db:"resolved_by"`
+	ID             int        `db:"id"`
+	AdID           int        `db:"ad_id"`
+	ThrowerID      int        `db:"thrower_id"`
+	ConversationID int        `db:"conversation_id"`
+	CreatedAt      time.Time  `db:"created_at"`
+	ResolvedAt     *time.Time `db:"resolved_at"`
+	ResolvedBy     *int       `db:"resolved_by"`
 	// Runtime fields
-	ThrowerName  string                  `json:"thrower_name,omitempty" db:"thrower_name"`
-	AdTitle      string                  `json:"ad_title,omitempty" db:"ad_title"`
-	Conversation *messaging.Conversation `json:"conversation,omitempty"`
+	ThrowerName  string `db:"thrower_name"`
+	AdTitle      string `db:"ad_title"`
+	Conversation *messaging.Conversation
 }
 
 // InitializeUserRocks creates a new rock inventory for a user with 3 rocks

@@ -41,7 +41,7 @@ type User struct {
 	EmailAddress       *string
 	CreatedAt          time.Time
 	IsAdmin            bool
-	DeletedAt          *time.Time `json:"deleted_at,omitempty"`
+	DeletedAt          *time.Time
 }
 
 // IsArchived returns true if the user has been archived
