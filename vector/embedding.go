@@ -587,7 +587,9 @@ func BuildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 	if adObj.SubCategoryID != 0 {
 		// Since SubCategory field no longer exists, we'll need to look up the name
 		// For now, just use the category if available
-		category = adObj.Category
+		if adObj.Category.Valid {
+			category = adObj.Category.String
+		}
 		// TODO: Look up subcategory name from SubCategoryID if needed
 	}
 

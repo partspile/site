@@ -2,7 +2,6 @@ package part
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -441,47 +440,20 @@ func GetAdsForNode(parts []string, q string) ([]ad.Ad, error) {
 		query += " WHERE " + strings.Join(conditions, " AND ")
 	}
 
-	rows, err := db.Query(query, args...)
+	var ads []ad.Ad
+	err := db.Select(&ads, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("query failed: %w; query: %s; args: %v", err, query, args)
 	}
-	defer rows.Close()
 
-	var ads []ad.Ad
-	var adIDs []int
-	for rows.Next() {
-		var adID int
-		var adObj ad.Ad
-		var subcategory, category, makeName, modelName, engineName sql.NullString
-		var year sql.NullInt64
-		if err := rows.Scan(&adID, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName); err != nil {
-			return nil, err
-		}
-		adObj.ID = adID
-		if category.Valid {
-			adObj.Category = category.String
-		}
-		if makeName.Valid {
-			adObj.Make = makeName.String
-		}
-		if year.Valid {
-			adObj.Years = []string{fmt.Sprintf("%d", year.Int64)}
-		}
-		if modelName.Valid {
-			adObj.Models = []string{modelName.String}
-		}
-		if engineName.Valid {
-			adObj.Engines = []string{engineName.String}
-		}
-		// Populate all years, models, engines for the ad
-		fullAd, ok := ad.GetAdWithVehicle(adID, nil)
+	// Populate vehicle data for each ad
+	for i := range ads {
+		fullAd, ok := ad.GetAdWithVehicle(ads[i].ID, nil)
 		if ok {
-			adObj.Years = fullAd.Years
-			adObj.Models = fullAd.Models
-			adObj.Engines = fullAd.Engines
+			ads[i].Years = fullAd.Years
+			ads[i].Models = fullAd.Models
+			ads[i].Engines = fullAd.Engines
 		}
-		ads = append(ads, adObj)
-		adIDs = append(adIDs, adID)
 	}
 
 	// Only show ads at leaf nodes (make/year/model/engine)
@@ -606,7 +578,7 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 		}
 		adObj.ID = adID
 		if category.Valid {
-			adObj.Category = category.String
+			adObj.Category = category
 		}
 		if makeName.Valid {
 			adObj.Make = makeName.String
@@ -624,7 +596,9 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 
 		// Handle image order
 		if imageOrder.Valid {
-			_ = json.Unmarshal([]byte(imageOrder.String), &adObj.ImageOrder)
+			adObj.ImageOrder = imageOrder.String
+			// Parse the JSON string into the slice for efficient access
+			adObj.PopulateImageOrderSlice()
 		}
 
 		// Handle location fields
@@ -632,13 +606,13 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 			adObj.LocationID = int(locationID.Int64)
 		}
 		if city.Valid {
-			adObj.City = city.String
+			adObj.City = city
 		}
 		if adminArea.Valid {
-			adObj.AdminArea = adminArea.String
+			adObj.AdminArea = adminArea
 		}
 		if country.Valid {
-			adObj.Country = country.String
+			adObj.Country = country
 		}
 
 		// Populate all years, models, engines for the ad
@@ -775,7 +749,7 @@ func GetAdsForTreeView(parts []string, sq ad.SearchQuery, userID int) ([]ad.Ad, 
 		}
 		adObj.ID = adID
 		if category.Valid {
-			adObj.Category = category.String
+			adObj.Category = category
 		}
 		if makeName.Valid {
 			adObj.Make = makeName.String
@@ -793,7 +767,9 @@ func GetAdsForTreeView(parts []string, sq ad.SearchQuery, userID int) ([]ad.Ad, 
 
 		// Handle image order
 		if imageOrder.Valid {
-			_ = json.Unmarshal([]byte(imageOrder.String), &adObj.ImageOrder)
+			adObj.ImageOrder = imageOrder.String
+			// Parse the JSON string into the slice for efficient access
+			adObj.PopulateImageOrderSlice()
 		}
 
 		// Handle location fields
@@ -801,13 +777,13 @@ func GetAdsForTreeView(parts []string, sq ad.SearchQuery, userID int) ([]ad.Ad, 
 			adObj.LocationID = int(locationID.Int64)
 		}
 		if city.Valid {
-			adObj.City = city.String
+			adObj.City = city
 		}
 		if adminArea.Valid {
-			adObj.AdminArea = adminArea.String
+			adObj.AdminArea = adminArea
 		}
 		if country.Valid {
-			adObj.Country = country.String
+			adObj.Country = country
 		}
 
 		// Get vehicle data directly to avoid overwriting bookmark status

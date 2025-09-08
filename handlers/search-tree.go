@@ -323,7 +323,7 @@ func matchesChildPath(ad ad.Ad, childPath []string, level int) bool {
 			if err != nil {
 				decodedCategory = childPath[4] // fallback to original if decoding fails
 			}
-			return ad.Category == decodedCategory
+			return ad.Category.Valid && ad.Category.String == decodedCategory
 		}
 	case 5: // Category level - check subcategory
 		// TODO: Implement subcategory filtering using SubCategoryID

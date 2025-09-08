@@ -41,13 +41,13 @@ func MapViewRenderPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL st
 
 	var adDataElements []g.Node
 	for _, ad := range ads {
-		if ad.Latitude != nil && ad.Longitude != nil {
+		if ad.Latitude.Valid && ad.Longitude.Valid {
 			adDataElements = append(adDataElements,
 				Div(
 					Class("hidden"),
 					g.Attr("data-ad-id", fmt.Sprintf("%d", ad.ID)),
-					g.Attr("data-lat", fmt.Sprintf("%f", *ad.Latitude)),
-					g.Attr("data-lon", fmt.Sprintf("%f", *ad.Longitude)),
+					g.Attr("data-lat", fmt.Sprintf("%f", ad.Latitude.Float64)),
+					g.Attr("data-lon", fmt.Sprintf("%f", ad.Longitude.Float64)),
 					g.Attr("data-title", ad.Title),
 					g.Attr("data-price", fmt.Sprintf("%.2f", ad.Price)),
 				),
@@ -73,13 +73,13 @@ func MapViewContainer(ads map[int]ad.Ad, loc *time.Location) g.Node {
 	// Create hidden data elements for each ad with coordinates
 	var adDataElements []g.Node
 	for _, ad := range ads {
-		if ad.Latitude != nil && ad.Longitude != nil {
+		if ad.Latitude.Valid && ad.Longitude.Valid {
 			adDataElements = append(adDataElements,
 				Div(
 					Class("hidden"),
 					g.Attr("data-ad-id", fmt.Sprintf("%d", ad.ID)),
-					g.Attr("data-lat", fmt.Sprintf("%f", *ad.Latitude)),
-					g.Attr("data-lon", fmt.Sprintf("%f", *ad.Longitude)),
+					g.Attr("data-lat", fmt.Sprintf("%f", ad.Latitude.Float64)),
+					g.Attr("data-lon", fmt.Sprintf("%f", ad.Longitude.Float64)),
 					g.Attr("data-title", ad.Title),
 					g.Attr("data-price", fmt.Sprintf("%.2f", ad.Price)),
 				),

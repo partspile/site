@@ -17,8 +17,8 @@ import (
 func AdGridNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
 	// Get the first image index
 	firstIdx := 1
-	if len(ad.ImageOrder) > 0 {
-		firstIdx = ad.ImageOrder[0]
+	if len(ad.ImageOrderSlice) > 0 {
+		firstIdx = ad.ImageOrderSlice[0]
 	}
 
 	imageNode := Div(

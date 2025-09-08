@@ -23,16 +23,10 @@ func GetAdsWithoutVectors() ([]Ad, error) {
 		WHERE a.has_vector = 0 AND a.deleted_at IS NULL
 	`
 
-	rows, err := db.Query(query)
+	var ads []Ad
+	err := db.Select(&ads, query)
 	if err != nil {
 		log.Printf("[GetAdsWithoutVectors] SQL error: %v", err)
-		return nil, err
-	}
-	defer rows.Close()
-
-	ads, err := scanAdRows(rows)
-	if err != nil {
-		log.Printf("[GetAdsWithoutVectors] Row scan error: %v", err)
 		return nil, err
 	}
 

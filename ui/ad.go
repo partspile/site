@@ -44,9 +44,18 @@ func countryFlag(country string) string {
 
 // locationFlagNode returns a Div containing flag and location text
 func locationFlagNode(ad ad.Ad) g.Node {
-	city := ad.City
-	adminArea := ad.AdminArea
-	country := ad.Country
+	var city string
+	if ad.City.Valid {
+		city = ad.City.String
+	}
+	var adminArea string
+	if ad.AdminArea.Valid {
+		adminArea = ad.AdminArea.String
+	}
+	var country string
+	if ad.Country.Valid {
+		country = ad.Country.String
+	}
 
 	// Return nil if no location data
 	if city == "" && adminArea == "" && country == "" {
@@ -281,7 +290,12 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 				}
 				return engineCheckboxes
 			}()...))),
-			CategoriesFormGroup(categories, adObj.Category),
+			CategoriesFormGroup(categories, func() string {
+				if adObj.Category.Valid {
+					return adObj.Category.String
+				}
+				return ""
+			}()),
 			Div(
 				ID("subcategoriesDiv"),
 				Class("space-y-2"),
@@ -301,7 +315,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 						Class("flex flex-row gap-2 mb-2"),
 						g.Group(func() []g.Node {
 							imageNodes := []g.Node{}
-							for i, idx := range adObj.ImageOrder {
+							for i, idx := range adObj.ImageOrderSlice {
 								imageNodes = append(imageNodes,
 									Div(
 										Class("relative group"),
@@ -326,7 +340,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 						Name("image_order"),
 						Value(func() string {
 							order := ""
-							for i, idx := range adObj.ImageOrder {
+							for i, idx := range adObj.ImageOrderSlice {
 								if i > 0 {
 									order += ","
 								}
@@ -647,7 +661,12 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 				FormGroup("Years", "years", Div(ID("yearsDiv"), GridContainer(5, yearCheckboxes...))),
 				FormGroup("Models", "models", Div(ID("modelsDiv"), GridContainer(5, modelCheckboxes...))),
 				FormGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer(5, engineCheckboxes...))),
-				CategoriesFormGroup(categories, currentAd.Category),
+				CategoriesFormGroup(categories, func() string {
+					if currentAd.Category.Valid {
+						return currentAd.Category.String
+					}
+					return ""
+				}()),
 				Div(
 					ID("subcategoriesDiv"),
 					Class("space-y-2"),
@@ -667,12 +686,12 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 							Class("flex flex-row gap-2 mb-2"),
 							g.Group(func() []g.Node {
 								imageNodes := []g.Node{}
-								imageURLs := AdImageURLs(currentAd.ID, currentAd.ImageOrder)
+								imageURLs := AdImageURLs(currentAd.ID, currentAd.ImageOrderSlice)
 								for i, url := range imageURLs {
 									imageNodes = append(imageNodes,
 										Div(
 											Class("relative group"),
-											g.Attr("data-image-idx", fmt.Sprintf("%d", currentAd.ImageOrder[i])),
+											g.Attr("data-image-idx", fmt.Sprintf("%d", currentAd.ImageOrderSlice[i])),
 											Img(
 												Src(url),
 												Alt(fmt.Sprintf("Image %d", i+1)),
@@ -682,7 +701,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 											Button(
 												Type("button"),
 												Class("absolute top-0 right-0 bg-white bg-opacity-80 rounded-full p-1 text-red-600 hover:text-red-800 z-10 delete-image-btn"),
-												g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", currentAd.ImageOrder[i])),
+												g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", currentAd.ImageOrderSlice[i])),
 												Img(Src("/images/trashcan.svg"), Alt("Delete"), Class("w-4 h-4")),
 											),
 										),
@@ -842,7 +861,7 @@ func AdImageWithFallbackSrcSet(adID int, idx int, alt string, context string) g.
 // AdCardCompactTree renders a compact single-line ad card for tree view (collapsed state)
 func AdCardCompactTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
 	// Check if ad has images
-	hasImages := len(ad.ImageOrder) > 0
+	hasImages := len(ad.ImageOrderSlice) > 0
 	picLink := g.Node(nil)
 	if hasImages {
 		picLink = Span(
@@ -921,8 +940,8 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 
 	// Use tile view layout for expanded tree view
 	firstIdx := 1
-	if len(ad.ImageOrder) > 0 {
-		firstIdx = ad.ImageOrder[0]
+	if len(ad.ImageOrderSlice) > 0 {
+		firstIdx = ad.ImageOrderSlice[0]
 	}
 
 	// Carousel main image area
@@ -943,7 +962,7 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 		Class("flex flex-row gap-2 mt-2 px-4 justify-center"),
 		g.Group(func() []g.Node {
 			nodes := []g.Node{}
-			for i, idx := range ad.ImageOrder {
+			for i, idx := range ad.ImageOrderSlice {
 				nodes = append(nodes, Button(
 					Type("button"),
 					Class("border rounded w-16 h-16 overflow-hidden p-0 focus:outline-none"),

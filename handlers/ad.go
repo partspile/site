@@ -204,8 +204,8 @@ func HandleEditAd(c *fiber.Ctx) error {
 
 	// Get subcategories for the current category if it exists
 	var subcategoryNames []string
-	if adObj.Category != "" {
-		subCategories, err := part.GetSubCategoriesForCategory(adObj.Category)
+	if adObj.Category.Valid && adObj.Category.String != "" {
+		subCategories, err := part.GetSubCategoriesForCategory(adObj.Category.String)
 		if err == nil {
 			subcategoryNames = make([]string, len(subCategories))
 			for i, subCat := range subCategories {
@@ -407,8 +407,8 @@ func HandleEditAdPartial(c *fiber.Ctx) error {
 
 	// Get subcategories for the current category if it exists
 	var subcategoryNames []string
-	if adObj.Category != "" {
-		subCategories, err := part.GetSubCategoriesForCategory(adObj.Category)
+	if adObj.Category.Valid && adObj.Category.String != "" {
+		subCategories, err := part.GetSubCategoriesForCategory(adObj.Category.String)
 		if err == nil {
 			subcategoryNames = make([]string, len(subCategories))
 			for i, subCat := range subCategories {

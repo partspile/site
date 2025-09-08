@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"mime/multipart"
 	"strconv"
@@ -228,6 +230,12 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 			}
 		}
 	}
+
+	// Convert imageOrder to JSON string for storage
+	imageOrderJSON, err := json.Marshal(imageOrder)
+	if err != nil {
+		return ad.Ad{}, nil, nil, fmt.Errorf("failed to marshal image_order: %v", err)
+	}
 	// Parse deleted images
 	deletedImagesStr := c.FormValue("deleted_images")
 	deletedImages := []int{}
@@ -245,11 +253,11 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 		Years:       years,
 		Models:      models,
 		Engines:     engines,
-		Category:    category,
+		Category:    sql.NullString{String: category, Valid: category != ""},
 		Description: description,
 		Price:       price,
 		UserID:      userID,
 		LocationID:  locationID,
-		ImageOrder:  imageOrder,
+		ImageOrder:  string(imageOrderJSON),
 	}, imageFiles, deletedImages, nil
 }

@@ -17,41 +17,55 @@ import (
 // Ad represents an advertisement in the system
 type Ad struct {
 	// Core database fields (matching schema order)
-	ID            int        `json:"id"`
-	Title         string     `json:"title"`
-	Description   string     `json:"description"`
-	Price         float64    `json:"price"`
-	CreatedAt     time.Time  `json:"created_at"`
-	DeletedAt     *time.Time `json:"deleted_at,omitempty"`
-	SubCategoryID int        `json:"subcategory_id"`
-	UserID        int        `json:"user_id"`
-	ImageOrder    []int      `json:"image_order"`
-	LocationID    int        `json:"location_id"`
-	ClickCount    int        `json:"click_count"`
-	LastClickedAt *time.Time `json:"last_clicked_at,omitempty"`
-	HasVector     bool       `json:"has_vector"`
+	ID            int        `json:"id" db:"id"`
+	Title         string     `json:"title" db:"title"`
+	Description   string     `json:"description" db:"description"`
+	Price         float64    `json:"price" db:"price"`
+	CreatedAt     time.Time  `json:"created_at" db:"created_at"`
+	DeletedAt     *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
+	SubCategoryID int        `json:"subcategory_id" db:"subcategory_id"`
+	UserID        int        `json:"user_id" db:"user_id"`
+	ImageOrder    string     `json:"image_order" db:"image_order"`
+	LocationID    int        `json:"location_id" db:"location_id"`
+	ClickCount    int        `json:"click_count" db:"click_count"`
+	LastClickedAt *time.Time `json:"last_clicked_at,omitempty" db:"last_clicked_at"`
+	HasVector     bool       `json:"has_vector" db:"has_vector"`
 
 	// Computed/derived fields from joins
-	City      string   `json:"city,omitempty"`
-	AdminArea string   `json:"admin_area,omitempty"`
-	Country   string   `json:"country,omitempty"`
-	Category  string   `json:"category,omitempty"`
-	Latitude  *float64 `json:"latitude,omitempty"`
-	Longitude *float64 `json:"longitude,omitempty"`
+	City        sql.NullString  `json:"city,omitempty" db:"city"`
+	AdminArea   sql.NullString  `json:"admin_area,omitempty" db:"admin_area"`
+	Country     sql.NullString  `json:"country,omitempty" db:"country"`
+	Category    sql.NullString  `json:"category,omitempty" db:"category"`
+	SubCategory sql.NullString  `json:"subcategory,omitempty" db:"subcategory"`
+	Latitude    sql.NullFloat64 `json:"latitude,omitempty" db:"latitude"`
+	Longitude   sql.NullFloat64 `json:"longitude,omitempty" db:"longitude"`
 
 	// Vehicle compatibility fields from AdCar join
-	Make    string   `json:"make"`
-	Years   []string `json:"years"`
-	Models  []string `json:"models"`
-	Engines []string `json:"engines"`
+	Make    string   `json:"make" db:"make"`
+	Years   []string `json:"years" db:"years"`
+	Models  []string `json:"models" db:"models"`
+	Engines []string `json:"engines" db:"engines"`
 
 	// User-specific computed fields
-	Bookmarked bool `json:"bookmarked"`
+	Bookmarked bool `json:"bookmarked" db:"is_bookmarked"`
+
+	// Parsed/computed fields
+	ImageOrderSlice []int `json:"-"` // Parsed version of ImageOrder, populated during scanning
 }
 
 // IsArchived returns true if the ad has been archived
 func (a Ad) IsArchived() bool {
 	return a.DeletedAt != nil
+}
+
+// PopulateImageOrderSlice parses the ImageOrder JSON string into ImageOrderSlice
+func (a *Ad) PopulateImageOrderSlice() {
+	if a.ImageOrder != "" {
+		var order []int
+		if err := json.Unmarshal([]byte(a.ImageOrder), &order); err == nil {
+			a.ImageOrderSlice = order
+		}
+	}
 }
 
 // GetVehicleData retrieves vehicle information for an ad
@@ -160,65 +174,6 @@ func buildAdQuery(ids []int, currentUser *user.User) (string, []interface{}) {
 	return query, args
 }
 
-// scanAdRows scans database rows into Ad structs
-func scanAdRows(rows *sql.Rows) ([]Ad, error) {
-	var ads []Ad
-	for rows.Next() {
-		var ad Ad
-		var subcategory, category sql.NullString
-		var lastClickedAt sql.NullTime
-		var locationID sql.NullInt64
-		var imageOrder sql.NullString
-		var city, adminArea, country sql.NullString
-		var latitude, longitude sql.NullFloat64
-		var createdAt string
-		var isBookmarked int
-
-		if err := rows.Scan(&ad.ID, &ad.Title, &ad.Description, &ad.Price, &createdAt,
-			&ad.SubCategoryID, &ad.UserID, &subcategory, &category, &ad.ClickCount, &lastClickedAt, &locationID, &imageOrder,
-			&city, &adminArea, &country, &latitude, &longitude, &isBookmarked); err != nil {
-			continue
-		}
-
-		// Parse the created_at string into time.Time
-		ad.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-
-		if category.Valid {
-			ad.Category = category.String
-		}
-
-		if lastClickedAt.Valid {
-			ad.LastClickedAt = &lastClickedAt.Time
-		}
-
-		if locationID.Valid {
-			ad.LocationID = int(locationID.Int64)
-			if city.Valid {
-				ad.City = city.String
-			}
-			if adminArea.Valid {
-				ad.AdminArea = adminArea.String
-			}
-			if country.Valid {
-				ad.Country = country.String
-			}
-			if latitude.Valid && longitude.Valid {
-				ad.Latitude = &latitude.Float64
-				ad.Longitude = &longitude.Float64
-			}
-		}
-
-		if imageOrder.Valid {
-			_ = json.Unmarshal([]byte(imageOrder.String), &ad.ImageOrder)
-		}
-
-		ad.Bookmarked = isBookmarked == 1
-
-		ads = append(ads, ad)
-	}
-	return ads, nil
-}
-
 // GetAd retrieves an ad by ID from the Ad table
 func GetAd(id int, currentUser *user.User) (Ad, bool) {
 	ads, err := GetAdsByIDs([]int{id}, currentUser)
@@ -249,9 +204,8 @@ func AddAd(ad Ad) int {
 	defer tx.Rollback()
 
 	createdAt := time.Now().UTC().Format(time.RFC3339)
-	imgOrderJSON, _ := json.Marshal(ad.ImageOrder)
 	res, err := tx.Exec("INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		ad.Title, ad.Description, ad.Price, createdAt, ad.SubCategoryID, ad.UserID, ad.LocationID, string(imgOrderJSON))
+		ad.Title, ad.Description, ad.Price, createdAt, ad.SubCategoryID, ad.UserID, ad.LocationID, ad.ImageOrder)
 	if err != nil {
 		return 0
 	}
@@ -260,6 +214,9 @@ func AddAd(ad Ad) int {
 	if err := addAdVehicleAssociations(tx, int(adID), ad.Make, ad.Years, ad.Models, ad.Engines); err != nil {
 		return 0
 	}
+
+	// Populate the image order slice for efficient access
+	ad.PopulateImageOrderSlice()
 
 	if err := tx.Commit(); err != nil {
 		return 0
@@ -310,9 +267,8 @@ func UpdateAd(ad Ad) error {
 	}
 	defer tx.Rollback()
 
-	imgOrderJSON, _ := json.Marshal(ad.ImageOrder)
 	_, err = tx.Exec("UPDATE Ad SET title = ?, description = ?, price = ?, subcategory_id = ?, location_id = ?, image_order = ? WHERE id = ?",
-		ad.Title, ad.Description, ad.Price, ad.SubCategoryID, ad.LocationID, string(imgOrderJSON), ad.ID)
+		ad.Title, ad.Description, ad.Price, ad.SubCategoryID, ad.LocationID, ad.ImageOrder, ad.ID)
 	if err != nil {
 		return err
 	}
@@ -329,6 +285,9 @@ func UpdateAd(ad Ad) error {
 			return err
 		}
 	}
+
+	// Populate the image order slice for efficient access
+	ad.PopulateImageOrderSlice()
 
 	return tx.Commit()
 }
@@ -361,13 +320,8 @@ func GetAdsByIDs(ids []int, currentUser *user.User) ([]Ad, error) {
 
 	query, args := buildAdQuery(ids, currentUser)
 
-	rows, err := db.Query(query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	ads, err := scanAdRows(rows)
+	var ads []Ad
+	err := db.Select(&ads, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -423,16 +377,10 @@ func GetMostPopularAds(n int) []Ad {
 		LIMIT ?
 	`
 
-	rows, err := db.Query(query, n)
+	var ads []Ad
+	err := db.Select(&ads, query, n)
 	if err != nil {
 		log.Printf("[GetMostPopularAds] SQL error: %v", err)
-		return nil
-	}
-	defer rows.Close()
-
-	ads, err := scanAdRows(rows)
-	if err != nil {
-		log.Printf("[GetMostPopularAds] Row scan error: %v", err)
 		return nil
 	}
 

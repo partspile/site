@@ -72,8 +72,8 @@ func adCarouselImageSrc(adID int, idx int) string {
 
 func adCarouselImage(ad ad.Ad) g.Node {
 	firstIdx := 1
-	if len(ad.ImageOrder) > 0 {
-		firstIdx = ad.ImageOrder[0]
+	if len(ad.ImageOrderSlice) > 0 {
+		firstIdx = ad.ImageOrderSlice[0]
 	}
 
 	src := adCarouselImageSrc(ad.ID, firstIdx)
@@ -129,7 +129,7 @@ func thumbnails(ad ad.Ad) g.Node {
 		Class("flex flex-row gap-2 mt-2 px-4 justify-center"),
 		g.Group(func() []g.Node {
 			nodes := []g.Node{}
-			for i, idx := range ad.ImageOrder {
+			for i, idx := range ad.ImageOrderSlice {
 				nodes = append(nodes, Button(
 					Type("button"),
 					Class("border rounded w-16 h-16 overflow-hidden p-0 focus:outline-none"),

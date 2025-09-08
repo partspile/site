@@ -70,15 +70,15 @@ This document outlines the step-by-step migration from `database/sql` to `sqlx` 
 ### 3.1 Ad Queries (High Risk, High Impact)
 **Files**: `ad/ad.go`, `part/part.go`
 
-- [ ] **ad/ad.go**: `scanAdRows()` function (lines 164-220):
-  - [ ] Convert complex struct scanning to sqlx struct tags
-  - [ ] Add struct tags to `Ad` struct for automatic scanning
-  - [ ] Test with complex queries involving joins
+- [X] **ad/ad.go**: `scanAdRows()` function (lines 164-220):
+  - [X] Convert complex struct scanning to sqlx struct tags
+  - [X] Add struct tags to `Ad` struct for automatic scanning
+  - [X] Test with complex queries involving joins
 
-- [ ] **part/part.go**: Complex ad queries (lines 506-539, 818-870):
-  - [ ] `GetAdsForNode()` - Convert to `db.Select()` with struct tags
-  - [ ] `GetAdsForNodeStructured()` - Convert to `db.Select()` with struct tags
-  - [ ] Handle complex joins and nullable fields
+- [X] **part/part.go**: Complex ad queries (lines 506-539, 818-870):
+  - [X] `GetAdsForNode()` - Convert to `db.Select()` with struct tags
+  - [X] `GetAdsForNodeStructured()` - Convert to `db.Select()` with struct tags
+  - [X] Handle complex joins and nullable fields
 
 ### 3.2 Messaging System (Medium Risk, Medium Impact)
 **File**: `messaging/messaging.go`
