@@ -326,6 +326,11 @@ func GetAdsByIDs(ids []int, currentUser *user.User) ([]Ad, error) {
 		return nil, err
 	}
 
+	// Populate ImageOrderSlice for each ad
+	for i := range ads {
+		ads[i].PopulateImageOrderSlice()
+	}
+
 	// For single ID, just return the first result directly
 	if len(ids) == 1 {
 		return ads, nil

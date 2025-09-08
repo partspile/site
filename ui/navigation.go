@@ -94,35 +94,55 @@ func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
 	menuItems = append(menuItems,
 		A(
 			Href("/bookmarks"),
-			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"),
-			g.Text("🔖 Bookmarks"),
+			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"),
+			Img(
+				Src("/images/bookmark-true.svg"),
+				Alt("Bookmarks"),
+				Class("w-4 h-4 mr-2"),
+			),
+			g.Text("Bookmarks"),
 		),
 	)
 
 	menuItems = append(menuItems,
 		A(
 			Href("/messages"),
-			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"),
-			g.Text("💬 Messages"),
+			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"),
+			Img(
+				Src("/images/message.svg"),
+				Alt("Messages"),
+				Class("w-4 h-4 mr-2"),
+			),
+			g.Text("Messages"),
 		),
 	)
 
 	menuItems = append(menuItems,
 		A(
 			Href("/settings"),
-			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"),
-			g.Text("⚙️ Settings"),
+			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"),
+			Img(
+				Src("/images/settings.svg"),
+				Alt("Settings"),
+				Class("w-4 h-4 mr-2"),
+			),
+			g.Text("Settings"),
 		),
 	)
 
 	menuItems = append(menuItems,
 		A(
 			Href("#"),
-			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"),
+			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"),
 			hx.Post("/logout"),
 			hx.Target("body"),
 			hx.Swap("outerHTML"),
-			g.Text("⬅️ Logout"),
+			Img(
+				Src("/images/logout.svg"),
+				Alt("Logout"),
+				Class("w-4 h-4 mr-2"),
+			),
+			g.Text("Logout"),
 		),
 	)
 
