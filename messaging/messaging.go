@@ -18,34 +18,34 @@ const (
 
 // Conversation represents a conversation between two users about an ad
 type Conversation struct {
-	ID        int       `json:"id"`
-	User1ID   int       `json:"user1_id"`
-	User2ID   int       `json:"user2_id"`
-	AdID      int       `json:"ad_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	User1Read bool      `json:"user1_read"`
-	User2Read bool      `json:"user2_read"`
+	ID        int       `json:"id" db:"id"`
+	User1ID   int       `json:"user1_id" db:"user1_id"`
+	User2ID   int       `json:"user2_id" db:"user2_id"`
+	AdID      int       `json:"ad_id" db:"ad_id"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+	User1Read bool      `json:"user1_read" db:"user1_read"`
+	User2Read bool      `json:"user2_read" db:"user2_read"`
 	// Runtime fields
-	User1Name     string    `json:"user1_name,omitempty"`
-	User2Name     string    `json:"user2_name,omitempty"`
-	AdTitle       string    `json:"ad_title,omitempty"`
-	LastMessage   string    `json:"last_message,omitempty"`
-	LastMessageAt time.Time `json:"last_message_at,omitempty"`
-	UnreadCount   int       `json:"unread_count,omitempty"`
+	User1Name     string    `json:"user1_name,omitempty" db:"user1_name"`
+	User2Name     string    `json:"user2_name,omitempty" db:"user2_name"`
+	AdTitle       string    `json:"ad_title,omitempty" db:"ad_title"`
+	LastMessage   string    `json:"last_message,omitempty" db:"last_message"`
+	LastMessageAt time.Time `json:"last_message_at,omitempty" db:"last_message_at"`
+	UnreadCount   int       `json:"unread_count,omitempty" db:"unread_count"`
 	IsUnread      bool      `json:"is_unread,omitempty"` // Whether current user has unread messages
 }
 
 // Message represents a single message in a conversation
 type Message struct {
-	ID             int        `json:"id"`
-	ConversationID int        `json:"conversation_id"`
-	SenderID       int        `json:"sender_id"`
-	Content        string     `json:"content"`
-	CreatedAt      time.Time  `json:"created_at"`
-	ReadAt         *time.Time `json:"read_at,omitempty"`
+	ID             int        `json:"id" db:"id"`
+	ConversationID int        `json:"conversation_id" db:"conversation_id"`
+	SenderID       int        `json:"sender_id" db:"sender_id"`
+	Content        string     `json:"content" db:"content"`
+	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
+	ReadAt         *time.Time `json:"read_at,omitempty" db:"read_at"`
 	// Runtime fields
-	SenderName string `json:"sender_name,omitempty"`
+	SenderName string `json:"sender_name,omitempty" db:"sender_name"`
 }
 
 // CreateConversation creates a new conversation between two users about an ad
@@ -161,7 +161,8 @@ func GetConversationWithDetails(id int) (Conversation, error) {
 
 // GetConversationsForUser retrieves all conversations for a user
 func GetConversationsForUser(userID int) ([]Conversation, error) {
-	rows, err := db.Query(`
+	var conversations []Conversation
+	err := db.Select(&conversations, `
 		SELECT c.id, c.user1_id, c.user2_id, c.ad_id, c.created_at, c.updated_at,
 		       c.user1_read, c.user2_read,
 		       u1.name as user1_name, u2.name as user2_name,
@@ -186,36 +187,10 @@ func GetConversationsForUser(userID int) ([]Conversation, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	var conversations []Conversation
-	for rows.Next() {
-		var conv Conversation
-		var createdAt, updatedAt string
-		var lastMessage sql.NullString
-		var lastMessageAtStr sql.NullString
-		err := rows.Scan(&conv.ID, &conv.User1ID, &conv.User2ID, &conv.AdID, &createdAt, &updatedAt,
-			&conv.User1Read, &conv.User2Read,
-			&conv.User1Name, &conv.User2Name, &conv.AdTitle,
-			&lastMessage, &lastMessageAtStr, &conv.UnreadCount)
-		if err != nil {
-			return nil, err
-		}
-
-		conv.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-		conv.UpdatedAt, _ = time.Parse(time.RFC3339Nano, updatedAt)
-
-		if lastMessage.Valid {
-			conv.LastMessage = lastMessage.String
-		}
-		if lastMessageAtStr.Valid {
-			conv.LastMessageAt, _ = time.Parse(time.RFC3339Nano, lastMessageAtStr.String)
-		}
-
-		// Calculate if conversation is unread for current user
-		conv.IsUnread = conv.UnreadCount > 0
-
-		conversations = append(conversations, conv)
+	// Calculate if conversation is unread for current user
+	for i := range conversations {
+		conversations[i].IsUnread = conversations[i].UnreadCount > 0
 	}
 
 	return conversations, nil
@@ -339,7 +314,8 @@ func AddMessageWithTx(tx *sql.Tx, conversationID, senderID int, content string) 
 
 // GetMessages retrieves all messages for a conversation
 func GetMessages(conversationID int) ([]Message, error) {
-	rows, err := db.Query(`
+	var messages []Message
+	err := db.Select(&messages, `
 		SELECT m.id, m.conversation_id, m.sender_id, m.content, m.created_at, m.read_at,
 		       u.name as sender_name
 		FROM Message m
@@ -347,31 +323,7 @@ func GetMessages(conversationID int) ([]Message, error) {
 		WHERE m.conversation_id = ?
 		ORDER BY m.created_at ASC
 	`, conversationID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var messages []Message
-	for rows.Next() {
-		var msg Message
-		var createdAt string
-		var readAt sql.NullString
-		err := rows.Scan(&msg.ID, &msg.ConversationID, &msg.SenderID, &msg.Content, &createdAt, &readAt, &msg.SenderName)
-		if err != nil {
-			return nil, err
-		}
-
-		msg.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-		if readAt.Valid {
-			readTime, _ := time.Parse(time.RFC3339Nano, readAt.String)
-			msg.ReadAt = &readTime
-		}
-
-		messages = append(messages, msg)
-	}
-
-	return messages, nil
+	return messages, err
 }
 
 // MarkMessagesAsRead marks all messages in a conversation as read by a specific user

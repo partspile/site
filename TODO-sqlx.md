@@ -83,12 +83,12 @@ This document outlines the step-by-step migration from `database/sql` to `sqlx` 
 ### 3.2 Messaging System (Medium Risk, Medium Impact)
 **File**: `messaging/messaging.go`
 
-- [ ] **Conversation queries** (lines 192-210):
-  - [ ] `GetConversationsForUser()` - Convert to `db.Select()`
-  - [ ] Add struct tags to `Conversation` struct
-- [ ] **Message queries** (lines 356-370):
-  - [ ] `GetMessagesForConversation()` - Convert to `db.Select()`
-  - [ ] Add struct tags to `Message` struct
+- [X] **Conversation queries** (lines 192-210):
+  - [X] `GetConversationsForUser()` - Convert to `db.Select()`
+  - [X] Add struct tags to `Conversation` struct
+- [X] **Message queries** (lines 356-370):
+  - [X] `GetMessagesForConversation()` - Convert to `db.Select()`
+  - [X] Add struct tags to `Message` struct
 
 ### 3.3 Rock System (Medium Risk, Low Impact)
 **File**: `rock/rock.go`
