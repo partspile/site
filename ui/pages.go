@@ -29,8 +29,8 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 		currentUser,
 		path,
 		[]g.Node{
-			PageHeader("Register"),
-			ContentContainer(
+			pageHeader("Register"),
+			contentContainer(
 				Div(
 					Class("text-center mb-6"),
 					P(
@@ -39,8 +39,8 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 					),
 				),
 
-				FormContainer("registerForm",
-					FormGroup("Username", "name",
+				formContainer("registerForm",
+					formGroup("Username", "name",
 						Input(
 							Type("text"),
 							ID("name"),
@@ -49,7 +49,7 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 							Required(),
 						),
 					),
-					FormGroup("Phone Number", "phone",
+					formGroup("Phone Number", "phone",
 						Div(
 							Input(
 								Type("text"),
@@ -73,8 +73,8 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 						Class("text-xs text-gray-600 bg-gray-50 p-3 rounded border"),
 						g.Text("By providing your phone number you agree to receive informational text messages from Parts Pile. Message frequency will vary. Msg & data rates may apply. Reply HELP for help or STOP to cancel. We only use your phone for essential communications and verification."),
 					),
-					ActionButtons(
-						StyledButton("Send Verification Code", ButtonPrimary,
+					actionButtons(
+						styledButton("Send Verification Code", buttonPrimary,
 							hx.Post("/api/register/step1"),
 							hx.Target("#result"),
 							hx.Indicator("#registerForm"),
@@ -108,7 +108,7 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 						g.Text("."),
 					),
 				),
-				ResultContainer(),
+				resultContainer(),
 			),
 		},
 	)
@@ -120,23 +120,23 @@ func LoginPage(currentUser *user.User, path string) g.Node {
 		currentUser,
 		path,
 		[]g.Node{
-			PageHeader("Login"),
-			ContentContainer(
-				FormContainer("loginForm",
-					FormGroup("Username", "name",
+			pageHeader("Login"),
+			contentContainer(
+				formContainer("loginForm",
+					formGroup("Username", "name",
 						TextInput("name", "name", ""),
 					),
-					FormGroup("Password", "password",
-						PasswordInput("password", "password"),
+					formGroup("Password", "password",
+						passwordInput("password", "password"),
 					),
-					ActionButtons(
-						StyledButton("Login", ButtonPrimary,
+					actionButtons(
+						styledButton("Login", buttonPrimary,
 							hx.Post("/api/login"),
 							hx.Target("#result"),
 							hx.Indicator("#loginForm"),
 						),
 					),
-					ResultContainer(),
+					resultContainer(),
 				),
 			),
 		},
@@ -149,8 +149,8 @@ func VerificationPage(currentUser *user.User, path string, username string) g.No
 		currentUser,
 		path,
 		[]g.Node{
-			PageHeader("Verify Your Phone Number"),
-			ContentContainer(
+			pageHeader("Verify Your Phone Number"),
+			contentContainer(
 				Div(
 					Class("text-center mb-6"),
 					P(
@@ -159,7 +159,7 @@ func VerificationPage(currentUser *user.User, path string, username string) g.No
 							"Please enter the code below to complete your registration."),
 					),
 				),
-				FormContainer("verificationForm",
+				formContainer("verificationForm",
 					// Hidden username field for password managers
 					Input(
 						Type("hidden"),
@@ -167,14 +167,14 @@ func VerificationPage(currentUser *user.User, path string, username string) g.No
 						Value(username),
 						g.Attr("autocomplete", "username"),
 					),
-					FormGroup("Verification Code", "verification_code",
+					formGroup("Verification Code", "verification_code",
 						TextInput("verification_code", "verification_code", ""),
 					),
-					FormGroup("Password", "password",
-						PasswordInput("password", "password"),
+					formGroup("Password", "password",
+						passwordInput("password", "password"),
 					),
-					FormGroup("Confirm Password", "password2",
-						PasswordInput("password2", "password2"),
+					formGroup("Confirm Password", "password2",
+						passwordInput("password2", "password2"),
 					),
 					Div(
 						Class("space-y-2"),
@@ -192,14 +192,14 @@ func VerificationPage(currentUser *user.User, path string, username string) g.No
 						),
 						g.Text("."),
 					),
-					ActionButtons(
-						StyledButton("Complete Registration", ButtonPrimary,
+					actionButtons(
+						styledButton("Complete Registration", buttonPrimary,
 							hx.Post("/api/register/verify"),
 							hx.Target("#result"),
 							hx.Indicator("#verificationForm"),
 						),
 					),
-					ResultContainer(),
+					resultContainer(),
 				),
 			),
 		},
@@ -212,8 +212,8 @@ func TermsOfServicePage(currentUser *user.User, path string) g.Node {
 		currentUser,
 		path,
 		[]g.Node{
-			PageHeader("Terms of Service"),
-			ContentContainer(
+			pageHeader("Terms of Service"),
+			contentContainer(
 				Div(
 					Class("prose max-w-none"),
 					H2(Class("text-xl font-semibold mb-4"), g.Text("Terms of Service")),
@@ -254,8 +254,8 @@ func PrivacyPolicyPage(currentUser *user.User, path string) g.Node {
 		currentUser,
 		path,
 		[]g.Node{
-			PageHeader("Privacy Policy"),
-			ContentContainer(
+			pageHeader("Privacy Policy"),
+			contentContainer(
 				Div(
 					Class("prose max-w-none"),
 					H2(Class("text-xl font-semibold mb-4"), g.Text("Privacy Policy")),
@@ -329,8 +329,8 @@ func RocksPage(currentUser *user.User, path string) g.Node {
 		currentUser,
 		path,
 		[]g.Node{
-			PageHeader("Your Rocks"),
-			ContentContainer(
+			pageHeader("Your Rocks"),
+			contentContainer(
 				Div(
 					Class("text-center mb-8"),
 					H2(
@@ -375,7 +375,7 @@ func RocksPage(currentUser *user.User, path string) g.Node {
 					),
 					Div(
 						Class("text-center"),
-						StyledLink("Continue to Login", "/login", ButtonPrimary,
+						StyledLink("Continue to Login", "/login", buttonPrimary,
 							Class("text-lg px-8 py-3"),
 						),
 					),

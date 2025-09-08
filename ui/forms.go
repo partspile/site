@@ -10,16 +10,16 @@ import (
 
 // ---- Form Components ----
 
-func FormContainer(formID string, content ...g.Node) g.Node {
+func formContainer(formID string, content ...g.Node) g.Node {
 	return Form(
 		ID(formID),
 		Class("space-y-6"),
-		ValidationErrorContainer(),
+		validationErrorContainer(),
 		g.Group(content),
 	)
 }
 
-func FormGroup(labelText string, fieldID string, input g.Node) g.Node {
+func formGroup(labelText string, fieldID string, input g.Node) g.Node {
 	return Div(
 		Class("space-y-2"),
 		Label(For(fieldID), Class("block"), g.Text(labelText)),
@@ -73,7 +73,7 @@ func TextInput(id, name, value string) g.Node {
 	)
 }
 
-func PasswordInput(id, name string) g.Node {
+func passwordInput(id, name string) g.Node {
 	return Input(
 		Type("password"),
 		ID(id),
@@ -96,7 +96,7 @@ func YearsFormGroup(years []string) g.Node {
 			),
 		)
 	}
-	return FormGroup("Years", "years", GridContainer(5, checkboxes...))
+	return formGroup("Years", "years", GridContainer(5, checkboxes...))
 }
 
 func ModelsFormGroup(modelAvailability map[string]bool) g.Node {
@@ -112,7 +112,7 @@ func ModelsFormGroup(modelAvailability map[string]bool) g.Node {
 			),
 		)
 	}
-	return FormGroup("Models", "models", GridContainer(5, checkboxes...))
+	return formGroup("Models", "models", GridContainer(5, checkboxes...))
 }
 
 func EnginesFormGroup(engineAvailability map[string]bool) g.Node {
@@ -122,7 +122,7 @@ func EnginesFormGroup(engineAvailability map[string]bool) g.Node {
 			Checkbox("engines", engine, engine, false, !isAvailable),
 		)
 	}
-	return FormGroup("Engines", "engines", GridContainer(5, checkboxes...))
+	return formGroup("Engines", "engines", GridContainer(5, checkboxes...))
 }
 
 func CategoriesFormGroup(categories []string, selectedCategory string) g.Node {
@@ -138,7 +138,7 @@ func CategoriesFormGroup(categories []string, selectedCategory string) g.Node {
 		options = append(options, Option(attrs...))
 	}
 
-	return FormGroup("Category", "category",
+	return formGroup("Category", "category",
 		Select(
 			ID("category"),
 			Name("category"),
@@ -166,7 +166,7 @@ func SubCategoriesFormGroup(subCategories []string, selectedSubCategory string) 
 		options = append(options, Option(attrs...))
 	}
 
-	return FormGroup("Subcategory", "subcategory",
+	return formGroup("Subcategory", "subcategory",
 		Select(
 			ID("subcategory"),
 			Name("subcategory"),
@@ -190,7 +190,7 @@ func SubCategoriesFormGroupFromStruct(subCategories []part.SubCategory, selected
 		options = append(options, Option(attrs...))
 	}
 
-	return FormGroup("Subcategory", "subcategory",
+	return formGroup("Subcategory", "subcategory",
 		Select(
 			ID("subcategory"),
 			Name("subcategory"),
@@ -201,8 +201,8 @@ func SubCategoriesFormGroupFromStruct(subCategories []part.SubCategory, selected
 	)
 }
 
-// NotificationMethodRadioGroup creates radio buttons for selecting notification method
-func NotificationMethodRadioGroup(selectedMethod string, emailAddress *string, phoneNumber string) g.Node {
+// notificationMethodRadioGroup creates radio buttons for selecting notification method
+func notificationMethodRadioGroup(selectedMethod string, emailAddress *string, phoneNumber string) g.Node {
 	radioButtons := []g.Node{
 		Div(Class("flex items-center"),
 			Input(Type("radio"), Name("notificationMethod"), Value("sms"), ID("notificationMethod-sms"), g.If(selectedMethod == "sms", Checked()), Class("mr-2"),
@@ -267,7 +267,7 @@ func NotificationMethodRadioGroup(selectedMethod string, emailAddress *string, p
 		),
 	}
 
-	return FormGroup("Notification Method", "notificationMethod",
+	return formGroup("Notification Method", "notificationMethod",
 		Div(Class("space-y-3"),
 			g.Group(radioButtons),
 		),

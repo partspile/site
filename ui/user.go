@@ -4,7 +4,6 @@ import (
 	"time"
 
 	g "maragu.dev/gomponents"
-	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
@@ -26,10 +25,10 @@ func BookmarksPage(currentUser *user.User, ads []ad.Ad) g.Node {
 		currentUser,
 		"/bookmarks",
 		[]g.Node{
-			PageHeader("Bookmarked Ads"),
+			pageHeader("Bookmarked Ads"),
 			Div(Class("text-gray-600 text-sm mb-6"), g.Text("Ads you have bookmarked for later.")),
 			g.If(len(ads) == 0,
-				ContentContainer(
+				contentContainer(
 					Div(Class("text-center py-12"),
 						Div(Class("text-gray-500 text-lg mb-4"), g.Text("No bookmarked ads yet.")),
 						Div(Class("text-gray-400 text-sm"), g.Text("Start browsing ads and bookmark the ones you're interested in!")),
@@ -40,69 +39,6 @@ func BookmarksPage(currentUser *user.User, ads []ad.Ad) g.Node {
 				AdCompactListContainer(
 					g.Group(BuildAdListNodesFromSlice(currentUser, ads)),
 				),
-			),
-		},
-	)
-}
-
-func SettingsPage(currentUser *user.User, currentPath string) g.Node {
-	return Page(
-		"Settings",
-		currentUser,
-		currentPath,
-		[]g.Node{
-			PageHeader("Settings"),
-			ContentContainer(
-				SectionHeader("Notification Preferences", "Choose how you'd like to receive notifications."),
-				FormContainer("notificationForm",
-					NotificationMethodRadioGroup(currentUser.NotificationMethod, currentUser.EmailAddress, currentUser.Phone),
-					ActionButtons(
-						StyledButton("Update Preferences", ButtonPrimary,
-							hx.Post("/api/update-notification-method"),
-							hx.Target("#notificationPreferencesResults"),
-							hx.Indicator("#notificationForm"),
-						),
-					),
-				),
-				Div(ID("notificationPreferencesResults"), Class("mt-2")),
-				Div(Class("mt-12"),
-					SectionHeader("Change Password", ""),
-					FormContainer("changePasswordForm",
-						FormGroup("Current Password", "currentPassword",
-							PasswordInput("currentPassword", "currentPassword"),
-						),
-						FormGroup("New Password", "newPassword",
-							PasswordInput("newPassword", "newPassword"),
-						),
-						FormGroup("Confirm New Password", "confirmNewPassword",
-							PasswordInput("confirmNewPassword", "confirmNewPassword"),
-						),
-						ActionButtons(
-							StyledButton("Change Password", ButtonPrimary,
-								hx.Post("/api/change-password"),
-								hx.Target("#result"),
-								hx.Indicator("#changePasswordForm"),
-							),
-						),
-					),
-				),
-				Div(Class("mt-12"),
-					SectionHeader("Delete Account", "This will permanently delete your account and all associated data. This action cannot be undone."),
-					FormContainer("deleteAccountForm",
-						FormGroup("Password", "deletePassword",
-							PasswordInput("deletePassword", "password"),
-						),
-						ActionButtons(
-							StyledButton("Delete My Account", ButtonDanger,
-								hx.Post("/api/delete-account"),
-								hx.Confirm("Are you sure you want to delete your account? This action is permanent."),
-								hx.Target("#result"),
-								hx.Indicator("#deleteAccountForm"),
-							),
-						),
-					),
-				),
-				ResultContainer(),
 			),
 		},
 	)

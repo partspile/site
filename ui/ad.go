@@ -184,8 +184,8 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 			hx.Encoding("multipart/form-data"),
 			hx.Target(htmxTarget),
 			hx.Swap("outerHTML"),
-			ValidationErrorContainer(),
-			FormGroup("Title", "title",
+			validationErrorContainer(),
+			formGroup("Title", "title",
 				Input(
 					Type("text"),
 					ID("title"),
@@ -195,7 +195,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 					Value(adObj.Title),
 				),
 			),
-			FormGroup("Make", "make",
+			formGroup("Make", "make",
 				Select(
 					ID("make"),
 					Name("make"),
@@ -220,7 +220,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 					}()),
 				),
 			),
-			FormGroup("Years", "years", Div(ID("yearsDiv"), GridContainer(5, func() []g.Node {
+			formGroup("Years", "years", Div(ID("yearsDiv"), GridContainer(5, func() []g.Node {
 				yearCheckboxes := []g.Node{}
 				for _, year := range years {
 					isChecked := false
@@ -241,7 +241,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 				}
 				return yearCheckboxes
 			}()...))),
-			FormGroup("Models", "models", Div(ID("modelsDiv"), GridContainer(5, func() []g.Node {
+			formGroup("Models", "models", Div(ID("modelsDiv"), GridContainer(5, func() []g.Node {
 				modelCheckboxes := []g.Node{}
 				models := make([]string, 0, len(modelAvailability))
 				for m := range modelAvailability {
@@ -268,7 +268,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 				}
 				return modelCheckboxes
 			}()...))),
-			FormGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer(5, func() []g.Node {
+			formGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer(5, func() []g.Node {
 				engineCheckboxes := []g.Node{}
 				engines := make([]string, 0, len(engineAvailability))
 				for e := range engineAvailability {
@@ -307,7 +307,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 					return g.Text("")
 				}(),
 			),
-			FormGroup("Images", "images",
+			formGroup("Images", "images",
 				Div(
 					// New: Image gallery for existing images
 					Div(
@@ -368,7 +368,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 					Div(ID("image-preview")),
 				),
 			),
-			FormGroup("Description", "description",
+			formGroup("Description", "description",
 				Textarea(
 					ID("description"),
 					Name("description"),
@@ -377,7 +377,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 					g.Text(adObj.Description),
 				),
 			),
-			FormGroup("Price", "price",
+			formGroup("Price", "price",
 				Input(
 					Type("number"),
 					ID("price"),
@@ -388,7 +388,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 					Value(fmt.Sprintf("%.2f", adObj.Price)),
 				),
 			),
-			FormGroup("Location", "location",
+			formGroup("Location", "location",
 				Input(
 					Type("text"),
 					ID("location"),
@@ -407,7 +407,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 					hx.Swap("outerHTML"),
 					g.Text("×"),
 				),
-				StyledButton("Save", ButtonPrimary,
+				styledButton("Save", buttonPrimary,
 					Type("submit"),
 				),
 			),
@@ -440,15 +440,15 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 		currentUser,
 		path,
 		[]g.Node{
-			PageHeader("Create New Ad"),
+			pageHeader("Create New Ad"),
 			Form(
 				ID("newAdForm"),
 				Class("space-y-6"),
 				hx.Post("/api/new-ad"),
 				hx.Encoding("multipart/form-data"),
 				hx.Target("#result"),
-				ValidationErrorContainer(),
-				FormGroup("Title", "title",
+				validationErrorContainer(),
+				formGroup("Title", "title",
 					Input(
 						Type("text"),
 						ID("title"),
@@ -457,7 +457,7 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 						Required(),
 					),
 				),
-				FormGroup("Make", "make",
+				formGroup("Make", "make",
 					Select(
 						ID("make"),
 						Name("make"),
@@ -488,7 +488,7 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 					ID("subcategoriesDiv"),
 					Class("space-y-2"),
 				),
-				FormGroup("Images", "images",
+				formGroup("Images", "images",
 					Div(
 						Input(
 							Type("file"),
@@ -501,7 +501,7 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 						Div(ID("image-preview")),
 					),
 				),
-				FormGroup("Description", "description",
+				formGroup("Description", "description",
 					Textarea(
 						ID("description"),
 						Name("description"),
@@ -509,7 +509,7 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 						Rows("4"),
 					),
 				),
-				FormGroup("Price", "price",
+				formGroup("Price", "price",
 					Input(
 						Type("number"),
 						ID("price"),
@@ -519,7 +519,7 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 						Min("0"),
 					),
 				),
-				FormGroup("Location", "location",
+				formGroup("Location", "location",
 					Input(
 						Type("text"),
 						ID("location"),
@@ -528,7 +528,7 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 						Placeholder("(Optional)"),
 					),
 				),
-				StyledButton("Submit", ButtonPrimary,
+				styledButton("Submit", buttonPrimary,
 					Type("submit"),
 				),
 				g.Raw(`<script src="/js/image-preview.js" defer></script>`),
@@ -626,7 +626,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 		currentUser,
 		path,
 		[]g.Node{
-			PageHeader("Edit Ad"),
+			pageHeader("Edit Ad"),
 			Form(
 				ID("editAdForm"),
 				Class("space-y-6"),
@@ -634,8 +634,8 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 				hx.Encoding("multipart/form-data"),
 				hx.Target(htmxTarget),
 				hx.Swap("outerHTML"),
-				ValidationErrorContainer(),
-				FormGroup("Title", "title",
+				validationErrorContainer(),
+				formGroup("Title", "title",
 					Input(
 						Type("text"),
 						ID("title"),
@@ -644,7 +644,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 						Required(),
 					),
 				),
-				FormGroup("Make", "make",
+				formGroup("Make", "make",
 					Select(
 						ID("make"),
 						Name("make"),
@@ -658,9 +658,9 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 						g.Group(makeOptions),
 					),
 				),
-				FormGroup("Years", "years", Div(ID("yearsDiv"), GridContainer(5, yearCheckboxes...))),
-				FormGroup("Models", "models", Div(ID("modelsDiv"), GridContainer(5, modelCheckboxes...))),
-				FormGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer(5, engineCheckboxes...))),
+				formGroup("Years", "years", Div(ID("yearsDiv"), GridContainer(5, yearCheckboxes...))),
+				formGroup("Models", "models", Div(ID("modelsDiv"), GridContainer(5, modelCheckboxes...))),
+				formGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer(5, engineCheckboxes...))),
 				CategoriesFormGroup(categories, func() string {
 					if currentAd.Category.Valid {
 						return currentAd.Category.String
@@ -678,7 +678,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 						return g.Text("")
 					}(),
 				),
-				FormGroup("Images", "images",
+				formGroup("Images", "images",
 					Div(
 						// New: Image gallery for existing images
 						Div(
@@ -745,7 +745,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 						Div(ID("image-preview")),
 					),
 				),
-				FormGroup("Description", "description",
+				formGroup("Description", "description",
 					Textarea(
 						ID("description"),
 						Name("description"),
@@ -753,7 +753,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 						Rows("4"),
 					),
 				),
-				FormGroup("Price", "price",
+				formGroup("Price", "price",
 					Input(
 						Type("number"),
 						ID("price"),
@@ -764,7 +764,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 						Value(fmt.Sprintf("%.2f", currentAd.Price)),
 					),
 				),
-				FormGroup("Location (Zipcode)", "location",
+				formGroup("Location (Zipcode)", "location",
 					Input(
 						Type("text"),
 						ID("location"),
@@ -773,7 +773,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 						Placeholder("Optional zipcode, e.g. 90210"),
 					),
 				),
-				StyledButton("Submit", ButtonPrimary,
+				styledButton("Submit", buttonPrimary,
 					Type("submit"),
 				),
 				g.Raw(`<script src="/js/image-preview.js" defer></script>`),

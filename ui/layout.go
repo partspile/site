@@ -66,6 +66,6 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 	})
 }
 
-func PageHeader(text string) g.Node {
+func pageHeader(text string) g.Node {
 	return H1(Class("text-4xl font-bold mb-8"), g.Text(text))
 }

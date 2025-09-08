@@ -18,8 +18,8 @@ func MessagesPage(currentUser *user.User, conversations []messaging.Conversation
 		currentUser,
 		"/messages",
 		[]g.Node{
-			PageHeader("Messages"),
-			ContentContainer(
+			pageHeader("Messages"),
+			contentContainer(
 				g.If(len(conversations) == 0,
 					Div(
 						Class("text-center py-8"),
@@ -61,8 +61,8 @@ func MessagesPageWithExpanded(currentUser *user.User, conversations []messaging.
 		currentUser,
 		"/messages",
 		[]g.Node{
-			PageHeader("Messages"),
-			ContentContainer(
+			pageHeader("Messages"),
+			contentContainer(
 				g.If(len(conversations) == 0,
 					Div(
 						Class("text-center py-8"),

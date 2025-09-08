@@ -20,14 +20,14 @@ func GridContainer(cols int, children ...g.Node) g.Node {
 	)
 }
 
-func ContentContainer(content ...g.Node) g.Node {
+func contentContainer(content ...g.Node) g.Node {
 	return Div(
 		Class("max-w-2xl mx-auto"),
 		g.Group(content),
 	)
 }
 
-func SectionHeader(title string, helpText string) g.Node {
+func sectionHeader(title string, helpText string) g.Node {
 	nodes := []g.Node{
 		Label(Class("block font-bold"), g.Text(title)),
 	}
@@ -47,7 +47,7 @@ func SectionHeader(title string, helpText string) g.Node {
 type ButtonVariant string
 
 const (
-	ButtonPrimary   ButtonVariant = "primary"
+	buttonPrimary   ButtonVariant = "primary"
 	ButtonSecondary ButtonVariant = "secondary"
 	ButtonDanger    ButtonVariant = "danger"
 )
@@ -55,7 +55,7 @@ const (
 func getButtonClass(variant ButtonVariant) string {
 	baseClass := "px-4 py-2 rounded inline-block "
 	switch variant {
-	case ButtonPrimary:
+	case buttonPrimary:
 		return baseClass + "bg-blue-500 text-white hover:bg-blue-600"
 	case ButtonSecondary:
 		return baseClass + "text-blue-500 hover:underline"
@@ -66,7 +66,7 @@ func getButtonClass(variant ButtonVariant) string {
 	}
 }
 
-func StyledButton(text string, variant ButtonVariant, attrs ...g.Node) g.Node {
+func styledButton(text string, variant ButtonVariant, attrs ...g.Node) g.Node {
 	allAttrs := append([]g.Node{Class(getButtonClass(variant))}, attrs...)
 	return Button(append(allAttrs, g.Text(text))...)
 }
@@ -91,7 +91,7 @@ func BackToListingsButton() g.Node {
 	)
 }
 
-func ActionButtons(buttons ...g.Node) g.Node {
+func actionButtons(buttons ...g.Node) g.Node {
 	return Div(
 		Class("mt-8 space-x-4"),
 		g.Group(buttons),
@@ -100,7 +100,7 @@ func ActionButtons(buttons ...g.Node) g.Node {
 
 // ---- Message Components ----
 
-func ValidationErrorContainer() g.Node {
+func validationErrorContainer() g.Node {
 	return Div(
 		ID("validationError"),
 		Class("hidden bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded mb-4"),
@@ -129,7 +129,7 @@ func SuccessMessage(message string, redirectURL string) g.Node {
 	return Div(nodes...)
 }
 
-func ResultContainer() g.Node {
+func resultContainer() g.Node {
 	return Div(
 		ID("result"),
 		Class("mt-4"),
@@ -142,7 +142,7 @@ func ErrorPage(code int, message string) g.Node {
 		nil, // no current user on error page
 		"",  // no current path
 		[]g.Node{
-			PageHeader(fmt.Sprintf("Error %d", code)),
+			pageHeader(fmt.Sprintf("Error %d", code)),
 			P(g.Text(message)),
 		},
 	)

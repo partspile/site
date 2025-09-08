@@ -1,0 +1,72 @@
+package ui
+
+import (
+	g "maragu.dev/gomponents"
+	hx "maragu.dev/gomponents-htmx"
+	. "maragu.dev/gomponents/html"
+
+	"github.com/parts-pile/site/user"
+)
+
+func SettingsPage(currentUser *user.User, currentPath string) g.Node {
+	return Page(
+		"Settings",
+		currentUser,
+		currentPath,
+		[]g.Node{
+			pageHeader("Settings"),
+			contentContainer(
+				sectionHeader("Notification Preferences", "Choose how you'd like to receive notifications."),
+				formContainer("notificationForm",
+					notificationMethodRadioGroup(currentUser.NotificationMethod, currentUser.EmailAddress, currentUser.Phone),
+					actionButtons(
+						styledButton("Update Preferences", buttonPrimary,
+							hx.Post("/api/update-notification-method"),
+							hx.Target("#notificationPreferencesResults"),
+							hx.Indicator("#notificationForm"),
+						),
+					),
+				),
+				Div(ID("notificationPreferencesResults"), Class("mt-2")),
+				Div(Class("mt-12"),
+					sectionHeader("Change Password", ""),
+					formContainer("changePasswordForm",
+						formGroup("Current Password", "currentPassword",
+							passwordInput("currentPassword", "currentPassword"),
+						),
+						formGroup("New Password", "newPassword",
+							passwordInput("newPassword", "newPassword"),
+						),
+						formGroup("Confirm New Password", "confirmNewPassword",
+							passwordInput("confirmNewPassword", "confirmNewPassword"),
+						),
+						actionButtons(
+							styledButton("Change Password", buttonPrimary,
+								hx.Post("/api/change-password"),
+								hx.Target("#result"),
+								hx.Indicator("#changePasswordForm"),
+							),
+						),
+					),
+				),
+				Div(Class("mt-12"),
+					sectionHeader("Delete Account", "This will permanently delete your account and all associated data. This action cannot be undone."),
+					formContainer("deleteAccountForm",
+						formGroup("Password", "deletePassword",
+							passwordInput("deletePassword", "password"),
+						),
+						actionButtons(
+							styledButton("Delete My Account", ButtonDanger,
+								hx.Post("/api/delete-account"),
+								hx.Confirm("Are you sure you want to delete your account? This action is permanent."),
+								hx.Target("#result"),
+								hx.Indicator("#deleteAccountForm"),
+							),
+						),
+					),
+				),
+				resultContainer(),
+			),
+		},
+	)
+}
