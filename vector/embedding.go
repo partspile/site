@@ -555,10 +555,10 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 		joinStrings(adObj.Years),
 		joinStrings(adObj.Models),
 		joinStrings(adObj.Engines),
-		adObj.Category,
-		adObj.City,
-		adObj.AdminArea,
-		adObj.Country,
+		adObj.Category.String,
+		adObj.City.String,
+		adObj.AdminArea.String,
+		adObj.Country.String,
 		rockContext,
 	)
 }

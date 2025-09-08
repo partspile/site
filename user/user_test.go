@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/jmoiron/sqlx"
 	"github.com/parts-pile/site/db"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -49,21 +50,22 @@ func TestCreateUser(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	// Expect transaction begin
 	mock.ExpectBegin()
-	
+
 	// Expect user insert
 	mock.ExpectExec("INSERT INTO User").
 		WithArgs("testuser", "1234567890", "hashedpassword", "somesalt", "argon2id", "sms").
 		WillReturnResult(sqlmock.NewResult(1, 1))
-	
+
 	// Expect rock inventory insert
 	mock.ExpectExec("INSERT INTO UserRock").
 		WithArgs(1).
 		WillReturnResult(sqlmock.NewResult(1, 1))
-	
+
 	// Expect transaction commit
 	mock.ExpectCommit()
 
@@ -79,7 +81,8 @@ func TestGetUserByID(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	// Test active user
 	mock.ExpectQuery("SELECT.*FROM User WHERE id = ?").
@@ -101,7 +104,8 @@ func TestGetUserByPhone(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	expectedTime := time.Now()
 	mock.ExpectQuery("SELECT.*FROM User WHERE phone = \\? AND deleted_at IS NULL").
@@ -124,7 +128,8 @@ func TestGetUser(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	expectedTime := time.Now()
 	mock.ExpectQuery("SELECT.*FROM User WHERE id = ?").
@@ -146,7 +151,8 @@ func TestGetUserByName(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	expectedTime := time.Now()
 	mock.ExpectQuery("SELECT.*FROM User WHERE name = \\? AND deleted_at IS NULL").
@@ -167,7 +173,8 @@ func TestUpdateUserPassword(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	mock.ExpectExec("UPDATE User SET password_hash = \\?, password_salt = \\?, password_algo = \\? WHERE id = \\?").
 		WithArgs("newhashedpassword", "newsalt", "argon2id", 1).
@@ -185,7 +192,8 @@ func TestUpdateNotificationMethod(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	mock.ExpectExec("UPDATE User SET notification_method = \\? WHERE id = \\?").
 		WithArgs("email", 1).
@@ -202,7 +210,8 @@ func TestArchiveUser(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	mock.ExpectExec("UPDATE User SET deleted_at = \\? WHERE id = \\?").
 		WithArgs(sqlmock.AnyArg(), 1).
@@ -219,7 +228,8 @@ func TestRestoreUser(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	mock.ExpectExec("UPDATE User SET deleted_at = NULL WHERE id = \\?").
 		WithArgs(1).

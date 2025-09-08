@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/jmoiron/sqlx"
 	"github.com/parts-pile/site/db"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,7 +17,8 @@ func TestSaveUserSearch(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	userID := sql.NullInt64{Int64: 1, Valid: true}
 	queryString := "test search"
@@ -36,7 +38,8 @@ func TestSaveUserSearch_Anonymous(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	userID := sql.NullInt64{Valid: false}
 	queryString := "anonymous search"
@@ -56,7 +59,8 @@ func TestGetRecentUserSearches(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	expectedSearches := []UserSearch{
 		{ID: 1, UserID: sql.NullInt64{Int64: 1, Valid: true}, QueryString: "test search 1", CreatedAt: time.Now()},
@@ -65,7 +69,7 @@ func TestGetRecentUserSearches(t *testing.T) {
 
 	rows := sqlmock.NewRows([]string{"id", "user_id", "query_string", "created_at"})
 	for _, search := range expectedSearches {
-		rows.AddRow(search.ID, search.UserID.Int64, search.QueryString, search.CreatedAt.Format(time.RFC3339Nano))
+		rows.AddRow(search.ID, search.UserID.Int64, search.QueryString, search.CreatedAt)
 	}
 
 	mock.ExpectQuery("SELECT id, user_id, query_string, created_at FROM UserSearch WHERE user_id = \\? ORDER BY created_at DESC LIMIT \\?").
@@ -86,7 +90,8 @@ func TestGetRecentUserSearches_Empty(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	userID := 1
 	limit := 5
@@ -107,7 +112,8 @@ func TestDeleteUserSearch(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	mock.ExpectExec("DELETE FROM UserSearch WHERE id = \\? AND user_id = \\?").
 		WithArgs(1, 1).
@@ -124,7 +130,8 @@ func TestDeleteAllUserSearches(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	mock.ExpectExec("DELETE FROM UserSearch WHERE user_id = \\?").
 		WithArgs(1).
@@ -141,7 +148,8 @@ func TestGetTopSearches(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	limit := 10
 
@@ -179,7 +187,8 @@ func TestGetTopSearches_Empty(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	limit := 10
 

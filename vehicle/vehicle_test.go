@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/jmoiron/sqlx"
 	"github.com/parts-pile/site/db"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,7 +15,8 @@ func TestGetAllMakes(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	expectedMakes := []Make{
 		{ID: 1, Name: "BMW", ParentCompanyID: nil},
@@ -45,7 +47,8 @@ func TestGetAllMakes_WithParentCompany(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	parentCompanyID := 1
 	expectedMakes := []Make{
@@ -76,7 +79,8 @@ func TestGetAllEngineSizes(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	expectedEngines := []string{"2.0L", "2.5L", "3.0L"}
 
@@ -107,7 +111,8 @@ func TestAddParentCompany(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	name := "Test Company"
 	country := "Test Country"
@@ -128,7 +133,8 @@ func TestUpdateParentCompanyCountry(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	id := 1
 	country := "New Country"

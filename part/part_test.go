@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/jmoiron/sqlx"
 	"github.com/parts-pile/site/db"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,7 +15,8 @@ func TestGetAllCategories(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	expectedCategories := []Category{
 		{ID: 1, Name: "Engine"},
@@ -45,7 +47,8 @@ func TestGetMakes_WithQuery(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	query := "engine"
 	expectedMakes := []string{"BMW", "Mercedes", "Toyota"}
@@ -74,7 +77,8 @@ func TestGetMakes_WithoutQuery(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	expectedMakes := []string{"BMW", "Mercedes", "Toyota"}
 
@@ -101,7 +105,8 @@ func TestGetSubCategoriesForCategory(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	categoryName := "Engine"
 	expectedSubCategories := []SubCategory{
@@ -135,7 +140,8 @@ func TestGetSubCategoriesForCategory_EmptyResult(t *testing.T) {
 	require.NoError(t, err)
 	defer mockDB.Close()
 
-	db.SetForTesting(mockDB)
+	sqlxDB := sqlx.NewDb(mockDB, "sqlmock")
+	db.SetForTesting(sqlxDB)
 
 	categoryName := "NonExistentCategory"
 
