@@ -1,7 +1,6 @@
 package rock
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -11,25 +10,25 @@ import (
 
 // UserRock represents a user's rock inventory
 type UserRock struct {
-	ID        int       `json:"id"`
-	UserID    int       `json:"user_id"`
-	RockCount int       `json:"rock_count"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        int       `json:"id" db:"id"`
+	UserID    int       `json:"user_id" db:"user_id"`
+	RockCount int       `json:"rock_count" db:"rock_count"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // AdRock represents a rock thrown at an ad
 type AdRock struct {
-	ID             int        `json:"id"`
-	AdID           int        `json:"ad_id"`
-	ThrowerID      int        `json:"thrower_id"`
-	ConversationID int        `json:"conversation_id"`
-	CreatedAt      time.Time  `json:"created_at"`
-	ResolvedAt     *time.Time `json:"resolved_at,omitempty"`
-	ResolvedBy     *int       `json:"resolved_by,omitempty"`
+	ID             int        `json:"id" db:"id"`
+	AdID           int        `json:"ad_id" db:"ad_id"`
+	ThrowerID      int        `json:"thrower_id" db:"thrower_id"`
+	ConversationID int        `json:"conversation_id" db:"conversation_id"`
+	CreatedAt      time.Time  `json:"created_at" db:"created_at"`
+	ResolvedAt     *time.Time `json:"resolved_at,omitempty" db:"resolved_at"`
+	ResolvedBy     *int       `json:"resolved_by,omitempty" db:"resolved_by"`
 	// Runtime fields
-	ThrowerName  string                  `json:"thrower_name,omitempty"`
-	AdTitle      string                  `json:"ad_title,omitempty"`
+	ThrowerName  string                  `json:"thrower_name,omitempty" db:"thrower_name"`
+	AdTitle      string                  `json:"ad_title,omitempty" db:"ad_title"`
 	Conversation *messaging.Conversation `json:"conversation,omitempty"`
 }
 
@@ -129,7 +128,8 @@ func ThrowRock(userID, adID int, initialMessage string) error {
 
 // GetAdRocks retrieves all rocks for an ad
 func GetAdRocks(adID int) ([]AdRock, error) {
-	rows, err := db.Query(`
+	var rocks []AdRock
+	err := db.Select(&rocks, `
 		SELECT ar.id, ar.ad_id, ar.thrower_id, ar.conversation_id, ar.created_at, ar.resolved_at, ar.resolved_by,
 		       u.name as thrower_name, a.title as ad_title
 		FROM AdRock ar
@@ -138,42 +138,13 @@ func GetAdRocks(adID int) ([]AdRock, error) {
 		WHERE ar.ad_id = ?
 		ORDER BY ar.created_at DESC
 	`, adID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var rocks []AdRock
-	for rows.Next() {
-		var rock AdRock
-		var createdAt string
-		var resolvedAt, resolvedBy sql.NullString
-		var resolvedByID sql.NullInt64
-
-		err := rows.Scan(&rock.ID, &rock.AdID, &rock.ThrowerID, &rock.ConversationID, &createdAt, &resolvedAt, &resolvedBy, &rock.ThrowerName, &rock.AdTitle, &resolvedByID)
-		if err != nil {
-			return nil, err
-		}
-
-		rock.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-		if resolvedAt.Valid {
-			t, _ := time.Parse(time.RFC3339Nano, resolvedAt.String)
-			rock.ResolvedAt = &t
-		}
-		if resolvedByID.Valid {
-			id := int(resolvedByID.Int64)
-			rock.ResolvedBy = &id
-		}
-
-		rocks = append(rocks, rock)
-	}
-
-	return rocks, nil
+	return rocks, err
 }
 
 // GetUserThrownRocks retrieves all rocks thrown by a user
 func GetUserThrownRocks(userID int) ([]AdRock, error) {
-	rows, err := db.Query(`
+	var rocks []AdRock
+	err := db.Select(&rocks, `
 		SELECT ar.id, ar.ad_id, ar.thrower_id, ar.conversation_id, ar.created_at, ar.resolved_at, ar.resolved_by,
 		       u.name as thrower_name, a.title as ad_title
 		FROM AdRock ar
@@ -182,37 +153,7 @@ func GetUserThrownRocks(userID int) ([]AdRock, error) {
 		WHERE ar.thrower_id = ?
 		ORDER BY ar.created_at DESC
 	`, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var rocks []AdRock
-	for rows.Next() {
-		var rock AdRock
-		var createdAt string
-		var resolvedAt, resolvedBy sql.NullString
-		var resolvedByID sql.NullInt64
-
-		err := rows.Scan(&rock.ID, &rock.AdID, &rock.ThrowerID, &rock.ConversationID, &createdAt, &resolvedAt, &resolvedBy, &rock.ThrowerName, &rock.AdTitle, &resolvedByID)
-		if err != nil {
-			return nil, err
-		}
-
-		rock.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-		if resolvedAt.Valid {
-			t, _ := time.Parse(time.RFC3339Nano, resolvedAt.String)
-			rock.ResolvedAt = &t
-		}
-		if resolvedByID.Valid {
-			id := int(resolvedByID.Int64)
-			rock.ResolvedBy = &id
-		}
-
-		rocks = append(rocks, rock)
-	}
-
-	return rocks, nil
+	return rocks, err
 }
 
 // ResolveRock resolves a rock dispute and returns the rock to the thrower

@@ -93,10 +93,10 @@ This document outlines the step-by-step migration from `database/sql` to `sqlx` 
 ### 3.3 Rock System (Medium Risk, Low Impact)
 **File**: `rock/rock.go`
 
-- [ ] **Rock queries** (lines 147-160, 191-204):
-  - [ ] `GetRocksForUser()` - Convert to `db.Select()`
-  - [ ] `GetRocksForAd()` - Convert to `db.Select()`
-  - [ ] Add struct tags to `Rock` struct
+- [X] **Rock queries** (lines 147-160, 191-204):
+  - [X] `GetRocksForUser()` - Convert to `db.Select()`
+  - [X] `GetRocksForAd()` - Convert to `db.Select()`
+  - [X] Add struct tags to `Rock` struct
 
 ## Phase 4: Testing and Validation
 
