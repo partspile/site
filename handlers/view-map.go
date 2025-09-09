@@ -7,7 +7,15 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
+	"github.com/qdrant/go-client/qdrant"
 )
+
+// MapView implements the View interface for map view
+type MapView struct {
+	ctx       *fiber.Ctx
+	bounds    *ui.GeoBounds
+	geoFilter *qdrant.Filter
+}
 
 // extractMapBounds extracts geographic bounding box parameters for map view
 func extractMapBounds(c *fiber.Ctx) *ui.GeoBounds {
@@ -37,35 +45,25 @@ func extractMapBounds(c *fiber.Ctx) *ui.GeoBounds {
 	}
 }
 
-// MapView implements the View interface for map view
-type MapView struct {
-	ctx    *fiber.Ctx
-	bounds *ui.GeoBounds
-}
-
 // NewMapView creates a new map view
-func NewMapView(ctx *fiber.Ctx, bounds *ui.GeoBounds) *MapView {
-	return &MapView{ctx: ctx, bounds: bounds}
+func NewMapView(ctx *fiber.Ctx) *MapView {
+	var bounds *ui.GeoBounds = extractMapBounds(ctx)
+	var geoFilter *qdrant.Filter
+	if bounds != nil {
+		geoFilter = vector.BuildBoundingBoxGeoFilter(bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
+	}
+	return &MapView{ctx, bounds, geoFilter}
 }
 
 func (v *MapView) GetAds() ([]ad.Ad, string, error) {
-	if v.bounds != nil {
-		geoFilter := vector.BuildBoundingBoxGeoFilter(v.bounds.MinLat, v.bounds.MaxLat, v.bounds.MinLon, v.bounds.MaxLon)
-		return getAds(v.ctx, geoFilter)
-	}
-	return getAds(v.ctx, nil)
+	return getAds(v.ctx, v.geoFilter)
 }
 
 func (v *MapView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
-	userPrompt := getQueryParam(v.ctx, "q")
-	threshold := getThreshold(v.ctx)
 	_, userID := getUser(v.ctx)
-
-	// Create loader URL if there are more results
-	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "map", threshold, v.bounds)
-
 	loc := getLocation(v.ctx)
-	return render(v.ctx, ui.MapViewRenderResults(ads, userID, loc, userPrompt, loaderURL, threshold))
+
+	return render(v.ctx, ui.MapViewResults(ads, userID, loc))
 }
 
 func (v *MapView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {

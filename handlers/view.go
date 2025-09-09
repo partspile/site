@@ -77,8 +77,7 @@ func NewView(ctx *fiber.Ctx, viewType string) (View, error) {
 	case "grid":
 		return NewGridView(ctx), nil
 	case "map":
-		bounds := extractMapBounds(ctx)
-		return NewMapView(ctx, bounds), nil
+		return NewMapView(ctx), nil
 	case "tree":
 		return NewTreeView(ctx), nil
 	default:

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -10,66 +11,27 @@ import (
 	"github.com/parts-pile/site/ad"
 )
 
-func MapViewRenderResults(ads []ad.Ad, userID int, loc *time.Location, query string, loaderURL string, threshold float64) g.Node {
-	// Create the main search results container
-	var viewContent g.Node
+func MapViewResults(ads []ad.Ad, userID int, loc *time.Location) g.Node {
+	var viewContent = NoSearchResultsMessage()
 
-	if len(ads) == 0 {
-		// Show empty state
-		viewContent = NoSearchResultsMessage()
-	} else {
-		// Show map with ads
-		adsMap := make(map[int]ad.Ad, len(ads))
-		for _, ad := range ads {
-			adsMap[ad.ID] = ad
-		}
-		viewContent = MapViewContainer(adsMap, loc)
+	if len(ads) > 0 {
+		viewContent = adMapNode(ads, userID, loc)
 	}
 
 	return Div(
 		ID("searchResults"),
-		SearchWidget(userID, "map", query, threshold),
 		ViewToggleButtons("map"),
 		viewContent,
 	)
 }
 
 func MapViewRenderPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	// For map view pagination, we need to add new ads to the existing map
-	// This would typically involve JavaScript to add markers to the existing map
-	// For now, we'll return the hidden data elements for the new ads
-
-	var adDataElements []g.Node
-	for _, ad := range ads {
-		if ad.Latitude.Valid && ad.Longitude.Valid {
-			adDataElements = append(adDataElements,
-				Div(
-					Class("hidden"),
-					g.Attr("data-ad-id", fmt.Sprintf("%d", ad.ID)),
-					g.Attr("data-lat", fmt.Sprintf("%f", ad.Latitude.Float64)),
-					g.Attr("data-lon", fmt.Sprintf("%f", ad.Longitude.Float64)),
-					g.Attr("data-title", ad.Title),
-					g.Attr("data-price", fmt.Sprintf("%.2f", ad.Price)),
-				),
-			)
-		}
-	}
-
-	// Add infinite scroll trigger if there are more results
-	if loaderURL != "" {
-		trigger := Div(
-			Class("h-4"),
-			g.Attr("hx-get", loaderURL),
-			g.Attr("hx-trigger", "revealed"),
-			g.Attr("hx-swap", "outerHTML"),
-		)
-		adDataElements = append(adDataElements, trigger)
-	}
-
-	return g.Group(adDataElements)
+	// There is no pagination for map view; no expecting this to be called
+	log.Println("[DEBUG] MapViewRenderPage called; no pagination for map view")
+	return nil
 }
 
-func MapViewContainer(ads map[int]ad.Ad, loc *time.Location) g.Node {
+func adMapNode(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 	// Create hidden data elements for each ad with coordinates
 	var adDataElements []g.Node
 	for _, ad := range ads {
