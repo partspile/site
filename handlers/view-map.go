@@ -1,11 +1,41 @@
 package handlers
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 )
+
+// extractMapBounds extracts geographic bounding box parameters for map view
+func extractMapBounds(c *fiber.Ctx) *ui.GeoBounds {
+	minLatStr := c.Query("minLat")
+	maxLatStr := c.Query("maxLat")
+	minLonStr := c.Query("minLon")
+	maxLonStr := c.Query("maxLon")
+
+	if minLatStr == "" || maxLatStr == "" || minLonStr == "" || maxLonStr == "" {
+		return nil
+	}
+
+	minLat, err1 := strconv.ParseFloat(minLatStr, 64)
+	maxLat, err2 := strconv.ParseFloat(maxLatStr, 64)
+	minLon, err3 := strconv.ParseFloat(minLonStr, 64)
+	maxLon, err4 := strconv.ParseFloat(maxLonStr, 64)
+
+	if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
+		return nil
+	}
+
+	return &ui.GeoBounds{
+		MinLat: minLat,
+		MaxLat: maxLat,
+		MinLon: minLon,
+		MaxLon: maxLon,
+	}
+}
 
 // MapView implements the View interface for map view
 type MapView struct {

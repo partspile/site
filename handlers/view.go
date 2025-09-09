@@ -3,7 +3,6 @@ package handlers
 import (
 	"fmt"
 	"log"
-	"strconv"
 
 	"database/sql"
 
@@ -11,19 +10,9 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/search"
-	"github.com/parts-pile/site/ui"
-	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vector"
 	"github.com/qdrant/go-client/qdrant"
 )
-
-// GeoBounds represents a geographic bounding box
-type GeoBounds struct {
-	MinLat float64
-	MaxLat float64
-	MinLon float64
-	MaxLon float64
-}
 
 // View interface defines the contract for different view implementations
 type View interface {
@@ -37,34 +26,6 @@ type View interface {
 	RenderSearchPage(ads []ad.Ad, nextCursor string) error
 }
 
-// extractMapBounds extracts geographic bounding box parameters for map view
-func extractMapBounds(c *fiber.Ctx) *ui.GeoBounds {
-	minLatStr := c.Query("minLat")
-	maxLatStr := c.Query("maxLat")
-	minLonStr := c.Query("minLon")
-	maxLonStr := c.Query("maxLon")
-
-	if minLatStr == "" || maxLatStr == "" || minLonStr == "" || maxLonStr == "" {
-		return nil
-	}
-
-	minLat, err1 := strconv.ParseFloat(minLatStr, 64)
-	maxLat, err2 := strconv.ParseFloat(maxLatStr, 64)
-	minLon, err3 := strconv.ParseFloat(minLonStr, 64)
-	maxLon, err4 := strconv.ParseFloat(maxLonStr, 64)
-
-	if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
-		return nil
-	}
-
-	return &ui.GeoBounds{
-		MinLat: minLat,
-		MaxLat: maxLat,
-		MinLon: minLon,
-		MaxLon: maxLon,
-	}
-}
-
 // saveUserSearchAndQueue saves user search and queues user for embedding update
 func saveUserSearchAndQueue(userPrompt string, userID int) {
 	if userPrompt != "" {
@@ -74,25 +35,6 @@ func saveUserSearchAndQueue(userPrompt string, userID int) {
 			vector.QueueUserForUpdate(userID)
 		}
 	}
-}
-
-// performGeoBoxSearch performs search with geo bounding box filtering
-func performGeoBoxSearch(userPrompt string, currentUser *user.User, cursorStr string, bounds *ui.GeoBounds, threshold float64) ([]ad.Ad, string, error) {
-	if bounds == nil {
-		return nil, "", fmt.Errorf("bounds cannot be nil for geo box search")
-	}
-
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
-	log.Printf("[performGeoBoxSearch] userPrompt='%s', userID=%d, cursorStr='%s', bounds=%+v", userPrompt, userID, cursorStr, bounds)
-
-	// Build geo filter
-	geoFilter := vector.BuildBoundingBoxGeoFilter(bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
-
-	// Use performSearch with the geo filter
-	return performSearch(userPrompt, currentUser, cursorStr, threshold, config.QdrantSearchInitialK, geoFilter)
 }
 
 // getAds performs the common ad retrieval logic
