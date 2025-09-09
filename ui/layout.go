@@ -23,11 +23,6 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 				Rel("stylesheet"),
 				Href(config.TailwindCSSURL),
 			),
-			// Leaflet CSS for map functionality
-			Link(
-				Rel("stylesheet"),
-				Href(config.LeafletCSSURL),
-			),
 			Script(
 				Type("text/javascript"),
 				Src(config.HTMXURL),
@@ -36,18 +31,6 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 			Script(
 				Type("text/javascript"),
 				Src(config.HTMXSSEURL),
-				Defer(),
-			),
-			// Leaflet JS for map functionality
-			Script(
-				Type("text/javascript"),
-				Src(config.LeafletJSURL),
-				Defer(),
-			),
-			// Custom map functionality
-			Script(
-				Type("text/javascript"),
-				Src("/js/map.js"),
 				Defer(),
 			),
 			// Script(

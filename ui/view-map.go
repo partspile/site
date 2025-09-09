@@ -2,13 +2,13 @@ package ui
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/config"
 )
 
 func MapViewResults(ads []ad.Ad, userID int, loc *time.Location) g.Node {
@@ -22,13 +22,8 @@ func MapViewResults(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 		ID("searchResults"),
 		ViewToggleButtons("map"),
 		viewContent,
+		loadMapResources(),
 	)
-}
-
-func MapViewRenderPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	// There is no pagination for map view; no expecting this to be called
-	log.Println("[DEBUG] MapViewRenderPage called; no pagination for map view")
-	return nil
 }
 
 func adMapNode(ads []ad.Ad, userID int, loc *time.Location) g.Node {
@@ -66,4 +61,25 @@ func adMapNode(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 		// Hidden ad data elements
 		g.Group(adDataElements),
 	)
+}
+
+// loadMapResources loads Leaflet CSS, JS, and map.js directly in the body
+func loadMapResources() g.Node {
+	return g.Group([]g.Node{
+		// Load Leaflet CSS
+		Link(
+			Rel("stylesheet"),
+			Href(config.LeafletCSSURL),
+		),
+		// Load Leaflet JS
+		Script(
+			Type("text/javascript"),
+			Src(config.LeafletJSURL),
+		),
+		// Load map.js
+		Script(
+			Type("text/javascript"),
+			Src("/js/map.js"),
+		),
+	})
 }
