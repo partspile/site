@@ -56,24 +56,43 @@ function initMap() {
   function updateMapMarkers() {
     if (!mapInstance) return;
     
-    // Clear existing markers
+    // Get current markers and their ad IDs
+    const existingMarkers = new Map();
     mapInstance.eachLayer(function(layer) {
-      if (layer instanceof L.Marker) {
-        mapInstance.removeLayer(layer);
+      if (layer instanceof L.Marker && layer.adId) {
+        existingMarkers.set(layer.adId, layer);
       }
     });
     
-    // Add new markers from updated data
+    // Get new ad data
     const adElements = document.querySelectorAll('#map-data [data-ad-id]');
+    const newAdIds = new Set();
     const points = [];
+    
     adElements.forEach(el => {
+      const adId = el.getAttribute('data-ad-id');
       const lat = parseFloat(el.getAttribute('data-lat'));
       const lon = parseFloat(el.getAttribute('data-lon'));
+      
       if (!isNaN(lat) && !isNaN(lon)) {
+        newAdIds.add(adId);
         points.push([lat, lon]);
-        L.marker([lat, lon]).addTo(mapInstance).bindPopup(
-          `<b>${el.getAttribute('data-title')}</b><br>Price: $${el.getAttribute('data-price')}`
-        );
+        
+        // Only create marker if it doesn't already exist
+        if (!existingMarkers.has(adId)) {
+          const marker = L.marker([lat, lon]).addTo(mapInstance);
+          marker.adId = adId; // Store ad ID for future reference
+          marker.bindPopup(
+            `<b>${el.getAttribute('data-title')}</b><br>Price: $${el.getAttribute('data-price')}`
+          );
+        }
+      }
+    });
+    
+    // Remove markers for ads that are no longer in the current view
+    existingMarkers.forEach((marker, adId) => {
+      if (!newAdIds.has(adId)) {
+        mapInstance.removeLayer(marker);
       }
     });
     
