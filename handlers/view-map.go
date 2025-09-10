@@ -67,17 +67,9 @@ func (v *MapView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
 }
 
 func (v *MapView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
-	loc := getLocation(v.ctx)
 	_, userID := getUser(v.ctx)
+	loc := getLocation(v.ctx)
 
-	// Create loader URL for infinite scroll
-	var loaderURL string
-	if nextCursor != "" {
-		userPrompt := getQueryParam(v.ctx, "q")
-		threshold := getThreshold(v.ctx)
-		loaderURL = ui.SearchCreateLoaderURL(userPrompt, nextCursor, "map", threshold, v.bounds)
-	}
-
-	// Render the page content using UI function
-	return render(v.ctx, ui.MapViewRenderPage(ads, userID, loc, loaderURL))
+	// For map view, return only the map data for HTMX updates
+	return render(v.ctx, ui.MapDataOnly(ads, userID, loc))
 }

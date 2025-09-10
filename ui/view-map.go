@@ -8,7 +8,6 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/config"
 )
 
 func MapViewResults(ads []ad.Ad, userID int, loc *time.Location) g.Node {
@@ -22,12 +21,11 @@ func MapViewResults(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 		ID("searchResults"),
 		ViewToggleButtons("map"),
 		viewContent,
-		loadMapResources(),
 	)
 }
 
-func adMapNode(ads []ad.Ad, userID int, loc *time.Location) g.Node {
-	// Create hidden data elements for each ad with coordinates
+// createAdDataElements creates hidden data elements for each ad with coordinates
+func createAdDataElements(ads []ad.Ad) []g.Node {
 	var adDataElements []g.Node
 	for _, ad := range ads {
 		if ad.Latitude.Valid && ad.Longitude.Valid {
@@ -43,43 +41,43 @@ func adMapNode(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 			)
 		}
 	}
+	return adDataElements
+}
 
+// MapDataOnly returns just the map data container for HTMX updates
+func MapDataOnly(ads []ad.Ad, userID int, loc *time.Location) g.Node {
+	return Div(
+		ID("map-data"),
+		Class("hidden"),
+		g.Group(createAdDataElements(ads)),
+	)
+}
+
+func adMapNode(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 	return Div(
 		ID("map-view"),
 		Class("h-96 w-full rounded border bg-gray-50"),
 		// Map container with explicit styling
 		Div(
 			ID("map-container"),
-			Class("h-full w-full z-10"),
-			Style("min-height: 384px; position: relative;"),
+			Class("h-full w-full"),
+			Style("border-radius: inherit; overflow: hidden;"),
 		),
 		// Hidden inputs for bounding box
 		Input(Type("hidden"), ID("min-lat"), Name("minLat")),
 		Input(Type("hidden"), ID("max-lat"), Name("maxLat")),
 		Input(Type("hidden"), ID("min-lon"), Name("minLon")),
 		Input(Type("hidden"), ID("max-lon"), Name("maxLon")),
-		// Hidden ad data elements
-		g.Group(adDataElements),
+		// Hidden data container for HTMX updates
+		Div(
+			ID("map-data"),
+			Class("hidden"),
+			g.Group(createAdDataElements(ads)),
+		),
+		// Initialize map after all elements are created
+		Script(
+			Type("text/javascript"),
+			g.Raw("initMap();"),
+		),
 	)
-}
-
-// loadMapResources loads Leaflet CSS, JS, and map.js directly in the body
-func loadMapResources() g.Node {
-	return g.Group([]g.Node{
-		// Load Leaflet CSS
-		Link(
-			Rel("stylesheet"),
-			Href(config.LeafletCSSURL),
-		),
-		// Load Leaflet JS
-		Script(
-			Type("text/javascript"),
-			Src(config.LeafletJSURL),
-		),
-		// Load map.js
-		Script(
-			Type("text/javascript"),
-			Src("/js/map.js"),
-		),
-	})
 }
