@@ -10,11 +10,11 @@ import (
 	"github.com/parts-pile/site/ad"
 )
 
-func MapViewResults(ads []ad.Ad, userID int, loc *time.Location) g.Node {
+func MapViewResults(ads []ad.Ad, userID int, loc *time.Location, bounds *GeoBounds) g.Node {
 	var viewContent = NoSearchResultsMessage()
 
 	if len(ads) > 0 {
-		viewContent = adMapNode(ads, userID, loc)
+		viewContent = adMapNode(ads, userID, loc, bounds)
 	}
 
 	return Div(
@@ -53,7 +53,16 @@ func MapDataOnly(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 	)
 }
 
-func adMapNode(ads []ad.Ad, userID int, loc *time.Location) g.Node {
+func adMapNode(ads []ad.Ad, userID int, loc *time.Location, bounds *GeoBounds) g.Node {
+	// Create initialization script with saved map bounds
+	var initScript string
+	if bounds != nil {
+		initScript = fmt.Sprintf("initMap({minLat: %f, maxLat: %f, minLon: %f, maxLon: %f});",
+			bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
+	} else {
+		initScript = "initMap();"
+	}
+
 	return Div(
 		ID("map-view"),
 		Class("h-96 w-full rounded border bg-gray-50"),
@@ -77,7 +86,7 @@ func adMapNode(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 		// Initialize map after all elements are created
 		Script(
 			Type("text/javascript"),
-			g.Raw("initMap();"),
+			g.Raw(initScript),
 		),
 	)
 }

@@ -3,16 +3,25 @@
 let mapInstance = null;
 let isFirstDataLoad = true;
 
-function initMap() {
+function initMap(savedBounds = null) {
     // Initialize the map once with reasonable bounds
     mapInstance = L.map('map-container');
     
-    // Set reasonable initial bounds (North America)
-    const initialBounds = L.latLngBounds(
-      L.latLng(24.0, -125.0), // Southwest corner
-      L.latLng(49.0, -66.0)   // Northeast corner
-    );
-    mapInstance.fitBounds(initialBounds);
+    if (savedBounds && savedBounds.minLat && savedBounds.maxLat && savedBounds.minLon && savedBounds.maxLon) {
+      // Use saved bounds
+      const bounds = L.latLngBounds(
+        L.latLng(savedBounds.minLat, savedBounds.minLon), // Southwest corner
+        L.latLng(savedBounds.maxLat, savedBounds.maxLon)   // Northeast corner
+      );
+      mapInstance.fitBounds(bounds);
+    } else {
+      // Default to Kansas bounds (central US)
+      const kansasBounds = L.latLngBounds(
+        L.latLng(36.9931, -102.0517), // Southwest corner
+        L.latLng(40.0016, -94.5882)   // Northeast corner
+      );
+      mapInstance.fitBounds(kansasBounds);
+    }
   
     // Add OpenStreetMap tile layer
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {

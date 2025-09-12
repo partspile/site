@@ -47,7 +47,6 @@ func ViewToggleButtons(activeView string) g.Node {
 			hx.Post("/view/"+view),
 			hx.Target("#searchResults"),
 			hx.Swap("outerHTML"),
-			hx.Indicator("#searchWaiting"),
 			hx.Include("[name='q'],[name='threshold']"),
 			icon(view, alt),
 		)
@@ -98,7 +97,6 @@ func SearchWidget(userID int, view string, query string, threshold float64) g.No
 				Class("w-full"),
 				hx.Get("/search"),
 				hx.Target("#searchResults"),
-				hx.Indicator("#searchWaiting"),
 				hx.Swap("outerHTML"),
 				Input(Type("hidden"), Name("view"), Value(view), ID("view-type-input")),
 				// Add bounding box inputs for map view
@@ -126,7 +124,6 @@ func SearchWidget(userID int, view string, query string, threshold float64) g.No
 						Class("flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"),
 						hx.Get("/search"),
 						hx.Target("#searchResults"),
-						hx.Indicator("#searchWaiting"),
 						hx.Swap("outerHTML"),
 						hx.Include("closest form"),
 						hx.Trigger("change"),
@@ -137,15 +134,6 @@ func SearchWidget(userID int, view string, query string, threshold float64) g.No
 						g.Text(thresholdStr),
 					),
 				)),
-			),
-		),
-		Div(
-			ID("searchWaiting"),
-			Class("htmx-indicator absolute inset-0 flex items-center justify-center bg-white bg-opacity-60 z-10 pointer-events-none"),
-			Img(
-				Src("/images/spinner.gif"),
-				Alt("Loading..."),
-				Class("w-12 h-12 pointer-events-auto"),
 			),
 		),
 	)

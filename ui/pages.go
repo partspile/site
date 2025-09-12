@@ -302,6 +302,14 @@ func PrivacyPolicyPage(currentUser *user.User, path string) g.Node {
 					),
 
 					Div(Class("ml-4 mb-4"),
+						H5(Class("text-sm font-semibold mb-1"), g.Text("map_min_lat, map_max_lat, map_min_lon, map_max_lon")),
+						P(Class("text-sm mb-2"), g.Text("Purpose: Saves your last viewed map area (geographic bounds) to restore the same view when returning to map view.")),
+						P(Class("text-sm mb-2"), g.Text("Data collected: Four coordinate values defining the geographic bounding box of your last map view (latitude and longitude ranges).")),
+						P(Class("text-sm mb-2"), g.Text("Retention: Expires after 30 days.")),
+						P(Class("text-sm mb-2"), g.Text("Third parties: None.")),
+					),
+
+					Div(Class("ml-4 mb-4"),
 						H5(Class("text-sm font-semibold mb-1"), g.Text("Session Cookies")),
 						P(Class("text-sm mb-2"), g.Text("Purpose: Maintains your login session and authentication state while using the website.")),
 						P(Class("text-sm mb-2"), g.Text("Data collected: User ID and session identifier for authentication.")),
