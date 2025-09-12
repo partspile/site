@@ -8,6 +8,8 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/b2util"
+	"github.com/parts-pile/site/config"
 )
 
 func MapViewResults(ads []ad.Ad, userID int, loc *time.Location, bounds *GeoBounds) g.Node {
@@ -29,6 +31,15 @@ func createAdDataElements(ads []ad.Ad) []g.Node {
 	var adDataElements []g.Node
 	for _, ad := range ads {
 		if ad.Latitude.Valid && ad.Longitude.Valid {
+			// Get the first image index
+			firstIdx := 1
+			if len(ad.ImageOrderSlice) > 0 {
+				firstIdx = ad.ImageOrderSlice[0]
+			}
+
+			// Generate the image URL
+			imageURL := generateMapImageURL(ad.ID, firstIdx)
+
 			adDataElements = append(adDataElements,
 				Div(
 					Class("hidden"),
@@ -37,11 +48,26 @@ func createAdDataElements(ads []ad.Ad) []g.Node {
 					g.Attr("data-lon", fmt.Sprintf("%f", ad.Longitude.Float64)),
 					g.Attr("data-title", ad.Title),
 					g.Attr("data-price", fmt.Sprintf("%.2f", ad.Price)),
+					g.Attr("data-image", imageURL),
 				),
 			)
 		}
 	}
 	return adDataElements
+}
+
+// generateMapImageURL generates a signed B2 image URL for map popup context
+func generateMapImageURL(adID int, idx int) string {
+	prefix := fmt.Sprintf("%d/", adID)
+	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
+	if err != nil || token == "" {
+		// Return empty string when B2 images aren't available - browser will show broken image
+		return ""
+	}
+
+	base := fmt.Sprintf("%s/%d/%d", config.B2FileServerURL, adID, idx)
+	// Use 480w for map popups - good balance of quality and file size
+	return fmt.Sprintf("%s-480w.webp?Authorization=%s", base, token)
 }
 
 // MapDataOnly returns just the map data container for HTMX updates

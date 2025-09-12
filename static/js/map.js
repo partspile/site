@@ -91,9 +91,27 @@ function initMap(savedBounds = null) {
         if (!existingMarkers.has(adId)) {
           const marker = L.marker([lat, lon]).addTo(mapInstance);
           marker.adId = adId; // Store ad ID for future reference
-          marker.bindPopup(
-            `<b>${el.getAttribute('data-title')}</b><br>Price: $${el.getAttribute('data-price')}`
-          );
+          
+          // Get image URL from data attribute
+          const imageURL = el.getAttribute('data-image');
+          
+          // Create popup content with image
+          let popupContent = `<b>${el.getAttribute('data-title')}</b><br>Price: $${el.getAttribute('data-price')}`;
+          
+          // Add image if available
+          if (imageURL && imageURL.trim() !== '') {
+            popupContent = `
+              <div style="text-align: center;">
+                <img src="${imageURL}" alt="${el.getAttribute('data-title')}" 
+                     style="width: 120px; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 8px;">
+                <br>
+                <b>${el.getAttribute('data-title')}</b><br>
+                Price: $${el.getAttribute('data-price')}
+              </div>
+            `;
+          }
+          
+          marker.bindPopup(popupContent);
         }
       }
     });
