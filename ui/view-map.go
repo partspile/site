@@ -91,28 +91,36 @@ func adMapNode(ads []ad.Ad, userID int, loc *time.Location, bounds *GeoBounds) g
 
 	return Div(
 		ID("map-view"),
-		Class("h-96 w-full rounded border bg-gray-50"),
+		Class("w-full"),
 		// Map container with explicit styling
 		Div(
-			ID("map-container"),
-			Class("h-full w-full"),
-			Style("border-radius: inherit; overflow: hidden;"),
+			Class("h-96 w-full rounded border bg-gray-50"),
+			Div(
+				ID("map-container"),
+				Class("h-full w-full"),
+				Style("border-radius: inherit; overflow: hidden;"),
+			),
+			// Hidden inputs for bounding box
+			Input(Type("hidden"), ID("min-lat"), Name("minLat")),
+			Input(Type("hidden"), ID("max-lat"), Name("maxLat")),
+			Input(Type("hidden"), ID("min-lon"), Name("minLon")),
+			Input(Type("hidden"), ID("max-lon"), Name("maxLon")),
+			// Hidden data container for HTMX updates
+			Div(
+				ID("map-data"),
+				Class("hidden"),
+				g.Group(createAdDataElements(ads)),
+			),
+			// Initialize map after all elements are created
+			Script(
+				Type("text/javascript"),
+				g.Raw(initScript),
+			),
 		),
-		// Hidden inputs for bounding box
-		Input(Type("hidden"), ID("min-lat"), Name("minLat")),
-		Input(Type("hidden"), ID("max-lat"), Name("maxLat")),
-		Input(Type("hidden"), ID("min-lon"), Name("minLon")),
-		Input(Type("hidden"), ID("max-lon"), Name("maxLon")),
-		// Hidden data container for HTMX updates
+		// Container for ad details below the map
 		Div(
-			ID("map-data"),
-			Class("hidden"),
-			g.Group(createAdDataElements(ads)),
-		),
-		// Initialize map after all elements are created
-		Script(
-			Type("text/javascript"),
-			g.Raw(initScript),
+			ID("map-ad-details"),
+			Class("mt-4"),
 		),
 	)
 }

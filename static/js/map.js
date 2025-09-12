@@ -95,18 +95,28 @@ function initMap(savedBounds = null) {
           // Get image URL from data attribute
           const imageURL = el.getAttribute('data-image');
           
-          // Create popup content with image
+          // Create popup content with image and click handler
           let popupContent = `<b>${el.getAttribute('data-title')}</b><br>Price: $${el.getAttribute('data-price')}`;
           
           // Add image if available
           if (imageURL && imageURL.trim() !== '') {
             popupContent = `
-              <div style="text-align: center;">
+              <div onclick="loadAdDetail(${adId})" style="text-align: center; cursor: pointer; padding: 4px;">
                 <img src="${imageURL}" alt="${el.getAttribute('data-title')}" 
                      style="width: 120px; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 8px;">
                 <br>
                 <b>${el.getAttribute('data-title')}</b><br>
                 Price: $${el.getAttribute('data-price')}
+                <br>
+              </div>
+            `;
+          } else {
+            popupContent = `
+              <div onclick="loadAdDetail(${adId})" style="text-align: center; cursor: pointer; padding: 8px;">
+                <b>${el.getAttribute('data-title')}</b><br>
+                Price: $${el.getAttribute('data-price')}
+                <br>
+                <small style="color: #666; font-style: italic;">Click to view details</small>
               </div>
             `;
           }
@@ -129,6 +139,34 @@ function initMap(savedBounds = null) {
       mapInstance.fitBounds(bounds);
       isFirstDataLoad = false; // Mark that we've done the initial fit
     }
+  }
+
+  // Function to load ad detail using HTMX
+  function loadAdDetail(adId) {
+    // Check if ad is already displayed using standard ad ID format
+    const existingAd = document.getElementById(`ad-${adId}`);
+    if (existingAd) {
+      // Ad already exists, scroll to it and focus
+      existingAd.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      existingAd.focus();
+      return;
+    }
+    
+    // Load ad detail using HTMX
+    htmx.ajax('GET', `/ad/detail/${adId}?view=list`, {
+      target: '#map-ad-details',
+      swap: 'afterbegin'
+    });
+    
+    // Add separator after the ad loads
+    setTimeout(() => {
+      const adElement = document.getElementById(`ad-${adId}`);
+      if (adElement && !adElement.nextElementSibling?.classList.contains('map-ad-separator')) {
+        const separator = document.createElement('div');
+        separator.className = 'border-b border-gray-200 map-ad-separator';
+        adElement.parentNode.insertBefore(separator, adElement.nextSibling);
+      }
+    }, 100);
   }
 
   // Listen for map data updates

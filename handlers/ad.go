@@ -299,7 +299,7 @@ func HandleAdCard(c *fiber.Ctx) error {
 	loc := getLocation(c)
 	view := getView(c)
 	switch view {
-	case "list":
+	case "list", "map":
 		return render(c, ui.AdListNode(adObj, loc, userID))
 	case "grid":
 		return render(c, ui.AdGridNode(adObj, loc, userID))
