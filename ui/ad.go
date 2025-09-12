@@ -533,6 +533,7 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 				),
 				g.Raw(`<script src="/js/image-preview.js" defer></script>`),
 			),
+			resultContainer(),
 		},
 	)
 }

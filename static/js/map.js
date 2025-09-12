@@ -115,8 +115,6 @@ function initMap(savedBounds = null) {
               <div onclick="loadAdDetail(${adId})" style="text-align: center; cursor: pointer; padding: 8px;">
                 <b>${el.getAttribute('data-title')}</b><br>
                 Price: $${el.getAttribute('data-price')}
-                <br>
-                <small style="color: #666; font-style: italic;">Click to view details</small>
               </div>
             `;
           }

@@ -16,8 +16,8 @@ func NewTreeView(ctx *fiber.Ctx) *TreeView {
 	return &TreeView{ctx: ctx}
 }
 
-func (v *TreeView) GetAds() ([]ad.Ad, string, error) {
-	return getAds(v.ctx, nil)
+func (v *TreeView) GetAdIDs() ([]int, string, error) {
+	return getAdIDs(v.ctx, nil)
 }
 
 func (v *TreeView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {

@@ -38,8 +38,8 @@ func NewMapView(ctx *fiber.Ctx) *MapView {
 	return &MapView{ctx, bounds, geoFilter}
 }
 
-func (v *MapView) GetAds() ([]ad.Ad, string, error) {
-	return getAds(v.ctx, v.geoFilter)
+func (v *MapView) GetAdIDs() ([]int, string, error) {
+	return getAdIDs(v.ctx, v.geoFilter)
 }
 
 func (v *MapView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {

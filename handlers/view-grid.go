@@ -16,8 +16,8 @@ func NewGridView(ctx *fiber.Ctx) *GridView {
 	return &GridView{ctx: ctx}
 }
 
-func (v *GridView) GetAds() ([]ad.Ad, string, error) {
-	return getAds(v.ctx, nil)
+func (v *GridView) GetAdIDs() ([]int, string, error) {
+	return getAdIDs(v.ctx, nil)
 }
 
 func (v *GridView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {

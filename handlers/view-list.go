@@ -16,8 +16,8 @@ func NewListView(ctx *fiber.Ctx) *ListView {
 	return &ListView{ctx: ctx}
 }
 
-func (v *ListView) GetAds() ([]ad.Ad, string, error) {
-	return getAds(v.ctx, nil)
+func (v *ListView) GetAdIDs() ([]int, string, error) {
+	return getAdIDs(v.ctx, nil)
 }
 
 func (v *ListView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {

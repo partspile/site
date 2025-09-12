@@ -16,8 +16,8 @@ import (
 
 // View interface defines the contract for different view implementations
 type View interface {
-	// GetAds retrieves ads for this view with appropriate search strategy
-	GetAds() ([]ad.Ad, string, error)
+	// GetAdIDs retrieves ad IDs for this view with appropriate search strategy
+	GetAdIDs() ([]int, string, error)
 
 	// RenderSearchResults renders the complete search results including container, ads, and pagination
 	RenderSearchResults(ads []ad.Ad, nextCursor string) error
@@ -37,16 +37,12 @@ func saveUserSearchAndQueue(userPrompt string, userID int) {
 	}
 }
 
-// getAds performs the common ad retrieval logic
-func getAds(ctx *fiber.Ctx, geoFilter *qdrant.Filter) ([]ad.Ad, string, error) {
+// getAdIDs performs the common ad ID retrieval logic
+func getAdIDs(ctx *fiber.Ctx, geoFilter *qdrant.Filter) ([]int, string, error) {
 	userPrompt := getQueryParam(ctx, "q")
 	cursor := getQueryParam(ctx, "cursor")
 	threshold := getThreshold(ctx)
 	currentUser, _ := CurrentUser(ctx)
-
-	var ads []ad.Ad
-	var nextCursor string
-	var err error
 
 	// Use QdrantSearchInitialK for geo searches, QdrantSearchPageSize for regular searches
 	limit := config.QdrantSearchPageSize
@@ -54,19 +50,14 @@ func getAds(ctx *fiber.Ctx, geoFilter *qdrant.Filter) ([]ad.Ad, string, error) {
 		limit = config.QdrantSearchInitialK
 	}
 
-	ads, nextCursor, err = performSearch(userPrompt, currentUser, cursor, threshold, limit, geoFilter)
+	adIDs, nextCursor, err := performSearch(userPrompt, currentUser, cursor, threshold, limit, geoFilter)
 
 	if err == nil {
-		log.Printf("[getAdsCommon] ads returned: %d", len(ads))
-		log.Printf("[getAdsCommon] Final ad order: %v", func() []int {
-			result := make([]int, len(ads))
-			for i, ad := range ads {
-				result[i] = ad.ID
-			}
-			return result
-		}())
+		log.Printf("[getAdIDs] ad IDs returned: %d", len(adIDs))
+		log.Printf("[getAdIDs] Final ad ID order: %v", adIDs)
 	}
-	return ads, nextCursor, err
+
+	return adIDs, nextCursor, err
 }
 
 // NewView creates the appropriate view implementation based on view type

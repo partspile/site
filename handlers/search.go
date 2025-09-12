@@ -23,7 +23,7 @@ func extractMapBounds(c *fiber.Ctx) *ui.GeoBounds {
 }
 
 // runEmbeddingSearch runs vector search with optional filters
-func runEmbeddingSearch(embedding []float32, cursor string, currentUser *user.User, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
+func runEmbeddingSearch(embedding []float32, cursor string, threshold float64, k int, filter *qdrant.Filter) ([]int, string, error) {
 	var ids []int
 	var nextCursor string
 	var err error
@@ -37,27 +37,21 @@ func runEmbeddingSearch(embedding []float32, cursor string, currentUser *user.Us
 	log.Printf("[runEmbeddingSearch] Qdrant returned %d results (threshold: %.2f, k: %d)", len(ids), threshold, k)
 	log.Printf("[runEmbeddingSearch] Qdrant result IDs: %v", ids)
 
-	ads, err := ad.GetAdsByIDs(ids, currentUser)
-	if err != nil {
-		return nil, "", err
-	}
-	log.Printf("[runEmbeddingSearch] DB fetch returned %d ads", len(ads))
-
-	return ads, nextCursor, nil
+	return ids, nextCursor, nil
 }
 
 // Embedding-based search with user query
-func queryEmbedding(userPrompt string, currentUser *user.User, cursor string, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
+func queryEmbedding(userPrompt string, cursor string, threshold float64, k int, filter *qdrant.Filter) ([]int, string, error) {
 	log.Printf("[queryEmbedding] Generating embedding for user query: %s", userPrompt)
 	embedding, err := vector.GetQueryEmbedding(userPrompt)
 	if err != nil {
 		return nil, "", err
 	}
-	return runEmbeddingSearch(embedding, cursor, currentUser, threshold, k, filter)
+	return runEmbeddingSearch(embedding, cursor, threshold, k, filter)
 }
 
 // Embedding-based search with user embedding
-func userEmbedding(currentUser *user.User, cursor string, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
+func userEmbedding(currentUser *user.User, cursor string, threshold float64, k int, filter *qdrant.Filter) ([]int, string, error) {
 	log.Printf("[userEmbedding] called with userID=%d, cursor=%s, threshold=%.2f", currentUser.ID, cursor, threshold)
 	embedding, err := vector.GetUserPersonalizedEmbedding(currentUser.ID, false)
 	if err != nil {
@@ -73,11 +67,11 @@ func userEmbedding(currentUser *user.User, cursor string, threshold float64, k i
 		log.Printf("[userEmbedding] GetUserPersonalizedEmbedding returned nil embedding, falling back to site-level embedding")
 		return siteEmbedding(cursor, threshold, k, filter)
 	}
-	return runEmbeddingSearch(embedding, cursor, currentUser, threshold, k, filter)
+	return runEmbeddingSearch(embedding, cursor, threshold, k, filter)
 }
 
 // Embedding-based search with site-level vector
-func siteEmbedding(cursor string, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
+func siteEmbedding(cursor string, threshold float64, k int, filter *qdrant.Filter) ([]int, string, error) {
 	log.Printf("[siteEmbedding] called with cursor=%s, threshold=%.2f", cursor, threshold)
 	embedding, err := vector.GetSiteEmbedding("default")
 	if err != nil {
@@ -88,11 +82,11 @@ func siteEmbedding(cursor string, threshold float64, k int, filter *qdrant.Filte
 		log.Printf("[siteEmbedding] GetSiteEmbedding returned nil embedding")
 		return nil, "", fmt.Errorf("site-level vector unavailable")
 	}
-	return runEmbeddingSearch(embedding, cursor, nil, threshold, k, filter)
+	return runEmbeddingSearch(embedding, cursor, threshold, k, filter)
 }
 
-// performSearch performs the search based on the user prompt and current user
-func performSearch(userPrompt string, currentUser *user.User, cursorStr string, threshold float64, k int, filter *qdrant.Filter) ([]ad.Ad, string, error) {
+// performSearch performs the search based on the user prompt and returns IDs
+func performSearch(userPrompt string, currentUser *user.User, cursorStr string, threshold float64, k int, filter *qdrant.Filter) ([]int, string, error) {
 	userID := 0
 	if currentUser != nil {
 		userID = currentUser.ID
@@ -100,7 +94,7 @@ func performSearch(userPrompt string, currentUser *user.User, cursorStr string, 
 	log.Printf("[performSearch] userPrompt='%s', userID=%d, cursorStr='%s', threshold=%.2f, k=%d, filter=%v", userPrompt, userID, cursorStr, threshold, k, filter)
 
 	if userPrompt != "" {
-		return queryEmbedding(userPrompt, currentUser, cursorStr, threshold, k, filter)
+		return queryEmbedding(userPrompt, cursorStr, threshold, k, filter)
 	}
 
 	if userPrompt == "" && userID != 0 {
@@ -120,8 +114,14 @@ func handleSearch(c *fiber.Ctx, viewType string) error {
 	if err != nil {
 		return err
 	}
+	currentUser, _ := getUser(c)
 
-	ads, nextCursor, err := view.GetAds()
+	adIDs, nextCursor, err := view.GetAdIDs()
+	if err != nil {
+		return err
+	}
+
+	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
 	if err != nil {
 		return err
 	}
@@ -139,8 +139,14 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	currentUser, _ := getUser(c)
 
-	ads, nextCursor, err := view.GetAds()
+	adIDs, nextCursor, err := view.GetAdIDs()
+	if err != nil {
+		return err
+	}
+
+	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
 	if err != nil {
 		return err
 	}
@@ -177,12 +183,22 @@ func HandleSearchAPI(c *fiber.Ctx) error {
 			"ads":   []ad.Ad{},
 		})
 	}
+	currentUser, _ := getUser(c)
 
-	ads, nextCursor, err := view.GetAds()
+	adIDs, nextCursor, err := view.GetAdIDs()
 	if err != nil {
 		log.Printf("[HandleSearchAPI] Search error: %v", err)
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Search failed",
+			"ads":   []ad.Ad{},
+		})
+	}
+
+	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
+	if err != nil {
+		log.Printf("[HandleSearchAPI] GetAdsByIDs error: %v", err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Failed to retrieve ads",
 			"ads":   []ad.Ad{},
 		})
 	}
