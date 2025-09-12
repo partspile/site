@@ -64,11 +64,12 @@ func InitialSearchResults(userID int, view string) g.Node {
 	return Div(
 		SearchWidget(userID, view, "", 0),
 		Div(
+			ID("searchResults"),
+			Class("h-96"),
 			hx.Get("/search?q=&view="+view),
 			hx.Trigger("load"),
 			hx.Target("this"),
 			hx.Swap("outerHTML"),
-			hx.Indicator("#searchWaiting"),
 		),
 	)
 }
