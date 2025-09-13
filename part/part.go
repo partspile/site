@@ -795,3 +795,449 @@ func GetAdsForTreeView(parts []string, sq ad.SearchQuery, userID int) ([]ad.Ad, 
 	// This allows us to extract children from ads at any level
 	return ads, nil
 }
+
+// ============================================================================
+// NEW TREE VIEW FUNCTIONS - Filtered by ad IDs (for search mode)
+// ============================================================================
+
+// GetMakesForAdIDs returns makes filtered by the provided ad IDs
+func GetMakesForAdIDs(adIDs []int) ([]string, error) {
+	if len(adIDs) == 0 {
+		return []string{}, nil
+	}
+
+	// Create placeholders for the IN clause
+	placeholders := make([]string, len(adIDs))
+	for i := range adIDs {
+		placeholders[i] = "?"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT DISTINCT m.name
+		FROM Make m
+		JOIN Car c ON m.id = c.make_id
+		JOIN AdCar ac ON c.id = ac.car_id
+		WHERE ac.ad_id IN (%s)
+		ORDER BY m.name
+	`, strings.Join(placeholders, ","))
+
+	var args []interface{}
+	for _, id := range adIDs {
+		args = append(args, id)
+	}
+
+	var makes []string
+	err := db.Select(&makes, query, args...)
+	return makes, err
+}
+
+// GetYearsForAdIDs returns years for a specific make, filtered by ad IDs
+func GetYearsForAdIDs(adIDs []int, makeName string) ([]string, error) {
+	if len(adIDs) == 0 {
+		return []string{}, nil
+	}
+
+	// Create placeholders for the IN clause
+	placeholders := make([]string, len(adIDs))
+	for i := range adIDs {
+		placeholders[i] = "?"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT DISTINCT y.year
+		FROM Year y
+		JOIN Car c ON y.id = c.year_id
+		JOIN Make m ON c.make_id = m.id
+		JOIN AdCar ac ON c.id = ac.car_id
+		WHERE m.name = ? AND ac.ad_id IN (%s)
+		ORDER BY y.year DESC
+	`, strings.Join(placeholders, ","))
+
+	var args []interface{}
+	args = append(args, makeName)
+	for _, id := range adIDs {
+		args = append(args, id)
+	}
+
+	var yearInts []int
+	err := db.Select(&yearInts, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var years []string
+	for _, year := range yearInts {
+		years = append(years, fmt.Sprintf("%d", year))
+	}
+	return years, nil
+}
+
+// GetModelsForAdIDs returns models for a specific make/year, filtered by ad IDs
+func GetModelsForAdIDs(adIDs []int, makeName, year string) ([]string, error) {
+	if len(adIDs) == 0 {
+		return []string{}, nil
+	}
+
+	// Create placeholders for the IN clause
+	placeholders := make([]string, len(adIDs))
+	for i := range adIDs {
+		placeholders[i] = "?"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT DISTINCT mo.name
+		FROM Model mo
+		JOIN Car c ON mo.id = c.model_id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN AdCar ac ON c.id = ac.car_id
+		WHERE m.name = ? AND y.year = ? AND ac.ad_id IN (%s)
+		ORDER BY mo.name
+	`, strings.Join(placeholders, ","))
+
+	var args []interface{}
+	args = append(args, makeName, year)
+	for _, id := range adIDs {
+		args = append(args, id)
+	}
+
+	var models []string
+	err := db.Select(&models, query, args...)
+	return models, err
+}
+
+// GetEnginesForAdIDs returns engines for a specific make/year/model, filtered by ad IDs
+func GetEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, error) {
+	if len(adIDs) == 0 {
+		return []string{}, nil
+	}
+
+	// Create placeholders for the IN clause
+	placeholders := make([]string, len(adIDs))
+	for i := range adIDs {
+		placeholders[i] = "?"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT DISTINCT e.name
+		FROM Engine e
+		JOIN Car c ON e.id = c.engine_id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN AdCar ac ON c.id = ac.car_id
+		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND ac.ad_id IN (%s)
+		ORDER BY e.name
+	`, strings.Join(placeholders, ","))
+
+	var args []interface{}
+	args = append(args, makeName, year, model)
+	for _, id := range adIDs {
+		args = append(args, id)
+	}
+
+	var engines []string
+	err := db.Select(&engines, query, args...)
+	return engines, err
+}
+
+// GetCategoriesForAdIDs returns categories for a specific make/year/model/engine, filtered by ad IDs
+func GetCategoriesForAdIDs(adIDs []int, makeName, year, model, engine string) ([]string, error) {
+	if len(adIDs) == 0 {
+		return []string{}, nil
+	}
+
+	// Create placeholders for the IN clause
+	placeholders := make([]string, len(adIDs))
+	for i := range adIDs {
+		placeholders[i] = "?"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT DISTINCT pc.name
+		FROM PartCategory pc
+		JOIN PartSubCategory psc ON pc.id = psc.category_id
+		JOIN Ad a ON psc.id = a.subcategory_id
+		JOIN AdCar ac ON a.id = ac.ad_id
+		JOIN Car c ON ac.car_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN Engine e ON c.engine_id = e.id
+		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND a.id IN (%s)
+		ORDER BY pc.name
+	`, strings.Join(placeholders, ","))
+
+	var args []interface{}
+	args = append(args, makeName, year, model, engine)
+	for _, id := range adIDs {
+		args = append(args, id)
+	}
+
+	var categories []string
+	err := db.Select(&categories, query, args...)
+	return categories, err
+}
+
+// GetSubCategoriesForAdIDs returns subcategories for a specific make/year/model/engine/category, filtered by ad IDs
+func GetSubCategoriesForAdIDs(adIDs []int, makeName, year, model, engine, category string) ([]string, error) {
+	if len(adIDs) == 0 {
+		return []string{}, nil
+	}
+
+	// Create placeholders for the IN clause
+	placeholders := make([]string, len(adIDs))
+	for i := range adIDs {
+		placeholders[i] = "?"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT DISTINCT psc.name
+		FROM PartSubCategory psc
+		JOIN PartCategory pc ON psc.category_id = pc.id
+		JOIN Ad a ON psc.id = a.subcategory_id
+		JOIN AdCar ac ON a.id = ac.ad_id
+		JOIN Car c ON ac.car_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN Engine e ON c.engine_id = e.id
+		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND pc.name = ? AND a.id IN (%s)
+		ORDER BY psc.name
+	`, strings.Join(placeholders, ","))
+
+	var args []interface{}
+	args = append(args, makeName, year, model, engine, category)
+	for _, id := range adIDs {
+		args = append(args, id)
+	}
+
+	var subCategories []string
+	err := db.Select(&subCategories, query, args...)
+	return subCategories, err
+}
+
+// GetAdsForAdIDs returns ads for a specific make/year/model/engine/category/subcategory, filtered by ad IDs
+func GetAdsForAdIDs(adIDs []int, makeName, year, model, engine, category, subcategory string) ([]ad.Ad, error) {
+	if len(adIDs) == 0 {
+		return nil, nil
+	}
+
+	filteredIDs, err := getAdIDsForTreeCriteria(adIDs, makeName, year, model, engine, category, subcategory)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(filteredIDs) == 0 {
+		return nil, nil
+	}
+
+	return ad.GetAdsByIDs(filteredIDs, nil)
+}
+
+// getAdIDsForTreeCriteria returns ad IDs that match the tree criteria
+// If adIDs is nil/empty, searches all ads; otherwise filters by the provided ad IDs
+func getAdIDsForTreeCriteria(adIDs []int, makeName, year, model, engine, category, subcategory string) ([]int, error) {
+	var query string
+	var args []interface{}
+
+	// Build the base query
+	query = `
+		SELECT DISTINCT a.id
+		FROM Ad a
+		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
+		JOIN AdCar ac ON a.id = ac.ad_id
+		JOIN Car c ON ac.car_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN Engine e ON c.engine_id = e.id
+		WHERE a.deleted_at IS NULL
+	`
+
+	// Add tree criteria filters
+	if makeName != "" {
+		query += " AND m.name = ?"
+		args = append(args, makeName)
+	}
+	if year != "" {
+		query += " AND y.year = ?"
+		args = append(args, year)
+	}
+	if model != "" {
+		query += " AND mo.name = ?"
+		args = append(args, model)
+	}
+	if engine != "" {
+		query += " AND e.name = ?"
+		args = append(args, engine)
+	}
+	if category != "" {
+		query += " AND pc.name = ?"
+		args = append(args, category)
+	}
+	if subcategory != "" {
+		query += " AND psc.name = ?"
+		args = append(args, subcategory)
+	}
+
+	// Add ad ID filtering if provided
+	if len(adIDs) > 0 {
+		placeholders := make([]string, len(adIDs))
+		for i := range adIDs {
+			placeholders[i] = "?"
+		}
+		query += fmt.Sprintf(" AND a.id IN (%s)", strings.Join(placeholders, ","))
+		for _, id := range adIDs {
+			args = append(args, id)
+		}
+	}
+
+	query += " ORDER BY a.created_at DESC, a.id DESC"
+
+	var ids []int
+	err := db.Select(&ids, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	return ids, nil
+}
+
+// ============================================================================
+// NEW TREE VIEW FUNCTIONS - Browse mode (when adIDs is nil/empty)
+// ============================================================================
+
+// GetMakesForAll returns all makes that have ads
+func GetMakesForAll() ([]string, error) {
+	query := `
+		SELECT DISTINCT m.name
+		FROM Make m
+		JOIN Car c ON m.id = c.make_id
+		JOIN AdCar ac ON c.id = ac.car_id
+		ORDER BY m.name
+	`
+	var makes []string
+	err := db.Select(&makes, query)
+	return makes, err
+}
+
+// GetYearsForAll returns all years for a specific make
+func GetYearsForAll(makeName string) ([]string, error) {
+	query := `
+		SELECT DISTINCT y.year
+		FROM Year y
+		JOIN Car c ON y.id = c.year_id
+		JOIN Make m ON c.make_id = m.id
+		JOIN AdCar ac ON c.id = ac.car_id
+		WHERE m.name = ?
+		ORDER BY y.year DESC
+	`
+	var yearInts []int
+	err := db.Select(&yearInts, query, makeName)
+	if err != nil {
+		return nil, err
+	}
+
+	var years []string
+	for _, year := range yearInts {
+		years = append(years, fmt.Sprintf("%d", year))
+	}
+	return years, nil
+}
+
+// GetModelsForAll returns all models for a specific make/year
+func GetModelsForAll(makeName, year string) ([]string, error) {
+	query := `
+		SELECT DISTINCT mo.name
+		FROM Model mo
+		JOIN Car c ON mo.id = c.model_id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN AdCar ac ON c.id = ac.car_id
+		WHERE m.name = ? AND y.year = ?
+		ORDER BY mo.name
+	`
+	var models []string
+	err := db.Select(&models, query, makeName, year)
+	return models, err
+}
+
+// GetEnginesForAll returns all engines for a specific make/year/model
+func GetEnginesForAll(makeName, year, model string) ([]string, error) {
+	query := `
+		SELECT DISTINCT e.name
+		FROM Engine e
+		JOIN Car c ON e.id = c.engine_id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN AdCar ac ON c.id = ac.car_id
+		WHERE m.name = ? AND y.year = ? AND mo.name = ?
+		ORDER BY e.name
+	`
+	var engines []string
+	err := db.Select(&engines, query, makeName, year, model)
+	return engines, err
+}
+
+// GetCategoriesAll returns all categories for a specific make/year/model/engine
+func GetCategoriesAll(makeName, year, model, engine string) ([]string, error) {
+	query := `
+		SELECT DISTINCT pc.name
+		FROM PartCategory pc
+		JOIN PartSubCategory psc ON pc.id = psc.category_id
+		JOIN Ad a ON psc.id = a.subcategory_id
+		JOIN AdCar ac ON a.id = ac.ad_id
+		JOIN Car c ON ac.car_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN Engine e ON c.engine_id = e.id
+		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ?
+		ORDER BY pc.name
+	`
+	var categories []string
+	err := db.Select(&categories, query, makeName, year, model, engine)
+	return categories, err
+}
+
+// GetSubCategoriesForAll returns all subcategories for a specific make/year/model/engine/category
+func GetSubCategoriesForAll(makeName, year, model, engine, category string) ([]string, error) {
+	query := `
+		SELECT DISTINCT psc.name
+		FROM PartSubCategory psc
+		JOIN PartCategory pc ON psc.category_id = pc.id
+		JOIN Ad a ON psc.id = a.subcategory_id
+		JOIN AdCar ac ON a.id = ac.ad_id
+		JOIN Car c ON ac.car_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN Engine e ON c.engine_id = e.id
+		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND pc.name = ?
+		ORDER BY psc.name
+	`
+	var subCategories []string
+	err := db.Select(&subCategories, query, makeName, year, model, engine, category)
+	return subCategories, err
+}
+
+// GetAdsForAll returns all ads for a specific make/year/model/engine/category/subcategory
+func GetAdsForAll(makeName, year, model, engine, category, subcategory string) ([]ad.Ad, error) {
+	filteredIDs, err := getAdIDsForTreeCriteria(nil, makeName, year, model, engine, category, subcategory)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(filteredIDs) == 0 {
+		return nil, nil
+	}
+
+	return ad.GetAdsByIDs(filteredIDs, nil) // user will be passed in actual usage
+}
