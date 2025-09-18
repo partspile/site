@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -30,12 +29,9 @@ func (v *TreeView) GetAdIDs() ([]int, string, error) {
 
 func (v *TreeView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
-	threshold := getThreshold(v.ctx)
-	_, userID := getUser(v.ctx)
-	loc := getLocation(v.ctx)
-	return render(v.ctx, ui.TreeViewResults(adIDs, userID, loc, userPrompt, nextCursor, threshold))
+	return render(v.ctx, ui.TreeViewResults(adIDs, userPrompt))
 }
 
-func (v *TreeView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
+func (v *TreeView) RenderSearchPage(adIDs []int, nextCursor string) error {
 	return nil
 }

@@ -7,7 +7,6 @@ import (
 	"database/sql"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/search"
 	"github.com/parts-pile/site/vector"
@@ -23,7 +22,7 @@ type View interface {
 	RenderSearchResults(adIDs []int, nextCursor string) error
 
 	// RenderSearchPage renders just the ads and infinite scroll for pagination
-	RenderSearchPage(ads []ad.Ad, nextCursor string) error
+	RenderSearchPage(adIDs []int, nextCursor string) error
 }
 
 // saveUserSearchAndQueue saves user search and queues user for embedding update

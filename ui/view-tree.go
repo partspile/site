@@ -3,8 +3,6 @@ package ui
 import (
 	"fmt"
 	"log"
-	"sort"
-	"time"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -14,14 +12,14 @@ import (
 	"github.com/parts-pile/site/vehicle"
 )
 
-func TreeViewResults(adIDs []int, userID int, loc *time.Location, userPrompt string, nextCursor string, threshold float64) g.Node {
+func TreeViewResults(adIDs []int, userPrompt string) g.Node {
 	var viewContent = NoSearchResultsMessage()
 
 	if userPrompt == "" {
-		viewContent = treeBrowseNodes(userID, loc)
+		viewContent = treeBrowseNodes()
 	} else {
 		if len(adIDs) > 0 {
-			viewContent = treeSearchNodes(adIDs, userID, loc, userPrompt)
+			viewContent = treeSearchNodes(adIDs, userPrompt)
 		}
 	}
 
@@ -60,49 +58,33 @@ func TreeViewWithQueryAndThreshold(query string, threshold float64) g.Node {
 	)
 }
 
-// treeBrowseNodes returns the initial tree view for browsing (no search query)
-func treeBrowseNodes(userID int, loc *time.Location) g.Node {
-	// Get makes with existing ads (cached)
+// treeBrowseNodes returns the initial tree view for browsing
+func treeBrowseNodes() g.Node {
 	makes, err := vehicle.GetAdMakes()
 	if err != nil {
 		log.Printf("[tree-view] Error getting makes: %v", err)
 		return Div(Class("text-red-500"), g.Text("Error loading makes"))
 	}
 
-	if len(makes) == 0 {
-		return Div(Class("text-gray-500"), g.Text("No makes available"))
-	}
-
-	// Create tree nodes for each make
-	var nodes []g.Node
-	for _, make := range makes {
-		path := fmt.Sprintf("/%s", make)
-		nodes = append(nodes, CollapsedTreeNode(make, path, "", 0))
-	}
-
-	return Div(
-		Class("tree-container"),
-		g.Group(nodes),
-	)
+	return createTreeNodes(makes, "")
 }
 
-// treeSearchNodes returns tree view nodes for search results
-func treeSearchNodes(adIDs []int, userID int, loc *time.Location, userPrompt string) g.Node {
-	// Get makes for the specific ad IDs
+// treeSearchNodes returns the initial tree view for search results
+func treeSearchNodes(adIDs []int, userPrompt string) g.Node {
 	makes, err := part.GetMakesForAdIDs(adIDs)
 	if err != nil {
 		log.Printf("[tree-search] Error getting makes for ad IDs: %v", err)
 		return Div(Class("text-red-500"), g.Text("Error loading makes"))
 	}
 
+	return createTreeNodes(makes, userPrompt)
+}
+
+func createTreeNodes(makes []string, userPrompt string) g.Node {
 	if len(makes) == 0 {
-		return Div(Class("text-gray-500"), g.Text("No makes found in search results"))
+		return Div(Class("text-gray-500"), g.Text("No makes available"))
 	}
 
-	// Sort makes alphabetically
-	sort.Strings(makes)
-
-	// Create tree nodes for each make found in search results
 	var nodes []g.Node
 	for _, make := range makes {
 		path := fmt.Sprintf("/%s", make)
@@ -110,7 +92,7 @@ func treeSearchNodes(adIDs []int, userID int, loc *time.Location, userPrompt str
 	}
 
 	return Div(
-		Class("tree-search-results"),
+		Class("tree-contianer"),
 		g.Group(nodes),
 	)
 }

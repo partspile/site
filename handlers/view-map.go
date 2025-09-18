@@ -55,9 +55,15 @@ func (v *MapView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	return render(v.ctx, ui.MapViewResults(ads, userID, loc, v.bounds))
 }
 
-func (v *MapView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
-	_, userID := getUser(v.ctx)
+func (v *MapView) RenderSearchPage(adIDs []int, nextCursor string) error {
+	currentUser, userID := getUser(v.ctx)
 	loc := getLocation(v.ctx)
+
+	// Convert ad IDs to full ad objects for UI rendering
+	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
+	if err != nil {
+		return err
+	}
 
 	// For map view, return only the map data for HTMX updates
 	return render(v.ctx, ui.MapDataOnly(ads, userID, loc))

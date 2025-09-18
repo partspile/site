@@ -133,19 +133,13 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	currentUser, _ := getUser(c)
 
 	adIDs, nextCursor, err := view.GetAdIDs()
 	if err != nil {
 		return err
 	}
 
-	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
-	if err != nil {
-		return err
-	}
-
-	return view.RenderSearchPage(ads, nextCursor)
+	return view.RenderSearchPage(adIDs, nextCursor)
 }
 
 func HandleListView(c *fiber.Ctx) error {
