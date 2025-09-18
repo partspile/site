@@ -25,14 +25,14 @@ func TreeNode(name, path string, level int) g.Node {
 	)
 }
 
-func CollapsedTreeNode(name, path, q, structuredQuery string, level int) g.Node {
+func CollapsedTreeNode(name, path, q string, level int) g.Node {
 	decodedName, _ := url.QueryUnescape(name)
 	return Div(
 		Class("ml-4"),
 		Button(
 			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
-			hx.Get(fmt.Sprintf("/tree%s?q=%s&structured_query=%s", path, url.QueryEscape(q), url.QueryEscape(structuredQuery))),
-			hx.Target("closest .ml-4"),
+			hx.Get(fmt.Sprintf("/tree%s?q=%s", path, url.QueryEscape(q))),
+			hx.Target("this"),
 			hx.Swap("outerHTML"),
 			g.Text("+"),
 		),
@@ -40,14 +40,14 @@ func CollapsedTreeNode(name, path, q, structuredQuery string, level int) g.Node 
 	)
 }
 
-func CollapsedTreeNodeWithThreshold(name, path, q, structuredQuery, threshold string, level int) g.Node {
+func CollapsedTreeNodeWithThreshold(name, path, q, threshold string, level int) g.Node {
 	decodedName, _ := url.QueryUnescape(name)
 	return Div(
 		Class("ml-4"),
 		Button(
 			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
-			hx.Get(fmt.Sprintf("/tree%s?q=%s&structured_query=%s&threshold=%s", path, url.QueryEscape(q), url.QueryEscape(structuredQuery), threshold)),
-			hx.Target("closest .ml-4"),
+			hx.Get(fmt.Sprintf("/tree%s?q=%s&threshold=%s", path, url.QueryEscape(q), threshold)),
+			hx.Target("this"),
 			hx.Swap("outerHTML"),
 			g.Text("+"),
 		),
@@ -55,14 +55,14 @@ func CollapsedTreeNodeWithThreshold(name, path, q, structuredQuery, threshold st
 	)
 }
 
-func ExpandedTreeNode(name, path, q, structuredQuery string, level int, children g.Node) g.Node {
+func ExpandedTreeNode(name, path, q string, level int, children g.Node) g.Node {
 	decodedName, _ := url.QueryUnescape(name)
 	return Div(
 		Class("ml-4"),
 		Button(
 			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
-			hx.Get(fmt.Sprintf("/tree-collapsed%s?q=%s&structured_query=%s", path, url.QueryEscape(q), url.QueryEscape(structuredQuery))),
-			hx.Target("closest .ml-4"),
+			hx.Get(fmt.Sprintf("/tree-collapsed%s?q=%s", path, url.QueryEscape(q))),
+			hx.Target("this"),
 			hx.Swap("outerHTML"),
 			g.Text("-"),
 		),
@@ -71,14 +71,14 @@ func ExpandedTreeNode(name, path, q, structuredQuery string, level int, children
 	)
 }
 
-func ExpandedTreeNodeWithThreshold(name, path, q, structuredQuery, threshold string, level int, children g.Node) g.Node {
+func ExpandedTreeNodeWithThreshold(name, path, q, threshold string, level int, children g.Node) g.Node {
 	decodedName, _ := url.QueryUnescape(name)
 	return Div(
 		Class("ml-4"),
 		Button(
 			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
-			hx.Get(fmt.Sprintf("/tree-collapsed%s?q=%s&structured_query=%s&threshold=%s", path, url.QueryEscape(q), url.QueryEscape(structuredQuery), threshold)),
-			hx.Target("closest .ml-4"),
+			hx.Get(fmt.Sprintf("/tree-collapsed%s?q=%s&threshold=%s", path, url.QueryEscape(q), threshold)),
+			hx.Target("this"),
 			hx.Swap("outerHTML"),
 			g.Text("-"),
 		),

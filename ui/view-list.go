@@ -13,10 +13,10 @@ func ListViewResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL stri
 	var viewContent = NoSearchResultsMessage()
 
 	if len(ads) > 0 {
-		adNodes := adListNodes(ads, userID, loc)
+		nodes := listNodes(ads, userID, loc)
 		viewContent = Div(
 			ID("list-view"),
-			g.Group(append(adNodes,
+			g.Group(append(nodes,
 				createInfiniteScrollTrigger(loaderURL))),
 		)
 	}
@@ -29,11 +29,11 @@ func ListViewResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL stri
 }
 
 func ListViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	adNodes := adListNodes(ads, userID, loc)
-	return g.Group(append(adNodes, createInfiniteScrollTrigger(loaderURL)))
+	nodes := listNodes(ads, userID, loc)
+	return g.Group(append(nodes, createInfiniteScrollTrigger(loaderURL)))
 }
 
-func adListNodes(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
+func listNodes(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
 	nodes := make([]g.Node, 0, len(ads)*2) // *2 because we'll add separators between ads
 	for _, ad := range ads {
 		nodes = append(nodes, AdListNode(ad, loc, userID))

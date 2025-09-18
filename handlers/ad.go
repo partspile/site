@@ -43,18 +43,9 @@ func HandleNewAd(c *fiber.Ctx) error {
 		return err
 	}
 	makes := vehicle.GetMakes()
-	categories, err := part.GetAllCategories()
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get categories")
-	}
+	categories := part.GetCategories() // Use cached static data
 
-	// Convert categories to string slice
-	categoryNames := make([]string, len(categories))
-	for i, cat := range categories {
-		categoryNames[i] = cat.Name
-	}
-
-	return render(c, ui.NewAdPage(currentUser, c.Path(), makes, categoryNames))
+	return render(c, ui.NewAdPage(currentUser, c.Path(), makes, categories))
 }
 
 // Helper to resolve location using Grok and upsert into Location table
@@ -190,28 +181,13 @@ func HandleEditAd(c *fiber.Ctx) error {
 	// Prepare engine checkboxes
 	engineAvailability := vehicle.GetEnginesWithAvailability(adObj.Make, adObj.Years, adObj.Models)
 
-	// Get categories
-	categories, err := part.GetAllCategories()
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get categories")
-	}
-
-	// Convert categories to string slice
-	categoryNames := make([]string, len(categories))
-	for i, cat := range categories {
-		categoryNames[i] = cat.Name
-	}
+	// Get categories (use cached static data)
+	categoryNames := part.GetCategories()
 
 	// Get subcategories for the current category if it exists
 	var subcategoryNames []string
 	if adObj.Category.Valid && adObj.Category.String != "" {
-		subCategories, err := part.GetSubCategoriesForCategory(adObj.Category.String)
-		if err == nil {
-			subcategoryNames = make([]string, len(subCategories))
-			for i, subCat := range subCategories {
-				subcategoryNames[i] = subCat.Name
-			}
-		}
+		subcategoryNames = part.GetSubCategories(adObj.Category.String) // Use cached static data
 	}
 
 	return render(c, ui.EditAdPage(currentUser, c.Path(), adObj, makes, years, modelAvailability, engineAvailability, categoryNames, subcategoryNames))
@@ -393,28 +369,13 @@ func HandleEditAdPartial(c *fiber.Ctx) error {
 	modelAvailability := vehicle.GetModelsWithAvailability(adObj.Make, adObj.Years)
 	engineAvailability := vehicle.GetEnginesWithAvailability(adObj.Make, adObj.Years, adObj.Models)
 
-	// Get categories
-	categories, err := part.GetAllCategories()
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get categories")
-	}
-
-	// Convert categories to string slice
-	categoryNames := make([]string, len(categories))
-	for i, cat := range categories {
-		categoryNames[i] = cat.Name
-	}
+	// Get categories (use cached static data)
+	categoryNames := part.GetCategories()
 
 	// Get subcategories for the current category if it exists
 	var subcategoryNames []string
 	if adObj.Category.Valid && adObj.Category.String != "" {
-		subCategories, err := part.GetSubCategoriesForCategory(adObj.Category.String)
-		if err == nil {
-			subcategoryNames = make([]string, len(subCategories))
-			for i, subCat := range subCategories {
-				subcategoryNames[i] = subCat.Name
-			}
-		}
+		subcategoryNames = part.GetSubCategories(adObj.Category.String) // Use cached static data
 	}
 
 	view := c.Query("view", "list")

@@ -36,18 +36,18 @@ Clean up the tree view implementation to have clear separation between browse mo
   - [x] `GetAdsForAll(makeName, year, model, engine, category, subcategory string) []ad.Ad`
 
 ### Phase 3: Simplify Tree Navigation Handler
-- [ ] **Update `HandleTreeViewNavigation` in `handlers/search-tree.go`:**
-  - [ ] Remove complex `filterAdsForChildPath` logic
-  - [ ] Remove `matchesChildPath` function
-  - [ ] Simplify to use new SQL functions
-  - [ ] Handle both browse mode (`q==""`) and search mode (`q!=""`)
+- [x] **Update `HandleTreeViewNavigation` in `handlers/search-tree.go`:**
+  - [x] Remove complex `filterAdsForChildPath` logic
+  - [x] Remove `matchesChildPath` function
+  - [x] Simplify to use new SQL functions
+  - [x] Handle both browse mode (`q==""`) and search mode (`q!=""`)
 
-- [ ] **Tree navigation logic:**
-  - [ ] Parse tree path from URL (`/tree/{make}/{year}/{model}/{engine}/{category}/{subcategory}`)
-  - [ ] Determine if we're in browse mode (`q==""`) or search mode (`q!=""`)
-  - [ ] For search mode: Get ad IDs from vector search, then filter tree nodes
-  - [ ] For browse mode: Use unfiltered SQL queries
-  - [ ] Return appropriate tree nodes for the current level
+- [x] **Tree navigation logic:**
+  - [x] Parse tree path from URL (`/tree/{make}/{year}/{model}/{engine}/{category}/{subcategory}`)
+  - [x] Determine if we're in browse mode (`q==""`) or search mode (`q!=""`)
+  - [x] For search mode: Get ad IDs from vector search, then filter tree nodes
+  - [x] For browse mode: Use unfiltered SQL queries
+  - [x] Return appropriate tree nodes for the current level
 
 ### Phase 4: Update Tree UI Components
 - [ ] **Simplify tree node components in `ui/tree.go`:**

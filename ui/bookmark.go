@@ -28,7 +28,7 @@ func BookmarksPage(ads []ad.Ad, currentUser *user.User, path string, loc *time.L
 			Div(Class("text-gray-400 text-sm"), g.Text("Start browsing ads and bookmark the ones you're interested in!")),
 		)
 	} else {
-		adNodes := adListNodes(ads, currentUser.ID, loc)
+		adNodes := listNodes(ads, currentUser.ID, loc)
 		viewContent = Div(
 			g.Group(adNodes),
 		)

@@ -14,8 +14,10 @@ import (
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/handlers"
+	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
+	"github.com/parts-pile/site/vehicle"
 )
 
 func main() {
@@ -47,6 +49,16 @@ func main() {
 	// Ensure collection exists and setup indexes
 	if err := vector.EnsureCollectionExists(); err != nil {
 		log.Fatalf("Failed to ensure collection exists: %v", err)
+	}
+
+	// Initialize vehicle cache
+	if err := vehicle.InitVehicleCache(); err != nil {
+		log.Fatalf("Failed to initialize vehicle cache: %v", err)
+	}
+
+	// Initialize parts static data
+	if err := part.InitPartsData(); err != nil {
+		log.Fatalf("Failed to initialize parts data: %v", err)
 	}
 
 	if err := vector.SetupPayloadIndexes(); err != nil {

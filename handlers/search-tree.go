@@ -1,10 +1,8 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -14,14 +12,13 @@ import (
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
-	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vector"
+	"github.com/parts-pile/site/vehicle"
 	g "maragu.dev/gomponents"
 )
 
 func HandleTreeCollapse(c *fiber.Ctx) error {
 	q := c.Query("q")
-	structuredQueryStr := c.Query("structured_query")
 	path := c.Params("*")
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 
@@ -30,12 +27,14 @@ func HandleTreeCollapse(c *fiber.Ctx) error {
 	name := parts[len(parts)-1]
 	level := len(parts) - 1
 
-	return render(c, ui.CollapsedTreeNodeWithThreshold(name, "/"+path, q, structuredQueryStr, fmt.Sprintf("%.1f", threshold), level))
+	return render(c, ui.CollapsedTreeNodeWithThreshold(name, "/"+path, q, fmt.Sprintf("%.1f", threshold), level))
 }
 
 func HandleTreeViewNavigation(c *fiber.Ctx) error {
 	q := c.Query("q")
-	structuredQueryStr := c.Query("structured_query")
+	threshold := getThreshold(c)
+	currentUser, _ := getUser(c)
+
 	path := c.Params("*")
 	parts := strings.Split(strings.Trim(path, "/"), "/")
 	if len(parts) == 1 && parts[0] == "" {
@@ -43,292 +42,139 @@ func HandleTreeViewNavigation(c *fiber.Ctx) error {
 	}
 	level := len(parts)
 
-	threshold := getThreshold(c)
-
-	var structuredQuery ad.SearchQuery
-	if structuredQueryStr != "" {
-		err := json.Unmarshal([]byte(structuredQueryStr), &structuredQuery)
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "Invalid structured_query")
-		}
-	}
-
 	var childNodes []g.Node
+
+	// Determine if we're in browse mode (q=="") or search mode (q!="")
+	var adIDs []int
 	var err error
 
-	// Get ads for the current node
-	currentUser, userID := getUser(c)
-
-	var ads []ad.Ad
 	if q != "" {
-		// If we have a tree path, use vector search with metadata filtering
-		if len(parts) > 0 && parts[0] != "" {
-			// Build tree path from parts
-			treePath := make(map[string]string)
-			if len(parts) >= 1 && parts[0] != "" {
-				treePath["make"] = parts[0]
-			}
-			if len(parts) >= 2 && parts[1] != "" {
-				treePath["year"] = parts[1]
-			}
-			if len(parts) >= 3 && parts[2] != "" {
-				treePath["model"] = parts[2]
-			}
-			if len(parts) >= 4 && parts[3] != "" {
-				treePath["engine"] = parts[3]
-			}
+		// Search mode: Get ad IDs from vector search
+		log.Printf("[tree-view] Search mode: getting ad IDs for query: %s, threshold: %.2f", q, threshold)
 
-			log.Printf("[tree-view] Using vector search with metadata filtering for query: %s, tree path: %+v, threshold: %.2f", q, treePath, threshold)
-			ads, err = getTreeAdsForSearchWithFilter(q, treePath, currentUser, threshold)
-		} else {
-			// Use vector search with threshold-based filtering for search queries without tree path
-			log.Printf("[tree-view] Using vector search for query: %s, threshold: %.2f", q, threshold)
-			ads, err = getTreeAdsForSearch(q, currentUser, threshold)
+		// Generate embedding for search query
+		embedding, err := vector.GetQueryEmbedding(q)
+		if err != nil {
+			return fmt.Errorf("failed to generate embedding: %w", err)
 		}
+
+		// Get results with threshold filtering
+		adIDs, _, err = vector.QuerySimilarAdIDs(embedding, nil, config.QdrantSearchInitialK, "", threshold)
+		if err != nil {
+			return fmt.Errorf("failed to query Qdrant: %w", err)
+		}
+		log.Printf("[tree-view] Vector search returned %d ad IDs", len(adIDs))
 	} else {
-		// Use SQL-based filtering for browse mode
-		log.Printf("[tree-view] Using SQL-based filtering for browse mode")
-		// For tree view, we need ads to extract children from, not to display
-		// So we get all ads that match the current path/structure
-		ads, err = part.GetAdsForTreeView(parts, structuredQuery, userID)
+		// Browse mode: No ad IDs filtering needed
+		log.Printf("[tree-view] Browse mode: no ad ID filtering")
 	}
 
-	if err != nil {
-		return err
-	}
-
-	// Sort ads by CreatedAt DESC, ID DESC (same as list/grid view)
-	sort.Slice(ads, func(i, j int) bool {
-		if ads[i].CreatedAt.Equal(ads[j].CreatedAt) {
-			return ads[i].ID > ads[j].ID
-		}
-		return ads[i].CreatedAt.After(ads[j].CreatedAt)
-	})
-
-	// At the root, only show a blank tree if there are no children (makes with ads)
-	if level == 0 {
-		var children []string
-		if structuredQuery.Make != "" {
-			adsForMake, err := part.GetAdsForNodeStructured([]string{structuredQuery.Make}, structuredQuery, userID)
-			if err != nil {
-				return err
-			}
-			if len(adsForMake) > 0 {
-				children = []string{structuredQuery.Make}
-			}
-		} else {
-			// For vector search (q != "") or SQL-based browsing (q == ""), get all makes
-			children, err = part.GetMakes("")
-			if err != nil {
-				return err
-			}
-		}
-		if len(children) == 0 {
-			return render(c, ui.EmptyResponse())
-		}
-	}
-
-	log.Printf("[tree-view] Processing %d ads for node at level %d", len(ads), level)
-
-	// For now, we'll skip showing children at this level since extractChildrenFromAds was removed
-	// The tree navigation will still work through direct URL navigation
+	// Get children for the current level using appropriate SQL function
 	var children []string
+	switch level {
+	case 0: // Root level - get makes
+		if q != "" {
+			// Search mode: get makes filtered by ad IDs
+			children, err = part.GetMakesForAdIDs(adIDs)
+		} else {
+			// Browse mode: get makes with existing ads (cached)
+			children, err = vehicle.GetAdMakes()
+		}
+	case 1: // Make level - get years
+		makeName := parts[0]
+		if q != "" {
+			children, err = part.GetYearsForAdIDs(adIDs, makeName)
+		} else {
+			// Browse mode: get years with existing ads (cached)
+			children, err = vehicle.GetAdYears(makeName)
+		}
+	case 2: // Year level - get models
+		makeName, year := parts[0], parts[1]
+		if q != "" {
+			children, err = part.GetModelsForAdIDs(adIDs, makeName, year)
+		} else {
+			// Browse mode: get models with existing ads (cached)
+			children, err = vehicle.GetAdModels(makeName, year)
+		}
+	case 3: // Model level - get engines
+		makeName, year, model := parts[0], parts[1], parts[2]
+		if q != "" {
+			children, err = part.GetEnginesForAdIDs(adIDs, makeName, year, model)
+		} else {
+			// Browse mode: get engines with existing ads (cached)
+			children, err = vehicle.GetAdEngines(makeName, year, model)
+		}
+	case 4: // Engine level - get categories
+		makeName, year, model, engine := parts[0], parts[1], parts[2], parts[3]
+		if q != "" {
+			children, err = part.GetCategoriesForAdIDs(adIDs, makeName, year, model, engine)
+		} else {
+			// Browse mode: get categories with existing ads
+			children, err = part.GetAdCategories(makeName, year, model, engine)
+		}
+	case 5: // Category level - get subcategories
+		makeName, year, model, engine, category := parts[0], parts[1], parts[2], parts[3], parts[4]
+		if q != "" {
+			children, err = part.GetSubCategoriesForAdIDs(adIDs, makeName, year, model, engine, category)
+		} else {
+			// Browse mode: get subcategories with existing ads
+			children, err = part.GetAdSubCategories(makeName, year, model, engine, category)
+		}
+	case 6: // Subcategory level - get ads
+		makeName, year, model, engine, category, subcategory := parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]
+		var ads []ad.Ad
+		if q != "" {
+			ads, err = part.GetAdsForAdIDs(adIDs, makeName, year, model, engine, category, subcategory)
+		} else {
+			ads, err = part.GetAdsForAll(makeName, year, model, engine, category, subcategory)
+		}
 
-	// Show ads if we're at a leaf level (level 4 = engine, level 5 = category)
-	// or if there are no more children to show
-	if level >= 4 || len(children) == 0 {
+		if err != nil {
+			return err
+		}
+
+		// Sort ads by CreatedAt DESC, ID DESC
+		sort.Slice(ads, func(i, j int) bool {
+			if ads[i].CreatedAt.Equal(ads[j].CreatedAt) {
+				return ads[i].ID > ads[j].ID
+			}
+			return ads[i].CreatedAt.After(ads[j].CreatedAt)
+		})
+
+		// Show ads at leaf level
 		if len(ads) > 0 {
 			loc, _ := time.LoadLocation(c.Get("X-Timezone"))
 			for _, ad := range ads {
 				childNodes = append(childNodes, ui.AdCardCompactTree(ad, loc, currentUser))
 			}
 		} else {
-			// Show "no results" message when no ads found (for all cases)
 			childNodes = append(childNodes, ui.NoSearchResultsMessage())
 		}
+
+		// Return expanded node with ads
+		name := parts[len(parts)-1]
+		return render(c, ui.ExpandedTreeNodeWithThreshold(name, "/"+path, q, fmt.Sprintf("%.1f", threshold), level, g.Group(childNodes)))
 	}
 
-	// Only show children that actually have ads
-	// We need to check each child to see if it has ads
-	var validChildren []string
+	if err != nil {
+		return err
+	}
+
+	// At root level, show empty response if no makes available
+	if level == 0 && len(children) == 0 {
+		return render(c, ui.EmptyResponse())
+	}
+
+	// Show children as collapsed tree nodes
 	for _, child := range children {
-		// Create a new path with this child
-		childPath := append(parts, child)
-
-		// Check if this child has any ads
-		var childAds []ad.Ad
-		var err error
-		if q != "" {
-			// For vector search, filter the existing ads instead of making new vector search calls
-			childAds = filterAdsForChildPath(ads, childPath, level)
-			err = nil // No error since we're just filtering existing ads
-		} else {
-			// For SQL search, check if this child has ads
-			childAds, err = part.GetAdsForTreeView(childPath, structuredQuery, userID)
-		}
-
-		if err == nil && len(childAds) > 0 {
-			validChildren = append(validChildren, child)
-		}
+		childNodes = append(childNodes, ui.CollapsedTreeNodeWithThreshold(child, "/"+path+"/"+child, q, fmt.Sprintf("%.1f", threshold), level+1))
 	}
 
-	// Show only children that have ads
-	if len(validChildren) > 0 {
-		for _, child := range validChildren {
-			childNodes = append(childNodes, ui.CollapsedTreeNodeWithThreshold(child, "/"+path+"/"+child, q, structuredQueryStr, fmt.Sprintf("%.1f", threshold), level+1))
-		}
-	}
-
+	// Return appropriate response based on level
 	if level == 0 {
 		return render(c, g.Group(childNodes))
 	}
 
 	name := parts[len(parts)-1]
-	return render(c, ui.ExpandedTreeNodeWithThreshold(name, "/"+path, q, structuredQueryStr, fmt.Sprintf("%.1f", threshold), level, g.Group(childNodes)))
-}
-
-// getTreeAdsForSearch performs vector search with threshold-based filtering for tree view
-// Uses larger limit to build complete tree structure
-func getTreeAdsForSearch(userPrompt string, currentUser *user.User, threshold float64) ([]ad.Ad, error) {
-	// Generate embedding for search query
-	log.Printf("[tree-search] Generating embedding for tree search query: %s", userPrompt)
-	embedding, err := vector.GetQueryEmbedding(userPrompt)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate embedding: %w", err)
-	}
-
-	// Get results with threshold filtering at Qdrant level (larger limit for tree building)
-	intIDs, _, err := vector.QuerySimilarAdIDs(embedding, nil, config.QdrantSearchInitialK, "", threshold)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query Qdrant: %w", err)
-	}
-	log.Printf("[tree-search] Qdrant returned %d results (threshold: %.2f)", len(intIDs), threshold)
-	log.Printf("[tree-search] Qdrant result IDs: %v", intIDs)
-	var ads []ad.Ad
-	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
-	log.Printf("[tree-search] DB fetch returned %d ads", len(ads))
-	return ads, nil
-}
-
-// getTreeAdsForSearchWithFilter gets ads for tree view with filtering
-func getTreeAdsForSearchWithFilter(userPrompt string, treePath map[string]string, currentUser *user.User, threshold float64) ([]ad.Ad, error) {
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
-	log.Printf("[getTreeAdsForSearchWithFilter] userPrompt='%s', treePath=%+v, userID=%d, threshold=%.2f", userPrompt, treePath, userID, threshold)
-
-	var embedding []float32
-	var err error
-
-	if userPrompt != "" {
-		embedding, err = vector.GetQueryEmbedding(userPrompt)
-		if err != nil {
-			return nil, fmt.Errorf("failed to generate embedding: %w", err)
-		}
-	} else {
-		embedding, err = vector.GetSiteEmbedding("default")
-		if err != nil {
-			return nil, fmt.Errorf("failed to get site-level vector: %w", err)
-		}
-	}
-
-	// Build tree filter
-	filter := vector.BuildTreeFilter(treePath)
-	if filter == nil {
-		log.Printf("[getTreeAdsForSearchWithFilter] No tree filter built, returning empty results")
-		return []ad.Ad{}, nil
-	}
-
-	// Get results with filtering at Qdrant level (larger limit for tree building)
-	intIDs, _, err := vector.QuerySimilarAdIDs(embedding, filter, config.QdrantSearchInitialK, "", threshold)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query Qdrant with filter: %w", err)
-	}
-	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant returned %d results (threshold: %.2f)", len(intIDs), threshold)
-	log.Printf("[getTreeAdsForSearchWithFilter] Qdrant result IDs: %v", intIDs)
-	var ads []ad.Ad
-	ads, _ = ad.GetAdsByIDs(intIDs, currentUser)
-	log.Printf("[getTreeAdsForSearchWithFilter] DB fetch returned %d ads", len(ads))
-	return ads, nil
-}
-
-// filterAdsForChildPath filters existing ads to find those that match a child path
-func filterAdsForChildPath(ads []ad.Ad, childPath []string, level int) []ad.Ad {
-	var filteredAds []ad.Ad
-
-	for _, ad := range ads {
-		// Check if this ad matches the child path
-		if matchesChildPath(ad, childPath, level) {
-			filteredAds = append(filteredAds, ad)
-		}
-	}
-
-	return filteredAds
-}
-
-// matchesChildPath checks if an ad matches a specific child path
-func matchesChildPath(ad ad.Ad, childPath []string, level int) bool {
-	switch level {
-	case 0: // Root level - check make
-		if len(childPath) >= 1 && childPath[0] != "" {
-			// URL decode the make value from the path
-			decodedMake, err := url.QueryUnescape(childPath[0])
-			if err != nil {
-				decodedMake = childPath[0] // fallback to original if decoding fails
-			}
-			return ad.Make == decodedMake
-		}
-	case 1: // Make level - check year
-		if len(childPath) >= 2 && childPath[1] != "" {
-			for _, year := range ad.Years {
-				if year == childPath[1] {
-					return true
-				}
-			}
-			return false
-		}
-	case 2: // Year level - check model
-		if len(childPath) >= 3 && childPath[2] != "" {
-			// URL decode the model value from the path
-			decodedModel, err := url.QueryUnescape(childPath[2])
-			if err != nil {
-				decodedModel = childPath[2] // fallback to original if decoding fails
-			}
-			for _, model := range ad.Models {
-				if model == decodedModel {
-					return true
-				}
-			}
-			return false
-		}
-	case 3: // Model level - check engine
-		if len(childPath) >= 4 && childPath[3] != "" {
-			// URL decode the engine value from the path
-			decodedEngine, err := url.QueryUnescape(childPath[3])
-			if err != nil {
-				decodedEngine = childPath[3] // fallback to original if decoding fails
-			}
-			for _, engine := range ad.Engines {
-				if engine == decodedEngine {
-					return true
-				}
-			}
-			return false
-		}
-	case 4: // Engine level - check category
-		if len(childPath) >= 5 && childPath[4] != "" {
-			// URL decode the category value from the path
-			decodedCategory, err := url.QueryUnescape(childPath[4])
-			if err != nil {
-				decodedCategory = childPath[4] // fallback to original if decoding fails
-			}
-			return ad.Category.Valid && ad.Category.String == decodedCategory
-		}
-	case 5: // Category level - check subcategory
-		// TODO: Implement subcategory filtering using SubCategoryID
-		// For now, skip subcategory level filtering
-	}
-
-	return true // Default to true if no specific filtering needed
+	return render(c, ui.ExpandedTreeNodeWithThreshold(name, "/"+path, q, fmt.Sprintf("%.1f", threshold), level, g.Group(childNodes)))
 }

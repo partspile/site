@@ -7,11 +7,7 @@ import (
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
-
-	"github.com/parts-pile/site/ad"
 )
-
-type SearchSchema ad.SearchQuery
 
 // GeoBounds represents a geographic bounding box
 type GeoBounds struct {

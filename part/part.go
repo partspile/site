@@ -3,6 +3,7 @@ package part
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 
@@ -19,6 +20,71 @@ type SubCategory struct {
 	ID         int    `db:"id"`
 	CategoryID int    `db:"category_id"`
 	Name       string `db:"name"`
+}
+
+var (
+	// Simple maps for static data that never changes
+	allCategories    []string
+	allSubCategories = make(map[string][]string) // category -> subcategories
+)
+
+// Initialize parts static data
+func InitPartsData() error {
+	// Load all categories
+	categories, err := GetAllCategories()
+	if err != nil {
+		return fmt.Errorf("failed to load categories: %w", err)
+	}
+
+	allCategories = make([]string, len(categories))
+	for i, cat := range categories {
+		allCategories[i] = cat.Name
+	}
+
+	// Load subcategories for each category
+	for _, categoryName := range allCategories {
+		subCategories, err := GetSubCategoriesForCategory(categoryName)
+		if err != nil {
+			continue
+		}
+
+		subCategoryNames := make([]string, len(subCategories))
+		for i, subCat := range subCategories {
+			subCategoryNames[i] = subCat.Name
+		}
+		allSubCategories[categoryName] = subCategoryNames
+	}
+
+	log.Printf("[parts] Static data loaded - %d categories", len(allCategories))
+	return nil
+}
+
+// ============================================================================
+// STATIC DATA FUNCTIONS (No cache needed - loaded once)
+// ============================================================================
+
+// GetCategories returns all categories (static data, no cache needed)
+func GetCategories() []string {
+	return allCategories
+}
+
+// GetSubCategories returns all subcategories for a category (static data, no cache needed)
+func GetSubCategories(categoryName string) []string {
+	return allSubCategories[categoryName]
+}
+
+// ============================================================================
+// AD DATA FUNCTIONS (For tree view)
+// ============================================================================
+
+// GetAdCategories returns categories that have existing ads for make/year/model/engine (for tree view)
+func GetAdCategories(makeName, year, model, engine string) ([]string, error) {
+	return GetCategoriesAll(makeName, year, model, engine)
+}
+
+// GetAdSubCategories returns subcategories that have existing ads for make/year/model/engine/category (for tree view)
+func GetAdSubCategories(makeName, year, model, engine, category string) ([]string, error) {
+	return GetSubCategoriesForAll(makeName, year, model, engine, category)
 }
 
 func GetAllCategories() ([]Category, error) {

@@ -16,7 +16,7 @@ func MapViewResults(ads []ad.Ad, userID int, loc *time.Location, bounds *GeoBoun
 	var viewContent = NoSearchResultsMessage()
 
 	if len(ads) > 0 {
-		viewContent = adMapNode(ads, userID, loc, bounds)
+		viewContent = mapNode(ads, userID, loc, bounds)
 	}
 
 	return Div(
@@ -79,7 +79,7 @@ func MapDataOnly(ads []ad.Ad, userID int, loc *time.Location) g.Node {
 	)
 }
 
-func adMapNode(ads []ad.Ad, userID int, loc *time.Location, bounds *GeoBounds) g.Node {
+func mapNode(ads []ad.Ad, userID int, loc *time.Location, bounds *GeoBounds) g.Node {
 	// Create initialization script with saved map bounds
 	var initScript string
 	if bounds != nil {

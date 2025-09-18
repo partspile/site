@@ -1,11 +1,15 @@
 package vehicle
 
 import (
+	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/parts-pile/site/cache"
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/part"
 )
 
 type Make struct {
@@ -37,7 +41,68 @@ var (
 	allModelsCache      []string
 	allEngineSizesCache []string
 	yearRangeCache      []string
+
+	// Cache for dynamic ad data (makes/years/models/engines with existing ads)
+	adCache              *cache.Cache[[]string]
+	cacheRefreshInterval = 30 * time.Minute
 )
+
+// Initialize vehicle cache and start background refresh
+func InitVehicleCache() error {
+	var err error
+
+	// Cache for dynamic ad data
+	adCache, err = cache.New[[]string](func(value []string) int64 {
+		return int64(len(value) * 30)
+	}, "Vehicle Ad Data Cache")
+	if err != nil {
+		return err
+	}
+
+	// Populate cache immediately on startup
+	if err := refreshVehicleAdData(); err != nil {
+		log.Printf("[vehicle-cache] Warning: Failed to populate cache on startup: %v", err)
+		// Don't return error - let the background refresh handle it
+	} else {
+		log.Printf("[vehicle-cache] Cache populated successfully on startup")
+	}
+
+	// Start background refresh for ad data
+	go refreshVehicleAdDataPeriodically()
+
+	return nil
+}
+
+// Background goroutine that refreshes vehicle ad data every 30 minutes
+func refreshVehicleAdDataPeriodically() {
+	ticker := time.NewTicker(cacheRefreshInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			log.Printf("[vehicle-cache] Starting periodic vehicle ad data refresh")
+			if err := refreshVehicleAdData(); err != nil {
+				log.Printf("[vehicle-cache] Error refreshing vehicle ad data: %v", err)
+			} else {
+				log.Printf("[vehicle-cache] Vehicle ad data refresh completed successfully")
+			}
+		}
+	}
+}
+
+// Refresh vehicle ad data (makes/years/models/engines with existing ads)
+func refreshVehicleAdData() error {
+	// Refresh makes with existing ads
+	makes, err := GetAdMakes()
+	if err != nil {
+		return fmt.Errorf("failed to refresh ad makes: %w", err)
+	}
+	adCache.Set("ad:makes", makes, int64(len(makes)*50))
+
+	log.Printf("[vehicle-cache] Vehicle ad data refreshed - %d makes with existing ads", len(makes))
+	return nil
+}
 
 func GetMakes() []string {
 	if makesCache != nil {
@@ -225,6 +290,82 @@ func GetEnginesWithAvailability(makeName string, years []string, models []string
 		}
 	}
 	return availableInAllCombos
+}
+
+// ============================================================================
+// CACHED FUNCTIONS FOR AD DATA (Tree View)
+// ============================================================================
+
+// GetAdMakes returns makes that have existing ads (for tree view)
+func GetAdMakes() ([]string, error) {
+	cacheKey := "ad:makes"
+
+	if cached, found := adCache.Get(cacheKey); found {
+		return cached, nil
+	}
+
+	// Cache miss - query database and populate cache
+	makes, err := part.GetMakesForAll() // This JOINs with AdCar
+	if err != nil {
+		return nil, err
+	}
+
+	adCache.Set(cacheKey, makes, int64(len(makes)*50))
+	return makes, nil
+}
+
+// GetAdYears returns years that have existing ads for a make (for tree view)
+func GetAdYears(makeName string) ([]string, error) {
+	cacheKey := fmt.Sprintf("ad:years:%s", makeName)
+
+	if cached, found := adCache.Get(cacheKey); found {
+		return cached, nil
+	}
+
+	// Cache miss - query database and populate cache
+	years, err := part.GetYearsForAll(makeName)
+	if err != nil {
+		return nil, err
+	}
+
+	adCache.Set(cacheKey, years, int64(len(years)*10))
+	return years, nil
+}
+
+// GetAdModels returns models that have existing ads for make/year (for tree view)
+func GetAdModels(makeName, year string) ([]string, error) {
+	cacheKey := fmt.Sprintf("ad:models:%s:%s", makeName, year)
+
+	if cached, found := adCache.Get(cacheKey); found {
+		return cached, nil
+	}
+
+	// Cache miss - query database and populate cache
+	models, err := part.GetModelsForAll(makeName, year)
+	if err != nil {
+		return nil, err
+	}
+
+	adCache.Set(cacheKey, models, int64(len(models)*30))
+	return models, nil
+}
+
+// GetAdEngines returns engines that have existing ads for make/year/model (for tree view)
+func GetAdEngines(makeName, year, model string) ([]string, error) {
+	cacheKey := fmt.Sprintf("ad:engines:%s:%s:%s", makeName, year, model)
+
+	if cached, found := adCache.Get(cacheKey); found {
+		return cached, nil
+	}
+
+	// Cache miss - query database and populate cache
+	engines, err := part.GetEnginesForAll(makeName, year, model)
+	if err != nil {
+		return nil, err
+	}
+
+	adCache.Set(cacheKey, engines, int64(len(engines)*25))
+	return engines, nil
 }
 
 func GetAllEngineSizes() []string {
