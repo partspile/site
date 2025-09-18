@@ -42,9 +42,15 @@ func (v *MapView) GetAdIDs() ([]int, string, error) {
 	return getAdIDs(v.ctx, v.geoFilter)
 }
 
-func (v *MapView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
-	_, userID := getUser(v.ctx)
+func (v *MapView) RenderSearchResults(adIDs []int, nextCursor string) error {
+	currentUser, userID := getUser(v.ctx)
 	loc := getLocation(v.ctx)
+
+	// Convert ad IDs to full ad objects for UI rendering
+	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
+	if err != nil {
+		return err
+	}
 
 	return render(v.ctx, ui.MapViewResults(ads, userID, loc, v.bounds))
 }

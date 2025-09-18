@@ -114,14 +114,8 @@ func handleSearch(c *fiber.Ctx, viewType string) error {
 	if err != nil {
 		return err
 	}
-	currentUser, _ := getUser(c)
 
 	adIDs, nextCursor, err := view.GetAdIDs()
-	if err != nil {
-		return err
-	}
-
-	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
 	if err != nil {
 		return err
 	}
@@ -129,7 +123,7 @@ func handleSearch(c *fiber.Ctx, viewType string) error {
 	saveUserSearch(c)
 	saveCookieLastView(c, viewType)
 
-	return view.RenderSearchResults(ads, nextCursor)
+	return view.RenderSearchResults(adIDs, nextCursor)
 }
 
 func HandleSearchPage(c *fiber.Ctx) error {

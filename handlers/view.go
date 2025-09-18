@@ -20,7 +20,7 @@ type View interface {
 	GetAdIDs() ([]int, string, error)
 
 	// RenderSearchResults renders the complete search results including container, ads, and pagination
-	RenderSearchResults(ads []ad.Ad, nextCursor string) error
+	RenderSearchResults(adIDs []int, nextCursor string) error
 
 	// RenderSearchPage renders just the ads and infinite scroll for pagination
 	RenderSearchPage(ads []ad.Ad, nextCursor string) error

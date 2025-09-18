@@ -10,18 +10,18 @@ import (
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
-	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/vehicle"
 )
 
-func TreeViewResults(ads []ad.Ad, userID int, loc *time.Location, userPrompt string, nextCursor string, threshold float64) g.Node {
+func TreeViewResults(adIDs []int, userID int, loc *time.Location, userPrompt string, nextCursor string, threshold float64) g.Node {
 	var viewContent = NoSearchResultsMessage()
 
 	if userPrompt == "" {
 		viewContent = treeBrowseNodes(userID, loc)
 	} else {
-		if len(ads) > 0 {
-			viewContent = treeSearchNodes(ads, userID, loc, userPrompt)
+		if len(adIDs) > 0 {
+			viewContent = treeSearchNodes(adIDs, userID, loc, userPrompt)
 		}
 	}
 
@@ -87,23 +87,16 @@ func treeBrowseNodes(userID int, loc *time.Location) g.Node {
 }
 
 // treeSearchNodes returns tree view nodes for search results
-func treeSearchNodes(ads []ad.Ad, userID int, loc *time.Location, userPrompt string) g.Node {
-	// Extract unique makes from the search results
-	makeSet := make(map[string]bool)
-	for _, ad := range ads {
-		if ad.Make != "" {
-			makeSet[ad.Make] = true
-		}
+func treeSearchNodes(adIDs []int, userID int, loc *time.Location, userPrompt string) g.Node {
+	// Get makes for the specific ad IDs
+	makes, err := part.GetMakesForAdIDs(adIDs)
+	if err != nil {
+		log.Printf("[tree-search] Error getting makes for ad IDs: %v", err)
+		return Div(Class("text-red-500"), g.Text("Error loading makes"))
 	}
 
-	if len(makeSet) == 0 {
+	if len(makes) == 0 {
 		return Div(Class("text-gray-500"), g.Text("No makes found in search results"))
-	}
-
-	// Convert map to slice and sort
-	var makes []string
-	for make := range makeSet {
-		makes = append(makes, make)
 	}
 
 	// Sort makes alphabetically

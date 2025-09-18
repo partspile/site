@@ -28,12 +28,12 @@ func (v *TreeView) GetAdIDs() ([]int, string, error) {
 	return getAdIDs(v.ctx, nil)
 }
 
-func (v *TreeView) RenderSearchResults(ads []ad.Ad, nextCursor string) error {
+func (v *TreeView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
 	threshold := getThreshold(v.ctx)
 	_, userID := getUser(v.ctx)
 	loc := getLocation(v.ctx)
-	return render(v.ctx, ui.TreeViewResults(ads, userID, loc, userPrompt, nextCursor, threshold))
+	return render(v.ctx, ui.TreeViewResults(adIDs, userID, loc, userPrompt, nextCursor, threshold))
 }
 
 func (v *TreeView) RenderSearchPage(ads []ad.Ad, nextCursor string) error {
