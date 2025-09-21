@@ -25,6 +25,22 @@ type View interface {
 	RenderSearchPage(adIDs []int, nextCursor string) error
 }
 
+func HandleListView(c *fiber.Ctx) error {
+	return handleSearch(c, "list")
+}
+
+func HandleGridView(c *fiber.Ctx) error {
+	return handleSearch(c, "grid")
+}
+
+func HandleTreeView(c *fiber.Ctx) error {
+	return handleSearch(c, "tree")
+}
+
+func HandleMapView(c *fiber.Ctx) error {
+	return handleSearch(c, "map")
+}
+
 // saveUserSearchAndQueue saves user search and queues user for embedding update
 func saveUserSearchAndQueue(userPrompt string, userID int) {
 	if userPrompt != "" {

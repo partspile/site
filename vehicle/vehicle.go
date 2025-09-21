@@ -368,6 +368,147 @@ func GetAdEngines(makeName, year, model string) ([]string, error) {
 	return engines, nil
 }
 
+// GetAdMakesForAdIDs returns makes filtered by the provided ad IDs
+func GetAdMakesForAdIDs(adIDs []int) ([]string, error) {
+	if len(adIDs) == 0 {
+		return []string{}, nil
+	}
+
+	// Create placeholders for the IN clause
+	placeholders := make([]string, len(adIDs))
+	for i := range adIDs {
+		placeholders[i] = "?"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT DISTINCT m.name
+		FROM Make m
+		JOIN Car c ON m.id = c.make_id
+		JOIN AdCar ac ON c.id = ac.car_id
+		WHERE ac.ad_id IN (%s)
+		ORDER BY m.name
+	`, strings.Join(placeholders, ","))
+
+	var args []interface{}
+	for _, id := range adIDs {
+		args = append(args, id)
+	}
+
+	var makes []string
+	err := db.Select(&makes, query, args...)
+	return makes, err
+}
+
+// GetAdYearsForAdIDs returns years for a specific make, filtered by ad IDs
+func GetAdYearsForAdIDs(adIDs []int, makeName string) ([]string, error) {
+	if len(adIDs) == 0 {
+		return []string{}, nil
+	}
+
+	// Create placeholders for the IN clause
+	placeholders := make([]string, len(adIDs))
+	for i := range adIDs {
+		placeholders[i] = "?"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT DISTINCT y.year
+		FROM Year y
+		JOIN Car c ON y.id = c.year_id
+		JOIN Make m ON c.make_id = m.id
+		JOIN AdCar ac ON c.id = ac.car_id
+		WHERE m.name = ? AND ac.ad_id IN (%s)
+		ORDER BY y.year DESC
+	`, strings.Join(placeholders, ","))
+
+	var args []interface{}
+	args = append(args, makeName)
+	for _, id := range adIDs {
+		args = append(args, id)
+	}
+
+	var yearInts []int
+	err := db.Select(&yearInts, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	var years []string
+	for _, year := range yearInts {
+		years = append(years, fmt.Sprintf("%d", year))
+	}
+	return years, nil
+}
+
+// GetAdModelsForAdIDs returns models for a specific make/year, filtered by ad IDs
+func GetAdModelsForAdIDs(adIDs []int, makeName, year string) ([]string, error) {
+	if len(adIDs) == 0 {
+		return []string{}, nil
+	}
+
+	// Create placeholders for the IN clause
+	placeholders := make([]string, len(adIDs))
+	for i := range adIDs {
+		placeholders[i] = "?"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT DISTINCT mo.name
+		FROM Model mo
+		JOIN Car c ON mo.id = c.model_id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN AdCar ac ON c.id = ac.car_id
+		WHERE m.name = ? AND y.year = ? AND ac.ad_id IN (%s)
+		ORDER BY mo.name
+	`, strings.Join(placeholders, ","))
+
+	var args []interface{}
+	args = append(args, makeName, year)
+	for _, id := range adIDs {
+		args = append(args, id)
+	}
+
+	var models []string
+	err := db.Select(&models, query, args...)
+	return models, err
+}
+
+// GetAdEnginesForAdIDs returns engines for a specific make/year/model, filtered by ad IDs
+func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, error) {
+	if len(adIDs) == 0 {
+		return []string{}, nil
+	}
+
+	// Create placeholders for the IN clause
+	placeholders := make([]string, len(adIDs))
+	for i := range adIDs {
+		placeholders[i] = "?"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT DISTINCT e.name
+		FROM Engine e
+		JOIN Car c ON e.id = c.engine_id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN AdCar ac ON c.id = ac.car_id
+		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND ac.ad_id IN (%s)
+		ORDER BY e.name
+	`, strings.Join(placeholders, ","))
+
+	var args []interface{}
+	args = append(args, makeName, year, model)
+	for _, id := range adIDs {
+		args = append(args, id)
+	}
+
+	var engines []string
+	err := db.Select(&engines, query, args...)
+	return engines, err
+}
+
 func GetAllEngineSizes() []string {
 	if allEngineSizesCache != nil {
 		return allEngineSizesCache

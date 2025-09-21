@@ -397,3 +397,109 @@ func GetMostPopularAds(n int) []Ad {
 	log.Printf("[GetMostPopularAds] Found %d ads from SQL query", len(ads))
 	return ads
 }
+
+// getAdIDsForTreeCriteria returns ad IDs filtered by tree criteria
+// If adIDs is nil/empty, searches all ads; otherwise filters by the provided ad IDs
+func getAdIDsForTreeCriteria(adIDs []int, makeName, year, model, engine, category, subcategory string) ([]int, error) {
+	var query string
+	var args []interface{}
+
+	// Build the base query
+	query = `
+		SELECT DISTINCT a.id
+		FROM Ad a
+		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
+		LEFT JOIN PartCategory pc ON psc.category_id = pc.id
+		JOIN AdCar ac ON a.id = ac.ad_id
+		JOIN Car c ON ac.car_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN Engine e ON c.engine_id = e.id
+		WHERE a.deleted_at IS NULL
+	`
+
+	// Add tree criteria filters
+	if makeName != "" {
+		query += " AND m.name = ?"
+		args = append(args, makeName)
+	}
+	if year != "" {
+		query += " AND y.year = ?"
+		args = append(args, year)
+	}
+	if model != "" {
+		query += " AND mo.name = ?"
+		args = append(args, model)
+	}
+	if engine != "" {
+		query += " AND e.name = ?"
+		args = append(args, engine)
+	}
+	if category != "" {
+		query += " AND pc.name = ?"
+		args = append(args, category)
+	}
+	if subcategory != "" {
+		query += " AND psc.name = ?"
+		args = append(args, subcategory)
+	}
+
+	// Add ad ID filtering if provided
+	if len(adIDs) > 0 {
+		placeholders := make([]string, len(adIDs))
+		for i := range adIDs {
+			placeholders[i] = "?"
+		}
+		query += fmt.Sprintf(" AND a.id IN (%s)", strings.Join(placeholders, ","))
+		for _, id := range adIDs {
+			args = append(args, id)
+		}
+	}
+
+	query += " ORDER BY a.created_at DESC, a.id DESC"
+
+	var ids []int
+	err := db.Select(&ids, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	return ids, nil
+}
+
+// GetAdsForAll returns all ads for a specific make/year/model/engine/category/subcategory
+func GetAdsForAll(makeName, year, model, engine, category, subcategory string) ([]Ad, error) {
+	filteredIDs, err := getAdIDsForTreeCriteria(nil, makeName, year, model, engine, category, subcategory)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(filteredIDs) == 0 {
+		return nil, nil
+	}
+
+	return GetAdsByIDs(filteredIDs, nil) // user will be passed in actual usage
+}
+
+// GetAdsForAdIDs returns ads for a specific make/year/model/engine/category/subcategory, filtered by ad IDs
+func GetAdsForAdIDs(adIDs []int, makeName, year, model, engine, category, subcategory string) ([]Ad, error) {
+	if len(adIDs) == 0 {
+		return nil, nil
+	}
+
+	filteredIDs, err := getAdIDsForTreeCriteria(adIDs, makeName, year, model, engine, category, subcategory)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(filteredIDs) == 0 {
+		return nil, nil
+	}
+
+	return GetAdsByIDs(filteredIDs, nil)
+}

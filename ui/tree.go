@@ -3,7 +3,10 @@ package ui
 import (
 	"fmt"
 	"net/url"
+	"time"
 
+	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/user"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
@@ -30,13 +33,12 @@ func CollapsedTreeNode(name, path, q string, level int) g.Node {
 	return Div(
 		Class("ml-4"),
 		Button(
-			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
+			Class("hover:bg-gray-200 rounded px-1 py-0.5"),
 			hx.Get(fmt.Sprintf("/tree%s?q=%s", path, url.QueryEscape(q))),
 			hx.Target("this"),
 			hx.Swap("outerHTML"),
-			g.Text("+"),
+			g.Text("+ "+decodedName),
 		),
-		g.Text(decodedName),
 	)
 }
 
@@ -84,5 +86,113 @@ func ExpandedTreeNodeWithThreshold(name, path, q, threshold string, level int, c
 		),
 		g.Text(decodedName),
 		children,
+	)
+}
+
+func collapsedTreeNode(name, path string) g.Node {
+	return Div(
+		Class("ml-4"),
+		Button(
+			Class("hover:bg-gray-200 rounded px-1 py-0.5"),
+			hx.Get(path),
+			hx.Target("this"),
+			hx.Swap("outerHTML"),
+			g.Text("+ "+name),
+		),
+	)
+}
+
+func CollapsedTreeNodeBrowse(name string) g.Node {
+	decodedName, _ := url.QueryUnescape(name)
+	path := fmt.Sprintf("/tree-browse-expand/%s", name)
+	return collapsedTreeNode(decodedName, path)
+}
+
+func ExpandedTreeNodeBrowse(name string, level int, children []string, ads []ad.Ad, currentUser *user.User, timezone string) g.Node {
+	decodedName, _ := url.QueryUnescape(name)
+	collapsePath := fmt.Sprintf("/tree-browse-collapse/%s", name)
+
+	var childNodes []g.Node
+
+	// Handle ads at leaf level (level 6)
+	if level == 6 && len(ads) > 0 {
+		loc, _ := time.LoadLocation(timezone)
+		for _, ad := range ads {
+			childNodes = append(childNodes, AdCardCompactTree(ad, loc, currentUser))
+		}
+	} else if level == 6 && len(ads) == 0 {
+		childNodes = append(childNodes, NoSearchResultsMessage())
+	} else {
+		// Show children as collapsed tree nodes
+		for _, child := range children {
+			childNodes = append(childNodes, CollapsedTreeNodeBrowse(child))
+		}
+	}
+
+	return Div(
+		Class("ml-4"),
+		Button(
+			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
+			hx.Get(fmt.Sprintf("%s?threshold=0.7", collapsePath)),
+			hx.Target("this"),
+			hx.Swap("outerHTML"),
+			g.Text("-"),
+		),
+		g.Text(decodedName),
+		g.Group(childNodes),
+	)
+}
+
+// Search mode tree nodes (adIDs passed via DOM storage)
+func CollapsedTreeNodeSearch(name string, level int) g.Node {
+	decodedName, _ := url.QueryUnescape(name)
+	path := fmt.Sprintf("/tree-search-expand/%s", name)
+	return Div(
+		Class("ml-4"),
+		Button(
+			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
+			hx.Get(fmt.Sprintf("%s?threshold=0.7", path)),
+			hx.Target("this"),
+			hx.Swap("outerHTML"),
+			hx.Include("[name='adIDs']"), // Include adIDs from DOM storage
+			g.Text("+"),
+		),
+		g.Text(decodedName),
+	)
+}
+
+func ExpandedTreeNodeSearch(name string, level int, children []string, ads []ad.Ad, currentUser *user.User, timezone string) g.Node {
+	decodedName, _ := url.QueryUnescape(name)
+	collapsePath := fmt.Sprintf("/tree-search-collapse/%s", name)
+
+	var childNodes []g.Node
+
+	// Handle ads at leaf level (level 6)
+	if level == 6 && len(ads) > 0 {
+		loc, _ := time.LoadLocation(timezone)
+		for _, ad := range ads {
+			childNodes = append(childNodes, AdCardCompactTree(ad, loc, currentUser))
+		}
+	} else if level == 6 && len(ads) == 0 {
+		childNodes = append(childNodes, NoSearchResultsMessage())
+	} else {
+		// Show children as collapsed tree nodes
+		for _, child := range children {
+			childNodes = append(childNodes, CollapsedTreeNodeSearch(child, level+1))
+		}
+	}
+
+	return Div(
+		Class("ml-4"),
+		Button(
+			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
+			hx.Get(fmt.Sprintf("%s?threshold=0.7", collapsePath)),
+			hx.Target("this"),
+			hx.Swap("outerHTML"),
+			hx.Include("[name='adIDs']"), // Include adIDs from DOM storage
+			g.Text("-"),
+		),
+		g.Text(decodedName),
+		g.Group(childNodes),
 	)
 }

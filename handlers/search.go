@@ -142,22 +142,6 @@ func HandleSearchPage(c *fiber.Ctx) error {
 	return view.RenderSearchPage(adIDs, nextCursor)
 }
 
-func HandleListView(c *fiber.Ctx) error {
-	return handleSearch(c, "list")
-}
-
-func HandleGridView(c *fiber.Ctx) error {
-	return handleSearch(c, "grid")
-}
-
-func HandleTreeView(c *fiber.Ctx) error {
-	return handleSearch(c, "tree")
-}
-
-func HandleMapView(c *fiber.Ctx) error {
-	return handleSearch(c, "map")
-}
-
 func HandleSearch(c *fiber.Ctx) error {
 	return handleSearch(c, c.Query("view", "list"))
 }

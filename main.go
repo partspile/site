@@ -108,9 +108,12 @@ func main() {
 	app.Get("/search", handlers.HandleSearch)          // x
 	app.Get("/search-page", handlers.HandleSearchPage) // x
 	app.Get("/api/search", handlers.HandleSearchAPI)   // x
-	app.Get("/tree", handlers.HandleTreeViewNavigation)
-	app.Get("/tree/*", handlers.HandleTreeViewNavigation)
-	app.Get("/tree-collapsed/*", handlers.HandleTreeCollapse)
+
+	// Tree view routes - split by browse vs search mode
+	app.Get("/tree-browse-expand/*", handlers.HandleTreeExpandBrowse)     // x
+	app.Get("/tree-browse-collapse/*", handlers.HandleTreeCollapseBrowse) // x
+	app.Get("/tree-search-expand/*", handlers.HandleTreeExpandSearch)     // x
+	app.Get("/tree-search-collapse/*", handlers.HandleTreeCollapseSearch) // x
 
 	// Ad in-place expand/collapse partials for htmx
 	app.Get("/ad/card/:id", handlers.HandleAdCard)     // x

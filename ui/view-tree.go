@@ -1,25 +1,40 @@
 package ui
 
 import (
-	"fmt"
+	"encoding/base64"
+	"encoding/binary"
 	"log"
 
 	g "maragu.dev/gomponents"
-	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
-	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/vehicle"
 )
+
+// encodeAdIDs encodes a slice of integers to a base64 string
+func encodeAdIDs(adIDs []int) string {
+	if len(adIDs) == 0 {
+		return ""
+	}
+
+	// Convert to bytes using binary encoding
+	buf := make([]byte, len(adIDs)*4) // 4 bytes per int32
+	for i, id := range adIDs {
+		binary.LittleEndian.PutUint32(buf[i*4:], uint32(id))
+	}
+
+	// Encode to base64
+	return base64.URLEncoding.EncodeToString(buf)
+}
 
 func TreeViewResults(adIDs []int, userPrompt string) g.Node {
 	var viewContent = NoSearchResultsMessage()
 
 	if userPrompt == "" {
-		viewContent = treeBrowseNodes()
+		viewContent = treeBrowseMakes()
 	} else {
 		if len(adIDs) > 0 {
-			viewContent = treeSearchNodes(adIDs, userPrompt)
+			viewContent = treeSearchMakes(adIDs)
 		}
 	}
 
@@ -30,69 +45,61 @@ func TreeViewResults(adIDs []int, userPrompt string) g.Node {
 	)
 }
 
-func TreeViewContainer() g.Node {
-	return Div(
-		ID("tree-view"),
-		hx.Get("/tree"),
-		hx.Trigger("load"),
-		hx.Swap("innerHTML"),
-	)
-}
-
-func TreeViewWithQuery(query string) g.Node {
-	return Div(
-		ID("tree-view"),
-		hx.Get("/tree?q="+query),
-		hx.Trigger("load"),
-		hx.Swap("innerHTML"),
-	)
-}
-
-func TreeViewWithQueryAndThreshold(query string, threshold float64) g.Node {
-	thresholdStr := fmt.Sprintf("%.1f", threshold)
-	return Div(
-		ID("tree-view"),
-		hx.Get("/tree?q="+query+"&threshold="+thresholdStr),
-		hx.Trigger("load"),
-		hx.Swap("innerHTML"),
-	)
-}
-
-// treeBrowseNodes returns the initial tree view for browsing
-func treeBrowseNodes() g.Node {
+// treeBrowseMakes returns the initial tree view for browsing
+func treeBrowseMakes() g.Node {
 	makes, err := vehicle.GetAdMakes()
 	if err != nil {
 		log.Printf("[tree-view] Error getting makes: %v", err)
 		return Div(Class("text-red-500"), g.Text("Error loading makes"))
 	}
 
-	return createTreeNodes(makes, "")
+	return createBrowseMakeNodes(makes)
 }
 
-// treeSearchNodes returns the initial tree view for search results
-func treeSearchNodes(adIDs []int, userPrompt string) g.Node {
-	makes, err := part.GetMakesForAdIDs(adIDs)
+// treeSearchMakes returns the initial tree view for search results
+func treeSearchMakes(adIDs []int) g.Node {
+	makes, err := vehicle.GetAdMakesForAdIDs(adIDs)
 	if err != nil {
 		log.Printf("[tree-search] Error getting makes for ad IDs: %v", err)
 		return Div(Class("text-red-500"), g.Text("Error loading makes"))
 	}
 
-	return createTreeNodes(makes, userPrompt)
+	return createSearchMakeNodes(makes, adIDs)
 }
 
-func createTreeNodes(makes []string, userPrompt string) g.Node {
+func createBrowseMakeNodes(makes []string) g.Node {
 	if len(makes) == 0 {
 		return Div(Class("text-gray-500"), g.Text("No makes available"))
 	}
 
 	var nodes []g.Node
 	for _, make := range makes {
-		path := fmt.Sprintf("/%s", make)
-		nodes = append(nodes, CollapsedTreeNode(make, path, userPrompt, 0))
+		nodes = append(nodes, CollapsedTreeNodeBrowse(make))
 	}
 
 	return Div(
 		Class("tree-contianer"),
 		g.Group(nodes),
+	)
+}
+
+func createSearchMakeNodes(makes []string, adIDs []int) g.Node {
+	if len(makes) == 0 {
+		return Div(Class("text-gray-500"), g.Text("No makes available"))
+	}
+
+	var nodes []g.Node
+	for _, make := range makes {
+		nodes = append(nodes, CollapsedTreeNodeSearch(make, 0))
+	}
+
+	// Convert adIDs to base64 encoded string for DOM storage
+	adIDsStr := encodeAdIDs(adIDs)
+
+	return Div(
+		Class("tree-contianer"),
+		g.Group(nodes),
+		// Hidden input to store adIDs for HTMX requests
+		Input(Type("hidden"), Name("adIDs"), Value(adIDsStr)),
 	)
 }
