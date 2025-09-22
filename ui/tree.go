@@ -95,20 +95,20 @@ func collapsedTreeNode(name, path string) g.Node {
 		Button(
 			Class("hover:bg-gray-200 rounded px-1 py-0.5"),
 			hx.Get(path),
-			hx.Target("this"),
+			hx.Target("closest .ml-4"),
 			hx.Swap("outerHTML"),
 			g.Text("+ "+name),
 		),
 	)
 }
 
-func CollapsedTreeNodeBrowse(name string) g.Node {
+func CollapsedTreeNodeBrowse(name string, fullPath string) g.Node {
 	decodedName, _ := url.QueryUnescape(name)
-	path := fmt.Sprintf("/tree-browse-expand/%s", name)
+	path := fmt.Sprintf("/tree-browse-expand/%s", fullPath)
 	return collapsedTreeNode(decodedName, path)
 }
 
-func ExpandedTreeNodeBrowse(name string, level int, children []string, ads []ad.Ad, currentUser *user.User, timezone string) g.Node {
+func ExpandedTreeNodeBrowse(name string, level int, children []string, ads []ad.Ad, currentUser *user.User, timezone string, currentPath string) g.Node {
 	decodedName, _ := url.QueryUnescape(name)
 	collapsePath := fmt.Sprintf("/tree-browse-collapse/%s", name)
 
@@ -125,43 +125,38 @@ func ExpandedTreeNodeBrowse(name string, level int, children []string, ads []ad.
 	} else {
 		// Show children as collapsed tree nodes
 		for _, child := range children {
-			childNodes = append(childNodes, CollapsedTreeNodeBrowse(child))
+			// Construct full path for child
+			var childPath string
+			if currentPath == "" {
+				childPath = child
+			} else {
+				childPath = currentPath + "/" + child
+			}
+			childNodes = append(childNodes, CollapsedTreeNodeBrowse(child, childPath))
 		}
 	}
 
 	return Div(
 		Class("ml-4"),
 		Button(
-			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
-			hx.Get(fmt.Sprintf("%s?threshold=0.7", collapsePath)),
-			hx.Target("this"),
+			Class("hover:bg-gray-200 rounded px-1 py-0.5"),
+			hx.Get(collapsePath),
+			hx.Target("closest .ml-4"),
 			hx.Swap("outerHTML"),
-			g.Text("-"),
+			g.Text("- "+decodedName),
 		),
-		g.Text(decodedName),
 		g.Group(childNodes),
 	)
 }
 
 // Search mode tree nodes (adIDs passed via DOM storage)
-func CollapsedTreeNodeSearch(name string, level int) g.Node {
+func CollapsedTreeNodeSearch(name string, level int, fullPath string) g.Node {
 	decodedName, _ := url.QueryUnescape(name)
-	path := fmt.Sprintf("/tree-search-expand/%s", name)
-	return Div(
-		Class("ml-4"),
-		Button(
-			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
-			hx.Get(fmt.Sprintf("%s?threshold=0.7", path)),
-			hx.Target("this"),
-			hx.Swap("outerHTML"),
-			hx.Include("[name='adIDs']"), // Include adIDs from DOM storage
-			g.Text("+"),
-		),
-		g.Text(decodedName),
-	)
+	path := fmt.Sprintf("/tree-search-expand/%s", fullPath)
+	return collapsedTreeNode(decodedName, path)
 }
 
-func ExpandedTreeNodeSearch(name string, level int, children []string, ads []ad.Ad, currentUser *user.User, timezone string) g.Node {
+func ExpandedTreeNodeSearch(name string, level int, children []string, ads []ad.Ad, currentUser *user.User, timezone string, currentPath string) g.Node {
 	decodedName, _ := url.QueryUnescape(name)
 	collapsePath := fmt.Sprintf("/tree-search-collapse/%s", name)
 
@@ -178,7 +173,14 @@ func ExpandedTreeNodeSearch(name string, level int, children []string, ads []ad.
 	} else {
 		// Show children as collapsed tree nodes
 		for _, child := range children {
-			childNodes = append(childNodes, CollapsedTreeNodeSearch(child, level+1))
+			// Construct full path for child
+			var childPath string
+			if currentPath == "" {
+				childPath = child
+			} else {
+				childPath = currentPath + "/" + child
+			}
+			childNodes = append(childNodes, CollapsedTreeNodeSearch(child, level+1, childPath))
 		}
 	}
 
@@ -186,13 +188,11 @@ func ExpandedTreeNodeSearch(name string, level int, children []string, ads []ad.
 		Class("ml-4"),
 		Button(
 			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
-			hx.Get(fmt.Sprintf("%s?threshold=0.7", collapsePath)),
-			hx.Target("this"),
+			hx.Get(collapsePath),
+			hx.Target("closest .ml-4"),
 			hx.Swap("outerHTML"),
-			hx.Include("[name='adIDs']"), // Include adIDs from DOM storage
-			g.Text("-"),
+			g.Text("- "+decodedName),
 		),
-		g.Text(decodedName),
 		g.Group(childNodes),
 	)
 }

@@ -56,8 +56,7 @@ func decodeAdIDs(adIDsStr string) ([]int, error) {
 }
 
 // parsePath extracts name, level, and parts from the path parameter
-func parsePath(c *fiber.Ctx) (name string, level int, parts []string) {
-	path := c.Params("*")
+func parsePath(path string) (name string, level int, parts []string) {
 	parts = strings.Split(strings.Trim(path, "/"), "/")
 
 	if len(parts) == 1 && parts[0] == "" {
@@ -73,13 +72,15 @@ func parsePath(c *fiber.Ctx) (name string, level int, parts []string) {
 }
 
 func HandleTreeCollapseBrowse(c *fiber.Ctx) error {
-	name, _, _ := parsePath(c)
-	return render(c, ui.CollapsedTreeNodeBrowse(name))
+	path := c.Params("*")
+	name, _, _ := parsePath(path)
+	return render(c, ui.CollapsedTreeNodeBrowse(name, path))
 }
 
 func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 	currentUser, _ := getUser(c)
-	name, level, parts := parsePath(c)
+	path := c.Params("*")
+	name, level, parts := parsePath(path)
 
 	// Browse mode: No ad IDs filtering needed
 	log.Printf("[tree-view] Browse mode: no ad ID filtering")
@@ -123,17 +124,20 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 		return render(c, ui.EmptyResponse())
 	}
 
-	return render(c, ui.ExpandedTreeNodeBrowse(name, level, children, ads, currentUser, c.Get("X-Timezone")))
+	// Construct current path from parts
+	return render(c, ui.ExpandedTreeNodeBrowse(name, level, children, ads, currentUser, c.Get("X-Timezone"), path))
 }
 
 func HandleTreeCollapseSearch(c *fiber.Ctx) error {
-	name, level, _ := parsePath(c)
-	return render(c, ui.CollapsedTreeNodeSearch(name, level))
+	path := c.Params("*")
+	name, level, _ := parsePath(path)
+	return render(c, ui.CollapsedTreeNodeSearch(name, level, path))
 }
 
 func HandleTreeExpandSearch(c *fiber.Ctx) error {
 	currentUser, _ := getUser(c)
-	name, level, parts := parsePath(c)
+	path := c.Params("*")
+	name, level, parts := parsePath(path)
 
 	// Search mode: Get ad IDs from DOM storage (passed via HTMX)
 	adIDsStr := c.Query("adIDs")
@@ -185,5 +189,6 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 		return render(c, ui.EmptyResponse())
 	}
 
-	return render(c, ui.ExpandedTreeNodeSearch(name, level, children, ads, currentUser, c.Get("X-Timezone")))
+	// Construct current path from parts
+	return render(c, ui.ExpandedTreeNodeSearch(name, level, children, ads, currentUser, c.Get("X-Timezone"), path))
 }

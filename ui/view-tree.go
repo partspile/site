@@ -74,7 +74,7 @@ func createBrowseMakeNodes(makes []string) g.Node {
 
 	var nodes []g.Node
 	for _, make := range makes {
-		nodes = append(nodes, CollapsedTreeNodeBrowse(make))
+		nodes = append(nodes, CollapsedTreeNodeBrowse(make, make))
 	}
 
 	return Div(
@@ -90,7 +90,7 @@ func createSearchMakeNodes(makes []string, adIDs []int) g.Node {
 
 	var nodes []g.Node
 	for _, make := range makes {
-		nodes = append(nodes, CollapsedTreeNodeSearch(make, 0))
+		nodes = append(nodes, CollapsedTreeNodeSearch(make, 0, make))
 	}
 
 	// Convert adIDs to base64 encoded string for DOM storage
