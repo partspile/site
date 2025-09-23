@@ -12,83 +12,6 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-// TreeNode represents a node in the tree view.
-func TreeNode(name, path string, level int) g.Node {
-	return Div(
-		Style(fmt.Sprintf("padding-left: %dem;", level*2)), // Increased padding
-		Button(
-			Class("border rounded px-1 py-0.5 text-xs"),
-			hx.Get(fmt.Sprintf("/tree%v", path)),
-			hx.Target("next .children"),
-			hx.Swap("outerHTML"), // Swap the button and the children div
-			g.Text("+"),
-		),
-		Span(Class("ml-2"), g.Text(name)),
-		Div(Class("children")),
-	)
-}
-
-func CollapsedTreeNode(name, path, q string, level int) g.Node {
-	decodedName, _ := url.QueryUnescape(name)
-	return Div(
-		Class("ml-4"),
-		Button(
-			Class("hover:bg-gray-200 rounded px-1 py-0.5"),
-			hx.Get(fmt.Sprintf("/tree%s?q=%s", path, url.QueryEscape(q))),
-			hx.Target("this"),
-			hx.Swap("outerHTML"),
-			g.Text("+ "+decodedName),
-		),
-	)
-}
-
-func CollapsedTreeNodeWithThreshold(name, path, q, threshold string, level int) g.Node {
-	decodedName, _ := url.QueryUnescape(name)
-	return Div(
-		Class("ml-4"),
-		Button(
-			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
-			hx.Get(fmt.Sprintf("/tree%s?q=%s&threshold=%s", path, url.QueryEscape(q), threshold)),
-			hx.Target("this"),
-			hx.Swap("outerHTML"),
-			g.Text("+"),
-		),
-		g.Text(decodedName),
-	)
-}
-
-func ExpandedTreeNode(name, path, q string, level int, children g.Node) g.Node {
-	decodedName, _ := url.QueryUnescape(name)
-	return Div(
-		Class("ml-4"),
-		Button(
-			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
-			hx.Get(fmt.Sprintf("/tree-collapsed%s?q=%s", path, url.QueryEscape(q))),
-			hx.Target("this"),
-			hx.Swap("outerHTML"),
-			g.Text("-"),
-		),
-		g.Text(decodedName),
-		children,
-	)
-}
-
-func ExpandedTreeNodeWithThreshold(name, path, q, threshold string, level int, children g.Node) g.Node {
-	decodedName, _ := url.QueryUnescape(name)
-	return Div(
-		Class("ml-4"),
-		Button(
-			Class("hover:bg-gray-200 rounded px-1 py-0.5 text-xs"),
-			hx.Get(fmt.Sprintf("/tree-collapsed%s?q=%s&threshold=%s", path, url.QueryEscape(q), threshold)),
-			hx.Target("this"),
-			hx.Swap("outerHTML"),
-			g.Text("-"),
-		),
-		g.Text(decodedName),
-		children,
-	)
-}
-
 func collapsedTreeNode(name, path string) g.Node {
 	return Div(
 		Class("ml-4"),
@@ -110,7 +33,7 @@ func CollapsedTreeNodeBrowse(name string, fullPath string) g.Node {
 
 func ExpandedTreeNodeBrowse(name string, level int, children []string, ads []ad.Ad, currentUser *user.User, timezone string, currentPath string) g.Node {
 	decodedName, _ := url.QueryUnescape(name)
-	collapsePath := fmt.Sprintf("/tree-browse-collapse/%s", name)
+	collapsePath := fmt.Sprintf("/tree-browse-collapse/%s", currentPath)
 
 	var childNodes []g.Node
 
@@ -158,7 +81,7 @@ func CollapsedTreeNodeSearch(name string, level int, fullPath string) g.Node {
 
 func ExpandedTreeNodeSearch(name string, level int, children []string, ads []ad.Ad, currentUser *user.User, timezone string, currentPath string) g.Node {
 	decodedName, _ := url.QueryUnescape(name)
-	collapsePath := fmt.Sprintf("/tree-search-collapse/%s", name)
+	collapsePath := fmt.Sprintf("/tree-search-collapse/%s", currentPath)
 
 	var childNodes []g.Node
 

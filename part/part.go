@@ -1021,6 +1021,11 @@ func GetEnginesForAll(makeName, year, model string) ([]string, error) {
 
 // GetCategoriesAll returns all categories for a specific make/year/model/engine
 func GetCategoriesAll(makeName, year, model, engine string) ([]string, error) {
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
+	model, _ = url.QueryUnescape(model)
+	engine, _ = url.QueryUnescape(engine)
+
 	query := `
 		SELECT DISTINCT pc.name
 		FROM PartCategory pc
@@ -1042,6 +1047,12 @@ func GetCategoriesAll(makeName, year, model, engine string) ([]string, error) {
 
 // GetSubCategoriesForAll returns all subcategories for a specific make/year/model/engine/category
 func GetSubCategoriesForAll(makeName, year, model, engine, category string) ([]string, error) {
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
+	model, _ = url.QueryUnescape(model)
+	engine, _ = url.QueryUnescape(engine)
+	category, _ = url.QueryUnescape(category)
+
 	query := `
 		SELECT DISTINCT psc.name
 		FROM PartSubCategory psc

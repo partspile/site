@@ -103,16 +103,20 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 		children, err = vehicle.GetAdEngines(makeName, year, model)
 	case 4: // Engine level - get categories
 		makeName, year, model, engine := parts[0], parts[1], parts[2], parts[3]
+		log.Printf("[tree-view] Getting categories for make=%s, year=%s, model=%s, engine=%s", makeName, year, model, engine)
 		children, err = part.GetAdCategories(makeName, year, model, engine)
+		log.Printf("[tree-view] Found %d categories: %v", len(children), children)
 	case 5: // Category level - get subcategories
 		makeName, year, model, engine, category := parts[0], parts[1], parts[2], parts[3], parts[4]
 		children, err = part.GetAdSubCategories(makeName, year, model, engine, category)
 	case 6: // Subcategory level - get ads
 		makeName, year, model, engine, category, subcategory := parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]
+		log.Printf("[tree-view] Getting ads for make=%s, year=%s, model=%s, engine=%s, category=%s, subcategory=%s", makeName, year, model, engine, category, subcategory)
 		ads, err = ad.GetAdsForAll(makeName, year, model, engine, category, subcategory)
 		if err != nil {
 			return err
 		}
+		log.Printf("[tree-view] Found %d ads", len(ads))
 	}
 
 	if err != nil {

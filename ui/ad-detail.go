@@ -28,7 +28,7 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 				Div(Class("font-semibold text-xl truncate"), titleNode(ad)),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
 					g.If(userID != 0, BookmarkButton(ad)),
-					messageButton(ad, userID),
+					g.If(userID != 0, messageButton(ad, userID)),
 					editButton(ad, userID),
 					deleteButton(ad, userID),
 				),

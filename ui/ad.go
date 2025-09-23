@@ -911,6 +911,9 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 
 	deleteBtn := g.Node(nil)
 	editBtn := g.Node(nil)
+	messageBtn := g.Node(nil)
+	bookmarkBtn := g.Node(nil)
+
 	if currentUser != nil && currentUser.ID == ad.UserID {
 		deleteBtn = Button(
 			Type("button"),
@@ -937,6 +940,14 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 				Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
 			),
 		)
+	}
+
+	if currentUser != nil {
+		bookmarkBtn = BookmarkButton(ad)
+	}
+
+	if currentUser != nil && currentUser.ID != 0 {
+		messageBtn = messageButton(ad, currentUser.ID)
 	}
 
 	// Use tile view layout for expanded tree view
@@ -999,8 +1010,8 @@ func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.
 				Class("flex flex-row items-center justify-between mb-2"),
 				Div(Class("font-semibold text-xl truncate"), titleNode(ad)),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
-					g.If(currentUser != nil, BookmarkButton(ad)),
-					messageButton(ad, currentUser.ID),
+					bookmarkBtn,
+					messageBtn,
 					editBtn,
 					deleteBtn,
 				),

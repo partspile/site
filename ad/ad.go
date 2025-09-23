@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/url"
 	"sort"
 	"strings"
 	"time"
@@ -401,6 +402,14 @@ func GetMostPopularAds(n int) []Ad {
 // getAdIDsForTreeCriteria returns ad IDs filtered by tree criteria
 // If adIDs is nil/empty, searches all ads; otherwise filters by the provided ad IDs
 func getAdIDsForTreeCriteria(adIDs []int, makeName, year, model, engine, category, subcategory string) ([]int, error) {
+	// URL decode all parameters
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
+	model, _ = url.QueryUnescape(model)
+	engine, _ = url.QueryUnescape(engine)
+	category, _ = url.QueryUnescape(category)
+	subcategory, _ = url.QueryUnescape(subcategory)
+
 	var query string
 	var args []interface{}
 
