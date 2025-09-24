@@ -90,7 +90,7 @@ func createSearchMakeNodes(makes []string, adIDs []int) g.Node {
 
 	var nodes []g.Node
 	for _, make := range makes {
-		nodes = append(nodes, CollapsedTreeNodeSearch(make, 0, make))
+		nodes = append(nodes, CollapsedTreeNodeSearch(make, make))
 	}
 
 	// Convert adIDs to base64 encoded string for DOM storage

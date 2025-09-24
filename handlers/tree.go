@@ -78,7 +78,8 @@ func HandleTreeCollapseBrowse(c *fiber.Ctx) error {
 }
 
 func HandleTreeExpandBrowse(c *fiber.Ctx) error {
-	currentUser, _ := getUser(c)
+	_, userID := getUser(c)
+	loc := getLocation(c)
 	path := c.Params("*")
 	name, level, parts := parsePath(path)
 
@@ -103,9 +104,7 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 		children, err = vehicle.GetAdEngines(makeName, year, model)
 	case 4: // Engine level - get categories
 		makeName, year, model, engine := parts[0], parts[1], parts[2], parts[3]
-		log.Printf("[tree-view] Getting categories for make=%s, year=%s, model=%s, engine=%s", makeName, year, model, engine)
 		children, err = part.GetAdCategories(makeName, year, model, engine)
-		log.Printf("[tree-view] Found %d categories: %v", len(children), children)
 	case 5: // Category level - get subcategories
 		makeName, year, model, engine, category := parts[0], parts[1], parts[2], parts[3], parts[4]
 		children, err = part.GetAdSubCategories(makeName, year, model, engine, category)
@@ -128,18 +127,18 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 		return render(c, ui.EmptyResponse())
 	}
 
-	// Construct current path from parts
-	return render(c, ui.ExpandedTreeNodeBrowse(name, level, children, ads, currentUser, c.Get("X-Timezone"), path))
+	return render(c, ui.ExpandedTreeNodeBrowse(name, path, level, loc, userID, children, ads))
 }
 
 func HandleTreeCollapseSearch(c *fiber.Ctx) error {
 	path := c.Params("*")
-	name, level, _ := parsePath(path)
-	return render(c, ui.CollapsedTreeNodeSearch(name, level, path))
+	name, _, _ := parsePath(path)
+	return render(c, ui.CollapsedTreeNodeSearch(name, path))
 }
 
 func HandleTreeExpandSearch(c *fiber.Ctx) error {
-	currentUser, _ := getUser(c)
+	_, userID := getUser(c)
+	loc := getLocation(c)
 	path := c.Params("*")
 	name, level, parts := parsePath(path)
 
@@ -172,10 +171,16 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 		children, err = vehicle.GetAdEnginesForAdIDs(adIDs, makeName, year, model)
 	case 4: // Engine level - get categories
 		makeName, year, model, engine := parts[0], parts[1], parts[2], parts[3]
-		children, err = part.GetCategoriesForAdIDs(adIDs, makeName, year, model, engine)
+		log.Printf("[tree-search] Getting categories for make=%s, year=%s, model=%s, engine=%s with %d ad IDs", makeName, year, model, engine, len(adIDs))
+		children, err = part.GetAdCategoriesForAdIDs(adIDs, makeName, year, model, engine)
+		if err != nil {
+			log.Printf("[tree-search] Error getting categories: %v", err)
+		} else {
+			log.Printf("[tree-search] Found %d categories: %v", len(children), children)
+		}
 	case 5: // Category level - get subcategories
 		makeName, year, model, engine, category := parts[0], parts[1], parts[2], parts[3], parts[4]
-		children, err = part.GetSubCategoriesForAdIDs(adIDs, makeName, year, model, engine, category)
+		children, err = part.GetAdSubCategoriesForAdIDs(adIDs, makeName, year, model, engine, category)
 	case 6: // Subcategory level - get ads
 		makeName, year, model, engine, category, subcategory := parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]
 		ads, err = ad.GetAdsForAdIDs(adIDs, makeName, year, model, engine, category, subcategory)
@@ -193,6 +198,5 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 		return render(c, ui.EmptyResponse())
 	}
 
-	// Construct current path from parts
-	return render(c, ui.ExpandedTreeNodeSearch(name, level, children, ads, currentUser, c.Get("X-Timezone"), path))
+	return render(c, ui.ExpandedTreeNodeSearch(name, path, level, loc, userID, children, ads))
 }

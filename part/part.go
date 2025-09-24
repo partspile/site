@@ -77,6 +77,16 @@ func GetSubCategories(categoryName string) []string {
 // AD DATA FUNCTIONS (For tree view)
 // ============================================================================
 
+// GetAdCategoriesForAdIDs returns categories that have existing ads for make/year/model/engine, filtered by ad IDs (for tree view)
+func GetAdCategoriesForAdIDs(adIDs []int, makeName, year, model, engine string) ([]string, error) {
+	return GetCategoriesForAdIDs(adIDs, makeName, year, model, engine)
+}
+
+// GetAdSubCategoriesForAdIDs returns subcategories that have existing ads for make/year/model/engine/category, filtered by ad IDs (for tree view)
+func GetAdSubCategoriesForAdIDs(adIDs []int, makeName, year, model, engine, category string) ([]string, error) {
+	return GetSubCategoriesForAdIDs(adIDs, makeName, year, model, engine, category)
+}
+
 // GetAdCategories returns categories that have existing ads for make/year/model/engine (for tree view)
 func GetAdCategories(makeName, year, model, engine string) ([]string, error) {
 	return GetCategoriesAll(makeName, year, model, engine)
@@ -872,6 +882,12 @@ func GetCategoriesForAdIDs(adIDs []int, makeName, year, model, engine string) ([
 		return []string{}, nil
 	}
 
+	// URL decode the parameters
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
+	model, _ = url.QueryUnescape(model)
+	engine, _ = url.QueryUnescape(engine)
+
 	// Create placeholders for the IN clause
 	placeholders := make([]string, len(adIDs))
 	for i := range adIDs {
@@ -899,8 +915,12 @@ func GetCategoriesForAdIDs(adIDs []int, makeName, year, model, engine string) ([
 		args = append(args, id)
 	}
 
+	log.Printf("[GetCategoriesForAdIDs] Query: %s", query)
+	log.Printf("[GetCategoriesForAdIDs] Args: %v", args)
+
 	var categories []string
 	err := db.Select(&categories, query, args...)
+	log.Printf("[GetCategoriesForAdIDs] Result: %d categories, error: %v", len(categories), err)
 	return categories, err
 }
 
@@ -909,6 +929,13 @@ func GetSubCategoriesForAdIDs(adIDs []int, makeName, year, model, engine, catego
 	if len(adIDs) == 0 {
 		return []string{}, nil
 	}
+
+	// URL decode the parameters
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
+	model, _ = url.QueryUnescape(model)
+	engine, _ = url.QueryUnescape(engine)
+	category, _ = url.QueryUnescape(category)
 
 	// Create placeholders for the IN clause
 	placeholders := make([]string, len(adIDs))
