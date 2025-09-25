@@ -13,7 +13,7 @@ func GetAdsWithoutVectors() ([]Ad, error) {
 	query := `
 		SELECT 
 			a.id, a.title, a.description, a.price, a.created_at, 
-			a.subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+			a.subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_count,
 			l.city, l.admin_area, l.country, l.latitude, l.longitude,
 			0 as is_bookmarked
 		FROM Ad a

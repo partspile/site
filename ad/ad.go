@@ -2,7 +2,6 @@ package ad
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
@@ -26,7 +25,7 @@ type Ad struct {
 	DeletedAt     *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
 	SubCategoryID int        `json:"subcategory_id" db:"subcategory_id"`
 	UserID        int        `json:"user_id" db:"user_id"`
-	ImageOrder    string     `json:"image_order" db:"image_order"`
+	ImageCount    int        `json:"image_count" db:"image_count"`
 	LocationID    int        `json:"location_id" db:"location_id"`
 	ClickCount    int        `json:"click_count" db:"click_count"`
 	LastClickedAt *time.Time `json:"last_clicked_at,omitempty" db:"last_clicked_at"`
@@ -49,24 +48,11 @@ type Ad struct {
 
 	// User-specific computed fields
 	Bookmarked bool `json:"bookmarked" db:"is_bookmarked"`
-
-	// Parsed/computed fields
-	ImageOrderSlice []int `json:"-"` // Parsed version of ImageOrder, populated during scanning
 }
 
 // IsArchived returns true if the ad has been archived
 func (a Ad) IsArchived() bool {
 	return a.DeletedAt != nil
-}
-
-// PopulateImageOrderSlice parses the ImageOrder JSON string into ImageOrderSlice
-func (a *Ad) PopulateImageOrderSlice() {
-	if a.ImageOrder != "" {
-		var order []int
-		if err := json.Unmarshal([]byte(a.ImageOrder), &order); err == nil {
-			a.ImageOrderSlice = order
-		}
-	}
 }
 
 // GetVehicleData retrieves vehicle information for an ad
@@ -137,7 +123,7 @@ func buildAdQuery(ids []int, currentUser *user.User) (string, []interface{}) {
 		// Query with bookmark status
 		query = `
 			SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-			       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+			       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_count,
 			       l.city, l.admin_area, l.country, l.latitude, l.longitude,
 			       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 			FROM Ad a
@@ -152,7 +138,7 @@ func buildAdQuery(ids []int, currentUser *user.User) (string, []interface{}) {
 		// Query without bookmark status (default to false)
 		query = `
 			SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
-			       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+			       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_count,
 			       l.city, l.admin_area, l.country, l.latitude, l.longitude,
 			       0 as is_bookmarked
 			FROM Ad a
@@ -205,8 +191,8 @@ func AddAd(ad Ad) int {
 	defer tx.Rollback()
 
 	createdAt := time.Now().UTC().Format(time.RFC3339)
-	res, err := tx.Exec("INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		ad.Title, ad.Description, ad.Price, createdAt, ad.SubCategoryID, ad.UserID, ad.LocationID, ad.ImageOrder)
+	res, err := tx.Exec("INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+		ad.Title, ad.Description, ad.Price, createdAt, ad.SubCategoryID, ad.UserID, ad.LocationID, ad.ImageCount)
 	if err != nil {
 		return 0
 	}
@@ -215,9 +201,6 @@ func AddAd(ad Ad) int {
 	if err := addAdVehicleAssociations(tx, int(adID), ad.Make, ad.Years, ad.Models, ad.Engines); err != nil {
 		return 0
 	}
-
-	// Populate the image order slice for efficient access
-	ad.PopulateImageOrderSlice()
 
 	if err := tx.Commit(); err != nil {
 		return 0
@@ -268,8 +251,8 @@ func UpdateAd(ad Ad) error {
 	}
 	defer tx.Rollback()
 
-	_, err = tx.Exec("UPDATE Ad SET title = ?, description = ?, price = ?, subcategory_id = ?, location_id = ?, image_order = ? WHERE id = ?",
-		ad.Title, ad.Description, ad.Price, ad.SubCategoryID, ad.LocationID, ad.ImageOrder, ad.ID)
+	_, err = tx.Exec("UPDATE Ad SET title = ?, description = ?, price = ?, subcategory_id = ?, location_id = ?, image_count = ? WHERE id = ?",
+		ad.Title, ad.Description, ad.Price, ad.SubCategoryID, ad.LocationID, ad.ImageCount, ad.ID)
 	if err != nil {
 		return err
 	}
@@ -286,9 +269,6 @@ func UpdateAd(ad Ad) error {
 			return err
 		}
 	}
-
-	// Populate the image order slice for efficient access
-	ad.PopulateImageOrderSlice()
 
 	return tx.Commit()
 }
@@ -327,11 +307,6 @@ func GetAdsByIDs(ids []int, currentUser *user.User) ([]Ad, error) {
 		return nil, err
 	}
 
-	// Populate ImageOrderSlice for each ad
-	for i := range ads {
-		ads[i].PopulateImageOrderSlice()
-	}
-
 	// For single ID, just return the first result directly
 	if len(ids) == 1 {
 		return ads, nil
@@ -367,7 +342,7 @@ func GetMostPopularAds(n int) []Ad {
 	query := `
 		SELECT 
 			a.id, a.title, a.description, a.price, a.created_at, 
-			a.subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_order,
+			a.subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_count,
 			l.city, l.admin_area, l.country, l.latitude, l.longitude,
 			0 as is_bookmarked
 		FROM Ad a

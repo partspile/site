@@ -18,8 +18,8 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 		ID(adID(ad)),
 		Class("border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2 col-span-full"),
 		closeButton(ad, view),
-		mainImage(ad),
-		thumbnails(ad),
+		priceFloatingNode(ad),
+		imageNode(ad),
 		Div(
 			Class("p-4 flex flex-col gap-2"),
 			// Title and buttons row
@@ -42,6 +42,13 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 			// Description
 			Div(Class("text-base mt-2"), g.Text(ad.Description)),
 		),
+	)
+}
+
+func priceFloatingNode(ad ad.Ad) g.Node {
+	return Div(
+		Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md z-10"),
+		priceNode(ad),
 	)
 }
 
@@ -70,31 +77,32 @@ func adCarouselImageSrc(adID int, idx int) string {
 	return fmt.Sprintf("%s-1200w.webp?Authorization=%s", base, token)
 }
 
-func adCarouselImage(ad ad.Ad) g.Node {
-	firstIdx := 1
-	if len(ad.ImageOrderSlice) > 0 {
-		firstIdx = ad.ImageOrderSlice[0]
-	}
-
-	src := adCarouselImageSrc(ad.ID, firstIdx)
-
+func AdCarouselImage(adID int, idx int) g.Node {
 	return Img(
-		Src(src),
-		Alt(ad.Title),
+		ID(fmt.Sprintf("ad-carousel-img-%d", adID)),
+		Src(adCarouselImageSrc(adID, idx)),
+		Alt(fmt.Sprintf("Image %d", idx)),
 		Class("object-contain w-full aspect-square bg-gray-100"),
 	)
 }
 
-func mainImage(ad ad.Ad) g.Node {
-	// Carousel main image area (HTMX target is the child, not the container)
+func imageNode(ad ad.Ad) g.Node {
+	// Carousel main image area with thumbnails as siblings to the image
 	return Div(
-		Class("relative w-full aspect-square bg-gray-100 overflow-hidden rounded-t-lg flex items-center justify-center"),
+		Class("relative w-full aspect-square bg-gray-100 overflow-hidden rounded-t-lg flex flex-col"),
 		Div(
-			ID(fmt.Sprintf("ad-carousel-img-%d", ad.ID)),
-			adCarouselImage(ad),
+			Class("flex-1 flex items-center justify-center"),
 			Div(
-				Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
-				priceNode(ad),
+				Class("relative"),
+				g.If(ad.ImageCount > 0, AdCarouselImage(ad.ID, 1)),
+				g.If(ad.ImageCount == 0, Div(
+					Class("w-full h-full bg-gray-100 flex items-center justify-center"),
+					Div(
+						Class("text-gray-400 text-sm"),
+						g.Text("No Image"),
+					),
+				)),
+				g.If(ad.ImageCount > 0, thumbnails(ad)),
 			),
 		),
 	)
@@ -114,8 +122,8 @@ func adThumbnailImageSrc(adID int, idx int) string {
 	return fmt.Sprintf("%s-160w.webp?Authorization=%s", base, token)
 }
 
-func adThumbnailImage(ad ad.Ad, idx int, alt string) g.Node {
-	src := adThumbnailImageSrc(ad.ID, idx)
+func adThumbnailImage(adID int, idx int, alt string) g.Node {
+	src := adThumbnailImageSrc(adID, idx)
 
 	return Img(
 		Src(src),
@@ -129,14 +137,14 @@ func thumbnails(ad ad.Ad) g.Node {
 		Class("flex flex-row gap-2 mt-2 px-4 justify-center"),
 		g.Group(func() []g.Node {
 			nodes := []g.Node{}
-			for i, idx := range ad.ImageOrderSlice {
+			for i := 1; i <= ad.ImageCount; i++ {
 				nodes = append(nodes, Button(
 					Type("button"),
 					Class("border rounded w-16 h-16 overflow-hidden p-0 focus:outline-none"),
-					g.Attr("hx-get", fmt.Sprintf("/ad/image/%d/%d", ad.ID, idx)),
-					g.Attr("hx-target", fmt.Sprintf("#ad-carousel-img-%d", ad.ID)),
-					g.Attr("hx-swap", "innerHTML"),
-					adThumbnailImage(ad, idx, fmt.Sprintf("Image %d", i+1)),
+					hx.Get(fmt.Sprintf("/ad/image/%d/%d", ad.ID, i)),
+					hx.Target(fmt.Sprintf("#ad-carousel-img-%d", ad.ID)),
+					hx.Swap("outerHTML"),
+					adThumbnailImage(ad.ID, i, fmt.Sprintf("Image %d", i)),
 				))
 			}
 			return nodes

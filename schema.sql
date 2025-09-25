@@ -109,7 +109,7 @@ CREATE TABLE Ad (
     deleted_at DATETIME,
     subcategory_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
-    image_order TEXT,
+    image_count INTEGER DEFAULT 0,
     location_id INTEGER REFERENCES Location(id),
     click_count INTEGER DEFAULT 0,
     last_clicked_at DATETIME,

@@ -119,9 +119,7 @@ func main() {
 	app.Get("/ad/card/:id", handlers.HandleAdCard)     // x
 	app.Get("/ad/detail/:id", handlers.HandleAdDetail) // x
 	app.Get("/ad/edit-partial/:id", handlers.AuthRequired, handlers.HandleEditAdPartial)
-	app.Get("/ad/image/:adID/:idx", handlers.HandleAdImagePartial)
-	app.Get("/ad/expand-tree/:id", handlers.HandleExpandAdTree)
-	app.Get("/ad/collapse-tree/:id", handlers.HandleCollapseAdTree)
+	app.Get("/ad/image/:adID/:idx", handlers.HandleAdImage) // x
 
 	// Ad management
 	app.Get("/ad/:id", handlers.OptionalAuth, handlers.HandleAdPage) // x

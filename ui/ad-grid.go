@@ -15,15 +15,9 @@ import (
 
 // AdGridNode renders a grid view of ad
 func AdGridNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
-	// Get the first image index
-	firstIdx := 1
-	if len(ad.ImageOrderSlice) > 0 {
-		firstIdx = ad.ImageOrderSlice[0]
-	}
-
 	imageNode := Div(
 		Class("relative w-full h-48 bg-gray-100 overflow-hidden"),
-		adGridImage(ad.ID, firstIdx, ad.Title),
+		g.If(ad.ImageCount > 0, adGridImage(ad.ID, ad.Title)),
 		Div(
 			Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
 			priceNode(ad),
@@ -74,8 +68,8 @@ func adGridImageSrc(adID int, idx int) string {
 	return fmt.Sprintf("%s-480w.webp?Authorization=%s", base, token)
 }
 
-func adGridImage(adID int, idx int, alt string) g.Node {
-	src := adGridImageSrc(adID, idx)
+func adGridImage(adID int, alt string) g.Node {
+	src := adGridImageSrc(adID, 1)
 
 	return Img(
 		Src(src),

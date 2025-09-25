@@ -347,7 +347,7 @@ The platform is built with the following technologies:
 - **PartCategory**: id, name
 - **PartSubCategory**: id, category_id, name
 - **Location**: id, raw_text, city, admin_area, country, latitude, longitude
-- **Ad**: id, title, description, price, created_at, deleted_at, subcategory_id, user_id, location_id, image_order, click_count, last_clicked_at, has_vector
+- **Ad**: id, title, description, price, created_at, deleted_at, subcategory_id, user_id, location_id, image_count, click_count, last_clicked_at, has_vector
 - **AdCar**: ad_id, car_id (single table for all vehicle associations)
 - **User**: id, name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin, deleted_at
 - **UserSearch**: id, user_id (nullable), query_string, created_at

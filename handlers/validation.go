@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"mime/multipart"
 	"strconv"
@@ -221,21 +220,6 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 		id = adID[0]
 	}
 
-	imageOrderStr := c.FormValue("image_order")
-	imageOrder := []int{}
-	if imageOrderStr != "" {
-		for _, s := range strings.Split(imageOrderStr, ",") {
-			if n, err := strconv.Atoi(strings.TrimSpace(s)); err == nil {
-				imageOrder = append(imageOrder, n)
-			}
-		}
-	}
-
-	// Convert imageOrder to JSON string for storage
-	imageOrderJSON, err := json.Marshal(imageOrder)
-	if err != nil {
-		return ad.Ad{}, nil, nil, fmt.Errorf("failed to marshal image_order: %v", err)
-	}
 	// Parse deleted images
 	deletedImagesStr := c.FormValue("deleted_images")
 	deletedImages := []int{}
@@ -246,6 +230,13 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 			}
 		}
 	}
+
+	// Calculate final image count: new images - deleted images
+	imageCount := len(imageFiles) - len(deletedImages)
+	if imageCount < 0 {
+		imageCount = 0
+	}
+
 	return ad.Ad{
 		ID:          id,
 		Title:       title,
@@ -258,6 +249,6 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 		Price:       price,
 		UserID:      userID,
 		LocationID:  locationID,
-		ImageOrder:  string(imageOrderJSON),
+		ImageCount:  imageCount,
 	}, imageFiles, deletedImages, nil
 }

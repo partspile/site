@@ -31,14 +31,11 @@ func createAdDataElements(ads []ad.Ad) []g.Node {
 	var adDataElements []g.Node
 	for _, ad := range ads {
 		if ad.Latitude.Valid && ad.Longitude.Valid {
-			// Get the first image index
-			firstIdx := 1
-			if len(ad.ImageOrderSlice) > 0 {
-				firstIdx = ad.ImageOrderSlice[0]
+			// Generate image URL only if images exist
+			var imageURL string
+			if ad.ImageCount > 0 {
+				imageURL = generateMapImageURL(ad.ID, 1)
 			}
-
-			// Generate the image URL
-			imageURL := generateMapImageURL(ad.ID, firstIdx)
 
 			adDataElements = append(adDataElements,
 				Div(

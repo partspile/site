@@ -20,7 +20,7 @@ func adID(ad ad.Ad) string {
 }
 
 func adTarget(ad ad.Ad) string {
-	return fmt.Sprintf("#ad-%d", ad.ID)
+	return fmt.Sprintf("closest #%s", adID(ad))
 }
 
 // priceNode returns price text
@@ -151,7 +151,7 @@ func BookmarkButton(ad ad.Ad) g.Node {
 		Type("button"),
 		Class("focus:outline-none"),
 		hxMethod,
-		hx.Target(fmt.Sprintf("#bookmark-btn-%d", ad.ID)),
+		hx.Target("this"),
 		hx.Swap("outerHTML"),
 		ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
 		g.Attr("onclick", "event.stopPropagation()"),
@@ -315,38 +315,22 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 						Class("flex flex-row gap-2 mb-2"),
 						g.Group(func() []g.Node {
 							imageNodes := []g.Node{}
-							for i, idx := range adObj.ImageOrderSlice {
+							for i := 1; i <= adObj.ImageCount; i++ {
 								imageNodes = append(imageNodes,
 									Div(
 										Class("relative group"),
-										g.Attr("data-image-idx", fmt.Sprintf("%d", idx)),
-										AdImageWithFallbackSrcSet(adObj.ID, idx, fmt.Sprintf("Image %d", i+1), "grid"),
+										g.Attr("data-image-idx", fmt.Sprintf("%d", i)),
+										AdImageWithFallbackSrcSet(adObj.ID, i, fmt.Sprintf("Image %d", i), "grid"),
 										Button(
 											Type("button"),
 											Class("absolute top-0 right-0 bg-white bg-opacity-80 rounded-full p-1 text-red-600 hover:text-red-800 z-10 delete-image-btn"),
-											g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", idx)),
+											g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", i)),
 											Img(Src("/images/trashcan.svg"), Alt("Delete"), Class("w-4 h-4")),
 										),
 									),
 								)
 							}
 							return imageNodes
-						}()),
-					),
-					// Hidden input for image order (comma-separated indices)
-					Input(
-						Type("hidden"),
-						ID("image_order"),
-						Name("image_order"),
-						Value(func() string {
-							order := ""
-							for i, idx := range adObj.ImageOrderSlice {
-								if i > 0 {
-									order += ","
-								}
-								order += fmt.Sprintf("%d", idx)
-							}
-							return order
 						}()),
 					),
 					// Hidden input for deleted images (comma-separated indices)
@@ -687,44 +671,29 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 							Class("flex flex-row gap-2 mb-2"),
 							g.Group(func() []g.Node {
 								imageNodes := []g.Node{}
-								imageURLs := AdImageURLs(currentAd.ID, currentAd.ImageOrderSlice)
+								imageURLs := AdImageURLs(currentAd.ID, currentAd.ImageCount)
 								for i, url := range imageURLs {
+									imageIdx := i + 1 // Images are numbered 1, 2, 3...
 									imageNodes = append(imageNodes,
 										Div(
 											Class("relative group"),
-											g.Attr("data-image-idx", fmt.Sprintf("%d", currentAd.ImageOrderSlice[i])),
+											g.Attr("data-image-idx", fmt.Sprintf("%d", imageIdx)),
 											Img(
 												Src(url),
-												Alt(fmt.Sprintf("Image %d", i+1)),
+												Alt(fmt.Sprintf("Image %d", imageIdx)),
 												Class("object-cover w-24 h-24 rounded border cursor-move"),
 												g.Attr("draggable", "true"),
 											),
 											Button(
 												Type("button"),
 												Class("absolute top-0 right-0 bg-white bg-opacity-80 rounded-full p-1 text-red-600 hover:text-red-800 z-10 delete-image-btn"),
-												g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", currentAd.ImageOrderSlice[i])),
+												g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", imageIdx)),
 												Img(Src("/images/trashcan.svg"), Alt("Delete"), Class("w-4 h-4")),
 											),
 										),
 									)
 								}
 								return imageNodes
-							}()),
-						),
-						// Hidden input for image order (comma-separated indices)
-						Input(
-							Type("hidden"),
-							ID("image_order"),
-							Name("image_order"),
-							Value(func() string {
-								order := ""
-								for i, idx := range currentAd.ImageOrder {
-									if i > 0 {
-										order += ","
-									}
-									order += fmt.Sprintf("%d", idx)
-								}
-								return order
 							}()),
 						),
 						// Hidden input for deleted images (comma-separated indices)
@@ -785,24 +754,24 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 }
 
 // Helper to generate signed B2 image URLs for an ad
-func AdImageURLs(adID int, order []int) []string {
+func AdImageURLs(adID int, imageCount int) []string {
 	urls := []string{}
 
 	prefix := fmt.Sprintf("%d/", adID)
 	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
 	if err != nil || token == "" {
 		// Return empty strings when B2 images aren't available - browser will show broken images
-		for range order {
+		for i := 0; i < imageCount; i++ {
 			urls = append(urls, "")
 		}
 		return urls
 	}
 
-	for _, idx := range order {
+	for i := 1; i <= imageCount; i++ {
 		// Use 160w size for gallery thumbnails
 		urls = append(urls, fmt.Sprintf(
 			"https://f004.backblazeb2.com/file/parts-pile/%d/%d-160w.webp?Authorization=%s",
-			adID, idx, token,
+			adID, i, token,
 		))
 	}
 	return urls
@@ -856,189 +825,5 @@ func AdImageWithFallbackSrcSet(adID int, idx int, alt string, context string) g.
 		g.Attr("srcset", srcset),
 		g.Attr("sizes", sizes),
 		Class("object-contain w-full aspect-square bg-gray-100"),
-	)
-}
-
-// AdCardCompactTree renders a compact single-line ad card for tree view (collapsed state)
-func AdCardCompactTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
-	// Check if ad has images
-	hasImages := len(ad.ImageOrderSlice) > 0
-	picLink := g.Node(nil)
-	if hasImages {
-		picLink = Span(
-			Class("text-orange-500 hover:text-orange-700 cursor-pointer"),
-			g.Text("pic"),
-		)
-	}
-
-	return Div(
-		ID(fmt.Sprintf("ad-tree-%d", ad.ID)),
-		Class("flex items-center py-2 px-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer last:border-b-0"),
-		hx.Get(fmt.Sprintf("/ad/expand-tree/%d", ad.ID)),
-		hx.Target(fmt.Sprintf("#ad-tree-%d", ad.ID)),
-		hx.Swap("outerHTML"),
-		// Bookmark icon
-		g.If(currentUser != nil, BookmarkButton(ad)),
-		// Description (blue text)
-		Div(
-			Class("flex-1 text-blue-600 hover:text-blue-800"),
-			titleNode(ad),
-		),
-		// Location with flag (using new helper function)
-		Div(
-			Class("mr-4"),
-			locationFlagNode(ad),
-		),
-		// Time posted (using new helper function)
-		Div(
-			Class("mr-4 text-xs text-gray-400"),
-			ageNode(ad, loc),
-		),
-		// Price (green text)
-		Div(
-			Class("text-green-600 font-semibold mr-4"),
-			priceNode(ad),
-		),
-		// Pic link (orange text)
-		picLink,
-	)
-}
-
-// AdCardExpandedTree renders an expanded ad card for tree view (with close button)
-func AdCardExpandedTree(ad ad.Ad, loc *time.Location, currentUser *user.User) g.Node {
-	// Create the expanded content similar to AdDetailUnified but without close button
-	htmxTarget := fmt.Sprintf("#ad-tree-%d", ad.ID)
-
-	deleteBtn := g.Node(nil)
-	editBtn := g.Node(nil)
-	messageBtn := g.Node(nil)
-	bookmarkBtn := g.Node(nil)
-
-	if currentUser != nil && currentUser.ID == ad.UserID {
-		deleteBtn = Button(
-			Type("button"),
-			Class("ml-2 focus:outline-none z-20"),
-			hx.Delete(fmt.Sprintf("/delete-ad/%d", ad.ID)),
-			hx.Target(htmxTarget),
-			hx.Swap("delete"),
-			hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
-			Img(
-				Src("/images/trashcan.svg"),
-				Alt("Delete"),
-				Class("w-6 h-6 inline align-middle text-red-500 hover:text-red-700"),
-			),
-		)
-		editBtn = Button(
-			Type("button"),
-			Class("ml-2 focus:outline-none z-20"),
-			hx.Get(fmt.Sprintf("/ad/edit-partial/%d?view=tree", ad.ID)),
-			hx.Target(htmxTarget),
-			hx.Swap("outerHTML"),
-			Img(
-				Src("/images/edit.svg"),
-				Alt("Edit"),
-				Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
-			),
-		)
-	}
-
-	if currentUser != nil {
-		bookmarkBtn = BookmarkButton(ad)
-	}
-
-	if currentUser != nil && currentUser.ID != 0 {
-		messageBtn = messageButton(ad, currentUser.ID)
-	}
-
-	// Use tile view layout for expanded tree view
-	firstIdx := 1
-	if len(ad.ImageOrderSlice) > 0 {
-		firstIdx = ad.ImageOrderSlice[0]
-	}
-
-	// Carousel main image area
-	mainImageArea := Div(
-		Class("relative w-full aspect-square bg-gray-100 overflow-hidden rounded-t-lg flex items-center justify-center"),
-		Div(
-			ID(fmt.Sprintf("ad-carousel-img-%d", ad.ID)),
-			AdImageWithFallbackSrcSet(ad.ID, firstIdx, ad.Title, "carousel"),
-			Div(
-				Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
-				priceNode(ad),
-			),
-		),
-	)
-
-	// Carousel thumbnails
-	thumbnails := Div(
-		Class("flex flex-row gap-2 mt-2 px-4 justify-center"),
-		g.Group(func() []g.Node {
-			nodes := []g.Node{}
-			for i, idx := range ad.ImageOrderSlice {
-				nodes = append(nodes, Button(
-					Type("button"),
-					Class("border rounded w-16 h-16 overflow-hidden p-0 focus:outline-none"),
-					g.Attr("hx-get", fmt.Sprintf("/ad/image/%d/%d", ad.ID, idx)),
-					g.Attr("hx-target", fmt.Sprintf("#ad-carousel-img-%d", ad.ID)),
-					g.Attr("hx-swap", "innerHTML"),
-					AdImageWithFallbackSrcSet(ad.ID, idx, fmt.Sprintf("Image %d", i+1), "thumbnail"),
-				))
-			}
-			return nodes
-		}()),
-	)
-
-	// Add close button to collapse back to compact view
-	closeBtn := Button(
-		Type("button"),
-		Class("absolute -top-2 -right-2 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
-		hx.Get(fmt.Sprintf("/ad/collapse-tree/%d", ad.ID)),
-		hx.Target(fmt.Sprintf("#ad-tree-%d", ad.ID)),
-		hx.Swap("outerHTML"),
-		g.Text("×"),
-	)
-
-	content := Div(
-		Class("border rounded-lg shadow-lg bg-white flex flex-col relative"),
-		closeBtn,
-		mainImageArea,
-		thumbnails,
-		Div(
-			Class("p-4 flex flex-col gap-2"),
-			// Title and buttons row
-			Div(
-				Class("flex flex-row items-center justify-between mb-2"),
-				Div(Class("font-semibold text-xl truncate"), titleNode(ad)),
-				Div(Class("flex flex-row items-center gap-2 ml-2"),
-					bookmarkBtn,
-					messageBtn,
-					editBtn,
-					deleteBtn,
-				),
-			),
-			// Age and location row
-			Div(
-				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
-				Div(Class("text-gray-400"), ageNode(ad, loc)),
-				Div(Class("flex flex-row items-center gap-1"),
-					locationFlagNode(ad),
-				),
-			),
-			// Description
-			Div(Class("text-base mt-2"), g.Text(ad.Description)),
-			// Rock section - will be populated by HTMX
-			Div(
-				ID(fmt.Sprintf("rock-section-%d", ad.ID)),
-				Class("mt-2"),
-				hx.Get(fmt.Sprintf("/api/ad-rocks/%d", ad.ID)),
-				hx.Trigger("load"),
-			),
-		),
-	)
-
-	return Div(
-		ID(fmt.Sprintf("ad-tree-%d", ad.ID)),
-		Class("relative my-4 mx-2"),
-		content,
 	)
 }

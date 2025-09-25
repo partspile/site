@@ -492,23 +492,12 @@ func main() {
 			continue
 		}
 
-		// Generate between 1 and 5 images per ad
-		numImages := 1 + rand.Intn(5) // 1 to 5 images
+		// Generate between 0 and 5 images per ad
+		numImages := rand.Intn(6) // 0 to 5 images
 
-		// Create image_order as JSON array of integers starting from 1
-		imageOrderIndices := make([]int, numImages)
-		for i := 0; i < numImages; i++ {
-			imageOrderIndices[i] = i + 1
-		}
-		imageOrderJSON, err := json.Marshal(imageOrderIndices)
-		if err != nil {
-			log.Printf("Failed to marshal image_order for ad: %v", err)
-			continue
-		}
-
-		// Insert ad with image_order and has_vector (initially 0)
-		res, err := database.Exec(`INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_order, has_vector) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-			ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryID, ad.UserID, locationID, string(imageOrderJSON))
+		// Insert ad with image_count and has_vector (initially 0)
+		res, err := database.Exec(`INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_count, has_vector) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+			ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryID, ad.UserID, locationID, numImages)
 		if err != nil {
 			log.Printf("Failed to insert Ad: %v", err)
 			continue

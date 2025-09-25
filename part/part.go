@@ -556,7 +556,7 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 		       a.user_id, psc.name as subcategory, pc.name as category,
 		       m.name, y.year, mo.name, e.name,
 		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
-		       a.image_order, a.location_id,
+		       a.image_count, a.location_id,
 		       l.city, l.admin_area, l.country
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
@@ -646,10 +646,9 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 		var subcategory, category, makeName, modelName, engineName sql.NullString
 		var year sql.NullInt64
 		var isBookmarked int
-		var imageOrder sql.NullString
 		var locationID sql.NullInt64
 		var city, adminArea, country sql.NullString
-		if err := rows.Scan(&adID, &adObj.Title, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName, &isBookmarked, &imageOrder, &locationID, &city, &adminArea, &country); err != nil {
+		if err := rows.Scan(&adID, &adObj.Title, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName, &isBookmarked, &adObj.ImageCount, &locationID, &city, &adminArea, &country); err != nil {
 			return nil, err
 		}
 		adObj.ID = adID
@@ -669,13 +668,6 @@ func GetAdsForNodeStructured(parts []string, sq ad.SearchQuery, userID int) ([]a
 			adObj.Engines = []string{engineName.String}
 		}
 		adObj.Bookmarked = isBookmarked == 1
-
-		// Handle image order
-		if imageOrder.Valid {
-			adObj.ImageOrder = imageOrder.String
-			// Parse the JSON string into the slice for efficient access
-			adObj.PopulateImageOrderSlice()
-		}
 
 		// Handle location fields
 		if locationID.Valid {
@@ -727,7 +719,7 @@ func GetAdsForTreeView(parts []string, sq ad.SearchQuery, userID int) ([]ad.Ad, 
 		       a.user_id, psc.name as subcategory, pc.name as category,
 		       m.name, y.year, mo.name, e.name,
 		       CASE WHEN fa.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
-		       a.image_order, a.location_id,
+		       a.image_count, a.location_id,
 		       l.city, l.admin_area, l.country
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
@@ -817,10 +809,9 @@ func GetAdsForTreeView(parts []string, sq ad.SearchQuery, userID int) ([]ad.Ad, 
 		var subcategory, category, makeName, modelName, engineName sql.NullString
 		var year sql.NullInt64
 		var isBookmarked int
-		var imageOrder sql.NullString
 		var locationID sql.NullInt64
 		var city, adminArea, country sql.NullString
-		if err := rows.Scan(&adID, &adObj.Title, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName, &isBookmarked, &imageOrder, &locationID, &city, &adminArea, &country); err != nil {
+		if err := rows.Scan(&adID, &adObj.Title, &adObj.Description, &adObj.Price, &adObj.CreatedAt, &adObj.SubCategoryID, &adObj.UserID, &subcategory, &category, &makeName, &year, &modelName, &engineName, &isBookmarked, &adObj.ImageCount, &locationID, &city, &adminArea, &country); err != nil {
 			return nil, err
 		}
 		adObj.ID = adID
@@ -840,13 +831,6 @@ func GetAdsForTreeView(parts []string, sq ad.SearchQuery, userID int) ([]ad.Ad, 
 			adObj.Engines = []string{engineName.String}
 		}
 		adObj.Bookmarked = isBookmarked == 1
-
-		// Handle image order
-		if imageOrder.Valid {
-			adObj.ImageOrder = imageOrder.String
-			// Parse the JSON string into the slice for efficient access
-			adObj.PopulateImageOrderSlice()
-		}
 
 		// Handle location fields
 		if locationID.Valid {

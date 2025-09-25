@@ -33,8 +33,6 @@ import (
 	"github.com/parts-pile/site/vehicle"
 	"golang.org/x/image/draw"
 	"gopkg.in/kothar/go-backblaze.v0"
-	g "maragu.dev/gomponents"
-	. "maragu.dev/gomponents/html"
 )
 
 func HandleNewAd(c *fiber.Ctx) error {
@@ -117,7 +115,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, err.Error())
 	}
 	adID := ad.AddAd(newAd)
-	fmt.Printf("[DEBUG] Created ad ID=%d with ImageOrder=%v\n", adID, newAd.ImageOrder)
+	fmt.Printf("[DEBUG] Created ad ID=%d with ImageCount=%d\n", adID, newAd.ImageCount)
 	fmt.Printf("[DEBUG] Image files count: %d\n", len(imageFiles))
 	if len(imageFiles) > 0 {
 		for i, file := range imageFiles {
@@ -571,8 +569,8 @@ func deleteAdImagesFromB2(adID int, indices []int) {
 	}
 }
 
-// Handler for HTMX image carousel partial (single image)
-func HandleAdImagePartial(c *fiber.Ctx) error {
+// Handler for HTMX image carousel
+func HandleAdImage(c *fiber.Ctx) error {
 	adID, err := c.ParamsInt("adID")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -581,17 +579,7 @@ func HandleAdImagePartial(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid image index")
 	}
-	adObj, ok := ad.GetAd(adID, nil)
-	if !ok {
-		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
-	}
-	// Render only the image and price badge (no container)
-	mainImage := ui.AdImageWithFallbackSrcSet(adObj.ID, idx, adObj.Title, "carousel")
-	priceBadge := Div(
-		Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md"),
-		g.Textf("$%.0f", adObj.Price),
-	)
-	return render(c, g.Group([]g.Node{mainImage, priceBadge}))
+	return render(c, ui.AdCarouselImage(adID, idx))
 }
 
 // --- VECTOR EMBEDDING HELPERS ---
@@ -659,41 +647,3 @@ func joinStrings(ss []string) string {
 }
 
 // --- END VECTOR EMBEDDING HELPERS ---
-
-// HandleExpandAdTree expands an ad in tree view from compact to detailed view
-func HandleExpandAdTree(c *fiber.Ctx) error {
-	adID, err := c.ParamsInt("id")
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
-	}
-
-	currentUser, _ := GetCurrentUser(c)
-
-	// Get ad from either active or archived tables with bookmark status
-	adObj, ok := ad.GetAd(adID, currentUser)
-	if !ok {
-		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
-	}
-
-	loc := getLocation(c)
-	return render(c, ui.AdCardExpandedTree(adObj, loc, currentUser))
-}
-
-// HandleCollapseAdTree collapses an ad in tree view from detailed to compact view
-func HandleCollapseAdTree(c *fiber.Ctx) error {
-	adID, err := c.ParamsInt("id")
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
-	}
-
-	currentUser, _ := GetCurrentUser(c)
-
-	// Get ad from either active or archived tables with bookmark status
-	adObj, ok := ad.GetAd(adID, currentUser)
-	if !ok {
-		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
-	}
-
-	loc := getLocation(c)
-	return render(c, ui.AdCardCompactTree(adObj, loc, currentUser))
-}
