@@ -124,6 +124,9 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	}
 	uploadAdImagesToB2(adID, imageFiles)
 
+	// Update the ad with the correct ID for embedding processing
+	newAd.ID = adID
+
 	// Attempt inline vector processing, fallback to queue if it fails
 	log.Printf("[embedding] Attempting inline vector processing for ad %d", adID)
 	err = vector.BuildAdEmbedding(newAd)

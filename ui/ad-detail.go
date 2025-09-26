@@ -64,7 +64,7 @@ func closeButton(ad ad.Ad, view string) g.Node {
 }
 
 // adCarouselImageSrc generates a single signed B2 image URL for carousel context
-func adCarouselImageSrc(adID int, idx int) string {
+func AdCarouselImageSrc(adID int, idx int) string {
 	prefix := fmt.Sprintf("%d/", adID)
 	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
 	if err != nil || token == "" {
@@ -79,28 +79,36 @@ func adCarouselImageSrc(adID int, idx int) string {
 
 func AdCarouselImage(adID int, idx int) g.Node {
 	return Img(
-		Class("object-contain h-80 aspect-square bg-gray-100"),
+		Class("object-contain w-full h-full bg-gray-100 transition-opacity duration-200"),
 		ID(fmt.Sprintf("ad-carousel-img-%d", adID)),
-		Src(adCarouselImageSrc(adID, idx)),
+		Src(AdCarouselImageSrc(adID, idx)),
 		Alt(fmt.Sprintf("Image %d", idx)),
+	)
+}
+
+func AdNoImage() g.Node {
+	return Div(
+		Class("absolute inset-0 bg-gray-100 flex items-center justify-center"),
+		Div(
+			Class("text-gray-400 text-sm"),
+			g.Text("No Image"),
+		),
 	)
 }
 
 func imageNode(ad ad.Ad) g.Node {
 	return Div(
-		Class("relative w-full aspect-square bg-gray-100 overflow-hidden rounded-t-lg flex flex-col"),
+		Class("relative w-full bg-gray-100 overflow-hidden rounded-t-lg"),
+		Style("height: 60vh; min-height: 500px; max-height: 800px;"),
 		Div(
-			Class("flex-1 flex items-center justify-center"),
+			Class("relative w-full h-full flex flex-col"),
 			Div(
-				Class("relative"),
+				Class("flex-1 flex items-center justify-center"),
 				g.If(ad.ImageCount > 0, AdCarouselImage(ad.ID, 1)),
-				g.If(ad.ImageCount == 0, Div(
-					Class("w-full h-full bg-gray-100 flex items-center justify-center"),
-					Div(
-						Class("text-gray-400 text-sm"),
-						g.Text("No Image"),
-					),
-				)),
+				g.If(ad.ImageCount == 0, AdNoImage()),
+			),
+			Div(
+				Class("flex-shrink-0 p-4"),
 				g.If(ad.ImageCount > 0, thumbnails(ad)),
 			),
 		),
