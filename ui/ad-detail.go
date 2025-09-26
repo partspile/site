@@ -79,15 +79,14 @@ func adCarouselImageSrc(adID int, idx int) string {
 
 func AdCarouselImage(adID int, idx int) g.Node {
 	return Img(
+		Class("object-contain h-80 aspect-square bg-gray-100"),
 		ID(fmt.Sprintf("ad-carousel-img-%d", adID)),
 		Src(adCarouselImageSrc(adID, idx)),
 		Alt(fmt.Sprintf("Image %d", idx)),
-		Class("object-contain w-full aspect-square bg-gray-100"),
 	)
 }
 
 func imageNode(ad ad.Ad) g.Node {
-	// Carousel main image area with thumbnails as siblings to the image
 	return Div(
 		Class("relative w-full aspect-square bg-gray-100 overflow-hidden rounded-t-lg flex flex-col"),
 		Div(
