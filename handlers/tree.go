@@ -14,22 +14,6 @@ import (
 	"github.com/parts-pile/site/vehicle"
 )
 
-// encodeAdIDs encodes a slice of integers to a base64 string
-func encodeAdIDs(adIDs []int) string {
-	if len(adIDs) == 0 {
-		return ""
-	}
-
-	// Convert to bytes using binary encoding
-	buf := make([]byte, len(adIDs)*4) // 4 bytes per int32
-	for i, id := range adIDs {
-		binary.LittleEndian.PutUint32(buf[i*4:], uint32(id))
-	}
-
-	// Encode to base64
-	return base64.URLEncoding.EncodeToString(buf)
-}
-
 // decodeAdIDs decodes a base64 string back to a slice of integers
 func decodeAdIDs(adIDsStr string) ([]int, error) {
 	if adIDsStr == "" {

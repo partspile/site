@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -48,9 +47,4 @@ func getUser(c *fiber.Ctx) (*user.User, int) {
 		userID = currentUser.ID
 	}
 	return currentUser, userID
-}
-
-// htmlEscape escapes HTML special characters
-func htmlEscape(s string) string {
-	return strings.ReplaceAll(s, `"`, `\"`)
 }

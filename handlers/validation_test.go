@@ -2,37 +2,11 @@ package handlers
 
 import (
 	"mime/multipart"
-	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/valyala/fasthttp"
 )
-
-// createTestContext creates a Fiber context for testing
-func createTestContext(method, path string, formData map[string][]string) *fiber.Ctx {
-	app := fiber.New()
-
-	// Create a mock request
-	req := httptest.NewRequest(method, path, nil)
-	if formData != nil {
-		req.PostForm = formData
-	}
-
-	// Create the context
-	ctx := app.AcquireCtx(&fasthttp.RequestCtx{})
-
-	// Set the request data
-	if formData != nil {
-		for key := range formData {
-			ctx.FormValue(key)
-		}
-	}
-
-	return ctx
-}
 
 func TestValidateRequired(t *testing.T) {
 
