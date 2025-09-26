@@ -107,7 +107,6 @@ func main() {
 	app.Get("/", handlers.HandleHome)                  // x
 	app.Get("/search", handlers.HandleSearch)          // x
 	app.Get("/search-page", handlers.HandleSearchPage) // x
-	app.Get("/api/search", handlers.HandleSearchAPI)   // x
 
 	// Tree view routes - split by browse vs search mode
 	app.Get("/tree-browse-expand/*", handlers.HandleTreeExpandBrowse)     // x
@@ -129,6 +128,9 @@ func main() {
 
 	// API group
 	api := app.Group("/api")
+
+	// Search API
+	api.Get("/search", handlers.HandleSearchAPI)
 
 	// Ad management (API)
 	api.Post("/new-ad", handlers.AuthRequired, handlers.HandleNewAdSubmission)
