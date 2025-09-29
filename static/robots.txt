@@ -1,0 +1,29 @@
+User-agent: *
+Allow: /
+Allow: /terms
+Allow: /privacy
+Allow: /register
+Allow: /login
+Allow: /ad/
+Allow: /search
+Allow: /search-page
+
+# Block access to private user content
+Disallow: /api/
+Disallow: /admin/
+Disallow: /messages/
+Disallow: /settings/
+Disallow: /bookmarks/
+Disallow: /user-menu/
+Disallow: /new-ad
+Disallow: /edit-ad/
+Disallow: /rocks
+
+# Block access to dynamic content that doesn't add SEO value
+Disallow: /tree-*
+Disallow: /view/
+Disallow: /*?*
+Disallow: /*#*
+
+# Sitemap location
+Sitemap: https://parts-pile.com/sitemap.xml

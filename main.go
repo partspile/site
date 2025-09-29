@@ -185,6 +185,9 @@ func main() {
 	app.Get("/terms", handlers.HandleTermsOfService)
 	app.Get("/privacy", handlers.HandlePrivacyPolicy)
 
+	// Sitemap
+	app.Get("/sitemap.xml", handlers.HandleSitemap)
+
 	// User settings
 	app.Get("/settings", handlers.AuthRequired, handlers.HandleSettings)       // x
 	app.Get("/bookmarks", handlers.AuthRequired, handlers.HandleBookmarksPage) // x

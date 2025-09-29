@@ -9,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -192,7 +193,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
 	}
-	years, models, engines, categories, _, err := ValidateAdFormAndReturn(form)
+	years, models, engines, categories, subcategories, err := ValidateAdFormAndReturn(form)
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
 	}
@@ -201,6 +202,17 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	category := ""
 	if len(categories) > 0 {
 		category = categories[0]
+	}
+
+	// Get subcategory ID from the validated arrays
+	subcategoryID := 0
+	if len(subcategories) > 0 {
+		subcategoryName := subcategories[0]
+		// Look up subcategory ID by name
+		subcategoryID, err = part.GetSubCategoryIDByName(subcategoryName)
+		if err != nil {
+			return ad.Ad{}, nil, nil, fmt.Errorf("invalid subcategory: %s", subcategoryName)
+		}
 	}
 
 	// Extract image files
@@ -238,17 +250,18 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	}
 
 	return ad.Ad{
-		ID:          id,
-		Title:       title,
-		Make:        make,
-		Years:       years,
-		Models:      models,
-		Engines:     engines,
-		Category:    sql.NullString{String: category, Valid: category != ""},
-		Description: description,
-		Price:       price,
-		UserID:      userID,
-		LocationID:  locationID,
-		ImageCount:  imageCount,
+		ID:            id,
+		Title:         title,
+		Make:          make,
+		Years:         years,
+		Models:        models,
+		Engines:       engines,
+		Category:      sql.NullString{String: category, Valid: category != ""},
+		SubCategoryID: subcategoryID,
+		Description:   description,
+		Price:         price,
+		UserID:        userID,
+		LocationID:    locationID,
+		ImageCount:    imageCount,
 	}, imageFiles, deletedImages, nil
 }
