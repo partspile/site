@@ -550,5 +550,273 @@
   {
     "name": "Volkswagen Group",
     "country": "DE"
+  },
+  {
+    "name": "Jensen Motors",
+    "country": "GB"
+  },
+  {
+    "name": "Paige-Detroit Motor Car Company",
+    "country": "US"
+  },
+  {
+    "name": "Jiangling Motors Corporation",
+    "country": "CN"
+  },
+  {
+    "name": "Jordan Motor Car Company",
+    "country": "US"
+  },
+  {
+    "name": "Jowett Cars Ltd",
+    "country": "GB"
+  },
+  {
+    "name": "Kaiser-Frazer Corporation",
+    "country": "US"
+  },
+  {
+    "name": "Karma Automotive",
+    "country": "US"
+  },
+  {
+    "name": "PACCAR Inc",
+    "country": "US"
+  },
+  {
+    "name": "Kissel Motor Car Company",
+    "country": "US"
+  },
+  {
+    "name": "Kurtis Kraft",
+    "country": "US"
+  },
+  {
+    "name": "AvtoVAZ",
+    "country": "RU"
+  },
+  {
+    "name": "LaForza Automobile Inc",
+    "country": "US"
+  },
+  {
+    "name": "Lanchester Motor Company",
+    "country": "GB"
+  },
+  {
+    "name": "Lea-Francis Cars Ltd",
+    "country": "GB"
+  },
+  {
+    "name": "Lexington Motor Company",
+    "country": "US"
+  },
+  {
+    "name": "McLaren Group",
+    "country": "GB"
+  },
+  {
+    "name": "Mercedes-Benz Group AG",
+    "country": "DE"
+  },
+  {
+    "name": "Messerschmitt-Bölkow-Blohm",
+    "country": "DE"
+  },
+  {
+    "name": "MG Motor",
+    "country": "CN"
+  },
+  {
+    "name": "Mitsubishi Motors Corporation",
+    "country": "JP"
+  },
+  {
+    "name": "Mobility Ventures LLC",
+    "country": "US"
+  },
+  {
+    "name": "Monteverdi High Speed Cars",
+    "country": "CH"
+  },
+  {
+    "name": "Moon Motor Car Company",
+    "country": "US"
+  },
+  {
+    "name": "Giovanni Moretti S.A.",
+    "country": "IT"
+  },
+  {
+    "name": "Morgan Motor Company",
+    "country": "GB"
+  },
+  {
+    "name": "AZLK",
+    "country": "RU"
+  },
+  {
+    "name": "Nardi-Danese",
+    "country": "IT"
+  },
+  {
+    "name": "Nash Motors",
+    "country": "US"
+  },
+  {
+    "name": "NSU Motorenwerke AG",
+    "country": "DE"
+  },
+  {
+    "name": "Chery Automobile",
+    "country": "CN"
+  },
+  {
+    "name": "Officine Specializzate Costruzione Automobili",
+    "country": "IT"
+  },
+  {
+    "name": "Panhard et Levassor",
+    "country": "FR"
+  },
+  {
+    "name": "Panoz Auto Development",
+    "country": "US"
+  },
+  {
+    "name": "Panther Westwinds",
+    "country": "GB"
+  },
+  {
+    "name": "Peerless Motor Car Company",
+    "country": "US"
+  },
+  {
+    "name": "ENASA",
+    "country": "ES"
+  },
+  {
+    "name": "Pierce-Arrow Motor Car Company",
+    "country": "US"
+  },
+  {
+    "name": "Qvale Automotive Group",
+    "country": "US"
+  },
+  {
+    "name": "Renault Group",
+    "country": "FR"
+  },
+  {
+    "name": "REO Motor Car Company",
+    "country": "US"
+  },
+  {
+    "name": "Rickenbacker Motor Company",
+    "country": "US"
+  },
+  {
+    "name": "Rivian Automotive",
+    "country": "US"
+  },
+  {
+    "name": "Barley Motor Car Company",
+    "country": "US"
+  },
+  {
+    "name": "Studebaker Corporation",
+    "country": "US"
+  },
+  {
+    "name": "Rollin Motor Company",
+    "country": "US"
+  },
+  {
+    "name": "Rolls-Royce Motor Cars",
+    "country": "GB"
+  },
+  {
+    "name": "National Electric Vehicle Sweden",
+    "country": "SE"
+  },
+  {
+    "name": "Autocars Co. Ltd",
+    "country": "IL"
+  },
+  {
+    "name": "Saleen Automotive",
+    "country": "US"
+  },
+  {
+    "name": "Société des Moteurs Salmson",
+    "country": "FR"
+  },
+  {
+    "name": "Sokon Group",
+    "country": "CN"
+  },
+  {
+    "name": "Shelby American",
+    "country": "US"
+  },
+  {
+    "name": "Società Italiana Auto Trasformazioni Accessori",
+    "country": "IT"
+  },
+  {
+    "name": "Singer Motors",
+    "country": "GB"
+  },
+  {
+    "name": "Spyker Cars",
+    "country": "NL"
+  },
+  {
+    "name": "KG Group",
+    "country": "KR"
+  },
+  {
+    "name": "Standard Motor Company",
+    "country": "GB"
+  },
+  {
+    "name": "Stearns-Knight Motor Car Company",
+    "country": "US"
+  },
+  {
+    "name": "Stevens-Duryea Company",
+    "country": "US"
+  },
+  {
+    "name": "Stutz Motor Car Company",
+    "country": "US"
+  },
+  {
+    "name": "Subaru Corporation",
+    "country": "JP"
+  },
+  {
+    "name": "Suzuki Motor Corporation",
+    "country": "JP"
+  },
+  {
+    "name": "Swallow Coachbuilding Company",
+    "country": "GB"
+  },
+  {
+    "name": "Automobiles Talbot",
+    "country": "FR"
+  },
+  {
+    "name": "Tatra Trucks",
+    "country": "CZ"
+  },
+  {
+    "name": "Tesla Inc",
+    "country": "US"
+  },
+  {
+    "name": "Think Global",
+    "country": "NO"
   }
 ]

@@ -564,6 +564,94 @@
     "parent_company": "Stellantis"
   },
   {
+    "make": "JENSEN",
+    "parent_company": "Jensen Motors"
+  },
+  {
+    "make": "JEWETT",
+    "parent_company": "Paige-Detroit Motor Car Company"
+  },
+  {
+    "make": "JMC",
+    "parent_company": "Jiangling Motors Corporation"
+  },
+  {
+    "make": "JORDAN",
+    "parent_company": "Jordan Motor Car Company"
+  },
+  {
+    "make": "JOWETT",
+    "parent_company": "Jowett Cars Ltd"
+  },
+  {
+    "make": "KAISER-FRAZER",
+    "parent_company": "Kaiser-Frazer Corporation"
+  },
+  {
+    "make": "KARMA",
+    "parent_company": "Karma Automotive"
+  },
+  {
+    "make": "KENWORTH",
+    "parent_company": "PACCAR Inc"
+  },
+  {
+    "make": "KIA",
+    "parent_company": "Hyundai Motor Group"
+  },
+  {
+    "make": "KISSEL",
+    "parent_company": "Kissel Motor Car Company"
+  },
+  {
+    "make": "KURTIS",
+    "parent_company": "Kurtis Kraft"
+  },
+  {
+    "make": "LADA",
+    "parent_company": "AvtoVAZ"
+  },
+  {
+    "make": "LAFORZA",
+    "parent_company": "LaForza Automobile Inc"
+  },
+  {
+    "make": "LAGONDA",
+    "parent_company": "Aston Martin Lagonda"
+  },
+  {
+    "make": "LAMBORGHINI",
+    "parent_company": "Volkswagen Group"
+  },
+  {
+    "make": "LANCHESTER",
+    "parent_company": "Lanchester Motor Company"
+  },
+  {
+    "make": "LANCIA",
+    "parent_company": "Stellantis"
+  },
+  {
+    "make": "LAND ROVER",
+    "parent_company": "Jaguar Land Rover"
+  },
+  {
+    "make": "LASALLE",
+    "parent_company": "General Motors"
+  },
+  {
+    "make": "LEA-FRANCIS",
+    "parent_company": "Lea-Francis Cars Ltd"
+  },
+  {
+    "make": "LEXINGTON",
+    "parent_company": "Lexington Motor Company"
+  },
+  {
+    "make": "LEXUS",
+    "parent_company": "Toyota Motor Corporation"
+  },
+  {
     "make": "LINCOLN",
     "parent_company": "Lincoln Motor Company"
   },
@@ -632,7 +720,359 @@
     "parent_company": "Maybach"
   },
   {
+    "make": "MCLAREN",
+    "parent_company": "McLaren Group"
+  },
+  {
     "make": "MAZDA",
     "parent_company": "Mazda Motor Corporation"
+  },
+  {
+    "make": "MERCEDES-BENZ",
+    "parent_company": "Mercedes-Benz Group AG"
+  },
+  {
+    "make": "MERCURY",
+    "parent_company": "Ford Motor Company"
+  },
+  {
+    "make": "MERKUR",
+    "parent_company": "Ford Motor Company"
+  },
+  {
+    "make": "MESSERSCHMITT",
+    "parent_company": "Messerschmitt-Bölkow-Blohm"
+  },
+  {
+    "make": "MG",
+    "parent_company": "MG Motor"
+  },
+  {
+    "make": "MINI",
+    "parent_company": "BMW Group"
+  },
+  {
+    "make": "MITSUBISHI",
+    "parent_company": "Mitsubishi Motors Corporation"
+  },
+  {
+    "make": "MITSUBISHI FUSO",
+    "parent_company": "Daimler Truck"
+  },
+  {
+    "make": "MOBILITY VENTURES",
+    "parent_company": "Mobility Ventures LLC"
+  },
+  {
+    "make": "MONTEVERDI",
+    "parent_company": "Monteverdi High Speed Cars"
+  },
+  {
+    "make": "MOON",
+    "parent_company": "Moon Motor Car Company"
+  },
+  {
+    "make": "MORETTI",
+    "parent_company": "Giovanni Moretti S.A."
+  },
+  {
+    "make": "MORGAN",
+    "parent_company": "Morgan Motor Company"
+  },
+  {
+    "make": "MORRIS",
+    "parent_company": "British Motor Corporation"
+  },
+  {
+    "make": "MOSKVICH",
+    "parent_company": "AZLK"
+  },
+  {
+    "make": "NARDI",
+    "parent_company": "Nardi-Danese"
+  },
+  {
+    "make": "NASH",
+    "parent_company": "Nash Motors"
+  },
+  {
+    "make": "NISSAN",
+    "parent_company": "Nissan Motor Company"
+  },
+  {
+    "make": "NSU",
+    "parent_company": "NSU Motorenwerke AG"
+  },
+  {
+    "make": "OAKLAND",
+    "parent_company": "General Motors"
+  },
+  {
+    "make": "OLDSMOBILE",
+    "parent_company": "General Motors"
+  },
+  {
+    "make": "OMEGA",
+    "parent_company": "General Motors"
+  },
+  {
+    "make": "OMODA",
+    "parent_company": "Chery Automobile"
+  },
+  {
+    "make": "OPEL",
+    "parent_company": "Stellantis"
+  },
+  {
+    "make": "OSCA",
+    "parent_company": "Officine Specializzate Costruzione Automobili"
+  },
+  {
+    "make": "PACKARD",
+    "parent_company": "Studebaker-Packard Corporation"
+  },
+  {
+    "make": "PAIGE",
+    "parent_company": "Paige-Detroit Motor Car Company"
+  },
+  {
+    "make": "PANHARD",
+    "parent_company": "Panhard et Levassor"
+  },
+  {
+    "make": "PANOZ",
+    "parent_company": "Panoz Auto Development"
+  },
+  {
+    "make": "PANTHER",
+    "parent_company": "Panther Westwinds"
+  },
+  {
+    "make": "PASSPORT",
+    "parent_company": "Honda Motor Company"
+  },
+  {
+    "make": "PEERLESS",
+    "parent_company": "Peerless Motor Car Company"
+  },
+  {
+    "make": "PEGASO",
+    "parent_company": "ENASA"
+  },
+  {
+    "make": "PETERBILT",
+    "parent_company": "PACCAR Inc"
+  },
+  {
+    "make": "PEUGEOT",
+    "parent_company": "Stellantis"
+  },
+  {
+    "make": "PIERCE-ARROW",
+    "parent_company": "Pierce-Arrow Motor Car Company"
+  },
+  {
+    "make": "PLYMOUTH",
+    "parent_company": "Chrysler Corporation"
+  },
+  {
+    "make": "POLESTAR",
+    "parent_company": "Geely Holding Group"
+  },
+  {
+    "make": "PONTIAC",
+    "parent_company": "General Motors"
+  },
+  {
+    "make": "PORSCHE",
+    "parent_company": "Volkswagen Group"
+  },
+  {
+    "make": "QVALE",
+    "parent_company": "Qvale Automotive Group"
+  },
+  {
+    "make": "RAM",
+    "parent_company": "Stellantis"
+  },
+  {
+    "make": "RELIANT",
+    "parent_company": "Reliant Motor Company"
+  },
+  {
+    "make": "RENAULT",
+    "parent_company": "Renault Group"
+  },
+  {
+    "make": "REO",
+    "parent_company": "REO Motor Car Company"
+  },
+  {
+    "make": "RICKENBACKER",
+    "parent_company": "Rickenbacker Motor Company"
+  },
+  {
+    "make": "RILEY",
+    "parent_company": "British Motor Corporation"
+  },
+  {
+    "make": "RIVIAN",
+    "parent_company": "Rivian Automotive"
+  },
+  {
+    "make": "ROAMER",
+    "parent_company": "Barley Motor Car Company"
+  },
+  {
+    "make": "ROCKNE",
+    "parent_company": "Studebaker Corporation"
+  },
+  {
+    "make": "ROLLIN",
+    "parent_company": "Rollin Motor Company"
+  },
+  {
+    "make": "ROLLS-ROYCE",
+    "parent_company": "Rolls-Royce Motor Cars"
+  },
+  {
+    "make": "ROOSEVELT",
+    "parent_company": "Marmon Motor Car Company"
+  },
+  {
+    "make": "ROVER",
+    "parent_company": "Jaguar Land Rover"
+  },
+  {
+    "make": "SAAB",
+    "parent_company": "National Electric Vehicle Sweden"
+  },
+  {
+    "make": "SABRA",
+    "parent_company": "Autocars Co. Ltd"
+  },
+  {
+    "make": "SALEEN",
+    "parent_company": "Saleen Automotive"
+  },
+  {
+    "make": "SALMSON",
+    "parent_company": "Société des Moteurs Salmson"
+  },
+  {
+    "make": "SATURN",
+    "parent_company": "General Motors"
+  },
+  {
+    "make": "SCION",
+    "parent_company": "Toyota Motor Corporation"
+  },
+  {
+    "make": "SEAT",
+    "parent_company": "Volkswagen Group"
+  },
+  {
+    "make": "SERES",
+    "parent_company": "Sokon Group"
+  },
+  {
+    "make": "SHELBY",
+    "parent_company": "Shelby American"
+  },
+  {
+    "make": "SIATA",
+    "parent_company": "Società Italiana Auto Trasformazioni Accessori"
+  },
+  {
+    "make": "SIMCA",
+    "parent_company": "Chrysler Corporation"
+  },
+  {
+    "make": "SINGER",
+    "parent_company": "Singer Motors"
+  },
+  {
+    "make": "SKODA",
+    "parent_company": "Volkswagen Group"
+  },
+  {
+    "make": "SMART",
+    "parent_company": "Mercedes-Benz Group AG"
+  },
+  {
+    "make": "SPYKER",
+    "parent_company": "Spyker Cars"
+  },
+  {
+    "make": "SRT",
+    "parent_company": "Stellantis"
+  },
+  {
+    "make": "SSANGYONG",
+    "parent_company": "KG Group"
+  },
+  {
+    "make": "STANDARD",
+    "parent_company": "Standard Motor Company"
+  },
+  {
+    "make": "STAR",
+    "parent_company": "Durant Motors"
+  },
+  {
+    "make": "STEARNS KNIGHT",
+    "parent_company": "Stearns-Knight Motor Car Company"
+  },
+  {
+    "make": "STERLING",
+    "parent_company": "Honda Motor Company"
+  },
+  {
+    "make": "STEVENS-DURYEA",
+    "parent_company": "Stevens-Duryea Company"
+  },
+  {
+    "make": "STUDEBAKER",
+    "parent_company": "Studebaker Corporation"
+  },
+  {
+    "make": "STUTZ",
+    "parent_company": "Stutz Motor Car Company"
+  },
+  {
+    "make": "SUBARU",
+    "parent_company": "Subaru Corporation"
+  },
+  {
+    "make": "SUNBEAM",
+    "parent_company": "Rootes Group"
+  },
+  {
+    "make": "SUZUKI",
+    "parent_company": "Suzuki Motor Corporation"
+  },
+  {
+    "make": "SWALLOW",
+    "parent_company": "Swallow Coachbuilding Company"
+  },
+  {
+    "make": "TALBOT-LAGO",
+    "parent_company": "Automobiles Talbot"
+  },
+  {
+    "make": "TATRA",
+    "parent_company": "Tatra Trucks"
+  },
+  {
+    "make": "TESLA",
+    "parent_company": "Tesla Inc"
+  },
+  {
+    "make": "THINK",
+    "parent_company": "Think Global"
+  },
+  {
+    "make": "TOYOTA",
+    "parent_company": "Toyota Motor Corporation"
   }
 ]
