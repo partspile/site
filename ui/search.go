@@ -44,6 +44,8 @@ func ViewToggleButtons(activeView string) g.Node {
 			hx.Target("#searchResults"),
 			hx.Swap("outerHTML"),
 			hx.Include("[name='q'],[name='threshold']"),
+			hx.Trigger("click"),
+			hx.On("click", "document.getElementById('view-type-input').value = '"+view+"'"),
 			icon(view, alt),
 		)
 	}
@@ -95,6 +97,7 @@ func SearchWidget(userID int, view string, query string, threshold float64) g.No
 				hx.Get("/search"),
 				hx.Target("#searchResults"),
 				hx.Swap("outerHTML"),
+				hx.Include("[name='view']"),
 				Input(Type("hidden"), Name("view"), Value(view), ID("view-type-input")),
 				// Add bounding box inputs for map view
 				g.Group(boundingBoxInputs),
@@ -105,7 +108,7 @@ func SearchWidget(userID int, view string, query string, threshold float64) g.No
 					Value(query),
 					Class("w-full p-2 border rounded"),
 					Placeholder("Search by make, year, model, or description..."),
-					hx.Trigger("keyup changed delay:500ms, search"),
+					hx.Trigger("search"),
 				),
 				// Threshold slider - only show when there's a search query
 				g.If(query != "", Div(
