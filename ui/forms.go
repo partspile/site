@@ -99,11 +99,11 @@ func YearsFormGroup(years []string) g.Node {
 	return formGroup("Years", "years", GridContainer(5, checkboxes...))
 }
 
-func ModelsFormGroup(modelAvailability map[string]bool) g.Node {
+func ModelsFormGroup(models []string) g.Node {
 	checkboxes := []g.Node{}
-	for model, isAvailable := range modelAvailability {
+	for _, model := range models {
 		checkboxes = append(checkboxes,
-			Checkbox("models", model, model, false, !isAvailable,
+			Checkbox("models", model, model, false, false,
 				hx.Trigger("change"),
 				hx.Get("/api/engines"),
 				hx.Target("#enginesDiv"),
@@ -115,11 +115,11 @@ func ModelsFormGroup(modelAvailability map[string]bool) g.Node {
 	return formGroup("Models", "models", GridContainer(5, checkboxes...))
 }
 
-func EnginesFormGroup(engineAvailability map[string]bool) g.Node {
+func EnginesFormGroup(engines []string) g.Node {
 	checkboxes := []g.Node{}
-	for engine, isAvailable := range engineAvailability {
+	for _, engine := range engines {
 		checkboxes = append(checkboxes,
-			Checkbox("engines", engine, engine, false, !isAvailable),
+			Checkbox("engines", engine, engine, false, false),
 		)
 	}
 	return formGroup("Engines", "engines", GridContainer(5, checkboxes...))

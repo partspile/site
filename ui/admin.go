@@ -15,6 +15,7 @@ func AdminSectionPage(currentUser *user.User, path, activeSection string, conten
 	}{
 		{"b2-cache", "B2 Cache"},
 		{"embedding-cache", "Embedding Cache"},
+		{"vehicle-cache", "Vehicle Cache"},
 	}
 	return Div(
 		ID("admin-section"),
@@ -56,430 +57,86 @@ func AdminDashboard(currentUser *user.User, path string) g.Node {
 	)
 }
 
-func AdminB2CacheSection(stats map[string]interface{}) g.Node {
+// Generic cache stats panel component
+func CacheStatsPanel(title string, stats map[string]interface{}, clearEndpoint, refreshEndpoint string) g.Node {
 	return Div(
-		H1(g.Text("B2 Cache Management")),
+		Class("bg-gray-100 p-4 rounded-lg mb-4"),
+		H2(Class("text-lg font-semibold mb-2"), g.Text(title)),
 		Div(
-			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Statistics")),
-			Div(
-				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Hits: ")),
-					g.Textf("%d", stats["hits"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Misses: ")),
-					g.Textf("%d", stats["misses"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Hit Rate: ")),
-					g.Textf("%.1f%%", stats["hit_rate"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Sets: ")),
-					g.Textf("%d", stats["sets"]),
-				),
-			),
-		),
-		Div(
-			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Memory Usage")),
-			Div(
-				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Memory Used: ")),
-					g.Textf("%.2f MB", stats["memory_used_mb"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Total Added: ")),
-					g.Textf("%.2f MB", stats["total_added_mb"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Total Evicted: ")),
-					g.Textf("%.2f MB", stats["total_evicted_mb"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Memory Used (bytes): ")),
-					g.Textf("%d", stats["memory_used"]),
-				),
-			),
-		),
-		Div(
-			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Metrics")),
-			Div(
-				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Cost Added: ")),
-					g.Textf("%d", stats["cost_added"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Cost Evicted: ")),
-					g.Textf("%d", stats["cost_evicted"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Gets Dropped: ")),
-					g.Textf("%d", stats["gets_dropped"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Gets Kept: ")),
-					g.Textf("%d", stats["gets_kept"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Sets Dropped: ")),
-					g.Textf("%d", stats["sets_dropped"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Sets Rejected: ")),
-					g.Textf("%d", stats["sets_rejected"]),
-				),
-			),
-		),
-		Div(
-			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("TTL Statistics")),
-			Div(
-				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("B2 Token TTL: ")),
-					g.Textf("%s", stats["b2_token_expiry_formatted"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Cache TTL: ")),
-					g.Textf("%s", stats["b2_cache_ttl_formatted"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Life Expectancy Count: ")),
-					g.Textf("%d", stats["life_expectancy_count"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Life Expectancy Mean: ")),
-					g.Textf("%.1fs", stats["life_expectancy_mean"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Current Items: ")),
-					g.Textf("%d", stats["current_items"]),
-				),
-			),
-			Div(
-				Class("grid grid-cols-3 gap-4 mt-4"),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Life Expectancy P50: ")),
-					g.Textf("%.1fs", stats["life_expectancy_p50"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Life Expectancy P95: ")),
-					g.Textf("%.1fs", stats["life_expectancy_p95"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Life Expectancy P99: ")),
-					g.Textf("%.1fs", stats["life_expectancy_p99"]),
-				),
-			),
-		),
-		Div(
-			Class("mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Information")),
-			Div(
-				Class("bg-white border border-gray-300 rounded-lg p-4"),
-				P(Class("text-gray-600"),
-					g.Text("The cache doesn't expose individual items for security reasons. "),
-					g.Text("The cache automatically manages memory usage and eviction based on cost."),
-				),
-			),
-		),
-		Div(
-			Class("mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Actions")),
-			Div(
-				Class("bg-white border border-gray-300 rounded-lg p-4"),
-				Div(
-					Class("flex gap-4 mb-4"),
-					Button(
-						Class("px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"),
-						hx.Post("/api/admin/b2-cache/clear"),
-						hx.Target("#admin-section-content"),
-						hx.Swap("innerHTML"),
-						g.Text("Clear All Cache"),
-					),
-				),
-				Div(
-					Class("border-t pt-4"),
-					H3(Class("text-md font-semibold mb-2"), g.Text("Refresh Specific Token")),
-					P(Class("text-gray-600 mb-3"),
-						g.Text("Enter an ad directory prefix (e.g., '22/') to refresh its B2 download token:"),
-					),
-					Form(
-						Class("flex gap-2"),
-						hx.Post("/api/admin/b2-cache/refresh"),
-						hx.Target("#admin-section-content"),
-						hx.Swap("innerHTML"),
-						Input(
-							Type("text"),
-							Name("prefix"),
-							Placeholder("e.g., 22/"),
-							Class("flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"),
-							Required(),
-						),
-						Button(
-							Type("submit"),
-							Class("px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"),
-							g.Text("Refresh Token"),
-						),
-					),
-				),
-			),
-		),
-	)
-}
-
-func AdminEmbeddingCacheSection(stats map[string]interface{}) g.Node {
-	return Div(
-		H1(g.Text("Embedding Cache Management")),
-		Div(
-			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Query Cache Statistics")),
-			Div(
-				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Hits: ")),
-					g.Textf("%d", stats["query"].(map[string]interface{})["hits"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Misses: ")),
-					g.Textf("%d", stats["query"].(map[string]interface{})["misses"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Hit Rate: ")),
-					g.Textf("%.1f%%", stats["query"].(map[string]interface{})["hit_rate"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Sets: ")),
-					g.Textf("%d", stats["query"].(map[string]interface{})["sets"]),
-				),
-			),
-		),
-		Div(
-			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("User Cache Statistics")),
-			Div(
-				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Hits: ")),
-					g.Textf("%d", stats["user"].(map[string]interface{})["hits"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Misses: ")),
-					g.Textf("%d", stats["user"].(map[string]interface{})["misses"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Hit Rate: ")),
-					g.Textf("%.1f%%", stats["user"].(map[string]interface{})["hit_rate"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Sets: ")),
-					g.Textf("%d", stats["user"].(map[string]interface{})["sets"]),
-				),
-			),
-		),
-		Div(
-			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Site Cache Statistics")),
-			Div(
-				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Hits: ")),
-					g.Textf("%d", stats["site"].(map[string]interface{})["hits"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Misses: ")),
-					g.Textf("%d", stats["site"].(map[string]interface{})["misses"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Hit Rate: ")),
-					g.Textf("%.1f%%", stats["site"].(map[string]interface{})["hit_rate"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Sets: ")),
-					g.Textf("%d", stats["site"].(map[string]interface{})["sets"]),
-				),
-			),
-		),
-		Div(
-			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Query Cache Memory Usage")),
-			Div(
-				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Memory Used: ")),
-					g.Textf("%.2f MB", stats["query"].(map[string]interface{})["memory_used_mb"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Total Added: ")),
-					g.Textf("%.2f MB", stats["query"].(map[string]interface{})["total_added_mb"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Total Evicted: ")),
-					g.Textf("%.2f MB", stats["query"].(map[string]interface{})["total_evicted_mb"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Memory Used (bytes): ")),
-					g.Textf("%d", stats["query"].(map[string]interface{})["memory_used"]),
-				),
-			),
-		),
-		Div(
-			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("User Cache Memory Usage")),
-			Div(
-				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Memory Used: ")),
-					g.Textf("%.2f MB", stats["user"].(map[string]interface{})["memory_used_mb"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Total Added: ")),
-					g.Textf("%.2f MB", stats["user"].(map[string]interface{})["total_added_mb"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Total Evicted: ")),
-					g.Textf("%.2f MB", stats["user"].(map[string]interface{})["total_evicted_mb"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Memory Used (bytes): ")),
-					g.Textf("%d", stats["user"].(map[string]interface{})["memory_used"]),
-				),
-			),
-		),
-		Div(
-			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Site Cache Memory Usage")),
-			Div(
-				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Memory Used: ")),
-					g.Textf("%.2f MB", stats["site"].(map[string]interface{})["memory_used_mb"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Total Added: ")),
-					g.Textf("%.2f MB", stats["site"].(map[string]interface{})["total_added_mb"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Total Evicted: ")),
-					g.Textf("%.2f MB", stats["site"].(map[string]interface{})["total_evicted_mb"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Memory Used (bytes): ")),
-					g.Textf("%d", stats["site"].(map[string]interface{})["memory_used"]),
-				),
-			),
-		),
-		Div(
-			Class("bg-gray-100 p-4 rounded-lg mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Query Cache Metrics")),
-			Div(
-				Class("grid grid-cols-2 md:grid-cols-4 gap-4"),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Cost Added: ")),
-					g.Textf("%d", stats["query"].(map[string]interface{})["cost_added"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Cost Evicted: ")),
-					g.Textf("%d", stats["query"].(map[string]interface{})["cost_evicted"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Gets Dropped: ")),
-					g.Textf("%d", stats["query"].(map[string]interface{})["gets_dropped"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Gets Kept: ")),
-					g.Textf("%d", stats["query"].(map[string]interface{})["gets_kept"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Sets Dropped: ")),
-					g.Textf("%d", stats["query"].(map[string]interface{})["sets_dropped"]),
-				),
-				Div(
-					Class("bg-white p-3 rounded border"),
-					Strong(g.Text("Sets Rejected: ")),
-					g.Textf("%d", stats["query"].(map[string]interface{})["sets_rejected"]),
-				),
-			),
-		),
-		Div(
-			Class("mb-4"),
-			H2(Class("text-lg font-semibold mb-2"), g.Text("Cache Information")),
-			Div(
-				Class("bg-white border border-gray-300 rounded-lg p-4"),
-				P(Class("text-gray-600"),
-					g.Text("The system now uses three specialized caches for different embedding types: "),
-					g.Text("Query Cache (1 hour TTL), User Cache (24 hour TTL), and Site Cache (6 hour TTL). "),
-					g.Text("Each cache automatically manages memory usage and eviction based on cost. "),
-					g.Text("These caches store embedding vectors to improve search performance."),
-				),
-			),
+			Class("grid grid-cols-2 md:grid-cols-4 gap-4 mb-4"),
+			statCard("Hits", "%d", stats["hits"]),
+			statCard("Misses", "%d", stats["misses"]),
+			statCard("Hit Rate", "%.1f%%", stats["hit_rate"]),
+			statCard("Sets", "%d", stats["sets"]),
+			statCard("Memory Used", "%.0f KB", stats["memory_used_kb"]),
+			statCard("Total Added", "%.0f KB", stats["total_added_kb"]),
+			statCard("Total Evicted", "%.0f KB", stats["total_evicted_kb"]),
+			statCard("Current Items", "%d", stats["current_items"]),
 		),
 		Div(
 			Class("flex gap-4"),
 			Button(
 				Class("px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"),
-				hx.Post("/api/admin/embedding-cache/clear"),
+				hx.Post(clearEndpoint),
 				hx.Target("#admin-section-content"),
 				hx.Swap("innerHTML"),
 				g.Text("Clear Cache"),
 			),
+			Button(
+				Class("px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"),
+				hx.Get(refreshEndpoint),
+				hx.Target("#admin-section-content"),
+				hx.Swap("innerHTML"),
+				g.Text("Refresh Stats"),
+			),
 		),
+	)
+}
+
+func statCard(label, format string, value interface{}) g.Node {
+	return Div(
+		Class("bg-white p-3 rounded border"),
+		Strong(g.Text(label+": ")),
+		g.Textf(format, value),
+	)
+}
+
+func AdminB2CacheSection(stats map[string]interface{}) g.Node {
+	return Div(
+		H1(g.Text("B2 Cache Management")),
+		CacheStatsPanel("Cache Statistics", stats, "/api/admin/b2-cache/clear", "/api/admin/b2-cache/refresh"),
+	)
+}
+
+func AdminEmbeddingCacheSection(stats map[string]interface{}) g.Node {
+	// Get stats for each cache type
+	queryStats := getCacheStats(stats, "query", "Query Embedding Cache")
+	userStats := getCacheStats(stats, "user", "User Embedding Cache")
+	siteStats := getCacheStats(stats, "site", "Site Embedding Cache")
+
+	return Div(
+		H1(g.Text("Embedding Cache Management")),
+		CacheStatsPanel("Query Cache Statistics", queryStats, "/api/admin/embedding-cache/query/clear", "/api/admin/embedding-cache/refresh"),
+		CacheStatsPanel("User Cache Statistics", userStats, "/api/admin/embedding-cache/user/clear", "/api/admin/embedding-cache/refresh"),
+		CacheStatsPanel("Site Cache Statistics", siteStats, "/api/admin/embedding-cache/site/clear", "/api/admin/embedding-cache/refresh"),
+	)
+}
+
+func getCacheStats(allStats map[string]interface{}, cacheType, cacheName string) map[string]interface{} {
+	if cacheStats, exists := allStats[cacheType]; exists {
+		if stats, ok := cacheStats.(map[string]interface{}); ok {
+			return stats
+		}
+	}
+	return map[string]interface{}{
+		"cache_type": cacheName,
+		"error":      "Cache not initialized",
+	}
+}
+
+func AdminVehicleCacheSection(stats map[string]interface{}) g.Node {
+	return Div(
+		H1(g.Text("Vehicle Cache Management")),
+		CacheStatsPanel("Cache Statistics", stats, "/api/admin/vehicle-cache/clear", "/api/admin/vehicle-cache/refresh"),
 	)
 }

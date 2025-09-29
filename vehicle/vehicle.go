@@ -1,11 +1,12 @@
 package vehicle
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
 	"log"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/parts-pile/site/cache"
 	"github.com/parts-pile/site/db"
@@ -28,104 +29,20 @@ type Year struct {
 	Year int `db:"year"`
 }
 
-// ParentCompany represents a parent company of a make
+// Parent company information with country
 type ParentCompany struct {
 	ID      int    `db:"id"`
 	Name    string `db:"name"`
 	Country string `db:"country"`
 }
 
-var (
-	makesCache          []string
-	yearsCache          = make(map[string][]string)
-	allModelsCache      []string
-	allEngineSizesCache []string
-	yearRangeCache      []string
-
-	// Cache for dynamic ad data (makes/years/models/engines with existing ads)
-	adCache              *cache.Cache[[]string]
-	cacheRefreshInterval = 30 * time.Minute
-)
-
-// Initialize vehicle cache and start background refresh
-func InitVehicleCache() error {
-	var err error
-
-	// Cache for dynamic ad data
-	adCache, err = cache.New[[]string](func(value []string) int64 {
-		return int64(len(value) * 30)
-	}, "Vehicle Ad Data Cache")
-	if err != nil {
-		return err
-	}
-
-	// Populate cache immediately on startup
-	if err := refreshVehicleAdData(); err != nil {
-		log.Printf("[vehicle-cache] Warning: Failed to populate cache on startup: %v", err)
-		// Don't return error - let the background refresh handle it
-	} else {
-		log.Printf("[vehicle-cache] Cache populated successfully on startup")
-	}
-
-	// Start background refresh for ad data
-	go refreshVehicleAdDataPeriodically()
-
-	return nil
+// Parent company information with country
+type ParentCompanyInfo struct {
+	Name    string
+	Country string
 }
 
-// Background goroutine that refreshes vehicle ad data every 30 minutes
-func refreshVehicleAdDataPeriodically() {
-	ticker := time.NewTicker(cacheRefreshInterval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			log.Printf("[vehicle-cache] Starting periodic vehicle ad data refresh")
-			if err := refreshVehicleAdData(); err != nil {
-				log.Printf("[vehicle-cache] Error refreshing vehicle ad data: %v", err)
-			} else {
-				log.Printf("[vehicle-cache] Vehicle ad data refresh completed successfully")
-			}
-		}
-	}
-}
-
-// Refresh vehicle ad data (makes/years/models/engines with existing ads)
-func refreshVehicleAdData() error {
-	// Refresh makes with existing ads
-	makes, err := GetAdMakes()
-	if err != nil {
-		return fmt.Errorf("failed to refresh ad makes: %w", err)
-	}
-	adCache.Set("ad:makes", makes, int64(len(makes)*50))
-
-	log.Printf("[vehicle-cache] Vehicle ad data refreshed - %d makes with existing ads", len(makes))
-	return nil
-}
-
-func GetMakes() []string {
-	if makesCache != nil {
-		return makesCache
-	}
-	query := "SELECT name FROM Make ORDER BY name"
-	var makes []string
-	err := db.Select(&makes, query)
-	if err != nil {
-		return nil
-	}
-	makesCache = makes
-	return makes
-}
-
-func GetAllMakes() ([]Make, error) {
-	query := "SELECT id, name, parent_company_id FROM Make ORDER BY name"
-	var makes []Make
-	err := db.Select(&makes, query)
-	return makes, err
-}
-
-// MakeWithParentCompany represents a make with its parent company information
+// Make with its parent company information
 type MakeWithParentCompany struct {
 	ID                int    `db:"id"`
 	Name              string `db:"name"`
@@ -133,10 +50,57 @@ type MakeWithParentCompany struct {
 	ParentCompanyName string `db:"parent_company_name"`
 }
 
-func GetYears(makeName string) []string {
-	if years, ok := yearsCache[makeName]; ok {
-		return years
+var (
+	// Cache for vehicle data
+	vehicleCache *cache.Cache[[]string]
+)
+
+// Initialize vehicle cache and start background refresh
+func InitVehicleCache() error {
+	var err error
+
+	// Cache for vehicle data
+	vehicleCache, err = cache.New[[]string](func(value []string) int64 {
+		return int64(len(value) * 30)
+	}, "Vehicle Data Cache")
+	if err != nil {
+		return err
 	}
+
+	log.Printf("[vehicle-cache] Cache initialized successfully")
+
+	return nil
+}
+
+// ============================================================================
+// CACHED FUNCTIONS FOR STATIC VEHICLE DATA
+// ============================================================================
+
+func GetMakes() []string {
+	cacheKey := "makes:all"
+
+	if cached, found := vehicleCache.Get(cacheKey); found {
+		return cached
+	}
+
+	query := "SELECT name FROM Make ORDER BY name"
+	var makes []string
+	err := db.Select(&makes, query)
+	if err != nil {
+		return nil
+	}
+
+	vehicleCache.Set(cacheKey, makes, int64(len(makes)*30))
+	return makes
+}
+
+func GetYears(makeName string) []string {
+	cacheKey := fmt.Sprintf("years:%s", makeName)
+
+	if cached, found := vehicleCache.Get(cacheKey); found {
+		return cached
+	}
+
 	query := `SELECT DISTINCT Year.year FROM Car
 	JOIN Make ON Car.make_id = Make.id
 	JOIN Year ON Car.year_id = Year.id
@@ -150,30 +114,21 @@ func GetYears(makeName string) []string {
 	for _, year := range yearInts {
 		years = append(years, strconv.Itoa(year))
 	}
-	yearsCache[makeName] = years
+
+	vehicleCache.Set(cacheKey, years, int64(len(years)*5))
 	return years
 }
 
-func GetAllModels() []string {
-	if allModelsCache != nil {
-		return allModelsCache
-	}
-	query := "SELECT DISTINCT name FROM Model ORDER BY name"
-	var models []string
-	err := db.Select(&models, query)
-	if err != nil {
-		return nil
-	}
-	allModelsCache = models
-	return models
-}
-
-func GetModelsWithAvailability(makeName string, years []string) map[string]bool {
-	allModels := make(map[string]bool)
-	availableInAllYears := make(map[string]bool)
-
+func GetModels(makeName string, years []string) []string {
 	if len(years) == 0 {
-		return allModels
+		return []string{}
+	}
+
+	// Create cache key with years as provided
+	cacheKey := fmt.Sprintf("models:%s:%s", makeName, strings.Join(years, ","))
+
+	if cached, found := vehicleCache.Get(cacheKey); found {
+		return cached
 	}
 
 	// Build placeholders for IN clause
@@ -189,47 +144,27 @@ func GetModelsWithAvailability(makeName string, years []string) map[string]bool 
 	JOIN Model ON Car.model_id = Model.id
 	JOIN Year ON Car.year_id = Year.id
 	WHERE Make.name = ? AND Year.year IN (` + strings.Join(yearPlaceholders, ",") + `) ORDER BY Model.name`
-	rows, err := db.Query(query, args...)
+
+	var models []string
+	err := db.Select(&models, query, args...)
 	if err != nil {
 		return nil
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var model string
-		rows.Scan(&model)
-		allModels[model] = true
-		if _, exists := availableInAllYears[model]; !exists {
-			availableInAllYears[model] = true
-		}
-	}
 
-	// Second pass: check if each model exists in all selected years
-	for model := range allModels {
-		for _, year := range years {
-			var count int
-			err := db.QueryRow(`SELECT COUNT(*) FROM Car
-			JOIN Make ON Car.make_id = Make.id
-			JOIN Model ON Car.model_id = Model.id
-			JOIN Year ON Car.year_id = Year.id
-			WHERE Make.name = ? AND Model.name = ? AND Year.year = ?`, makeName, model, year).Scan(&count)
-			if err != nil {
-				return nil
-			}
-			if count == 0 {
-				availableInAllYears[model] = false
-				break
-			}
-		}
-	}
-	return availableInAllYears
+	vehicleCache.Set(cacheKey, models, int64(len(models)*20))
+	return models
 }
 
-func GetEnginesWithAvailability(makeName string, years []string, models []string) map[string]bool {
-	allEngines := make(map[string]bool)
-	availableInAllCombos := make(map[string]bool)
-
+func GetEngines(makeName string, years []string, models []string) []string {
 	if len(years) == 0 || len(models) == 0 {
-		return allEngines
+		return []string{}
+	}
+
+	// Create cache key: engines:BMW:2020,2021:M3,X5
+	cacheKey := fmt.Sprintf("engines:%s:%s:%s", makeName, strings.Join(years, ","), strings.Join(models, ","))
+
+	if cached, found := vehicleCache.Get(cacheKey); found {
+		return cached
 	}
 
 	// Build placeholders for IN clauses
@@ -251,74 +186,44 @@ func GetEnginesWithAvailability(makeName string, years []string, models []string
 	JOIN Year ON Car.year_id = Year.id
 	JOIN Engine ON Car.engine_id = Engine.id
 	WHERE Make.name = ? AND Year.year IN (` + strings.Join(yearPlaceholders, ",") + `) AND Model.name IN (` + strings.Join(modelPlaceholders, ",") + `) ORDER BY Engine.name`
-	rows, err := db.Query(query, args...)
+
+	var engines []string
+	err := db.Select(&engines, query, args...)
 	if err != nil {
 		return nil
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var engine string
-		rows.Scan(&engine)
-		allEngines[engine] = true
-		if _, exists := availableInAllCombos[engine]; !exists {
-			availableInAllCombos[engine] = true
-		}
-	}
 
-	// Second pass: check if each engine exists for all selected year-model combinations
-	for engine := range allEngines {
-		for _, year := range years {
-			for _, model := range models {
-				var count int
-				err := db.QueryRow(`SELECT COUNT(*) FROM Car
-				JOIN Make ON Car.make_id = Make.id
-				JOIN Model ON Car.model_id = Model.id
-				JOIN Year ON Car.year_id = Year.id
-				JOIN Engine ON Car.engine_id = Engine.id
-				WHERE Make.name = ? AND Model.name = ? AND Year.year = ? AND Engine.name = ?`, makeName, model, year, engine).Scan(&count)
-				if err != nil {
-					return nil
-				}
-				if count == 0 {
-					availableInAllCombos[engine] = false
-					break
-				}
-			}
-			if !availableInAllCombos[engine] {
-				break
-			}
-		}
-	}
-	return availableInAllCombos
+	vehicleCache.Set(cacheKey, engines, int64(len(engines)*25))
+	return engines
 }
 
 // ============================================================================
-// CACHED FUNCTIONS FOR AD DATA (Tree View)
+// CACHED FUNCTIONS FOR AD DATA (Tree View Browse Mode when q=="")
 // ============================================================================
 
-// GetAdMakes returns makes that have existing ads (for tree view)
+// GetAdMakes returns makes that have existing ads
 func GetAdMakes() ([]string, error) {
 	cacheKey := "ad:makes"
 
-	if cached, found := adCache.Get(cacheKey); found {
+	if cached, found := vehicleCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
 	// Cache miss - query database and populate cache
-	makes, err := part.GetMakesForAll() // This JOINs with AdCar
+	makes, err := part.GetMakesForAll()
 	if err != nil {
 		return nil, err
 	}
 
-	adCache.Set(cacheKey, makes, int64(len(makes)*50))
+	vehicleCache.Set(cacheKey, makes, int64(len(makes)*50))
 	return makes, nil
 }
 
-// GetAdYears returns years that have existing ads for a make (for tree view)
+// GetAdYears returns years that have existing ads for a make
 func GetAdYears(makeName string) ([]string, error) {
 	cacheKey := fmt.Sprintf("ad:years:%s", makeName)
 
-	if cached, found := adCache.Get(cacheKey); found {
+	if cached, found := vehicleCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
@@ -328,15 +233,15 @@ func GetAdYears(makeName string) ([]string, error) {
 		return nil, err
 	}
 
-	adCache.Set(cacheKey, years, int64(len(years)*10))
+	vehicleCache.Set(cacheKey, years, int64(len(years)*10))
 	return years, nil
 }
 
-// GetAdModels returns models that have existing ads for make/year (for tree view)
+// GetAdModels returns models that have existing ads for make/year
 func GetAdModels(makeName, year string) ([]string, error) {
 	cacheKey := fmt.Sprintf("ad:models:%s:%s", makeName, year)
 
-	if cached, found := adCache.Get(cacheKey); found {
+	if cached, found := vehicleCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
@@ -346,15 +251,15 @@ func GetAdModels(makeName, year string) ([]string, error) {
 		return nil, err
 	}
 
-	adCache.Set(cacheKey, models, int64(len(models)*30))
+	vehicleCache.Set(cacheKey, models, int64(len(models)*30))
 	return models, nil
 }
 
-// GetAdEngines returns engines that have existing ads for make/year/model (for tree view)
+// GetAdEngines returns engines that have existing ads for make/year/model
 func GetAdEngines(makeName, year, model string) ([]string, error) {
 	cacheKey := fmt.Sprintf("ad:engines:%s:%s:%s", makeName, year, model)
 
-	if cached, found := adCache.Get(cacheKey); found {
+	if cached, found := vehicleCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
@@ -364,8 +269,37 @@ func GetAdEngines(makeName, year, model string) ([]string, error) {
 		return nil, err
 	}
 
-	adCache.Set(cacheKey, engines, int64(len(engines)*25))
+	vehicleCache.Set(cacheKey, engines, int64(len(engines)*25))
 	return engines, nil
+}
+
+// ============================================================================
+// FUNCTIONS FOR AD DATA (Tree View Search Mode when q!="")
+// ============================================================================
+
+// genIDsKey creates a consistent cache key for adID sets
+func genIDsKey(adIDs []int, operation string) string {
+	if len(adIDs) == 0 {
+		return fmt.Sprintf("%s:empty", operation)
+	}
+
+	// Hash-based (collision-resistant)
+	hash := sha256.New()
+	hash.Write([]byte(fmt.Sprintf("%s:", operation))) // Namespace and operation type
+
+	// Write count first for uniqueness
+	var countBuf [4]byte
+	binary.LittleEndian.PutUint32(countBuf[:], uint32(len(adIDs)))
+	hash.Write(countBuf[:])
+
+	// Write each ID in consistent binary format
+	for _, id := range adIDs {
+		binary.LittleEndian.PutUint32(countBuf[:], uint32(id))
+		hash.Write(countBuf[:])
+	}
+
+	sum := hash.Sum(nil)
+	return fmt.Sprintf("%s:%x", operation, sum[:16]) // 128-bit key
 }
 
 // GetAdMakesForAdIDs returns makes filtered by the provided ad IDs
@@ -373,6 +307,18 @@ func GetAdMakesForAdIDs(adIDs []int) ([]string, error) {
 	if len(adIDs) == 0 {
 		return []string{}, nil
 	}
+
+	// Generate deterministic cache key
+	cacheKey := genIDsKey(adIDs, "search:makes")
+
+	// Check cache first
+	makes, found := vehicleCache.Get(cacheKey)
+	if found {
+		log.Printf("[search-cache] Cache hit for makes: %s", cacheKey)
+		return makes, nil
+	}
+
+	log.Printf("[search-cache] Cache miss for makes: %s", cacheKey)
 
 	// Create placeholders for the IN clause
 	placeholders := make([]string, len(adIDs))
@@ -394,9 +340,16 @@ func GetAdMakesForAdIDs(adIDs []int) ([]string, error) {
 		args = append(args, id)
 	}
 
-	var makes []string
 	err := db.Select(&makes, query, args...)
-	return makes, err
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the result
+	vehicleCache.Set(cacheKey, makes, int64(len(makes)*40))
+	log.Printf("[search-cache] Cached %d makes for key: %s", len(makes), cacheKey)
+
+	return makes, nil
 }
 
 // GetAdYearsForAdIDs returns years for a specific make, filtered by ad IDs
@@ -404,6 +357,17 @@ func GetAdYearsForAdIDs(adIDs []int, makeName string) ([]string, error) {
 	if len(adIDs) == 0 {
 		return []string{}, nil
 	}
+
+	// Generate deterministic cache key with make name
+	cacheKey := genIDsKey(adIDs, fmt.Sprintf("search:years:%s", makeName))
+
+	// Check cache first
+	if cached, found := vehicleCache.Get(cacheKey); found {
+		log.Printf("[search-cache] Cache hit for years: %s", cacheKey)
+		return cached, nil
+	}
+
+	log.Printf("[search-cache] Cache miss for years: %s", cacheKey)
 
 	// Create placeholders for the IN clause
 	placeholders := make([]string, len(adIDs))
@@ -437,6 +401,11 @@ func GetAdYearsForAdIDs(adIDs []int, makeName string) ([]string, error) {
 	for _, year := range yearInts {
 		years = append(years, fmt.Sprintf("%d", year))
 	}
+
+	// Cache the result
+	vehicleCache.Set(cacheKey, years, int64(len(years)*15))
+	log.Printf("[search-cache] Cached %d years for key: %s", len(years), cacheKey)
+
 	return years, nil
 }
 
@@ -445,6 +414,17 @@ func GetAdModelsForAdIDs(adIDs []int, makeName, year string) ([]string, error) {
 	if len(adIDs) == 0 {
 		return []string{}, nil
 	}
+
+	// Generate deterministic cache key with make and year
+	cacheKey := genIDsKey(adIDs, fmt.Sprintf("search:models:%s:%s", makeName, year))
+
+	// Check cache first
+	if cached, found := vehicleCache.Get(cacheKey); found {
+		log.Printf("[search-cache] Cache hit for models: %s", cacheKey)
+		return cached, nil
+	}
+
+	log.Printf("[search-cache] Cache miss for models: %s", cacheKey)
 
 	// Create placeholders for the IN clause
 	placeholders := make([]string, len(adIDs))
@@ -471,7 +451,15 @@ func GetAdModelsForAdIDs(adIDs []int, makeName, year string) ([]string, error) {
 
 	var models []string
 	err := db.Select(&models, query, args...)
-	return models, err
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the result
+	vehicleCache.Set(cacheKey, models, int64(len(models)*25))
+	log.Printf("[search-cache] Cached %d models for key: %s", len(models), cacheKey)
+
+	return models, nil
 }
 
 // GetAdEnginesForAdIDs returns engines for a specific make/year/model, filtered by ad IDs
@@ -479,6 +467,17 @@ func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, 
 	if len(adIDs) == 0 {
 		return []string{}, nil
 	}
+
+	// Generate deterministic cache key with make, year, and model
+	cacheKey := genIDsKey(adIDs, fmt.Sprintf("search:engines:%s:%s:%s", makeName, year, model))
+
+	// Check cache first
+	if cached, found := vehicleCache.Get(cacheKey); found {
+		log.Printf("[search-cache] Cache hit for engines: %s", cacheKey)
+		return cached, nil
+	}
+
+	log.Printf("[search-cache] Cache miss for engines: %s", cacheKey)
 
 	// Create placeholders for the IN clause
 	placeholders := make([]string, len(adIDs))
@@ -506,34 +505,15 @@ func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, 
 
 	var engines []string
 	err := db.Select(&engines, query, args...)
-	return engines, err
-}
-
-func GetAllEngineSizes() []string {
-	if allEngineSizesCache != nil {
-		return allEngineSizesCache
-	}
-	query := "SELECT DISTINCT name FROM Engine ORDER BY name"
-	var engines []string
-	err := db.Select(&engines, query)
 	if err != nil {
-		return nil
+		return nil, err
 	}
-	allEngineSizesCache = engines
-	return engines
-}
 
-func GetYearRange() []string {
-	if yearRangeCache != nil {
-		return yearRangeCache
-	}
-	currentYear := time.Now().Year() + 1
-	years := make([]string, 0, currentYear-1900+1)
-	for year := 1900; year <= currentYear; year++ {
-		years = append(years, strconv.Itoa(year))
-	}
-	yearRangeCache = years
-	return years
+	// Cache the result
+	vehicleCache.Set(cacheKey, engines, int64(len(engines)*30))
+	log.Printf("[search-cache] Cached %d engines for key: %s", len(engines), cacheKey)
+
+	return engines, nil
 }
 
 // AddParentCompany inserts a new parent company
@@ -576,12 +556,6 @@ func GetParentCompaniesForMake(makeName string) ([]string, error) {
 	return parentCompanies, nil
 }
 
-// ParentCompanyInfo represents parent company information with country
-type ParentCompanyInfo struct {
-	Name    string
-	Country string
-}
-
 // GetParentCompanyInfoForMake returns the parent company information for a given make
 func GetParentCompanyInfoForMake(makeName string) (*ParentCompanyInfo, error) {
 	rows, err := db.Query(`
@@ -603,4 +577,23 @@ func GetParentCompanyInfoForMake(makeName string) (*ParentCompanyInfo, error) {
 		return &pcInfo, nil
 	}
 	return nil, nil
+}
+
+// GetVehicleCacheStats returns cache statistics for admin monitoring
+func GetVehicleCacheStats() map[string]interface{} {
+	if vehicleCache == nil {
+		return map[string]interface{}{
+			"cache_type": "Vehicle Data Cache",
+			"error":      "Cache not initialized",
+		}
+	}
+	return vehicleCache.Stats()
+}
+
+// ClearVehicleCache clears all items from the vehicle cache
+func ClearVehicleCache() {
+	if vehicleCache != nil {
+		vehicleCache.Clear()
+		log.Printf("[vehicle-cache] Cache cleared")
+	}
 }

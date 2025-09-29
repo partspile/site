@@ -178,9 +178,9 @@ func HandleEditAd(c *fiber.Ctx) error {
 	// Prepare year checkboxes
 	years := vehicle.GetYears(adObj.Make)
 	// Prepare model checkboxes
-	modelAvailability := vehicle.GetModelsWithAvailability(adObj.Make, adObj.Years)
+	models := vehicle.GetModels(adObj.Make, adObj.Years)
 	// Prepare engine checkboxes
-	engineAvailability := vehicle.GetEnginesWithAvailability(adObj.Make, adObj.Years, adObj.Models)
+	engines := vehicle.GetEngines(adObj.Make, adObj.Years, adObj.Models)
 
 	// Get categories (use cached static data)
 	categoryNames := part.GetCategories()
@@ -191,7 +191,7 @@ func HandleEditAd(c *fiber.Ctx) error {
 		subcategoryNames = part.GetSubCategories(adObj.Category.String) // Use cached static data
 	}
 
-	return render(c, ui.EditAdPage(currentUser, c.Path(), adObj, makes, years, modelAvailability, engineAvailability, categoryNames, subcategoryNames))
+	return render(c, ui.EditAdPage(currentUser, c.Path(), adObj, makes, years, models, engines, categoryNames, subcategoryNames))
 }
 
 func HandleUpdateAdSubmission(c *fiber.Ctx) error {
@@ -367,8 +367,8 @@ func HandleEditAdPartial(c *fiber.Ctx) error {
 	}
 	makes := vehicle.GetMakes()
 	years := vehicle.GetYears(adObj.Make)
-	modelAvailability := vehicle.GetModelsWithAvailability(adObj.Make, adObj.Years)
-	engineAvailability := vehicle.GetEnginesWithAvailability(adObj.Make, adObj.Years, adObj.Models)
+	models := vehicle.GetModels(adObj.Make, adObj.Years)
+	engines := vehicle.GetEngines(adObj.Make, adObj.Years, adObj.Models)
 
 	// Get categories (use cached static data)
 	categoryNames := part.GetCategories()
@@ -385,7 +385,7 @@ func HandleEditAdPartial(c *fiber.Ctx) error {
 	if view == "grid" {
 		htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", adObj.ID)
 	}
-	return render(c, ui.AdEditPartial(adObj, makes, years, modelAvailability, engineAvailability, categoryNames, subcategoryNames, cancelTarget, htmxTarget, view))
+	return render(c, ui.AdEditPartial(adObj, makes, years, models, engines, categoryNames, subcategoryNames, cancelTarget, htmxTarget, view))
 }
 
 // uploadAdImagesToB2 uploads user-uploaded images to B2 with multiple sizes

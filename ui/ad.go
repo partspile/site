@@ -173,7 +173,7 @@ func AdPage(adObj ad.Ad, currentUser *user.User, userID int, path string, loc *t
 // ---- Ad Components ----
 
 // AdEditPartial renders the ad edit form for inline editing
-func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engineAvailability map[string]bool, categories, subcategories []string, cancelTarget, htmxTarget string, view ...string) g.Node {
+func AdEditPartial(adObj ad.Ad, makes, years, models, engines, categories, subcategories []string, cancelTarget, htmxTarget string, view ...string) g.Node {
 	editForm := Div(
 		ID(fmt.Sprintf("ad-%d", adObj.ID)),
 		Class("border p-4 mb-4 rounded bg-white shadow-lg relative"),
@@ -243,13 +243,10 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 			}()...))),
 			formGroup("Models", "models", Div(ID("modelsDiv"), GridContainer(5, func() []g.Node {
 				modelCheckboxes := []g.Node{}
-				models := make([]string, 0, len(modelAvailability))
-				for m := range modelAvailability {
-					models = append(models, m)
-				}
-				sort.Strings(models)
-				for _, modelName := range models {
-					isAvailable := modelAvailability[modelName]
+				sortedModels := make([]string, len(models))
+				copy(sortedModels, models)
+				sort.Strings(sortedModels)
+				for _, modelName := range sortedModels {
 					isChecked := false
 					for _, adModel := range adObj.Models {
 						if modelName == adModel {
@@ -258,7 +255,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 						}
 					}
 					modelCheckboxes = append(modelCheckboxes,
-						Checkbox("models", modelName, modelName, isChecked, !isAvailable,
+						Checkbox("models", modelName, modelName, isChecked, false,
 							hx.Trigger("change"),
 							hx.Get("/api/engines"),
 							hx.Target("#enginesDiv"),
@@ -270,13 +267,10 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 			}()...))),
 			formGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer(5, func() []g.Node {
 				engineCheckboxes := []g.Node{}
-				engines := make([]string, 0, len(engineAvailability))
-				for e := range engineAvailability {
-					engines = append(engines, e)
-				}
-				sort.Strings(engines)
-				for _, engineName := range engines {
-					isAvailable := engineAvailability[engineName]
+				sortedEngines := make([]string, len(engines))
+				copy(sortedEngines, engines)
+				sort.Strings(sortedEngines)
+				for _, engineName := range sortedEngines {
 					isChecked := false
 					for _, adEngine := range adObj.Engines {
 						if engineName == adEngine {
@@ -285,7 +279,7 @@ func AdEditPartial(adObj ad.Ad, makes, years []string, modelAvailability, engine
 						}
 					}
 					engineCheckboxes = append(engineCheckboxes,
-						Checkbox("engines", engineName, engineName, isChecked, !isAvailable),
+						Checkbox("engines", engineName, engineName, isChecked, false),
 					)
 				}
 				return engineCheckboxes
@@ -513,7 +507,7 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 	)
 }
 
-func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []string, years []string, modelAvailability map[string]bool, engineAvailability map[string]bool, categories []string, subcategories []string) g.Node {
+func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes, years, models, engines, categories, subcategories []string) g.Node {
 	// Prepare make options
 	makeOptions := []g.Node{}
 	for _, makeName := range makes {
@@ -547,14 +541,11 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 
 	// Prepare model checkboxes
 	modelCheckboxes := []g.Node{}
-	models := make([]string, 0, len(modelAvailability))
-	for m := range modelAvailability {
-		models = append(models, m)
-	}
-	sort.Strings(models)
+	sortedModels := make([]string, len(models))
+	copy(sortedModels, models)
+	sort.Strings(sortedModels)
 
-	for _, modelName := range models {
-		isAvailable := modelAvailability[modelName]
+	for _, modelName := range sortedModels {
 		isChecked := false
 		for _, adModel := range currentAd.Models {
 			if modelName == adModel {
@@ -563,7 +554,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 			}
 		}
 		modelCheckboxes = append(modelCheckboxes,
-			Checkbox("models", modelName, modelName, isChecked, !isAvailable,
+			Checkbox("models", modelName, modelName, isChecked, false,
 				hx.Trigger("change"),
 				hx.Get("/api/engines"),
 				hx.Target("#enginesDiv"),
@@ -574,14 +565,11 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 
 	// Prepare engine checkboxes
 	engineCheckboxes := []g.Node{}
-	engines := make([]string, 0, len(engineAvailability))
-	for e := range engineAvailability {
-		engines = append(engines, e)
-	}
-	sort.Strings(engines)
+	sortedEngines := make([]string, len(engines))
+	copy(sortedEngines, engines)
+	sort.Strings(sortedEngines)
 
-	for _, engineName := range engines {
-		isAvailable := engineAvailability[engineName]
+	for _, engineName := range sortedEngines {
 		isChecked := false
 		for _, adEngine := range currentAd.Engines {
 			if engineName == adEngine {
@@ -590,7 +578,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes []st
 			}
 		}
 		engineCheckboxes = append(engineCheckboxes,
-			Checkbox("engines", engineName, engineName, isChecked, !isAvailable),
+			Checkbox("engines", engineName, engineName, isChecked, false),
 		)
 	}
 

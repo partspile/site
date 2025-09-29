@@ -110,14 +110,55 @@ func GetEmbeddingCacheStats() map[string]interface{} {
 	return stats
 }
 
-// ClearEmbeddingCache clears all cached embeddings
-func ClearEmbeddingCache() {
+// GetQueryEmbeddingCacheStats returns stats for the query embedding cache
+func GetQueryEmbeddingCacheStats() map[string]interface{} {
+	if queryEmbeddingCache == nil {
+		return map[string]interface{}{
+			"cache_type": "Query Embedding Cache",
+			"error":      "Cache not initialized",
+		}
+	}
+	return queryEmbeddingCache.Stats()
+}
+
+// GetUserEmbeddingCacheStats returns stats for the user embedding cache
+func GetUserEmbeddingCacheStats() map[string]interface{} {
+	if userEmbeddingCache == nil {
+		return map[string]interface{}{
+			"cache_type": "User Embedding Cache",
+			"error":      "Cache not initialized",
+		}
+	}
+	return userEmbeddingCache.Stats()
+}
+
+// GetSiteEmbeddingCacheStats returns stats for the site embedding cache
+func GetSiteEmbeddingCacheStats() map[string]interface{} {
+	if siteEmbeddingCache == nil {
+		return map[string]interface{}{
+			"cache_type": "Site Embedding Cache",
+			"error":      "Cache not initialized",
+		}
+	}
+	return siteEmbeddingCache.Stats()
+}
+
+// ClearQueryEmbeddingCache clears only the query embedding cache
+func ClearQueryEmbeddingCache() {
 	if queryEmbeddingCache != nil {
 		queryEmbeddingCache.Clear()
 	}
+}
+
+// ClearUserEmbeddingCache clears only the user embedding cache
+func ClearUserEmbeddingCache() {
 	if userEmbeddingCache != nil {
 		userEmbeddingCache.Clear()
 	}
+}
+
+// ClearSiteEmbeddingCache clears only the site embedding cache
+func ClearSiteEmbeddingCache() {
 	if siteEmbeddingCache != nil {
 		siteEmbeddingCache.Clear()
 	}

@@ -156,12 +156,19 @@ func main() {
 	admin.Get("/", handlers.HandleAdminDashboard)
 	admin.Get("/b2-cache", handlers.HandleAdminB2Cache)
 	admin.Get("/embedding-cache", handlers.HandleAdminEmbeddingCache)
+	admin.Get("/vehicle-cache", handlers.HandleAdminVehicleCache)
 
 	// Admin API group
 	adminAPI := api.Group("/admin", handlers.AdminRequired)
 	adminAPI.Post("/b2-cache/clear", handlers.HandleClearB2Cache)
+	adminAPI.Get("/b2-cache/refresh", handlers.HandleRefreshB2Cache)
 	adminAPI.Post("/b2-cache/refresh", handlers.HandleRefreshB2Token)
-	adminAPI.Post("/embedding-cache/clear", handlers.HandleClearEmbeddingCache)
+	adminAPI.Get("/embedding-cache/refresh", handlers.HandleRefreshEmbeddingCache)
+	adminAPI.Post("/embedding-cache/query/clear", handlers.HandleClearQueryEmbeddingCache)
+	adminAPI.Post("/embedding-cache/user/clear", handlers.HandleClearUserEmbeddingCache)
+	adminAPI.Post("/embedding-cache/site/clear", handlers.HandleClearSiteEmbeddingCache)
+	adminAPI.Post("/vehicle-cache/clear", handlers.HandleClearVehicleCache)
+	adminAPI.Get("/vehicle-cache/refresh", handlers.HandleRefreshVehicleCache)
 
 	// User registration/authentication
 	app.Get("/register", handlers.HandleRegistrationStep1)

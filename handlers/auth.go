@@ -102,7 +102,12 @@ func GetCurrentUser(c *fiber.Ctx) (*user.User, error) {
 func AuthRequired(c *fiber.Ctx) error {
 	user, err := GetCurrentUser(c)
 	if err != nil {
-		// You might want to redirect to login page
+		// For HTMX requests, return a redirect response that HTMX can handle
+		if c.Get("HX-Request") != "" {
+			c.Set("HX-Redirect", "/login")
+			return c.Status(fiber.StatusSeeOther).SendString("")
+		}
+		// For regular requests, redirect to login page
 		return c.Redirect("/login", fiber.StatusSeeOther)
 	}
 

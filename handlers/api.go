@@ -43,8 +43,8 @@ func HandleModels(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "At least one year is required")
 	}
 
-	modelAvailability := vehicle.GetModelsWithAvailability(makeName, years)
-	return render(c, ui.ModelsFormGroup(modelAvailability))
+	models := vehicle.GetModels(makeName, years)
+	return render(c, ui.ModelsFormGroup(models))
 }
 
 func HandleEngines(c *fiber.Ctx) error {
@@ -67,8 +67,8 @@ func HandleEngines(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "At least one model is required")
 	}
 
-	engineAvailability := vehicle.GetEnginesWithAvailability(makeName, years, models)
-	return render(c, ui.EnginesFormGroup(engineAvailability))
+	engines := vehicle.GetEngines(makeName, years, models)
+	return render(c, ui.EnginesFormGroup(engines))
 }
 
 func HandleCategories(c *fiber.Ctx) error {

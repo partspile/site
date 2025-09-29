@@ -7,6 +7,7 @@ import (
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
+	"github.com/parts-pile/site/vehicle"
 	g "maragu.dev/gomponents"
 )
 
@@ -54,6 +55,11 @@ func HandleClearB2Cache(c *fiber.Ctx) error {
 	return render(c, ui.AdminB2CacheSection(stats))
 }
 
+func HandleRefreshB2Cache(c *fiber.Ctx) error {
+	stats := b2util.GetCacheStats()
+	return render(c, ui.AdminB2CacheSection(stats))
+}
+
 func HandleRefreshB2Token(c *fiber.Ctx) error {
 	prefix := c.FormValue("prefix")
 	if prefix == "" {
@@ -88,9 +94,59 @@ func HandleAdminEmbeddingCache(c *fiber.Ctx) error {
 	))
 }
 
-func HandleClearEmbeddingCache(c *fiber.Ctx) error {
-	vector.ClearEmbeddingCache()
+func HandleRefreshEmbeddingCache(c *fiber.Ctx) error {
+	stats := vector.GetEmbeddingCacheStats()
+	return render(c, ui.AdminEmbeddingCacheSection(stats))
+}
+
+func HandleClearQueryEmbeddingCache(c *fiber.Ctx) error {
+	vector.ClearQueryEmbeddingCache()
 
 	stats := vector.GetEmbeddingCacheStats()
 	return render(c, ui.AdminEmbeddingCacheSection(stats))
+}
+
+func HandleClearUserEmbeddingCache(c *fiber.Ctx) error {
+	vector.ClearUserEmbeddingCache()
+
+	stats := vector.GetEmbeddingCacheStats()
+	return render(c, ui.AdminEmbeddingCacheSection(stats))
+}
+
+func HandleClearSiteEmbeddingCache(c *fiber.Ctx) error {
+	vector.ClearSiteEmbeddingCache()
+
+	stats := vector.GetEmbeddingCacheStats()
+	return render(c, ui.AdminEmbeddingCacheSection(stats))
+}
+
+func HandleAdminVehicleCache(c *fiber.Ctx) error {
+	currentUser, err := CurrentUser(c)
+	if err != nil {
+		return err
+	}
+
+	stats := vehicle.GetVehicleCacheStats()
+
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "vehicle-cache", ui.AdminVehicleCacheSection(stats)))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "vehicle-cache", ui.AdminVehicleCacheSection(stats))},
+	))
+}
+
+func HandleClearVehicleCache(c *fiber.Ctx) error {
+	vehicle.ClearVehicleCache()
+
+	stats := vehicle.GetVehicleCacheStats()
+	return render(c, ui.AdminVehicleCacheSection(stats))
+}
+
+func HandleRefreshVehicleCache(c *fiber.Ctx) error {
+	stats := vehicle.GetVehicleCacheStats()
+	return render(c, ui.AdminVehicleCacheSection(stats))
 }

@@ -20,6 +20,7 @@ func navLoggedIn(currentUser *user.User) g.Node {
 			hx.Get("/user-menu"),
 			hx.Target("body"),
 			hx.Swap("beforeend"),
+			hx.Headers(`js:{'X-Requested-With': 'XMLHttpRequest'}`),
 			g.Text(getUserInitial(currentUser)),
 		),
 	)
