@@ -32,6 +32,12 @@ type GrokResponse struct {
 
 // CallGrok sends prompts to the Grok API and returns the response string
 func CallGrok(systemPrompt, userPrompt string) (string, error) {
+	return CallGrokWithDebug(systemPrompt, userPrompt, false)
+}
+
+// CallGrokWithDebug sends prompts to the Grok API and returns the response string
+// debug parameter controls whether to print request/response details
+func CallGrokWithDebug(systemPrompt, userPrompt string, debug bool) (string, error) {
 	apiKey := config.GrokAPIKey
 	if apiKey == "" {
 		return "", fmt.Errorf("GROK_API_KEY environment variable not set")
@@ -57,10 +63,12 @@ func CallGrok(systemPrompt, userPrompt string) (string, error) {
 		return "", fmt.Errorf("failed to marshal payload: %w", err)
 	}
 
-	log.Printf("[grok] System prompt: %s", systemPrompt)
-	log.Printf("[grok] User prompt: %s", userPrompt)
-	fmt.Println("REQUEST")
-	fmt.Println(string(data))
+	if debug {
+		log.Printf("[grok] System prompt: %s", systemPrompt)
+		log.Printf("[grok] User prompt: %s", userPrompt)
+		fmt.Println("REQUEST")
+		fmt.Println(string(data))
+	}
 
 	req, err := http.NewRequest("POST", config.GrokAPIURL, bytes.NewBuffer(data))
 	if err != nil {
@@ -92,8 +100,10 @@ func CallGrok(systemPrompt, userPrompt string) (string, error) {
 		return "", fmt.Errorf("no response from Grok API")
 	}
 
-	fmt.Println("RESPONSE")
-	fmt.Println(grokResp.Choices[0].Message.Content)
+	if debug {
+		fmt.Println("RESPONSE")
+		fmt.Println(grokResp.Choices[0].Message.Content)
+	}
 
 	return grokResp.Choices[0].Message.Content, nil
 }

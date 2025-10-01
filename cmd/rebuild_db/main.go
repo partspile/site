@@ -32,10 +32,7 @@ func main() {
 	dbFile := config.DatabaseURL
 	schemaFile := "schema.sql"
 
-	dbFileOnDisk := dbFile
-	if strings.HasPrefix(dbFileOnDisk, "file:") {
-		dbFileOnDisk = strings.TrimPrefix(dbFileOnDisk, "file:")
-	}
+	dbFileOnDisk := strings.TrimPrefix(dbFile, "file:")
 	// Remove old DB if exists
 	if _, err := os.Stat(dbFileOnDisk); err == nil {
 		log.Printf("Removing existing database file: %s", dbFileOnDisk)
@@ -447,6 +444,7 @@ func main() {
 	}
 
 	// Process ads
+	adCount := 0
 	for _, ad := range ads {
 		// Insert or get location
 		locationKey := fmt.Sprintf("%s, %s, %s", ad.Location.City, ad.Location.AdminArea, ad.Location.Country)
@@ -504,10 +502,6 @@ func main() {
 		}
 		adID, _ := res.LastInsertId()
 
-		// Skip image generation for seed ads - only generate images for new user-created ads
-		// Seed ads will show broken images when viewed (no images uploaded to B2)
-		log.Printf("Skipping image generation for seed ad %d: %s", adID, ad.Title)
-
 		// Create AdCar relationships for all combinations
 		for _, year := range ad.Years {
 			for _, model := range ad.Models {
@@ -539,8 +533,10 @@ func main() {
 		}
 
 		fmt.Printf("Inserted ad: %s\n", ad.Title)
+		adCount++
 	}
 
+	fmt.Printf("Inserted %d ads total\n", adCount)
 	fmt.Println("Database rebuild and import complete.")
 	fmt.Println("Vector embeddings will be processed by the main application background processor.")
 }
