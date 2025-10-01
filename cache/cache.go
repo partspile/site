@@ -68,8 +68,11 @@ func (c *Cache[T]) Stats() map[string]interface{} {
 	// Calculate memory usage in bytes
 	memoryUsed := metrics.CostAdded() - metrics.CostEvicted()
 	memoryUsedKB := float64(memoryUsed) / 1024
+	memoryUsedMB := float64(memoryUsed) / (1024 * 1024)
 	totalAddedKB := float64(metrics.CostAdded()) / 1024
+	totalAddedMB := float64(metrics.CostAdded()) / (1024 * 1024)
 	totalEvictedKB := float64(metrics.CostEvicted()) / 1024
+	totalEvictedMB := float64(metrics.CostEvicted()) / (1024 * 1024)
 
 	// Calculate hit rate from metrics
 	hitRate := 0.0
@@ -116,8 +119,11 @@ func (c *Cache[T]) Stats() map[string]interface{} {
 		"sets_rejected":    metrics.SetsRejected(),
 		"memory_used":      memoryUsed,
 		"memory_used_kb":   memoryUsedKB,
+		"memory_used_mb":   memoryUsedMB,
 		"total_added_kb":   totalAddedKB,
+		"total_added_mb":   totalAddedMB,
 		"total_evicted_kb": totalEvictedKB,
+		"total_evicted_mb": totalEvictedMB,
 		"current_items":    c.GetItemCount(),
 	}
 

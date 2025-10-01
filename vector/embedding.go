@@ -164,6 +164,13 @@ func ClearSiteEmbeddingCache() {
 	}
 }
 
+// ClearEmbeddingCache clears all embedding caches
+func ClearEmbeddingCache() {
+	ClearQueryEmbeddingCache()
+	ClearUserEmbeddingCache()
+	ClearSiteEmbeddingCache()
+}
+
 // GetQueryEmbedding retrieves or generates an embedding for the given text using the query cache
 func GetQueryEmbedding(text string) ([]float32, error) {
 	if queryEmbeddingCache == nil {
