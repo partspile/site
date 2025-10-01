@@ -20,7 +20,8 @@ import (
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
 	"golang.org/x/image/font"
-	"golang.org/x/image/font/basicfont"
+	"golang.org/x/image/font/gofont/gomono"
+	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/math/fixed"
 	"gopkg.in/kothar/go-backblaze.v0"
 )
@@ -210,7 +211,7 @@ func generateTestAdImage(adID, imageNum, width, height int) (*bytes.Buffer, erro
 
 	// Add text
 	textColor := color.RGBA{255, 255, 255, 255} // White text for dark background
-	addText(img, textContent, textColor, width/2, height/2, width, height)
+	addText(img, textContent, textColor, width, height)
 
 	// Encode to PNG first
 	var pngBuf bytes.Buffer
@@ -244,82 +245,52 @@ func getAdBackgroundColor(adID int) color.RGBA {
 	return mutedColors[colorIndex]
 }
 
-// addText adds text to an image at the specified position with size-appropriate scaling
-func addText(img *image.RGBA, text string, textColor color.Color, x, y, imgWidth, imgHeight int) {
-	// Use larger font for better visibility
-	f := basicfont.Face7x13
-
-	// Calculate text width and height
-	textWidth := len(text) * f.Width
-	textHeight := f.Height
-
-	// Scale text based on image size to maintain readability
-	// For 1200px width, use scale 4; for 480px use scale 3; for 160px use scale 2
-	var scale int
-	switch {
-	case imgWidth >= 1000:
-		scale = 4
-	case imgWidth >= 400:
-		scale = 3
-	default:
-		scale = 2
+// addText adds text to an image centered with gomono font
+func addText(img *image.RGBA, text string, textColor color.Color, imgWidth, imgHeight int) {
+	// Load and configure gomono font
+	fontData, err := opentype.Parse(gomono.TTF)
+	if err != nil {
+		log.Printf("Failed to parse gomono font: %v", err)
+		return
 	}
+
+	// Set font size based on image width
+	var fontSize float64 = float64(imgWidth) * 0.0333
+
+	fontFace, err := opentype.NewFace(fontData, &opentype.FaceOptions{
+		Size:    fontSize,
+		DPI:     72,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		log.Printf("Failed to create font face: %v", err)
+		return
+	}
+	defer fontFace.Close()
+
+	// Calculate text dimensions for centering
+	advance := font.MeasureString(fontFace, text)
+	textWidth := int(advance >> 6) // Convert fixed.Int26_6 to pixels (/64)
+
+	ascent := int(fontFace.Metrics().Ascent >> 6)
+	descent := int(fontFace.Metrics().Descent >> 6)
+	textHeight := ascent + descent
 
 	// Center the text
-	startX := x - (textWidth*scale)/2
-	startY := y - (textHeight*scale)/2
+	x := (imgWidth - textWidth) / 2
+	y := (imgHeight - textHeight) / 2 // Top of text bounding box
 
-	// Draw text using a simple pixel-by-pixel approach for crisp rendering
-	for i, char := range text {
-		charX := startX + i*f.Width*scale
-		charY := startY
+	baselineY := y + ascent
 
-		// Draw each character by scaling the basic font
-		drawScaledChar(img, char, charX, charY, scale, textColor)
-	}
-}
-
-// drawScaledChar draws a single character scaled up for crisp rendering
-func drawScaledChar(img *image.RGBA, char rune, x, y, scale int, textColor color.Color) {
-	// Get the basic font face
-	f := basicfont.Face7x13
-
-	// Create a temporary image for the character
-	charImg := image.NewRGBA(image.Rect(0, 0, f.Width, f.Height))
-
-	// Draw the character to the temporary image
-	point := fixed.Point26_6{
-		X: fixed.Int26_6(0),
-		Y: fixed.Int26_6(f.Height * 64),
-	}
+	point := fixed.Point26_6{X: fixed.I(x), Y: fixed.I(baselineY)}
 
 	d := &font.Drawer{
-		Dst:  charImg,
+		Dst:  img,
 		Src:  image.NewUniform(textColor),
-		Face: f,
+		Face: fontFace,
 		Dot:  point,
 	}
-	d.DrawString(string(char))
-
-	// Scale up the character by drawing each pixel multiple times
-	for srcY := 0; srcY < f.Height; srcY++ {
-		for srcX := 0; srcX < f.Width; srcX++ {
-			// Get the pixel color from the source
-			srcColor := charImg.RGBAAt(srcX, srcY)
-			if srcColor.A > 0 { // Only draw non-transparent pixels
-				// Draw the pixel scaled up
-				for dy := 0; dy < scale; dy++ {
-					for dx := 0; dx < scale; dx++ {
-						dstX := x + srcX*scale + dx
-						dstY := y + srcY*scale + dy
-						if dstX >= 0 && dstX < img.Bounds().Dx() && dstY >= 0 && dstY < img.Bounds().Dy() {
-							img.Set(dstX, dstY, textColor)
-						}
-					}
-				}
-			}
-		}
-	}
+	d.DrawString(text)
 }
 
 // batchUploadToB2 uploads all images to B2 in batches
