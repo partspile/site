@@ -60,21 +60,23 @@ func QueueAd(adObj ad.Ad) {
 
 // ProcessAdsWithoutVectors loads ads without vectors and queues them for processing
 func ProcessAdsWithoutVectors() {
-	ads, err := ad.GetAdsWithoutVectors()
-	if err != nil {
-		log.Printf("[vector] Error getting ads without vectors: %v", err)
-		return
-	}
+	go func() {
+		ads, err := ad.GetAdsWithoutVectors()
+		if err != nil {
+			log.Printf("[vector] Error getting ads without vectors: %v", err)
+			return
+		}
 
-	if len(ads) == 0 {
-		log.Printf("[vector] No ads without vectors found")
-		return
-	}
+		if len(ads) == 0 {
+			log.Printf("[vector] No ads without vectors found")
+			return
+		}
 
-	log.Printf("[vector] Queueing %d ads without vectors for processing", len(ads))
+		log.Printf("[vector] Queueing %d ads without vectors for processing", len(ads))
 
-	// Queue all ads for background processing
-	for _, adObj := range ads {
-		QueueAd(adObj)
-	}
+		// Queue all ads for background processing
+		for _, adObj := range ads {
+			QueueAd(adObj)
+		}
+	}()
 }

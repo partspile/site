@@ -65,15 +65,6 @@ func main() {
 		log.Fatalf("Failed to setup payload indexes: %v", err)
 	}
 
-	// Start background user embedding processor
-	vector.StartUserBackgroundProcessor()
-
-	// Start background vector processor for ads
-	vector.StartBackgroundProcessor()
-
-	// Initially process existing ads without vectors
-	vector.ProcessAdsWithoutVectors()
-
 	app := fiber.New(fiber.Config{
 		ErrorHandler: customErrorHandler,
 		BodyLimit:    config.ServerUploadLimit,
@@ -213,6 +204,15 @@ func main() {
 	app.Post("/view/tree", handlers.HandleTreeView) // x
 	app.Post("/view/grid", handlers.HandleGridView) // x
 	app.Post("/view/map", handlers.HandleMapView)   // x
+
+	// Start background user embedding processor
+	vector.StartUserBackgroundProcessor()
+
+	// Start background vector processor for ads
+	vector.StartBackgroundProcessor()
+
+	// Initially process existing ads without vectors
+	vector.ProcessAdsWithoutVectors()
 
 	fmt.Printf("Starting server on port %s...\n", config.ServerPort)
 	log.Fatal(app.Listen(":" + config.ServerPort))
