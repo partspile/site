@@ -48,8 +48,8 @@ const (
 
 	// CDN URLs for external resources
 	TailwindCSSURL = "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
-	HTMXURL        = "https://unpkg.com/htmx.org@2.0.4"
-	HTMXSSEURL     = "https://cdn.jsdelivr.net/npm/htmx-ext-sse@2.2.2"
+	HTMXURL        = "https://unpkg.com/htmx.org@2.0.7"
+	HTMXSSEURL     = "https://cdn.jsdelivr.net/npm/htmx-ext-sse@2.2.3"
 
 	// Leaflet map library URLs
 	LeafletCSSURL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"

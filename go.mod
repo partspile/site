@@ -8,15 +8,15 @@ require (
 	github.com/dgraph-io/ristretto/v2 v2.3.0
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/jmoiron/sqlx v1.4.0
-	github.com/mattn/go-sqlite3 v1.14.28
-	github.com/qdrant/go-client v1.15.1
-	github.com/stretchr/testify v1.10.0
-	github.com/twilio/twilio-go v1.27.0
-	golang.org/x/crypto v0.39.0
-	golang.org/x/image v0.28.0
+	github.com/mattn/go-sqlite3 v1.14.32
+	github.com/qdrant/go-client v1.15.2
+	github.com/stretchr/testify v1.11.1
+	github.com/twilio/twilio-go v1.28.3
+	golang.org/x/crypto v0.42.0
+	golang.org/x/image v0.31.0
 	google.golang.org/genai v1.27.0
 	gopkg.in/kothar/go-backblaze.v0 v0.0.0-20210124194846-35409b867216
-	maragu.dev/gomponents v1.1.0
+	maragu.dev/gomponents v1.2.0
 	maragu.dev/gomponents-htmx v0.6.1
 )
 
@@ -59,9 +59,9 @@ require (
 	go.opentelemetry.io/otel v1.36.0 // indirect
 	go.opentelemetry.io/otel/metric v1.36.0 // indirect
 	go.opentelemetry.io/otel/trace v1.36.0 // indirect
-	golang.org/x/net v0.41.0 // indirect
-	golang.org/x/sys v0.35.0 // indirect
-	golang.org/x/text v0.26.0 // indirect
+	golang.org/x/net v0.43.0 // indirect
+	golang.org/x/sys v0.36.0 // indirect
+	golang.org/x/text v0.29.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
 	google.golang.org/grpc v1.73.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
