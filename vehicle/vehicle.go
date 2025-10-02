@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -358,6 +359,8 @@ func GetAdYearsForAdIDs(adIDs []int, makeName string) ([]string, error) {
 		return []string{}, nil
 	}
 
+	makeName, _ = url.QueryUnescape(makeName)
+
 	// Generate deterministic cache key with make name
 	cacheKey := genIDsKey(adIDs, fmt.Sprintf("search:years:%s", makeName))
 
@@ -415,6 +418,9 @@ func GetAdModelsForAdIDs(adIDs []int, makeName, year string) ([]string, error) {
 		return []string{}, nil
 	}
 
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
+
 	// Generate deterministic cache key with make and year
 	cacheKey := genIDsKey(adIDs, fmt.Sprintf("search:models:%s:%s", makeName, year))
 
@@ -467,6 +473,10 @@ func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, 
 	if len(adIDs) == 0 {
 		return []string{}, nil
 	}
+
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
+	model, _ = url.QueryUnescape(model)
 
 	// Generate deterministic cache key with make, year, and model
 	cacheKey := genIDsKey(adIDs, fmt.Sprintf("search:engines:%s:%s:%s", makeName, year, model))

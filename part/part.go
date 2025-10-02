@@ -983,6 +983,7 @@ func GetMakesForAll() ([]string, error) {
 
 // GetYearsForAll returns all years for a specific make
 func GetYearsForAll(makeName string) ([]string, error) {
+	makeName, _ = url.QueryUnescape(makeName)
 	query := `
 		SELECT DISTINCT y.year
 		FROM Year y
@@ -1007,6 +1008,8 @@ func GetYearsForAll(makeName string) ([]string, error) {
 
 // GetModelsForAll returns all models for a specific make/year
 func GetModelsForAll(makeName, year string) ([]string, error) {
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
 	query := `
 		SELECT DISTINCT mo.name
 		FROM Model mo
@@ -1024,6 +1027,9 @@ func GetModelsForAll(makeName, year string) ([]string, error) {
 
 // GetEnginesForAll returns all engines for a specific make/year/model
 func GetEnginesForAll(makeName, year, model string) ([]string, error) {
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
+	model, _ = url.QueryUnescape(model)
 	query := `
 		SELECT DISTINCT e.name
 		FROM Engine e
