@@ -72,12 +72,6 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 				Src("/js/map.js"),
 				Defer(),
 			),
-			// Global loading indicator
-			Script(
-				Type("text/javascript"),
-				Src("/js/global-indicator.js"),
-				Defer(),
-			),
 			// Script(
 			// 	Type("text/javascript"),
 			// 	g.Raw("if(window.htmx){htmx.logAll()} else {document.addEventListener('htmx:load',function(){htmx.logAll()})}"),
@@ -86,8 +80,8 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 		Body: []g.Node{
 			Div(
 				Class("container mx-auto px-4 py-8"),
-				hx.Ext("global-indicator"),
 				hx.Headers(`js:{'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone}`),
+				hx.Indicator("#indicator"),
 				navigation(currentUser, currentPath),
 				g.Group(content),
 			),

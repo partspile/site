@@ -13,6 +13,17 @@ func getUserInitial(currentUser *user.User) string {
 	return strings.ToUpper(string([]rune(currentUser.Name)[0]))
 }
 
+func indicator() g.Node {
+	return Div(
+		ID("indicator"),
+		Class("htmx-indicator flex items-center gap-2 text-blue-600"),
+		Div(
+			Class("w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"),
+		),
+		g.Text("Loading..."),
+	)
+}
+
 func navLoggedIn(currentUser *user.User) g.Node {
 	return Div(
 		Span(
@@ -53,9 +64,9 @@ func navLoggedOut(currentPath string) g.Node {
 
 func navigation(currentUser *user.User, currentPath string) g.Node {
 	return Nav(
-		Class("mb-8 border-b pb-4 flex items-center space-x-4 w-full"),
+		Class("mb-8 border-b pb-4 flex items-center justify-between w-full"),
 		A(Href("/"), Class("text-xl font-bold"), g.Text("Parts Pile")),
-		Span(Class("flex-grow")),
+		indicator(),
 		g.Iff(currentUser != nil, func() g.Node { return navLoggedIn(currentUser) }),
 		g.Iff(currentUser == nil, func() g.Node { return navLoggedOut(currentPath) }),
 	)
@@ -138,6 +149,7 @@ func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
 			hx.Post("/logout"),
 			hx.Target("body"),
 			hx.Swap("outerHTML"),
+			hx.Indicator("#htmx-indicator"),
 			Img(
 				Src("/images/logout.svg"),
 				Alt("Logout"),
