@@ -17,9 +17,7 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 	return Div(
 		ID(adID(ad)),
 		Class("border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2 col-span-full"),
-		closeButton(ad, view),
-		priceFloatingNode(ad),
-		imageNode(ad),
+		imageNode(ad, view),
 		Div(
 			Class("p-4 flex flex-col gap-2"),
 			// Title and buttons row
@@ -45,14 +43,14 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 	)
 }
 
-func priceFloatingNode(ad ad.Ad) g.Node {
+func priceOverlayNode(ad ad.Ad) g.Node {
 	return Div(
 		Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md z-10"),
 		priceNode(ad),
 	)
 }
 
-func closeButton(ad ad.Ad, view string) g.Node {
+func closeButtonOverlayNode(ad ad.Ad, view string) g.Node {
 	return Button(
 		Type("button"),
 		Class("absolute -top-2 -right-2 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
@@ -96,12 +94,14 @@ func AdNoImage() g.Node {
 	)
 }
 
-func imageNode(ad ad.Ad) g.Node {
+func imageNode(ad ad.Ad, view string) g.Node {
 	return Div(
-		Class("relative w-full bg-gray-100 overflow-hidden rounded-t-lg"),
+		Class("relative w-full bg-gray-100 overflow-visible"),
 		Style("height: 60vh; min-height: 500px; max-height: 800px;"),
+		priceOverlayNode(ad),
+		closeButtonOverlayNode(ad, view),
 		Div(
-			Class("relative w-full h-full flex flex-col"),
+			Class("relative w-full h-full flex flex-col overflow-hidden rounded-t-lg"),
 			Div(
 				Class("flex-1 flex items-center justify-center"),
 				g.If(ad.ImageCount > 0, AdCarouselImage(ad.ID, 1)),
