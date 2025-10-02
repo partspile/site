@@ -60,7 +60,9 @@ func EmbedTexts(texts []string) ([][]float32, error) {
 
 	log.Printf("[embedding] Calculating batch embedding vectors for %d texts", len(texts))
 	ctx := context.Background()
-	resp, err := geminiClient.Models.EmbedContent(ctx, config.GeminiEmbeddingModel, contents, nil)
+	dimensions := int32(config.GeminiEmbeddingDimensions)
+	resp, err := geminiClient.Models.EmbedContent(ctx, config.GeminiEmbeddingModel, contents,
+		&genai.EmbedContentConfig{OutputDimensionality: &dimensions})
 	if err != nil {
 		return nil, fmt.Errorf("Gemini batch embedding API error: %w", err)
 	}

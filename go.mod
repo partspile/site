@@ -12,10 +12,9 @@ require (
 	github.com/qdrant/go-client v1.15.1
 	github.com/stretchr/testify v1.10.0
 	github.com/twilio/twilio-go v1.27.0
-	github.com/valyala/fasthttp v1.51.0
 	golang.org/x/crypto v0.39.0
 	golang.org/x/image v0.28.0
-	google.golang.org/genai v1.15.0
+	google.golang.org/genai v1.27.0
 	gopkg.in/kothar/go-backblaze.v0 v0.0.0-20210124194846-35409b867216
 	maragu.dev/gomponents v1.1.0
 	maragu.dev/gomponents-htmx v0.6.1
@@ -53,6 +52,7 @@ require (
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/tinylib/msgp v1.2.5 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
+	github.com/valyala/fasthttp v1.51.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0 // indirect

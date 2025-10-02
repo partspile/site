@@ -40,7 +40,8 @@ const (
 	GrokModel  = "grok-3-mini"
 
 	// Gemini API configuration
-	GeminiEmbeddingModel = "embedding-001"
+	GeminiEmbeddingModel      = "gemini-embedding-001"
+	GeminiEmbeddingDimensions = 3072
 
 	// Password/Argon2 configuration
 	Argon2Memory = 64 * 1024

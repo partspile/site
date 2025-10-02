@@ -41,7 +41,7 @@ func EnsureCollectionExists() error {
 			VectorsConfig: &qdrant.VectorsConfig{
 				Config: &qdrant.VectorsConfig_Params{
 					Params: &qdrant.VectorParams{
-						Size:     768, // Gemini embedding size
+						Size:     config.GeminiEmbeddingDimensions,
 						Distance: qdrant.Distance_Cosine,
 					},
 				},
