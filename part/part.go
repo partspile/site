@@ -89,12 +89,55 @@ func GetAdSubCategoriesForAdIDs(adIDs []int, makeName, year, model, engine, cate
 
 // GetAdCategories returns categories that have existing ads for make/year/model/engine (for tree view)
 func GetAdCategories(makeName, year, model, engine string) ([]string, error) {
-	return GetCategoriesAll(makeName, year, model, engine)
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
+	model, _ = url.QueryUnescape(model)
+	engine, _ = url.QueryUnescape(engine)
+
+	query := `
+		SELECT DISTINCT pc.name
+		FROM PartCategory pc
+		JOIN PartSubCategory psc ON pc.id = psc.category_id
+		JOIN Ad a ON psc.id = a.subcategory_id
+		JOIN AdCar ac ON a.id = ac.ad_id
+		JOIN Car c ON ac.car_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN Engine e ON c.engine_id = e.id
+		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ?
+		ORDER BY pc.name
+	`
+	var categories []string
+	err := db.Select(&categories, query, makeName, year, model, engine)
+	return categories, err
 }
 
 // GetAdSubCategories returns subcategories that have existing ads for make/year/model/engine/category (for tree view)
 func GetAdSubCategories(makeName, year, model, engine, category string) ([]string, error) {
-	return GetSubCategoriesForAll(makeName, year, model, engine, category)
+	makeName, _ = url.QueryUnescape(makeName)
+	year, _ = url.QueryUnescape(year)
+	model, _ = url.QueryUnescape(model)
+	engine, _ = url.QueryUnescape(engine)
+	category, _ = url.QueryUnescape(category)
+
+	query := `
+		SELECT DISTINCT psc.name
+		FROM PartSubCategory psc
+		JOIN PartCategory pc ON psc.category_id = pc.id
+		JOIN Ad a ON psc.id = a.subcategory_id
+		JOIN AdCar ac ON a.id = ac.ad_id
+		JOIN Car c ON ac.car_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Year y ON c.year_id = y.id
+		JOIN Model mo ON c.model_id = mo.id
+		JOIN Engine e ON c.engine_id = e.id
+		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND pc.name = ?
+		ORDER BY psc.name
+	`
+	var subCategories []string
+	err := db.Select(&subCategories, query, makeName, year, model, engine, category)
+	return subCategories, err
 }
 
 func GetAllCategories() ([]Category, error) {
@@ -127,7 +170,7 @@ func GetSubCategoryIDByName(subcategoryName string) (int, error) {
 	return id, nil
 }
 
-func GetMakes(query string) ([]string, error) {
+func getMakes(query string) ([]string, error) {
 	// If there's a search query, filter makes based on matching ads
 	if query != "" {
 		querySQL := `
@@ -157,7 +200,7 @@ func GetMakes(query string) ([]string, error) {
 	return makes, err
 }
 
-func GetYearsForMake(makeName string, query string) ([]string, error) {
+func getYearsForMake(makeName string, query string) ([]string, error) {
 	makeName, _ = url.QueryUnescape(makeName)
 	// If there's a search query, filter years based on matching ads
 	if query != "" {
@@ -205,7 +248,7 @@ func GetYearsForMake(makeName string, query string) ([]string, error) {
 	return years, nil
 }
 
-func GetModelsForMakeYear(makeName, year, query string) ([]string, error) {
+func getModelsForMakeYear(makeName, year, query string) ([]string, error) {
 	makeName, _ = url.QueryUnescape(makeName)
 	year, _ = url.QueryUnescape(year)
 	// If there's a search query, filter models based on matching ads
@@ -1044,57 +1087,4 @@ func GetEnginesForAll(makeName, year, model string) ([]string, error) {
 	var engines []string
 	err := db.Select(&engines, query, makeName, year, model)
 	return engines, err
-}
-
-// GetCategoriesAll returns all categories for a specific make/year/model/engine
-func GetCategoriesAll(makeName, year, model, engine string) ([]string, error) {
-	makeName, _ = url.QueryUnescape(makeName)
-	year, _ = url.QueryUnescape(year)
-	model, _ = url.QueryUnescape(model)
-	engine, _ = url.QueryUnescape(engine)
-
-	query := `
-		SELECT DISTINCT pc.name
-		FROM PartCategory pc
-		JOIN PartSubCategory psc ON pc.id = psc.category_id
-		JOIN Ad a ON psc.id = a.subcategory_id
-		JOIN AdCar ac ON a.id = ac.ad_id
-		JOIN Car c ON ac.car_id = c.id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Year y ON c.year_id = y.id
-		JOIN Model mo ON c.model_id = mo.id
-		JOIN Engine e ON c.engine_id = e.id
-		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ?
-		ORDER BY pc.name
-	`
-	var categories []string
-	err := db.Select(&categories, query, makeName, year, model, engine)
-	return categories, err
-}
-
-// GetSubCategoriesForAll returns all subcategories for a specific make/year/model/engine/category
-func GetSubCategoriesForAll(makeName, year, model, engine, category string) ([]string, error) {
-	makeName, _ = url.QueryUnescape(makeName)
-	year, _ = url.QueryUnescape(year)
-	model, _ = url.QueryUnescape(model)
-	engine, _ = url.QueryUnescape(engine)
-	category, _ = url.QueryUnescape(category)
-
-	query := `
-		SELECT DISTINCT psc.name
-		FROM PartSubCategory psc
-		JOIN PartCategory pc ON psc.category_id = pc.id
-		JOIN Ad a ON psc.id = a.subcategory_id
-		JOIN AdCar ac ON a.id = ac.ad_id
-		JOIN Car c ON ac.car_id = c.id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Year y ON c.year_id = y.id
-		JOIN Model mo ON c.model_id = mo.id
-		JOIN Engine e ON c.engine_id = e.id
-		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND pc.name = ?
-		ORDER BY psc.name
-	`
-	var subCategories []string
-	err := db.Select(&subCategories, query, makeName, year, model, engine, category)
-	return subCategories, err
 }

@@ -62,7 +62,7 @@ func TestGetMakes_WithQuery(t *testing.T) {
 		WithArgs("%" + query + "%").
 		WillReturnRows(rows)
 
-	makes, err := GetMakes(query)
+	makes, err := getMakes(query)
 
 	assert.NoError(t, err)
 	assert.Len(t, makes, 3)
@@ -90,7 +90,7 @@ func TestGetMakes_WithoutQuery(t *testing.T) {
 	mock.ExpectQuery("SELECT DISTINCT m.name FROM Make m JOIN Car c ON m.id = c.make_id JOIN AdCar ac ON c.id = ac.car_id ORDER BY m.name").
 		WillReturnRows(rows)
 
-	makes, err := GetMakes("")
+	makes, err := getMakes("")
 
 	assert.NoError(t, err)
 	assert.Len(t, makes, 3)

@@ -169,7 +169,7 @@ func SearchCreateLoaderURL(userPrompt, nextCursor, view string, threshold float6
 // Helper function to render new ad button based on user login
 func renderNewAdButton(userID int) g.Node {
 	if userID != 0 {
-		return StyledLink("New Ad", "/new-ad", buttonPrimary)
+		return styledLink("New Ad", "/new-ad", buttonPrimary)
 	}
-	return StyledLinkDisabled("New Ad", buttonPrimary)
+	return styledLinkDisabled("New Ad", buttonPrimary)
 }

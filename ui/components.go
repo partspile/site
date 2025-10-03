@@ -71,23 +71,15 @@ func styledButton(text string, variant ButtonVariant, attrs ...g.Node) g.Node {
 	return Button(append(allAttrs, g.Text(text))...)
 }
 
-func StyledLink(text string, href string, variant ButtonVariant, attrs ...g.Node) g.Node {
+func styledLink(text string, href string, variant ButtonVariant, attrs ...g.Node) g.Node {
 	allAttrs := append([]g.Node{Href(href), Class(getButtonClass(variant))}, attrs...)
 	return A(append(allAttrs, g.Text(text))...)
 }
 
-func StyledLinkDisabled(text string, variant ButtonVariant) g.Node {
+func styledLinkDisabled(text string, variant ButtonVariant) g.Node {
 	return Span(
 		Class(getButtonClass(variant)+" opacity-50 cursor-not-allowed"),
 		g.Text(text),
-	)
-}
-
-func BackToListingsButton() g.Node {
-	return A(
-		Href("/"),
-		Class("text-blue-500 hover:underline"),
-		g.Text("← Back to listings"),
 	)
 }
 
@@ -149,7 +141,7 @@ func ErrorPage(code int, message string) g.Node {
 }
 
 // LoaderDiv renders the loader for infinite scroll (kept for compatibility)
-func LoaderDiv(url string, view string) g.Node {
+func loaderDiv(url string, view string) g.Node {
 	return Div(
 		ID("infinite-scroll-loader"),
 		Class("h-4"),

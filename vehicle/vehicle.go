@@ -526,46 +526,6 @@ func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, 
 	return engines, nil
 }
 
-// AddParentCompany inserts a new parent company
-func AddParentCompany(name, country string) (int, error) {
-	res, err := db.Exec("INSERT INTO ParentCompany (name, country) VALUES (?, ?)", name, country)
-	if err != nil {
-		return 0, err
-	}
-	id, err := res.LastInsertId()
-	return int(id), err
-}
-
-// UpdateParentCompanyCountry updates the country for a parent company
-func UpdateParentCompanyCountry(id int, country string) error {
-	_, err := db.Exec("UPDATE ParentCompany SET country = ? WHERE id = ?", country, id)
-	return err
-}
-
-// GetParentCompaniesForMake returns the parent company name for a given make
-func GetParentCompaniesForMake(makeName string) ([]string, error) {
-	rows, err := db.Query(`
-		SELECT pc.name
-		FROM ParentCompany pc
-		JOIN Make m ON pc.id = m.parent_company_id
-		WHERE m.name = ?
-	`, makeName)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var parentCompanies []string
-	for rows.Next() {
-		var pcName string
-		if err := rows.Scan(&pcName); err != nil {
-			return nil, err
-		}
-		parentCompanies = append(parentCompanies, pcName)
-	}
-	return parentCompanies, nil
-}
-
 // GetParentCompanyInfoForMake returns the parent company information for a given make
 func GetParentCompanyInfoForMake(makeName string) (*ParentCompanyInfo, error) {
 	rows, err := db.Query(`

@@ -82,18 +82,3 @@ func Begin() (*sql.Tx, error) {
 func Select(dest interface{}, query string, args ...interface{}) error {
 	return Get().Select(dest, query, args...)
 }
-
-// GetRow executes a query and scans the result into dest (single struct)
-func GetRow(dest interface{}, query string, args ...interface{}) error {
-	return Get().Get(dest, query, args...)
-}
-
-// NamedExec executes a named query that doesn't return rows
-func NamedExec(query string, arg interface{}) (sql.Result, error) {
-	return Get().NamedExec(query, arg)
-}
-
-// NamedQuery executes a named query that returns rows
-func NamedQuery(query string, arg interface{}) (*sqlx.Rows, error) {
-	return Get().NamedQuery(query, arg)
-}

@@ -383,7 +383,7 @@ func RocksPage(currentUser *user.User, path string) g.Node {
 					),
 					Div(
 						Class("text-center"),
-						StyledLink("Continue to Login", "/login", buttonPrimary,
+						styledLink("Continue to Login", "/login", buttonPrimary,
 							Class("text-lg px-8 py-3"),
 						),
 					),
