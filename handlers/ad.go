@@ -36,9 +36,9 @@ import (
 )
 
 func HandleNewAd(c *fiber.Ctx) error {
-	currentUser, err := CurrentUser(c)
-	if err != nil {
-		return err
+	currentUser, _ := CurrentUser(c)
+	if currentUser == nil {
+		return fiber.NewError(fiber.StatusUnauthorized, "user not logged in")
 	}
 	makes := vehicle.GetMakes()
 	categories := part.GetCategories() // Use cached static data
@@ -98,9 +98,9 @@ Example input: "97333" -> {"city": "Corvallis", "admin_area": "OR",
 }
 
 func HandleNewAdSubmission(c *fiber.Ctx) error {
-	currentUser, err := CurrentUser(c)
-	if err != nil {
-		return err
+	_, userID := CurrentUser(c)
+	if userID == 0 {
+		return fiber.NewError(fiber.StatusUnauthorized, "user not logged in")
 	}
 
 	// Resolve and store location first
@@ -110,7 +110,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, "Could not resolve location.")
 	}
 
-	newAd, imageFiles, _, err := BuildAdFromForm(c, currentUser.ID, locID)
+	newAd, imageFiles, _, err := BuildAdFromForm(c, userID, locID)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
@@ -146,7 +146,7 @@ func HandleAdPage(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	currentUser, userID := getUser(c)
+	currentUser, userID := CurrentUser(c)
 
 	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
@@ -157,7 +157,7 @@ func HandleAdPage(c *fiber.Ctx) error {
 }
 
 func HandleEditAd(c *fiber.Ctx) error {
-	currentUser, _ := getUser(c)
+	currentUser, _ := CurrentUser(c)
 	adID, err := ParseIntParam(c, "id")
 	if err != nil {
 		return err
@@ -196,9 +196,9 @@ func HandleEditAd(c *fiber.Ctx) error {
 
 func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	println("HandleUpdateAdSubmission")
-	currentUser, err := CurrentUser(c)
-	if err != nil {
-		return err
+	currentUser, _ := CurrentUser(c)
+	if currentUser == nil {
+		return fiber.NewError(fiber.StatusUnauthorized, "user not logged in")
 	}
 
 	adID, err := ParseIntParam(c, "id")
@@ -268,7 +268,7 @@ func HandleAdCard(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
-	currentUser, userID := getUser(c)
+	currentUser, userID := CurrentUser(c)
 	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
@@ -294,7 +294,7 @@ func HandleAdDetail(c *fiber.Ctx) error {
 	// Increment global click count
 	_ = ad.IncrementAdClick(adID)
 
-	currentUser, userID := getUser(c)
+	currentUser, userID := CurrentUser(c)
 	if userID != 0 {
 		_ = ad.IncrementAdClickForUser(adID, userID)
 		// Queue user for background embedding update
@@ -316,10 +316,7 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	currentUser, err := CurrentUser(c)
-	if err != nil {
-		return err
-	}
+	currentUser, _ := CurrentUser(c)
 	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
@@ -354,10 +351,7 @@ func HandleEditAdPartial(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
-	currentUser, err := CurrentUser(c)
-	if err != nil {
-		return err
-	}
+	currentUser, _ := CurrentUser(c)
 	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")

@@ -6,6 +6,6 @@ import (
 )
 
 func HandleSettings(c *fiber.Ctx) error {
-	currentUser, _ := getUser(c)
+	currentUser, _ := CurrentUser(c)
 	return render(c, ui.SettingsPage(currentUser, c.Path()))
 }

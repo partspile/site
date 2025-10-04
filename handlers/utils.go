@@ -5,7 +5,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/config"
-	"github.com/parts-pile/site/user"
 	g "maragu.dev/gomponents"
 )
 
@@ -37,14 +36,4 @@ func getLocation(c *fiber.Ctx) *time.Location {
 }
 func getView(c *fiber.Ctx) string {
 	return c.Query("view", "list")
-}
-
-// getUser gets the current user and their ID
-func getUser(c *fiber.Ctx) (*user.User, int) {
-	currentUser, _ := CurrentUser(c)
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
-	return currentUser, userID
 }

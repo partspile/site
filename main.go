@@ -88,6 +88,9 @@ func main() {
 	// Add logger middleware
 	app.Use(logger.New())
 
+	// Add global user stashing middleware - populates c.Locals("user") for all requests
+	app.Use(handlers.StashUser)
+
 	// Static files and utility
 	app.Static("/", "./static")
 	app.Get("/.well-known/appspecific/com.chrome.devtools.json", func(c *fiber.Ctx) error {
@@ -95,25 +98,25 @@ func main() {
 	})
 
 	// Main pages
-	app.Get("/", handlers.OptionalAuth, handlers.HandleHome)                  // x
-	app.Get("/search", handlers.OptionalAuth, handlers.HandleSearch)          // x
-	app.Get("/search-page", handlers.OptionalAuth, handlers.HandleSearchPage) // x
+	app.Get("/", handlers.HandleHome)                  // x
+	app.Get("/search", handlers.HandleSearch)          // x
+	app.Get("/search-page", handlers.HandleSearchPage) // x
 
 	// Tree view routes - split by browse vs search mode
-	app.Get("/tree-browse-expand/*", handlers.OptionalAuth, handlers.HandleTreeExpandBrowse)     // x
-	app.Get("/tree-browse-collapse/*", handlers.OptionalAuth, handlers.HandleTreeCollapseBrowse) // x
-	app.Get("/tree-search-expand/*", handlers.OptionalAuth, handlers.HandleTreeExpandSearch)     // x
-	app.Get("/tree-search-collapse/*", handlers.OptionalAuth, handlers.HandleTreeCollapseSearch) // x
+	app.Get("/tree-browse-expand/*", handlers.HandleTreeExpandBrowse)     // x
+	app.Get("/tree-browse-collapse/*", handlers.HandleTreeCollapseBrowse) // x
+	app.Get("/tree-search-expand/*", handlers.HandleTreeExpandSearch)     // x
+	app.Get("/tree-search-collapse/*", handlers.HandleTreeCollapseSearch) // x
 
 	// Ad in-place expand/collapse partials for htmx
-	app.Get("/ad/card/:id", handlers.OptionalAuth, handlers.HandleAdCard)     // x
-	app.Get("/ad/detail/:id", handlers.OptionalAuth, handlers.HandleAdDetail) // x
+	app.Get("/ad/card/:id", handlers.HandleAdCard)     // x
+	app.Get("/ad/detail/:id", handlers.HandleAdDetail) // x
 	app.Get("/ad/edit-partial/:id", handlers.AuthRequired, handlers.HandleEditAdPartial)
 	app.Get("/ad/image/:adID/:idx", handlers.HandleAdImage) // x
 
 	// Ad management
-	app.Get("/ad/:id", handlers.OptionalAuth, handlers.HandleAdPage) // x
-	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd)  // x
+	app.Get("/ad/:id", handlers.HandleAdPage)                       // x
+	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd) // x
 	app.Get("/edit-ad/:id", handlers.AuthRequired, handlers.HandleEditAd)
 	app.Delete("/delete-ad/:id", handlers.AuthRequired, handlers.HandleDeleteAd)
 
@@ -137,7 +140,7 @@ func main() {
 	api.Get("/ad-image-url/:adID", handlers.HandleAdImageSignedURL)
 
 	// Rock system (API)
-	api.Get("/ad-rocks/:id", handlers.OptionalAuth, handlers.HandleAdRocks)
+	api.Get("/ad-rocks/:id", handlers.HandleAdRocks)
 	api.Post("/throw-rock/:id", handlers.AuthRequired, handlers.HandleThrowRock)
 	api.Get("/ad-rocks/:id/conversations", handlers.HandleViewRockConversations)
 	api.Post("/resolve-rock/:id", handlers.AuthRequired, handlers.HandleResolveRock)
@@ -200,10 +203,10 @@ func main() {
 	api.Get("/messages/:action", handlers.AuthRequired, handlers.HandleMessagesAPI)
 
 	// Views for HTMX view switching
-	app.Post("/view/list", handlers.OptionalAuth, handlers.HandleListView) // x
-	app.Post("/view/tree", handlers.OptionalAuth, handlers.HandleTreeView) // x
-	app.Post("/view/grid", handlers.OptionalAuth, handlers.HandleGridView) // x
-	app.Post("/view/map", handlers.OptionalAuth, handlers.HandleMapView)   // x
+	app.Post("/view/list", handlers.HandleListView) // x
+	app.Post("/view/tree", handlers.HandleTreeView) // x
+	app.Post("/view/grid", handlers.HandleGridView) // x
+	app.Post("/view/map", handlers.HandleMapView)   // x
 
 	// Start background user embedding processor
 	vector.StartUserBackgroundProcessor()

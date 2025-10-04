@@ -99,9 +99,10 @@ func GetCurrentUser(c *fiber.Ctx) (*user.User, error) {
 }
 
 // AuthRequired is a middleware that requires a user to be logged in.
+// Assumes StashUser middleware has already run and populated c.Locals("user").
 func AuthRequired(c *fiber.Ctx) error {
-	user, err := GetCurrentUser(c)
-	if err != nil {
+	u, _ := CurrentUser(c)
+	if u == nil {
 		// For HTMX requests, return a redirect response that HTMX can handle
 		if c.Get("HX-Request") != "" {
 			c.Set("HX-Redirect", "/login")
@@ -111,33 +112,40 @@ func AuthRequired(c *fiber.Ctx) error {
 		return c.Redirect("/login", fiber.StatusSeeOther)
 	}
 
-	// Store user in context for downstream handlers
-	c.Locals("user", user)
-
 	return c.Next()
 }
 
-// OptionalAuth is a middleware that checks for a user but does not require one.
-func OptionalAuth(c *fiber.Ctx) error {
+// StashUser is a global middleware that populates c.Locals("user") for all requests.
+// It either stores a valid user object or nil, ensuring subsequent middleware/handlers
+// can always rely on c.Locals("user") being populated.
+func StashUser(c *fiber.Ctx) error {
+	// Always try to get user from session and stash in context
 	user, err := GetCurrentUser(c)
 	if err == nil {
 		c.Locals("user", user)
+	} else {
+		c.Locals("user", nil) // Explicitly set to nil for consistency
 	}
 	return c.Next()
 }
 
 // AdminRequired is a middleware that requires a user to be an admin.
+// Assumes StashUser middleware has already run and populated c.Locals("user").
 func AdminRequired(c *fiber.Ctx) error {
-	user, err := GetCurrentUser(c)
-	if err != nil {
+	u, _ := CurrentUser(c)
+	if u == nil {
+		// For HTMX requests, return a redirect response that HTMX can handle
+		if c.Get("HX-Request") != "" {
+			c.Set("HX-Redirect", "/login")
+			return c.Status(fiber.StatusSeeOther).SendString("")
+		}
+		// For regular requests, redirect to login page
 		return c.Redirect("/login", fiber.StatusSeeOther)
 	}
 
-	if !user.IsAdmin {
+	if !u.IsAdmin {
 		return c.Status(fiber.StatusForbidden).SendString("Forbidden")
 	}
-
-	c.Locals("user", user)
 
 	return c.Next()
 }
@@ -305,23 +313,29 @@ func HandleDeleteAccount(c *fiber.Ctx) error {
 	return render(c, ui.SuccessMessage("Account deleted successfully", "/"))
 }
 
-// CurrentUser extracts the user from context, or falls back to session if not present.
-func CurrentUser(c *fiber.Ctx) (*user.User, error) {
-	u, ok := c.Locals("user").(*user.User)
-	if ok && u != nil {
-		log.Printf("[DEBUG] CurrentUser returning user from context: userID=%d", u.ID)
-		return u, nil
+// CurrentUser extracts the user from context and returns both user and userID.
+// Returns (nil, 0) if no user is logged in.
+// Assumes StashUser middleware has already run and populated c.Locals("user").
+func CurrentUser(c *fiber.Ctx) (*user.User, int) {
+	localUser := c.Locals("user")
+	if localUser == nil {
+		return nil, 0
 	}
-	log.Printf("[DEBUG] CurrentUser no user in context, falling back to session")
-	// Fallback to session-based extraction
-	return GetCurrentUser(c)
+
+	u, ok := localUser.(*user.User)
+	if !ok || u == nil {
+		return nil, 0
+	}
+
+	log.Printf("[DEBUG] CurrentUser returning user from context: userID=%d", u.ID)
+	return u, u.ID
 }
 
 // RequireAdmin extracts the user from context and checks admin status.
 func RequireAdmin(c *fiber.Ctx) (*user.User, error) {
-	u, err := CurrentUser(c)
-	if err != nil {
-		return nil, err
+	u, _ := CurrentUser(c)
+	if u == nil {
+		return nil, fiber.NewError(fiber.StatusUnauthorized, "no user in session")
 	}
 	if !u.IsAdmin {
 		return nil, fiber.NewError(fiber.StatusForbidden, "admin access required")
@@ -331,9 +345,9 @@ func RequireAdmin(c *fiber.Ctx) (*user.User, error) {
 
 // RequireOwnership checks if the current user owns the resource.
 func RequireOwnership(c *fiber.Ctx, resourceUserID int) (*user.User, error) {
-	u, err := CurrentUser(c)
-	if err != nil {
-		return nil, err
+	u, _ := CurrentUser(c)
+	if u == nil {
+		return nil, fiber.NewError(fiber.StatusUnauthorized, "no user in session")
 	}
 	if u.ID != resourceUserID {
 		return nil, fiber.NewError(fiber.StatusForbidden, "not resource owner")

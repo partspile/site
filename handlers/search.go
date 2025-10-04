@@ -155,7 +155,7 @@ func HandleSearchAPI(c *fiber.Ctx) error {
 			"ads":   []ad.Ad{},
 		})
 	}
-	currentUser, _ := getUser(c)
+	currentUser, _ := CurrentUser(c)
 
 	adIDs, nextCursor, err := view.GetAdIDs()
 	if err != nil {
@@ -190,6 +190,6 @@ func HandleSearchAPI(c *fiber.Ctx) error {
 // saveUserSearch saves user search and queues user for embedding update
 func saveUserSearch(c *fiber.Ctx) {
 	userPrompt := getQueryParam(c, "q")
-	_, userID := getUser(c)
+	_, userID := CurrentUser(c)
 	saveUserSearchAndQueue(userPrompt, userID)
 }

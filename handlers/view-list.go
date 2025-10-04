@@ -23,7 +23,7 @@ func (v *ListView) GetAdIDs() ([]int, string, error) {
 func (v *ListView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
 	threshold := getThreshold(v.ctx)
-	currentUser, userID := getUser(v.ctx)
+	currentUser, userID := CurrentUser(v.ctx)
 	loc := getLocation(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering
@@ -41,7 +41,7 @@ func (v *ListView) RenderSearchResults(adIDs []int, nextCursor string) error {
 func (v *ListView) RenderSearchPage(adIDs []int, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
 	threshold := getThreshold(v.ctx)
-	currentUser, userID := getUser(v.ctx)
+	currentUser, userID := CurrentUser(v.ctx)
 	loc := getLocation(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering

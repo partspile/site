@@ -43,7 +43,7 @@ func (v *MapView) GetAdIDs() ([]int, string, error) {
 }
 
 func (v *MapView) RenderSearchResults(adIDs []int, nextCursor string) error {
-	currentUser, userID := getUser(v.ctx)
+	currentUser, userID := CurrentUser(v.ctx)
 	loc := getLocation(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering
@@ -56,7 +56,7 @@ func (v *MapView) RenderSearchResults(adIDs []int, nextCursor string) error {
 }
 
 func (v *MapView) RenderSearchPage(adIDs []int, nextCursor string) error {
-	currentUser, userID := getUser(v.ctx)
+	currentUser, userID := CurrentUser(v.ctx)
 	loc := getLocation(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering

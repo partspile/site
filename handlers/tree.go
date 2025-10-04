@@ -62,7 +62,7 @@ func HandleTreeCollapseBrowse(c *fiber.Ctx) error {
 }
 
 func HandleTreeExpandBrowse(c *fiber.Ctx) error {
-	_, userID := getUser(c)
+	_, userID := CurrentUser(c)
 	loc := getLocation(c)
 	path := c.Params("*")
 	name, level, parts := parsePath(path)
@@ -121,7 +121,7 @@ func HandleTreeCollapseSearch(c *fiber.Ctx) error {
 }
 
 func HandleTreeExpandSearch(c *fiber.Ctx) error {
-	_, userID := getUser(c)
+	_, userID := CurrentUser(c)
 	loc := getLocation(c)
 	path := c.Params("*")
 	name, level, parts := parsePath(path)

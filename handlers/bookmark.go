@@ -9,7 +9,7 @@ import (
 
 // Handler to bookmark an ad
 func HandleBookmarkAd(c *fiber.Ctx) error {
-	currentUser, userID := getUser(c)
+	currentUser, userID := CurrentUser(c)
 	adID, err := ParseIntParam(c, "id")
 	if err != nil {
 		return err
@@ -30,7 +30,7 @@ func HandleBookmarkAd(c *fiber.Ctx) error {
 
 // Handler to unbookmark an ad
 func HandleUnbookmarkAd(c *fiber.Ctx) error {
-	currentUser, userID := getUser(c)
+	currentUser, userID := CurrentUser(c)
 	adID, err := ParseIntParam(c, "id")
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func HandleUnbookmarkAd(c *fiber.Ctx) error {
 }
 
 func HandleBookmarksPage(c *fiber.Ctx) error {
-	currentUser, userID := getUser(c)
+	currentUser, userID := CurrentUser(c)
 	adIDs, err := ad.GetBookmarkedAdIDs(userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ad IDs")
