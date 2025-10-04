@@ -37,9 +37,6 @@ import (
 
 func HandleNewAd(c *fiber.Ctx) error {
 	currentUser, _ := CurrentUser(c)
-	if currentUser == nil {
-		return fiber.NewError(fiber.StatusUnauthorized, "user not logged in")
-	}
 	makes := vehicle.GetMakes()
 	categories := part.GetCategories() // Use cached static data
 
@@ -99,9 +96,6 @@ Example input: "97333" -> {"city": "Corvallis", "admin_area": "OR",
 
 func HandleNewAdSubmission(c *fiber.Ctx) error {
 	_, userID := CurrentUser(c)
-	if userID == 0 {
-		return fiber.NewError(fiber.StatusUnauthorized, "user not logged in")
-	}
 
 	// Resolve and store location first
 	locationRaw := c.FormValue("location")
@@ -197,9 +191,6 @@ func HandleEditAd(c *fiber.Ctx) error {
 func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 	println("HandleUpdateAdSubmission")
 	currentUser, _ := CurrentUser(c)
-	if currentUser == nil {
-		return fiber.NewError(fiber.StatusUnauthorized, "user not logged in")
-	}
 
 	adID, err := ParseIntParam(c, "id")
 	if err != nil {

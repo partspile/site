@@ -129,9 +129,6 @@ func HandleSMSWebhook(c *fiber.Ctx) error {
 // HandleUpdateNotificationMethod updates the user's notification method preference
 func HandleUpdateNotificationMethod(c *fiber.Ctx) error {
 	currentUser, _ := CurrentUser(c)
-	if currentUser == nil {
-		return fiber.NewError(fiber.StatusUnauthorized, "Authentication required")
-	}
 
 	var request struct {
 		NotificationMethod string  `json:"notificationMethod"`
@@ -177,9 +174,6 @@ func HandleUpdateNotificationMethod(c *fiber.Ctx) error {
 func HandleNotificationMethodChanged(c *fiber.Ctx) error {
 	// Get the current user to retrieve their saved email address
 	currentUser, _ := CurrentUser(c)
-	if currentUser == nil {
-		return fiber.NewError(fiber.StatusUnauthorized, "Authentication required")
-	}
 
 	// Get the selected notification method from the form data
 	notificationMethod := c.FormValue("notificationMethod")

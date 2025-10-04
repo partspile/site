@@ -13,9 +13,6 @@ import (
 
 func HandleAdminDashboard(c *fiber.Ctx) error {
 	currentUser, _ := CurrentUser(c)
-	if currentUser == nil {
-		return fiber.NewError(fiber.StatusUnauthorized, "user not logged in")
-	}
 
 	// Default to b2-cache section
 	if c.Get("HX-Request") != "" {
@@ -31,9 +28,6 @@ func HandleAdminDashboard(c *fiber.Ctx) error {
 
 func HandleAdminB2Cache(c *fiber.Ctx) error {
 	currentUser, _ := CurrentUser(c)
-	if currentUser == nil {
-		return fiber.NewError(fiber.StatusUnauthorized, "user not logged in")
-	}
 
 	stats := b2util.GetCacheStats()
 
@@ -77,9 +71,6 @@ func HandleRefreshB2Token(c *fiber.Ctx) error {
 
 func HandleAdminEmbeddingCache(c *fiber.Ctx) error {
 	currentUser, _ := CurrentUser(c)
-	if currentUser == nil {
-		return fiber.NewError(fiber.StatusUnauthorized, "user not logged in")
-	}
 
 	stats := vector.GetEmbeddingCacheStats()
 
@@ -122,9 +113,6 @@ func HandleClearSiteEmbeddingCache(c *fiber.Ctx) error {
 
 func HandleAdminVehicleCache(c *fiber.Ctx) error {
 	currentUser, _ := CurrentUser(c)
-	if currentUser == nil {
-		return fiber.NewError(fiber.StatusUnauthorized, "user not logged in")
-	}
 
 	stats := vehicle.GetVehicleCacheStats()
 
