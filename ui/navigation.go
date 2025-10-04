@@ -161,7 +161,7 @@ func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
 
 	return Div(
 		ID("user-menu-popup"),
-		Class("fixed inset-0 bg-black bg-opacity-30 z-50"),
+		Class("fixed inset-0 bg-black/30 z-50"),
 		g.Attr("onclick", "this.remove()"),
 		Div(
 			Class("fixed top-16 right-4 pointer-events-none"),
