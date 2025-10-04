@@ -24,4 +24,4 @@ WORKDIR /app
 COPY --from=go-builder /site ./
 COPY --from=go-builder /app/static ./static
 EXPOSE 8000
-CMD ["./site"]
+CMD ["/app/site"]
