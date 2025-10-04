@@ -4,7 +4,7 @@
 FROM node:20-alpine AS css-builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --include=dev
 COPY static/css/input.css ./static/css/
 COPY tailwind.config.js ./
 RUN npm run build-css-prod
