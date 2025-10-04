@@ -22,6 +22,34 @@ func ValidateRequired(c *fiber.Ctx, fieldName, displayName string) (string, erro
 	return value, nil
 }
 
+// ValidateCleanText validates that text contains only clean characters and is within length limits
+func ValidateCleanText(c *fiber.Ctx, fieldName, displayName string, maxLength int) (string, error) {
+	value := c.FormValue(fieldName)
+	if value == "" {
+		return "", fmt.Errorf("%s is required", displayName)
+	}
+
+	// Trim whitespace
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "", fmt.Errorf("%s cannot be empty", displayName)
+	}
+
+	// Check length
+	if len(value) > maxLength {
+		return "", fmt.Errorf("%s must be %d characters or less", displayName, maxLength)
+	}
+
+	// Check for printable ASCII characters only (0x20-0x7E)
+	for _, char := range value {
+		if char < 0x20 || char > 0x7E {
+			return "", fmt.Errorf("%s contains invalid characters. Only printable ASCII characters are allowed", displayName)
+		}
+	}
+
+	return value, nil
+}
+
 // ValidateEmail validates that a string is a valid email address
 func ValidateEmail(email string) error {
 	if email == "" {
@@ -181,7 +209,7 @@ func ValidateAndParsePrice(c *fiber.Ctx) (float64, error) {
 
 // BuildAdFromForm builds an Ad struct from form data
 func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.Ad, []*multipart.FileHeader, []int, error) {
-	title, err := ValidateRequired(c, "title", "Title")
+	title, err := ValidateCleanText(c, "title", "Title", 35)
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
 	}

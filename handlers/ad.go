@@ -38,7 +38,7 @@ import (
 func HandleNewAd(c *fiber.Ctx) error {
 	currentUser, _ := CurrentUser(c)
 	makes := vehicle.GetMakes()
-	categories := part.GetCategories() // Use cached static data
+	categories := part.GetCategories()
 
 	return render(c, ui.NewAdPage(currentUser, c.Path(), makes, categories))
 }

@@ -1,0 +1,25 @@
+{
+  "name": "site",
+  "version": "1.0.0",
+  "description": "A Go-based auto parts marketplace built with Fiber, HTMX, and Gomponents.",
+  "main": "index.js",
+  "scripts": {
+    "build-css": "tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch",
+    "build-css-prod": "tailwindcss -i ./static/css/input.css -o ./static/css/output.css --minify"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/partspile/site.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/partspile/site/issues"
+  },
+  "homepage": "https://github.com/partspile/site#readme",
+  "devDependencies": {
+    "tailwindcss": "^4.1.14"
+  }
+}

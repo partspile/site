@@ -45,7 +45,7 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 			// Stylesheets
 			Link(
 				Rel("stylesheet"),
-				Href(config.TailwindCSSURL),
+				Href("/css/output.css"),
 			),
 			Script(
 				Type("text/javascript"),
