@@ -122,7 +122,12 @@ func descriptionTextareaField() g.Node {
 			ID("description"),
 			Name("description"),
 			Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
+			Required(),
+			MaxLength("500"),
 			Rows("4"),
+			Pattern("[\\x20-\\x7E]+"),
+			Title("Description must contain printable ASCII characters only"),
+			g.Attr("oninput", "this.checkValidity()"),
 		),
 	)
 }
@@ -134,8 +139,11 @@ func priceInputField() g.Node {
 			ID("price"),
 			Name("price"),
 			Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
-			Step("0.01"),
+			Required(),
+			Step("1"),
 			Min("0"),
+			g.Attr("title", "Price must be >= 0"),
+			g.Attr("oninput", "this.checkValidity()"),
 		),
 	)
 }
