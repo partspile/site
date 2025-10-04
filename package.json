@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build-css": "tailwindcss -i ./static/css/input.css -o ./static/css/output.css --watch",
+    "build-css-dev": "tailwindcss -i ./static/css/input.css -o ./static/css/output.css",
     "build-css-prod": "tailwindcss -i ./static/css/input.css -o ./static/css/output.css --minify"
   },
   "repository": {
@@ -15,11 +16,12 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "devDependencies": {
+    "tailwindcss": "^4.1.14",
+    "@tailwindcss/cli": "^4.1.14"
+  },
   "bugs": {
     "url": "https://github.com/partspile/site/issues"
   },
-  "homepage": "https://github.com/partspile/site#readme",
-  "devDependencies": {
-    "tailwindcss": "^4.1.14"
-  }
+  "homepage": "https://github.com/partspile/site#readme"
 }
