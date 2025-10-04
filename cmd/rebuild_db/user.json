@@ -2,12 +2,12 @@
   {
     "name": "test",
     "password": "test",
-    "phone": "+15035238780"
+    "phone": "+15555555555"
   },
   {
     "name": "admin",
     "password": "admin",
-    "phone": "+15037068064",
+    "phone": "+15555555556",
     "is_admin": true
   },
   {
