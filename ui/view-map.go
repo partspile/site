@@ -62,9 +62,7 @@ func generateMapImageURL(adID int, idx int) string {
 		return ""
 	}
 
-	base := fmt.Sprintf("%s/%d/%d", config.B2FileServerURL, adID, idx)
-	// Use 480w for map popups - good balance of quality and file size
-	return fmt.Sprintf("%s-480w.webp?Authorization=%s", base, token)
+	return config.GetB2ImageURL(adID, idx, "480w", token)
 }
 
 // MapDataOnly returns just the map data container for HTMX updates

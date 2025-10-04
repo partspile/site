@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"time"
 )
@@ -18,8 +19,6 @@ const (
 	B2DownloadTokenExpiry  = 3600 // seconds (1 hour)
 	B2AuthEndpoint         = "https://api.backblazeb2.com/b2api/v2/b2_authorize_account"
 	B2DownloadAuthEndpoint = "/b2api/v2/b2_get_download_authorization"
-	B2BucketName           = "parts-pile"
-	B2FileServerURL        = "https://f004.backblazeb2.com/file/parts-pile"
 
 	// Qdrant vector database configuration
 	QdrantPort       = 6334
@@ -65,6 +64,7 @@ var (
 	B2KeyID       = getEnvWithDefault("BACKBLAZE_KEY_ID", "")
 	B2AppKey      = getEnvWithDefault("BACKBLAZE_APP_KEY", "")
 	B2BucketID    = getEnvWithDefault("B2_BUCKET_ID", "")
+	B2BucketName  = getEnvWithDefault("B2_BUCKET_NAME", "")
 
 	// Qdrant vector database configuration
 	QdrantHost       = getEnvWithDefault("QDRANT_HOST", "")
@@ -95,4 +95,10 @@ func getEnvWithDefault(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// GetB2ImageURL returns the complete B2 image URL for a given ad and image index
+func GetB2ImageURL(adID, imageIndex int, size string, token string) string {
+	return fmt.Sprintf("https://f004.backblazeb2.com/file/%s/%d/%d-%s.webp?Authorization=%s",
+		B2BucketName, adID, imageIndex, size, token)
 }

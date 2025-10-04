@@ -63,9 +63,7 @@ func adGridImageSrc(adID int, idx int) string {
 		return ""
 	}
 
-	base := fmt.Sprintf("%s/%d/%d", config.B2FileServerURL, adID, idx)
-	// Use 480w for grid cards - good balance of quality and file size for fixed grid layout
-	return fmt.Sprintf("%s-480w.webp?Authorization=%s", base, token)
+	return config.GetB2ImageURL(adID, idx, "480w", token)
 }
 
 func adGridImage(adID int, alt string) g.Node {

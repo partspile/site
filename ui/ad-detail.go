@@ -70,9 +70,7 @@ func AdCarouselImageSrc(adID int, idx int) string {
 		return ""
 	}
 
-	base := fmt.Sprintf("%s/%d/%d", config.B2FileServerURL, adID, idx)
-	// Use 1200w for carousel - high quality for main display
-	return fmt.Sprintf("%s-1200w.webp?Authorization=%s", base, token)
+	return config.GetB2ImageURL(adID, idx, "1200w", token)
 }
 
 func AdCarouselImage(adID int, idx int) g.Node {
@@ -124,9 +122,7 @@ func adThumbnailImageSrc(adID int, idx int) string {
 		return ""
 	}
 
-	base := fmt.Sprintf("%s/%d/%d", config.B2FileServerURL, adID, idx)
-	// Use 160w for thumbnails - small size for navigation
-	return fmt.Sprintf("%s-160w.webp?Authorization=%s", base, token)
+	return config.GetB2ImageURL(adID, idx, "160w", token)
 }
 
 func adThumbnailImage(adID int, idx int, alt string) g.Node {

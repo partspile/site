@@ -11,6 +11,7 @@ import (
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/user"
 )
 
@@ -544,10 +545,7 @@ func AdImageURLs(adID int, imageCount int) []string {
 
 	for i := 1; i <= imageCount; i++ {
 		// Use 160w size for gallery thumbnails
-		urls = append(urls, fmt.Sprintf(
-			"https://f004.backblazeb2.com/file/parts-pile/%d/%d-160w.webp?Authorization=%s",
-			adID, i, token,
-		))
+		urls = append(urls, config.GetB2ImageURL(adID, i, "160w", token))
 	}
 	return urls
 }
@@ -559,14 +557,13 @@ func AdImageSrcSet(adID int, idx int, context string) (src, srcset string) {
 		return "", ""
 	}
 
-	baseURL := fmt.Sprintf("https://f004.backblazeb2.com/file/parts-pile/%d/%d", adID, idx)
-	src = fmt.Sprintf("%s-320w.webp?Authorization=%s", baseURL, token)
+	src = config.GetB2ImageURL(adID, idx, "320w", token)
 
 	// Generate srcset for different sizes
 	sizes := []string{"320w", "640w", "1280w"}
 	srcsetParts := []string{}
 	for _, size := range sizes {
-		srcsetParts = append(srcsetParts, fmt.Sprintf("%s-%s.webp?Authorization=%s %s", baseURL, size, token, size))
+		srcsetParts = append(srcsetParts, fmt.Sprintf("%s %s", config.GetB2ImageURL(adID, idx, size, token), size))
 	}
 	srcset = strings.Join(srcsetParts, ", ")
 
