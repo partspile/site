@@ -14,4 +14,4 @@ COPY --from=go-builder /site ./
 COPY --from=go-builder /app/static ./static
 COPY --from=go-builder /app/project.db ./
 EXPOSE 8000
-CMD ["/site"]
+CMD ["./site"]
