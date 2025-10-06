@@ -178,6 +178,7 @@ func main() {
 	// Legal pages
 	app.Get("/terms", handlers.HandleTermsOfService)
 	app.Get("/privacy", handlers.HandlePrivacyPolicy)
+	app.Get("/about", handlers.HandleAbout)
 
 	// Sitemap
 	app.Get("/sitemap.xml", handlers.HandleSitemap)
