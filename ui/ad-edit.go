@@ -222,7 +222,7 @@ func editImagesInputField(adID int, imageCount int) g.Node {
 									Type("button"),
 									Class("absolute top-0 right-0 bg-white bg-opacity-80 rounded-full p-1 text-red-600 hover:text-red-800 z-10 delete-image-btn"),
 									g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", imageIdx)),
-									Img(Src("/images/trashcan.svg"), Alt("Delete"), Class("w-4 h-4")),
+									Img(Src("/images/trashcan.svg"), Alt("Delete"), Class("w-6 h-6")),
 								),
 							),
 						)
@@ -450,7 +450,7 @@ func AdEditPartial(adObj ad.Ad, makes, years, models, engines, categories, subca
 											Type("button"),
 											Class("absolute top-0 right-0 bg-white bg-opacity-80 rounded-full p-1 text-red-600 hover:text-red-800 z-10 delete-image-btn"),
 											g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", imageIdx)),
-											Img(Src("/images/trashcan.svg"), Alt("Delete"), Class("w-4 h-4")),
+											Img(Src("/images/trashcan.svg"), Alt("Delete"), Class("w-6 h-6")),
 										),
 									),
 								)
