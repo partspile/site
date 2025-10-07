@@ -132,19 +132,34 @@ func GetModels(makeName string, years []string) []string {
 		return cached
 	}
 
-	// Build placeholders for IN clause
-	yearPlaceholders := make([]string, len(years))
-	args := make([]interface{}, len(years)+1)
-	args[0] = makeName
-	for i, year := range years {
-		yearPlaceholders[i] = "?"
-		args[i+1] = year
+	// For multiple years, we want models that exist in ALL selected years (intersection)
+	// Build a query that finds models present in every selected year
+	query := `SELECT DISTINCT Model.name FROM Model
+	WHERE Model.id IN (
+		SELECT Car.model_id FROM Car
+		JOIN Make ON Car.make_id = Make.id
+		JOIN Year ON Car.year_id = Year.id
+		WHERE Make.name = ? AND Year.year = ?
+	)`
+
+	// Add additional year conditions for intersection
+	for i := 1; i < len(years); i++ {
+		query += ` AND Model.id IN (
+			SELECT Car.model_id FROM Car
+			JOIN Make ON Car.make_id = Make.id
+			JOIN Year ON Car.year_id = Year.id
+			WHERE Make.name = ? AND Year.year = ?
+		)`
 	}
-	query := `SELECT DISTINCT Model.name FROM Car
-	JOIN Make ON Car.make_id = Make.id
-	JOIN Model ON Car.model_id = Model.id
-	JOIN Year ON Car.year_id = Year.id
-	WHERE Make.name = ? AND Year.year IN (` + strings.Join(yearPlaceholders, ",") + `) ORDER BY Model.name`
+
+	query += ` ORDER BY Model.name`
+
+	// Build args: makeName repeated for each year
+	args := make([]interface{}, len(years)*2)
+	for i, year := range years {
+		args[i*2] = makeName
+		args[i*2+1] = year
+	}
 
 	var models []string
 	err := db.Select(&models, query, args...)
@@ -168,25 +183,43 @@ func GetEngines(makeName string, years []string, models []string) []string {
 		return cached
 	}
 
-	// Build placeholders for IN clauses
-	yearPlaceholders := make([]string, len(years))
-	modelPlaceholders := make([]string, len(models))
-	args := make([]interface{}, 0, 1+len(years)+len(models))
-	args = append(args, makeName)
-	for i, year := range years {
-		yearPlaceholders[i] = "?"
-		args = append(args, year)
+	// For multiple years/models, we want engines that exist in ALL combinations (intersection)
+	// Build a query that finds engines present in every year-model combination
+	query := `SELECT DISTINCT Engine.name FROM Engine
+	WHERE Engine.id IN (
+		SELECT Car.engine_id FROM Car
+		JOIN Make ON Car.make_id = Make.id
+		JOIN Model ON Car.model_id = Model.id
+		JOIN Year ON Car.year_id = Year.id
+		WHERE Make.name = ? AND Year.year = ? AND Model.name = ?
+	)`
+
+	// Add additional year-model conditions for intersection
+	for i := 1; i < len(years); i++ {
+		for j := 0; j < len(models); j++ {
+			query += ` AND Engine.id IN (
+				SELECT Car.engine_id FROM Car
+				JOIN Make ON Car.make_id = Make.id
+				JOIN Model ON Car.model_id = Model.id
+				JOIN Year ON Car.year_id = Year.id
+				WHERE Make.name = ? AND Year.year = ? AND Model.name = ?
+			)`
+		}
 	}
-	for i, model := range models {
-		modelPlaceholders[i] = "?"
-		args = append(args, model)
+
+	query += ` ORDER BY Engine.name`
+
+	// Build args: makeName, year, model for each combination
+	args := make([]interface{}, len(years)*len(models)*3)
+	argIndex := 0
+	for _, year := range years {
+		for _, model := range models {
+			args[argIndex] = makeName
+			args[argIndex+1] = year
+			args[argIndex+2] = model
+			argIndex += 3
+		}
 	}
-	query := `SELECT DISTINCT Engine.name FROM Car
-	JOIN Make ON Car.make_id = Make.id
-	JOIN Model ON Car.model_id = Model.id
-	JOIN Year ON Car.year_id = Year.id
-	JOIN Engine ON Car.engine_id = Engine.id
-	WHERE Make.name = ? AND Year.year IN (` + strings.Join(yearPlaceholders, ",") + `) AND Model.name IN (` + strings.Join(modelPlaceholders, ",") + `) ORDER BY Engine.name`
 
 	var engines []string
 	err := db.Select(&engines, query, args...)

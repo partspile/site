@@ -13,9 +13,9 @@ import (
 
 // ---- Layout Components ----
 
-func GridContainer5(children ...g.Node) g.Node {
+func GridContainer4(children ...g.Node) g.Node {
 	return Div(
-		Class("grid grid-cols-5 gap-2"),
+		Class("grid grid-cols-4 gap-2 p-4 bg-gray-50 border border-gray-200 rounded-lg"),
 		g.Group(children),
 	)
 }

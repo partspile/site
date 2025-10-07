@@ -110,9 +110,9 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes, yea
 				hx.Swap("outerHTML"),
 				editTitleInputField(currentAd.Title),
 				editMakeSelectField(makes, currentAd.Make),
-				formGroup("Years", "years", Div(ID("yearsDiv"), GridContainer5(yearCheckboxes...))),
-				formGroup("Models", "models", Div(ID("modelsDiv"), GridContainer5(modelCheckboxes...))),
-				formGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer5(engineCheckboxes...))),
+				formGroup("Years", "years", Div(ID("yearsDiv"), GridContainer4(yearCheckboxes...))),
+				formGroup("Models", "models", Div(ID("modelsDiv"), GridContainer4(modelCheckboxes...))),
+				formGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer4(engineCheckboxes...))),
 				catogorySelector(categories, func() string {
 					if currentAd.Category.Valid {
 						return currentAd.Category.String
@@ -361,7 +361,7 @@ func AdEditPartial(adObj ad.Ad, makes, years, models, engines, categories, subca
 						),
 					)
 				}
-				return GridContainer5(yearCheckboxes...)
+				return GridContainer4(yearCheckboxes...)
 			}())),
 			formGroup("Models", "models", Div(ID("modelsDiv"), func() g.Node {
 				modelCheckboxes := []g.Node{}
@@ -386,7 +386,7 @@ func AdEditPartial(adObj ad.Ad, makes, years, models, engines, categories, subca
 						),
 					)
 				}
-				return GridContainer5(modelCheckboxes...)
+				return GridContainer4(modelCheckboxes...)
 			}())),
 			formGroup("Engines", "engines", Div(ID("enginesDiv"), func() g.Node {
 				engineCheckboxes := []g.Node{}
@@ -406,7 +406,7 @@ func AdEditPartial(adObj ad.Ad, makes, years, models, engines, categories, subca
 						Checkbox("engines", engineName, engineName, isChecked, false),
 					)
 				}
-				return GridContainer5(engineCheckboxes...)
+				return GridContainer4(engineCheckboxes...)
 			}())),
 			catogorySelector(categories, func() string {
 				if adObj.Category.Valid {

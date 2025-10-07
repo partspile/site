@@ -176,3 +176,31 @@ func SubcategoriesPlaceholder() g.Node {
 		Class("space-y-2"),
 	)
 }
+
+func modelsDivEmpty() g.Node {
+	return Div(
+		ID("modelsDiv"),
+		Class("space-y-2"),
+		Div(
+			Class("p-4 bg-gray-50 border border-gray-200 rounded-lg"),
+			Div(
+				Class("text-gray-600 text-sm italic"),
+				g.Text("No models available for all selected years"),
+			),
+		),
+	)
+}
+
+func enginesDivEmpty() g.Node {
+	return Div(
+		ID("enginesDiv"),
+		Class("space-y-2"),
+		Div(
+			Class("p-4 bg-gray-50 border border-gray-200 rounded-lg"),
+			Div(
+				Class("text-gray-600 text-sm italic"),
+				g.Text("No engines available for all selected year-model combinations"),
+			),
+		),
+	)
+}
