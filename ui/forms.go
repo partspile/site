@@ -95,7 +95,7 @@ func YearsFormGroup(years []string) g.Node {
 			),
 		)
 	}
-	return formGroup("Years", "years", GridContainer(5, checkboxes...))
+	return formGroup("Years", "years", GridContainer5(checkboxes...))
 }
 
 func ModelsFormGroup(models []string) g.Node {
@@ -111,7 +111,7 @@ func ModelsFormGroup(models []string) g.Node {
 			),
 		)
 	}
-	return formGroup("Models", "models", GridContainer(5, checkboxes...))
+	return formGroup("Models", "models", GridContainer5(checkboxes...))
 }
 
 func EnginesFormGroup(engines []string) g.Node {
@@ -121,7 +121,7 @@ func EnginesFormGroup(engines []string) g.Node {
 			Checkbox("engines", engine, engine, false, false),
 		)
 	}
-	return formGroup("Engines", "engines", GridContainer(5, checkboxes...))
+	return formGroup("Engines", "engines", GridContainer5(checkboxes...))
 }
 
 func catogorySelector(categories []string, selectedCategory string) g.Node {

@@ -13,9 +13,9 @@ import (
 
 // ---- Layout Components ----
 
-func GridContainer(cols int, children ...g.Node) g.Node {
+func GridContainer5(children ...g.Node) g.Node {
 	return Div(
-		Class(fmt.Sprintf("grid grid-cols-%d gap-4", cols)),
+		Class("grid grid-cols-5 gap-2"),
 		g.Group(children),
 	)
 }
