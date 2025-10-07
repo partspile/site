@@ -21,7 +21,8 @@ func HandleMakes(c *fiber.Ctx) error {
 func HandleYears(c *fiber.Ctx) error {
 	makeName := c.Query("make")
 	if makeName == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "Make is required")
+		// Return empty div when make is not selected
+		return render(c, ui.YearsDiv())
 	}
 
 	years := vehicle.GetYears(makeName)
@@ -31,7 +32,8 @@ func HandleYears(c *fiber.Ctx) error {
 func HandleModels(c *fiber.Ctx) error {
 	makeName := c.Query("make")
 	if makeName == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "Make is required")
+		// Return empty div when make is not selected
+		return render(c, ui.ModelsDiv())
 	}
 
 	q, err := url.ParseQuery(string(c.Request().URI().QueryString()))
@@ -41,17 +43,22 @@ func HandleModels(c *fiber.Ctx) error {
 	years := q["years"]
 	if len(years) == 0 {
 		// Return empty div instead of error when no years are selected
-		return render(c, ui.ModelsPlaceholder())
+		return render(c, ui.ModelsDiv())
 	}
 
 	models := vehicle.GetModels(makeName, years)
+	if len(models) == 0 {
+		// Return empty message when no models are available for all selected years
+		return render(c, ui.ModelsDivEmpty())
+	}
 	return render(c, ui.ModelsFormGroup(models))
 }
 
 func HandleEngines(c *fiber.Ctx) error {
 	makeName := c.Query("make")
 	if makeName == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "Make is required")
+		// Return empty div when make is not selected
+		return render(c, ui.EnginesDiv())
 	}
 
 	q, err := url.ParseQuery(string(c.Request().URI().QueryString()))
@@ -61,16 +68,20 @@ func HandleEngines(c *fiber.Ctx) error {
 	years := q["years"]
 	if len(years) == 0 {
 		// Return empty div instead of error when no years are selected
-		return render(c, ui.EnginesPlaceholder())
+		return render(c, ui.EnginesDiv())
 	}
 
 	models := q["models"]
 	if len(models) == 0 {
 		// Return empty div instead of error when no models are selected
-		return render(c, ui.EnginesPlaceholder())
+		return render(c, ui.EnginesDiv())
 	}
 
 	engines := vehicle.GetEngines(makeName, years, models)
+	if len(engines) == 0 {
+		// Return empty message when no engines are available for all selected year-model combinations
+		return render(c, ui.EnginesDivEmpty())
+	}
 	return render(c, ui.EnginesFormGroup(engines))
 }
 
@@ -85,7 +96,8 @@ func HandleCategories(c *fiber.Ctx) error {
 func HandleSubCategories(c *fiber.Ctx) error {
 	categoryName := c.Query("category")
 	if categoryName == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "Category is required")
+		// Return empty div when category is not selected
+		return render(c, ui.SubcategoriesDiv())
 	}
 
 	subCategories, err := part.GetSubCategoriesForCategory(categoryName)

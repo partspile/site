@@ -113,7 +113,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes, yea
 				formGroup("Years", "years", Div(ID("yearsDiv"), GridContainer4(yearCheckboxes...))),
 				formGroup("Models", "models", Div(ID("modelsDiv"), GridContainer4(modelCheckboxes...))),
 				formGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer4(engineCheckboxes...))),
-				catogorySelector(categories, func() string {
+				categoriesSelector(categories, func() string {
 					if currentAd.Category.Valid {
 						return currentAd.Category.String
 					}
@@ -408,7 +408,7 @@ func AdEditPartial(adObj ad.Ad, makes, years, models, engines, categories, subca
 				}
 				return GridContainer4(engineCheckboxes...)
 			}())),
-			catogorySelector(categories, func() string {
+			categoriesSelector(categories, func() string {
 				if adObj.Category.Valid {
 					return adObj.Category.String
 				}

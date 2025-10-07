@@ -183,8 +183,12 @@ func GetEngines(makeName string, years []string, models []string) []string {
 		return cached
 	}
 
-	// For multiple years/models, we want engines that exist in ALL combinations (intersection)
+	// For multiple years/models, we want engines that exist in ALL year-model combinations (intersection)
+	// We need to find engines that exist for every combination of selected years and models
+
 	// Build a query that finds engines present in every year-model combination
+	// The logic: engine must exist in (year1, model1) AND (year1, model2) AND ... AND (year2, model1) AND (year2, model2) AND ...
+
 	query := `SELECT DISTINCT Engine.name FROM Engine
 	WHERE Engine.id IN (
 		SELECT Car.engine_id FROM Car
@@ -195,15 +199,20 @@ func GetEngines(makeName string, years []string, models []string) []string {
 	)`
 
 	// Add additional year-model conditions for intersection
-	for i := 1; i < len(years); i++ {
+	// Skip the first combination since it's already in the base query
+	combinationCount := 0
+	for i := 0; i < len(years); i++ {
 		for j := 0; j < len(models); j++ {
-			query += ` AND Engine.id IN (
-				SELECT Car.engine_id FROM Car
-				JOIN Make ON Car.make_id = Make.id
-				JOIN Model ON Car.model_id = Model.id
-				JOIN Year ON Car.year_id = Year.id
-				WHERE Make.name = ? AND Year.year = ? AND Model.name = ?
-			)`
+			if combinationCount > 0 {
+				query += ` AND Engine.id IN (
+					SELECT Car.engine_id FROM Car
+					JOIN Make ON Car.make_id = Make.id
+					JOIN Model ON Car.model_id = Model.id
+					JOIN Year ON Car.year_id = Year.id
+					WHERE Make.name = ? AND Year.year = ? AND Model.name = ?
+				)`
+			}
+			combinationCount++
 		}
 	}
 

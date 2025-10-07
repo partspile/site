@@ -28,8 +28,8 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 				YearsDiv(),
 				ModelsDiv(),
 				EnginesDiv(),
-				catogorySelector(categories, ""),
-				SubcategoriesPlaceholder(),
+				categoriesSelector(categories, ""),
+				SubcategoriesDiv(),
 				imagesInputField(),
 				descriptionTextareaField(),
 				priceInputField(),
@@ -43,8 +43,6 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 		},
 	)
 }
-
-// ---- New Ad Form Field Components ----
 
 func titleInputField() g.Node {
 	return formGroup("Title", "title",
@@ -80,7 +78,7 @@ func makeSelector(makes []string) g.Node {
 			hx.Get("/api/years"),
 			hx.Target("#yearsDiv"),
 			hx.Include("this"),
-			g.Attr("onchange", "this.checkValidity(); document.getElementById('modelsDiv').innerHTML = ''; document.getElementById('enginesDiv').innerHTML = '';"),
+			g.Attr("onchange", "this.checkValidity(); document.getElementById('modelsDiv').innerHTML = ''; document.getElementById('enginesDiv').innerHTML = ''; document.getElementById('subcategoriesDiv').innerHTML = '';"),
 			Option(Value(""), g.Text("Select a make")),
 			g.Group(makeOptions),
 		),
@@ -147,8 +145,6 @@ func locationInputField() g.Node {
 	)
 }
 
-// ---- Form Container Functions ----
-
 func YearsDiv() g.Node {
 	return Div(
 		ID("yearsDiv"),
@@ -170,14 +166,14 @@ func EnginesDiv() g.Node {
 	)
 }
 
-func SubcategoriesPlaceholder() g.Node {
+func SubcategoriesDiv() g.Node {
 	return Div(
 		ID("subcategoriesDiv"),
 		Class("space-y-2"),
 	)
 }
 
-func modelsDivEmpty() g.Node {
+func ModelsDivEmpty() g.Node {
 	return Div(
 		ID("modelsDiv"),
 		Class("space-y-2"),
@@ -191,7 +187,7 @@ func modelsDivEmpty() g.Node {
 	)
 }
 
-func enginesDivEmpty() g.Node {
+func EnginesDivEmpty() g.Node {
 	return Div(
 		ID("enginesDiv"),
 		Class("space-y-2"),

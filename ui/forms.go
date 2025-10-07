@@ -99,10 +99,6 @@ func YearsFormGroup(years []string) g.Node {
 }
 
 func ModelsFormGroup(models []string) g.Node {
-	if len(models) == 0 {
-		return modelsDivEmpty()
-	}
-
 	checkboxes := []g.Node{}
 	for _, model := range models {
 		checkboxes = append(checkboxes,
@@ -119,10 +115,6 @@ func ModelsFormGroup(models []string) g.Node {
 }
 
 func EnginesFormGroup(engines []string) g.Node {
-	if len(engines) == 0 {
-		return enginesDivEmpty()
-	}
-
 	checkboxes := []g.Node{}
 	for _, engine := range engines {
 		checkboxes = append(checkboxes,
@@ -132,7 +124,7 @@ func EnginesFormGroup(engines []string) g.Node {
 	return formGroup("Engines", "engines", GridContainer4(checkboxes...))
 }
 
-func catogorySelector(categories []string, selectedCategory string) g.Node {
+func categoriesSelector(categories []string, selectedCategory string) g.Node {
 	options := []g.Node{
 		Option(Value(""), g.Text("Select a category")),
 	}
@@ -149,7 +141,7 @@ func catogorySelector(categories []string, selectedCategory string) g.Node {
 		Select(
 			ID("category"),
 			Name("category"),
-			Class("w-full p-2 border rounded"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			Required(),
 			hx.Trigger("change"),
 			hx.Get("/api/subcategories"),
@@ -177,7 +169,7 @@ func SubCategoriesFormGroup(subCategories []string, selectedSubCategory string) 
 		Select(
 			ID("subcategory"),
 			Name("subcategory"),
-			Class("w-full p-2 border rounded"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			Required(),
 			g.Group(options),
 		),
@@ -201,14 +193,13 @@ func SubCategoriesFormGroupFromStruct(subCategories []part.SubCategory, selected
 		Select(
 			ID("subcategory"),
 			Name("subcategory"),
-			Class("w-full p-2 border rounded"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			Required(),
 			g.Group(options),
 		),
 	)
 }
 
-// notificationMethodRadioGroup creates radio buttons for selecting notification method
 func notificationMethodRadioGroup(selectedMethod string, emailAddress *string, phoneNumber string) g.Node {
 	radioButtons := []g.Node{
 		Div(Class("flex items-center"),
