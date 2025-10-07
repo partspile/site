@@ -25,9 +25,9 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 				hx.Target("#result"),
 				titleInputField(),
 				makeSelector(makes),
-				YearsPlaceholder(),
-				ModelsPlaceholder(),
-				EnginesPlaceholder(),
+				YearsDiv(),
+				ModelsDiv(),
+				EnginesDiv(),
 				catogorySelector(categories, ""),
 				SubcategoriesPlaceholder(),
 				imagesInputField(),
@@ -52,7 +52,7 @@ func titleInputField() g.Node {
 			Type("text"),
 			ID("title"),
 			Name("title"),
-			Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			Required(),
 			MaxLength("35"),
 			Pattern("[\\x20-\\x7E]+"),
@@ -74,7 +74,7 @@ func makeSelector(makes []string) g.Node {
 		Select(
 			ID("make"),
 			Name("make"),
-			Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			Required(),
 			hx.Trigger("change"),
 			hx.Get("/api/years"),
@@ -94,7 +94,7 @@ func imagesInputField() g.Node {
 				Type("file"),
 				ID("images"),
 				Name("images"),
-				Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
+				Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 				g.Attr("accept", "image/*"),
 				g.Attr("multiple"),
 			),
@@ -108,7 +108,7 @@ func descriptionTextareaField() g.Node {
 		Textarea(
 			ID("description"),
 			Name("description"),
-			Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			Required(),
 			MaxLength("500"),
 			Rows("4"),
@@ -125,7 +125,7 @@ func priceInputField() g.Node {
 			Type("number"),
 			ID("price"),
 			Name("price"),
-			Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			Required(),
 			Step("1"),
 			Min("0"),
@@ -141,7 +141,7 @@ func locationInputField() g.Node {
 			Type("text"),
 			ID("location"),
 			Name("location"),
-			Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			Placeholder("(Optional)"),
 		),
 	)
@@ -149,21 +149,21 @@ func locationInputField() g.Node {
 
 // ---- Form Container Functions ----
 
-func YearsPlaceholder() g.Node {
+func YearsDiv() g.Node {
 	return Div(
 		ID("yearsDiv"),
 		Class("space-y-2"),
 	)
 }
 
-func ModelsPlaceholder() g.Node {
+func ModelsDiv() g.Node {
 	return Div(
 		ID("modelsDiv"),
 		Class("space-y-2"),
 	)
 }
 
-func EnginesPlaceholder() g.Node {
+func EnginesDiv() g.Node {
 	return Div(
 		ID("enginesDiv"),
 		Class("space-y-2"),

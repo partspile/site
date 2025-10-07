@@ -157,7 +157,7 @@ func editTitleInputField(currentTitle string) g.Node {
 			Type("text"),
 			ID("title"),
 			Name("title"),
-			Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			Required(),
 			MaxLength("35"),
 			Pattern("[\\x20-\\x7E]+"),
@@ -183,7 +183,7 @@ func editMakeSelectField(makes []string, currentMake string) g.Node {
 		Select(
 			ID("make"),
 			Name("make"),
-			Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			hx.Trigger("change"),
 			hx.Get("/api/years"),
 			hx.Target("#yearsDiv"),
@@ -241,7 +241,7 @@ func editImagesInputField(adID int, imageCount int) g.Node {
 				Type("file"),
 				ID("images"),
 				Name("images"),
-				Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
+				Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 				g.Attr("accept", "image/*"),
 				g.Attr("multiple"),
 			),
@@ -255,7 +255,7 @@ func editDescriptionTextareaField(currentDescription string) g.Node {
 		Textarea(
 			ID("description"),
 			Name("description"),
-			Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			Rows("4"),
 			g.Text(currentDescription),
 		),
@@ -268,7 +268,7 @@ func editPriceInputField(currentPrice float64) g.Node {
 			Type("number"),
 			ID("price"),
 			Name("price"),
-			Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			Step("0.01"),
 			Min("0"),
 			Value(fmt.Sprintf("%.2f", currentPrice)),
@@ -282,7 +282,7 @@ func editLocationInputField(currentLocation string) g.Node {
 			Type("text"),
 			ID("location"),
 			Name("location"),
-			Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			Placeholder("Optional zipcode, e.g. 90210"),
 			Value(func() string {
 				if currentLocation != "" {
