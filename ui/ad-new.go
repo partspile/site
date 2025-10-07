@@ -25,11 +25,11 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 				hx.Target("#result"),
 				titleInputField(),
 				makeSelector(makes),
-				yearsPlaceholder(),
-				modelsPlaceholder(),
-				enginesPlaceholder(),
+				YearsPlaceholder(),
+				ModelsPlaceholder(),
+				EnginesPlaceholder(),
 				catogorySelector(categories, ""),
-				subcategoriesPlaceholder(),
+				SubcategoriesPlaceholder(),
 				imagesInputField(),
 				descriptionTextareaField(),
 				priceInputField(),
@@ -149,28 +149,28 @@ func locationInputField() g.Node {
 
 // ---- Form Container Functions ----
 
-func yearsPlaceholder() g.Node {
+func YearsPlaceholder() g.Node {
 	return Div(
 		ID("yearsDiv"),
 		Class("space-y-2"),
 	)
 }
 
-func modelsPlaceholder() g.Node {
+func ModelsPlaceholder() g.Node {
 	return Div(
 		ID("modelsDiv"),
 		Class("space-y-2"),
 	)
 }
 
-func enginesPlaceholder() g.Node {
+func EnginesPlaceholder() g.Node {
 	return Div(
 		ID("enginesDiv"),
 		Class("space-y-2"),
 	)
 }
 
-func subcategoriesPlaceholder() g.Node {
+func SubcategoriesPlaceholder() g.Node {
 	return Div(
 		ID("subcategoriesDiv"),
 		Class("space-y-2"),

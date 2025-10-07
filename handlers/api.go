@@ -40,7 +40,8 @@ func HandleModels(c *fiber.Ctx) error {
 	}
 	years := q["years"]
 	if len(years) == 0 {
-		return fiber.NewError(fiber.StatusBadRequest, "At least one year is required")
+		// Return empty div instead of error when no years are selected
+		return render(c, ui.ModelsPlaceholder())
 	}
 
 	models := vehicle.GetModels(makeName, years)
@@ -59,12 +60,14 @@ func HandleEngines(c *fiber.Ctx) error {
 	}
 	years := q["years"]
 	if len(years) == 0 {
-		return fiber.NewError(fiber.StatusBadRequest, "At least one year is required")
+		// Return empty div instead of error when no years are selected
+		return render(c, ui.EnginesPlaceholder())
 	}
 
 	models := q["models"]
 	if len(models) == 0 {
-		return fiber.NewError(fiber.StatusBadRequest, "At least one model is required")
+		// Return empty div instead of error when no models are selected
+		return render(c, ui.EnginesPlaceholder())
 	}
 
 	engines := vehicle.GetEngines(makeName, years, models)
