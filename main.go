@@ -184,8 +184,11 @@ func main() {
 	app.Get("/sitemap.xml", handlers.HandleSitemap)
 
 	// User settings
-	app.Get("/settings", handlers.AuthRequired, handlers.HandleSettings)       // x
-	app.Get("/bookmarks", handlers.AuthRequired, handlers.HandleBookmarksPage) // x
+	app.Get("/settings", handlers.AuthRequired, handlers.HandleSettings)                // x
+	app.Get("/ads", handlers.AuthRequired, handlers.HandleAdsPage)                      // x
+	app.Get("/ads/bookmarked", handlers.AuthRequired, handlers.HandleBookmarkedAdsPage) // x
+	app.Get("/ads/active", handlers.AuthRequired, handlers.HandleActiveAdsPage)         // x
+	app.Get("/ads/deleted", handlers.AuthRequired, handlers.HandleDeletedAdsPage)       // x
 	api.Post("/change-password", handlers.AuthRequired, handlers.HandleChangePassword)
 	api.Post("/update-notification-method", handlers.AuthRequired, handlers.HandleUpdateNotificationMethod)
 	api.Post("/notification-method-changed", handlers.AuthRequired, handlers.HandleNotificationMethodChanged)

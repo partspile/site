@@ -110,14 +110,14 @@ func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
 
 	menuItems = append(menuItems,
 		A(
-			Href("/bookmarks"),
+			Href("/ads"),
 			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"),
 			Img(
 				Src("/images/bookmark-true.svg"),
-				Alt("Bookmarks"),
+				Alt("My Ads"),
 				Class("w-6 h-6 mr-2"),
 			),
-			g.Text("Bookmarks"),
+			g.Text("My Ads"),
 		),
 	)
 

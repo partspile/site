@@ -116,13 +116,18 @@ func GetVehicleData(adID int) (makeName string, years []string, models []string,
 
 // buildAdQuery builds the complete query for fetching ads with IDs and user context
 func buildAdQuery(ids []int, currentUser *user.User) (string, []interface{}) {
+	return buildAdQueryWithDeleted(ids, currentUser, false)
+}
+
+// buildAdQueryWithDeleted builds the complete query for fetching ads with IDs and user context, optionally including deleted ads
+func buildAdQueryWithDeleted(ids []int, currentUser *user.User, includeDeleted bool) (string, []interface{}) {
 	var query string
 	var args []interface{}
 
 	if currentUser != nil {
 		// Query with bookmark status
 		query = `
-			SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
+			SELECT a.id, a.title, a.description, a.price, a.created_at, a.deleted_at, a.subcategory_id,
 			       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_count,
 			       l.city, l.admin_area, l.country, l.latitude, l.longitude,
 			       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
@@ -131,13 +136,12 @@ func buildAdQuery(ids []int, currentUser *user.User) (string, []interface{}) {
 			LEFT JOIN PartCategory pc ON psc.category_id = pc.id
 			LEFT JOIN Location l ON a.location_id = l.id
 			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
-			WHERE a.deleted_at IS NULL
 		`
 		args = append(args, currentUser.ID)
 	} else {
 		// Query without bookmark status (default to false)
 		query = `
-			SELECT a.id, a.title, a.description, a.price, a.created_at, a.subcategory_id,
+			SELECT a.id, a.title, a.description, a.price, a.created_at, a.deleted_at, a.subcategory_id,
 			       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_count,
 			       l.city, l.admin_area, l.country, l.latitude, l.longitude,
 			       0 as is_bookmarked
@@ -145,15 +149,22 @@ func buildAdQuery(ids []int, currentUser *user.User) (string, []interface{}) {
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
 			LEFT JOIN PartCategory pc ON psc.category_id = pc.id
 			LEFT JOIN Location l ON a.location_id = l.id
-			WHERE a.deleted_at IS NULL
 		`
+	}
+
+	if !includeDeleted {
+		query += " WHERE a.deleted_at IS NULL"
 	}
 
 	placeholders := make([]string, len(ids))
 	for i := range ids {
 		placeholders[i] = "?"
 	}
-	query += " AND a.id IN (" + strings.Join(placeholders, ",") + ")"
+	if includeDeleted {
+		query += " WHERE a.id IN (" + strings.Join(placeholders, ",") + ")"
+	} else {
+		query += " AND a.id IN (" + strings.Join(placeholders, ",") + ")"
+	}
 	for _, id := range ids {
 		args = append(args, id)
 	}
@@ -295,11 +306,16 @@ func ArchiveAdsByUserID(userID int) error {
 
 // GetAdsByIDs returns ads for a list of IDs
 func GetAdsByIDs(ids []int, currentUser *user.User) ([]Ad, error) {
+	return GetAdsByIDsWithDeleted(ids, currentUser, false)
+}
+
+// GetAdsByIDsWithDeleted returns ads for a list of IDs, optionally including deleted ads
+func GetAdsByIDsWithDeleted(ids []int, currentUser *user.User, includeDeleted bool) ([]Ad, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
 
-	query, args := buildAdQuery(ids, currentUser)
+	query, args := buildAdQueryWithDeleted(ids, currentUser, includeDeleted)
 
 	var ads []Ad
 	err := db.Select(&ads, query, args...)
@@ -486,4 +502,26 @@ func GetAdsForAdIDs(adIDs []int, makeName, year, model, engine, category, subcat
 	}
 
 	return GetAdsByIDs(filteredIDs, nil)
+}
+
+// GetUserActiveAdIDs returns a list of active ad IDs owned by the user
+func GetUserActiveAdIDs(userID int) ([]int, error) {
+	query := `SELECT id FROM Ad 
+		WHERE user_id = ? AND deleted_at IS NULL 
+		ORDER BY created_at DESC`
+
+	var adIDs []int
+	err := db.Select(&adIDs, query, userID)
+	return adIDs, err
+}
+
+// GetUserDeletedAdIDs returns a list of deleted ad IDs owned by the user
+func GetUserDeletedAdIDs(userID int) ([]int, error) {
+	query := `SELECT id FROM Ad 
+		WHERE user_id = ? AND deleted_at IS NOT NULL 
+		ORDER BY deleted_at DESC`
+
+	var adIDs []int
+	err := db.Select(&adIDs, query, userID)
+	return adIDs, err
 }

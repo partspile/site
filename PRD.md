@@ -117,6 +117,12 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
   - Notification method preferences (SMS, Email, Signal) with radio button selection
   - Conditional email address field (always visible, enabled only when email is selected)
   - Password change functionality
+- **Ads Management Page**: Centralized ads management with three sub-sections:
+  - **Bookmarked**: Shows ads the user has bookmarked for later reference
+  - **Active**: Shows the user's currently active ads with option to create new ads
+  - **Deleted**: Shows the user's deleted/archived ads that can be restored if needed
+  - Tab-based navigation using HTMX for seamless switching between sections
+  - User menu item changed from "Bookmarks" to "Ads" to reflect expanded functionality
 
 ### 3.8 User-to-User Messaging System
 - **Per-Ad Conversations**: Users can start conversations about specific ads by clicking a message button on expanded ad views.

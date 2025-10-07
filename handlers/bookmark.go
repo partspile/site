@@ -48,17 +48,3 @@ func HandleUnbookmarkAd(c *fiber.Ctx) error {
 	// Return the unbookmarked button HTML for HTMX swap
 	return render(c, ui.BookmarkButton(adObj))
 }
-
-func HandleBookmarksPage(c *fiber.Ctx) error {
-	currentUser, userID := CurrentUser(c)
-	adIDs, err := ad.GetBookmarkedAdIDs(userID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ad IDs")
-	}
-	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ads")
-	}
-
-	return render(c, ui.BookmarksPage(ads, currentUser, c.Path(), getLocation(c)))
-}
