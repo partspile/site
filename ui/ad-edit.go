@@ -108,13 +108,12 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes, yea
 				hx.Encoding("multipart/form-data"),
 				hx.Target(htmxTarget),
 				hx.Swap("outerHTML"),
-				validationErrorContainer(),
 				editTitleInputField(currentAd.Title),
 				editMakeSelectField(makes, currentAd.Make),
 				formGroup("Years", "years", Div(ID("yearsDiv"), GridContainer(5, yearCheckboxes...))),
 				formGroup("Models", "models", Div(ID("modelsDiv"), GridContainer(5, modelCheckboxes...))),
 				formGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer(5, engineCheckboxes...))),
-				CategoriesFormGroup(categories, func() string {
+				catogorySelector(categories, func() string {
 					if currentAd.Category.Valid {
 						return currentAd.Category.String
 					}
@@ -308,7 +307,6 @@ func AdEditPartial(adObj ad.Ad, makes, years, models, engines, categories, subca
 			hx.Encoding("multipart/form-data"),
 			hx.Target(htmxTarget),
 			hx.Swap("outerHTML"),
-			validationErrorContainer(),
 			formGroup("Title", "title",
 				Input(
 					Type("text"),
@@ -410,7 +408,7 @@ func AdEditPartial(adObj ad.Ad, makes, years, models, engines, categories, subca
 				}
 				return GridContainer(5, engineCheckboxes...)
 			}())),
-			CategoriesFormGroup(categories, func() string {
+			catogorySelector(categories, func() string {
 				if adObj.Category.Valid {
 					return adObj.Category.String
 				}

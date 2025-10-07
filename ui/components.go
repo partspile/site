@@ -92,13 +92,6 @@ func actionButtons(buttons ...g.Node) g.Node {
 
 // ---- Message Components ----
 
-func validationErrorContainer() g.Node {
-	return Div(
-		ID("validationError"),
-		Class("hidden bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded mb-4"),
-	)
-}
-
 func ValidationError(message string) g.Node {
 	return Div(
 		Class("bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded"),

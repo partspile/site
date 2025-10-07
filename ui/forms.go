@@ -14,7 +14,6 @@ func formContainer(formID string, content ...g.Node) g.Node {
 	return Form(
 		ID(formID),
 		Class("space-y-6"),
-		validationErrorContainer(),
 		g.Group(content),
 	)
 }
@@ -125,7 +124,7 @@ func EnginesFormGroup(engines []string) g.Node {
 	return formGroup("Engines", "engines", GridContainer(5, checkboxes...))
 }
 
-func CategoriesFormGroup(categories []string, selectedCategory string) g.Node {
+func catogorySelector(categories []string, selectedCategory string) g.Node {
 	options := []g.Node{
 		Option(Value(""), g.Text("Select a category")),
 	}

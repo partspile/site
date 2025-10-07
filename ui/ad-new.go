@@ -23,26 +23,13 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 				hx.Post("/api/new-ad"),
 				hx.Encoding("multipart/form-data"),
 				hx.Target("#result"),
-				validationErrorContainer(),
 				titleInputField(),
-				makeSelectField(makes),
-				Div(
-					ID("yearsDiv"),
-					Class("space-y-2"),
-				),
-				Div(
-					ID("modelsDiv"),
-					Class("space-y-2"),
-				),
-				Div(
-					ID("enginesDiv"),
-					Class("space-y-2"),
-				),
-				CategoriesFormGroup(categories, ""),
-				Div(
-					ID("subcategoriesDiv"),
-					Class("space-y-2"),
-				),
+				makeSelector(makes),
+				yearsPlaceholder(),
+				modelsPlaceholder(),
+				enginesPlaceholder(),
+				catogorySelector(categories, ""),
+				subcategoriesPlaceholder(),
 				imagesInputField(),
 				descriptionTextareaField(),
 				priceInputField(),
@@ -75,7 +62,7 @@ func titleInputField() g.Node {
 	)
 }
 
-func makeSelectField(makes []string) g.Node {
+func makeSelector(makes []string) g.Node {
 	makeOptions := []g.Node{}
 	for _, makeName := range makes {
 		makeOptions = append(makeOptions,
@@ -157,5 +144,35 @@ func locationInputField() g.Node {
 			Class("w-full p-2 border rounded invalid:border-red-500 invalid:bg-red-50 valid:border-emerald-500 valid:bg-emerald-50"),
 			Placeholder("(Optional)"),
 		),
+	)
+}
+
+// ---- Form Container Functions ----
+
+func yearsPlaceholder() g.Node {
+	return Div(
+		ID("yearsDiv"),
+		Class("space-y-2"),
+	)
+}
+
+func modelsPlaceholder() g.Node {
+	return Div(
+		ID("modelsDiv"),
+		Class("space-y-2"),
+	)
+}
+
+func enginesPlaceholder() g.Node {
+	return Div(
+		ID("enginesDiv"),
+		Class("space-y-2"),
+	)
+}
+
+func subcategoriesPlaceholder() g.Node {
+	return Div(
+		ID("subcategoriesDiv"),
+		Class("space-y-2"),
 	)
 }
