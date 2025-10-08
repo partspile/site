@@ -42,6 +42,9 @@ const (
 	GeminiEmbeddingModel      = "gemini-embedding-001"
 	GeminiEmbeddingDimensions = 3072
 
+	// Ad configuration
+	MaxImagesPerAd = 20
+
 	// Password/Argon2 configuration
 	Argon2Memory = 64 * 1024
 

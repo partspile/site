@@ -1,10 +1,13 @@
 package ui
 
 import (
+	"fmt"
+
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/user"
 )
 
@@ -98,8 +101,8 @@ func imagesInputField() g.Node {
 			),
 			Div(
 				ID("upload-area"),
-				Class("border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200 cursor-pointer"),
-				g.Attr("onclick", "document.getElementById('images').click()"),
+				Class("border rounded p-6 hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200 cursor-pointer"),
+				g.Attr("onclick", "handleUploadClick()"),
 				g.Attr("ondragover", "event.preventDefault(); this.classList.add('border-blue-400', 'bg-blue-50')"),
 				g.Attr("ondragleave", "this.classList.remove('border-blue-400', 'bg-blue-50')"),
 				g.Attr("ondrop", "event.preventDefault(); this.classList.remove('border-blue-400', 'bg-blue-50'); handleDrop(event)"),
@@ -129,6 +132,7 @@ func imagesInputField() g.Node {
 					Class("hidden image-preview flex flex-row flex-wrap gap-2 justify-center mt-4"),
 				),
 			),
+			g.Raw(fmt.Sprintf(`<script>const MAX_IMAGES_PER_AD = %d;</script>`, config.MaxImagesPerAd)),
 			g.Raw(`<script src="/js/image-preview.js" defer></script>`),
 		),
 	)
