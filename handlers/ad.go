@@ -48,7 +48,19 @@ func resolveAndStoreLocation(raw string) (int, error) {
 	if raw == "" {
 		return 0, nil
 	}
-	// Update Grok prompt to include coordinates
+
+	// Check if location already exists first to avoid expensive Grok API call
+	var id int
+	err := db.QueryRow("SELECT id FROM Location WHERE raw_text = ?", raw).Scan(&id)
+	if err == nil {
+		// Location already exists, return the ID
+		return id, nil
+	} else if err != sql.ErrNoRows {
+		// Database error
+		return 0, err
+	}
+
+	// Location doesn't exist, resolve using Grok API
 	systemPrompt := `You are a location resolver for an auto parts website.
 Given a user input (which may be a address, city, zip code, or country),
 return a JSON object with the best guess for city, admin_area (state,
@@ -77,21 +89,15 @@ Example input: "97333" -> {"city": "Corvallis", "admin_area": "OR",
 	if err != nil {
 		return 0, err
 	}
-	// Upsert into Location table
-	var id int
-	err = db.QueryRow("SELECT id FROM Location WHERE raw_text = ?", raw).Scan(&id)
-	if err == sql.ErrNoRows {
-		res, err := db.Exec("INSERT INTO Location (raw_text, city, admin_area, country, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)",
-			raw, loc.City, loc.AdminArea, loc.Country, loc.Latitude, loc.Longitude)
-		if err != nil {
-			return 0, err
-		}
-		lastID, _ := res.LastInsertId()
-		id = int(lastID)
-	} else if err != nil {
+
+	// Insert new location into database
+	res, err := db.Exec("INSERT INTO Location (raw_text, city, admin_area, country, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)",
+		raw, loc.City, loc.AdminArea, loc.Country, loc.Latitude, loc.Longitude)
+	if err != nil {
 		return 0, err
 	}
-	return id, nil
+	lastID, _ := res.LastInsertId()
+	return int(lastID), nil
 }
 
 func HandleNewAdSubmission(c *fiber.Ctx) error {

@@ -348,22 +348,18 @@ func TestValidateAdFormAndReturn(t *testing.T) {
 				},
 			}
 
-			years, models, engines, categories, subcategories, err := ValidateAdFormAndReturn(form)
+			years, models, engines, err := ValidateAdFormAndReturn(form)
 
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, years)
 				assert.Nil(t, models)
 				assert.Nil(t, engines)
-				assert.Nil(t, categories)
-				assert.Nil(t, subcategories)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.years, years)
 				assert.Equal(t, tt.models, models)
 				assert.Equal(t, tt.engines, engines)
-				assert.Equal(t, tt.categories, categories)
-				assert.Equal(t, tt.subcategories, subcategories)
 			}
 		})
 	}

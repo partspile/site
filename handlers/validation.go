@@ -104,7 +104,7 @@ func ValidateEmail(email string) error {
 func ValidateRequiredMultipart(form *multipart.Form, fieldName, displayName string) ([]string, error) {
 	values := form.Value[fieldName]
 	if len(values) == 0 {
-		return nil, fmt.Errorf("Please select at least one %s", displayName)
+		return nil, fmt.Errorf("please select at least one %s", displayName)
 	}
 	return values, nil
 }
@@ -138,7 +138,7 @@ func ValidationErrorResponseWithStatus(c *fiber.Ctx, message string, statusCode 
 	return render(c, ui.ValidationError(message))
 }
 
-// ValidateAdForm validates the common ad form fields (years, models, engines, category, subcategory)
+// ValidateAdForm validates the common ad form fields (years, models, engines)
 func ValidateAdForm(form *multipart.Form) error {
 	if _, err := ValidateRequiredMultipart(form, "years", "year"); err != nil {
 		return err
@@ -149,59 +149,43 @@ func ValidateAdForm(form *multipart.Form) error {
 	if _, err := ValidateRequiredMultipart(form, "engines", "engine size"); err != nil {
 		return err
 	}
-	if _, err := ValidateRequiredMultipart(form, "category", "category"); err != nil {
-		return err
-	}
-	if _, err := ValidateRequiredMultipart(form, "subcategory", "subcategory"); err != nil {
-		return err
-	}
 	return nil
 }
 
 // ValidateAdFormAndReturn validates ad form and returns the values
-func ValidateAdFormAndReturn(form *multipart.Form) (years, models, engines, categories, subcategories []string, err error) {
+func ValidateAdFormAndReturn(form *multipart.Form) (years, models, engines []string, err error) {
 	years, err = ValidateRequiredMultipart(form, "years", "year")
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	models, err = ValidateRequiredMultipart(form, "models", "model")
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	engines, err = ValidateRequiredMultipart(form, "engines", "engine size")
 	if err != nil {
-		return nil, nil, nil, nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	categories, err = ValidateRequiredMultipart(form, "category", "category")
-	if err != nil {
-		return nil, nil, nil, nil, nil, err
-	}
-
-	subcategories, err = ValidateRequiredMultipart(form, "subcategory", "subcategory")
-	if err != nil {
-		return nil, nil, nil, nil, nil, err
-	}
-
-	return years, models, engines, categories, subcategories, nil
+	return years, models, engines, nil
 }
 
 // ValidateAndParsePrice validates and parses a price field
 func ValidateAndParsePrice(c *fiber.Ctx) (float64, error) {
 	priceStr := c.FormValue("price")
 	if priceStr == "" {
-		return 0, fmt.Errorf("Price is required")
+		return 0, fmt.Errorf("price is required")
 	}
 
 	price, err := strconv.ParseFloat(priceStr, 64)
 	if err != nil {
-		return 0, fmt.Errorf("Invalid price format")
+		return 0, fmt.Errorf("invalid price format")
 	}
 
 	if price < 0 {
-		return 0, fmt.Errorf("Price cannot be negative")
+		return 0, fmt.Errorf("price cannot be negative")
 	}
 
 	return price, nil
@@ -221,31 +205,32 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
 	}
-	years, models, engines, categories, subcategories, err := ValidateAdFormAndReturn(form)
+	years, models, engines, err := ValidateAdFormAndReturn(form)
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
 	}
 
-	// Get category from the validated arrays
-	category := ""
-	if len(categories) > 0 {
-		category = categories[0]
+	// Validate category as single field
+	category, err := ValidateRequired(c, "category", "Category")
+	if err != nil {
+		return ad.Ad{}, nil, nil, err
 	}
 
-	// Get subcategory ID from the validated arrays
-	subcategoryID := 0
-	if len(subcategories) > 0 {
-		subcategoryName := subcategories[0]
-		// Look up subcategory ID by name
-		subcategoryID, err = part.GetSubCategoryIDByName(subcategoryName)
-		if err != nil {
-			return ad.Ad{}, nil, nil, fmt.Errorf("invalid subcategory: %s", subcategoryName)
-		}
+	// Validate subcategory as single field
+	subcategoryName, err := ValidateRequired(c, "subcategory", "Subcategory")
+	if err != nil {
+		return ad.Ad{}, nil, nil, err
+	}
+
+	// Look up subcategory ID by name
+	subcategoryID, err := part.GetSubCategoryIDByName(subcategoryName)
+	if err != nil {
+		return ad.Ad{}, nil, nil, fmt.Errorf("invalid subcategory: %s", subcategoryName)
 	}
 
 	// Extract image files
 	imageFiles := form.File["images"]
-	// Don't require at least one image for edit
+
 	description, err := ValidateRequired(c, "description", "Description")
 	if err != nil {
 		return ad.Ad{}, nil, nil, err

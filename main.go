@@ -127,7 +127,7 @@ func main() {
 	api.Get("/search", handlers.HandleSearchAPI)
 
 	// Ad management (API)
-	api.Post("/new-ad", handlers.AuthRequired, handlers.HandleNewAdSubmission)
+	api.Post("/new-ad", handlers.AuthRequired, handlers.HandleNewAdSubmission) // x
 	api.Post("/update-ad/:id", handlers.AuthRequired, handlers.HandleUpdateAdSubmission)
 	api.Post("/bookmark-ad/:id", handlers.AuthRequired, handlers.HandleBookmarkAd)
 	api.Delete("/bookmark-ad/:id", handlers.AuthRequired, handlers.HandleUnbookmarkAd)
