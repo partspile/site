@@ -91,12 +91,44 @@ func imagesInputField() g.Node {
 				Type("file"),
 				ID("images"),
 				Name("images"),
-				Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
+				Class("hidden"),
 				g.Attr("accept", "image/*"),
 				g.Attr("multiple"),
 				g.Attr("onchange", "previewImages(this)"),
 			),
-			Div(ID("image-preview")),
+			Div(
+				ID("upload-area"),
+				Class("border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200 cursor-pointer"),
+				g.Attr("onclick", "document.getElementById('images').click()"),
+				g.Attr("ondragover", "event.preventDefault(); this.classList.add('border-blue-400', 'bg-blue-50')"),
+				g.Attr("ondragleave", "this.classList.remove('border-blue-400', 'bg-blue-50')"),
+				g.Attr("ondrop", "event.preventDefault(); this.classList.remove('border-blue-400', 'bg-blue-50'); handleDrop(event)"),
+				Div(
+					ID("upload-content"),
+					Class("flex flex-col items-center space-y-4"),
+					Div(
+						Class("flex flex-col items-center space-y-2"),
+						Div(
+							Class("w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center"),
+							g.Raw(`<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+							</svg>`),
+						),
+						Div(
+							Class("text-lg font-medium text-gray-700"),
+							g.Text("Upload Images"),
+						),
+						Div(
+							Class("text-sm text-gray-500"),
+							g.Text("Click to browse or drag and drop"),
+						),
+					),
+				),
+				Div(
+					ID("image-preview"),
+					Class("hidden image-preview flex flex-row flex-wrap gap-2 justify-center mt-4"),
+				),
+			),
 			g.Raw(`<script src="/js/image-preview.js" defer></script>`),
 		),
 	)
