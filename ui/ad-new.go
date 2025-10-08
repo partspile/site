@@ -37,7 +37,6 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 				styledButton("Submit", buttonPrimary,
 					Type("submit"),
 				),
-				g.Raw(`<script src="/js/image-preview.js" defer></script>`),
 			),
 			resultContainer(),
 		},
@@ -95,8 +94,10 @@ func imagesInputField() g.Node {
 				Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 				g.Attr("accept", "image/*"),
 				g.Attr("multiple"),
+				g.Attr("onchange", "previewImages(this)"),
 			),
 			Div(ID("image-preview")),
+			g.Raw(`<script src="/js/image-preview.js" defer></script>`),
 		),
 	)
 }

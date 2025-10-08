@@ -142,8 +142,6 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes, yea
 				styledButton("Submit", buttonPrimary,
 					Type("submit"),
 				),
-				g.Raw(`<script src="/js/image-preview.js" defer></script>`),
-				g.Raw(`<script src="/js/image-edit.js" defer></script>`),
 			),
 		},
 	)
@@ -244,8 +242,10 @@ func editImagesInputField(adID int, imageCount int) g.Node {
 				Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 				g.Attr("accept", "image/*"),
 				g.Attr("multiple"),
+				g.Attr("onchange", "previewImages(this)"),
 			),
 			Div(ID("image-preview")),
+			g.Raw(`<script src="/js/image-preview.js" defer></script>`),
 		),
 	)
 }
@@ -522,8 +522,6 @@ func AdEditPartial(adObj ad.Ad, makes, years, models, engines, categories, subca
 					hx.Swap("outerHTML"),
 				),
 			),
-			g.Raw(`<script src="/js/image-preview.js" defer></script>`),
-			g.Raw(`<script src="/js/image-edit.js" defer></script>`),
 		),
 	)
 

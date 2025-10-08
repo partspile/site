@@ -1,138 +1,157 @@
-// Handles image previews, deletion, and drag-and-drop reordering for ad create/edit forms
-(function() {
-  // Utility to create a thumbnail with a trashcan overlay and drag handle
-  function createThumbnail(file, idx, onDelete, onDragStart, onDragOver, onDrop, isDragging) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'relative inline-block m-1 group';
-    wrapper.style.width = '96px';
-    wrapper.style.height = '96px';
-    wrapper.setAttribute('draggable', 'true');
-    wrapper.dataset.idx = idx;
-    if (isDragging) wrapper.style.opacity = '0.5';
+// image-preview.js: Handles image previews and file management for ad forms
+let allSelectedFiles = [];
+let draggedElement = null;
+let dragAndDropSetup = false;
 
-    wrapper.addEventListener('dragstart', onDragStart);
-    wrapper.addEventListener('dragover', onDragOver);
-    wrapper.addEventListener('drop', onDrop);
-    wrapper.addEventListener('dragend', function() {
-      wrapper.style.opacity = '';
-    });
+function previewImages(input) {
+	const preview = document.getElementById('image-preview');
+	
+	// Add new files to our collection
+	if (input.files && input.files.length > 0) {
+		Array.from(input.files).forEach(file => {
+			// Check if file is already in our collection (by name and size)
+			const isDuplicate = allSelectedFiles.some(existing => 
+				existing.name === file.name && existing.size === file.size
+			);
+			if (!isDuplicate) {
+				allSelectedFiles.push(file);
+			}
+		});
+	}
+	
+	// Update the file input to include all files
+	updateFileInput(input);
+	
+	// Render all thumbnails
+	renderThumbnails(preview);
+	
+	// Set up drag and drop only once
+	if (!dragAndDropSetup) {
+		setupDragAndDrop(preview);
+		dragAndDropSetup = true;
+	}
+}
 
-    const img = document.createElement('img');
-    img.className = 'object-cover w-24 h-24 rounded border';
-    img.style.display = 'block';
-    img.style.width = '96px';
-    img.style.height = '96px';
-    img.alt = file.name;
-    img.src = URL.createObjectURL(file);
-    wrapper.appendChild(img);
+function updateFileInput(input) {
+	const dt = new DataTransfer();
+	allSelectedFiles.forEach(file => {
+		dt.items.add(file);
+	});
+	input.files = dt.files;
+}
 
-    const trash = document.createElement('img');
-    trash.src = '/images/trashcan.svg';
-    trash.alt = 'Delete';
-    trash.className = 'absolute top-0 right-0 w-6 h-6 p-1 bg-white rounded-full shadow cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity';
-    trash.style.zIndex = 10;
-    trash.title = 'Remove image';
-    trash.addEventListener('click', function(e) {
-      e.stopPropagation();
-      e.preventDefault();
-      onDelete(idx);
-    });
-    wrapper.appendChild(trash);
+function renderThumbnails(preview) {
+	preview.innerHTML = '';
+	preview.className = 'image-preview flex flex-row flex-wrap gap-2 mt-2';
+	
+	allSelectedFiles.forEach((file, index) => {
+		const reader = new FileReader();
+		reader.onload = function(e) {
+			const thumbnail = document.createElement('div');
+			thumbnail.className = 'relative inline-block m-1 group cursor-move';
+			thumbnail.style.width = '96px';
+			thumbnail.style.height = '96px';
+			thumbnail.setAttribute('data-index', index);
+			thumbnail.setAttribute('draggable', 'true');
+			thumbnail.fileReference = file; // Store file reference directly
+			
+			const img = document.createElement('img');
+			img.className = 'object-cover w-24 h-24 rounded border';
+			img.style.display = 'block';
+			img.style.width = '96px';
+			img.style.height = '96px';
+			img.src = e.target.result;
+			img.alt = file.name;
+			
+			const deleteBtn = document.createElement('button');
+			deleteBtn.className = 'absolute top-0 right-0 w-6 h-6 bg-red-500 text-white rounded-full text-xs hover:bg-red-600';
+			deleteBtn.innerHTML = '×';
+			deleteBtn.onclick = function() {
+				removeImageFromCollection(index);
+			};
+			
+			// Add drag handle indicator
+			const dragHandle = document.createElement('div');
+			dragHandle.className = 'absolute bottom-0 left-0 w-6 h-6 bg-gray-600 bg-opacity-75 text-white text-xs flex items-center justify-center rounded-tl';
+			dragHandle.innerHTML = '⋮⋮';
+			dragHandle.style.fontSize = '8px';
+			dragHandle.style.lineHeight = '1';
+			
+			thumbnail.appendChild(img);
+			thumbnail.appendChild(deleteBtn);
+			thumbnail.appendChild(dragHandle);
+			preview.appendChild(thumbnail);
+		};
+		reader.readAsDataURL(file);
+	});
+}
 
-    return wrapper;
-  }
+function setupDragAndDrop(preview) {
+	// Add event delegation to the preview container
+	preview.addEventListener('dragstart', function(e) {
+		if (e.target.closest('[data-index]')) {
+			draggedElement = e.target.closest('[data-index]');
+			e.target.style.opacity = '0.5';
+			e.dataTransfer.effectAllowed = 'move';
+		}
+	});
+	
+	preview.addEventListener('dragover', function(e) {
+		e.preventDefault();
+		const over = e.target.closest('[data-index]');
+		if (draggedElement && over && draggedElement !== over) {
+			over.style.border = '2px dashed #3b82f6';
+			over.style.backgroundColor = '#eff6ff';
+		}
+	});
+	
+	preview.addEventListener('dragleave', function(e) {
+		const over = e.target.closest('[data-index]');
+		if (over) {
+			over.style.border = '';
+			over.style.backgroundColor = '';
+		}
+	});
+	
+	preview.addEventListener('drop', function(e) {
+		e.preventDefault();
+		const over = e.target.closest('[data-index]');
+		if (draggedElement && over && draggedElement !== over) {
+			over.style.border = '';
+			over.style.backgroundColor = '';
+			
+			// Move the dragged element before the drop target in the DOM
+			preview.insertBefore(draggedElement, over);
+			
+			// Update the files array based on the new DOM order
+			updateFilesFromDOMOrder();
+			
+			// Update the file input
+			const input = document.getElementById('images');
+			updateFileInput(input);
+		}
+	});
+	
+	preview.addEventListener('dragend', function() {
+		// Clean up any remaining drag styles
+		Array.from(preview.children).forEach(el => {
+			el.style.border = '';
+			el.style.backgroundColor = '';
+			el.style.opacity = '';
+		});
+		draggedElement = null;
+	});
+}
 
-  // Main logic for handling file input, preview, and order
-  function setupImagePreview(inputId, previewId, orderInputId) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-    let files = [];
-    let preview = document.getElementById(previewId);
-    if (!preview) {
-      preview = document.createElement('div');
-      preview.id = previewId;
-      preview.className = 'flex flex-row flex-wrap gap-2 mt-2';
-      input.parentNode.appendChild(preview);
-    }
-    let orderInput = document.getElementById(orderInputId);
-    if (!orderInput) {
-      orderInput = document.createElement('input');
-      orderInput.type = 'hidden';
-      orderInput.name = 'image_order';
-      orderInput.id = orderInputId;
-      input.form.appendChild(orderInput);
-    }
-    let draggingIdx = null;
+function updateFilesFromDOMOrder() {
+	const preview = document.getElementById('image-preview');
+	const thumbnails = Array.from(preview.children);
+	allSelectedFiles = thumbnails.map(thumbnail => thumbnail.fileReference);
+}
 
-    function updateOrderInput() {
-      // Store the order as contiguous 1-based indices
-      const order = files.map((_, i) => i + 1);
-      orderInput.value = order.join(',');
-    }
-
-    function renderPreviews() {
-      preview.innerHTML = '';
-      files.forEach((file, idx) => {
-        const thumb = createThumbnail(
-          file,
-          idx,
-          (removeIdx) => {
-            files.splice(removeIdx, 1);
-            updateInputFiles();
-            renderPreviews();
-          },
-          function(e) { // dragstart
-            draggingIdx = idx;
-            e.dataTransfer.effectAllowed = 'move';
-          },
-          function(e) { // dragover
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-          },
-          function(e) { // drop
-            e.preventDefault();
-            if (draggingIdx === null || draggingIdx === idx) return;
-            const dragged = files[draggingIdx];
-            files.splice(draggingIdx, 1);
-            files.splice(idx, 0, dragged);
-            updateInputFiles();
-            renderPreviews();
-            draggingIdx = null;
-          },
-          draggingIdx === idx
-        );
-        preview.appendChild(thumb);
-      });
-      updateOrderInput();
-    }
-
-    function updateInputFiles() {
-      // Create a new DataTransfer to update the input's files
-      const dt = new DataTransfer();
-      files.forEach(f => dt.items.add(f));
-      input.files = dt.files;
-    }
-
-    input.addEventListener('change', function(e) {
-      // Instead of replacing, append new files (if any)
-      const newFiles = Array.from(input.files);
-      // Only add files that are not already in the list (by name+size)
-      newFiles.forEach((f, i) => {
-        if (!files.some(existing => existing.name === f.name && existing.size === f.size)) {
-          // Store original index for order
-          f._origIdx = files.length + i;
-          files.push(f);
-        }
-      });
-      // Assign _origIdx for all files if not present (for initial load)
-      files.forEach((f, i) => { if (f._origIdx === undefined) f._origIdx = i; });
-      updateInputFiles();
-      renderPreviews();
-    });
-  }
-
-  // Setup for both create and edit ad forms
-  document.addEventListener('DOMContentLoaded', function() {
-    setupImagePreview('images', 'image-preview', 'image_order');
-  });
-})(); 
+function removeImageFromCollection(index) {
+	allSelectedFiles.splice(index, 1);
+	const input = document.getElementById('images');
+	updateFileInput(input);
+	renderThumbnails(document.getElementById('image-preview'));
+}
