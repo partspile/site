@@ -348,7 +348,7 @@ func TestValidateAdFormAndReturn(t *testing.T) {
 				},
 			}
 
-			years, models, engines, err := ValidateAdFormAndReturn(form)
+			years, models, engines, err := validateAdFormMultipart(form)
 
 			if tt.expectError {
 				assert.Error(t, err)

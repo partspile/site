@@ -152,8 +152,8 @@ func ValidateAdForm(form *multipart.Form) error {
 	return nil
 }
 
-// ValidateAdFormAndReturn validates ad form and returns the values
-func ValidateAdFormAndReturn(form *multipart.Form) (years, models, engines []string, err error) {
+// validateAdFormMultipart validates ad form and returns the values
+func validateAdFormMultipart(form *multipart.Form) (years, models, engines []string, err error) {
 	years, err = ValidateRequiredMultipart(form, "years", "year")
 	if err != nil {
 		return nil, nil, nil, err
@@ -205,7 +205,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
 	}
-	years, models, engines, err := ValidateAdFormAndReturn(form)
+	years, models, engines, err := validateAdFormMultipart(form)
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
 	}
@@ -231,7 +231,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	// Extract image files
 	imageFiles := form.File["images"]
 
-	description, err := ValidateRequired(c, "description", "Description")
+	description, err := ValidateCleanText(c, "description", "Description", 500)
 	if err != nil {
 		return ad.Ad{}, nil, nil, err
 	}

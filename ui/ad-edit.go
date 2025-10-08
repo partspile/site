@@ -256,7 +256,12 @@ func editDescriptionTextareaField(currentDescription string) g.Node {
 			ID("description"),
 			Name("description"),
 			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
+			Required(),
+			MaxLength("500"),
 			Rows("4"),
+			Pattern("[\\x20-\\x7E]+"),
+			Title("Description must contain printable ASCII characters only"),
+			g.Attr("oninput", "this.checkValidity()"),
 			g.Text(currentDescription),
 		),
 	)
