@@ -14,21 +14,35 @@ import (
 )
 
 func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
+	// Determine full class strings based on deleted status
+	var containerClass, contentClass string
+	if ad.IsArchived() {
+		containerClass = "border rounded-lg shadow-lg bg-red-100 flex flex-col relative my-4 mx-2 col-span-full overflow-hidden"
+		contentClass = "p-4 flex flex-col gap-2 bg-red-100"
+	} else {
+		containerClass = "border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2 col-span-full overflow-hidden"
+		contentClass = "p-4 flex flex-col gap-2 bg-white"
+	}
+
 	return Div(
 		ID(adID(ad)),
-		Class("border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2 col-span-full"),
+		Class(containerClass),
 		imageNode(ad, view),
+		g.If(ad.IsArchived(), deletedWatermark()),
 		Div(
-			Class("p-4 flex flex-col gap-2"),
+			Class(contentClass),
 			// Title and buttons row
 			Div(
 				Class("flex flex-row items-center justify-between mb-2"),
 				Div(Class("font-semibold text-xl truncate"), titleNode(ad)),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
-					g.If(userID != 0, BookmarkButton(ad)),
-					g.If(userID != 0, messageButton(ad, userID)),
-					editButton(ad, userID),
-					deleteButton(ad, userID),
+					// For active ads: show bookmark, message, edit, and delete
+					g.If(!ad.IsArchived() && userID != 0, BookmarkButton(ad)),
+					g.If(!ad.IsArchived() && userID != 0, messageButton(ad, userID)),
+					g.If(!ad.IsArchived(), editButton(ad, userID)),
+					g.If(!ad.IsArchived(), deleteButton(ad, userID)),
+					// For deleted ads: show restore button (owner only)
+					g.If(ad.IsArchived(), restoreButton(ad, userID)),
 				),
 			),
 			// Age and location row
@@ -39,6 +53,17 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 			),
 			// Description
 			Div(Class("text-base mt-2"), g.Text(ad.Description)),
+		),
+	)
+}
+
+func deletedWatermark() g.Node {
+	return Div(
+		Class("absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center pointer-events-none z-50"),
+		Div(
+			Class("font-bold transform rotate-[-45deg]"),
+			Style("user-select: none; font-size: 8rem; color: transparent; -webkit-text-stroke: 3px rgba(220, 38, 38, 0.4); text-stroke: 3px rgba(220, 38, 38, 0.4);"),
+			g.Text("DELETED"),
 		),
 	)
 }
@@ -93,8 +118,16 @@ func AdNoImage() g.Node {
 }
 
 func imageNode(ad ad.Ad, view string) g.Node {
+	// Determine full class string based on deleted status
+	var imageContainerClass string
+	if ad.IsArchived() {
+		imageContainerClass = "relative w-full bg-red-100 overflow-visible"
+	} else {
+		imageContainerClass = "relative w-full bg-gray-100 overflow-visible"
+	}
+
 	return Div(
-		Class("relative w-full bg-gray-100 overflow-visible"),
+		Class(imageContainerClass),
 		Style("height: 60vh; min-height: 500px; max-height: 800px;"),
 		priceOverlayNode(ad),
 		closeButtonOverlayNode(ad, view),
@@ -189,6 +222,7 @@ func deleteButton(ad ad.Ad, userID int) g.Node {
 	return Button(
 		Type("button"),
 		Class("ml-2 focus:outline-none"),
+		Title("Delete ad"),
 		hx.Delete(fmt.Sprintf("/delete-ad/%d", ad.ID)),
 		hx.Target(adTarget(ad)),
 		hx.Swap("delete"),
@@ -197,6 +231,27 @@ func deleteButton(ad ad.Ad, userID int) g.Node {
 			Src("/images/trashcan.svg"),
 			Alt("Delete"),
 			Class("w-6 h-6 inline align-middle text-red-500 hover:text-red-700"),
+		),
+	)
+}
+
+func restoreButton(ad ad.Ad, userID int) g.Node {
+	if userID != ad.UserID {
+		return g.Node(nil)
+	}
+
+	return Button(
+		Type("button"),
+		Class("ml-2 focus:outline-none"),
+		Title("Restore ad"),
+		hx.Post(fmt.Sprintf("/restore-ad/%d", ad.ID)),
+		hx.Target(adTarget(ad)),
+		hx.Swap("outerHTML"),
+		hx.Confirm("Are you sure you want to restore this ad?"),
+		Img(
+			Src("/images/restore.svg"),
+			Alt("Restore"),
+			Class("w-6 h-6 inline align-middle text-green-600 hover:text-green-700"),
 		),
 	)
 }

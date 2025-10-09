@@ -119,6 +119,7 @@ func main() {
 	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd) // x
 	app.Get("/edit-ad/:id", handlers.AuthRequired, handlers.HandleEditAd)
 	app.Delete("/delete-ad/:id", handlers.AuthRequired, handlers.HandleDeleteAd)
+	app.Post("/restore-ad/:id", handlers.AuthRequired, handlers.HandleRestoreAd)
 
 	// API group
 	api := app.Group("/api")

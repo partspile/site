@@ -392,3 +392,40 @@ func RocksPage(currentUser *user.User, path string) g.Node {
 		},
 	)
 }
+
+func AdDeletedPage(currentUser *user.User, path string) g.Node {
+	return Page(
+		"Ad Deleted - Parts Pile",
+		currentUser,
+		path,
+		[]g.Node{
+			contentContainer(
+				Div(
+					Class("text-center py-16"),
+					Div(
+						Class("mb-6 flex justify-center"),
+						Img(
+							Src("/images/trashcan.svg"),
+							Alt("Deleted"),
+							Class("w-24 h-24"),
+						),
+					),
+					H2(
+						Class("text-3xl font-bold text-gray-900 mb-4"),
+						g.Text("Ad Deleted"),
+					),
+					P(
+						Class("text-lg text-gray-600 mb-8"),
+						g.Text("This ad has been deleted by the owner and is no longer available."),
+					),
+					Div(
+						Class("text-center"),
+						styledLink("Back to Home", "/", buttonPrimary,
+							Class("text-lg px-8 py-3"),
+						),
+					),
+				),
+			),
+		},
+	)
+}

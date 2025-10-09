@@ -138,17 +138,8 @@ func ActiveAdsPage(ads []ad.Ad, currentUser *user.User, path string, loc *time.L
 
 	return Div(
 		Class("space-y-4"),
-		Div(Class("flex items-center justify-between"),
-			Div(
-				Div(Class("text-lg font-medium text-gray-900"), g.Text("Active Ads")),
-				Div(Class("text-gray-600 text-sm"), g.Text("Your currently active ads.")),
-			),
-			A(
-				Href("/new-ad"),
-				Class("inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"),
-				g.Text("Create New Ad"),
-			),
-		),
+		Div(Class("text-lg font-medium text-gray-900"), g.Text("Active Ads")),
+		Div(Class("text-gray-600 text-sm"), g.Text("Your currently active ads.")),
 		viewContent,
 	)
 }

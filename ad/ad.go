@@ -172,9 +172,10 @@ func buildAdQueryWithDeleted(ids []int, currentUser *user.User, includeDeleted b
 	return query, args
 }
 
-// GetAd retrieves an ad by ID from the Ad table
+// GetAd retrieves an ad by ID from the Ad table (includes deleted ads)
+// Callers should check IsArchived() if they need to filter out deleted ads
 func GetAd(id int, currentUser *user.User) (Ad, bool) {
-	ads, err := GetAdsByIDs([]int{id}, currentUser)
+	ads, err := GetAdsByIDsWithDeleted([]int{id}, currentUser, true)
 	if err != nil || len(ads) == 0 {
 		return Ad{}, false
 	}

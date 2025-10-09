@@ -24,9 +24,17 @@ func AdGridNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
 		),
 	)
 
+	// Determine full class string based on deleted status
+	var containerClass string
+	if ad.IsArchived() {
+		containerClass = "border rounded-lg shadow-sm bg-red-100 flex flex-col cursor-pointer hover:shadow-md transition-shadow"
+	} else {
+		containerClass = "border rounded-lg shadow-sm flex flex-col cursor-pointer hover:shadow-md transition-shadow"
+	}
+
 	return Div(
 		ID(adID(ad)),
-		Class("border rounded-lg shadow-sm bg-white flex flex-col cursor-pointer hover:shadow-md transition-shadow"),
+		Class(containerClass),
 
 		hx.Get(fmt.Sprintf("/ad/detail/%d?view=grid", ad.ID)),
 		hx.Target(adTarget(ad)),

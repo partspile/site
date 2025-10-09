@@ -13,9 +13,17 @@ import (
 
 // AdListNode renders a list view of ad
 func AdListNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
+	// Determine styling based on deleted status
+	var classes string
+	if ad.IsArchived() {
+		classes = "flex items-center py-2 px-3 bg-red-100 cursor-pointer border border-red-300 rounded-lg my-2 mx-2"
+	} else {
+		classes = "flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer"
+	}
+
 	return Div(
 		ID(adID(ad)),
-		Class("flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer"),
+		Class(classes),
 
 		hx.Get(fmt.Sprintf("/ad/detail/%d?view=list", ad.ID)),
 		hx.Target(adTarget(ad)),

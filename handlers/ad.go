@@ -153,6 +153,12 @@ func HandleAdPage(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
+	// If ad is deleted and user is not the owner, show deleted message
+	if adObj.IsArchived() && adObj.UserID != userID {
+		return render(c, ui.AdDeletedPage(currentUser, c.Path()))
+	}
+
+	// Owner can see their deleted ads, or anyone can see active ads
 	return render(c, ui.AdPage(adObj, currentUser, userID, c.Path(), getLocation(c), getView(c)))
 }
 
@@ -288,20 +294,22 @@ func HandleAdDetail(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	// Increment global click count
-	_ = ad.IncrementAdClick(adID)
-
 	currentUser, userID := CurrentUser(c)
-	if userID != 0 {
-		_ = ad.IncrementAdClickForUser(adID, userID)
-		// Queue user for background embedding update
-		vector.QueueUserForUpdate(userID)
-	}
-
 	adObj, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+
+	// Only increment click counts for non-deleted ads
+	if !adObj.IsArchived() {
+		_ = ad.IncrementAdClick(adID)
+		if userID != 0 {
+			_ = ad.IncrementAdClickForUser(adID, userID)
+			// Queue user for background embedding update
+			vector.QueueUserForUpdate(userID)
+		}
+	}
+
 	loc := getLocation(c)
 	view := getView(c)
 	return render(c, ui.AdDetail(adObj, loc, userID, view))
@@ -340,6 +348,50 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 	}
 	log.Printf("Returning success page for non-HTMX request to delete ad %d", adID)
 	return render(c, ui.SuccessMessage("Ad deleted successfully", "/"))
+}
+
+// Handler for restoring a deleted ad
+func HandleRestoreAd(c *fiber.Ctx) error {
+	adID, err := ParseIntParam(c, "id")
+	if err != nil {
+		return err
+	}
+	currentUser, userID := CurrentUser(c)
+	adObj, ok := ad.GetAd(adID, currentUser)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+	if adObj.UserID != userID {
+		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
+	}
+	if !adObj.IsArchived() {
+		return fiber.NewError(fiber.StatusBadRequest, "Ad is not deleted")
+	}
+	if err := ad.RestoreAd(adID); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to restore ad")
+	}
+
+	// Queue ad for background re-addition to vector database (Qdrant)
+	vector.QueueAd(adObj)
+
+	// Get the restored ad with updated data
+	restoredAd, ok := ad.GetAd(adID, currentUser)
+	if !ok {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve restored ad")
+	}
+
+	// If viewing in collapsed list/grid view (from deleted ads page), remove the ad from the list
+	// Otherwise, show the updated ad detail
+	view := getView(c)
+	if view == "list" || view == "grid" || view == "map" {
+		// Return empty response to remove the ad from the deleted ads list
+		log.Printf("Restore ad %d from list view, removing from DOM", adID)
+		return render(c, ui.EmptyResponse())
+	}
+
+	// For expanded detail view, return the updated ad without deleted styling
+	loc := getLocation(c)
+	return render(c, ui.AdDetail(restoredAd, loc, userID, view))
 }
 
 // Handler for ad edit partial (inline edit)
