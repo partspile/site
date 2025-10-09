@@ -152,30 +152,6 @@ func categoriesSelector(categories []string, selectedCategory string) g.Node {
 	)
 }
 
-func SubCategoriesFormGroup(subCategories []string, selectedSubCategory string) g.Node {
-	options := []g.Node{
-		Option(Value(""), g.Text("Select a subcategory")),
-	}
-
-	for _, subCategory := range subCategories {
-		attrs := []g.Node{Value(subCategory), g.Text(subCategory)}
-		if subCategory == selectedSubCategory {
-			attrs = append(attrs, Selected())
-		}
-		options = append(options, Option(attrs...))
-	}
-
-	return formGroup("Subcategory", "subcategory",
-		Select(
-			ID("subcategory"),
-			Name("subcategory"),
-			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
-			Required(),
-			g.Group(options),
-		),
-	)
-}
-
 func SubCategoriesFormGroupFromStruct(subCategories []part.SubCategory, selectedSubCategory string) g.Node {
 	options := []g.Node{
 		Option(Value(""), g.Text("Select a subcategory")),

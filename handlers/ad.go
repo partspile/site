@@ -319,17 +319,6 @@ func HandleUpdateAdDescription(c *fiber.Ctx) error {
 		currentUser.ID, getView(c)))
 }
 
-func HandleArchiveAd(c *fiber.Ctx) error {
-	adID, err := ParseIntParam(c, "id")
-	if err != nil {
-		return err
-	}
-	if err := ad.ArchiveAd(adID); err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to archive ad")
-	}
-	return render(c, ui.SuccessMessage("Ad archived successfully", "/"))
-}
-
 // Handler for ad card (collapse)
 func HandleAdCard(c *fiber.Ctx) error {
 	adID, err := c.ParamsInt("id")
@@ -599,48 +588,6 @@ func HandleAdImageSignedURL(c *fiber.Ctx) error {
 		"token":   token,
 		"expires": time.Now().Unix() + config.B2DownloadTokenExpiry,
 	})
-}
-
-func deleteAdImagesFromB2(adID int, indices []int) {
-	accountID := config.B2MasterKeyID
-	keyID := config.B2KeyID
-	appKey := config.B2AppKey
-	if accountID == "" || appKey == "" || keyID == "" {
-		log.Println("B2 credentials not set in env vars")
-		return
-	}
-	b2, err := backblaze.NewB2(backblaze.Credentials{
-		AccountID:      accountID,
-		ApplicationKey: appKey,
-		KeyID:          keyID,
-	})
-	if err != nil {
-		log.Println("B2 auth error:", err)
-		return
-	}
-	bucket, err := b2.Bucket(config.B2BucketName)
-	if err != nil {
-		log.Println("B2 bucket error:", err)
-		return
-	}
-	for _, idx := range indices {
-		b2Path := filepath.Join(
-			fmt.Sprintf("%d", adID),
-			fmt.Sprintf("%d.webp", idx),
-		)
-		// List file versions for this file name
-		resp, err := bucket.ListFileVersions(b2Path, "", 10)
-		if err != nil {
-			log.Println("B2 list file versions error for", b2Path, ":", err)
-			continue
-		}
-		for _, file := range resp.Files {
-			_, err := bucket.DeleteFileVersion(file.Name, file.ID)
-			if err != nil {
-				log.Println("B2 delete error for", b2Path, file.ID, ":", err)
-			}
-		}
-	}
 }
 
 // Handler for HTMX image carousel

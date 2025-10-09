@@ -48,16 +48,6 @@ func SetForTesting(database *sqlx.DB) {
 	db = database
 }
 
-// Close closes the database connection
-func Close() error {
-	if db != nil {
-		return db.Close()
-	}
-	return nil
-}
-
-// Convenience methods that wrap common database operations
-
 // Query executes a query that returns rows
 func Query(query string, args ...interface{}) (*sql.Rows, error) {
 	return Get().Query(query, args...)

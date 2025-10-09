@@ -133,17 +133,6 @@ func ErrorPage(code int, message string) g.Node {
 	)
 }
 
-// LoaderDiv renders the loader for infinite scroll (kept for compatibility)
-func loaderDiv(url string, view string) g.Node {
-	return Div(
-		ID("infinite-scroll-loader"),
-		Class("h-4"),
-		g.Attr("hx-get", url),
-		g.Attr("hx-trigger", "intersect once"),
-		g.Attr("hx-swap", "outerHTML"),
-	)
-}
-
 func NoSearchResultsMessage() g.Node {
 	return Div(
 		Class("flex justify-center items-center p-8"),

@@ -1,7 +1,6 @@
 package ad
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"time"
@@ -33,19 +32,6 @@ func IncrementAdClickForUser(adID int, userID int) error {
 func GetAdClickCount(adID int) (int, error) {
 	var count int
 	err := db.QueryRow("SELECT click_count FROM Ad WHERE id = ?", adID).Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
-// GetAdClickCountForUser returns the click count for an ad for a specific user
-func GetAdClickCountForUser(adID int, userID int) (int, error) {
-	var count int
-	err := db.QueryRow("SELECT click_count FROM UserAdClick WHERE ad_id = ? AND user_id = ?", adID, userID).Scan(&count)
-	if err == sql.ErrNoRows {
-		return 0, nil
-	}
 	if err != nil {
 		return 0, err
 	}

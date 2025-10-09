@@ -158,38 +158,6 @@ func GetUser(id int) (User, error) {
 	return u, nil
 }
 
-// GetArchivedUser retrieves an archived user by ID
-func GetArchivedUser(id int) (User, bool) {
-	row := db.QueryRow(`SELECT id, name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin, deleted_at FROM User WHERE id = ? AND deleted_at IS NOT NULL`, id)
-	var u User
-	var createdAt string
-	var isAdmin int
-	var phoneVerified int
-	var verificationCode *string
-	var notificationMethod string
-	var emailAddress *string
-	var deletedAt sql.NullString
-	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &emailAddress, &createdAt, &isAdmin, &deletedAt)
-	if err != nil {
-		return User{}, false
-	}
-	u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
-	u.IsAdmin = isAdmin == 1
-	u.PhoneVerified = phoneVerified == 1
-	u.VerificationCode = verificationCode
-	u.NotificationMethod = notificationMethod
-	u.EmailAddress = emailAddress
-
-	// Parse deleted_at field
-	if deletedAt.Valid && deletedAt.String != "" {
-		if parsedTime, err := time.Parse(time.RFC3339Nano, deletedAt.String); err == nil {
-			u.DeletedAt = &parsedTime
-		}
-	}
-
-	return u, true
-}
-
 // GetUserByName retrieves a user by name (username)
 func GetUserByName(name string) (User, error) {
 	row := db.QueryRow(`SELECT id, name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin, deleted_at FROM User WHERE name = ? AND deleted_at IS NULL`, name)

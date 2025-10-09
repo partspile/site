@@ -3,13 +3,10 @@ package handlers
 import (
 	"fmt"
 	"log"
-	"regexp"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
@@ -150,104 +147,6 @@ func AdminRequired(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-func HandleRegister(c *fiber.Ctx) error {
-	currentUser, _ := GetCurrentUser(c)
-	return render(c, ui.RegisterPage(currentUser, c.Path()))
-}
-
-func HandleRegisterSubmission(c *fiber.Ctx) error {
-	name := c.FormValue("name")
-	phone := c.FormValue("phone")
-	phone = strings.TrimSpace(phone)
-
-	// Validate required fields
-	if strings.TrimSpace(name) == "" {
-		return ValidationErrorResponse(c, "Username is required.")
-	}
-
-	if phone == "" {
-		return ValidationErrorResponse(c, "Phone number is required.")
-	}
-
-	// Validate required checkbox
-	offers := c.FormValue("offers")
-
-	if offers != "true" {
-		return ValidationErrorResponse(c, "You must agree to receive informational text messages to continue.")
-	}
-	if strings.HasPrefix(phone, "+") {
-		matched, _ := regexp.MatchString(`^\+[1-9][0-9]{7,14}$`, phone)
-		if !matched {
-			return ValidationErrorResponse(c, "Phone must be in international format, e.g. +12025550123")
-		}
-	} else {
-		digits := regexp.MustCompile(`\D`).ReplaceAllString(phone, "")
-		if len(digits) == 10 {
-			phone = "+1" + digits
-		} else {
-			return ValidationErrorResponse(c, "US/Canada numbers must have 10 digits")
-		}
-	}
-	userPassword := c.FormValue("password")
-	password2 := c.FormValue("password2")
-
-	if err := password.ValidatePasswordConfirmation(userPassword, password2); err != nil {
-		return ValidationErrorResponse(c, err.Error())
-	}
-
-	// Validate password strength
-	if err := password.ValidatePasswordStrength(userPassword); err != nil {
-		return ValidationErrorResponse(c, err.Error())
-	}
-
-	// Check for existing username and phone before GROK screening
-	if _, err := user.GetUserByName(name); err == nil {
-		return ValidationErrorResponse(c, "Username already exists. Please choose a different username.")
-	}
-
-	if _, err := user.GetUserByPhone(phone); err == nil {
-		return ValidationErrorResponse(c, "Phone number is already registered. Please use a different phone number.")
-	}
-
-	// GROK username screening
-	systemPrompt := `You are an expert parts technician. Your job is to screen potential user names for the parts-pile web site.
-Reject user names that the general public would find offensive.
-Car-guy humor, double entendres, and puns are allowed unless they are widely considered offensive or hateful.
-Examples of acceptable usernames:
-- rusty nuts
-- lugnut
-- fast wrench
-- shift happens
-
-Examples of unacceptable usernames:
-- racial slurs
-- hate speech
-- explicit sexual content
-
-If the user name is acceptable, return only: OK
-If the user name is unacceptable, return a short, direct error message (1-2 sentences), and do not mention yourself, AI, or Grok in the response.
-Only reject names that are truly offensive to a general audience.`
-	resp, err := grok.CallGrok(systemPrompt, name)
-	if err != nil {
-		return ValidationErrorResponse(c, "Could not validate username. Please try again later.")
-	}
-	if resp != "OK" {
-		return ValidationErrorResponse(c, resp)
-	}
-
-	hash, salt, err := password.HashPassword(userPassword)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Server error, unable to create your account.")
-	}
-	_, err = user.CreateUser(name, phone, hash, salt, "argon2id")
-	if err != nil {
-		// This should rarely happen since we checked above, but handle any other database errors
-		return ValidationErrorResponse(c, "Unable to create account. Please try again.")
-	}
-
-	return render(c, ui.SuccessMessage("Registration successful", "/login"))
-}
-
 func HandleLogin(c *fiber.Ctx) error {
 	currentUser, _ := GetCurrentUser(c)
 	return render(c, ui.LoginPage(currentUser, c.Path()))
@@ -329,18 +228,6 @@ func CurrentUser(c *fiber.Ctx) (*user.User, int) {
 
 	log.Printf("[DEBUG] CurrentUser returning user from context: userID=%d", u.ID)
 	return u, u.ID
-}
-
-// RequireAdmin extracts the user from context and checks admin status.
-func RequireAdmin(c *fiber.Ctx) (*user.User, error) {
-	u, _ := CurrentUser(c)
-	if u == nil {
-		return nil, fiber.NewError(fiber.StatusUnauthorized, "no user in session")
-	}
-	if !u.IsAdmin {
-		return nil, fiber.NewError(fiber.StatusForbidden, "admin access required")
-	}
-	return u, nil
 }
 
 // RequireOwnership checks if the current user owns the resource.

@@ -118,15 +118,6 @@ func ParseIntParam(c *fiber.Ctx, paramName string) (int, error) {
 	return value, nil
 }
 
-// ParseFormInt parses a form value as an integer with consistent error handling
-func ParseFormInt(c *fiber.Ctx, fieldName string) (int, error) {
-	value, err := strconv.Atoi(c.FormValue(fieldName))
-	if err != nil {
-		return 0, fiber.NewError(fiber.StatusBadRequest, "Invalid integer value for field: "+fieldName)
-	}
-	return value, nil
-}
-
 // ValidationErrorResponse returns a validation error response
 func ValidationErrorResponse(c *fiber.Ctx, message string) error {
 	return render(c, ui.ValidationError(message))

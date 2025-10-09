@@ -1,7 +1,6 @@
 package vector
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -9,7 +8,6 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/search"
-	"github.com/qdrant/go-client/qdrant"
 )
 
 // GetUserPersonalizedEmbedding loads from cache first, then generates new embedding if not found.
@@ -169,57 +167,4 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 	log.Printf("[embedding][info] userID=%d: Successfully created user embedding from %d vectors (bookmarks: %d, clicks: %d, searches: %d)",
 		userID, len(vectors), len(bookmarkIDs), len(clickedIDs), len(searches))
 	return emb, nil
-}
-
-// GetAdEmbeddingFromQdrant fetches the embedding for an ad by ID from Qdrant.
-func GetAdEmbeddingFromQdrant(adID int) ([]float32, error) {
-	if qdrantClient == nil {
-		return nil, fmt.Errorf("Qdrant client not initialized")
-	}
-	log.Printf("[qdrant] Fetching vector for ad %d", adID)
-	ctx := context.Background()
-	pointID := qdrant.NewIDNum(uint64(adID))
-	resp, err := qdrantClient.Get(ctx, &qdrant.GetPoints{
-		CollectionName: qdrantCollection,
-		Ids:            []*qdrant.PointId{pointID},
-		WithPayload:    &qdrant.WithPayloadSelector{SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true}},
-		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: true}},
-	})
-	if err != nil {
-		log.Printf("[qdrant] Fetch error for ad %d: %v", adID, err)
-		return nil, fmt.Errorf("Qdrant fetch error: %w", err)
-	}
-	log.Printf("[qdrant] Fetch response for ad %d: found %d points", adID, len(resp))
-	if len(resp) == 0 {
-		log.Printf("[qdrant] No points found for ad %d", adID)
-		return nil, fmt.Errorf("vector not found for adID %d", adID)
-	}
-
-	point := resp[0]
-	log.Printf("[qdrant] Point structure for ad %d: Vectors=%v", adID, point.Vectors != nil)
-	if point.Vectors == nil {
-		log.Printf("[qdrant] Vector values are nil for ad %d", adID)
-		return nil, fmt.Errorf("no vector data for adID %d", adID)
-	}
-
-	// Extract vector data
-	var vectorData []float32
-	if point.Vectors != nil {
-		if vectorOutput := point.Vectors.GetVector(); vectorOutput != nil {
-			// Try to get the vector data directly from VectorOutput
-			if data := vectorOutput.GetData(); len(data) > 0 {
-				vectorData = data
-			} else if dense := vectorOutput.GetDense(); dense != nil {
-				vectorData = dense.Data
-			}
-		}
-	}
-
-	if vectorData == nil {
-		log.Printf("[qdrant] No vector data found for ad %d", adID)
-		return nil, fmt.Errorf("no vector data for adID %d", adID)
-	}
-
-	log.Printf("[qdrant] Successfully retrieved vector for ad %d with length %d", adID, len(vectorData))
-	return vectorData, nil
 }

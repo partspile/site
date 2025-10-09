@@ -115,11 +115,6 @@ func GetVehicleData(adID int) (makeName string, years []string, models []string,
 	return makeName, years, models, engines
 }
 
-// buildAdQuery builds the complete query for fetching ads with IDs and user context
-func buildAdQuery(ids []int, currentUser *user.User) (string, []interface{}) {
-	return buildAdQueryWithDeleted(ids, currentUser, false)
-}
-
 // buildAdQueryWithDeleted builds the complete query for fetching ads with IDs and user context, optionally including deleted ads
 func buildAdQueryWithDeleted(ids []int, currentUser *user.User, includeDeleted bool) (string, []interface{}) {
 	var query string
@@ -183,19 +178,6 @@ func GetAd(id int, currentUser *user.User) (Ad, bool) {
 	return ads[0], true
 }
 
-// GetAdWithVehicle retrieves an ad by ID from the ads table with vehicle data
-func GetAdWithVehicle(id int, currentUser *user.User) (Ad, bool) {
-	ad, ok := GetAd(id, currentUser)
-	if !ok {
-		return Ad{}, false
-	}
-
-	// Get vehicle data
-	ad.Make, ad.Years, ad.Models, ad.Engines = GetVehicleData(id)
-
-	return ad, true
-}
-
 func AddAd(ad Ad) int {
 	tx, err := db.Begin()
 	if err != nil {
@@ -254,36 +236,6 @@ func addAdVehicleAssociations(tx *sql.Tx, adID int, makeName string, years []str
 		}
 	}
 	return nil
-}
-
-// UpdateAd updates an existing ad
-func UpdateAd(ad Ad) error {
-	tx, err := db.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	_, err = tx.Exec("UPDATE Ad SET title = ?, description = ?, price = ?, subcategory_id = ?, location_id = ?, image_count = ? WHERE id = ?",
-		ad.Title, ad.Description, ad.Price, ad.SubCategoryID, ad.LocationID, ad.ImageCount, ad.ID)
-	if err != nil {
-		return err
-	}
-
-	// First, remove existing vehicle associations for this ad
-	_, err = tx.Exec("DELETE FROM AdCar WHERE ad_id = ?", ad.ID)
-	if err != nil {
-		return err
-	}
-
-	// Then, add the new ones
-	if ad.Make != "" || len(ad.Years) > 0 || len(ad.Models) > 0 || len(ad.Engines) > 0 {
-		if err := addAdVehicleAssociations(tx, ad.ID, ad.Make, ad.Years, ad.Models, ad.Engines); err != nil {
-			return err
-		}
-	}
-
-	return tx.Commit()
 }
 
 // ArchiveAd archives an ad using soft delete

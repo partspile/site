@@ -45,18 +45,6 @@ func AdminSectionPage(currentUser *user.User, path, activeSection string, conten
 	)
 }
 
-// Update AdminDashboard to default to b2-cache section
-func AdminDashboard(currentUser *user.User, path string) g.Node {
-	return Page(
-		"Admin Dashboard",
-		currentUser,
-		path,
-		[]g.Node{
-			AdminSectionPage(currentUser, path, "b2-cache", nil),
-		},
-	)
-}
-
 // Generic cache stats panel component
 func CacheStatsPanel(title string, stats map[string]interface{}, clearEndpoint, refreshEndpoint string) g.Node {
 	return Div(
