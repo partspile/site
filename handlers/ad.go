@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"net/http"
+	"strings"
 	"time"
 
 	"bytes"
@@ -209,7 +210,7 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	existingAd, ok := ad.GetAd(adID, currentUser)
+	existingAd, ok := ad.GetAdWithVehicle(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
@@ -226,16 +227,45 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, "Could not resolve location.")
 	}
 
-	updatedAd, imageFiles, deletedImages, err := BuildAdFromForm(c, currentUser.ID, locID, adID)
+	// Validate and parse price
+	price, err := ValidateAndParsePrice(c)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
-	ad.UpdateAd(updatedAd)
-	// Delete images from B2 if needed
-	if len(deletedImages) > 0 {
-		deleteAdImagesFromB2(updatedAd.ID, deletedImages)
+
+	// Handle description addition
+	descriptionAddition := c.FormValue("description_addition")
+	updatedDescription := existingAd.Description
+	if descriptionAddition != "" {
+		// Clean the addition text (remove extra whitespace, validate ASCII)
+		descriptionAddition = strings.TrimSpace(descriptionAddition)
+		if descriptionAddition != "" {
+			// Create timestamp
+			timestamp := time.Now().Format("2006-01-02 15:04")
+			// Append with timestamp
+			addition := fmt.Sprintf("\n\n[%s] %s", timestamp, descriptionAddition)
+			updatedDescription = existingAd.Description + addition
+
+			// Validate total length
+			if len(updatedDescription) > 500 {
+				return ValidationErrorResponse(c,
+					fmt.Sprintf("Total description would be %d characters (max 500). Please shorten your addition.",
+						len(updatedDescription)))
+			}
+		}
 	}
-	uploadAdImagesToB2(updatedAd.ID, imageFiles)
+
+	// Create updated ad with only editable fields changed
+	updatedAd := existingAd
+	updatedAd.Price = price
+	updatedAd.LocationID = locID
+	updatedAd.Description = updatedDescription
+
+	// Update the ad in the database
+	err = ad.UpdateAd(updatedAd)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update ad")
+	}
 
 	// Attempt inline vector processing, fallback to queue if it fails
 	log.Printf("[embedding] Attempting inline vector processing for updated ad %d", adID)
@@ -247,9 +277,15 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		log.Printf("[embedding] Successfully processed updated ad %d inline", adID)
 	}
 
+	// Fetch updated ad with location data for display
+	updatedAdWithLocation, ok := ad.GetAd(adID, currentUser)
+	if !ok {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to fetch updated ad")
+	}
+
 	if c.Get("HX-Request") != "" {
 		// For htmx, return the updated detail partial
-		return render(c, ui.AdDetail(updatedAd, getLocation(c), currentUser.ID, getView(c)))
+		return render(c, ui.AdDetail(updatedAdWithLocation, getLocation(c), currentUser.ID, getView(c)))
 	}
 	return render(c, ui.SuccessMessage("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
 }

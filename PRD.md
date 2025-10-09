@@ -299,11 +299,21 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - There are no expand/collapse icons or in-place expansion; ad details are shown on a separate page.
 
 ### 3.14 Ad Editing
-- Ad editing is now performed inline within the ad detail view.
-- The edit icon (using /edit.svg) appears on the ad detail view only for the ad owner when logged in.
-- Clicking the edit icon swaps the ad detail for an inline edit form.
-- The edit form has an 'X' button to cancel (return to detail view) and a Save button to save changes and return to detail view.
-- There is no longer a standalone edit page or edit link.
+- Ad editing is simplified to allow only essential changes after ad creation.
+- **Editable Fields:** Once an ad is created, users can only edit:
+  - **Price:** Can be updated at any time
+  - **Location:** Can be updated to reflect part relocation
+  - **Description:** Users can only add to the description (not replace it)
+    - Each addition is timestamped in the format `[YYYY-MM-DD HH:MM]`
+    - Additions are appended to the existing description with timestamps
+    - Total description length must remain under 500 characters
+- **Non-Editable Fields:** The following fields cannot be changed after creation:
+  - Title, Make, Years, Models, Engines, Categories, Subcategories, Images
+- **Edit Page:** The edit page displays current ad details (read-only) along with editable fields
+- **Inline Editing:** Ad editing can also be performed inline within the ad detail view
+  - The edit icon (using /edit.svg) appears on the ad detail view only for the ad owner when logged in
+  - Clicking the edit icon swaps the ad detail for an inline edit form
+  - The edit form shows current details and only allows editing price, location, and adding to description
 
 ### 3.15 Ad Location
 - Each ad now has an optional location field to track where parts are located. This field is stored in the database and can be set or edited by the user. If present, it is displayed on the ad details page.

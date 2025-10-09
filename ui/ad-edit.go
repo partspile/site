@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"sort"
 	"strings"
 
 	g "maragu.dev/gomponents"
@@ -18,80 +17,6 @@ import (
 // ---- Edit Ad Page ----
 
 func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes, years, models, engines, categories, subcategories []string) g.Node {
-	// Prepare make options
-	makeOptions := []g.Node{}
-	for _, makeName := range makes {
-		attrs := []g.Node{Value(makeName)}
-		if makeName == currentAd.Make {
-			attrs = append(attrs, Selected())
-		}
-		attrs = append(attrs, g.Text(makeName))
-		makeOptions = append(makeOptions, Option(attrs...))
-	}
-
-	// Prepare year checkboxes
-	yearCheckboxes := []g.Node{}
-	for _, year := range years {
-		isChecked := false
-		for _, adYear := range currentAd.Years {
-			if year == adYear {
-				isChecked = true
-				break
-			}
-		}
-		yearCheckboxes = append(yearCheckboxes,
-			Checkbox("years", year, year, isChecked, false,
-				hx.Trigger("change"),
-				hx.Get("/api/models"),
-				hx.Target("#modelsDiv"),
-				hx.Include("[name='make'],[name='years']:checked"),
-			),
-		)
-	}
-
-	// Prepare model checkboxes
-	modelCheckboxes := []g.Node{}
-	sortedModels := make([]string, len(models))
-	copy(sortedModels, models)
-	sort.Strings(sortedModels)
-
-	for _, modelName := range sortedModels {
-		isChecked := false
-		for _, adModel := range currentAd.Models {
-			if modelName == adModel {
-				isChecked = true
-				break
-			}
-		}
-		modelCheckboxes = append(modelCheckboxes,
-			Checkbox("models", modelName, modelName, isChecked, false,
-				hx.Trigger("change"),
-				hx.Get("/api/engines"),
-				hx.Target("#enginesDiv"),
-				hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
-			),
-		)
-	}
-
-	// Prepare engine checkboxes
-	engineCheckboxes := []g.Node{}
-	sortedEngines := make([]string, len(engines))
-	copy(sortedEngines, engines)
-	sort.Strings(sortedEngines)
-
-	for _, engineName := range sortedEngines {
-		isChecked := false
-		for _, adEngine := range currentAd.Engines {
-			if engineName == adEngine {
-				isChecked = true
-				break
-			}
-		}
-		engineCheckboxes = append(engineCheckboxes,
-			Checkbox("engines", engineName, engineName, isChecked, false),
-		)
-	}
-
 	// Define htmxTarget for this form
 	htmxTarget := fmt.Sprintf("#ad-%d", currentAd.ID)
 
@@ -101,6 +26,54 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes, yea
 		path,
 		[]g.Node{
 			pageHeader("Edit Ad"),
+			// Show current ad details (read-only)
+			Div(
+				Class("space-y-4 mb-6 p-4 bg-gray-50 rounded border"),
+				H2(Class("text-xl font-bold mb-4"), g.Text("Current Ad Details")),
+				Div(Class("grid grid-cols-2 gap-4"),
+					Div(
+						Class("space-y-2"),
+						Div(Class("font-semibold"), g.Text("Title:")),
+						Div(g.Text(currentAd.Title)),
+					),
+					Div(
+						Class("space-y-2"),
+						Div(Class("font-semibold"), g.Text("Make:")),
+						Div(g.Text(currentAd.Make)),
+					),
+					Div(
+						Class("space-y-2"),
+						Div(Class("font-semibold"), g.Text("Years:")),
+						Div(g.Text(strings.Join(currentAd.Years, ", "))),
+					),
+					Div(
+						Class("space-y-2"),
+						Div(Class("font-semibold"), g.Text("Models:")),
+						Div(g.Text(strings.Join(currentAd.Models, ", "))),
+					),
+					Div(
+						Class("space-y-2"),
+						Div(Class("font-semibold"), g.Text("Engines:")),
+						Div(g.Text(strings.Join(currentAd.Engines, ", "))),
+					),
+					func() g.Node {
+						if currentAd.Category.Valid {
+							return Div(
+								Class("space-y-2"),
+								Div(Class("font-semibold"), g.Text("Category:")),
+								Div(g.Text(currentAd.Category.String)),
+							)
+						}
+						return g.Text("")
+					}(),
+				),
+				Div(
+					Class("mt-4"),
+					Div(Class("font-semibold mb-2"), g.Text("Current Description:")),
+					Div(Class("whitespace-pre-wrap"), g.Text(currentAd.Description)),
+				),
+			),
+			// Editable fields
 			Form(
 				ID("editAdForm"),
 				Class("space-y-6"),
@@ -108,30 +81,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes, yea
 				hx.Encoding("multipart/form-data"),
 				hx.Target(htmxTarget),
 				hx.Swap("outerHTML"),
-				editTitleInputField(currentAd.Title),
-				editMakeSelectField(makes, currentAd.Make),
-				formGroup("Years", "years", Div(ID("yearsDiv"), GridContainer4(yearCheckboxes...))),
-				formGroup("Models", "models", Div(ID("modelsDiv"), GridContainer4(modelCheckboxes...))),
-				formGroup("Engines", "engines", Div(ID("enginesDiv"), GridContainer4(engineCheckboxes...))),
-				categoriesSelector(categories, func() string {
-					if currentAd.Category.Valid {
-						return currentAd.Category.String
-					}
-					return ""
-				}()),
-				Div(
-					ID("subcategoriesDiv"),
-					Class("space-y-2"),
-					// Show subcategories if they exist
-					func() g.Node {
-						if len(subcategories) > 0 {
-							return SubCategoriesFormGroup(subcategories, "")
-						}
-						return g.Text("")
-					}(),
-				),
-				editImagesInputField(currentAd.ID, currentAd.ImageCount),
-				editDescriptionTextareaField(currentAd.Description),
+				H2(Class("text-xl font-bold"), g.Text("Edit Ad")),
 				editPriceInputField(currentAd.Price),
 				editLocationInputField(func() string {
 					if currentAd.City.Valid {
@@ -139,6 +89,7 @@ func EditAdPage(currentUser *user.User, path string, currentAd ad.Ad, makes, yea
 					}
 					return ""
 				}()),
+				editDescriptionAdditionTextareaField(),
 				styledButton("Submit", buttonPrimary,
 					Type("submit"),
 				),
@@ -299,12 +250,82 @@ func editLocationInputField(currentLocation string) g.Node {
 	)
 }
 
+func editDescriptionAdditionTextareaField() g.Node {
+	return formGroup("Add to Description", "description_addition",
+		Div(
+			Textarea(
+				ID("description_addition"),
+				Name("description_addition"),
+				Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
+				MaxLength("500"),
+				Rows("4"),
+				Pattern("[\\x20-\\x7E\\n]+"),
+				Title("Addition must contain printable ASCII characters only"),
+				Placeholder("Add additional information (will be timestamped and appended)"),
+				g.Attr("oninput", "this.checkValidity()"),
+			),
+			Div(
+				Class("text-sm text-gray-600 mt-1"),
+				g.Text("Note: This will be appended to the current description with a timestamp. Total description must remain under 500 characters."),
+			),
+		),
+	)
+}
+
 // ---- Edit Ad Partial (for inline editing) ----
 
 func AdEditPartial(adObj ad.Ad, makes, years, models, engines, categories, subcategories []string, cancelTarget, htmxTarget string, view ...string) g.Node {
 	editForm := Div(
 		ID(fmt.Sprintf("ad-%d", adObj.ID)),
 		Class("border p-4 mb-4 rounded bg-white shadow-lg relative"),
+		// Show current ad details (read-only)
+		Div(
+			Class("space-y-4 mb-6 p-4 bg-gray-50 rounded border"),
+			H3(Class("text-lg font-bold mb-4"), g.Text("Current Ad Details")),
+			Div(Class("grid grid-cols-2 gap-4 text-sm"),
+				Div(
+					Class("space-y-1"),
+					Div(Class("font-semibold"), g.Text("Title:")),
+					Div(g.Text(adObj.Title)),
+				),
+				Div(
+					Class("space-y-1"),
+					Div(Class("font-semibold"), g.Text("Make:")),
+					Div(g.Text(adObj.Make)),
+				),
+				Div(
+					Class("space-y-1"),
+					Div(Class("font-semibold"), g.Text("Years:")),
+					Div(g.Text(strings.Join(adObj.Years, ", "))),
+				),
+				Div(
+					Class("space-y-1"),
+					Div(Class("font-semibold"), g.Text("Models:")),
+					Div(g.Text(strings.Join(adObj.Models, ", "))),
+				),
+				Div(
+					Class("space-y-1"),
+					Div(Class("font-semibold"), g.Text("Engines:")),
+					Div(g.Text(strings.Join(adObj.Engines, ", "))),
+				),
+				func() g.Node {
+					if adObj.Category.Valid {
+						return Div(
+							Class("space-y-1"),
+							Div(Class("font-semibold"), g.Text("Category:")),
+							Div(g.Text(adObj.Category.String)),
+						)
+					}
+					return g.Text("")
+				}(),
+			),
+			Div(
+				Class("mt-4"),
+				Div(Class("font-semibold mb-2"), g.Text("Current Description:")),
+				Div(Class("whitespace-pre-wrap text-sm"), g.Text(adObj.Description)),
+			),
+		),
+		// Editable fields
 		Form(
 			ID("editAdForm"),
 			Class("space-y-6"),
@@ -312,181 +333,7 @@ func AdEditPartial(adObj ad.Ad, makes, years, models, engines, categories, subca
 			hx.Encoding("multipart/form-data"),
 			hx.Target(htmxTarget),
 			hx.Swap("outerHTML"),
-			formGroup("Title", "title",
-				Input(
-					Type("text"),
-					ID("title"),
-					Name("title"),
-					Class("w-full p-2 border rounded"),
-					Required(),
-					Value(adObj.Title),
-				),
-			),
-			formGroup("Make", "make",
-				Select(
-					ID("make"),
-					Name("make"),
-					Class("w-full p-2 border rounded"),
-					hx.Trigger("change"),
-					hx.Get("/api/years"),
-					hx.Target("#yearsDiv"),
-					hx.Include("this"),
-					g.Attr("onchange", "document.getElementById('modelsDiv').innerHTML = ''; document.getElementById('enginesDiv').innerHTML = '';"),
-					Option(Value(""), g.Text("Select a make")),
-					g.Group(func() []g.Node {
-						makeOptions := []g.Node{}
-						for _, makeName := range makes {
-							attrs := []g.Node{Value(makeName)}
-							if makeName == adObj.Make {
-								attrs = append(attrs, Selected())
-							}
-							attrs = append(attrs, g.Text(makeName))
-							makeOptions = append(makeOptions, Option(attrs...))
-						}
-						return makeOptions
-					}()),
-				),
-			),
-			formGroup("Years", "years", Div(ID("yearsDiv"), func() g.Node {
-				yearCheckboxes := []g.Node{}
-				for _, year := range years {
-					isChecked := false
-					for _, adYear := range adObj.Years {
-						if year == adYear {
-							isChecked = true
-							break
-						}
-					}
-					yearCheckboxes = append(yearCheckboxes,
-						Checkbox("years", year, year, isChecked, false,
-							hx.Trigger("change"),
-							hx.Get("/api/models"),
-							hx.Target("#modelsDiv"),
-							hx.Include("[name='make'],[name='years']:checked"),
-						),
-					)
-				}
-				return GridContainer4(yearCheckboxes...)
-			}())),
-			formGroup("Models", "models", Div(ID("modelsDiv"), func() g.Node {
-				modelCheckboxes := []g.Node{}
-				sortedModels := make([]string, len(models))
-				copy(sortedModels, models)
-				sort.Strings(sortedModels)
-
-				for _, modelName := range sortedModels {
-					isChecked := false
-					for _, adModel := range adObj.Models {
-						if modelName == adModel {
-							isChecked = true
-							break
-						}
-					}
-					modelCheckboxes = append(modelCheckboxes,
-						Checkbox("models", modelName, modelName, isChecked, false,
-							hx.Trigger("change"),
-							hx.Get("/api/engines"),
-							hx.Target("#enginesDiv"),
-							hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
-						),
-					)
-				}
-				return GridContainer4(modelCheckboxes...)
-			}())),
-			formGroup("Engines", "engines", Div(ID("enginesDiv"), func() g.Node {
-				engineCheckboxes := []g.Node{}
-				sortedEngines := make([]string, len(engines))
-				copy(sortedEngines, engines)
-				sort.Strings(sortedEngines)
-
-				for _, engineName := range sortedEngines {
-					isChecked := false
-					for _, adEngine := range adObj.Engines {
-						if engineName == adEngine {
-							isChecked = true
-							break
-						}
-					}
-					engineCheckboxes = append(engineCheckboxes,
-						Checkbox("engines", engineName, engineName, isChecked, false),
-					)
-				}
-				return GridContainer4(engineCheckboxes...)
-			}())),
-			categoriesSelector(categories, func() string {
-				if adObj.Category.Valid {
-					return adObj.Category.String
-				}
-				return ""
-			}()),
-			Div(
-				ID("subcategoriesDiv"),
-				Class("space-y-2"),
-				func() g.Node {
-					if len(subcategories) > 0 {
-						return SubCategoriesFormGroup(subcategories, "")
-					}
-					return g.Text("")
-				}(),
-			),
-			formGroup("Images", "images",
-				Div(
-					Div(
-						ID("image-gallery"),
-						Class("flex flex-row gap-2 mb-2"),
-						g.Group(func() []g.Node {
-							imageNodes := []g.Node{}
-							imageURLs := AdImageURLs(adObj.ID, adObj.ImageCount)
-							for i, url := range imageURLs {
-								imageIdx := i + 1
-								imageNodes = append(imageNodes,
-									Div(
-										Class("relative group"),
-										g.Attr("data-image-idx", fmt.Sprintf("%d", imageIdx)),
-										Img(
-											Src(url),
-											Alt(fmt.Sprintf("Image %d", imageIdx)),
-											Class("object-cover w-24 h-24 rounded border cursor-move"),
-											g.Attr("draggable", "true"),
-										),
-										Button(
-											Type("button"),
-											Class("absolute top-0 right-0 bg-white bg-opacity-80 rounded-full p-1 text-red-600 hover:text-red-800 z-10 delete-image-btn"),
-											g.Attr("onclick", fmt.Sprintf("deleteImage(this, %d)", imageIdx)),
-											Img(Src("/images/trashcan.svg"), Alt("Delete"), Class("w-6 h-6")),
-										),
-									),
-								)
-							}
-							return imageNodes
-						}()),
-					),
-					Input(
-						Type("hidden"),
-						ID("deleted_images"),
-						Name("deleted_images"),
-						Value(""),
-					),
-					Input(
-						Type("file"),
-						ID("images"),
-						Name("images"),
-						Class("w-full p-2 border rounded"),
-						g.Attr("accept", "image/*"),
-						g.Attr("multiple"),
-					),
-					Div(ID("image-preview")),
-				),
-			),
-			formGroup("Description", "description",
-				Textarea(
-					ID("description"),
-					Name("description"),
-					Class("w-full p-2 border rounded"),
-					Rows("4"),
-					g.Text(adObj.Description),
-				),
-			),
+			H3(Class("text-lg font-bold"), g.Text("Edit Ad")),
 			formGroup("Price", "price",
 				Input(
 					Type("number"),
@@ -511,6 +358,22 @@ func AdEditPartial(adObj ad.Ad, makes, years, models, engines, categories, subca
 						}
 						return ""
 					}()),
+				),
+			),
+			formGroup("Add to Description", "description_addition",
+				Div(
+					Textarea(
+						ID("description_addition"),
+						Name("description_addition"),
+						Class("w-full p-2 border rounded"),
+						MaxLength("500"),
+						Rows("4"),
+						Placeholder("Add additional information (will be timestamped and appended)"),
+					),
+					Div(
+						Class("text-sm text-gray-600 mt-1"),
+						g.Text("Note: This will be appended to the current description with a timestamp. Total description must remain under 500 characters."),
+					),
 				),
 			),
 			Div(
