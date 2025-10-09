@@ -309,11 +309,15 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
     - Total description length must remain under 500 characters
 - **Non-Editable Fields:** The following fields cannot be changed after creation:
   - Title, Make, Years, Models, Engines, Categories, Subcategories, Images
-- **Edit Page:** The edit page displays current ad details (read-only) along with editable fields
-- **Inline Editing:** Ad editing can also be performed inline within the ad detail view
-  - The edit icon (using /edit.svg) appears on the ad detail view only for the ad owner when logged in
-  - Clicking the edit icon swaps the ad detail for an inline edit form
-  - The edit form shows current details and only allows editing price, location, and adding to description
+- **In-Place Modal Editing:** Ad owners can edit fields directly in the detail view
+  - Editable fields show a small edit icon (using /edit.svg) on hover
+  - Clicking on a field or its edit icon opens a modal dialog for editing
+  - Modal dialogs provide a focused editing experience for each field:
+    - **Price Modal:** Simple number input for updating the price
+    - **Location Modal:** Text input for updating location (resolved via Grok API)
+    - **Description Modal:** Shows current description and provides textarea for additions with timestamp
+  - After saving, the modal closes and the ad detail view updates via HTMX
+  - Each field update triggers a separate API endpoint and vector embedding update
 
 ### 3.15 Ad Location
 - Each ad now has an optional location field to track where parts are located. This field is stored in the database and can be set or edited by the user. If present, it is displayed on the ad details page.
@@ -419,7 +423,6 @@ See `schema.sql` for full schema and indexes.
 
 - `GET /` — Home/search page
 - `GET /new-ad` — New ad form
-- `GET /edit-ad/{id}` — Edit ad form
 - `GET /ad/{id}` — View ad details
 - `GET /search` — Search ads (supports query and cursor for pagination)
 - `GET /api/makes` — List all makes
@@ -427,7 +430,9 @@ See `schema.sql` for full schema and indexes.
 - `GET /api/models?make=...&years=...` — List models for make/years
 - `GET /api/engines?make=...&years=...&models=...` — List engines for make/years/models
 - `POST /api/new-ad` — Create new ad
-- `POST /api/update-ad` — Update ad
+- `POST /api/update-ad-price/:id` — Update ad price
+- `POST /api/update-ad-location/:id` — Update ad location
+- `POST /api/update-ad-description/:id` — Add to ad description
 - `DELETE /delete-ad/{id}` — Delete ad
 - `GET /register` — Registration form
 - `POST /api/register` — Register new user

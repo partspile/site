@@ -37,7 +37,7 @@ func AdListNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
 		),
 		Div(
 			Class("mr-4 text-xs text-gray-500"),
-			locationFlagNode(ad),
+			location(ad),
 		),
 		Div(
 			Class("mr-4 text-xs text-gray-400"),

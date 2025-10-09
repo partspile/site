@@ -163,54 +163,15 @@ func HandleAdPage(c *fiber.Ctx) error {
 	return render(c, ui.AdPage(adObj, currentUser, userID, c.Path(), getLocation(c), getView(c)))
 }
 
-func HandleEditAd(c *fiber.Ctx) error {
+// HandleUpdateAdPrice updates only the price of an ad
+func HandleUpdateAdPrice(c *fiber.Ctx) error {
 	currentUser, _ := CurrentUser(c)
-	adID, err := ParseIntParam(c, "id")
-	if err != nil {
-		return err
-	}
-
-	adObj, ok := ad.GetAdWithVehicle(adID, currentUser)
-	if !ok {
-		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
-	}
-
-	_, err = RequireOwnership(c, adObj.UserID)
-	if err != nil {
-		return err
-	}
-
-	// Prepare make options
-	makes := vehicle.GetMakes()
-	// Prepare year checkboxes
-	years := vehicle.GetYears(adObj.Make)
-	// Prepare model checkboxes
-	models := vehicle.GetModels(adObj.Make, adObj.Years)
-	// Prepare engine checkboxes
-	engines := vehicle.GetEngines(adObj.Make, adObj.Years, adObj.Models)
-
-	// Get categories (use cached static data)
-	categoryNames := part.GetCategories()
-
-	// Get subcategories for the current category if it exists
-	var subcategoryNames []string
-	if adObj.Category.Valid && adObj.Category.String != "" {
-		subcategoryNames = part.GetSubCategories(adObj.Category.String) // Use cached static data
-	}
-
-	return render(c, ui.EditAdPage(currentUser, c.Path(), adObj, makes, years, models, engines, categoryNames, subcategoryNames))
-}
-
-func HandleUpdateAdSubmission(c *fiber.Ctx) error {
-	println("HandleUpdateAdSubmission")
-	currentUser, _ := CurrentUser(c)
-
 	adID, err := ParseIntParam(c, "id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	existingAd, ok := ad.GetAdWithVehicle(adID, currentUser)
+	existingAd, ok := ad.GetAd(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
@@ -220,74 +181,142 @@ func HandleUpdateAdSubmission(c *fiber.Ctx) error {
 		return err
 	}
 
-	// Resolve and store location first
-	locationRaw := c.FormValue("location")
-	locID, err := resolveAndStoreLocation(locationRaw)
-	if err != nil {
-		return ValidationErrorResponse(c, "Could not resolve location.")
-	}
-
 	// Validate and parse price
 	price, err := ValidateAndParsePrice(c)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
 
+	// Update only the price
+	_, err = db.Exec("UPDATE Ad SET price = ? WHERE id = ?", price, adID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError,
+			"Failed to update price")
+	}
+
+	// Fetch updated ad for display
+	updatedAd, ok := ad.GetAd(adID, currentUser)
+	if !ok {
+		return fiber.NewError(fiber.StatusInternalServerError,
+			"Failed to fetch updated ad")
+	}
+
+	// Queue for vector update since price affects search
+	vector.QueueAd(updatedAd)
+
+	return render(c, ui.AdDetail(updatedAd, getLocation(c),
+		currentUser.ID, getView(c)))
+}
+
+// HandleUpdateAdLocation updates only the location of an ad
+func HandleUpdateAdLocation(c *fiber.Ctx) error {
+	currentUser, _ := CurrentUser(c)
+	adID, err := ParseIntParam(c, "id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+
+	existingAd, ok := ad.GetAd(adID, currentUser)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+
+	_, err = RequireOwnership(c, existingAd.UserID)
+	if err != nil {
+		return err
+	}
+
+	// Resolve and store location
+	locationRaw := c.FormValue("location")
+	locID, err := resolveAndStoreLocation(locationRaw)
+	if err != nil {
+		return ValidationErrorResponse(c, "Could not resolve location.")
+	}
+
+	// Update only the location
+	_, err = db.Exec("UPDATE Ad SET location_id = ? WHERE id = ?", locID, adID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError,
+			"Failed to update location")
+	}
+
+	// Fetch updated ad for display
+	updatedAd, ok := ad.GetAd(adID, currentUser)
+	if !ok {
+		return fiber.NewError(fiber.StatusInternalServerError,
+			"Failed to fetch updated ad")
+	}
+
+	// Queue for vector update since location affects search
+	vector.QueueAd(updatedAd)
+
+	return render(c, ui.AdDetail(updatedAd, getLocation(c),
+		currentUser.ID, getView(c)))
+}
+
+// HandleUpdateAdDescription appends to the description of an ad
+func HandleUpdateAdDescription(c *fiber.Ctx) error {
+	currentUser, _ := CurrentUser(c)
+	adID, err := ParseIntParam(c, "id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+
+	existingAd, ok := ad.GetAd(adID, currentUser)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+
+	_, err = RequireOwnership(c, existingAd.UserID)
+	if err != nil {
+		return err
+	}
+
 	// Handle description addition
 	descriptionAddition := c.FormValue("description_addition")
 	updatedDescription := existingAd.Description
+
 	if descriptionAddition != "" {
-		// Clean the addition text (remove extra whitespace, validate ASCII)
+		// Clean the addition text
 		descriptionAddition = strings.TrimSpace(descriptionAddition)
 		if descriptionAddition != "" {
 			// Create timestamp
 			timestamp := time.Now().Format("2006-01-02 15:04")
 			// Append with timestamp
-			addition := fmt.Sprintf("\n\n[%s] %s", timestamp, descriptionAddition)
+			addition := fmt.Sprintf("\n\n[%s] %s",
+				timestamp, descriptionAddition)
 			updatedDescription = existingAd.Description + addition
 
 			// Validate total length
 			if len(updatedDescription) > 500 {
-				return ValidationErrorResponse(c,
-					fmt.Sprintf("Total description would be %d characters (max 500). Please shorten your addition.",
-						len(updatedDescription)))
+				return ValidationErrorResponse(c, fmt.Sprintf(
+					"Total description would be %d characters (max 500). "+
+						"Please shorten your addition.",
+					len(updatedDescription)))
 			}
 		}
 	}
 
-	// Create updated ad with only editable fields changed
-	updatedAd := existingAd
-	updatedAd.Price = price
-	updatedAd.LocationID = locID
-	updatedAd.Description = updatedDescription
-
-	// Update the ad in the database
-	err = ad.UpdateAd(updatedAd)
+	// Update only the description
+	_, err = db.Exec("UPDATE Ad SET description = ? WHERE id = ?",
+		updatedDescription, adID)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update ad")
+		return fiber.NewError(fiber.StatusInternalServerError,
+			"Failed to update description")
 	}
 
-	// Attempt inline vector processing, fallback to queue if it fails
-	log.Printf("[embedding] Attempting inline vector processing for updated ad %d", adID)
-	err = vector.BuildAdEmbedding(updatedAd)
-	if err != nil {
-		log.Printf("[embedding] Inline processing failed for ad %d: %v, queuing for background processing", adID, err)
-		vector.QueueAd(updatedAd)
-	} else {
-		log.Printf("[embedding] Successfully processed updated ad %d inline", adID)
-	}
-
-	// Fetch updated ad with location data for display
-	updatedAdWithLocation, ok := ad.GetAd(adID, currentUser)
+	// Fetch updated ad for display
+	updatedAd, ok := ad.GetAd(adID, currentUser)
 	if !ok {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to fetch updated ad")
+		return fiber.NewError(fiber.StatusInternalServerError,
+			"Failed to fetch updated ad")
 	}
 
-	if c.Get("HX-Request") != "" {
-		// For htmx, return the updated detail partial
-		return render(c, ui.AdDetail(updatedAdWithLocation, getLocation(c), currentUser.ID, getView(c)))
-	}
-	return render(c, ui.SuccessMessage("Ad updated successfully", fmt.Sprintf("/ad/%d", adID)))
+	// Queue for vector update since description affects search
+	vector.QueueAd(updatedAd)
+
+	return render(c, ui.AdDetail(updatedAd, getLocation(c),
+		currentUser.ID, getView(c)))
 }
 
 func HandleArchiveAd(c *fiber.Ctx) error {
@@ -428,43 +457,6 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 	// For expanded detail view, return the updated ad without deleted styling
 	loc := getLocation(c)
 	return render(c, ui.AdDetail(restoredAd, loc, userID, view))
-}
-
-// Handler for ad edit partial (inline edit)
-func HandleEditAdPartial(c *fiber.Ctx) error {
-	adID, err := c.ParamsInt("id")
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
-	}
-	currentUser, _ := CurrentUser(c)
-	adObj, ok := ad.GetAd(adID, currentUser)
-	if !ok {
-		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
-	}
-	if adObj.UserID != currentUser.ID {
-		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
-	}
-	makes := vehicle.GetMakes()
-	years := vehicle.GetYears(adObj.Make)
-	models := vehicle.GetModels(adObj.Make, adObj.Years)
-	engines := vehicle.GetEngines(adObj.Make, adObj.Years, adObj.Models)
-
-	// Get categories (use cached static data)
-	categoryNames := part.GetCategories()
-
-	// Get subcategories for the current category if it exists
-	var subcategoryNames []string
-	if adObj.Category.Valid && adObj.Category.String != "" {
-		subcategoryNames = part.GetSubCategories(adObj.Category.String) // Use cached static data
-	}
-
-	view := c.Query("view", "list")
-	cancelTarget := fmt.Sprintf("/ad/detail/%d?view=%s", adObj.ID, view)
-	htmxTarget := fmt.Sprintf("#ad-%d", adObj.ID)
-	if view == "grid" {
-		htmxTarget = fmt.Sprintf("#ad-grid-wrap-%d", adObj.ID)
-	}
-	return render(c, ui.AdEditPartial(adObj, makes, years, models, engines, categoryNames, subcategoryNames, cancelTarget, htmxTarget, view))
 }
 
 // uploadAdImagesToB2 uploads user-uploaded images to B2 with multiple sizes

@@ -109,15 +109,13 @@ func main() {
 	app.Get("/tree-search-collapse/*", handlers.HandleTreeCollapseSearch) // x
 
 	// Ad in-place expand/collapse partials for htmx
-	app.Get("/ad/card/:id", handlers.HandleAdCard)     // x
-	app.Get("/ad/detail/:id", handlers.HandleAdDetail) // x
-	app.Get("/ad/edit-partial/:id", handlers.AuthRequired, handlers.HandleEditAdPartial)
+	app.Get("/ad/card/:id", handlers.HandleAdCard)          // x
+	app.Get("/ad/detail/:id", handlers.HandleAdDetail)      // x
 	app.Get("/ad/image/:adID/:idx", handlers.HandleAdImage) // x
 
 	// Ad management
 	app.Get("/ad/:id", handlers.HandleAdPage)                       // x
 	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd) // x
-	app.Get("/edit-ad/:id", handlers.AuthRequired, handlers.HandleEditAd)
 	app.Delete("/delete-ad/:id", handlers.AuthRequired, handlers.HandleDeleteAd)
 	app.Post("/restore-ad/:id", handlers.AuthRequired, handlers.HandleRestoreAd)
 
@@ -129,7 +127,9 @@ func main() {
 
 	// Ad management (API)
 	api.Post("/new-ad", handlers.AuthRequired, handlers.HandleNewAdSubmission) // x
-	api.Post("/update-ad/:id", handlers.AuthRequired, handlers.HandleUpdateAdSubmission)
+	api.Post("/update-ad-price/:id", handlers.AuthRequired, handlers.HandleUpdateAdPrice)
+	api.Post("/update-ad-location/:id", handlers.AuthRequired, handlers.HandleUpdateAdLocation)
+	api.Post("/update-ad-description/:id", handlers.AuthRequired, handlers.HandleUpdateAdDescription)
 	api.Post("/bookmark-ad/:id", handlers.AuthRequired, handlers.HandleBookmarkAd)
 	api.Delete("/bookmark-ad/:id", handlers.AuthRequired, handlers.HandleUnbookmarkAd)
 	api.Get("/makes", handlers.HandleMakes)

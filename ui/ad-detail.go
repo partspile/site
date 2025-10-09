@@ -24,6 +24,8 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 		contentClass = "p-4 flex flex-col gap-2 bg-white"
 	}
 
+	isOwner := userID == ad.UserID && userID != 0
+
 	return Div(
 		ID(adID(ad)),
 		Class(containerClass),
@@ -36,24 +38,47 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 				Class("flex flex-row items-center justify-between mb-2"),
 				Div(Class("font-semibold text-xl truncate"), titleNode(ad)),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
-					// For active ads: show bookmark, message, edit, and delete
+					// For active ads: show bookmark, message, and delete
 					g.If(!ad.IsArchived() && userID != 0, BookmarkButton(ad)),
 					g.If(!ad.IsArchived() && userID != 0, messageButton(ad, userID)),
-					g.If(!ad.IsArchived(), editButton(ad, userID)),
 					g.If(!ad.IsArchived(), deleteButton(ad, userID)),
 					// For deleted ads: show restore button (owner only)
 					g.If(ad.IsArchived(), restoreButton(ad, userID)),
 				),
 			),
-			// Age and location row
+			// Price row with inline edit for owner
+			Div(
+				Class("flex flex-row items-center gap-2 mb-2"),
+				g.If(isOwner && !ad.IsArchived(),
+					priceEditable(ad),
+				),
+				g.If(!isOwner || ad.IsArchived(),
+					price(ad),
+				),
+			),
+			// Age and location row with inline edit for owner
 			Div(
 				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
 				Div(Class("text-gray-400"), ageNode(ad, loc)),
-				locationFlagNode(ad),
+				g.If(isOwner && !ad.IsArchived(),
+					locationEditable(ad),
+				),
+				g.If(!isOwner || ad.IsArchived(),
+					location(ad),
+				),
 			),
-			// Description
-			Div(Class("text-base mt-2"), g.Text(ad.Description)),
+			// Description with inline edit for owner
+			g.If(isOwner && !ad.IsArchived(),
+				descriptionEditable(ad),
+			),
+			g.If(!isOwner || ad.IsArchived(),
+				description(ad),
+			),
 		),
+		// Modal dialogs (hidden by default)
+		g.If(isOwner && !ad.IsArchived(), priceEditModal(ad, view)),
+		g.If(isOwner && !ad.IsArchived(), locationEditModal(ad, view)),
+		g.If(isOwner && !ad.IsArchived(), descriptionEditModal(ad, view)),
 	)
 }
 
@@ -65,13 +90,6 @@ func deletedWatermark() g.Node {
 			Style("user-select: none; font-size: 8rem; color: transparent; -webkit-text-stroke: 3px rgba(220, 38, 38, 0.4); text-stroke: 3px rgba(220, 38, 38, 0.4);"),
 			g.Text("DELETED"),
 		),
-	)
-}
-
-func priceOverlayNode(ad ad.Ad) g.Node {
-	return Div(
-		Class("absolute top-0 left-0 bg-white text-green-600 text-base font-normal px-2 rounded-br-md z-10"),
-		priceNode(ad),
 	)
 }
 
@@ -129,7 +147,6 @@ func imageNode(ad ad.Ad, view string) g.Node {
 	return Div(
 		Class(imageContainerClass),
 		Style("height: 60vh; min-height: 500px; max-height: 800px;"),
-		priceOverlayNode(ad),
 		closeButtonOverlayNode(ad, view),
 		Div(
 			Class("relative w-full h-full flex flex-col overflow-hidden rounded-t-lg"),
@@ -256,21 +273,183 @@ func restoreButton(ad ad.Ad, userID int) g.Node {
 	)
 }
 
-func editButton(ad ad.Ad, userID int) g.Node {
-	if userID != ad.UserID {
-		return g.Node(nil)
-	}
+func description(ad ad.Ad) g.Node {
+	return Div(Class("text-base mt-2 whitespace-pre-wrap"), g.Text(ad.Description))
+}
 
-	return Button(
-		Type("button"),
-		Class("ml-2 focus:outline-none"),
-		hx.Get(fmt.Sprintf("/ad/edit-partial/%d", ad.ID)),
-		hx.Target(adTarget(ad)),
-		hx.Swap("outerHTML"),
-		Img(
-			Src("/images/edit.svg"),
-			Alt("Edit"),
-			Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
+func price(ad ad.Ad) g.Node {
+	return Div(Class("text-2xl font-bold text-green-600"), priceNode(ad))
+}
+
+// Editable field components
+func priceEditable(ad ad.Ad) g.Node {
+	return Div(
+		Class("flex items-center gap-3"),
+		price(ad),
+		Button(
+			Type("button"),
+			Class("px-4 bg-blue-500 text-white rounded hover:bg-blue-600"),
+			Style("height: 40px"),
+			g.Attr("onclick", fmt.Sprintf("document.getElementById('price-modal-%d').classList.remove('hidden')", ad.ID)),
+			g.Text("Edit"),
 		),
 	)
+}
+
+func locationEditable(ad ad.Ad) g.Node {
+	return Div(
+		Class("flex items-center gap-2"),
+		location(ad),
+		Button(
+			Type("button"),
+			Class("px-4 bg-blue-500 text-white rounded hover:bg-blue-600"),
+			Style("height: 40px"),
+			g.Attr("onclick", fmt.Sprintf("document.getElementById('location-modal-%d').classList.remove('hidden')", ad.ID)),
+			g.Text("Edit"),
+		),
+	)
+}
+
+func descriptionEditable(ad ad.Ad) g.Node {
+	return Div(
+		Class("mt-2"),
+		description(ad),
+		Button(
+			Type("button"),
+			Class("px-4 bg-blue-500 text-white rounded hover:bg-blue-600"),
+			Style("height: 40px"),
+			g.Attr("onclick", fmt.Sprintf("document.getElementById('description-modal-%d').classList.remove('hidden')", ad.ID)),
+			g.Text("Edit"),
+		),
+	)
+}
+
+// Modal dialog components
+type editModalConfig struct {
+	modalID       string
+	title         string
+	apiEndpoint   string
+	formContent   g.Node
+	submitBtnText string
+}
+
+func editModal(ad ad.Ad, cfg editModalConfig) g.Node {
+	return Div(
+		ID(cfg.modalID),
+		Class("hidden fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-8"),
+		g.Attr("onclick", fmt.Sprintf("if (event.target.id === '%s') this.classList.add('hidden')", cfg.modalID)),
+		Div(
+			Class("bg-white rounded-lg w-full shadow-2xl border-2 border-gray-300 flex flex-col overflow-hidden"),
+			Style("max-width: 500px; max-height: 70vh"),
+			g.Attr("onclick", "event.stopPropagation()"),
+			Div(Class("p-8 overflow-y-auto flex-1"),
+				H3(Class("text-2xl font-bold mb-6 text-gray-900"), g.Text(cfg.title)),
+				Form(
+					hx.Post(cfg.apiEndpoint),
+					hx.Target(adTarget(ad)),
+					hx.Swap("outerHTML"),
+					g.Attr("hx-on::after-request", fmt.Sprintf("document.getElementById('%s').classList.add('hidden')", cfg.modalID)),
+					cfg.formContent,
+					Div(
+						Class("flex gap-3 justify-end"),
+						Button(
+							Type("button"),
+							Class("px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition"),
+							g.Attr("onclick", fmt.Sprintf("document.getElementById('%s').classList.add('hidden')", cfg.modalID)),
+							g.Text("Cancel"),
+						),
+						Button(
+							Type("submit"),
+							Class("px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md transition"),
+							g.Text(cfg.submitBtnText),
+						),
+					),
+				),
+			),
+		),
+	)
+}
+
+func priceEditModal(ad ad.Ad, view string) g.Node {
+	modalID := fmt.Sprintf("price-modal-%d", ad.ID)
+	return editModal(ad, editModalConfig{
+		modalID:       modalID,
+		title:         "Update Price",
+		apiEndpoint:   fmt.Sprintf("/api/update-ad-price/%d", ad.ID),
+		submitBtnText: "Save",
+		formContent: Div(Class("mb-6"),
+			Label(For("price"), Class("block text-sm font-semibold text-gray-800 mb-3"), g.Text("Price")),
+			Input(
+				Type("number"),
+				ID("price"),
+				Name("price"),
+				Class("w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"),
+				Step("0.01"),
+				Min("0"),
+				Value(fmt.Sprintf("%.2f", ad.Price)),
+				Required(),
+				g.Attr("autofocus"),
+			),
+		),
+	})
+}
+
+func locationEditModal(ad ad.Ad, view string) g.Node {
+	modalID := fmt.Sprintf("location-modal-%d", ad.ID)
+	currentLocation := ""
+	if ad.RawLocation.Valid {
+		currentLocation = ad.RawLocation.String
+	}
+	return editModal(ad, editModalConfig{
+		modalID:       modalID,
+		title:         "Update Location",
+		apiEndpoint:   fmt.Sprintf("/api/update-ad-location/%d", ad.ID),
+		submitBtnText: "Save",
+		formContent: Div(Class("mb-6"),
+			Label(For("location"), Class("block text-sm font-semibold text-gray-800 mb-3"), g.Text("Location (Zipcode or City)")),
+			Input(
+				Type("text"),
+				ID("location"),
+				Name("location"),
+				Class("w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"),
+				Placeholder("e.g., 90210 or Portland, OR"),
+				Value(currentLocation),
+				g.Attr("autofocus"),
+			),
+			Div(Class("text-sm text-gray-600 mt-2 bg-blue-50 p-2 rounded"),
+				g.Text("Enter a zipcode, city, or address. We'll resolve it automatically.")),
+		),
+	})
+}
+
+func descriptionEditModal(ad ad.Ad, view string) g.Node {
+	modalID := fmt.Sprintf("description-modal-%d", ad.ID)
+	return editModal(ad, editModalConfig{
+		modalID:       modalID,
+		title:         "Add to Description",
+		apiEndpoint:   fmt.Sprintf("/api/update-ad-description/%d", ad.ID),
+		submitBtnText: "Add",
+		formContent: g.Group([]g.Node{
+			Div(
+				Class("mb-6 p-4 bg-gray-100 rounded-lg border-2 border-gray-200 max-h-40 overflow-y-auto"),
+				Div(Class("text-sm font-semibold text-gray-800 mb-3"), g.Text("Current Description:")),
+				Div(Class("text-sm whitespace-pre-wrap text-gray-700"), g.Text(ad.Description)),
+			),
+			Div(Class("mb-6"),
+				Label(For("description_addition"), Class("block text-sm font-semibold text-gray-800 mb-3"), g.Text("Add to Description")),
+				Textarea(
+					ID("description_addition"),
+					Name("description_addition"),
+					Class("w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"),
+					Rows("4"),
+					MaxLength("500"),
+					Placeholder("Add additional information (will be timestamped and appended)"),
+					g.Attr("autofocus"),
+				),
+				Div(Class("text-sm text-gray-600 mt-2 bg-blue-50 p-2 rounded"),
+					g.Text("Your addition will be appended with a timestamp. Total description must remain under 500 characters."),
+				),
+			),
+		}),
+	})
 }

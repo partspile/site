@@ -40,8 +40,8 @@ func countryFlag(country string) string {
 	return string(rune(int32(code[0])-'A'+0x1F1E6)) + string(rune(int32(code[1])-'A'+0x1F1E6))
 }
 
-// locationFlagNode returns a Div containing flag and location text
-func locationFlagNode(ad ad.Ad) g.Node {
+// location returns a Div containing flag and location text
+func location(ad ad.Ad) g.Node {
 	var city string
 	if ad.City.Valid {
 		city = ad.City.String

@@ -32,6 +32,7 @@ type Ad struct {
 	HasVector     bool       `json:"has_vector" db:"has_vector"`
 
 	// Computed/derived fields from joins
+	RawLocation sql.NullString  `json:"raw_location,omitempty" db:"raw_location"`
 	City        sql.NullString  `json:"city,omitempty" db:"city"`
 	AdminArea   sql.NullString  `json:"admin_area,omitempty" db:"admin_area"`
 	Country     sql.NullString  `json:"country,omitempty" db:"country"`
@@ -129,7 +130,7 @@ func buildAdQueryWithDeleted(ids []int, currentUser *user.User, includeDeleted b
 		query = `
 			SELECT a.id, a.title, a.description, a.price, a.created_at, a.deleted_at, a.subcategory_id,
 			       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_count,
-			       l.city, l.admin_area, l.country, l.latitude, l.longitude,
+			       l.raw_text as raw_location, l.city, l.admin_area, l.country, l.latitude, l.longitude,
 			       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
@@ -143,7 +144,7 @@ func buildAdQueryWithDeleted(ids []int, currentUser *user.User, includeDeleted b
 		query = `
 			SELECT a.id, a.title, a.description, a.price, a.created_at, a.deleted_at, a.subcategory_id,
 			       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_count,
-			       l.city, l.admin_area, l.country, l.latitude, l.longitude,
+			       l.raw_text as raw_location, l.city, l.admin_area, l.country, l.latitude, l.longitude,
 			       0 as is_bookmarked
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id
@@ -360,7 +361,7 @@ func GetMostPopularAds(n int) []Ad {
 		SELECT 
 			a.id, a.title, a.description, a.price, a.created_at, 
 			a.subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_count,
-			l.city, l.admin_area, l.country, l.latitude, l.longitude,
+			l.raw_text as raw_location, l.city, l.admin_area, l.country, l.latitude, l.longitude,
 			0 as is_bookmarked
 		FROM Ad a
 		LEFT JOIN PartSubCategory psc ON a.subcategory_id = psc.id

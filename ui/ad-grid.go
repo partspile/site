@@ -56,7 +56,7 @@ func AdGridNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
 			Div(
 				Class("flex flex-row items-center justify-between text-xs text-gray-500"),
 				Div(Class("text-gray-400"), ageNode(ad, loc)),
-				locationFlagNode(ad),
+				location(ad),
 			),
 		),
 	)
