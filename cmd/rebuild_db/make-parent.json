@@ -1074,5 +1074,109 @@
   {
     "make": "TOYOTA",
     "parent_company": "Toyota Motor Corporation"
+  },
+  {
+    "make": "TRIUMPH",
+    "parent_company": "British Leyland"
+  },
+  {
+    "make": "TURNER",
+    "parent_company": "Turner Sports Cars"
+  },
+  {
+    "make": "TVR",
+    "parent_company": "TVR Engineering Ltd"
+  },
+  {
+    "make": "UAZ",
+    "parent_company": "Sollers"
+  },
+  {
+    "make": "UD",
+    "parent_company": "Volvo Group"
+  },
+  {
+    "make": "UTILIMASTER",
+    "parent_company": "Spartan Motors"
+  },
+  {
+    "make": "VAM",
+    "parent_company": "Vehiculos Automotores Mexicanos"
+  },
+  {
+    "make": "VAUXHALL",
+    "parent_company": "Stellantis"
+  },
+  {
+    "make": "VELIE",
+    "parent_company": "Velie Motors Corporation"
+  },
+  {
+    "make": "VESPA",
+    "parent_company": "Piaggio Group"
+  },
+  {
+    "make": "VIKING",
+    "parent_company": "General Motors"
+  },
+  {
+    "make": "VINFAST",
+    "parent_company": "Vingroup"
+  },
+  {
+    "make": "VOLKSWAGEN",
+    "parent_company": "Volkswagen Group"
+  },
+  {
+    "make": "VOLVO",
+    "parent_company": "Geely Holding Group"
+  },
+  {
+    "make": "VPG",
+    "parent_company": "Vehicle Production Group"
+  },
+  {
+    "make": "WARTBURG",
+    "parent_company": "VEB Automobilwerk Eisenach"
+  },
+  {
+    "make": "WESTCOTT",
+    "parent_company": "Westcott Motor Car Company"
+  },
+  {
+    "make": "WHIPPET",
+    "parent_company": "Willys-Overland"
+  },
+  {
+    "make": "WILLYS",
+    "parent_company": "Willys-Overland"
+  },
+  {
+    "make": "WINDSOR",
+    "parent_company": "General Motors Canada"
+  },
+  {
+    "make": "WOLSELEY",
+    "parent_company": "British Motor Corporation"
+  },
+  {
+    "make": "WORKHORSE",
+    "parent_company": "Workhorse Group"
+  },
+  {
+    "make": "YELLOW CAB",
+    "parent_company": "Yellow Cab Manufacturing Company"
+  },
+  {
+    "make": "YUGO",
+    "parent_company": "Zastava Automobiles"
+  },
+  {
+    "make": "ZACUA",
+    "parent_company": "Zacua Automobiles"
+  },
+  {
+    "make": "ZUNDAPP",
+    "parent_company": "Zündapp"
   }
 ]

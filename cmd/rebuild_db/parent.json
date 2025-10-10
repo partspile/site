@@ -96,6 +96,10 @@
     "country": "GB"
   },
   {
+    "name": "British Leyland",
+    "country": "GB"
+  },
+  {
     "name": "British Motor Corporation",
     "country": "GB"
   },
@@ -696,6 +700,10 @@
     "country": "ES"
   },
   {
+    "name": "Piaggio Group",
+    "country": "IT"
+  },
+  {
     "name": "Pierce-Arrow Motor Car Company",
     "country": "US"
   },
@@ -752,8 +760,16 @@
     "country": "FR"
   },
   {
+    "name": "Sollers",
+    "country": "RU"
+  },
+  {
     "name": "Sokon Group",
     "country": "CN"
+  },
+  {
+    "name": "Spartan Motors",
+    "country": "US"
   },
   {
     "name": "Shelby American",
@@ -818,5 +834,65 @@
   {
     "name": "Think Global",
     "country": "NO"
+  },
+  {
+    "name": "Turner Sports Cars",
+    "country": "GB"
+  },
+  {
+    "name": "TVR Engineering Ltd",
+    "country": "GB"
+  },
+  {
+    "name": "VEB Automobilwerk Eisenach",
+    "country": "DE"
+  },
+  {
+    "name": "Vehicle Production Group",
+    "country": "US"
+  },
+  {
+    "name": "Vehiculos Automotores Mexicanos",
+    "country": "MX"
+  },
+  {
+    "name": "Velie Motors Corporation",
+    "country": "US"
+  },
+  {
+    "name": "Vingroup",
+    "country": "VN"
+  },
+  {
+    "name": "Volvo Group",
+    "country": "SE"
+  },
+  {
+    "name": "Westcott Motor Car Company",
+    "country": "US"
+  },
+  {
+    "name": "Willys-Overland",
+    "country": "US"
+  },
+  {
+    "name": "Workhorse Group",
+    "country": "US"
+  },
+  {
+    "name": "Yellow Cab Manufacturing Company",
+    "country": "US"
+  },
+  {
+    "name": "Zacua Automobiles",
+    "country": "MX"
+  },
+  {
+    "name": "Zastava Automobiles",
+    "country": "RS"
+  },
+  {
+    "name": "Zündapp",
+    "country": "DE"
   }
 ]
