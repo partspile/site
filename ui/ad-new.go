@@ -7,7 +7,9 @@ import (
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/user"
 )
 
@@ -26,13 +28,13 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 				hx.Post("/api/new-ad"),
 				hx.Encoding("multipart/form-data"),
 				hx.Target("#result"),
-				titleInputField(),
-				makeSelector(makes),
-				YearsDiv(),
-				ModelsDiv(),
-				EnginesDiv(),
+				titleInputField(""),
+				makeSelector(makes, ""),
+				YearsSelector([]string{}),
+				ModelsSelector([]string{}),
+				EnginesSelector([]string{}),
 				categoriesSelector(categories, ""),
-				SubcategoriesDiv(),
+				SubCategoriesSelector([]part.SubCategory{}, ""),
 				imagesInputField(),
 				descriptionTextareaField(),
 				priceInputField(),
@@ -46,7 +48,57 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 	)
 }
 
-func titleInputField() g.Node {
+// DuplicateAdPage renders the new ad form pre-filled with data from an existing ad
+func DuplicateAdPage(
+	currentUser *user.User,
+	path string,
+	makes []string,
+	categories []string,
+	originalAd ad.Ad,
+	years []string,
+	models []string,
+	engines []string,
+	subcategories []part.SubCategory,
+	selectedSubcategory string,
+) g.Node {
+	categoryName := ""
+	if originalAd.Category.Valid {
+		categoryName = originalAd.Category.String
+	}
+
+	return Page(
+		"Duplicate Ad - Parts Pile",
+		currentUser,
+		path,
+		[]g.Node{
+			pageHeader("Create New Ad"),
+			Form(
+				ID("newAdForm"),
+				Class("space-y-6"),
+				hx.Post("/api/new-ad"),
+				hx.Encoding("multipart/form-data"),
+				hx.Target("#result"),
+				titleInputField(originalAd.Title),
+				makeSelector(makes, originalAd.Make),
+				YearsSelector(years, originalAd.Years),
+				ModelsSelector(models, originalAd.Models),
+				EnginesSelector(engines, originalAd.Engines),
+				categoriesSelector(categories, categoryName),
+				SubCategoriesSelector(subcategories, selectedSubcategory),
+				imagesInputField(),
+				descriptionTextareaField(),
+				priceInputField(),
+				locationInputField(),
+				styledButton("Submit", buttonPrimary,
+					Type("submit"),
+				),
+			),
+			resultContainer(),
+		},
+	)
+}
+
+func titleInputField(defaultValue string) g.Node {
 	return formGroup("Title", "title",
 		Input(
 			Type("text"),
@@ -58,16 +110,19 @@ func titleInputField() g.Node {
 			Pattern("[\\x20-\\x7E]+"),
 			Title("Title must be 1-35 characters, printable ASCII characters only"),
 			g.Attr("oninput", "this.checkValidity()"),
+			g.If(defaultValue != "", Value(defaultValue)),
 		),
 	)
 }
 
-func makeSelector(makes []string) g.Node {
+func makeSelector(makes []string, defaultMake string) g.Node {
 	makeOptions := []g.Node{}
 	for _, makeName := range makes {
-		makeOptions = append(makeOptions,
-			Option(Value(makeName), g.Text(makeName)),
-		)
+		attrs := []g.Node{Value(makeName), g.Text(makeName)}
+		if makeName == defaultMake {
+			attrs = append(attrs, Selected())
+		}
+		makeOptions = append(makeOptions, Option(attrs...))
 	}
 
 	return formGroup("Make", "make",
@@ -182,31 +237,135 @@ func locationInputField() g.Node {
 	)
 }
 
-func YearsDiv() g.Node {
+func YearsSelector(years []string, selectedYears ...[]string) g.Node {
+	selected := make(map[string]bool)
+	if len(selectedYears) > 0 {
+		for _, year := range selectedYears[0] {
+			selected[year] = true
+		}
+	}
+
+	checkboxes := []g.Node{}
+	for _, year := range years {
+		checkboxes = append(checkboxes,
+			Checkbox("years", year, year, selected[year], false,
+				hx.Trigger("change"),
+				hx.Get("/api/models"),
+				hx.Target("#modelsDiv"),
+				hx.Include("[name='make'],[name='years']:checked"),
+				hx.Swap("innerHTML"),
+				g.Attr("onclick", "document.getElementById('enginesDiv').innerHTML = ''"),
+			),
+		)
+	}
 	return Div(
 		ID("yearsDiv"),
 		Class("space-y-2"),
+		formGroup("Years", "years", GridContainer4(checkboxes...)),
 	)
 }
 
-func ModelsDiv() g.Node {
+func ModelsSelector(models []string, selectedModels ...[]string) g.Node {
+	selected := make(map[string]bool)
+	if len(selectedModels) > 0 {
+		for _, model := range selectedModels[0] {
+			selected[model] = true
+		}
+	}
+
+	checkboxes := []g.Node{}
+	for _, model := range models {
+		checkboxes = append(checkboxes,
+			Checkbox("models", model, model, selected[model], false,
+				hx.Trigger("change"),
+				hx.Get("/api/engines"),
+				hx.Target("#enginesDiv"),
+				hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
+				hx.Swap("innerHTML"),
+			),
+		)
+	}
 	return Div(
 		ID("modelsDiv"),
 		Class("space-y-2"),
+		formGroup("Models", "models", GridContainer4(checkboxes...)),
 	)
 }
 
-func EnginesDiv() g.Node {
+func EnginesSelector(engines []string, selectedEngines ...[]string) g.Node {
+	selected := make(map[string]bool)
+	if len(selectedEngines) > 0 {
+		for _, engine := range selectedEngines[0] {
+			selected[engine] = true
+		}
+	}
+
+	checkboxes := []g.Node{}
+	for _, engine := range engines {
+		checkboxes = append(checkboxes,
+			Checkbox("engines", engine, engine, selected[engine], false),
+		)
+	}
 	return Div(
 		ID("enginesDiv"),
 		Class("space-y-2"),
+		formGroup("Engines", "engines", GridContainer4(checkboxes...)),
 	)
 }
 
-func SubcategoriesDiv() g.Node {
+func categoriesSelector(categories []string, selectedCategory string) g.Node {
+	options := []g.Node{
+		Option(Value(""), g.Text("Select a category")),
+	}
+
+	for _, category := range categories {
+		attrs := []g.Node{Value(category), g.Text(category)}
+		if category == selectedCategory {
+			attrs = append(attrs, Selected())
+		}
+		options = append(options, Option(attrs...))
+	}
+
+	return formGroup("Category", "category",
+		Select(
+			ID("category"),
+			Name("category"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
+			Required(),
+			hx.Trigger("change"),
+			hx.Get("/api/subcategories"),
+			hx.Target("#subcategoriesDiv"),
+			hx.Include("this"),
+			g.Group(options),
+		),
+	)
+}
+
+func SubCategoriesSelector(subCategories []part.SubCategory, selectedSubCategory string) g.Node {
+	options := []g.Node{
+		Option(Value(""), g.Text("Select a subcategory")),
+	}
+
+	for _, subCategory := range subCategories {
+		attrs := []g.Node{Value(subCategory.Name), g.Text(subCategory.Name)}
+		if subCategory.Name == selectedSubCategory {
+			attrs = append(attrs, Selected())
+		}
+		options = append(options, Option(attrs...))
+	}
+
 	return Div(
 		ID("subcategoriesDiv"),
 		Class("space-y-2"),
+		formGroup("Subcategory", "subcategory",
+			Select(
+				ID("subcategory"),
+				Name("subcategory"),
+				Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
+				Required(),
+				g.Group(options),
+			),
+		),
 	)
 }
 

@@ -163,6 +163,16 @@ func GetSubCategoryIDByName(subcategoryName string) (int, error) {
 	return id, nil
 }
 
+func GetSubCategoryNameByID(subcategoryID int) (string, error) {
+	query := `SELECT name FROM PartSubCategory WHERE id = ?`
+	var name string
+	err := db.QueryRow(query, subcategoryID).Scan(&name)
+	if err != nil {
+		return "", err
+	}
+	return name, nil
+}
+
 func getMakes(query string) ([]string, error) {
 	// If there's a search query, filter makes based on matching ads
 	if query != "" {

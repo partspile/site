@@ -22,18 +22,18 @@ func HandleYears(c *fiber.Ctx) error {
 	makeName := c.Query("make")
 	if makeName == "" {
 		// Return empty div when make is not selected
-		return render(c, ui.YearsDiv())
+		return render(c, ui.YearsSelector([]string{}))
 	}
 
 	years := vehicle.GetYears(makeName)
-	return render(c, ui.YearsFormGroup(years))
+	return render(c, ui.YearsSelector(years))
 }
 
 func HandleModels(c *fiber.Ctx) error {
 	makeName := c.Query("make")
 	if makeName == "" {
 		// Return empty div when make is not selected
-		return render(c, ui.ModelsDiv())
+		return render(c, ui.ModelsSelector([]string{}))
 	}
 
 	q, err := url.ParseQuery(string(c.Request().URI().QueryString()))
@@ -43,7 +43,7 @@ func HandleModels(c *fiber.Ctx) error {
 	years := q["years"]
 	if len(years) == 0 {
 		// Return empty div instead of error when no years are selected
-		return render(c, ui.ModelsDiv())
+		return render(c, ui.ModelsSelector([]string{}))
 	}
 
 	models := vehicle.GetModels(makeName, years)
@@ -51,14 +51,14 @@ func HandleModels(c *fiber.Ctx) error {
 		// Return empty message when no models are available for all selected years
 		return render(c, ui.ModelsDivEmpty())
 	}
-	return render(c, ui.ModelsFormGroup(models))
+	return render(c, ui.ModelsSelector(models))
 }
 
 func HandleEngines(c *fiber.Ctx) error {
 	makeName := c.Query("make")
 	if makeName == "" {
 		// Return empty div when make is not selected
-		return render(c, ui.EnginesDiv())
+		return render(c, ui.EnginesSelector([]string{}))
 	}
 
 	q, err := url.ParseQuery(string(c.Request().URI().QueryString()))
@@ -68,13 +68,13 @@ func HandleEngines(c *fiber.Ctx) error {
 	years := q["years"]
 	if len(years) == 0 {
 		// Return empty div instead of error when no years are selected
-		return render(c, ui.EnginesDiv())
+		return render(c, ui.EnginesSelector([]string{}))
 	}
 
 	models := q["models"]
 	if len(models) == 0 {
 		// Return empty div instead of error when no models are selected
-		return render(c, ui.EnginesDiv())
+		return render(c, ui.EnginesSelector([]string{}))
 	}
 
 	engines := vehicle.GetEngines(makeName, years, models)
@@ -82,7 +82,7 @@ func HandleEngines(c *fiber.Ctx) error {
 		// Return empty message when no engines are available for all selected year-model combinations
 		return render(c, ui.EnginesDivEmpty())
 	}
-	return render(c, ui.EnginesFormGroup(engines))
+	return render(c, ui.EnginesSelector(engines))
 }
 
 func HandleCategories(c *fiber.Ctx) error {
@@ -97,14 +97,14 @@ func HandleSubCategories(c *fiber.Ctx) error {
 	categoryName := c.Query("category")
 	if categoryName == "" {
 		// Return empty div when category is not selected
-		return render(c, ui.SubcategoriesDiv())
+		return render(c, ui.SubCategoriesSelector([]part.SubCategory{}, ""))
 	}
 
 	subCategories, err := part.GetSubCategoriesForCategory(categoryName)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get subcategories")
 	}
-	return render(c, ui.SubCategoriesFormGroupFromStruct(subCategories, ""))
+	return render(c, ui.SubCategoriesSelector(subCategories, ""))
 }
 
 // HandleSMSWebhook processes Twilio webhook callbacks for SMS status updates

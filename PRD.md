@@ -319,6 +319,32 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
   - After saving, the modal closes and the ad detail view updates via HTMX
   - Each field update triggers a separate API endpoint and vector embedding update
 
+### 3.14a Ad Sharing
+- **Share Button:** All ad detail pages include a share button (using /images/share.svg) visible to all users
+  - Opens a modal dialog showing the ad's full URL (`/ad/{id}`)
+  - Includes a copy-to-clipboard button (using /images/copy.svg) that copies the full URL
+  - Copy functionality uses JavaScript `navigator.clipboard.writeText()` API
+  - Displays temporary success feedback after copying
+  - Modal can be closed by clicking outside or using the close button
+- **Visibility:** Share button is visible to all users (logged in or not) on both active and archived ads
+
+### 3.14b Ad Duplication
+- **Duplicate Button:** All ad detail pages include a duplicate button (using /images/duplicate.svg) visible to logged-in users
+  - Links to `/duplicate-ad/{id}` to create a new ad based on an existing one
+  - Pre-fills the new ad form with selected fields from the original ad:
+    - **Copied Fields:** Title, Make, Years, Models, Engines, Category, Subcategory
+    - **Not Copied:** Description, Price, Location, Images
+  - Server-side rendering: All form fields (dropdowns, checkboxes) are pre-populated on page load
+  - No JavaScript required - pure HTMX/server-side rendering approach
+  - Allows users to create similar ads without re-entering vehicle and part information
+- **Implementation:** Separate `HandleDuplicateAd` handler fetches original ad data and renders `DuplicateAdPage` with all vehicle/part options pre-loaded and pre-selected
+- **Visibility:** Duplicate button is only visible to logged-in users on both active and archived ads
+- **Authentication:** Unauthenticated users who access the duplicate URL directly are redirected to the login page (via authentication middleware)
+- **Use Cases:** 
+  - Sellers can quickly list multiple similar parts
+  - Users can repost expired ads with updated information
+  - Archived ads can be duplicated to create new listings
+
 ### 3.15 Ad Location
 - Each ad now has an optional location field to track where parts are located. This field is stored in the database and can be set or edited by the user. If present, it is displayed on the ad details page.
 - **Grok API Location Resolution:** When users enter location information (address, city, zip code, or country), the system uses the Grok API to intelligently resolve and standardize the location data:

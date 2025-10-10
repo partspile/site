@@ -44,6 +44,10 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 					g.If(!ad.IsArchived(), deleteButton(ad, userID)),
 					// For deleted ads: show restore button (owner only)
 					g.If(ad.IsArchived(), restoreButton(ad, userID)),
+					// Share button (visible to everyone)
+					shareButton(ad),
+					// Duplicate button (logged in users only)
+					g.If(userID != 0, duplicateButton(ad)),
 				),
 			),
 			// Price row with inline edit for owner
@@ -79,6 +83,7 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 		g.If(isOwner && !ad.IsArchived(), priceEditModal(ad, view)),
 		g.If(isOwner && !ad.IsArchived(), locationEditModal(ad, view)),
 		g.If(isOwner && !ad.IsArchived(), descriptionEditModal(ad, view)),
+		shareModal(ad),
 	)
 }
 
@@ -452,4 +457,124 @@ func descriptionEditModal(ad ad.Ad, view string) g.Node {
 			),
 		}),
 	})
+}
+
+func shareButton(ad ad.Ad) g.Node {
+	return Button(
+		Type("button"),
+		Class("ml-2 focus:outline-none"),
+		Title("Share ad"),
+		g.Attr("onclick", fmt.Sprintf(
+			"document.getElementById('share-modal-%d').classList.remove('hidden')",
+			ad.ID)),
+		Img(
+			Src("/images/share.svg"),
+			Alt("Share"),
+			Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
+		),
+	)
+}
+
+func duplicateButton(ad ad.Ad) g.Node {
+	return A(
+		Href(fmt.Sprintf("/duplicate-ad/%d", ad.ID)),
+		Class("ml-2 focus:outline-none"),
+		Title("Duplicate ad"),
+		Img(
+			Src("/images/duplicate.svg"),
+			Alt("Duplicate"),
+			Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
+		),
+	)
+}
+
+func shareModal(ad ad.Ad) g.Node {
+	modalID := fmt.Sprintf("share-modal-%d", ad.ID)
+	adPath := fmt.Sprintf("/ad/%d", ad.ID)
+	urlInputID := fmt.Sprintf("ad-url-%d", ad.ID)
+	copyButtonID := fmt.Sprintf("copy-button-%d", ad.ID)
+	copyFeedbackID := fmt.Sprintf("copy-feedback-%d", ad.ID)
+
+	return Div(
+		ID(modalID),
+		Class("hidden fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-8"),
+		g.Attr("onclick", fmt.Sprintf(
+			"if (event.target.id === '%s') this.classList.add('hidden')",
+			modalID)),
+		Div(
+			Class("bg-white rounded-lg w-full shadow-2xl border-2 border-gray-300 flex flex-col overflow-hidden"),
+			Style("max-width: 500px;"),
+			g.Attr("onclick", "event.stopPropagation()"),
+			Div(Class("p-8"),
+				H3(Class("text-2xl font-bold mb-6 text-gray-900"),
+					g.Text("Share Ad")),
+				Div(Class("mb-6"),
+					Label(Class("block text-sm font-semibold text-gray-800 mb-3"),
+						g.Text("Ad Link")),
+					Input(
+						Type("text"),
+						ID(urlInputID),
+						Class("w-full p-3 border-2 border-gray-300 rounded-lg bg-gray-50"),
+						Value(""),
+						g.Attr("readonly"),
+					),
+					Div(
+						ID(copyFeedbackID),
+						Class("hidden mt-2 text-sm text-green-600 font-medium"),
+						g.Text("✓ Copied to clipboard!"),
+					),
+				),
+				Div(
+					Class("flex gap-3 justify-end"),
+					Button(
+						Type("button"),
+						Class("px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition"),
+						g.Attr("onclick", fmt.Sprintf(
+							"document.getElementById('%s').classList.add('hidden')",
+							modalID)),
+						g.Text("Close"),
+					),
+					Button(
+						Type("button"),
+						ID(copyButtonID),
+						Class("px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md transition flex items-center gap-2"),
+						g.Attr("onclick", fmt.Sprintf(`
+							const urlInput = document.getElementById('%s');
+							const fullURL = urlInput.value;
+							navigator.clipboard.writeText(fullURL).then(() => {
+								const feedback = document.getElementById('%s');
+								feedback.classList.remove('hidden');
+								setTimeout(() => {
+									feedback.classList.add('hidden');
+								}, 2000);
+							});
+						`, urlInputID, copyFeedbackID)),
+						Img(
+							Src("/images/copy.svg"),
+							Alt("Copy"),
+							Class("w-5 h-5 inline"),
+						),
+						g.Text("Copy"),
+					),
+				),
+			),
+		),
+		// Script to set the full URL when modal is opened
+		Script(
+			g.Raw(fmt.Sprintf(`
+				(function() {
+					const modal = document.getElementById('%s');
+					const urlInput = document.getElementById('%s');
+					const observer = new MutationObserver(function(mutations) {
+						mutations.forEach(function(mutation) {
+							if (!modal.classList.contains('hidden') && urlInput.value === '') {
+								urlInput.value = window.location.origin + '%s';
+							}
+						});
+					});
+					observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+				})();
+			`, modalID, urlInputID, adPath)),
+		),
+	)
 }

@@ -114,8 +114,9 @@ func main() {
 	app.Get("/ad/image/:adID/:idx", handlers.HandleAdImage) // x
 
 	// Ad management
-	app.Get("/ad/:id", handlers.HandleAdPage)                       // x
-	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd) // x
+	app.Get("/ad/:id", handlers.HandleAdPage)                                       // x
+	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd)                 // x
+	app.Get("/duplicate-ad/:id", handlers.AuthRequired, handlers.HandleDuplicateAd) // x
 	app.Delete("/delete-ad/:id", handlers.AuthRequired, handlers.HandleDeleteAd)
 	app.Post("/restore-ad/:id", handlers.AuthRequired, handlers.HandleRestoreAd)
 

@@ -44,6 +44,51 @@ func HandleNewAd(c *fiber.Ctx) error {
 	return render(c, ui.NewAdPage(currentUser, c.Path(), makes, categories))
 }
 
+func HandleDuplicateAd(c *fiber.Ctx) error {
+	currentUser, _ := CurrentUser(c)
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+
+	// Fetch the original ad
+	adObj, ok := ad.GetAd(adID, currentUser)
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+
+	// Populate vehicle data (Make, Years, Models, Engines)
+	adObj.Make, adObj.Years, adObj.Models, adObj.Engines =
+		ad.GetVehicleData(adObj.ID)
+
+	// Fetch subcategory name
+	var subcategoryName string
+	if adObj.SubCategory.Valid {
+		subcategoryName = adObj.SubCategory.String
+	}
+
+	// Get category name for fetching subcategories
+	var categoryName string
+	if adObj.Category.Valid {
+		categoryName = adObj.Category.String
+	}
+
+	// Pre-fetch all the dropdown/checkbox data needed for the form
+	makes := vehicle.GetMakes()
+	categories := part.GetCategories()
+	years := vehicle.GetYears(adObj.Make)
+	models := vehicle.GetModels(adObj.Make, adObj.Years)
+	engines := vehicle.GetEngines(adObj.Make, adObj.Years, adObj.Models)
+	var subcategories []part.SubCategory
+	if categoryName != "" {
+		subcategories, _ = part.GetSubCategoriesForCategory(categoryName)
+	}
+
+	return render(c, ui.DuplicateAdPage(
+		currentUser, c.Path(), makes, categories,
+		adObj, years, models, engines, subcategories, subcategoryName))
+}
+
 // Helper to resolve location using Grok and upsert into Location table
 func resolveAndStoreLocation(raw string) (int, error) {
 	if raw == "" {

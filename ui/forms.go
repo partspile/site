@@ -4,8 +4,6 @@ import (
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
-
-	"github.com/parts-pile/site/part"
 )
 
 // ---- Form Components ----
@@ -78,101 +76,6 @@ func passwordInput(id, name string) g.Node {
 		ID(id),
 		Name(name),
 		Class("w-full p-2 border rounded"),
-	)
-}
-
-func YearsFormGroup(years []string) g.Node {
-	checkboxes := []g.Node{}
-	for _, year := range years {
-		checkboxes = append(checkboxes,
-			Checkbox("years", year, year, false, false,
-				hx.Trigger("change"),
-				hx.Get("/api/models"),
-				hx.Target("#modelsDiv"),
-				hx.Include("[name='make'],[name='years']:checked"),
-				hx.Swap("innerHTML"),
-				g.Attr("onclick", "document.getElementById('enginesDiv').innerHTML = ''"),
-			),
-		)
-	}
-	return formGroup("Years", "years", GridContainer4(checkboxes...))
-}
-
-func ModelsFormGroup(models []string) g.Node {
-	checkboxes := []g.Node{}
-	for _, model := range models {
-		checkboxes = append(checkboxes,
-			Checkbox("models", model, model, false, false,
-				hx.Trigger("change"),
-				hx.Get("/api/engines"),
-				hx.Target("#enginesDiv"),
-				hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
-				hx.Swap("innerHTML"),
-			),
-		)
-	}
-	return formGroup("Models", "models", GridContainer4(checkboxes...))
-}
-
-func EnginesFormGroup(engines []string) g.Node {
-	checkboxes := []g.Node{}
-	for _, engine := range engines {
-		checkboxes = append(checkboxes,
-			Checkbox("engines", engine, engine, false, false),
-		)
-	}
-	return formGroup("Engines", "engines", GridContainer4(checkboxes...))
-}
-
-func categoriesSelector(categories []string, selectedCategory string) g.Node {
-	options := []g.Node{
-		Option(Value(""), g.Text("Select a category")),
-	}
-
-	for _, category := range categories {
-		attrs := []g.Node{Value(category), g.Text(category)}
-		if category == selectedCategory {
-			attrs = append(attrs, Selected())
-		}
-		options = append(options, Option(attrs...))
-	}
-
-	return formGroup("Category", "category",
-		Select(
-			ID("category"),
-			Name("category"),
-			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
-			Required(),
-			hx.Trigger("change"),
-			hx.Get("/api/subcategories"),
-			hx.Target("#subcategoriesDiv"),
-			hx.Include("this"),
-			g.Group(options),
-		),
-	)
-}
-
-func SubCategoriesFormGroupFromStruct(subCategories []part.SubCategory, selectedSubCategory string) g.Node {
-	options := []g.Node{
-		Option(Value(""), g.Text("Select a subcategory")),
-	}
-
-	for _, subCategory := range subCategories {
-		attrs := []g.Node{Value(subCategory.Name), g.Text(subCategory.Name)}
-		if subCategory.Name == selectedSubCategory {
-			attrs = append(attrs, Selected())
-		}
-		options = append(options, Option(attrs...))
-	}
-
-	return formGroup("Subcategory", "subcategory",
-		Select(
-			ID("subcategory"),
-			Name("subcategory"),
-			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
-			Required(),
-			g.Group(options),
-		),
 	)
 }
 
