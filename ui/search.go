@@ -51,7 +51,7 @@ func ViewToggleButtons(activeView string) g.Node {
 
 func InitialSearchResults(userID int, view string) g.Node {
 	return Div(
-		SearchWidget(userID, view, "", 0),
+		SearchWidget(userID, view, ""),
 		Div(
 			ID("searchResults"),
 			Class("h-96"),
@@ -63,9 +63,7 @@ func InitialSearchResults(userID int, view string) g.Node {
 	)
 }
 
-func SearchWidget(userID int, view string, query string, threshold float64) g.Node {
-	thresholdStr := fmt.Sprintf("%.1f", threshold)
-
+func SearchWidget(userID int, view string, query string) g.Node {
 	return Div(
 		Class("flex items-start gap-4"),
 		renderNewAdButton(userID),
@@ -86,39 +84,21 @@ func SearchWidget(userID int, view string, query string, threshold float64) g.No
 						ID("searchBox"),
 						Name("q"),
 						Value(query),
+						hx.Trigger("search"),
 						Class("flex-1 p-2 border rounded"),
 						Placeholder("Search by make, year, model, or description..."),
-						hx.Trigger("search"),
 					),
 					Button(
+						Type("button"),
 						Class("px-4 py-2 border border-blue-500 bg-white text-blue-500 rounded-full hover:bg-blue-50 whitespace-nowrap"),
+						hx.Get("/filters/toggle"),
+						hx.Target("#filtersArea"),
+						hx.Swap("outerHTML"),
+						hx.Vals("js:{show: document.getElementById('filtersArea').innerHTML.trim() === ''}"),
 						g.Text("Filters"),
 					),
 				),
-				// Threshold slider - only show when there's a search query
-				g.If(query != "", Div(
-					Class("flex items-center gap-2"),
-					Input(
-						Type("range"),
-						ID("thresholdSlider"),
-						Name("threshold"),
-						Min("0.0"),
-						Max("1.0"),
-						Step("0.1"),
-						Value(thresholdStr),
-						Class("flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"),
-						hx.Get("/search"),
-						hx.Target("#searchResults"),
-						hx.Swap("outerHTML"),
-						hx.Include("closest form"),
-						hx.Trigger("change"),
-					),
-					Span(
-						ID("thresholdValue"),
-						Class("text-sm text-gray-600 min-w-[3rem]"),
-						g.Text(thresholdStr),
-					),
-				)),
+				emptyFiltersArea(),
 			),
 		),
 	)
@@ -149,4 +129,72 @@ func renderNewAdButton(userID int) g.Node {
 		return styledLink("New Ad", "/new-ad", buttonPrimary)
 	}
 	return styledLinkDisabled("New Ad", buttonPrimary)
+}
+
+func emptyFiltersArea() g.Node {
+	return Div(
+		ID("filtersArea"),
+	)
+}
+
+// FiltersToggleResponse renders the filters section that can be shown/hidden
+func FiltersToggleResponse(showFilters bool) g.Node {
+	if !showFilters {
+		return emptyFiltersArea()
+	}
+
+	return Div(
+		ID("filtersArea"),
+		Class("bg-gray-50 border border-gray-200 rounded-lg p-4 my-4"),
+		Div(
+			Class("grid grid-cols-1 md:grid-cols-3 gap-4"),
+			// Make filter
+			Div(
+				Label(Class("block text-sm font-medium text-gray-700 mb-1"), g.Text("Make")),
+				Select(
+					Name("make"),
+					ID("makeFilter"),
+					Class("w-full p-2 border border-gray-300 rounded-md"),
+					Option(Value(""), g.Text("All Makes")),
+					// TODO: Add dynamic makes from API
+				),
+			),
+			// Year filter
+			Div(
+				Label(Class("block text-sm font-medium text-gray-700 mb-1"), g.Text("Year")),
+				Select(
+					Name("year"),
+					ID("yearFilter"),
+					Class("w-full p-2 border border-gray-300 rounded-md"),
+					Option(Value(""), g.Text("All Years")),
+					// TODO: Add dynamic years from API
+				),
+			),
+			// Model filter
+			Div(
+				Label(Class("block text-sm font-medium text-gray-700 mb-1"), g.Text("Model")),
+				Select(
+					Name("model"),
+					ID("modelFilter"),
+					Class("w-full p-2 border border-gray-300 rounded-md"),
+					Option(Value(""), g.Text("All Models")),
+					// TODO: Add dynamic models from API
+				),
+			),
+		),
+		Div(
+			Class("flex justify-end gap-2 mt-4"),
+			Button(
+				Type("button"),
+				Class("px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"),
+				hx.On("click", "document.getElementById('makeFilter').value = ''; document.getElementById('yearFilter').value = ''; document.getElementById('modelFilter').value = ''; htmx.trigger('#searchForm', 'submit')"),
+				g.Text("Clear Filters"),
+			),
+			Button(
+				Type("submit"),
+				Class("px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"),
+				g.Text("Apply Filters"),
+			),
+		),
+	)
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vector"
 	"github.com/qdrant/go-client/qdrant"
@@ -181,4 +182,15 @@ func saveUserSearch(c *fiber.Ctx) {
 	userPrompt := getQueryParam(c, "q")
 	_, userID := CurrentUser(c)
 	saveUserSearchAndQueue(userPrompt, userID)
+}
+
+// HandleFiltersToggle toggles the visibility of the filters area
+func HandleFiltersToggle(c *fiber.Ctx) error {
+	c.Set("Content-Type", "text/html")
+
+	// Get current state from query parameter (default to false/hidden)
+	showFilters := c.Query("show", "false") == "true"
+
+	// Return both the filters area and the updated button
+	return render(c, ui.FiltersToggleResponse(showFilters))
 }
