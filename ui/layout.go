@@ -57,21 +57,6 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 				Src(config.HTMXSSEURL),
 				Defer(),
 			),
-			// Map resources
-			Link(
-				Rel("stylesheet"),
-				Href(config.LeafletCSSURL),
-			),
-			Script(
-				Type("text/javascript"),
-				Src(config.LeafletJSURL),
-				Defer(),
-			),
-			Script(
-				Type("text/javascript"),
-				Src("/js/map.js"),
-				Defer(),
-			),
 			// Script(
 			// 	Type("text/javascript"),
 			// 	g.Raw("if(window.htmx){htmx.logAll()} else {document.addEventListener('htmx:load',function(){htmx.logAll()})}"),

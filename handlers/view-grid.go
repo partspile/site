@@ -17,7 +17,7 @@ func NewGridView(ctx *fiber.Ctx) *GridView {
 }
 
 func (v *GridView) GetAdIDs() ([]int, string, error) {
-	return getAdIDs(v.ctx, nil)
+	return getAdIDs(v.ctx)
 }
 
 func (v *GridView) RenderSearchResults(adIDs []int, nextCursor string) error {
@@ -33,7 +33,7 @@ func (v *GridView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	}
 
 	// Create loader URL for infinite scroll
-	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid", threshold, nil)
+	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid", threshold)
 
 	return render(v.ctx, ui.GridViewResults(ads, userID, loc, loaderURL))
 }
@@ -51,7 +51,7 @@ func (v *GridView) RenderSearchPage(adIDs []int, nextCursor string) error {
 	}
 
 	// Create loader URL for infinite scroll
-	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid", threshold, nil)
+	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid", threshold)
 
 	return render(v.ctx, ui.GridViewPage(ads, userID, loc, loaderURL))
 }

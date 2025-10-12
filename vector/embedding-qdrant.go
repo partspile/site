@@ -337,26 +337,3 @@ func GetAdEmbeddings(adIDs []int) ([][]float32, error) {
 	log.Printf("[qdrant] Successfully retrieved %d embeddings in batch", len(result))
 	return result, nil
 }
-
-// BuildBoundingBoxGeoFilter creates a geo filter for bounding box search
-func BuildBoundingBoxGeoFilter(minLat, maxLat, minLon, maxLon float64) *qdrant.Filter {
-	log.Printf("[vector] Building bounding box filter: lat[%.6f,%.6f], lon[%.6f,%.6f]", minLat, maxLat, minLon, maxLon)
-
-	// Create geo bounding box filter using Qdrant's native geo filtering
-	// Note: The order is topLeft.lat, topLeft.lon, bottomRight.lat, bottomRight.lon
-	// topLeft = maxLat, minLon (northwest corner)
-	// bottomRight = minLat, maxLon (southeast corner)
-	geoCondition := qdrant.NewGeoBoundingBox("location", maxLat, minLon, minLat, maxLon)
-
-	conditions := []*qdrant.Condition{
-		geoCondition,
-	}
-
-	// Create filter with conditions
-	filter := &qdrant.Filter{
-		Must: conditions,
-	}
-
-	log.Printf("[vector] Created Qdrant geo bounding box filter")
-	return filter
-}

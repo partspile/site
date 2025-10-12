@@ -212,7 +212,6 @@ func main() {
 	app.Post("/view/list", handlers.HandleListView) // x
 	app.Post("/view/tree", handlers.HandleTreeView) // x
 	app.Post("/view/grid", handlers.HandleGridView) // x
-	app.Post("/view/map", handlers.HandleMapView)   // x
 
 	// Start background user embedding processor
 	vector.StartUserBackgroundProcessor()

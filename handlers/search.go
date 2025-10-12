@@ -6,21 +6,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vector"
 	"github.com/qdrant/go-client/qdrant"
 )
-
-// extractMapBounds extracts geographic bounding box parameters for map view
-func extractMapBounds(c *fiber.Ctx) *ui.GeoBounds {
-	bounds, _ := parseBounds(
-		c.Query("minLat"),
-		c.Query("maxLat"),
-		c.Query("minLon"),
-		c.Query("maxLon"))
-	return bounds
-}
 
 // runEmbeddingSearch runs vector search with optional filters
 func runEmbeddingSearch(embedding []float32, cursor string, threshold float64, k int, filter *qdrant.Filter) ([]int, string, error) {

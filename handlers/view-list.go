@@ -17,7 +17,7 @@ func NewListView(ctx *fiber.Ctx) *ListView {
 }
 
 func (v *ListView) GetAdIDs() ([]int, string, error) {
-	return getAdIDs(v.ctx, nil)
+	return getAdIDs(v.ctx)
 }
 
 func (v *ListView) RenderSearchResults(adIDs []int, nextCursor string) error {
@@ -33,7 +33,7 @@ func (v *ListView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	}
 
 	// Create loader URL for infinite scroll
-	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list", threshold, nil)
+	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list", threshold)
 
 	return render(v.ctx, ui.ListViewResults(ads, userID, loc, loaderURL))
 }
@@ -51,7 +51,7 @@ func (v *ListView) RenderSearchPage(adIDs []int, nextCursor string) error {
 	}
 
 	// Create loader URL for infinite scroll
-	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list", threshold, nil)
+	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list", threshold)
 
 	return render(v.ctx, ui.ListViewPage(ads, userID, loc, loaderURL))
 }

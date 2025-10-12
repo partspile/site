@@ -24,7 +24,7 @@ func (v *TreeView) GetAdIDs() ([]int, string, error) {
 	}
 
 	// Search mode - get ad IDs from vector search for tree filtering
-	return getAdIDs(v.ctx, nil)
+	return getAdIDs(v.ctx)
 }
 
 func (v *TreeView) RenderSearchResults(adIDs []int, nextCursor string) error {

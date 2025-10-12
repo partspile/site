@@ -10,7 +10,6 @@ import (
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/search"
 	"github.com/parts-pile/site/vector"
-	"github.com/qdrant/go-client/qdrant"
 )
 
 // View interface defines the contract for different view implementations
@@ -37,10 +36,6 @@ func HandleTreeView(c *fiber.Ctx) error {
 	return handleSearch(c, "tree")
 }
 
-func HandleMapView(c *fiber.Ctx) error {
-	return handleSearch(c, "map")
-}
-
 // saveUserSearchAndQueue saves user search and queues user for embedding update
 func saveUserSearchAndQueue(userPrompt string, userID int) {
 	if userPrompt != "" {
@@ -53,19 +48,13 @@ func saveUserSearchAndQueue(userPrompt string, userID int) {
 }
 
 // getAdIDs performs the common ad ID retrieval logic
-func getAdIDs(ctx *fiber.Ctx, geoFilter *qdrant.Filter) ([]int, string, error) {
+func getAdIDs(ctx *fiber.Ctx) ([]int, string, error) {
 	userPrompt := getQueryParam(ctx, "q")
 	cursor := getQueryParam(ctx, "cursor")
 	threshold := getThreshold(ctx)
 	currentUser, _ := CurrentUser(ctx)
 
-	// Use QdrantSearchInitialK for geo searches, QdrantSearchPageSize for regular searches
-	limit := config.QdrantSearchPageSize
-	if geoFilter != nil {
-		limit = config.QdrantSearchInitialK
-	}
-
-	adIDs, nextCursor, err := performSearch(userPrompt, currentUser, cursor, threshold, limit, geoFilter)
+	adIDs, nextCursor, err := performSearch(userPrompt, currentUser, cursor, threshold, config.QdrantSearchPageSize, nil)
 
 	if err == nil {
 		log.Printf("[getAdIDs] ad IDs returned: %d", len(adIDs))
@@ -82,8 +71,6 @@ func NewView(ctx *fiber.Ctx, viewType string) (View, error) {
 		return NewListView(ctx), nil
 	case "grid":
 		return NewGridView(ctx), nil
-	case "map":
-		return NewMapView(ctx), nil
 	case "tree":
 		return NewTreeView(ctx), nil
 	default:

@@ -9,14 +9,6 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-// GeoBounds represents a geographic bounding box
-type GeoBounds struct {
-	MinLat float64
-	MaxLat float64
-	MinLon float64
-	MaxLon float64
-}
-
 // htmlEscape escapes HTML special characters
 func htmlEscape(s string) string {
 	return strings.ReplaceAll(s, `"`, `\"`)
@@ -54,7 +46,6 @@ func ViewToggleButtons(activeView string) g.Node {
 		button("list", "List View"),
 		button("tree", "Tree View"),
 		button("grid", "Grid View"),
-		button("map", "Map View"),
 	)
 }
 
@@ -75,17 +66,6 @@ func InitialSearchResults(userID int, view string) g.Node {
 func SearchWidget(userID int, view string, query string, threshold float64) g.Node {
 	thresholdStr := fmt.Sprintf("%.1f", threshold)
 
-	// Create bounding box inputs for map view
-	var boundingBoxInputs []g.Node
-	if view == "map" {
-		boundingBoxInputs = []g.Node{
-			Input(Type("hidden"), Name("minLat"), ID("form-min-lat")),
-			Input(Type("hidden"), Name("maxLat"), ID("form-max-lat")),
-			Input(Type("hidden"), Name("minLon"), ID("form-min-lon")),
-			Input(Type("hidden"), Name("maxLon"), ID("form-max-lon")),
-		}
-	}
-
 	return Div(
 		Class("flex items-start gap-4"),
 		renderNewAdButton(userID),
@@ -99,8 +79,6 @@ func SearchWidget(userID int, view string, query string, threshold float64) g.No
 				hx.Swap("outerHTML"),
 				hx.Include("[name='view']"),
 				Input(Type("hidden"), Name("view"), Value(view), ID("view-type-input")),
-				// Add bounding box inputs for map view
-				g.Group(boundingBoxInputs),
 				Input(
 					Type("search"),
 					ID("searchBox"),
@@ -149,21 +127,13 @@ func createInfiniteScrollTrigger(loaderURL string) g.Node {
 }
 
 // SearchCreateLoaderURL creates the loader URL for pagination
-func SearchCreateLoaderURL(userPrompt, nextCursor, view string, threshold float64, bounds *GeoBounds) string {
+func SearchCreateLoaderURL(userPrompt, nextCursor, view string, threshold float64) string {
 	if nextCursor == "" {
 		return ""
 	}
 
-	loaderURL := fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s&threshold=%.1f",
+	return fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s&threshold=%.1f",
 		htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view), threshold)
-
-	// Add bounding box to loader URL for map view
-	if view == "map" && bounds != nil {
-		loaderURL += fmt.Sprintf("&minLat=%.6f&maxLat=%.6f&minLon=%.6f&maxLon=%.6f",
-			bounds.MinLat, bounds.MaxLat, bounds.MinLon, bounds.MaxLon)
-	}
-
-	return loaderURL
 }
 
 // Helper function to render new ad button based on user login

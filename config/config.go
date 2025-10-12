@@ -51,10 +51,6 @@ const (
 	// CDN URLs for external resources
 	HTMXURL    = "https://unpkg.com/htmx.org@2.0.7"
 	HTMXSSEURL = "https://unpkg.com/htmx-ext-sse@2.2.3/dist/sse.min.js"
-
-	// Leaflet map library URLs
-	LeafletCSSURL = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-	LeafletJSURL  = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 )
 
 // Global configuration variables
