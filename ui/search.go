@@ -79,14 +79,21 @@ func SearchWidget(userID int, view string, query string, threshold float64) g.No
 				hx.Swap("outerHTML"),
 				hx.Include("[name='view']"),
 				Input(Type("hidden"), Name("view"), Value(view), ID("view-type-input")),
-				Input(
-					Type("search"),
-					ID("searchBox"),
-					Name("q"),
-					Value(query),
-					Class("w-full p-2 border rounded"),
-					Placeholder("Search by make, year, model, or description..."),
-					hx.Trigger("search"),
+				Div(
+					Class("flex gap-2 items-center"),
+					Input(
+						Type("search"),
+						ID("searchBox"),
+						Name("q"),
+						Value(query),
+						Class("flex-1 p-2 border rounded"),
+						Placeholder("Search by make, year, model, or description..."),
+						hx.Trigger("search"),
+					),
+					Button(
+						Class("px-4 py-2 border border-blue-500 bg-white text-blue-500 rounded-full hover:bg-blue-50 whitespace-nowrap"),
+						g.Text("Filters"),
+					),
 				),
 				// Threshold slider - only show when there's a search query
 				g.If(query != "", Div(
