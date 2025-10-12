@@ -22,7 +22,6 @@ func (v *ListView) GetAdIDs() ([]int, string, error) {
 
 func (v *ListView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
-	threshold := getThreshold(v.ctx)
 	currentUser, userID := CurrentUser(v.ctx)
 	loc := getLocation(v.ctx)
 
@@ -33,14 +32,13 @@ func (v *ListView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	}
 
 	// Create loader URL for infinite scroll
-	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list", threshold)
+	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list")
 
 	return render(v.ctx, ui.ListViewResults(ads, userID, loc, loaderURL))
 }
 
 func (v *ListView) RenderSearchPage(adIDs []int, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
-	threshold := getThreshold(v.ctx)
 	currentUser, userID := CurrentUser(v.ctx)
 	loc := getLocation(v.ctx)
 
@@ -51,7 +49,7 @@ func (v *ListView) RenderSearchPage(adIDs []int, nextCursor string) error {
 	}
 
 	// Create loader URL for infinite scroll
-	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list", threshold)
+	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list")
 
 	return render(v.ctx, ui.ListViewPage(ads, userID, loc, loaderURL))
 }

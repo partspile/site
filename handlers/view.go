@@ -51,10 +51,9 @@ func saveUserSearchAndQueue(userPrompt string, userID int) {
 func getAdIDs(ctx *fiber.Ctx) ([]int, string, error) {
 	userPrompt := getQueryParam(ctx, "q")
 	cursor := getQueryParam(ctx, "cursor")
-	threshold := getThreshold(ctx)
 	currentUser, _ := CurrentUser(ctx)
 
-	adIDs, nextCursor, err := performSearch(userPrompt, currentUser, cursor, threshold, config.QdrantSearchPageSize, nil)
+	adIDs, nextCursor, err := performSearch(userPrompt, currentUser, cursor, config.QdrantSearchThreshold, config.QdrantSearchPageSize, nil)
 
 	if err == nil {
 		log.Printf("[getAdIDs] ad IDs returned: %d", len(adIDs))

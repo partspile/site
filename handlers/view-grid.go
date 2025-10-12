@@ -22,7 +22,6 @@ func (v *GridView) GetAdIDs() ([]int, string, error) {
 
 func (v *GridView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
-	threshold := getThreshold(v.ctx)
 	currentUser, userID := CurrentUser(v.ctx)
 	loc := getLocation(v.ctx)
 
@@ -33,14 +32,13 @@ func (v *GridView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	}
 
 	// Create loader URL for infinite scroll
-	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid", threshold)
+	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid")
 
 	return render(v.ctx, ui.GridViewResults(ads, userID, loc, loaderURL))
 }
 
 func (v *GridView) RenderSearchPage(adIDs []int, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
-	threshold := getThreshold(v.ctx)
 	currentUser, userID := CurrentUser(v.ctx)
 	loc := getLocation(v.ctx)
 
@@ -51,7 +49,7 @@ func (v *GridView) RenderSearchPage(adIDs []int, nextCursor string) error {
 	}
 
 	// Create loader URL for infinite scroll
-	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid", threshold)
+	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid")
 
 	return render(v.ctx, ui.GridViewPage(ads, userID, loc, loaderURL))
 }

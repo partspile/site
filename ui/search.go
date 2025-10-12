@@ -35,7 +35,7 @@ func ViewToggleButtons(activeView string) g.Node {
 			hx.Post("/view/"+view),
 			hx.Target("#searchResults"),
 			hx.Swap("outerHTML"),
-			hx.Include("[name='q'],[name='threshold']"),
+			hx.Include("[name='q']"),
 			hx.Trigger("click"),
 			hx.On("click", "document.getElementById('view-type-input').value = '"+view+"'"),
 			icon(view, alt),
@@ -114,13 +114,13 @@ func createInfiniteScrollTrigger(loaderURL string) g.Node {
 }
 
 // SearchCreateLoaderURL creates the loader URL for pagination
-func SearchCreateLoaderURL(userPrompt, nextCursor, view string, threshold float64) string {
+func SearchCreateLoaderURL(userPrompt, nextCursor, view string) string {
 	if nextCursor == "" {
 		return ""
 	}
 
-	return fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s&threshold=%.1f",
-		htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view), threshold)
+	return fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s",
+		htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view))
 }
 
 // Helper function to render new ad button based on user login

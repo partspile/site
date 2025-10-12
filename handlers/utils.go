@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/parts-pile/site/config"
 	g "maragu.dev/gomponents"
 )
 
@@ -22,11 +21,6 @@ func getQueryParam(ctx *fiber.Ctx, key string) string {
 	}
 	// Fall back to form value (for POST requests)
 	return ctx.FormValue(key)
-}
-
-// getThreshold gets the threshold parameter with default value
-func getThreshold(ctx *fiber.Ctx) float64 {
-	return ctx.QueryFloat("threshold", config.QdrantSearchThreshold)
 }
 
 // getLocation gets the timezone location from context
