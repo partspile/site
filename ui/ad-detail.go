@@ -18,10 +18,10 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 	var containerClass, contentClass string
 	if ad.IsArchived() {
 		containerClass = "border rounded-lg shadow-lg bg-red-100 flex flex-col relative my-4 mx-2 col-span-full overflow-hidden"
-		contentClass = "p-4 flex flex-col gap-2 bg-red-100"
+		contentClass = "p-4 flex flex-col bg-red-100"
 	} else {
 		containerClass = "border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2 col-span-full overflow-hidden"
-		contentClass = "p-4 flex flex-col gap-2 bg-white"
+		contentClass = "p-4 flex flex-col bg-white"
 	}
 
 	isOwner := userID == ad.UserID && userID != 0
@@ -33,10 +33,31 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 		g.If(ad.IsArchived(), deletedWatermark()),
 		Div(
 			Class(contentClass),
-			// Title and buttons row
+			// Title row
 			Div(
-				Class("flex flex-row items-center justify-between mb-2"),
-				Div(Class("font-semibold text-xl truncate"), titleNode(ad)),
+				Class("font-semibold text-xl truncate"),
+				titleNode(ad),
+			),
+			// Age and location row with inline edit for owner
+			Div(
+				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-4"),
+				Div(Class("text-gray-400"), ageNode(ad, loc)),
+				g.If(isOwner && !ad.IsArchived(),
+					locationEditable(ad),
+				),
+				g.If(!isOwner || ad.IsArchived(),
+					location(ad),
+				),
+			),
+			// Price row with inline edit for owner and action buttons
+			Div(
+				Class("flex flex-row items-center justify-between mb-4"),
+				g.If(isOwner && !ad.IsArchived(),
+					priceEditable(ad),
+				),
+				g.If(!isOwner || ad.IsArchived(),
+					price(ad),
+				),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
 					// For active ads: show bookmark, message, and delete
 					g.If(!ad.IsArchived() && userID != 0, BookmarkButton(ad)),
@@ -48,27 +69,6 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 					shareButton(ad),
 					// Duplicate button (logged in users only)
 					g.If(userID != 0, duplicateButton(ad)),
-				),
-			),
-			// Price row with inline edit for owner
-			Div(
-				Class("flex flex-row items-center gap-2 mb-2"),
-				g.If(isOwner && !ad.IsArchived(),
-					priceEditable(ad),
-				),
-				g.If(!isOwner || ad.IsArchived(),
-					price(ad),
-				),
-			),
-			// Age and location row with inline edit for owner
-			Div(
-				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-2"),
-				Div(Class("text-gray-400"), ageNode(ad, loc)),
-				g.If(isOwner && !ad.IsArchived(),
-					locationEditable(ad),
-				),
-				g.If(!isOwner || ad.IsArchived(),
-					location(ad),
 				),
 			),
 			// Description with inline edit for owner
