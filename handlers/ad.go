@@ -19,7 +19,6 @@ import (
 	_ "image/png"
 
 	"database/sql"
-	"encoding/json"
 
 	"github.com/chai2010/webp"
 	"github.com/gofiber/fiber/v2"
@@ -27,7 +26,6 @@ import (
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
-	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -107,31 +105,7 @@ func resolveAndStoreLocation(raw string) (int, error) {
 	}
 
 	// Location doesn't exist, resolve using Grok API
-	systemPrompt := `You are a location resolver for an auto parts website.
-Given a user input (which may be a address, city, zip code, or country),
-return a JSON object with the best guess for city, admin_area (state,
-province, or region), country, latitude, and longitude. The country field 
-must be a 2-letter ISO country code (e.g., "US" for United States, "CA" 
-for Canada, "GB" for United Kingdom). For US and Canada, the admin_area 
-field must be the official 2-letter code (e.g., "OR" for Oregon, "NY" 
-for New York, "BC" for British Columbia, "ON" for Ontario). For all 
-other countries, use the full name for admin_area. Latitude and longitude 
-should be decimal degrees (positive for North/East, negative for South/West).
-If a field is unknown, leave it blank or null.
-Example input: "97333" -> {"city": "Corvallis", "admin_area": "OR",
-"country": "US", "latitude": 44.5646, "longitude": -123.2620}`
-	resp, err := grok.CallGrok(systemPrompt, raw)
-	if err != nil {
-		return 0, err
-	}
-	var loc struct {
-		City      string   `json:"city"`
-		AdminArea string   `json:"admin_area"`
-		Country   string   `json:"country"`
-		Latitude  *float64 `json:"latitude"`
-		Longitude *float64 `json:"longitude"`
-	}
-	err = json.Unmarshal([]byte(resp), &loc)
+	loc, err := ad.ResolveLocation(raw)
 	if err != nil {
 		return 0, err
 	}

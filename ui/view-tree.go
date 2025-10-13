@@ -30,9 +30,11 @@ func encodeAdIDs(adIDs []int) string {
 func TreeViewResults(adIDs []int, userPrompt string) g.Node {
 	var viewContent = NoSearchResultsMessage()
 
-	if userPrompt == "" {
+	if userPrompt == "" && len(adIDs) == 0 {
+		// No search query and no filtered results - show full browse tree
 		viewContent = treeBrowseMakes()
 	} else {
+		// Either has search query or has filtered results - show filtered tree
 		if len(adIDs) > 0 {
 			viewContent = treeSearchMakes(adIDs)
 		}

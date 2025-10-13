@@ -18,6 +18,18 @@ func HandleMakes(c *fiber.Ctx) error {
 	return c.JSON(makes)
 }
 
+// HandleFilterMakes returns makes that have existing ads for filter dropdowns
+func HandleFilterMakes(c *fiber.Ctx) error {
+	makes, err := vehicle.GetAdMakes()
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to get makes"})
+	}
+
+	// Return HTML options for the select dropdown
+	c.Set("Content-Type", "text/html")
+	return render(c, ui.MakeFilterOptions(makes))
+}
+
 func HandleYears(c *fiber.Ctx) error {
 	makeName := c.Query("make")
 	if makeName == "" {

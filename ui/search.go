@@ -35,14 +35,14 @@ func ViewToggleButtons(activeView string) g.Node {
 			hx.Post("/view/"+view),
 			hx.Target("#searchResults"),
 			hx.Swap("outerHTML"),
-			hx.Include("[name='q']"),
+			hx.Include("form"),
 			hx.Trigger("click"),
 			hx.On("click", "document.getElementById('view-type-input').value = '"+view+"'"),
 			icon(view, alt),
 		)
 	}
 	return Div(
-		Class("flex justify-end gap-2 my-4"),
+		Class("flex justify-end gap-2 mb-4 mt-6"),
 		button("list", "List View"),
 		button("tree", "Tree View"),
 		button("grid", "Grid View"),
@@ -67,49 +67,21 @@ func SearchWidget(userID int, view string, query string) g.Node {
 	return Div(
 		Class("flex items-start gap-4"),
 		renderNewAdButton(userID),
-		Div(
-			Class("flex-1 flex flex-col gap-4 relative"),
-			Form(
-				ID("searchForm"),
-				Class("w-full"),
-				hx.Get("/search"),
-				hx.Target("#searchResults"),
-				hx.Swap("outerHTML"),
-				hx.Include("[name='view']"),
-				Input(Type("hidden"), Name("view"), Value(view), ID("view-type-input")),
-				Div(
-					Class("flex gap-2 items-center"),
-					Input(
-						Type("search"),
-						ID("searchBox"),
-						Name("q"),
-						Value(query),
-						hx.Trigger("search"),
-						Class("flex-1 p-2 border rounded"),
-						Placeholder("Search by make, year, model, or description..."),
-					),
-					Button(
-						Type("button"),
-						Class("px-4 py-2 border border-blue-500 bg-white text-blue-500 rounded-full hover:bg-blue-50 whitespace-nowrap"),
-						hx.Get("/filters/toggle"),
-						hx.Target("#filtersArea"),
-						hx.Swap("outerHTML"),
-						hx.Vals("js:{show: document.getElementById('filtersArea').innerHTML.trim() === ''}"),
-						g.Text("Filters"),
-					),
-				),
-				emptyFiltersArea(),
-			),
-		),
+		searchForm(view, query, Div(
+			Class("flex gap-2 items-center"),
+			searchBox(query),
+			filtersButton(),
+		)),
 	)
 }
 
 func createInfiniteScrollTrigger(loaderURL string) g.Node {
 	return g.If(loaderURL != "", Div(
 		Class("h-4"),
-		g.Attr("hx-get", loaderURL),
-		g.Attr("hx-trigger", "revealed"),
-		g.Attr("hx-swap", "outerHTML"),
+		hx.Get(loaderURL),
+		hx.Trigger("revealed"),
+		hx.Swap("outerHTML"),
+		hx.Include("#searchForm, #filtersArea"),
 	))
 }
 
@@ -131,70 +103,47 @@ func renderNewAdButton(userID int) g.Node {
 	return styledLinkDisabled("New Ad", buttonPrimary)
 }
 
-func emptyFiltersArea() g.Node {
-	return Div(
-		ID("filtersArea"),
+// searchBox creates the search input field
+func searchBox(query string) g.Node {
+	return Input(
+		Type("search"),
+		ID("searchBox"),
+		Name("q"),
+		Value(query),
+		hx.Trigger("search"),
+		Class("w-full p-2 border rounded"),
+		Placeholder("What are you looking for?"),
 	)
 }
 
-// FiltersToggleResponse renders the filters section that can be shown/hidden
-func FiltersToggleResponse(showFilters bool) g.Node {
-	if !showFilters {
-		return emptyFiltersArea()
-	}
-
+// searchForm creates the common search form structure
+func searchForm(view string, query string, content g.Node) g.Node {
 	return Div(
-		ID("filtersArea"),
-		Class("bg-gray-50 border border-gray-200 rounded-lg p-4 my-4"),
-		Div(
-			Class("grid grid-cols-1 md:grid-cols-3 gap-4"),
-			// Make filter
-			Div(
-				Label(Class("block text-sm font-medium text-gray-700 mb-1"), g.Text("Make")),
-				Select(
-					Name("make"),
-					ID("makeFilter"),
-					Class("w-full p-2 border border-gray-300 rounded-md"),
-					Option(Value(""), g.Text("All Makes")),
-					// TODO: Add dynamic makes from API
-				),
-			),
-			// Year filter
-			Div(
-				Label(Class("block text-sm font-medium text-gray-700 mb-1"), g.Text("Year")),
-				Select(
-					Name("year"),
-					ID("yearFilter"),
-					Class("w-full p-2 border border-gray-300 rounded-md"),
-					Option(Value(""), g.Text("All Years")),
-					// TODO: Add dynamic years from API
-				),
-			),
-			// Model filter
-			Div(
-				Label(Class("block text-sm font-medium text-gray-700 mb-1"), g.Text("Model")),
-				Select(
-					Name("model"),
-					ID("modelFilter"),
-					Class("w-full p-2 border border-gray-300 rounded-md"),
-					Option(Value(""), g.Text("All Models")),
-					// TODO: Add dynamic models from API
-				),
-			),
-		),
-		Div(
-			Class("flex justify-end gap-2 mt-4"),
-			Button(
-				Type("button"),
-				Class("px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"),
-				hx.On("click", "document.getElementById('makeFilter').value = ''; document.getElementById('yearFilter').value = ''; document.getElementById('modelFilter').value = ''; htmx.trigger('#searchForm', 'submit')"),
-				g.Text("Clear Filters"),
-			),
-			Button(
-				Type("submit"),
-				Class("px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"),
-				g.Text("Apply Filters"),
-			),
+		Class("flex-1 flex flex-col gap-4"),
+		Form(
+			ID("searchForm"),
+			Class("w-full"),
+			hx.Get("/search"),
+			hx.Target("#searchResults"),
+			hx.Swap("outerHTML"),
+			hx.Include("form"),
+			Input(Type("hidden"), Name("view"), Value(view), ID("view-type-input")),
+			content,
 		),
 	)
+}
+
+// MakeFilterOptions returns HTML options for the make filter dropdown
+func MakeFilterOptions(makes []string) g.Node {
+	var options []g.Node
+
+	// Add "All Makes" option first
+	options = append(options, Option(Value(""), g.Text("All Makes")))
+
+	// Add make options
+	for _, make := range makes {
+		options = append(options, Option(Value(make), g.Text(make)))
+	}
+
+	return g.Group(options)
 }

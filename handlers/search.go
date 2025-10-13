@@ -184,13 +184,14 @@ func saveUserSearch(c *fiber.Ctx) {
 	saveUserSearchAndQueue(userPrompt, userID)
 }
 
-// HandleFiltersToggle toggles the visibility of the filters area
-func HandleFiltersToggle(c *fiber.Ctx) error {
+// HandleFiltersShow shows the filters area
+func HandleFiltersShow(c *fiber.Ctx) error {
 	c.Set("Content-Type", "text/html")
 
-	// Get current state from query parameter (default to false/hidden)
-	showFilters := c.Query("show", "false") == "true"
+	// Get view and query parameters
+	view := c.Query("view", "list")
+	query := c.Query("q", "")
 
-	// Return both the filters area and the updated button
-	return render(c, ui.FiltersToggleResponse(showFilters))
+	// Return the search form with filters
+	return render(c, ui.FiltersShow(view, query))
 }

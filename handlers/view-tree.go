@@ -16,10 +16,17 @@ func NewTreeView(ctx *fiber.Ctx) *TreeView {
 }
 
 func (v *TreeView) GetAdIDs() ([]int, string, error) {
-	userPrompt := getQueryParam(v.ctx, "q")
+	// Check if any filters are applied (search query, location, make, year range, price range)
+	hasFilters := getQueryParam(v.ctx, "q") != "" ||
+		getQueryParam(v.ctx, "location") != "" ||
+		getQueryParam(v.ctx, "make") != "" ||
+		getQueryParam(v.ctx, "min_year") != "" ||
+		getQueryParam(v.ctx, "max_year") != "" ||
+		getQueryParam(v.ctx, "min_price") != "" ||
+		getQueryParam(v.ctx, "max_price") != ""
 
-	if userPrompt == "" {
-		// Browse mode - return empty slice, tree will be built using unfiltered SQL queries
+	if !hasFilters {
+		// Browse mode - no search query and no filters, return empty slice for full tree
 		return []int{}, "", nil
 	}
 

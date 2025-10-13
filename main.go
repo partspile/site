@@ -98,10 +98,10 @@ func main() {
 	})
 
 	// Main pages
-	app.Get("/", handlers.HandleHome)                        // x
-	app.Get("/search", handlers.HandleSearch)                // x
-	app.Get("/search-page", handlers.HandleSearchPage)       // x
-	app.Get("/filters/toggle", handlers.HandleFiltersToggle) // x
+	app.Get("/", handlers.HandleHome)                    // x
+	app.Get("/search", handlers.HandleSearch)            // x
+	app.Get("/search-page", handlers.HandleSearchPage)   // x
+	app.Get("/filters/show", handlers.HandleFiltersShow) // x
 
 	// Tree view routes - split by browse vs search mode
 	app.Get("/tree-browse-expand/*", handlers.HandleTreeExpandBrowse)     // x
@@ -135,6 +135,7 @@ func main() {
 	api.Post("/bookmark-ad/:id", handlers.AuthRequired, handlers.HandleBookmarkAd)
 	api.Delete("/bookmark-ad/:id", handlers.AuthRequired, handlers.HandleUnbookmarkAd)
 	api.Get("/makes", handlers.HandleMakes)
+	api.Get("/filter-makes", handlers.HandleFilterMakes)
 	api.Get("/years", handlers.HandleYears)
 	api.Get("/models", handlers.HandleModels)
 	api.Get("/engines", handlers.HandleEngines)
