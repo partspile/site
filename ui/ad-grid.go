@@ -37,6 +37,7 @@ func AdGridNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
 				Class("flex flex-row items-center justify-between"),
 				Div(
 					Class("text-green-600 font-semibold text-base"),
+					Class("font-semibold text-base"),
 					priceNode(ad),
 				),
 				g.If(userID != 0, BookmarkButton(ad)),
@@ -72,6 +73,7 @@ func gridImage(adID int, alt string) g.Node {
 
 	return Img(
 		Class("rounded-md w-full h-60 object-cover"),
+		Class("rounded-md w-full h-48 object-cover"),
 		Src(src),
 		Alt(alt),
 	)
@@ -80,6 +82,7 @@ func gridImage(adID int, alt string) g.Node {
 func gridNoImage() g.Node {
 	return Div(
 		Class("rounded-md w-full h-60 bg-gray-100 border border-gray-300 flex items-center justify-center text-gray-500"),
+		Class("rounded-md w-full h-48 bg-gray-100 border border-gray-300 flex items-center justify-center text-gray-500"),
 		g.Text("No Image"),
 	)
 }
