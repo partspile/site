@@ -10,6 +10,7 @@ import (
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vector"
 	"github.com/qdrant/go-client/qdrant"
+	g "maragu.dev/gomponents"
 )
 
 // runEmbeddingSearch runs vector search with optional filters
@@ -134,6 +135,42 @@ func HandleSearchPage(c *fiber.Ctx) error {
 
 func HandleSearch(c *fiber.Ctx) error {
 	return handleSearch(c, c.Query("view", "list"))
+}
+
+// HandleSearchQuery renders a full search page with search widget and results
+func HandleSearchQuery(c *fiber.Ctx) error {
+	c.Set("Content-Type", "text/html")
+
+	view, err := NewView(c, "list")
+	if err != nil {
+		return err
+	}
+
+	adIDs, nextCursor, err := view.GetAdIDs()
+	if err != nil {
+		return err
+	}
+
+	// Convert ad IDs to full ad objects for UI rendering
+	currentUser, userID := CurrentUser(c)
+	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
+	if err != nil {
+		return err
+	}
+
+	// Create loader URL for infinite scroll
+	userPrompt := getQueryParam(c, "q")
+	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list")
+
+	// Render full page with search widget and results
+	return render(c, ui.Page(
+		"Search Results",
+		currentUser,
+		c.Path(),
+		[]g.Node{
+			ui.SearchPage(userID, userPrompt, ads, getLocation(c), loaderURL),
+		},
+	))
 }
 
 // HandleSearchAPI returns search results as JSON for JavaScript consumption

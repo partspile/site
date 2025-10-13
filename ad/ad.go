@@ -168,6 +168,20 @@ func buildAdQueryWithDeleted(ids []int, currentUser *user.User, includeDeleted b
 	return query, args
 }
 
+// GetAdWithVehicle retrieves an ad by ID with vehicle data populated
+// This is a convenience function for non-performance-critical paths that need vehicle data
+func GetAdWithVehicle(id int, currentUser *user.User) (Ad, bool) {
+	adObj, ok := GetAd(id, currentUser)
+	if !ok {
+		return Ad{}, false
+	}
+
+	// Populate vehicle data
+	adObj.Make, adObj.Years, adObj.Models, adObj.Engines = GetVehicleData(adObj.ID)
+
+	return adObj, true
+}
+
 // GetAd retrieves an ad by ID from the Ad table (includes deleted ads)
 // Callers should check IsArchived() if they need to filter out deleted ads
 func GetAd(id int, currentUser *user.User) (Ad, bool) {

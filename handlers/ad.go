@@ -50,14 +50,10 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 	}
 
 	// Fetch the original ad
-	adObj, ok := ad.GetAd(adID, currentUser)
+	adObj, ok := ad.GetAdWithVehicle(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-
-	// Populate vehicle data (Make, Years, Models, Engines)
-	adObj.Make, adObj.Years, adObj.Models, adObj.Engines =
-		ad.GetVehicleData(adObj.ID)
 
 	// Fetch subcategory name
 	var subcategoryName string
@@ -168,7 +164,7 @@ func HandleAdPage(c *fiber.Ctx) error {
 
 	currentUser, userID := CurrentUser(c)
 
-	adObj, ok := ad.GetAd(adID, currentUser)
+	adObj, ok := ad.GetAdWithVehicle(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
@@ -214,7 +210,7 @@ func HandleUpdateAdPrice(c *fiber.Ctx) error {
 	}
 
 	// Fetch updated ad for display
-	updatedAd, ok := ad.GetAd(adID, currentUser)
+	updatedAd, ok := ad.GetAdWithVehicle(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to fetch updated ad")
@@ -260,7 +256,7 @@ func HandleUpdateAdLocation(c *fiber.Ctx) error {
 	}
 
 	// Fetch updated ad for display
-	updatedAd, ok := ad.GetAd(adID, currentUser)
+	updatedAd, ok := ad.GetAdWithVehicle(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to fetch updated ad")
@@ -325,7 +321,7 @@ func HandleUpdateAdDescription(c *fiber.Ctx) error {
 	}
 
 	// Fetch updated ad for display
-	updatedAd, ok := ad.GetAd(adID, currentUser)
+	updatedAd, ok := ad.GetAdWithVehicle(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to fetch updated ad")
@@ -368,7 +364,7 @@ func HandleAdDetail(c *fiber.Ctx) error {
 	}
 
 	currentUser, userID := CurrentUser(c)
-	adObj, ok := ad.GetAd(adID, currentUser)
+	adObj, ok := ad.GetAdWithVehicle(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
@@ -448,7 +444,7 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 	vector.QueueAd(adObj)
 
 	// Get the restored ad with updated data
-	restoredAd, ok := ad.GetAd(adID, currentUser)
+	restoredAd, ok := ad.GetAdWithVehicle(adID, currentUser)
 	if !ok {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve restored ad")
 	}

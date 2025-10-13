@@ -3,10 +3,13 @@ package ui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
+
+	"github.com/parts-pile/site/ad"
 )
 
 // htmlEscape escapes HTML special characters
@@ -146,4 +149,15 @@ func MakeFilterOptions(makes []string) g.Node {
 	}
 
 	return g.Group(options)
+}
+
+// SearchPage renders a full search page with search widget and results
+func SearchPage(userID int, query string, ads []ad.Ad, loc *time.Location, loaderURL string) g.Node {
+	return Div(
+		SearchWidget(userID, "list", query),
+		Div(
+			ID("searchResults"),
+			ListViewResults(ads, userID, loc, loaderURL),
+		),
+	)
 }

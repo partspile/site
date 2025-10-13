@@ -2,6 +2,9 @@ package ui
 
 import (
 	"fmt"
+	"net/url"
+	"sort"
+	"strings"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -78,6 +81,8 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 			g.If(!isOwner || ad.IsArchived(),
 				description(ad),
 			),
+			// Part type path
+			partTypePath(ad),
 		),
 		// Modal dialogs (hidden by default)
 		g.If(isOwner && !ad.IsArchived(), priceEditModal(ad, view)),
@@ -553,5 +558,161 @@ func shareModal(ad ad.Ad) g.Node {
 				})();
 			`, modalID, urlInputID, adPath)),
 		),
+	)
+}
+
+func formatYearRanges(years []string) string {
+	if len(years) == 0 {
+		return ""
+	}
+	if len(years) == 1 {
+		return years[0]
+	}
+
+	// Convert strings to integers for proper sorting
+	yearInts := make([]int, len(years))
+	for i, yearStr := range years {
+		fmt.Sscanf(yearStr, "%d", &yearInts[i])
+	}
+
+	// Sort years numerically
+	sort.Ints(yearInts)
+
+	// Group consecutive years into ranges
+	var ranges []string
+	start := yearInts[0]
+	end := yearInts[0]
+
+	for i := 1; i < len(yearInts); i++ {
+		if yearInts[i] == end+1 {
+			// Consecutive year, extend range
+			end = yearInts[i]
+		} else {
+			// Non-consecutive year, close current range and start new one
+			if start == end {
+				ranges = append(ranges, fmt.Sprintf("%d", start))
+			} else {
+				ranges = append(ranges, fmt.Sprintf("%d-%d", start, end))
+			}
+			start = yearInts[i]
+			end = yearInts[i]
+		}
+	}
+
+	// Add the last range
+	if start == end {
+		ranges = append(ranges, fmt.Sprintf("%d", start))
+	} else {
+		ranges = append(ranges, fmt.Sprintf("%d-%d", start, end))
+	}
+
+	return strings.Join(ranges, ", ")
+}
+
+func pathSegmentLink(text string, accumulatedSegments []string) g.Node {
+	searchQuery := strings.Join(accumulatedSegments, " ")
+	searchURL := fmt.Sprintf("/search-query?q=%s", url.QueryEscape(searchQuery))
+
+	return A(
+		Href(searchURL),
+		Class("hover:underline hover:text-blue-600"),
+		g.Text(text),
+	)
+}
+
+func intersperseSeparators(nodes []g.Node) g.Node {
+	if len(nodes) == 0 {
+		return g.Node(nil)
+	}
+
+	result := []g.Node{nodes[0]}
+	for i := 1; i < len(nodes); i++ {
+		result = append(result, g.Text(" | "), nodes[i])
+	}
+	return g.Group(result)
+}
+
+// commaSeparatedLinks splits comma-separated text and makes each item clickable
+func commaSeparatedLinks(text string, accumulatedSegments []string) g.Node {
+	// Split by comma and trim whitespace
+	items := strings.Split(text, ",")
+	for i, item := range items {
+		items[i] = strings.TrimSpace(item)
+	}
+
+	if len(items) == 1 {
+		// Single item, just return a regular link
+		return pathSegmentLink(items[0], accumulatedSegments)
+	}
+
+	// Multiple items, create links for each with comma separators
+	var linkNodes []g.Node
+	for i, item := range items {
+		if i > 0 {
+			linkNodes = append(linkNodes, g.Text(", "))
+		}
+		// Create new accumulated segments with this specific item
+		newSegments := make([]string, len(accumulatedSegments))
+		copy(newSegments, accumulatedSegments)
+		// Replace the last segment (which was the full comma-separated text) with just this item
+		newSegments[len(newSegments)-1] = item
+		linkNodes = append(linkNodes, pathSegmentLink(item, newSegments))
+	}
+
+	return g.Group(linkNodes)
+}
+
+func partTypePath(ad ad.Ad) g.Node {
+	var segments []string  // Keep strings for building cumulative queries
+	var linkNodes []g.Node // Build link nodes
+
+	// Add make
+	if ad.Make != "" {
+		segments = append(segments, ad.Make)
+		linkNodes = append(linkNodes, pathSegmentLink(ad.Make, segments))
+	}
+
+	// Add years (format as ranges when possible, comma-separated for individual years)
+	if len(ad.Years) > 0 {
+		yearRanges := formatYearRanges(ad.Years)
+		segments = append(segments, yearRanges)
+		linkNodes = append(linkNodes, commaSeparatedLinks(yearRanges, segments))
+	}
+
+	// Add models (join multiple with comma)
+	if len(ad.Models) > 0 {
+		models := strings.Join(ad.Models, ", ")
+		segments = append(segments, models)
+		linkNodes = append(linkNodes, commaSeparatedLinks(models, segments))
+	}
+
+	// Add engines (join multiple with comma)
+	if len(ad.Engines) > 0 {
+		engines := strings.Join(ad.Engines, ", ")
+		segments = append(segments, engines)
+		linkNodes = append(linkNodes, commaSeparatedLinks(engines, segments))
+	}
+
+	// Add category
+	if ad.Category.Valid && ad.Category.String != "" {
+		segments = append(segments, ad.Category.String)
+		linkNodes = append(linkNodes, pathSegmentLink(ad.Category.String, segments))
+	}
+
+	// Add subcategory
+	if ad.SubCategory.Valid && ad.SubCategory.String != "" {
+		segments = append(segments, ad.SubCategory.String)
+		linkNodes = append(linkNodes, pathSegmentLink(ad.SubCategory.String, segments))
+	}
+
+	// If no path parts, return empty node
+	if len(linkNodes) == 0 {
+		return g.Node(nil)
+	}
+
+	// Intersperse links with " | " separators
+	return Div(
+		Class("text-xs text-gray-500 mt-4 pt-2 border-t border-gray-200"),
+		intersperseSeparators(linkNodes),
 	)
 }

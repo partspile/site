@@ -101,6 +101,7 @@ func main() {
 	app.Get("/", handlers.HandleHome)                    // x
 	app.Get("/search", handlers.HandleSearch)            // x
 	app.Get("/search-page", handlers.HandleSearchPage)   // x
+	app.Get("/search-query", handlers.HandleSearchQuery) // x
 	app.Get("/filters/show", handlers.HandleFiltersShow) // x
 
 	// Tree view routes - split by browse vs search mode
