@@ -98,11 +98,7 @@ func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
 			A(
 				Href("/admin"),
 				Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"),
-				Img(
-					Src("/images/tools.svg"),
-					Alt("Admin"),
-					Class("w-6 h-6 mr-2"),
-				),
+				navigationIcon("/images/tools.svg", "Admin"),
 				g.Text("Admin"),
 			),
 		)
@@ -112,11 +108,7 @@ func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
 		A(
 			Href("/ads"),
 			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"),
-			Img(
-				Src("/images/bookmark-true.svg"),
-				Alt("My Ads"),
-				Class("w-6 h-6 mr-2"),
-			),
+			navigationIcon("/images/bookmark-true.svg", "My Ads"),
 			g.Text("My Ads"),
 		),
 	)
@@ -125,11 +117,7 @@ func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
 		A(
 			Href("/messages"),
 			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"),
-			Img(
-				Src("/images/message.svg"),
-				Alt("Messages"),
-				Class("w-6 h-6 mr-2"),
-			),
+			navigationIcon("/images/message.svg", "Messages"),
 			g.Text("Messages"),
 		),
 	)
@@ -138,11 +126,7 @@ func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
 		A(
 			Href("/settings"),
 			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"),
-			Img(
-				Src("/images/settings.svg"),
-				Alt("Settings"),
-				Class("w-6 h-6 mr-2"),
-			),
+			navigationIcon("/images/settings.svg", "Settings"),
 			g.Text("Settings"),
 		),
 	)
@@ -151,11 +135,7 @@ func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
 		A(
 			Href("/about"),
 			Class("block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"),
-			Img(
-				Src("/images/info.svg"),
-				Alt("About"),
-				Class("w-6 h-6 mr-2"),
-			),
+			navigationIcon("/images/info.svg", "About"),
 			g.Text("About"),
 		),
 	)
@@ -168,11 +148,7 @@ func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
 			hx.Target("body"),
 			hx.Swap("outerHTML"),
 			hx.Indicator("#htmx-indicator"),
-			Img(
-				Src("/images/logout.svg"),
-				Alt("Logout"),
-				Class("w-6 h-6 mr-2"),
-			),
+			navigationIcon("/images/logout.svg", "Logout"),
 			g.Text("Logout"),
 		),
 	)

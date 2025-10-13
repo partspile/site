@@ -16,8 +16,9 @@ func collapsedTreeNode(mode, name, path string) g.Node {
 	expandPath := fmt.Sprintf("/tree-%s-expand/%s", mode, path)
 	return Div(
 		Class("ml-4"),
-		Button(
-			Class("hover:bg-gray-200 rounded px-1 py-0.5"),
+		A(
+			Href("#"),
+			Class("text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-1 py-0.5 rounded cursor-pointer"),
 			hx.Get(expandPath),
 			hx.Target("closest .ml-4"),
 			hx.Swap("outerHTML"),
@@ -48,8 +49,9 @@ func expandedTreeNode(mode, name, path string, level int, loc *time.Location, us
 
 	return Div(
 		Class("ml-4"),
-		Button(
-			Class("hover:bg-gray-200 rounded px-1 py-0.5"),
+		A(
+			Href("#"),
+			Class("text-gray-700 hover:text-gray-900 hover:bg-gray-100 px-1 py-0.5 rounded cursor-pointer"),
 			hx.Get(collapsePath),
 			hx.Target("closest .ml-4"),
 			hx.Swap("outerHTML"),

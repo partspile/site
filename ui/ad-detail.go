@@ -221,18 +221,13 @@ func messageButton(ad ad.Ad, userID int) g.Node {
 		return g.Node(nil)
 	}
 
-	return Button(
-		Type("button"),
-		Class("ml-2 focus:outline-none z-20"),
-		Title("Message seller"),
+	return iconButton(
+		"/images/message.svg",
+		"Message",
+		"Message seller",
 		hx.Get(fmt.Sprintf("/messages/inline/%d?view=%s", ad.ID, "tree")),
 		hx.Target(adTarget(ad)),
 		hx.Swap("outerHTML"),
-		Img(
-			Src("/images/message.svg"),
-			Alt("Message"),
-			Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
-		),
 	)
 }
 
@@ -241,19 +236,14 @@ func deleteButton(ad ad.Ad, userID int) g.Node {
 		return g.Node(nil)
 	}
 
-	return Button(
-		Type("button"),
-		Class("ml-2 focus:outline-none"),
-		Title("Delete ad"),
+	return iconButton(
+		"/images/trashcan.svg",
+		"Delete",
+		"Delete ad",
 		hx.Delete(fmt.Sprintf("/delete-ad/%d", ad.ID)),
 		hx.Target(adTarget(ad)),
 		hx.Swap("delete"),
 		hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
-		Img(
-			Src("/images/trashcan.svg"),
-			Alt("Delete"),
-			Class("w-6 h-6 inline align-middle text-red-500 hover:text-red-700"),
-		),
 	)
 }
 
@@ -262,19 +252,14 @@ func restoreButton(ad ad.Ad, userID int) g.Node {
 		return g.Node(nil)
 	}
 
-	return Button(
-		Type("button"),
-		Class("ml-2 focus:outline-none"),
-		Title("Restore ad"),
+	return iconButton(
+		"/images/restore.svg",
+		"Restore",
+		"Restore ad",
 		hx.Post(fmt.Sprintf("/restore-ad/%d", ad.ID)),
 		hx.Target(adTarget(ad)),
 		hx.Swap("outerHTML"),
 		hx.Confirm("Are you sure you want to restore this ad?"),
-		Img(
-			Src("/images/restore.svg"),
-			Alt("Restore"),
-			Class("w-6 h-6 inline align-middle text-green-600 hover:text-green-700"),
-		),
 	)
 }
 
@@ -291,12 +276,11 @@ func priceEditable(ad ad.Ad) g.Node {
 	return Div(
 		Class("flex items-center gap-3"),
 		price(ad),
-		Button(
-			Type("button"),
-			Class("px-4 bg-blue-500 text-white rounded hover:bg-blue-600"),
-			Style("height: 40px"),
-			g.Attr("onclick", fmt.Sprintf("document.getElementById('price-modal-%d').classList.remove('hidden')", ad.ID)),
-			g.Text("Edit"),
+		button("Edit",
+			withClass("px-4 h-10"),
+			withAttributes(
+				g.Attr("onclick", fmt.Sprintf("document.getElementById('price-modal-%d').classList.remove('hidden')", ad.ID)),
+			),
 		),
 	)
 }
@@ -305,12 +289,11 @@ func locationEditable(ad ad.Ad) g.Node {
 	return Div(
 		Class("flex items-center gap-2"),
 		location(ad),
-		Button(
-			Type("button"),
-			Class("px-4 bg-blue-500 text-white rounded hover:bg-blue-600"),
-			Style("height: 40px"),
-			g.Attr("onclick", fmt.Sprintf("document.getElementById('location-modal-%d').classList.remove('hidden')", ad.ID)),
-			g.Text("Edit"),
+		button("Edit",
+			withClass("px-4 h-10"),
+			withAttributes(
+				g.Attr("onclick", fmt.Sprintf("document.getElementById('location-modal-%d').classList.remove('hidden')", ad.ID)),
+			),
 		),
 	)
 }
@@ -319,12 +302,49 @@ func descriptionEditable(ad ad.Ad) g.Node {
 	return Div(
 		Class("mt-2"),
 		description(ad),
-		Button(
-			Type("button"),
-			Class("px-4 bg-blue-500 text-white rounded hover:bg-blue-600"),
-			Style("height: 40px"),
-			g.Attr("onclick", fmt.Sprintf("document.getElementById('description-modal-%d').classList.remove('hidden')", ad.ID)),
-			g.Text("Edit"),
+		button("Edit",
+			withClass("px-4 h-10"),
+			withAttributes(
+				g.Attr("onclick", fmt.Sprintf("document.getElementById('description-modal-%d').classList.remove('hidden')", ad.ID)),
+			),
+		),
+	)
+}
+
+// Modal button components
+func modalCloseButton(modalID string) g.Node {
+	return buttonSecondary("Close",
+		withClass("px-6 py-3 font-medium transition"),
+		withAttributes(
+			g.Attr("onclick", fmt.Sprintf(
+				"document.getElementById('%s').classList.add('hidden')",
+				modalID)),
+		),
+	)
+}
+
+// copyIcon creates a copy icon for the modal
+func copyIcon() g.Node {
+	return icon("/images/copy.svg", "Copy", "w-5 h-5 inline")
+}
+
+func modalCopyButton(copyButtonID, urlInputID, copyFeedbackID string) g.Node {
+	return button("Copy",
+		withClass("px-6 py-3 font-medium shadow-md transition flex items-center gap-2"),
+		withAttributes(
+			ID(copyButtonID),
+			g.Attr("onclick", fmt.Sprintf(`
+				const urlInput = document.getElementById('%s');
+				const fullURL = urlInput.value;
+				navigator.clipboard.writeText(fullURL).then(() => {
+					const feedback = document.getElementById('%s');
+					feedback.classList.remove('hidden');
+					setTimeout(() => {
+						feedback.classList.add('hidden');
+					}, 2000);
+				});
+			`, urlInputID, copyFeedbackID)),
+			copyIcon(),
 		),
 	)
 }
@@ -357,16 +377,10 @@ func editModal(ad ad.Ad, cfg editModalConfig) g.Node {
 					cfg.formContent,
 					Div(
 						Class("flex gap-3 justify-end"),
-						Button(
-							Type("button"),
-							Class("px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition"),
-							g.Attr("onclick", fmt.Sprintf("document.getElementById('%s').classList.add('hidden')", cfg.modalID)),
-							g.Text("Cancel"),
-						),
-						Button(
-							Type("submit"),
-							Class("px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md transition"),
-							g.Text(cfg.submitBtnText),
+						modalCloseButton(cfg.modalID),
+						button(cfg.submitBtnText,
+							withType("submit"),
+							withClass("px-6 py-3 font-medium shadow-md transition"),
 						),
 					),
 				),
@@ -460,31 +474,22 @@ func descriptionEditModal(ad ad.Ad, view string) g.Node {
 }
 
 func shareButton(ad ad.Ad) g.Node {
-	return Button(
-		Type("button"),
-		Class("ml-2 focus:outline-none"),
-		Title("Share ad"),
+	return iconButton(
+		"/images/share.svg",
+		"Share",
+		"Share ad",
 		g.Attr("onclick", fmt.Sprintf(
 			"document.getElementById('share-modal-%d').classList.remove('hidden')",
 			ad.ID)),
-		Img(
-			Src("/images/share.svg"),
-			Alt("Share"),
-			Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
-		),
 	)
 }
 
 func duplicateButton(ad ad.Ad) g.Node {
-	return A(
-		Href(fmt.Sprintf("/duplicate-ad/%d", ad.ID)),
-		Class("ml-2 focus:outline-none"),
-		Title("Duplicate ad"),
-		Img(
-			Src("/images/duplicate.svg"),
-			Alt("Duplicate"),
-			Class("w-6 h-6 inline align-middle text-blue-500 hover:text-blue-700"),
-		),
+	return iconLink(
+		"/images/duplicate.svg",
+		"Duplicate",
+		"Duplicate ad",
+		fmt.Sprintf("/duplicate-ad/%d", ad.ID),
 	)
 }
 
@@ -526,36 +531,8 @@ func shareModal(ad ad.Ad) g.Node {
 				),
 				Div(
 					Class("flex gap-3 justify-end"),
-					Button(
-						Type("button"),
-						Class("px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition"),
-						g.Attr("onclick", fmt.Sprintf(
-							"document.getElementById('%s').classList.add('hidden')",
-							modalID)),
-						g.Text("Close"),
-					),
-					Button(
-						Type("button"),
-						ID(copyButtonID),
-						Class("px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md transition flex items-center gap-2"),
-						g.Attr("onclick", fmt.Sprintf(`
-							const urlInput = document.getElementById('%s');
-							const fullURL = urlInput.value;
-							navigator.clipboard.writeText(fullURL).then(() => {
-								const feedback = document.getElementById('%s');
-								feedback.classList.remove('hidden');
-								setTimeout(() => {
-									feedback.classList.add('hidden');
-								}, 2000);
-							});
-						`, urlInputID, copyFeedbackID)),
-						Img(
-							Src("/images/copy.svg"),
-							Alt("Copy"),
-							Class("w-5 h-5 inline"),
-						),
-						g.Text("Copy"),
-					),
+					modalCloseButton(modalID),
+					modalCopyButton(copyButtonID, urlInputID, copyFeedbackID),
 				),
 			),
 		),

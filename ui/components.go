@@ -42,54 +42,6 @@ func sectionHeader(title string, helpText string) g.Node {
 	return g.Group(nodes)
 }
 
-// ---- Button Components ----
-
-type ButtonVariant string
-
-const (
-	buttonPrimary   ButtonVariant = "primary"
-	ButtonSecondary ButtonVariant = "secondary"
-	ButtonDanger    ButtonVariant = "danger"
-)
-
-func getButtonClass(variant ButtonVariant) string {
-	baseClass := "px-4 py-2 rounded inline-block "
-	switch variant {
-	case buttonPrimary:
-		return baseClass + "bg-blue-500 text-white hover:bg-blue-600"
-	case ButtonSecondary:
-		return baseClass + "text-blue-500 hover:underline"
-	case ButtonDanger:
-		return baseClass + "bg-red-500 text-white hover:bg-red-600"
-	default:
-		return baseClass + "bg-blue-500 text-white hover:bg-blue-600"
-	}
-}
-
-func styledButton(text string, variant ButtonVariant, attrs ...g.Node) g.Node {
-	allAttrs := append([]g.Node{Class(getButtonClass(variant))}, attrs...)
-	return Button(append(allAttrs, g.Text(text))...)
-}
-
-func styledLink(text string, href string, variant ButtonVariant, attrs ...g.Node) g.Node {
-	allAttrs := append([]g.Node{Href(href), Class(getButtonClass(variant))}, attrs...)
-	return A(append(allAttrs, g.Text(text))...)
-}
-
-func styledLinkDisabled(text string, variant ButtonVariant) g.Node {
-	return Span(
-		Class(getButtonClass(variant)+" opacity-50 cursor-not-allowed"),
-		g.Text(text),
-	)
-}
-
-func actionButtons(buttons ...g.Node) g.Node {
-	return Div(
-		Class("mt-8 space-x-4"),
-		g.Group(buttons),
-	)
-}
-
 // ---- Message Components ----
 
 func ValidationError(message string) g.Node {

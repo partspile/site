@@ -199,13 +199,14 @@ func ExpandedConversation(currentUser *user.User, conversation messaging.Convers
 						g.Text(fmt.Sprintf("Re: %s", conversation.AdTitle)),
 					),
 				),
-				Button(
-					Class("text-gray-400 hover:text-gray-600 p-1"),
-					hx.Get(fmt.Sprintf("/messages/%d/collapse", conversation.ID)),
-					hx.Target(fmt.Sprintf("#conversation-%d", conversation.ID)),
-					hx.Swap("outerHTML"),
-					Title("Close conversation"),
-					g.Text("✕"),
+				buttonSecondary("✕",
+					withClass("text-gray-400 hover:text-gray-600 p-1"),
+					withAttributes(
+						hx.Get(fmt.Sprintf("/messages/%d/collapse", conversation.ID)),
+						hx.Target(fmt.Sprintf("#conversation-%d", conversation.ID)),
+						hx.Swap("outerHTML"),
+						Title("Close conversation"),
+					),
 				),
 			),
 			Div(
@@ -287,10 +288,9 @@ func MessageForm(conversationID int) g.Node {
 			Class("flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
 			Required(),
 		),
-		Button(
-			Type("submit"),
-			Class("px-6 py-3 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"),
-			g.Text("Send"),
+		button("Send",
+			withType("submit"),
+			withClass("px-6 py-3 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"),
 		),
 	)
 }

@@ -98,9 +98,9 @@ func SearchCreateLoaderURL(userPrompt, nextCursor, view string) string {
 // Helper function to render new ad button based on user login
 func renderNewAdButton(userID int) g.Node {
 	if userID != 0 {
-		return styledLink("New Ad", "/new-ad", buttonPrimary)
+		return button("New Ad", withHref("/new-ad"))
 	}
-	return styledLinkDisabled("New Ad", buttonPrimary)
+	return button("New Ad", withDisabled())
 }
 
 // searchBox creates the search input field

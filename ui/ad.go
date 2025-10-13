@@ -124,16 +124,12 @@ func ageNode(ad ad.Ad, loc *time.Location) g.Node {
 	return g.Text(agoStr)
 }
 
-func bookmarkIcon(bookmarked bool) g.Node {
-	icon := "/images/bookmark-false.svg"
+// bookmarkIconSrc returns the bookmark icon source based on state
+func bookmarkIconSrc(bookmarked bool) string {
 	if bookmarked {
-		icon = "/images/bookmark-true.svg"
+		return "/images/bookmark-true.svg"
 	}
-	return Img(
-		Src(icon),
-		Class("inline w-6 h-6 align-middle"),
-		Alt("Bookmark"),
-	)
+	return "/images/bookmark-false.svg"
 }
 
 // BookmarkButton returns the bookmark toggle button
@@ -145,15 +141,15 @@ func BookmarkButton(ad ad.Ad) g.Node {
 		hxMethod = hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", ad.ID))
 	}
 
-	return Button(
-		Type("button"),
-		Class("focus:outline-none"),
+	return iconButton(
+		bookmarkIconSrc(ad.Bookmarked),
+		"Bookmark",
+		"Toggle bookmark",
 		hxMethod,
 		hx.Target("this"),
 		hx.Swap("outerHTML"),
 		ID(fmt.Sprintf("bookmark-btn-%d", ad.ID)),
 		g.Attr("onclick", "event.stopPropagation()"),
-		bookmarkIcon(ad.Bookmarked),
 	)
 }
 

@@ -74,10 +74,12 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 						g.Text("By providing your phone number you agree to receive informational text messages from Parts Pile. Message frequency will vary. Msg & data rates may apply. Reply HELP for help or STOP to cancel. We only use your phone for essential communications and verification."),
 					),
 					actionButtons(
-						styledButton("Send Verification Code", buttonPrimary,
-							hx.Post("/api/register/step1"),
-							hx.Target("#result"),
-							hx.Indicator("#registerForm"),
+						button("Send Verification Code",
+							withAttributes(
+								hx.Post("/api/register/step1"),
+								hx.Target("#result"),
+								hx.Indicator("#registerForm"),
+							),
 						),
 					),
 				),
@@ -130,10 +132,12 @@ func LoginPage(currentUser *user.User, path string) g.Node {
 						passwordInput("password", "password"),
 					),
 					actionButtons(
-						styledButton("Login", buttonPrimary,
-							hx.Post("/api/login"),
-							hx.Target("#result"),
-							hx.Indicator("#loginForm"),
+						button("Login",
+							withAttributes(
+								hx.Post("/api/login"),
+								hx.Target("#result"),
+								hx.Indicator("#loginForm"),
+							),
 						),
 					),
 					resultContainer(),
@@ -193,10 +197,12 @@ func VerificationPage(currentUser *user.User, path string, username string) g.No
 						g.Text("."),
 					),
 					actionButtons(
-						styledButton("Complete Registration", buttonPrimary,
-							hx.Post("/api/register/verify"),
-							hx.Target("#result"),
-							hx.Indicator("#verificationForm"),
+						button("Complete Registration",
+							withAttributes(
+								hx.Post("/api/register/verify"),
+								hx.Target("#result"),
+								hx.Indicator("#verificationForm"),
+							),
 						),
 					),
 					resultContainer(),
@@ -383,9 +389,7 @@ func RocksPage(currentUser *user.User, path string) g.Node {
 					),
 					Div(
 						Class("text-center"),
-						styledLink("Continue to Login", "/login", buttonPrimary,
-							Class("text-lg px-8 py-3"),
-						),
+						button("Continue to Login", withHref("/login"), withClass("text-lg px-8 py-3")),
 					),
 				),
 			),
@@ -404,11 +408,7 @@ func AdDeletedPage(currentUser *user.User, path string) g.Node {
 					Class("text-center py-16"),
 					Div(
 						Class("mb-6 flex justify-center"),
-						Img(
-							Src("/images/trashcan.svg"),
-							Alt("Deleted"),
-							Class("w-24 h-24"),
-						),
+						largeIcon("/images/trashcan.svg", "Deleted", "24"),
 					),
 					H2(
 						Class("text-3xl font-bold text-gray-900 mb-4"),
@@ -420,9 +420,7 @@ func AdDeletedPage(currentUser *user.User, path string) g.Node {
 					),
 					Div(
 						Class("text-center"),
-						styledLink("Back to Home", "/", buttonPrimary,
-							Class("text-lg px-8 py-3"),
-						),
+						button("Back to Home", withHref("/"), withClass("text-lg px-8 py-3")),
 					),
 				),
 			),

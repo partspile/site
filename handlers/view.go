@@ -73,7 +73,7 @@ func getAdIDs(ctx *fiber.Ctx) ([]int, string, error) {
 func buildSearchFilter(ctx *fiber.Ctx) *qdrant.Filter {
 	var conditions []*qdrant.Condition
 
-	// Location filter (geo radius) - only apply if location is provided
+	// Location condition (geo radius) - only apply if location is provided
 	locationText := getQueryParam(ctx, "location")
 	if locationText != "" {
 		radiusStr := getQueryParam(ctx, "radius")
@@ -96,7 +96,7 @@ func buildSearchFilter(ctx *fiber.Ctx) *qdrant.Filter {
 		}
 	}
 
-	// Make filter (exact string match)
+	// Make condition (exact string match)
 	makeFilter := getQueryParam(ctx, "make")
 	if makeFilter != "" {
 		makeCondition := qdrant.NewMatch("make", makeFilter)
@@ -104,7 +104,7 @@ func buildSearchFilter(ctx *fiber.Ctx) *qdrant.Filter {
 		log.Printf("[buildSearchFilters] Added make filter: %s", makeFilter)
 	}
 
-	// Year filter (range - min/max years converted to keywords)
+	// Year condition (range - min/max years converted to keywords)
 	minYearStr := getQueryParam(ctx, "min_year")
 	maxYearStr := getQueryParam(ctx, "max_year")
 	if minYearStr != "" || maxYearStr != "" {
@@ -151,7 +151,7 @@ func buildSearchFilter(ctx *fiber.Ctx) *qdrant.Filter {
 		}
 	}
 
-	// Price filter (range - min/max price)
+	// Price condition (range - min/max price)
 	minPriceStr := getQueryParam(ctx, "min_price")
 	maxPriceStr := getQueryParam(ctx, "max_price")
 	if minPriceStr != "" || maxPriceStr != "" {
@@ -178,17 +178,17 @@ func buildSearchFilter(ctx *fiber.Ctx) *qdrant.Filter {
 		}
 	}
 
-	// If no conditions, return nil (no filter)
+	// If no conditions, return nil (no filter conditions)
 	if len(conditions) == 0 {
 		return nil
 	}
 
-	// Create filter with all conditions
+	// Create filter with all filter conditions
 	filter := &qdrant.Filter{
 		Must: conditions,
 	}
 
-	log.Printf("[buildSearchFilters] Built filter with %d conditions", len(conditions))
+	log.Printf("[buildSearchFilters] Built filter with %d filter conditions", len(conditions))
 	return filter
 }
 

@@ -72,12 +72,12 @@ func yearFilter() g.Node {
 	return Div(
 		Label(Class("block text-sm font-medium mb-1"), g.Text("Year Range")),
 		Div(
-			Class("flex gap-2"),
+			Class("flex gap-2 flex-nowrap"),
 			Input(
 				Type("number"),
 				Name("min_year"),
 				ID("minYearFilter"),
-				Class("w-32 p-2 border rounded-md"),
+				Class("w-20 flex-shrink-0 p-2 border rounded-md"),
 				Placeholder("Min"),
 				Min("1900"),
 				Max("2030"),
@@ -86,7 +86,7 @@ func yearFilter() g.Node {
 				Type("number"),
 				Name("max_year"),
 				ID("maxYearFilter"),
-				Class("w-32 p-2 border rounded-md"),
+				Class("w-20 flex-shrink-0 p-2 border rounded-md"),
 				Placeholder("Max"),
 				Min("1900"),
 				Max("2030"),
@@ -100,12 +100,12 @@ func priceFilter() g.Node {
 	return Div(
 		Label(Class("block text-sm font-medium mb-1"), g.Text("Price Range")),
 		Div(
-			Class("flex gap-2"),
+			Class("flex gap-2 flex-nowrap"),
 			Input(
 				Type("number"),
 				Name("min_price"),
 				ID("minPriceFilter"),
-				Class("w-32 p-2 border rounded-md"),
+				Class("w-24 flex-shrink-0 p-2 border rounded-md"),
 				Placeholder("Min $"),
 				Min("0"),
 				Step("0.01"),
@@ -114,7 +114,7 @@ func priceFilter() g.Node {
 				Type("number"),
 				Name("max_price"),
 				ID("maxPriceFilter"),
-				Class("w-32 p-2 border rounded-md"),
+				Class("w-24 flex-shrink-0 p-2 border rounded-md"),
 				Placeholder("Max $"),
 				Min("0"),
 				Step("0.01"),
@@ -125,21 +125,17 @@ func priceFilter() g.Node {
 
 // clearFilters creates the Clear Filters button
 func clearFilters() g.Node {
-	return Button(
-		Type("button"),
-		Class("px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"),
-		hx.On("click", "document.getElementById('searchBox').value = ''; document.getElementById('locationFilter').value = ''; document.getElementById('radiusFilter').value = '25'; document.getElementById('makeFilter').value = ''; document.getElementById('minYearFilter').value = ''; document.getElementById('maxYearFilter').value = ''; document.getElementById('minPriceFilter').value = ''; document.getElementById('maxPriceFilter').value = ''; htmx.trigger('#searchForm', 'submit')"),
-		g.Text("Clear Filters"),
+	return buttonSecondary("Clear Filters",
+		withClass("px-4 py-2"),
+		withAttributes(
+			hx.On("click", "document.getElementById('searchBox').value = ''; document.getElementById('locationFilter').value = ''; document.getElementById('radiusFilter').value = '25'; document.getElementById('makeFilter').value = ''; document.getElementById('minYearFilter').value = ''; document.getElementById('maxYearFilter').value = ''; document.getElementById('minPriceFilter').value = ''; document.getElementById('maxPriceFilter').value = ''; htmx.trigger('#searchForm', 'submit')"),
+		),
 	)
 }
 
 // applyFilters creates the Apply Filters button
 func applyFilters() g.Node {
-	return Button(
-		Type("submit"),
-		Class("px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"),
-		g.Text("Apply Filters"),
-	)
+	return button("Apply Filters", withType("submit"), withClass("px-4 py-2"))
 }
 
 // FiltersShow renders the search form with filters

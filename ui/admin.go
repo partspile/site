@@ -9,38 +9,57 @@ import (
 
 // AdminSectionPage renders the admin section navigation and the current section content.
 func AdminSectionPage(currentUser *user.User, path, activeSection string, content g.Node) g.Node {
-	sections := []struct {
-		Name  string
-		Label string
-	}{
-		{"b2-cache", "B2 Cache"},
-		{"embedding-cache", "Embedding Cache"},
-		{"vehicle-cache", "Vehicle Cache"},
-	}
 	return Div(
 		ID("admin-section"),
-		Class("my-8"),
-		H1(g.Text("Admin Dashboard")),
-		Div(
-			Class("flex flex-wrap gap-2 mb-6"),
-			g.Group(g.Map(sections, func(s struct{ Name, Label string }) g.Node {
-				colorClass := "bg-gray-200 text-gray-800 hover:bg-gray-300"
-				if s.Name == activeSection {
-					colorClass = "bg-blue-500 text-white"
-				}
-				return Button(
-					Class("px-4 py-1 rounded "+colorClass),
-					ID("btn-"+s.Name),
-					hx.Get("/admin/"+s.Name),
-					hx.Target("#admin-section"),
-					hx.Swap("outerHTML"),
-					g.Text(s.Label),
-				)
-			})),
-		),
+		H1(Class("text-4xl font-bold mb-8"), g.Text("Admin Dashboard")),
+		Div(Class("text-gray-600 text-sm mb-6"), g.Text("Manage system caches and configurations.")),
+		adminNavigation(activeSection),
 		Div(
 			ID("admin-section-content"),
+			Class("mt-6"),
 			content,
+		),
+	)
+}
+
+// adminNavigation renders the tab navigation for the admin page
+func adminNavigation(activeSection string) g.Node {
+	sections := []struct {
+		name  string
+		label string
+		href  string
+	}{
+		{"b2-cache", "B2 Cache", "/admin/b2-cache"},
+		{"embedding-cache", "Embedding Cache", "/admin/embedding-cache"},
+		{"vehicle-cache", "Vehicle Cache", "/admin/vehicle-cache"},
+	}
+
+	var tabNodes []g.Node
+	for _, section := range sections {
+		var classes string
+		if activeSection == section.name {
+			classes = "px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600"
+		} else {
+			classes = "px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent"
+		}
+
+		tabNodes = append(tabNodes,
+			A(
+				Href(section.href),
+				Class(classes),
+				hx.Get(section.href),
+				hx.Target("#admin-section"),
+				hx.Swap("outerHTML"),
+				g.Text(section.label),
+			),
+		)
+	}
+
+	return Div(
+		Class("border-b border-gray-200 mb-6"),
+		Nav(
+			Class("flex space-x-8"),
+			g.Group(tabNodes),
 		),
 	)
 }
@@ -63,19 +82,21 @@ func CacheStatsPanel(title string, stats map[string]interface{}, clearEndpoint, 
 		),
 		Div(
 			Class("flex gap-4"),
-			Button(
-				Class("px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"),
-				hx.Post(clearEndpoint),
-				hx.Target("#admin-section-content"),
-				hx.Swap("innerHTML"),
-				g.Text("Clear Cache"),
+			buttonDanger("Clear Cache",
+				withClass("px-4 py-2"),
+				withAttributes(
+					hx.Post(clearEndpoint),
+					hx.Target("#admin-section-content"),
+					hx.Swap("innerHTML"),
+				),
 			),
-			Button(
-				Class("px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"),
-				hx.Get(refreshEndpoint),
-				hx.Target("#admin-section-content"),
-				hx.Swap("innerHTML"),
-				g.Text("Refresh Stats"),
+			button("Refresh Stats",
+				withClass("px-4 py-2"),
+				withAttributes(
+					hx.Get(refreshEndpoint),
+					hx.Target("#admin-section-content"),
+					hx.Swap("innerHTML"),
+				),
 			),
 		),
 	)
@@ -91,7 +112,9 @@ func statCard(label, format string, value interface{}) g.Node {
 
 func AdminB2CacheSection(stats map[string]interface{}) g.Node {
 	return Div(
-		H1(g.Text("B2 Cache Management")),
+		Class("space-y-4"),
+		Div(Class("text-lg font-medium text-gray-900"), g.Text("B2 Cache Management")),
+		Div(Class("text-gray-600 text-sm"), g.Text("Manage B2 file storage cache performance and statistics.")),
 		CacheStatsPanel("Cache Statistics", stats, "/api/admin/b2-cache/clear", "/api/admin/b2-cache/refresh"),
 	)
 }
@@ -103,7 +126,9 @@ func AdminEmbeddingCacheSection(stats map[string]interface{}) g.Node {
 	siteStats := getCacheStats(stats, "site", "Site Embedding Cache")
 
 	return Div(
-		H1(g.Text("Embedding Cache Management")),
+		Class("space-y-4"),
+		Div(Class("text-lg font-medium text-gray-900"), g.Text("Embedding Cache Management")),
+		Div(Class("text-gray-600 text-sm"), g.Text("Manage AI embedding cache performance and statistics.")),
 		CacheStatsPanel("Query Cache Statistics", queryStats, "/api/admin/embedding-cache/query/clear", "/api/admin/embedding-cache/refresh"),
 		CacheStatsPanel("User Cache Statistics", userStats, "/api/admin/embedding-cache/user/clear", "/api/admin/embedding-cache/refresh"),
 		CacheStatsPanel("Site Cache Statistics", siteStats, "/api/admin/embedding-cache/site/clear", "/api/admin/embedding-cache/refresh"),
@@ -124,7 +149,9 @@ func getCacheStats(allStats map[string]interface{}, cacheType, cacheName string)
 
 func AdminVehicleCacheSection(stats map[string]interface{}) g.Node {
 	return Div(
-		H1(g.Text("Vehicle Cache Management")),
+		Class("space-y-4"),
+		Div(Class("text-lg font-medium text-gray-900"), g.Text("Vehicle Cache Management")),
+		Div(Class("text-gray-600 text-sm"), g.Text("Manage vehicle data cache performance and statistics.")),
 		CacheStatsPanel("Cache Statistics", stats, "/api/admin/vehicle-cache/clear", "/api/admin/vehicle-cache/refresh"),
 	)
 }
