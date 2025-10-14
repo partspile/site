@@ -20,11 +20,11 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 	// Determine full class strings based on deleted status
 	var containerClass, contentClass string
 	if ad.IsArchived() {
-		containerClass = "border rounded-lg shadow-lg bg-red-100 flex flex-col relative my-4 mx-2 col-span-full overflow-visible"
+		containerClass = "rounded-lg shadow-xl/50 bg-red-100 flex flex-col relative my-4 mx-2 col-span-full overflow-hidden"
 		contentClass = "p-4 flex flex-col bg-red-100"
 	} else {
-		containerClass = "border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2 col-span-full overflow-visible"
-		contentClass = "p-4 flex flex-col bg-white"
+		containerClass = "rounded-lg shadow-xl/50 flex flex-col relative my-4 mx-2 col-span-full overflow-hidden"
+		contentClass = "p-4 flex flex-col"
 	}
 
 	isOwner := userID == ad.UserID && userID != 0
@@ -33,7 +33,7 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 		ID(adID(ad)),
 		Class(containerClass),
 		imageNode(ad, view),
-		closeButtonOverlayNode(ad, view),
+		closeButton(ad, view),
 		g.If(ad.IsArchived(), deletedWatermark()),
 		Div(
 			Class(contentClass),
@@ -104,10 +104,10 @@ func deletedWatermark() g.Node {
 	)
 }
 
-func closeButtonOverlayNode(ad ad.Ad, view string) g.Node {
+func closeButton(ad ad.Ad, view string) g.Node {
 	return Button(
 		Type("button"),
-		Class("absolute -top-2 -right-2 bg-white border-2 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-100 focus:outline-none cursor-pointer"),
+		Class("absolute top-2 right-2 bg-white border-2 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-100 focus:outline-none cursor-pointer"),
 		hx.Get(fmt.Sprintf("/ad/card/%d?view=%s", ad.ID, view)),
 		hx.Target(adTarget(ad)),
 		hx.Swap("outerHTML"),
@@ -129,7 +129,7 @@ func AdCarouselImageSrc(adID int, idx int) string {
 
 func AdCarouselImage(adID int, idx int) g.Node {
 	return Img(
-		Class("object-contain w-full h-full bg-gray-100 transition-opacity duration-200"),
+		Class("object-cover w-full aspect-[4/3]"),
 		ID(fmt.Sprintf("ad-carousel-img-%d", adID)),
 		Src(AdCarouselImageSrc(adID, idx)),
 		Alt(fmt.Sprintf("Image %d", idx)),
@@ -138,38 +138,21 @@ func AdCarouselImage(adID int, idx int) g.Node {
 
 func AdNoImage() g.Node {
 	return Div(
-		Class("absolute inset-0 bg-gray-100 flex items-center justify-center"),
-		Div(
-			Class("text-gray-400 text-sm"),
-			g.Text("No Image"),
-		),
+		Class("flex items-center justify-center h-24 bg-gray-100 text-gray-400 text-sm"),
+		g.Text("No Image"),
 	)
 }
 
 func imageNode(ad ad.Ad, view string) g.Node {
-	// Determine full class string based on deleted status
-	var imageContainerClass string
-	if ad.IsArchived() {
-		imageContainerClass = "relative w-full bg-red-100 overflow-visible"
-	} else {
-		imageContainerClass = "relative w-full bg-gray-100 overflow-visible"
-	}
-
 	return Div(
-		Class(imageContainerClass),
-		Style("height: 60vh; min-height: 500px; max-height: 800px;"),
+		Class("w-full h-full flex flex-col overflow-hidden rounded-t-lg"),
 		Div(
-			Class("relative w-full h-full flex flex-col overflow-hidden rounded-t-lg"),
-			Div(
-				Class("flex-1 flex items-center justify-center"),
-				g.If(ad.ImageCount > 0, AdCarouselImage(ad.ID, 1)),
-				g.If(ad.ImageCount == 0, AdNoImage()),
-			),
-			Div(
-				Class("flex-shrink-0 p-4"),
-				g.If(ad.ImageCount > 0, thumbnails(ad)),
-			),
+			g.If(ad.ImageCount > 0, AdCarouselImage(ad.ID, 1)),
+			g.If(ad.ImageCount == 0, AdNoImage()),
 		),
+		g.If(ad.ImageCount > 0, Div(
+			thumbnails(ad),
+		)),
 	)
 }
 
@@ -191,7 +174,7 @@ func adThumbnailImage(adID int, idx int, alt string) g.Node {
 	return Img(
 		Src(src),
 		Alt(alt),
-		Class("object-contain w-full aspect-square bg-gray-100"),
+		Class("object-cover w-full h-full"),
 	)
 }
 
@@ -203,7 +186,7 @@ func thumbnails(ad ad.Ad) g.Node {
 			for i := 1; i <= ad.ImageCount; i++ {
 				nodes = append(nodes, Button(
 					Type("button"),
-					Class("border rounded w-16 h-16 overflow-hidden p-0 focus:outline-none"),
+					Class("rounded w-16 h-16 overflow-hidden"),
 					hx.Get(fmt.Sprintf("/ad/image/%d/%d", ad.ID, i)),
 					hx.Target(fmt.Sprintf("#ad-carousel-img-%d", ad.ID)),
 					hx.Swap("outerHTML"),
