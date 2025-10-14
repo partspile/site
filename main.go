@@ -111,9 +111,10 @@ func main() {
 	app.Get("/tree-search-collapse/*", handlers.HandleTreeCollapseSearch) // x
 
 	// Ad in-place expand/collapse partials for htmx
-	app.Get("/ad/card/:id", handlers.HandleAdCard)          // x
-	app.Get("/ad/detail/:id", handlers.HandleAdDetail)      // x
-	app.Get("/ad/image/:adID/:idx", handlers.HandleAdImage) // x
+	app.Get("/ad/card/:id", handlers.HandleAdCard)                   // x
+	app.Get("/ad/detail/:id", handlers.HandleAdDetail)               // x
+	app.Get("/ad/image/:adID/:idx", handlers.HandleAdImage)          // x
+	app.Get("/ad/grid-image/:adID/:idx", handlers.HandleAdGridImage) // x
 
 	// Ad management
 	app.Get("/ad/:id", handlers.HandleAdPage)                                       // x

@@ -615,5 +615,32 @@ func HandleAdImage(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid image index")
 	}
-	return render(c, ui.AdCarouselImage(adID, idx))
+
+	// Fetch the ad to get image count
+	adObj, ok := ad.GetAdWithVehicle(adID, nil) // nil for public access
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+
+	return render(c, ui.CarouselImageContainer(adObj, idx))
+}
+
+// Handler for HTMX grid image updates
+func HandleAdGridImage(c *fiber.Ctx) error {
+	adID, err := c.ParamsInt("adID")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+	idx, err := c.ParamsInt("idx")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid image index")
+	}
+
+	// Fetch the ad to get image count
+	adObj, ok := ad.GetAdWithVehicle(adID, nil) // nil for public access
+	if !ok {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+
+	return render(c, ui.GridImageWithNav(adObj, idx))
 }

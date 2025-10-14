@@ -146,14 +146,54 @@ func AdNoImage() g.Node {
 func imageNode(ad ad.Ad, view string) g.Node {
 	return Div(
 		Class("w-full h-full flex flex-col overflow-hidden rounded-t-lg"),
-		Div(
-			g.If(ad.ImageCount > 0, AdCarouselImage(ad.ID, 1)),
-			g.If(ad.ImageCount == 0, AdNoImage()),
-		),
+		carouselImageContainer(ad, 1),
 		g.If(ad.ImageCount > 0, Div(
 			thumbnails(ad),
 		)),
 	)
+}
+
+func carouselImageContainer(ad ad.Ad, currentIdx int) g.Node {
+	containerID := fmt.Sprintf("carousel-image-container-%d", ad.ID)
+
+	return Div(
+		ID(containerID),
+		Class("relative"),
+		g.If(ad.ImageCount > 0, AdCarouselImage(ad.ID, currentIdx)),
+		g.If(ad.ImageCount == 0, AdNoImage()),
+		g.If(ad.ImageCount > 1, carouselNavButtons(ad, currentIdx)),
+	)
+}
+
+func carouselNavButtons(ad ad.Ad, currentIdx int) g.Node {
+	prevIdx := (currentIdx-2+ad.ImageCount)%ad.ImageCount + 1
+	nextIdx := currentIdx%ad.ImageCount + 1
+
+	return g.Group([]g.Node{
+		// Left button
+		Button(
+			Type("button"),
+			Class("absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20"),
+			hx.Get(fmt.Sprintf("/ad/image/%d/%d", ad.ID, prevIdx)),
+			hx.Target(fmt.Sprintf("#carousel-image-container-%d", ad.ID)),
+			hx.Swap("outerHTML"),
+			icon("/images/left.svg", "Previous", "w-6 h-6"),
+		),
+		// Right button
+		Button(
+			Type("button"),
+			Class("absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20"),
+			hx.Get(fmt.Sprintf("/ad/image/%d/%d", ad.ID, nextIdx)),
+			hx.Target(fmt.Sprintf("#carousel-image-container-%d", ad.ID)),
+			hx.Swap("outerHTML"),
+			icon("/images/right.svg", "Next", "w-6 h-6"),
+		),
+	})
+}
+
+// CarouselImageContainer creates the carousel image container for HTMX swapping
+func CarouselImageContainer(ad ad.Ad, currentIdx int) g.Node {
+	return carouselImageContainer(ad, currentIdx)
 }
 
 // adThumbnailImageSrc generates a single signed B2 image URL for thumbnail context
@@ -188,7 +228,7 @@ func thumbnails(ad ad.Ad) g.Node {
 					Type("button"),
 					Class("rounded w-16 h-16 overflow-hidden"),
 					hx.Get(fmt.Sprintf("/ad/image/%d/%d", ad.ID, i)),
-					hx.Target(fmt.Sprintf("#ad-carousel-img-%d", ad.ID)),
+					hx.Target(fmt.Sprintf("#carousel-image-container-%d", ad.ID)),
 					hx.Swap("outerHTML"),
 					adThumbnailImage(ad.ID, i, fmt.Sprintf("Image %d", i)),
 				))
