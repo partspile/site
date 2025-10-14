@@ -20,10 +20,10 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 	// Determine full class strings based on deleted status
 	var containerClass, contentClass string
 	if ad.IsArchived() {
-		containerClass = "border rounded-lg shadow-lg bg-red-100 flex flex-col relative my-4 mx-2 col-span-full overflow-hidden"
+		containerClass = "border rounded-lg shadow-lg bg-red-100 flex flex-col relative my-4 mx-2 col-span-full overflow-visible"
 		contentClass = "p-4 flex flex-col bg-red-100"
 	} else {
-		containerClass = "border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2 col-span-full overflow-hidden"
+		containerClass = "border rounded-lg shadow-lg bg-white flex flex-col relative my-4 mx-2 col-span-full overflow-visible"
 		contentClass = "p-4 flex flex-col bg-white"
 	}
 
@@ -33,6 +33,7 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 		ID(adID(ad)),
 		Class(containerClass),
 		imageNode(ad, view),
+		closeButtonOverlayNode(ad, view),
 		g.If(ad.IsArchived(), deletedWatermark()),
 		Div(
 			Class(contentClass),
@@ -106,11 +107,11 @@ func deletedWatermark() g.Node {
 func closeButtonOverlayNode(ad ad.Ad, view string) g.Node {
 	return Button(
 		Type("button"),
-		Class("absolute -top-2 -right-2 bg-gray-800 bg-opacity-80 text-white text-2xl font-bold rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-700 focus:outline-none"),
+		Class("absolute -top-2 -right-2 bg-white border-2 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-100 focus:outline-none cursor-pointer"),
 		hx.Get(fmt.Sprintf("/ad/card/%d?view=%s", ad.ID, view)),
 		hx.Target(adTarget(ad)),
 		hx.Swap("outerHTML"),
-		g.Text("×"),
+		icon("/images/close.svg", "Close", "w-6 h-6"),
 	)
 }
 
@@ -157,7 +158,6 @@ func imageNode(ad ad.Ad, view string) g.Node {
 	return Div(
 		Class(imageContainerClass),
 		Style("height: 60vh; min-height: 500px; max-height: 800px;"),
-		closeButtonOverlayNode(ad, view),
 		Div(
 			Class("relative w-full h-full flex flex-col overflow-hidden rounded-t-lg"),
 			Div(
