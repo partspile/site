@@ -166,6 +166,10 @@ func carouselImageContainer(ad ad.Ad, currentIdx int) g.Node {
 }
 
 func carouselNavButtons(ad ad.Ad, currentIdx int) g.Node {
+	if ad.ImageCount == 0 {
+		return g.Node(nil)
+	}
+
 	prevIdx := (currentIdx-2+ad.ImageCount)%ad.ImageCount + 1
 	nextIdx := currentIdx%ad.ImageCount + 1
 

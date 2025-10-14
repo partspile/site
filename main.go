@@ -205,10 +205,12 @@ func main() {
 	app.Get("/messages", handlers.AuthRequired, handlers.HandleMessagesPage)
 	app.Get("/messages/:id/expand", handlers.AuthRequired, handlers.HandleExpandConversation)
 	app.Get("/messages/:id/collapse", handlers.AuthRequired, handlers.HandleCollapseConversation)
+	app.Get("/messages/inline/:adID", handlers.AuthRequired, handlers.HandleInlineMessaging)
 
 	app.Get("/messages/sse", handlers.AuthRequired, handlers.HandleSSE)
 	app.Get("/messages/:id/sse-update", handlers.AuthRequired, handlers.HandleSSEConversationUpdate)
 	app.Post("/messages/:id/send", handlers.AuthRequired, handlers.HandleSendMessage)
+	app.Post("/messages/:id/send-inline", handlers.AuthRequired, handlers.HandleInlineMessageSend)
 	app.Get("/messages/start/:adID", handlers.AuthRequired, handlers.HandleStartConversation)
 	api.Get("/messages/:action", handlers.AuthRequired, handlers.HandleMessagesAPI)
 

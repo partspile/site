@@ -49,7 +49,7 @@ func navLoggedOut(currentPath string) g.Node {
 	switch currentPath {
 	case "/login":
 		return registerNode()
-	case "/register", "/rocks":
+	case "/register":
 		return loginNode()
 	case "/register/verify":
 		return nil

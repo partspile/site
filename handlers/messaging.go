@@ -195,6 +195,109 @@ func HandleSendMessage(c *fiber.Ctx) error {
 	return render(c, ui.ExpandedConversation(currentUser, updatedConversation, updatedMessages))
 }
 
+// HandleInlineMessageSend handles sending messages from the inline messaging interface
+func HandleInlineMessageSend(c *fiber.Ctx) error {
+	currentUser := c.Locals("user").(*user.User)
+
+	conversationID, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return render(c, ui.ErrorPage(400, "Invalid conversation ID"))
+	}
+
+	conversation, err := messaging.GetConversationWithDetails(conversationID)
+	if err != nil {
+		return render(c, ui.ErrorPage(404, "Conversation not found"))
+	}
+
+	// Check if user is part of this conversation
+	if conversation.User1ID != currentUser.ID && conversation.User2ID != currentUser.ID {
+		return render(c, ui.ErrorPage(403, "Access denied"))
+	}
+
+	// Get message content from form
+	content := c.FormValue("message")
+	if content == "" {
+		return render(c, ui.ErrorPage(400, "Message cannot be empty"))
+	}
+
+	// Add message to conversation
+	_, err = messaging.AddMessage(conversationID, currentUser.ID, content)
+	if err != nil {
+		return render(c, ui.ErrorPage(500, "Failed to send message"))
+	}
+
+	// Determine recipient ID
+	recipientID := conversation.User1ID
+	if currentUser.ID == conversation.User1ID {
+		recipientID = conversation.User2ID
+	}
+
+	// Send notification to recipient
+	notificationService, err := notification.NewNotificationService()
+	if err != nil {
+		// Log error but don't fail the request
+		log.Printf("Failed to create notification service: %v", err)
+	} else {
+		go func() {
+			err := notificationService.NotifyNewMessage(conversationID, currentUser.ID, recipientID, content)
+			if err != nil {
+				log.Printf("Failed to send notification: %v", err)
+			}
+		}()
+	}
+
+	// Get updated messages
+	updatedMessages, err := messaging.GetMessages(conversationID)
+	if err != nil {
+		return render(c, ui.ErrorPage(500, "Failed to load updated messages"))
+	}
+
+	// Return the updated inline conversation
+	return render(c, ui.InlineConversation(updatedMessages, currentUser.ID))
+}
+
+// HandleInlineMessaging handles inline messaging interface for ad detail pages
+func HandleInlineMessaging(c *fiber.Ctx) error {
+	currentUser := c.Locals("user").(*user.User)
+
+	adID, err := strconv.Atoi(c.Params("adID"))
+	if err != nil {
+		return render(c, ui.ErrorPage(400, "Invalid ad ID"))
+	}
+
+	// Get ad details to check ownership
+	ad, found := ad.GetAd(adID, currentUser)
+	if !found {
+		return render(c, ui.ErrorPage(404, "Ad not found"))
+	}
+
+	// Check if user can message this ad
+	err = messaging.CanUserMessageAd(currentUser.ID, ad.UserID)
+	if err != nil {
+		return render(c, ui.ErrorPage(400, err.Error()))
+	}
+
+	// Get or create conversation
+	conversationID, err := messaging.GetOrCreateConversation(currentUser.ID, ad.UserID, adID)
+	if err != nil {
+		return render(c, ui.ErrorPage(500, "Failed to create conversation"))
+	}
+
+	// Get conversation details and messages
+	conversation, err := messaging.GetConversationWithDetails(conversationID)
+	if err != nil {
+		return render(c, ui.ErrorPage(500, "Failed to load conversation"))
+	}
+
+	messages, err := messaging.GetMessages(conversationID)
+	if err != nil {
+		return render(c, ui.ErrorPage(500, "Failed to load messages"))
+	}
+
+	// Return the inline messaging interface
+	return render(c, ui.InlineMessagingInterface(currentUser, ad, conversation, messages))
+}
+
 // HandleMessagesAPI handles AJAX requests for messages
 func HandleMessagesAPI(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)

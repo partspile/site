@@ -7,6 +7,7 @@ import (
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/messaging"
 	"github.com/parts-pile/site/user"
 )
@@ -291,6 +292,155 @@ func MessageForm(conversationID int) g.Node {
 		button("Send",
 			withType("submit"),
 			withClass("px-6 py-3 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"),
+		),
+	)
+}
+
+// InlineMessagingInterface renders a compact messaging interface for ad detail pages
+func InlineMessagingInterface(currentUser *user.User, ad ad.Ad, conversation messaging.Conversation, messages []messaging.Message) g.Node {
+	// Determine the other participant's name
+	otherUserName := conversation.User1Name
+	if currentUser.ID == conversation.User1ID {
+		otherUserName = conversation.User2Name
+	}
+
+	return Div(
+		ID(fmt.Sprintf("inline-messaging-%d", ad.ID)),
+		Class("bg-white border border-gray-200 rounded-lg shadow-lg max-w-md mx-auto"),
+		Div(
+			Class("p-4 border-b border-gray-200"),
+			Div(
+				Class("flex items-center justify-between mb-2"),
+				H3(
+					Class("text-lg font-semibold text-gray-900"),
+					g.Text("Message Seller"),
+				),
+				buttonSecondary("✕",
+					withClass("text-gray-400 hover:text-gray-600 p-1"),
+					withAttributes(
+						hx.Get(fmt.Sprintf("/ad/detail/%d?view=tree", ad.ID)),
+						hx.Target(fmt.Sprintf("#inline-messaging-%d", ad.ID)),
+						hx.Swap("outerHTML"),
+						Title("Close messaging"),
+					),
+				),
+			),
+			Div(
+				Class("text-sm text-gray-600"),
+				Span(Class("font-medium"), g.Text("To: ")),
+				g.Text(otherUserName),
+			),
+			Div(
+				Class("text-sm text-gray-600"),
+				Span(Class("font-medium"), g.Text("Subject: ")),
+				g.Text(fmt.Sprintf("Re: %s", ad.Title)),
+			),
+		),
+		Div(
+			ID(fmt.Sprintf("inline-conversation-%d", conversation.ID)),
+			Class("h-64 overflow-y-auto p-4"),
+			g.If(len(messages) == 0,
+				Div(
+					Class("text-center py-8"),
+					P(Class("text-gray-500"), g.Text("No messages yet. Start the conversation!")),
+				),
+			),
+			g.If(len(messages) > 0,
+				Div(
+					Class("space-y-4"),
+					g.Group(func() []g.Node {
+						var messageNodes []g.Node
+						for _, msg := range messages {
+							messageNodes = append(messageNodes, InlineMessageItem(msg, currentUser.ID))
+						}
+						return messageNodes
+					}()),
+				),
+			),
+		),
+		InlineMessageForm(conversation.ID, ad.ID),
+	)
+}
+
+// InlineMessageItem renders a single message in the inline interface
+func InlineMessageItem(msg messaging.Message, currentUserID int) g.Node {
+	isOwnMessage := msg.SenderID == currentUserID
+
+	messageClass := "bg-blue-500 text-white"
+	containerClass := "flex justify-end"
+	timeClass := "text-right text-xs text-gray-400 mr-2"
+	if !isOwnMessage {
+		messageClass = "bg-gray-200 text-gray-800"
+		containerClass = "flex justify-start"
+		timeClass = "text-left text-xs text-gray-400 ml-2"
+	}
+
+	return Div(
+		Class(containerClass),
+		Div(
+			Class("flex items-end gap-2"),
+			g.If(!isOwnMessage,
+				Div(
+					Class(timeClass),
+					g.Text(formatAdAge(msg.CreatedAt)),
+				),
+			),
+			Div(
+				Class(fmt.Sprintf("max-w-xs px-3 py-2 rounded-lg text-sm %s", messageClass)),
+				g.Text(msg.Content),
+			),
+			g.If(isOwnMessage,
+				Div(
+					Class(timeClass),
+					g.Text(formatAdAge(msg.CreatedAt)),
+				),
+			),
+		),
+	)
+}
+
+// InlineMessageForm renders the form for sending new messages in the inline interface
+func InlineMessageForm(conversationID int, adID int) g.Node {
+	return Form(
+		Class("flex gap-2 p-4 bg-gray-50 border-t"),
+		hx.Post(fmt.Sprintf("/messages/%d/send-inline", conversationID)),
+		hx.Target(fmt.Sprintf("#inline-conversation-%d", conversationID)),
+		hx.Swap("outerHTML"),
+		Input(
+			Type("text"),
+			Name("message"),
+			Placeholder("Type your message..."),
+			Class("flex-1 p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"),
+			Required(),
+		),
+		button("Send",
+			withType("submit"),
+			withClass("px-4 py-2 text-sm font-medium rounded focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"),
+		),
+	)
+}
+
+// InlineConversation renders just the conversation part for inline messaging updates
+func InlineConversation(messages []messaging.Message, currentUserID int) g.Node {
+	return Div(
+		Class("h-64 overflow-y-auto p-4"),
+		g.If(len(messages) == 0,
+			Div(
+				Class("text-center py-8"),
+				P(Class("text-gray-500"), g.Text("No messages yet. Start the conversation!")),
+			),
+		),
+		g.If(len(messages) > 0,
+			Div(
+				Class("space-y-4"),
+				g.Group(func() []g.Node {
+					var messageNodes []g.Node
+					for _, msg := range messages {
+						messageNodes = append(messageNodes, InlineMessageItem(msg, currentUserID))
+					}
+					return messageNodes
+				}()),
+			),
 		),
 	)
 }
