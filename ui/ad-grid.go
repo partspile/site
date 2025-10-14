@@ -68,10 +68,6 @@ func adGridImageSrc(adID int, idx int) string {
 	return config.GetB2ImageURL(adID, idx, "480w", token)
 }
 
-func gridImage(adID int, alt string) g.Node {
-	return gridImageWithIndex(adID, 1, alt)
-}
-
 func gridImageWithIndex(adID int, idx int, alt string) g.Node {
 	src := adGridImageSrc(adID, idx)
 
@@ -103,7 +99,7 @@ func gridImageWithNav(ad ad.Ad, currentIdx int) g.Node {
 
 	return Div(
 		ID(containerID),
-		Class("relative"),
+		Class("relative group"),
 		gridImageWithIndex(ad.ID, currentIdx, ad.Title),
 		g.If(ad.ImageCount > 1, gridNavButtons(ad, currentIdx)),
 	)
@@ -117,7 +113,7 @@ func gridNavButtons(ad ad.Ad, currentIdx int) g.Node {
 		// Left button
 		Button(
 			Type("button"),
-			Class("absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20"),
+			Class("absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"),
 			hx.Get(fmt.Sprintf("/ad/grid-image/%d/%d", ad.ID, prevIdx)),
 			hx.Target(fmt.Sprintf("#grid-image-container-%d", ad.ID)),
 			hx.Swap("outerHTML"),
@@ -127,7 +123,7 @@ func gridNavButtons(ad ad.Ad, currentIdx int) g.Node {
 		// Right button
 		Button(
 			Type("button"),
-			Class("absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20"),
+			Class("absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"),
 			hx.Get(fmt.Sprintf("/ad/grid-image/%d/%d", ad.ID, nextIdx)),
 			hx.Target(fmt.Sprintf("#grid-image-container-%d", ad.ID)),
 			hx.Swap("outerHTML"),

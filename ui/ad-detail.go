@@ -158,7 +158,7 @@ func carouselImageContainer(ad ad.Ad, currentIdx int) g.Node {
 
 	return Div(
 		ID(containerID),
-		Class("relative"),
+		Class("relative group"),
 		g.If(ad.ImageCount > 0, AdCarouselImage(ad.ID, currentIdx)),
 		g.If(ad.ImageCount == 0, AdNoImage()),
 		g.If(ad.ImageCount > 1, carouselNavButtons(ad, currentIdx)),
@@ -173,7 +173,7 @@ func carouselNavButtons(ad ad.Ad, currentIdx int) g.Node {
 		// Left button
 		Button(
 			Type("button"),
-			Class("absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20"),
+			Class("absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"),
 			hx.Get(fmt.Sprintf("/ad/image/%d/%d", ad.ID, prevIdx)),
 			hx.Target(fmt.Sprintf("#carousel-image-container-%d", ad.ID)),
 			hx.Swap("outerHTML"),
@@ -182,7 +182,7 @@ func carouselNavButtons(ad ad.Ad, currentIdx int) g.Node {
 		// Right button
 		Button(
 			Type("button"),
-			Class("absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20"),
+			Class("absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"),
 			hx.Get(fmt.Sprintf("/ad/image/%d/%d", ad.ID, nextIdx)),
 			hx.Target(fmt.Sprintf("#carousel-image-container-%d", ad.ID)),
 			hx.Swap("outerHTML"),
