@@ -39,7 +39,7 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 			Class(contentClass),
 			// Title row
 			Div(
-				Class("font-semibold text-xl truncate"),
+				Class("font-semibold text-xl"),
 				titleNode(ad),
 			),
 			// Age and location row with inline edit for owner
@@ -90,6 +90,7 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 		g.If(isOwner && !ad.IsArchived(), locationEditModal(ad, view)),
 		g.If(isOwner && !ad.IsArchived(), descriptionEditModal(ad, view)),
 		shareModal(ad),
+		g.If(!ad.IsArchived() && userID != 0 && userID != ad.UserID, messageModal(ad)),
 	)
 }
 
@@ -257,9 +258,9 @@ func messageButton(ad ad.Ad, userID int) g.Node {
 		"/images/message.svg",
 		"Message",
 		"Message seller",
-		hx.Get(fmt.Sprintf("/messages/inline/%d?view=%s", ad.ID, "tree")),
-		hx.Target(adTarget(ad)),
-		hx.Swap("outerHTML"),
+		g.Attr("onclick", fmt.Sprintf(
+			"document.getElementById('message-modal-%d').classList.remove('hidden')",
+			ad.ID)),
 	)
 }
 
@@ -584,6 +585,78 @@ func shareModal(ad ad.Ad) g.Node {
 					observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
 				})();
 			`, modalID, urlInputID, adPath)),
+		),
+	)
+}
+
+func messageModal(ad ad.Ad) g.Node {
+	modalID := fmt.Sprintf("message-modal-%d", ad.ID)
+	conversationContainerID := fmt.Sprintf("message-conversation-%d", ad.ID)
+
+	return Div(
+		ID(modalID),
+		Class("hidden fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-8"),
+		g.Attr("onclick", fmt.Sprintf(
+			"if (event.target.id === '%s') this.classList.add('hidden')",
+			modalID)),
+		Div(
+			Class("bg-white rounded-lg w-full shadow-2xl border-2 border-gray-300 flex flex-col overflow-hidden"),
+			Style("max-width: 600px; max-height: 80vh"),
+			g.Attr("onclick", "event.stopPropagation()"),
+			Div(Class("p-6 flex flex-col h-full"),
+				Div(
+					Class("flex items-center justify-between mb-4"),
+					H3(Class("text-xl font-bold text-gray-900"),
+						g.Text("Message Seller")),
+					buttonSecondary("✕",
+						withClass("text-gray-400 hover:text-gray-600 p-1"),
+						withAttributes(
+							g.Attr("onclick", fmt.Sprintf(
+								"document.getElementById('%s').classList.add('hidden')",
+								modalID)),
+						),
+					),
+				),
+				Div(
+					ID(conversationContainerID),
+					Class("flex-1 overflow-hidden"),
+					// Hidden trigger element for HTMX
+					Div(
+						ID(fmt.Sprintf("message-trigger-%d", ad.ID)),
+						Class("hidden"),
+						hx.Get(fmt.Sprintf("/messages/modal/%d", ad.ID)),
+						hx.Target(fmt.Sprintf("#%s", conversationContainerID)),
+						hx.Swap("innerHTML"),
+						hx.Trigger("load"),
+					),
+					// This will be populated by HTMX when the modal opens
+					Div(
+						Class("flex items-center justify-center h-full"),
+						Div(
+							Class("text-gray-500"),
+							g.Text("Loading conversation..."),
+						),
+					),
+				),
+			),
+		),
+		// Script to trigger HTMX request when modal opens
+		Script(
+			g.Raw(fmt.Sprintf(`
+				(function() {
+					const modal = document.getElementById('%s');
+					const trigger = document.getElementById('message-trigger-%d');
+					const observer = new MutationObserver(function(mutations) {
+						mutations.forEach(function(mutation) {
+							if (!modal.classList.contains('hidden')) {
+								// Trigger the HTMX request
+								htmx.trigger(trigger, 'load');
+							}
+						});
+					});
+					observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+				})();
+			`, modalID, ad.ID)),
 		),
 	)
 }

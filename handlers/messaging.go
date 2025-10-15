@@ -129,74 +129,8 @@ func HandleStartConversation(c *fiber.Ctx) error {
 	return c.Redirect(fmt.Sprintf("/messages?expand=%d", conversationID))
 }
 
-// HandleSendMessage handles sending a new message
+// HandleSendMessage handles sending a new message (works for both main messages page and modal)
 func HandleSendMessage(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
-
-	conversationID, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return render(c, ui.ErrorPage(400, "Invalid conversation ID"))
-	}
-
-	conversation, err := messaging.GetConversationWithDetails(conversationID)
-	if err != nil {
-		return render(c, ui.ErrorPage(404, "Conversation not found"))
-	}
-
-	// Check if user is part of this conversation
-	if conversation.User1ID != currentUser.ID && conversation.User2ID != currentUser.ID {
-		return render(c, ui.ErrorPage(403, "Access denied"))
-	}
-
-	// Get message content from form
-	content := c.FormValue("message")
-	if content == "" {
-		return render(c, ui.ErrorPage(400, "Message cannot be empty"))
-	}
-
-	// Add message to conversation
-	_, err = messaging.AddMessage(conversationID, currentUser.ID, content)
-	if err != nil {
-		return render(c, ui.ErrorPage(500, "Failed to send message"))
-	}
-
-	// Determine recipient ID
-	recipientID := conversation.User1ID
-	if currentUser.ID == conversation.User1ID {
-		recipientID = conversation.User2ID
-	}
-
-	// Send notification to recipient
-	notificationService, err := notification.NewNotificationService()
-	if err != nil {
-		// Log error but don't fail the request
-		log.Printf("Failed to create notification service: %v", err)
-	} else {
-		go func() {
-			err := notificationService.NotifyNewMessage(conversationID, currentUser.ID, recipientID, content)
-			if err != nil {
-				log.Printf("Failed to send notification: %v", err)
-			}
-		}()
-	}
-
-	// Get updated conversation and messages
-	updatedConversation, err := messaging.GetConversationWithDetails(conversationID)
-	if err != nil {
-		return render(c, ui.ErrorPage(500, "Failed to load updated conversation"))
-	}
-
-	updatedMessages, err := messaging.GetMessages(conversationID)
-	if err != nil {
-		return render(c, ui.ErrorPage(500, "Failed to load updated messages"))
-	}
-
-	// Return the messages page version
-	return render(c, ui.ExpandedConversation(currentUser, updatedConversation, updatedMessages))
-}
-
-// HandleInlineMessageSend handles sending messages from the inline messaging interface
-func HandleInlineMessageSend(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
 
 	conversationID, err := strconv.Atoi(c.Params("id"))
@@ -252,12 +186,26 @@ func HandleInlineMessageSend(c *fiber.Ctx) error {
 		return render(c, ui.ErrorPage(500, "Failed to load updated messages"))
 	}
 
-	// Return the updated inline conversation
-	return render(c, ui.InlineConversation(updatedMessages, currentUser.ID))
+	// Determine context from query parameter or form data
+	context := c.Query("context", c.FormValue("context"))
+
+	// Return appropriate UI component based on context
+	switch context {
+	case "modal":
+		// Return modal conversation for ad detail modal
+		return render(c, ui.ModalConversation(updatedMessages, currentUser.ID))
+	default:
+		// Return expanded conversation for main messages page
+		updatedConversation, err := messaging.GetConversationWithDetails(conversationID)
+		if err != nil {
+			return render(c, ui.ErrorPage(500, "Failed to load updated conversation"))
+		}
+		return render(c, ui.ExpandedConversation(currentUser, updatedConversation, updatedMessages))
+	}
 }
 
-// HandleInlineMessaging handles inline messaging interface for ad detail pages
-func HandleInlineMessaging(c *fiber.Ctx) error {
+// HandleModalMessaging handles modal messaging interface for ad detail pages
+func HandleModalMessaging(c *fiber.Ctx) error {
 	currentUser := c.Locals("user").(*user.User)
 
 	adID, err := strconv.Atoi(c.Params("adID"))
@@ -294,8 +242,8 @@ func HandleInlineMessaging(c *fiber.Ctx) error {
 		return render(c, ui.ErrorPage(500, "Failed to load messages"))
 	}
 
-	// Return the inline messaging interface
-	return render(c, ui.InlineMessagingInterface(currentUser, ad, conversation, messages))
+	// Return the modal messaging interface
+	return render(c, ui.ModalMessagingInterface(currentUser, ad, conversation, messages))
 }
 
 // HandleMessagesAPI handles AJAX requests for messages

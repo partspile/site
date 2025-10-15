@@ -27,13 +27,13 @@ type Conversation struct {
 	User1Read bool      `json:"user1_read" db:"user1_read"`
 	User2Read bool      `json:"user2_read" db:"user2_read"`
 	// Runtime fields
-	User1Name     string    `json:"user1_name,omitempty" db:"user1_name"`
-	User2Name     string    `json:"user2_name,omitempty" db:"user2_name"`
-	AdTitle       string    `json:"ad_title,omitempty" db:"ad_title"`
-	LastMessage   string    `json:"last_message,omitempty" db:"last_message"`
-	LastMessageAt time.Time `json:"last_message_at,omitempty" db:"last_message_at"`
-	UnreadCount   int       `json:"unread_count,omitempty" db:"unread_count"`
-	IsUnread      bool      `json:"is_unread,omitempty"` // Whether current user has unread messages
+	User1Name     string     `json:"user1_name,omitempty" db:"user1_name"`
+	User2Name     string     `json:"user2_name,omitempty" db:"user2_name"`
+	AdTitle       string     `json:"ad_title,omitempty" db:"ad_title"`
+	LastMessage   *string    `json:"last_message,omitempty" db:"last_message"`
+	LastMessageAt *time.Time `json:"last_message_at,omitempty" db:"last_message_at"`
+	UnreadCount   int        `json:"unread_count,omitempty" db:"unread_count"`
+	IsUnread      bool       `json:"is_unread,omitempty"` // Whether current user has unread messages
 }
 
 // Message represents a single message in a conversation
@@ -148,12 +148,18 @@ func GetConversationWithDetails(id int) (Conversation, error) {
 		ORDER BY created_at DESC 
 		LIMIT 1
 	`, id)
-	var lastMessage string
-	var lastMessageAt string
+	var lastMessage sql.NullString
+	var lastMessageAt sql.NullString
 	err = row.Scan(&lastMessage, &lastMessageAt)
 	if err == nil {
-		conv.LastMessage = lastMessage
-		conv.LastMessageAt, _ = time.Parse(time.RFC3339Nano, lastMessageAt)
+		if lastMessage.Valid {
+			conv.LastMessage = &lastMessage.String
+		}
+		if lastMessageAt.Valid {
+			if parsedTime, parseErr := time.Parse(time.RFC3339Nano, lastMessageAt.String); parseErr == nil {
+				conv.LastMessageAt = &parsedTime
+			}
+		}
 	}
 
 	return conv, nil
