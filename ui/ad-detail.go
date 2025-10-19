@@ -85,12 +85,6 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 			// Part type path
 			partTypePath(ad),
 		),
-		// Modal dialogs (hidden by default)
-		g.If(isOwner && !ad.IsArchived(), priceEditModal(ad, view)),
-		g.If(isOwner && !ad.IsArchived(), locationEditModal(ad, view)),
-		g.If(isOwner && !ad.IsArchived(), descriptionEditModal(ad, view)),
-		shareModal(ad),
-		g.If(!ad.IsArchived() && userID != 0 && userID != ad.UserID, messageModal(ad)),
 	)
 }
 
@@ -258,9 +252,9 @@ func messageButton(ad ad.Ad, userID int) g.Node {
 		"/images/message.svg",
 		"Message",
 		"Message seller",
-		g.Attr("onclick", fmt.Sprintf(
-			"document.getElementById('message-modal-%d').classList.remove('hidden')",
-			ad.ID)),
+		hx.Get(fmt.Sprintf("/modal/ad/message/%d", ad.ID)),
+		hx.Target("body"),
+		hx.Swap("beforeend"),
 	)
 }
 
@@ -312,7 +306,9 @@ func priceEditable(ad ad.Ad) g.Node {
 		button("Edit",
 			withClass("px-4 h-10"),
 			withAttributes(
-				g.Attr("onclick", fmt.Sprintf("document.getElementById('price-modal-%d').classList.remove('hidden')", ad.ID)),
+				hx.Get(fmt.Sprintf("/modal/ad/price/%d", ad.ID)),
+				hx.Target("body"),
+				hx.Swap("beforeend"),
 			),
 		),
 	)
@@ -325,7 +321,9 @@ func locationEditable(ad ad.Ad) g.Node {
 		button("Edit",
 			withClass("px-4 h-10"),
 			withAttributes(
-				g.Attr("onclick", fmt.Sprintf("document.getElementById('location-modal-%d').classList.remove('hidden')", ad.ID)),
+				hx.Get(fmt.Sprintf("/modal/ad/location/%d", ad.ID)),
+				hx.Target("body"),
+				hx.Swap("beforeend"),
 			),
 		),
 	)
@@ -338,21 +336,21 @@ func descriptionEditable(ad ad.Ad) g.Node {
 		button("Edit",
 			withClass("px-4 h-10"),
 			withAttributes(
-				g.Attr("onclick", fmt.Sprintf("document.getElementById('description-modal-%d').classList.remove('hidden')", ad.ID)),
+				hx.Get(fmt.Sprintf("/modal/ad/description/%d", ad.ID)),
+				hx.Target("body"),
+				hx.Swap("beforeend"),
 			),
 		),
 	)
 }
 
 // Modal button components
-func modalCloseButton(modalID string) g.Node {
-	return buttonSecondary("Close",
-		withClass("px-6 py-3 font-medium transition"),
-		withAttributes(
-			g.Attr("onclick", fmt.Sprintf(
-				"document.getElementById('%s').classList.add('hidden')",
-				modalID)),
-		),
+func modalCloseButton() g.Node {
+	return Button(
+		Type("button"),
+		Class("bg-white border-2 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-gray-100 focus:outline-none cursor-pointer"),
+		g.Attr("onclick", "this.closest('.fixed').remove()"),
+		icon("/images/close.svg", "Close", "w-6 h-6"),
 	)
 }
 
@@ -394,8 +392,8 @@ type editModalConfig struct {
 func editModal(ad ad.Ad, cfg editModalConfig) g.Node {
 	return Div(
 		ID(cfg.modalID),
-		Class("hidden fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-8"),
-		g.Attr("onclick", fmt.Sprintf("if (event.target.id === '%s') this.classList.add('hidden')", cfg.modalID)),
+		Class("fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-8"),
+		g.Attr("onclick", "this.remove()"),
 		Div(
 			Class("bg-white rounded-lg w-full shadow-2xl border-2 border-gray-300 flex flex-col overflow-hidden"),
 			Style("max-width: 500px; max-height: 70vh"),
@@ -406,11 +404,11 @@ func editModal(ad ad.Ad, cfg editModalConfig) g.Node {
 					hx.Post(cfg.apiEndpoint),
 					hx.Target(adTarget(ad)),
 					hx.Swap("outerHTML"),
-					g.Attr("hx-on::after-request", fmt.Sprintf("document.getElementById('%s').classList.add('hidden')", cfg.modalID)),
+					g.Attr("hx-on::after-swap", "this.closest('.fixed').remove();"),
 					cfg.formContent,
 					Div(
 						Class("flex gap-3 justify-end"),
-						modalCloseButton(cfg.modalID),
+						modalCloseButton(),
 						button(cfg.submitBtnText,
 							withType("submit"),
 							withClass("px-6 py-3 font-medium shadow-md transition"),
@@ -422,7 +420,7 @@ func editModal(ad ad.Ad, cfg editModalConfig) g.Node {
 	)
 }
 
-func priceEditModal(ad ad.Ad, view string) g.Node {
+func PriceEditModal(ad ad.Ad, view string) g.Node {
 	modalID := fmt.Sprintf("price-modal-%d", ad.ID)
 	return editModal(ad, editModalConfig{
 		modalID:       modalID,
@@ -446,7 +444,7 @@ func priceEditModal(ad ad.Ad, view string) g.Node {
 	})
 }
 
-func locationEditModal(ad ad.Ad, view string) g.Node {
+func LocationEditModal(ad ad.Ad, view string) g.Node {
 	modalID := fmt.Sprintf("location-modal-%d", ad.ID)
 	currentLocation := ""
 	if ad.RawLocation.Valid {
@@ -474,7 +472,7 @@ func locationEditModal(ad ad.Ad, view string) g.Node {
 	})
 }
 
-func descriptionEditModal(ad ad.Ad, view string) g.Node {
+func DescriptionEditModal(ad ad.Ad, view string) g.Node {
 	modalID := fmt.Sprintf("description-modal-%d", ad.ID)
 	return editModal(ad, editModalConfig{
 		modalID:       modalID,
@@ -511,9 +509,9 @@ func shareButton(ad ad.Ad) g.Node {
 		"/images/share.svg",
 		"Share",
 		"Share ad",
-		g.Attr("onclick", fmt.Sprintf(
-			"document.getElementById('share-modal-%d').classList.remove('hidden')",
-			ad.ID)),
+		hx.Get(fmt.Sprintf("/modal/ad/share/%d", ad.ID)),
+		hx.Target("body"),
+		hx.Swap("beforeend"),
 	)
 }
 
@@ -526,7 +524,7 @@ func duplicateButton(ad ad.Ad) g.Node {
 	)
 }
 
-func shareModal(ad ad.Ad) g.Node {
+func ShareModal(ad ad.Ad) g.Node {
 	modalID := fmt.Sprintf("share-modal-%d", ad.ID)
 	adPath := fmt.Sprintf("/ad/%d", ad.ID)
 	urlInputID := fmt.Sprintf("ad-url-%d", ad.ID)
@@ -535,10 +533,8 @@ func shareModal(ad ad.Ad) g.Node {
 
 	return Div(
 		ID(modalID),
-		Class("hidden fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-8"),
-		g.Attr("onclick", fmt.Sprintf(
-			"if (event.target.id === '%s') this.classList.add('hidden')",
-			modalID)),
+		Class("fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-8"),
+		g.Attr("onclick", "this.remove()"),
 		Div(
 			Class("bg-white rounded-lg w-full shadow-2xl border-2 border-gray-300 flex flex-col overflow-hidden"),
 			Style("max-width: 500px;"),
@@ -564,7 +560,7 @@ func shareModal(ad ad.Ad) g.Node {
 				),
 				Div(
 					Class("flex gap-3 justify-end"),
-					modalCloseButton(modalID),
+					modalCloseButton(),
 					modalCopyButton(copyButtonID, urlInputID, copyFeedbackID),
 				),
 			),
@@ -575,30 +571,21 @@ func shareModal(ad ad.Ad) g.Node {
 				(function() {
 					const modal = document.getElementById('%s');
 					const urlInput = document.getElementById('%s');
-					const observer = new MutationObserver(function(mutations) {
-						mutations.forEach(function(mutation) {
-							if (!modal.classList.contains('hidden') && urlInput.value === '') {
-								urlInput.value = window.location.origin + '%s';
-							}
-						});
-					});
-					observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+					// Set URL immediately since modal is now visible when loaded
+					urlInput.value = window.location.origin + '%s';
 				})();
 			`, modalID, urlInputID, adPath)),
 		),
 	)
 }
 
-func messageModal(ad ad.Ad) g.Node {
+func MessageModal(ad ad.Ad, conversationContent g.Node) g.Node {
 	modalID := fmt.Sprintf("message-modal-%d", ad.ID)
-	conversationContainerID := fmt.Sprintf("message-conversation-%d", ad.ID)
 
 	return Div(
 		ID(modalID),
-		Class("hidden fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-8"),
-		g.Attr("onclick", fmt.Sprintf(
-			"if (event.target.id === '%s') this.classList.add('hidden')",
-			modalID)),
+		Class("fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-8"),
+		g.Attr("onclick", "this.remove()"),
 		Div(
 			Class("bg-white rounded-lg w-full shadow-2xl border-2 border-gray-300 flex flex-col overflow-hidden"),
 			Style("max-width: 600px; max-height: 80vh"),
@@ -608,55 +595,18 @@ func messageModal(ad ad.Ad) g.Node {
 					Class("flex items-center justify-between mb-4"),
 					H3(Class("text-xl font-bold text-gray-900"),
 						g.Text("Message Seller")),
-					buttonSecondary("✕",
-						withClass("text-gray-400 hover:text-gray-600 p-1"),
-						withAttributes(
-							g.Attr("onclick", fmt.Sprintf(
-								"document.getElementById('%s').classList.add('hidden')",
-								modalID)),
-						),
+					Button(
+						Type("button"),
+						Class("bg-white border-2 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-gray-100 focus:outline-none cursor-pointer"),
+						g.Attr("onclick", "this.closest('.fixed').remove()"),
+						icon("/images/close.svg", "Close", "w-6 h-6"),
 					),
 				),
 				Div(
-					ID(conversationContainerID),
 					Class("flex-1 overflow-hidden"),
-					// Hidden trigger element for HTMX
-					Div(
-						ID(fmt.Sprintf("message-trigger-%d", ad.ID)),
-						Class("hidden"),
-						hx.Get(fmt.Sprintf("/messages/modal/%d", ad.ID)),
-						hx.Target(fmt.Sprintf("#%s", conversationContainerID)),
-						hx.Swap("innerHTML"),
-						hx.Trigger("load"),
-					),
-					// This will be populated by HTMX when the modal opens
-					Div(
-						Class("flex items-center justify-center h-full"),
-						Div(
-							Class("text-gray-500"),
-							g.Text("Loading conversation..."),
-						),
-					),
+					conversationContent,
 				),
 			),
-		),
-		// Script to trigger HTMX request when modal opens
-		Script(
-			g.Raw(fmt.Sprintf(`
-				(function() {
-					const modal = document.getElementById('%s');
-					const trigger = document.getElementById('message-trigger-%d');
-					const observer = new MutationObserver(function(mutations) {
-						mutations.forEach(function(mutation) {
-							if (!modal.classList.contains('hidden')) {
-								// Trigger the HTMX request
-								htmx.trigger(trigger, 'load');
-							}
-						});
-					});
-					observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
-				})();
-			`, modalID, ad.ID)),
 		),
 	)
 }
@@ -794,15 +744,15 @@ func partTypePath(ad ad.Ad) g.Node {
 	}
 
 	// Add category
-	if ad.Category.Valid && ad.Category.String != "" {
-		segments = append(segments, ad.Category.String)
-		linkNodes = append(linkNodes, pathSegmentLink(ad.Category.String, segments))
+	if ad.PartCategory.Valid && ad.PartCategory.String != "" {
+		segments = append(segments, ad.PartCategory.String)
+		linkNodes = append(linkNodes, pathSegmentLink(ad.PartCategory.String, segments))
 	}
 
 	// Add subcategory
-	if ad.SubCategory.Valid && ad.SubCategory.String != "" {
-		segments = append(segments, ad.SubCategory.String)
-		linkNodes = append(linkNodes, pathSegmentLink(ad.SubCategory.String, segments))
+	if ad.PartSubcategory.Valid && ad.PartSubcategory.String != "" {
+		segments = append(segments, ad.PartSubcategory.String)
+		linkNodes = append(linkNodes, pathSegmentLink(ad.PartSubcategory.String, segments))
 	}
 
 	// If no path parts, return empty node

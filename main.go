@@ -116,6 +116,13 @@ func main() {
 	app.Get("/ad/image/:adID/:idx", handlers.HandleAdImage)          // x
 	app.Get("/ad/grid-image/:adID/:idx", handlers.HandleAdGridImage) // x
 
+	// Modal routes for HTMX-based modals
+	app.Get("/modal/ad/price/:id", handlers.AuthRequired, handlers.HandlePriceModal)
+	app.Get("/modal/ad/location/:id", handlers.AuthRequired, handlers.HandleLocationModal)
+	app.Get("/modal/ad/description/:id", handlers.AuthRequired, handlers.HandleDescriptionModal)
+	app.Get("/modal/ad/share/:id", handlers.HandleShareModal) // No auth required
+	app.Get("/modal/ad/message/:id", handlers.AuthRequired, handlers.HandleMessageModal)
+
 	// Ad management
 	app.Get("/ad/:id", handlers.HandleAdPage)                                       // x
 	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd)                 // x
@@ -205,7 +212,6 @@ func main() {
 	app.Get("/messages", handlers.AuthRequired, handlers.HandleMessagesPage)
 	app.Get("/messages/:id/expand", handlers.AuthRequired, handlers.HandleExpandConversation)
 	app.Get("/messages/:id/collapse", handlers.AuthRequired, handlers.HandleCollapseConversation)
-	app.Get("/messages/modal/:adID", handlers.AuthRequired, handlers.HandleModalMessaging)
 
 	app.Get("/messages/sse", handlers.AuthRequired, handlers.HandleSSE)
 	app.Get("/messages/:id/sse-update", handlers.AuthRequired, handlers.HandleSSEConversationUpdate)

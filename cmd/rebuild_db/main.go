@@ -29,6 +29,7 @@ func main() {
 	parentFile := "cmd/rebuild_db/parent.json"
 	makeParentFile := "cmd/rebuild_db/make-parent.json"
 	adFile := "cmd/rebuild_db/ad.json"
+	typeFile := "cmd/rebuild_db/type.json"
 	dbFile := config.DatabaseURL
 	schemaFile := "schema.sql"
 
@@ -76,6 +77,48 @@ func main() {
 	if _, err := database.Exec("PRAGMA temp_store=MEMORY"); err != nil {
 		log.Printf("Warning: Failed to set temp store: %v", err)
 	}
+
+	// Import type.json (AdCategory)
+	typeData, err := ioutil.ReadFile(typeFile)
+	if err != nil {
+		log.Fatalf("Failed to read type.json: %v", err)
+	}
+	type AdCategory struct {
+		Name string `json:"name"`
+	}
+	var adCategories []AdCategory
+	if err := json.Unmarshal(typeData, &adCategories); err != nil {
+		log.Fatalf("Failed to parse type.json: %v", err)
+	}
+
+	// Create map for category lookups
+	categoryMap := make(map[string]int)
+	for _, cat := range adCategories {
+		_, err := database.Exec(`INSERT INTO AdCategory (name) VALUES (?)`, cat.Name)
+		if err != nil {
+			log.Printf("Failed to insert AdCategory %s: %v", cat.Name, err)
+		} else {
+			fmt.Printf("Inserted AdCategory: %s\n", cat.Name)
+		}
+	}
+
+	// Populate category map
+	categoryRows, err := database.Query(`SELECT id, name FROM AdCategory`)
+	if err != nil {
+		log.Fatalf("Failed to query AdCategory: %v", err)
+	}
+	defer categoryRows.Close()
+	for categoryRows.Next() {
+		var id int
+		var name string
+		if err := categoryRows.Scan(&id, &name); err != nil {
+			log.Fatalf("Failed to scan ad_category_id row: %v", err)
+		}
+		categoryMap[name] = id
+	}
+
+	// Get CarParts category ID for use throughout the script
+	carPartsCategoryID := categoryMap["CarParts"]
 
 	// Import parent.json
 	parentData, err := ioutil.ReadFile(parentFile)
@@ -227,25 +270,26 @@ func main() {
 			}
 		}
 
-		// Insert make with parent company relationship
+		// Insert make with parent company relationship and category
 		var makeID int
+		carPartsCategoryID := categoryMap["CarParts"]
 		if parentCompanyID != nil {
-			makeID = getOrInsertWithParent(database, "Make", "name", make, *parentCompanyID)
+			makeID = getOrInsertWithParentAndCategory(database, "Make", "name", make, *parentCompanyID, carPartsCategoryID)
 		} else {
-			makeID = getOrInsert(database, "Make", "name", make)
+			makeID = getOrInsertWithCategory(database, "Make", "name", make, carPartsCategoryID)
 		}
 		makeMap[make] = makeID
 
 		for year, models := range years {
-			yearID := getOrInsert(database, "Year", "year", year)
+			yearID := getOrInsertWithCategory(database, "Year", "year", year, carPartsCategoryID)
 			yearMap[year] = yearID
 
 			for model, engines := range models {
-				modelID := getOrInsert(database, "Model", "name", model)
+				modelID := getOrInsertWithCategory(database, "Model", "name", model, carPartsCategoryID)
 				modelMap[model] = modelID
 
 				for _, engine := range engines {
-					engineID := getOrInsert(database, "Engine", "name", engine)
+					engineID := getOrInsertWithCategory(database, "Engine", "name", engine, carPartsCategoryID)
 					engineMap[engine] = engineID
 				}
 			}
@@ -313,13 +357,13 @@ func main() {
 		log.Fatalf("Failed to parse part.json: %v", err)
 	}
 	for cat, subcats := range partMap {
-		catID := getOrInsert(database, "PartCategory", "name", cat)
+		catID := getOrInsertWithCategory(database, "PartCategory", "name", cat, carPartsCategoryID)
 		for _, subcat := range subcats {
 			// Insert subcategory if not exists
 			var subcatID int
-			err := database.QueryRow(`SELECT id FROM PartSubCategory WHERE category_id=? AND name=?`, catID, subcat).Scan(&subcatID)
+			err := database.QueryRow(`SELECT id FROM PartSubCategory WHERE part_category_id=? AND name=?`, catID, subcat).Scan(&subcatID)
 			if err == sql.ErrNoRows {
-				_, err := database.Exec(`INSERT INTO PartSubCategory (category_id, name) VALUES (?, ?)`, catID, subcat)
+				_, err := database.Exec(`INSERT INTO PartSubCategory (part_category_id, name) VALUES (?, ?)`, catID, subcat)
 				if err != nil {
 					log.Printf("Failed to insert PartSubCategory: %v", err)
 				}
@@ -395,11 +439,11 @@ func main() {
 
 	// Create maps for efficient lookups
 	userMap := make(map[int]int)
-	categoryMap := make(map[string]int)
+	partCategoryMap := make(map[string]int)
 	subcategoryMap := make(map[string]int)
 
 	// Declare variables for database queries
-	var userRows, categoryRows, subcategoryRows *sql.Rows
+	var userRows, partCategoryRows, subcategoryRows *sql.Rows
 
 	// Populate maps
 	userRows, err = database.Query(`SELECT id FROM User WHERE deleted_at IS NULL`)
@@ -415,18 +459,18 @@ func main() {
 		userMap[id] = id
 	}
 
-	categoryRows, err = database.Query(`SELECT id, name FROM PartCategory`)
+	partCategoryRows, err = database.Query(`SELECT id, name FROM PartCategory`)
 	if err != nil {
 		log.Fatalf("Failed to query PartCategory: %v", err)
 	}
-	defer categoryRows.Close()
-	for categoryRows.Next() {
+	defer partCategoryRows.Close()
+	for partCategoryRows.Next() {
 		var id int
 		var name string
-		if err := categoryRows.Scan(&id, &name); err != nil {
+		if err := partCategoryRows.Scan(&id, &name); err != nil {
 			log.Fatalf("Failed to scan PartCategory row: %v", err)
 		}
-		categoryMap[name] = id
+		partCategoryMap[name] = id
 	}
 
 	subcategoryRows, err = database.Query(`SELECT id, name FROM PartSubCategory`)
@@ -493,9 +537,9 @@ func main() {
 		// Generate between 0 and 5 images per ad
 		numImages := rand.Intn(6) // 0 to 5 images
 
-		// Insert ad with image_count and has_vector (initially 0)
-		res, err := database.Exec(`INSERT INTO Ad (title, description, price, created_at, subcategory_id, user_id, location_id, image_count, has_vector) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
-			ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryID, ad.UserID, locationID, numImages)
+		// Insert ad with image_count, has_vector (initially 0), and ad_category_id
+		res, err := database.Exec(`INSERT INTO Ad (title, description, price, created_at, part_subcategory_id, user_id, location_id, image_count, has_vector, ad_category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
+			ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryID, ad.UserID, locationID, numImages, carPartsCategoryID)
 		if err != nil {
 			log.Printf("Failed to insert Ad: %v", err)
 			continue
@@ -523,10 +567,10 @@ func main() {
 						continue
 					}
 
-					// Insert AdCar relationship
-					_, err = database.Exec(`INSERT INTO AdCar (ad_id, car_id) VALUES (?, ?)`, adID, carID)
+					// Insert AdCarPart relationship (renamed from AdCar)
+					_, err = database.Exec(`INSERT INTO AdCarPart (ad_id, car_id) VALUES (?, ?)`, adID, carID)
 					if err != nil {
-						log.Printf("Failed to insert AdCar: %v", err)
+						log.Printf("Failed to insert AdCarPart: %v", err)
 					}
 				}
 			}
@@ -585,11 +629,27 @@ func getOrInsert(db *sql.DB, table, col, val string) int {
 	return id
 }
 
-func getOrInsertWithParent(db *sql.DB, table, col, val string, parentID int) int {
+func getOrInsertWithCategory(db *sql.DB, table, col, val string, categoryID int) int {
 	var id int
-	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=?", table, col), val).Scan(&id)
+	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=? AND ad_category_id=?", table, col), val, categoryID).Scan(&id)
 	if err == sql.ErrNoRows {
-		res, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s, parent_company_id) VALUES (?, ?)", table, col), val, parentID)
+		res, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s, ad_category_id) VALUES (?, ?)", table, col), val, categoryID)
+		if err != nil {
+			log.Fatalf("Failed to insert into %s: %v", table, err)
+		}
+		id64, _ := res.LastInsertId()
+		return int(id64)
+	} else if err != nil {
+		log.Fatalf("Failed to lookup %s: %v", table, err)
+	}
+	return id
+}
+
+func getOrInsertWithParentAndCategory(db *sql.DB, table, col, val string, parentID, categoryID int) int {
+	var id int
+	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=? AND parent_company_id=? AND ad_category_id=?", table, col), val, parentID, categoryID).Scan(&id)
+	if err == sql.ErrNoRows {
+		res, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s, parent_company_id, ad_category_id) VALUES (?, ?, ?)", table, col), val, parentID, categoryID)
 		if err != nil {
 			log.Fatalf("Failed to insert into %s: %v", table, err)
 		}

@@ -6,18 +6,19 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/db"
 )
 
-type Category struct {
+type AdCategory struct {
 	ID   int    `db:"id"`
 	Name string `db:"name"`
 }
 
-type SubCategory struct {
-	ID         int    `db:"id"`
-	CategoryID int    `db:"category_id"`
-	Name       string `db:"name"`
+type SubAdCategory struct {
+	ID           int    `db:"id"`
+	AdCategoryID int    `db:"category_id"`
+	Name         string `db:"name"`
 }
 
 var (
@@ -28,8 +29,8 @@ var (
 
 // Initialize parts static data
 func InitPartsData() error {
-	// Load all categories
-	categories, err := GetAllCategories()
+	// Load all categories for CarParts (default category)
+	categories, err := GetAllCategories(ad.CarParts)
 	if err != nil {
 		return fmt.Errorf("failed to load categories: %w", err)
 	}
@@ -41,16 +42,16 @@ func InitPartsData() error {
 
 	// Load subcategories for each category
 	for _, categoryName := range allCategories {
-		subCategories, err := GetSubCategoriesForCategory(categoryName)
+		subCategories, err := GetSubCategoriesForAdCategory(ad.CarParts, categoryName)
 		if err != nil {
 			continue
 		}
 
-		subCategoryNames := make([]string, len(subCategories))
+		subAdCategoryNames := make([]string, len(subCategories))
 		for i, subCat := range subCategories {
-			subCategoryNames[i] = subCat.Name
+			subAdCategoryNames[i] = subCat.Name
 		}
-		allSubCategories[categoryName] = subCategoryNames
+		allSubCategories[categoryName] = subAdCategoryNames
 	}
 
 	log.Printf("[parts] Static data loaded - %d categories", len(allCategories))
@@ -90,8 +91,8 @@ func GetAdCategories(makeName, year, model, engine string) ([]string, error) {
 	query := `
 		SELECT DISTINCT pc.name
 		FROM PartCategory pc
-		JOIN PartSubCategory psc ON pc.id = psc.category_id
-		JOIN Ad a ON psc.id = a.subcategory_id
+		JOIN PartSubAdCategory psc ON pc.id = psc.category_id
+		JOIN Ad a ON psc.id = a.part_subcategory_id
 		JOIN AdCar ac ON a.id = ac.ad_id
 		JOIN Car c ON ac.car_id = c.id
 		JOIN Make m ON c.make_id = m.id
@@ -116,9 +117,9 @@ func GetAdSubCategories(makeName, year, model, engine, category string) ([]strin
 
 	query := `
 		SELECT DISTINCT psc.name
-		FROM PartSubCategory psc
-		JOIN PartCategory pc ON psc.category_id = pc.id
-		JOIN Ad a ON psc.id = a.subcategory_id
+		FROM PartSubAdCategory psc
+		JOIN PartCategory pc ON psc.part_category_id = pc.id
+		JOIN Ad a ON psc.id = a.part_subcategory_id
 		JOIN AdCar ac ON a.id = ac.ad_id
 		JOIN Car c ON ac.car_id = c.id
 		JOIN Make m ON c.make_id = m.id
@@ -133,28 +134,28 @@ func GetAdSubCategories(makeName, year, model, engine, category string) ([]strin
 	return subCategories, err
 }
 
-func GetAllCategories() ([]Category, error) {
-	query := "SELECT id, name FROM PartCategory ORDER BY name"
-	var categories []Category
-	err := db.Select(&categories, query)
+func GetAllCategories(ad_category ad.AdCategory) ([]AdCategory, error) {
+	query := "SELECT id, name FROM PartCategory WHERE ad_category_id = ? ORDER BY name"
+	var categories []AdCategory
+	err := db.Select(&categories, query, ad_category.ToID())
 	return categories, err
 }
 
-func GetSubCategoriesForCategory(categoryName string) ([]SubCategory, error) {
+func GetSubCategoriesForAdCategory(ad_category ad.AdCategory, categoryName string) ([]SubAdCategory, error) {
 	query := `
 		SELECT psc.id, psc.category_id, psc.name 
-		FROM PartSubCategory psc
-		JOIN PartCategory pc ON psc.category_id = pc.id
-		WHERE pc.name = ?
+		FROM PartSubAdCategory psc
+		JOIN PartCategory pc ON psc.part_category_id = pc.id
+		WHERE pc.name = ? AND pc.ad_category_id = ?
 		ORDER BY psc.name
 	`
-	var subCategories []SubCategory
-	err := db.Select(&subCategories, query, categoryName)
+	var subCategories []SubAdCategory
+	err := db.Select(&subCategories, query, categoryName, ad_category.ToID())
 	return subCategories, err
 }
 
-func GetSubCategoryIDByName(subcategoryName string) (int, error) {
-	query := `SELECT id FROM PartSubCategory WHERE name = ?`
+func GetSubAdCategoryIDByName(subcategoryName string) (int, error) {
+	query := `SELECT id FROM PartSubAdCategory WHERE name = ?`
 	var id int
 	err := db.QueryRow(query, subcategoryName).Scan(&id)
 	if err != nil {
@@ -163,8 +164,8 @@ func GetSubCategoryIDByName(subcategoryName string) (int, error) {
 	return id, nil
 }
 
-func GetSubCategoryNameByID(subcategoryID int) (string, error) {
-	query := `SELECT name FROM PartSubCategory WHERE id = ?`
+func GetSubAdCategoryNameByID(subcategoryID int) (string, error) {
+	query := `SELECT name FROM PartSubAdCategory WHERE id = ?`
 	var name string
 	err := db.QueryRow(query, subcategoryID).Scan(&name)
 	if err != nil {
@@ -228,8 +229,8 @@ func GetCategoriesForAdIDs(adIDs []int, makeName, year, model, engine string) ([
 	query := fmt.Sprintf(`
 		SELECT DISTINCT pc.name
 		FROM PartCategory pc
-		JOIN PartSubCategory psc ON pc.id = psc.category_id
-		JOIN Ad a ON psc.id = a.subcategory_id
+		JOIN PartSubAdCategory psc ON pc.id = psc.category_id
+		JOIN Ad a ON psc.id = a.part_subcategory_id
 		JOIN AdCar ac ON a.id = ac.ad_id
 		JOIN Car c ON ac.car_id = c.id
 		JOIN Make m ON c.make_id = m.id
@@ -276,9 +277,9 @@ func GetSubCategoriesForAdIDs(adIDs []int, makeName, year, model, engine, catego
 
 	query := fmt.Sprintf(`
 		SELECT DISTINCT psc.name
-		FROM PartSubCategory psc
-		JOIN PartCategory pc ON psc.category_id = pc.id
-		JOIN Ad a ON psc.id = a.subcategory_id
+		FROM PartSubAdCategory psc
+		JOIN PartCategory pc ON psc.part_category_id = pc.id
+		JOIN Ad a ON psc.id = a.part_subcategory_id
 		JOIN AdCar ac ON a.id = ac.ad_id
 		JOIN Car c ON ac.car_id = c.id
 		JOIN Make m ON c.make_id = m.id
@@ -304,22 +305,24 @@ func GetSubCategoriesForAdIDs(adIDs []int, makeName, year, model, engine, catego
 // NEW TREE VIEW FUNCTIONS - Browse mode (when adIDs is nil/empty)
 // ============================================================================
 
-// GetMakesForAll returns all makes that have ads
-func GetMakesForAll() ([]string, error) {
+// GetMakesForAll returns all makes that have ads for a specific category
+func GetMakesForAll(ad_category int) ([]string, error) {
 	query := `
 		SELECT DISTINCT m.name
 		FROM Make m
 		JOIN Car c ON m.id = c.make_id
 		JOIN AdCar ac ON c.id = ac.car_id
+		JOIN Ad a ON ac.ad_id = a.id
+		WHERE a.ad_category_id = ?
 		ORDER BY m.name
 	`
 	var makes []string
-	err := db.Select(&makes, query)
+	err := db.Select(&makes, query, ad_category)
 	return makes, err
 }
 
-// GetYearsForAll returns all years for a specific make
-func GetYearsForAll(makeName string) ([]string, error) {
+// GetYearsForAll returns all years for a specific make and category
+func GetYearsForAll(ad_category int, makeName string) ([]string, error) {
 	makeName, _ = url.QueryUnescape(makeName)
 	query := `
 		SELECT DISTINCT y.year
@@ -327,11 +330,12 @@ func GetYearsForAll(makeName string) ([]string, error) {
 		JOIN Car c ON y.id = c.year_id
 		JOIN Make m ON c.make_id = m.id
 		JOIN AdCar ac ON c.id = ac.car_id
-		WHERE m.name = ?
+		JOIN Ad a ON ac.ad_id = a.id
+		WHERE m.name = ? AND a.ad_category_id = ?
 		ORDER BY y.year DESC
 	`
 	var yearInts []int
-	err := db.Select(&yearInts, query, makeName)
+	err := db.Select(&yearInts, query, makeName, ad_category)
 	if err != nil {
 		return nil, err
 	}
@@ -343,8 +347,8 @@ func GetYearsForAll(makeName string) ([]string, error) {
 	return years, nil
 }
 
-// GetModelsForAll returns all models for a specific make/year
-func GetModelsForAll(makeName, year string) ([]string, error) {
+// GetModelsForAll returns all models for a specific make/year and category
+func GetModelsForAll(ad_category int, makeName, year string) ([]string, error) {
 	makeName, _ = url.QueryUnescape(makeName)
 	year, _ = url.QueryUnescape(year)
 	query := `
@@ -354,16 +358,17 @@ func GetModelsForAll(makeName, year string) ([]string, error) {
 		JOIN Make m ON c.make_id = m.id
 		JOIN Year y ON c.year_id = y.id
 		JOIN AdCar ac ON c.id = ac.car_id
-		WHERE m.name = ? AND y.year = ?
+		JOIN Ad a ON ac.ad_id = a.id
+		WHERE m.name = ? AND y.year = ? AND a.ad_category_id = ?
 		ORDER BY mo.name
 	`
 	var models []string
-	err := db.Select(&models, query, makeName, year)
+	err := db.Select(&models, query, makeName, year, ad_category)
 	return models, err
 }
 
-// GetEnginesForAll returns all engines for a specific make/year/model
-func GetEnginesForAll(makeName, year, model string) ([]string, error) {
+// GetEnginesForAll returns all engines for a specific make/year/model and category
+func GetEnginesForAll(ad_category int, makeName, year, model string) ([]string, error) {
 	makeName, _ = url.QueryUnescape(makeName)
 	year, _ = url.QueryUnescape(year)
 	model, _ = url.QueryUnescape(model)
@@ -375,10 +380,11 @@ func GetEnginesForAll(makeName, year, model string) ([]string, error) {
 		JOIN Year y ON c.year_id = y.id
 		JOIN Model mo ON c.model_id = mo.id
 		JOIN AdCar ac ON c.id = ac.car_id
-		WHERE m.name = ? AND y.year = ? AND mo.name = ?
+		JOIN Ad a ON ac.ad_id = a.id
+		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND a.ad_category_id = ?
 		ORDER BY e.name
 	`
 	var engines []string
-	err := db.Select(&engines, query, makeName, year, model)
+	err := db.Select(&engines, query, makeName, year, model, ad_category)
 	return engines, err
 }

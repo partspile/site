@@ -1,0 +1,10 @@
+[
+  {"name": "Cars"},
+  {"name": "CarParts"},
+  {"name": "Motorcycles"},
+  {"name": "MotorcycleParts"},
+  {"name": "Bicycle"},
+  {"name": "BicycleParts"},
+  {"name": "AgEquipment"},
+  {"name": "AgEquipmentParts"}
+]

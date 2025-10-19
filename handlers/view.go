@@ -178,6 +178,14 @@ func buildSearchFilter(ctx *fiber.Ctx) *qdrant.Filter {
 		}
 	}
 
+	// Category condition (exact string match)
+	categoryFilter := getQueryParam(ctx, "category")
+	if categoryFilter != "" {
+		categoryCondition := qdrant.NewMatch("category", categoryFilter)
+		conditions = append(conditions, categoryCondition)
+		log.Printf("[buildSearchFilters] Added category filter: %s", categoryFilter)
+	}
+
 	// If no conditions, return nil (no filter conditions)
 	if len(conditions) == 0 {
 		return nil

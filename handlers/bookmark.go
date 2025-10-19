@@ -20,10 +20,11 @@ func HandleBookmarkAd(c *fiber.Ctx) error {
 	// Queue user for background embedding update
 	vector.QueueUserForUpdate(userID)
 	// Get the updated ad with bookmark status
-	adObj, ok := ad.GetAd(adID, currentUser)
-	if !ok {
+	ads, err := ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads) == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+	adObj := ads[0]
 	// Return the bookmarked button HTML for HTMX swap
 	return render(c, ui.BookmarkButton(adObj))
 }
@@ -41,10 +42,11 @@ func HandleUnbookmarkAd(c *fiber.Ctx) error {
 	// Queue user for background embedding update
 	vector.QueueUserForUpdate(userID)
 	// Get the updated ad with bookmark status
-	adObj, ok := ad.GetAd(adID, currentUser)
-	if !ok {
+	ads, err := ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads) == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+	adObj := ads[0]
 	// Return the unbookmarked button HTML for HTMX swap
 	return render(c, ui.BookmarkButton(adObj))
 }

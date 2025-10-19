@@ -5,6 +5,7 @@ import (
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/user"
 )
 
@@ -18,7 +19,7 @@ func HomePage(currentUser *user.User, path string, view string) g.Node {
 		currentUser,
 		path,
 		[]g.Node{
-			InitialSearchResults(userID, view),
+			InitialSearchResults(userID, view, ad.CarParts),
 		},
 	)
 }

@@ -200,14 +200,14 @@ func ExpandedConversation(currentUser *user.User, conversation messaging.Convers
 						g.Text(fmt.Sprintf("Re: %s", conversation.AdTitle)),
 					),
 				),
-				buttonSecondary("✕",
-					withClass("text-gray-400 hover:text-gray-600 p-1"),
-					withAttributes(
-						hx.Get(fmt.Sprintf("/messages/%d/collapse", conversation.ID)),
-						hx.Target(fmt.Sprintf("#conversation-%d", conversation.ID)),
-						hx.Swap("outerHTML"),
-						Title("Close conversation"),
-					),
+				Button(
+					Type("button"),
+					Class("bg-white border-2 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-gray-100 focus:outline-none cursor-pointer"),
+					hx.Get(fmt.Sprintf("/messages/%d/collapse", conversation.ID)),
+					hx.Target(fmt.Sprintf("#conversation-%d", conversation.ID)),
+					hx.Swap("outerHTML"),
+					Title("Close conversation"),
+					icon("/images/close.svg", "Close", "w-6 h-6"),
 				),
 			),
 			Div(

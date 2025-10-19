@@ -108,19 +108,20 @@ func HandleStartConversation(c *fiber.Ctx) error {
 	}
 
 	// Get ad details to check ownership
-	ad, found := ad.GetAd(adID, currentUser)
-	if !found {
+	ads, err := ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads) == 0 {
 		return render(c, ui.ErrorPage(404, "Ad not found"))
 	}
+	adObj := ads[0]
 
 	// Check if user can message this ad
-	err = messaging.CanUserMessageAd(currentUser.ID, ad.UserID)
+	err = messaging.CanUserMessageAd(currentUser.ID, adObj.UserID)
 	if err != nil {
 		return render(c, ui.ErrorPage(400, err.Error()))
 	}
 
 	// Get or create conversation
-	conversationID, err := messaging.GetOrCreateConversation(currentUser.ID, ad.UserID, adID)
+	conversationID, err := messaging.GetOrCreateConversation(currentUser.ID, adObj.UserID, adID)
 	if err != nil {
 		return render(c, ui.ErrorPage(500, "Failed to create conversation"))
 	}
@@ -214,19 +215,20 @@ func HandleModalMessaging(c *fiber.Ctx) error {
 	}
 
 	// Get ad details to check ownership
-	ad, found := ad.GetAd(adID, currentUser)
-	if !found {
+	ads, err := ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads) == 0 {
 		return render(c, ui.ErrorPage(404, "Ad not found"))
 	}
+	adObj := ads[0]
 
 	// Check if user can message this ad
-	err = messaging.CanUserMessageAd(currentUser.ID, ad.UserID)
+	err = messaging.CanUserMessageAd(currentUser.ID, adObj.UserID)
 	if err != nil {
 		return render(c, ui.ErrorPage(400, err.Error()))
 	}
 
 	// Get or create conversation
-	conversationID, err := messaging.GetOrCreateConversation(currentUser.ID, ad.UserID, adID)
+	conversationID, err := messaging.GetOrCreateConversation(currentUser.ID, adObj.UserID, adID)
 	if err != nil {
 		return render(c, ui.ErrorPage(500, "Failed to create conversation"))
 	}
@@ -243,7 +245,7 @@ func HandleModalMessaging(c *fiber.Ctx) error {
 	}
 
 	// Return the modal messaging interface
-	return render(c, ui.ModalMessagingInterface(currentUser, ad, conversation, messages))
+	return render(c, ui.ModalMessagingInterface(currentUser, adObj, conversation, messages))
 }
 
 // HandleMessagesAPI handles AJAX requests for messages

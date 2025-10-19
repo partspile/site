@@ -561,7 +561,22 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 		rockContext = fmt.Sprintf("This ad has %d reported issues (%d rocks thrown).", rockCount, rockCount)
 	}
 
-	return fmt.Sprintf(`Encode the following ad for semantic search. Focus on what the part is, what vehicles it fits, and any relevant details for a buyer. Return only the embedding vector.\n\nTitle: %s\nDescription: %s\nMake: %s\nParent Company: %s\nParent Company Country: %s\nYears: %s\nModels: %s\nEngines: %s\nCategory: %s\nLocation: %s, %s, %s\nQuality Indicator: %s`,
+	promptTemplate := `Encode the following ad for semantic search. Focus on what the part is, 
+what vehicles it fits, and any relevant details for a buyer. Return only the embedding vector.
+
+Title: %s
+Description: %s
+Make: %s
+Parent Company: %s
+Parent Company Country: %s
+Years: %s
+Models: %s
+Engines: %s
+Category: %s
+Location: %s, %s, %s
+Quality Indicator: %s`
+
+	return fmt.Sprintf(promptTemplate,
 		adObj.Title,
 		adObj.Description,
 		adObj.Make,
@@ -570,7 +585,7 @@ func buildAdEmbeddingPrompt(adObj ad.Ad) string {
 		joinStrings(adObj.Years),
 		joinStrings(adObj.Models),
 		joinStrings(adObj.Engines),
-		adObj.Category.String,
+		adObj.PartCategory.String,
 		adObj.City.String,
 		adObj.AdminArea.String,
 		adObj.Country.String,
@@ -599,13 +614,11 @@ func BuildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 
 	// Get category data for filtering
 	var category, subcategory string
-	if adObj.SubCategoryID != 0 {
-		// Since SubCategory field no longer exists, we'll need to look up the name
-		// For now, just use the category if available
-		if adObj.Category.Valid {
-			category = adObj.Category.String
-		}
-		// TODO: Look up subcategory name from SubCategoryID if needed
+	if adObj.PartCategory.Valid {
+		category = adObj.PartCategory.String
+	}
+	if adObj.PartSubcategory.Valid {
+		subcategory = adObj.PartSubcategory.String
 	}
 
 	// Get rock count for this ad

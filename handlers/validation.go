@@ -9,7 +9,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -213,12 +212,6 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 		return ad.Ad{}, nil, nil, err
 	}
 
-	// Look up subcategory ID by name
-	subcategoryID, err := part.GetSubCategoryIDByName(subcategoryName)
-	if err != nil {
-		return ad.Ad{}, nil, nil, fmt.Errorf("invalid subcategory: %s", subcategoryName)
-	}
-
 	// Extract image files
 	imageFiles := form.File["images"]
 
@@ -253,19 +246,29 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 		imageCount = 0
 	}
 
-	return ad.Ad{
-		ID:            id,
-		Title:         title,
-		Make:          make,
-		Years:         years,
-		Models:        models,
-		Engines:       engines,
-		Category:      sql.NullString{String: category, Valid: category != ""},
-		SubCategoryID: subcategoryID,
-		Description:   description,
-		Price:         price,
-		UserID:        userID,
-		LocationID:    locationID,
-		ImageCount:    imageCount,
-	}, imageFiles, deletedImages, nil
+	// Parse category to determine which concrete Ad type to create
+	categoryEnum, err := ad.FromString(category)
+	if err != nil {
+		return ad.Ad{}, nil, nil, fmt.Errorf("invalid category: %s", category)
+	}
+
+	// Create a simple Ad struct with the specified category
+	newAd := ad.Ad{
+		ID:              id,
+		Title:           title,
+		Make:            make,
+		Years:           years,
+		Models:          models,
+		Engines:         engines,
+		PartCategory:    sql.NullString{String: category, Valid: category != ""},
+		PartSubcategory: sql.NullString{String: subcategoryName, Valid: subcategoryName != ""},
+		Description:     description,
+		Price:           price,
+		UserID:          userID,
+		LocationID:      locationID,
+		ImageCount:      imageCount,
+		AdCategoryID:    categoryEnum.ToID(),
+	}
+
+	return newAd, imageFiles, deletedImages, nil
 }

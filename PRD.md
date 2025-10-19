@@ -6,32 +6,59 @@
 
 ## 1. Overview
 
-Parts Pile is a web-based platform for listing, searching, and managing automotive parts ads. It provides a structured, vehicle-centric approach to cataloging parts, allowing users to filter and search by make, year, model, engine, category, and subcategory. The system is backed by a normalized vehicle/parts database and supports CRUD operations for ads, as well as a rich vehicle data model. The platform serves both sellers (listing parts) and buyers (searching for parts).
+Parts Pile is a web-based platform for listing, searching, and managing ads across multiple categories including automotive parts, vehicles, motorcycles, bicycles, and agricultural equipment. It provides a structured, vehicle-centric approach to cataloging ads, allowing users to filter and search by make, year, model, engine, category, and subcategory. The system is backed by a normalized vehicle/parts database and supports CRUD operations for ads, as well as a rich vehicle data model. The platform serves both sellers (listing ads) and buyers (searching for ads).
 
 ---
 
 ## 2. Goals & Objectives
 
-- Enable users to list and manage ads for automotive parts with detailed vehicle fitment data.
-- Provide powerful, structured search and filtering by vehicle (make, year, model, engine) and part (category, subcategory).
-- Support a modern, responsive UI for ad creation, editing, and browsing.
-- Maintain a comprehensive, normalized database of vehicles and parts.
-- Allow for future extensibility (e.g., more part attributes, user accounts, messaging).
+- Enable users to list and manage ads across multiple categories (cars, car parts, motorcycles, motorcycle parts, bicycles, bicycle parts, agricultural equipment, agricultural equipment parts).
+- Provide powerful, structured search and filtering by vehicle (make, year, model, engine) and part (category, subcategory) with category-specific attributes.
+- Support a modern, responsive UI for ad creation, editing, and browsing with category selection.
+- Maintain a comprehensive, normalized database of vehicles and parts partitioned by ad category.
+- Allow for future extensibility (e.g., more ad categories, additional vehicle attributes, user accounts, messaging).
+
+---
+
+## 2.1 Multi-Category Architecture
+
+The platform supports multiple ad categories, each with appropriate vehicle/part attributes:
+
+### Supported Categories
+- **Cars**: Complete vehicles (Make, Year, Model, Engine)
+- **Car Parts**: Automotive parts (Make, Year, Model, Engine, Category, Subcategory)
+- **Motorcycles**: Complete motorcycles (Make, Year, Model, Engine)
+- **Motorcycle Parts**: Motorcycle parts (Make, Year, Model, Engine, Category, Subcategory)
+- **Bicycle**: Complete bicycles (Make, Model)
+- **Bicycle Parts**: Bicycle parts (Make, Model, Category, Subcategory)
+- **Ag Equipment**: Agricultural equipment (Make, Year, Model)
+- **Ag Equipment Parts**: Agricultural equipment parts (Make, Year, Model, Category, Subcategory)
+
+### Category-Specific Features
+- Each category uses appropriate vehicle attributes (e.g., bicycles don't use Year/Engine)
+- Part categories only use subcategories when applicable
+- Vehicle tables are partitioned by category_id for efficient querying
+- Ad interface supports polymorphic behavior based on category
+- UI adapts to show relevant fields based on selected category
 
 ---
 
 ## 3. Features
 
 ### 3.1 Ad Management
-- Users can create, edit, and delete ads for automotive parts.
+- Users can create, edit, and delete ads across multiple categories (cars, car parts, motorcycles, etc.).
 - Each ad includes: description, price, vehicle fitment (make, year(s), model(s), engine(s)), part category, and subcategory.
-- Ads are timestamped.
+- Category selection determines which vehicle/part attributes are available.
+- Ads are timestamped and categorized for efficient filtering.
 
 ### 3.2 Vehicle Data Integration
-- The system maintains a comprehensive, normalized vehicle database (make, year, model, engine) to support accurate fitment and filtering.
+- The system maintains a comprehensive, normalized vehicle database (make, year, model, engine) partitioned by ad category.
+- Each vehicle type (cars, motorcycles, bicycles, ag equipment) has appropriate attributes.
+- Category-specific vehicle tables ensure efficient querying and data integrity.
 
 ### 3.3 Part Categorization
 - Parts are organized by category and subcategory (e.g., "Electrical" > "Alternator").
+- Categories and subcategories are partitioned by ad category for multi-category support.
 - Categories and subcategories are stored in the database and can be extended.
 
 ### 3.4 Search & Filtering (Updated)
@@ -63,7 +90,14 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - All search and feed functionality is powered by Qdrant vector search only.
 - **[Complete]** All vector embedding and personalization features are implemented, including persistent user embeddings and automatic updates after user activity.
 
-### 3.5 Caching System
+### 3.5 Category Selection UI
+- **Category Pills**: Row of pill buttons above the search form for easy category selection.
+- **Active Category Highlighting**: Currently selected category is visually highlighted.
+- **Cookie Persistence**: User's category preference is saved and restored across sessions.
+- **HTMX Integration**: Category selection triggers seamless search form updates without page reload.
+- **Default Category**: Car Parts is the default category for new users.
+
+### 3.6 Caching System
 - **B2 Token Cache:** Caches Backblaze B2 download authorization tokens to reduce API calls and improve performance when serving ad images. Tokens are cached by directory prefix (e.g., "22/") and automatically expire based on B2's token expiry settings.
 - **Specialized Embedding Caches:** The system now uses three specialized caches for different embedding types:
   - **Query Cache (1 hour TTL):** Caches vector embeddings for user search queries to improve search performance and reduce API calls to Google Gemini. This cache stores the embedding vectors themselves and uses memory-based cost calculation (4 bytes per float32).
@@ -77,7 +111,7 @@ Parts Pile is a web-based platform for listing, searching, and managing automoti
 - **Cache Management:** Admin interface provides real-time statistics for all three caches and the ability to clear caches for maintenance purposes.
 - **Performance Benefits:** Specialized caching significantly reduces API latency and costs while improving user experience through faster response times. The three-cache architecture ensures optimal TTL settings for each embedding type.
 
-### 3.6 API Endpoints
+### 3.7 API Endpoints
 - RESTful endpoints for CRUD operations on ads and for fetching vehicle/part data for dynamic forms.
 - **SMS Webhook Endpoint**: `/api/sms/webhook` - Processes Twilio SMS status callbacks and user responses.
 - **Twilio Integration**: Unified platform for both SMS and email notifications using Twilio's services.

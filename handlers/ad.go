@@ -26,6 +26,7 @@ import (
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/messaging"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -36,10 +37,16 @@ import (
 
 func HandleNewAd(c *fiber.Ctx) error {
 	currentUser, _ := CurrentUser(c)
-	makes := vehicle.GetMakes()
-	categories := part.GetCategories()
+	categoryStr := c.Query("category", "CarParts")
+	category := ad.ParseCategoryFromQuery(categoryStr)
+	makes := vehicle.GetMakes(category.ToID())
+	categories, _ := part.GetAllCategories(category)
+	categoryNames := make([]string, len(categories))
+	for i, cat := range categories {
+		categoryNames[i] = cat.Name
+	}
 
-	return render(c, ui.NewAdPage(currentUser, c.Path(), makes, categories))
+	return render(c, ui.NewAdPage(currentUser, c.Path(), makes, categoryNames))
 }
 
 func HandleDuplicateAd(c *fiber.Ctx) error {
@@ -50,36 +57,41 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 	}
 
 	// Fetch the original ad
-	adObj, ok := ad.GetAdWithVehicle(adID, currentUser)
-	if !ok {
+	var ads4444443 []ad.Ad
+	ads4444443, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444443) == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+	adObj := ads4444443[0]
 
 	// Fetch subcategory name
 	var subcategoryName string
-	if adObj.SubCategory.Valid {
-		subcategoryName = adObj.SubCategory.String
+	if adObj.PartCategory.Valid {
+		subcategoryName = adObj.PartCategory.String
 	}
 
 	// Get category name for fetching subcategories
 	var categoryName string
-	if adObj.Category.Valid {
-		categoryName = adObj.Category.String
-	}
+	category := adObj.GetCategory()
+	categoryName = category.String()
 
 	// Pre-fetch all the dropdown/checkbox data needed for the form
-	makes := vehicle.GetMakes()
-	categories := part.GetCategories()
-	years := vehicle.GetYears(adObj.Make)
-	models := vehicle.GetModels(adObj.Make, adObj.Years)
-	engines := vehicle.GetEngines(adObj.Make, adObj.Years, adObj.Models)
-	var subcategories []part.SubCategory
+	makes := vehicle.GetMakes(category.ToID())
+	categories, _ := part.GetAllCategories(category)
+	categoryNames := make([]string, len(categories))
+	for i, cat := range categories {
+		categoryNames[i] = cat.Name
+	}
+	years := vehicle.GetYears(category.ToID(), adObj.Make)
+	models := vehicle.GetModels(category.ToID(), adObj.Make, adObj.Years)
+	engines := vehicle.GetEngines(category.ToID(), adObj.Make, adObj.Years, adObj.Models)
+	var subcategories []part.SubAdCategory
 	if categoryName != "" {
-		subcategories, _ = part.GetSubCategoriesForCategory(categoryName)
+		subcategories, _ = part.GetSubCategoriesForAdCategory(category, categoryName)
 	}
 
 	return render(c, ui.DuplicateAdPage(
-		currentUser, c.Path(), makes, categories,
+		currentUser, c.Path(), makes, categoryNames,
 		adObj, years, models, engines, subcategories, subcategoryName))
 }
 
@@ -130,7 +142,10 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
-	adID := ad.AddAd(newAd)
+	adID, err := ad.AddAd(newAd)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create ad")
+	}
 	fmt.Printf("[DEBUG] Created ad ID=%d with ImageCount=%d\n", adID, newAd.ImageCount)
 	fmt.Printf("[DEBUG] Image files count: %d\n", len(imageFiles))
 	if len(imageFiles) > 0 {
@@ -141,7 +156,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	uploadAdImagesToB2(adID, imageFiles)
 
 	// Update the ad with the correct ID for embedding processing
-	newAd.ID = adID
+	// Note: ID is set when the ad is created in the database
 
 	// Attempt inline vector processing, fallback to queue if it fails
 	log.Printf("[embedding] Attempting inline vector processing for ad %d", adID)
@@ -164,17 +179,19 @@ func HandleAdPage(c *fiber.Ctx) error {
 
 	currentUser, userID := CurrentUser(c)
 
-	adObj, ok := ad.GetAdWithVehicle(adID, currentUser)
-	if !ok {
+	var ads4444443 []ad.Ad
+	ads4444443, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444443) == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+	adObj := ads4444443[0]
 
 	// If ad is deleted and user is not the owner, show deleted message
 	if adObj.IsArchived() && adObj.UserID != userID {
 		return render(c, ui.AdDeletedPage(currentUser, c.Path()))
 	}
 
-	// Owner can see their deleted ads, or anyone can see active ads
+	// Owner can see their deleted ads444444, or anyone can see active ads444444
 	return render(c, ui.AdPage(adObj, currentUser, userID, c.Path(), getLocation(c), getView(c)))
 }
 
@@ -186,10 +203,12 @@ func HandleUpdateAdPrice(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	existingAd, ok := ad.GetAd(adID, currentUser)
-	if !ok {
+	var priceAds []ad.Ad
+	priceAds, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(priceAds) == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+	existingAd := priceAds[0]
 
 	_, err = RequireOwnership(c, existingAd.UserID)
 	if err != nil {
@@ -210,11 +229,13 @@ func HandleUpdateAdPrice(c *fiber.Ctx) error {
 	}
 
 	// Fetch updated ad for display
-	updatedAd, ok := ad.GetAdWithVehicle(adID, currentUser)
-	if !ok {
+	var priceUpdatedAds []ad.Ad
+	priceUpdatedAds, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(priceUpdatedAds) == 0 {
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to fetch updated ad")
 	}
+	updatedAd := priceUpdatedAds[0]
 
 	// Queue for vector update since price affects search
 	vector.QueueAd(updatedAd)
@@ -231,10 +252,12 @@ func HandleUpdateAdLocation(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	existingAd, ok := ad.GetAd(adID, currentUser)
-	if !ok {
+	var locationAds []ad.Ad
+	locationAds, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(locationAds) == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+	existingAd := locationAds[0]
 
 	_, err = RequireOwnership(c, existingAd.UserID)
 	if err != nil {
@@ -256,11 +279,13 @@ func HandleUpdateAdLocation(c *fiber.Ctx) error {
 	}
 
 	// Fetch updated ad for display
-	updatedAd, ok := ad.GetAdWithVehicle(adID, currentUser)
-	if !ok {
+	var ads4444444 []ad.Ad
+	ads4444444, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444444) == 0 {
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to fetch updated ad")
 	}
+	updatedAd := ads4444444[0]
 
 	// Queue for vector update since location affects search
 	vector.QueueAd(updatedAd)
@@ -277,10 +302,12 @@ func HandleUpdateAdDescription(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	existingAd, ok := ad.GetAd(adID, currentUser)
-	if !ok {
+	var descAds []ad.Ad
+	descAds, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(descAds) == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+	existingAd := descAds[0]
 
 	_, err = RequireOwnership(c, existingAd.UserID)
 	if err != nil {
@@ -321,11 +348,13 @@ func HandleUpdateAdDescription(c *fiber.Ctx) error {
 	}
 
 	// Fetch updated ad for display
-	updatedAd, ok := ad.GetAdWithVehicle(adID, currentUser)
-	if !ok {
+	var ads4444444 []ad.Ad
+	ads4444444, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444444) == 0 {
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to fetch updated ad")
 	}
+	updatedAd := ads4444444[0]
 
 	// Queue for vector update since description affects search
 	vector.QueueAd(updatedAd)
@@ -341,10 +370,12 @@ func HandleAdCard(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 	currentUser, userID := CurrentUser(c)
-	adObj, ok := ad.GetAd(adID, currentUser)
-	if !ok {
+	var ads4444443 []ad.Ad
+	ads4444443, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444443) == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+	adObj := ads4444443[0]
 	loc := getLocation(c)
 	view := getView(c)
 	switch view {
@@ -364,12 +395,14 @@ func HandleAdDetail(c *fiber.Ctx) error {
 	}
 
 	currentUser, userID := CurrentUser(c)
-	adObj, ok := ad.GetAdWithVehicle(adID, currentUser)
-	if !ok {
+	var ads4444443 []ad.Ad
+	ads4444443, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444443) == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+	adObj := ads4444443[0]
 
-	// Only increment click counts for non-deleted ads
+	// Only increment click counts for non-deleted ads444444
 	if !adObj.IsArchived() {
 		_ = ad.IncrementAdClick(adID)
 		if userID != 0 {
@@ -391,10 +424,12 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 		return err
 	}
 	currentUser, _ := CurrentUser(c)
-	adObj, ok := ad.GetAd(adID, currentUser)
-	if !ok {
+	var ads4444443 []ad.Ad
+	ads4444443, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444443) == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+	adObj := ads4444443[0]
 	if adObj.UserID != currentUser.ID {
 		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
 	}
@@ -426,10 +461,12 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 		return err
 	}
 	currentUser, userID := CurrentUser(c)
-	adObj, ok := ad.GetAd(adID, currentUser)
-	if !ok {
+	var ads4444443 []ad.Ad
+	ads4444443, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444443) == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+	adObj := ads4444443[0]
 	if adObj.UserID != userID {
 		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
 	}
@@ -444,16 +481,18 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 	vector.QueueAd(adObj)
 
 	// Get the restored ad with updated data
-	restoredAd, ok := ad.GetAdWithVehicle(adID, currentUser)
-	if !ok {
+	var ads4444444 []ad.Ad
+	ads4444444, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444444) == 0 {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to retrieve restored ad")
 	}
+	restoredAd := ads4444444[0]
 
-	// If viewing in collapsed list/grid view (from deleted ads page), remove the ad from the list
+	// If viewing in collapsed list/grid view (from deleted ads444444 page), remove the ad from the list
 	// Otherwise, show the updated ad detail
 	view := getView(c)
 	if view == "list" || view == "grid" || view == "map" {
-		// Return empty response to remove the ad from the deleted ads list
+		// Return empty response to remove the ad from the deleted ads444444 list
 		log.Printf("Restore ad %d from list view, removing from DOM", adID)
 		return render(c, ui.EmptyResponse())
 	}
@@ -463,7 +502,7 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 	return render(c, ui.AdDetail(restoredAd, loc, userID, view))
 }
 
-// uploadAdImagesToB2 uploads user-uploaded images to B2 with multiple sizes
+// uploadAdImagesToB2 uploads444444 user-uploaded images to B2 with multiple sizes
 func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 	log.Printf("[B2] Starting upload for ad %d with %d images", adID, len(files))
 
@@ -617,10 +656,12 @@ func HandleAdImage(c *fiber.Ctx) error {
 	}
 
 	// Fetch the ad to get image count
-	adObj, ok := ad.GetAdWithVehicle(adID, nil) // nil for public access
-	if !ok {
+	var ads444444 []ad.Ad
+	ads444444, err = ad.GetAdsByIDs([]int{adID}, nil)
+	if err != nil || len(ads444444) == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+	adObj := ads444444[0]
 
 	return render(c, ui.CarouselImageContainer(adObj, idx))
 }
@@ -637,10 +678,158 @@ func HandleAdGridImage(c *fiber.Ctx) error {
 	}
 
 	// Fetch the ad to get image count
-	adObj, ok := ad.GetAdWithVehicle(adID, nil) // nil for public access
-	if !ok {
+	var ads444444 []ad.Ad
+	ads444444, err = ad.GetAdsByIDs([]int{adID}, nil)
+	if err != nil || len(ads444444) == 0 {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
+	adObj := ads444444[0]
 
 	return render(c, ui.GridImageWithNav(adObj, idx))
+}
+
+// Modal handlers for HTMX-based modals
+func HandlePriceModal(c *fiber.Ctx) error {
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+
+	currentUser, userID := CurrentUser(c)
+	var ads4444443 []ad.Ad
+	ads4444443, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444443) == 0 {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+	adObj := ads4444443[0]
+
+	// Check ownership and archived status
+	if adObj.UserID != userID {
+		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
+	}
+	if adObj.IsArchived() {
+		return fiber.NewError(fiber.StatusBadRequest, "Cannot edit archived ad")
+	}
+
+	return render(c, ui.PriceEditModal(adObj, getView(c)))
+}
+
+func HandleLocationModal(c *fiber.Ctx) error {
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+
+	currentUser, userID := CurrentUser(c)
+	var ads4444443 []ad.Ad
+	ads4444443, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444443) == 0 {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+	adObj := ads4444443[0]
+
+	// Check ownership and archived status
+	if adObj.UserID != userID {
+		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
+	}
+	if adObj.IsArchived() {
+		return fiber.NewError(fiber.StatusBadRequest, "Cannot edit archived ad")
+	}
+
+	return render(c, ui.LocationEditModal(adObj, getView(c)))
+}
+
+func HandleDescriptionModal(c *fiber.Ctx) error {
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+
+	currentUser, userID := CurrentUser(c)
+	var ads4444443 []ad.Ad
+	ads4444443, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444443) == 0 {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+	adObj := ads4444443[0]
+
+	// Check ownership and archived status
+	if adObj.UserID != userID {
+		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
+	}
+	if adObj.IsArchived() {
+		return fiber.NewError(fiber.StatusBadRequest, "Cannot edit archived ad")
+	}
+
+	return render(c, ui.DescriptionEditModal(adObj, getView(c)))
+}
+
+func HandleShareModal(c *fiber.Ctx) error {
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+
+	currentUser, _ := CurrentUser(c)
+	var ads4444443 []ad.Ad
+	ads4444443, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444443) == 0 {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+	adObj := ads4444443[0]
+
+	return render(c, ui.ShareModal(adObj))
+}
+
+func HandleMessageModal(c *fiber.Ctx) error {
+	adID, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+
+	currentUser, userID := CurrentUser(c)
+	var ads4444443 []ad.Ad
+	ads4444443, err = ad.GetAdsByIDs([]int{adID}, currentUser)
+	if err != nil || len(ads4444443) == 0 {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+	adObj := ads4444443[0]
+
+	// Check if user is logged in and not viewing their own ad
+	if userID == 0 {
+		return fiber.NewError(fiber.StatusUnauthorized, "Must be logged in to message")
+	}
+	if adObj.UserID == userID {
+		return fiber.NewError(fiber.StatusBadRequest, "Cannot message yourself")
+	}
+	if adObj.IsArchived() {
+		return fiber.NewError(fiber.StatusBadRequest, "Cannot message about archived ad")
+	}
+
+	// Check if user can message this ad
+	err = messaging.CanUserMessageAd(currentUser.ID, adObj.UserID)
+	if err != nil {
+		return ValidationErrorResponse(c, err.Error())
+	}
+
+	// Get or create conversation
+	conversationID, err := messaging.GetOrCreateConversation(currentUser.ID, adObj.UserID, adID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create conversation")
+	}
+
+	// Get conversation details and messages
+	conversation, err := messaging.GetConversationWithDetails(conversationID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to load conversation")
+	}
+
+	messages, err := messaging.GetMessages(conversationID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to load messages")
+	}
+
+	// Return the complete modal with conversation content
+	conversationContent := ui.ModalMessagingInterface(currentUser, adObj, conversation, messages)
+	return render(c, ui.MessageModal(adObj, conversationContent))
 }

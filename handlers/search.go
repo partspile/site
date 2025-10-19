@@ -134,12 +134,68 @@ func HandleSearchPage(c *fiber.Ctx) error {
 }
 
 func HandleSearch(c *fiber.Ctx) error {
+	// Check if this is a request targeting the search container (from category pills)
+	target := c.Get("HX-Target")
+	if target == "#searchContainer" {
+		// Return the full search container with updated category pills and results
+		return handleSearchContainer(c, c.Query("view", "list"))
+	}
+
+	// Default behavior - return just the search results
 	return handleSearch(c, c.Query("view", "list"))
+}
+
+// handleSearchContainer handles requests targeting the search container (from category pills)
+func handleSearchContainer(c *fiber.Ctx, viewType string) error {
+	// Get category from query param or cookie
+	categoryStr := c.Query("category", "")
+	var activeAdCategory ad.AdCategory
+	if categoryStr != "" {
+		activeAdCategory = ad.ParseCategoryFromQuery(categoryStr)
+	} else {
+		activeAdCategory = getCookieAdCategoryID(c)
+	}
+
+	view, err := NewView(c, viewType)
+	if err != nil {
+		return err
+	}
+
+	adIDs, nextCursor, err := view.GetAdIDs()
+	if err != nil {
+		return err
+	}
+
+	// Convert ad IDs to full ad objects for UI rendering
+	currentUser, userID := CurrentUser(c)
+	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
+	if err != nil {
+		return err
+	}
+
+	// Create loader URL for infinite scroll
+	userPrompt := getQueryParam(c, "q")
+	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, viewType)
+
+	// Save category preference
+	saveCookieAdCategoryID(c, activeAdCategory)
+
+	// Render the full search container
+	return render(c, ui.SearchPage(userID, userPrompt, ads, getLocation(c), loaderURL, activeAdCategory))
 }
 
 // HandleSearchQuery renders a full search page with search widget and results
 func HandleSearchQuery(c *fiber.Ctx) error {
 	c.Set("Content-Type", "text/html")
+
+	// Get category from query param or cookie
+	categoryStr := c.Query("category", "")
+	var activeAdCategory ad.AdCategory
+	if categoryStr != "" {
+		activeAdCategory = ad.ParseCategoryFromQuery(categoryStr)
+	} else {
+		activeAdCategory = getCookieAdCategoryID(c)
+	}
 
 	view, err := NewView(c, "list")
 	if err != nil {
@@ -162,13 +218,16 @@ func HandleSearchQuery(c *fiber.Ctx) error {
 	userPrompt := getQueryParam(c, "q")
 	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list")
 
+	// Save category preference
+	saveCookieAdCategoryID(c, activeAdCategory)
+
 	// Render full page with search widget and results
 	return render(c, ui.Page(
 		"Search Results",
 		currentUser,
 		c.Path(),
 		[]g.Node{
-			ui.SearchPage(userID, userPrompt, ads, getLocation(c), loaderURL),
+			ui.SearchPage(userID, userPrompt, ads, getLocation(c), loaderURL, activeAdCategory),
 		},
 	))
 }
@@ -228,7 +287,9 @@ func HandleFiltersShow(c *fiber.Ctx) error {
 	// Get view and query parameters
 	view := c.Query("view", "list")
 	query := c.Query("q", "")
+	categoryStr := c.Query("category", "CarParts")
+	category := ad.ParseCategoryFromQuery(categoryStr)
 
 	// Return the search form with filters
-	return render(c, ui.FiltersShow(view, query))
+	return render(c, ui.FiltersShow(view, query, category))
 }

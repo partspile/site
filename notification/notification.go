@@ -126,9 +126,9 @@ func (n *NotificationService) sendEmailNotification(emailAddress, senderName, ad
 
 // getAdDetails is a helper function to get ad details
 func getAdDetails(adID int) (struct{ Title string }, error) {
-	adObj, found := ad.GetAd(adID, nil)
-	if !found {
+	ads, err := ad.GetAdsByIDs([]int{adID}, nil)
+	if err != nil || len(ads) == 0 {
 		return struct{ Title string }{}, fmt.Errorf("ad not found")
 	}
-	return struct{ Title string }{Title: adObj.Title}, nil
+	return struct{ Title string }{Title: ads[0].Title}, nil
 }

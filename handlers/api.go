@@ -5,6 +5,7 @@ import (
 	"net/url"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/sms"
 	"github.com/parts-pile/site/ui"
@@ -14,13 +15,18 @@ import (
 )
 
 func HandleMakes(c *fiber.Ctx) error {
-	makes := vehicle.GetMakes()
+	categoryStr := c.Query("category", "CarParts")
+	category := ad.ParseCategoryFromQuery(categoryStr)
+	makes := vehicle.GetMakes(category.ToID())
 	return c.JSON(makes)
 }
 
 // HandleFilterMakes returns makes that have existing ads for filter dropdowns
 func HandleFilterMakes(c *fiber.Ctx) error {
-	makes, err := vehicle.GetAdMakes()
+	categoryStr := c.Query("category", "CarParts")
+	category := ad.ParseCategoryFromQuery(categoryStr)
+
+	makes, err := vehicle.GetAdMakes(category.ToID())
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to get makes"})
 	}
@@ -32,17 +38,21 @@ func HandleFilterMakes(c *fiber.Ctx) error {
 
 func HandleYears(c *fiber.Ctx) error {
 	makeName := c.Query("make")
+	categoryStr := c.Query("category", "CarParts")
+	category := ad.ParseCategoryFromQuery(categoryStr)
 	if makeName == "" {
 		// Return empty div when make is not selected
 		return render(c, ui.YearsSelector([]string{}))
 	}
 
-	years := vehicle.GetYears(makeName)
+	years := vehicle.GetYears(category.ToID(), makeName)
 	return render(c, ui.YearsSelector(years))
 }
 
 func HandleModels(c *fiber.Ctx) error {
 	makeName := c.Query("make")
+	categoryStr := c.Query("category", "CarParts")
+	category := ad.ParseCategoryFromQuery(categoryStr)
 	if makeName == "" {
 		// Return empty div when make is not selected
 		return render(c, ui.ModelsSelector([]string{}))
@@ -58,7 +68,7 @@ func HandleModels(c *fiber.Ctx) error {
 		return render(c, ui.ModelsSelector([]string{}))
 	}
 
-	models := vehicle.GetModels(makeName, years)
+	models := vehicle.GetModels(category.ToID(), makeName, years)
 	if len(models) == 0 {
 		// Return empty message when no models are available for all selected years
 		return render(c, ui.ModelsDivEmpty())
@@ -68,6 +78,8 @@ func HandleModels(c *fiber.Ctx) error {
 
 func HandleEngines(c *fiber.Ctx) error {
 	makeName := c.Query("make")
+	categoryStr := c.Query("category", "CarParts")
+	category := ad.ParseCategoryFromQuery(categoryStr)
 	if makeName == "" {
 		// Return empty div when make is not selected
 		return render(c, ui.EnginesSelector([]string{}))
@@ -89,7 +101,7 @@ func HandleEngines(c *fiber.Ctx) error {
 		return render(c, ui.EnginesSelector([]string{}))
 	}
 
-	engines := vehicle.GetEngines(makeName, years, models)
+	engines := vehicle.GetEngines(category.ToID(), makeName, years, models)
 	if len(engines) == 0 {
 		// Return empty message when no engines are available for all selected year-model combinations
 		return render(c, ui.EnginesDivEmpty())
@@ -98,7 +110,9 @@ func HandleEngines(c *fiber.Ctx) error {
 }
 
 func HandleCategories(c *fiber.Ctx) error {
-	categories, err := part.GetAllCategories()
+	categoryStr := c.Query("category", "CarParts")
+	category := ad.ParseCategoryFromQuery(categoryStr)
+	categories, err := part.GetAllCategories(category)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get categories")
 	}
@@ -107,12 +121,14 @@ func HandleCategories(c *fiber.Ctx) error {
 
 func HandleSubCategories(c *fiber.Ctx) error {
 	categoryName := c.Query("category")
+	categoryStr := c.Query("ad_category", "CarParts")
+	category := ad.ParseCategoryFromQuery(categoryStr)
 	if categoryName == "" {
 		// Return empty div when category is not selected
-		return render(c, ui.SubCategoriesSelector([]part.SubCategory{}, ""))
+		return render(c, ui.SubCategoriesSelector([]part.SubAdCategory{}, ""))
 	}
 
-	subCategories, err := part.GetSubCategoriesForCategory(categoryName)
+	subCategories, err := part.GetSubCategoriesForAdCategory(category, categoryName)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get subcategories")
 	}

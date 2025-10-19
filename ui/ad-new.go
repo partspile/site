@@ -34,7 +34,7 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 				ModelsSelector([]string{}),
 				EnginesSelector([]string{}),
 				categoriesSelector(categories, ""),
-				SubCategoriesSelector([]part.SubCategory{}, ""),
+				SubCategoriesSelector([]part.SubAdCategory{}, ""),
 				imagesInputField(),
 				descriptionTextareaField(),
 				priceInputField(),
@@ -56,12 +56,12 @@ func DuplicateAdPage(
 	years []string,
 	models []string,
 	engines []string,
-	subcategories []part.SubCategory,
+	subcategories []part.SubAdCategory,
 	selectedSubcategory string,
 ) g.Node {
 	categoryName := ""
-	if originalAd.Category.Valid {
-		categoryName = originalAd.Category.String
+	if originalAd.PartCategory.Valid {
+		categoryName = originalAd.PartCategory.String
 	}
 
 	return Page(
@@ -337,7 +337,7 @@ func categoriesSelector(categories []string, selectedCategory string) g.Node {
 	)
 }
 
-func SubCategoriesSelector(subCategories []part.SubCategory, selectedSubCategory string) g.Node {
+func SubCategoriesSelector(subCategories []part.SubAdCategory, selectedSubCategory string) g.Node {
 	options := []g.Node{
 		Option(Value(""), g.Text("Select a subcategory")),
 	}

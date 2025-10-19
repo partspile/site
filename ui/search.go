@@ -17,6 +17,38 @@ func htmlEscape(s string) string {
 	return strings.ReplaceAll(s, `"`, `\"`)
 }
 
+// AdAdCategoryPills renders the category selection pills above the search form
+func AdAdCategoryPills(activeAdCategory ad.AdCategory) g.Node {
+	categories := ad.GetAllAdCategories()
+
+	var pills []g.Node
+	for _, category := range categories {
+		isActive := category == activeAdCategory
+		pillClass := "px-4 py-2 rounded-full text-sm font-medium transition-colors "
+		if isActive {
+			pillClass += "bg-blue-500 text-white"
+		} else {
+			pillClass += "bg-gray-200 text-gray-700 hover:bg-gray-300"
+		}
+
+		pill := Button(
+			Class(pillClass),
+			hx.Get("/search"),
+			hx.Target("#searchContainer"),
+			hx.Swap("outerHTML"),
+			hx.Include("form"),
+			hx.On("click", fmt.Sprintf("document.getElementById('category-input').value = '%s'", category.String())),
+			g.Text(category.DisplayName()),
+		)
+		pills = append(pills, pill)
+	}
+
+	// Create a slice with all the nodes
+	allNodes := []g.Node{Class("flex flex-wrap gap-2 mb-4")}
+	allNodes = append(allNodes, pills...)
+	return Div(allNodes...)
+}
+
 func ViewToggleButtons(activeView string) g.Node {
 	icon := func(name, alt string) g.Node {
 		return Img(
@@ -52,9 +84,10 @@ func ViewToggleButtons(activeView string) g.Node {
 	)
 }
 
-func InitialSearchResults(userID int, view string) g.Node {
+func InitialSearchResults(userID int, view string, activeAdCategory ad.AdCategory) g.Node {
 	return Div(
-		SearchWidget(userID, view, ""),
+		ID("searchContainer"),
+		SearchWidget(userID, view, "", activeAdCategory),
 		Div(
 			ID("searchResults"),
 			Class("h-96"),
@@ -66,11 +99,11 @@ func InitialSearchResults(userID int, view string) g.Node {
 	)
 }
 
-func SearchWidget(userID int, view string, query string) g.Node {
+func SearchWidget(userID int, view string, query string, activeAdCategory ad.AdCategory) g.Node {
 	return Div(
 		Class("flex items-start gap-4"),
 		renderNewAdButton(userID),
-		searchForm(view, query, Div(
+		searchForm(view, query, activeAdCategory, Div(
 			Class("flex gap-2 items-center"),
 			searchBox(query),
 			filtersButton(),
@@ -120,9 +153,10 @@ func searchBox(query string) g.Node {
 }
 
 // searchForm creates the common search form structure
-func searchForm(view string, query string, content g.Node) g.Node {
+func searchForm(view string, query string, activeAdCategory ad.AdCategory, content g.Node) g.Node {
 	return Div(
 		Class("flex-1 flex flex-col gap-4"),
+		AdAdCategoryPills(activeAdCategory),
 		Form(
 			ID("searchForm"),
 			Class("w-full"),
@@ -131,6 +165,7 @@ func searchForm(view string, query string, content g.Node) g.Node {
 			hx.Swap("outerHTML"),
 			hx.Include("form"),
 			Input(Type("hidden"), Name("view"), Value(view), ID("view-type-input")),
+			Input(Type("hidden"), Name("category"), Value(activeAdCategory.String()), ID("category-input")),
 			content,
 		),
 	)
@@ -152,9 +187,10 @@ func MakeFilterOptions(makes []string) g.Node {
 }
 
 // SearchPage renders a full search page with search widget and results
-func SearchPage(userID int, query string, ads []ad.Ad, loc *time.Location, loaderURL string) g.Node {
+func SearchPage(userID int, query string, ads []ad.Ad, loc *time.Location, loaderURL string, activeAdCategory ad.AdCategory) g.Node {
 	return Div(
-		SearchWidget(userID, "list", query),
+		ID("searchContainer"),
+		SearchWidget(userID, "list", query, activeAdCategory),
 		Div(
 			ID("searchResults"),
 			ListViewResults(ads, userID, loc, loaderURL),

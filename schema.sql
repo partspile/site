@@ -1,10 +1,17 @@
 -- Schema for project.db
 
+-- Ad Category table
+CREATE TABLE AdCategory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
+);
+
 -- Vehicle tables
 CREATE TABLE Make (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
-    parent_company_id INTEGER REFERENCES ParentCompany(id)
+    parent_company_id INTEGER REFERENCES ParentCompany(id),
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id)
 );
 
 CREATE TABLE ParentCompany (
@@ -15,17 +22,20 @@ CREATE TABLE ParentCompany (
 
 CREATE TABLE Year (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    year INTEGER NOT NULL UNIQUE
+    year INTEGER NOT NULL UNIQUE,
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id)
 );
 
 CREATE TABLE Model (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id)
 );
 
 CREATE TABLE Engine (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id)
 );
 
 CREATE TABLE Car (
@@ -42,21 +52,58 @@ CREATE TABLE Car (
 );
 CREATE INDEX idx_car_make_year_model_engine ON Car(make_id, year_id, model_id, engine_id);
 
+CREATE TABLE Motorcycle (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    make_id INTEGER NOT NULL,
+    year_id INTEGER NOT NULL,
+    model_id INTEGER NOT NULL,
+    engine_id INTEGER NOT NULL,
+    FOREIGN KEY (make_id) REFERENCES Make(id),
+    FOREIGN KEY (year_id) REFERENCES Year(id),
+    FOREIGN KEY (model_id) REFERENCES Model(id),
+    FOREIGN KEY (engine_id) REFERENCES Engine(id),
+    UNIQUE (make_id, year_id, model_id, engine_id)
+);
+CREATE INDEX idx_motorcycle_make_year_model_engine ON Motorcycle(make_id, year_id, model_id, engine_id);
+
+CREATE TABLE Bicycle (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    make_id INTEGER NOT NULL,
+    model_id INTEGER NOT NULL,
+    FOREIGN KEY (make_id) REFERENCES Make(id),
+    FOREIGN KEY (model_id) REFERENCES Model(id),
+    UNIQUE (make_id, model_id)
+);
+CREATE INDEX idx_bicycle_make_model ON Bicycle(make_id, model_id);
+
+CREATE TABLE Ag (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    make_id INTEGER NOT NULL,
+    year_id INTEGER NOT NULL,
+    model_id INTEGER NOT NULL,
+    FOREIGN KEY (make_id) REFERENCES Make(id),
+    FOREIGN KEY (year_id) REFERENCES Year(id),
+    FOREIGN KEY (model_id) REFERENCES Model(id),
+    UNIQUE (make_id, year_id, model_id)
+);
+CREATE INDEX idx_ag_make_year_model ON Ag(make_id, year_id, model_id);
+
 -- Part tables
 CREATE TABLE PartCategory (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE,
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id)
 );
 CREATE INDEX idx_partcategory_name ON PartCategory(name);
 
 CREATE TABLE PartSubCategory (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    category_id INTEGER NOT NULL,
+    part_category_id INTEGER NOT NULL,
     name TEXT NOT NULL,
-    FOREIGN KEY (category_id) REFERENCES PartCategory(id),
-    UNIQUE (category_id, name)
+    FOREIGN KEY (part_category_id) REFERENCES PartCategory(id),
+    UNIQUE (part_category_id, name)
 );
-CREATE INDEX idx_partsubcategory_category_name ON PartSubCategory(category_id, name);
+CREATE INDEX idx_partsubcategory_part_category_id ON PartSubCategory(part_category_id, name);
 
 -- Location table
 CREATE TABLE Location (
@@ -102,23 +149,35 @@ CREATE INDEX idx_user_deleted_at ON User(deleted_at);
 -- Ad tables
 CREATE TABLE Ad (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
     title TEXT,
     description TEXT,
     price REAL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME,
-    subcategory_id INTEGER NOT NULL,
+    part_subcategory_id INTEGER,
     user_id INTEGER NOT NULL,
     image_count INTEGER DEFAULT 0,
     location_id INTEGER REFERENCES Location(id),
     click_count INTEGER DEFAULT 0,
     last_clicked_at DATETIME,
     has_vector INTEGER DEFAULT 0,
-    FOREIGN KEY (subcategory_id) REFERENCES PartSubCategory(id),
+    FOREIGN KEY (part_subcategory_id) REFERENCES PartSubCategory(id),
     FOREIGN KEY (user_id) REFERENCES User(id)
 );
 CREATE INDEX idx_ad_created_at_id ON Ad(created_at, id);
 CREATE INDEX idx_ad_deleted_at ON Ad(deleted_at);
+CREATE INDEX idx_ad_ad_category_id ON Ad(ad_category_id);
+
+CREATE TABLE AdCarPart (
+    ad_id INTEGER NOT NULL,
+    car_id INTEGER NOT NULL,
+    FOREIGN KEY (ad_id) REFERENCES Ad(id),
+    FOREIGN KEY (car_id) REFERENCES Car(id),
+    PRIMARY KEY (ad_id, car_id)
+);
+CREATE INDEX idx_adcarpart_car_id ON AdCarPart(car_id);
+CREATE INDEX idx_adcarpart_ad_id ON AdCarPart(ad_id);
 
 CREATE TABLE AdCar (
     ad_id INTEGER NOT NULL,
@@ -129,6 +188,66 @@ CREATE TABLE AdCar (
 );
 CREATE INDEX idx_adcar_car_id ON AdCar(car_id);
 CREATE INDEX idx_adcar_ad_id ON AdCar(ad_id);
+
+CREATE TABLE AdMotorcycle (
+    ad_id INTEGER NOT NULL,
+    motorcycle_id INTEGER NOT NULL,
+    FOREIGN KEY (ad_id) REFERENCES Ad(id),
+    FOREIGN KEY (motorcycle_id) REFERENCES Motorcycle(id),
+    PRIMARY KEY (ad_id, motorcycle_id)
+);
+CREATE INDEX idx_admotorcycle_motorcycle_id ON AdMotorcycle(motorcycle_id);
+CREATE INDEX idx_admotorcycle_ad_id ON AdMotorcycle(ad_id);
+
+CREATE TABLE AdMotorcyclePart (
+    ad_id INTEGER NOT NULL,
+    motorcycle_id INTEGER NOT NULL,
+    FOREIGN KEY (ad_id) REFERENCES Ad(id),
+    FOREIGN KEY (motorcycle_id) REFERENCES Motorcycle(id),
+    PRIMARY KEY (ad_id, motorcycle_id)
+);
+CREATE INDEX idx_admotorcyclepart_motorcycle_id ON AdMotorcyclePart(motorcycle_id);
+CREATE INDEX idx_admotorcyclepart_ad_id ON AdMotorcyclePart(ad_id);
+
+CREATE TABLE AdBicycle (
+    ad_id INTEGER NOT NULL,
+    bicycle_id INTEGER NOT NULL,
+    FOREIGN KEY (ad_id) REFERENCES Ad(id),
+    FOREIGN KEY (bicycle_id) REFERENCES Bicycle(id),
+    PRIMARY KEY (ad_id, bicycle_id)
+);
+CREATE INDEX idx_adbicycle_bicycle_id ON AdBicycle(bicycle_id);
+CREATE INDEX idx_adbicycle_ad_id ON AdBicycle(ad_id);
+
+CREATE TABLE AdBicyclePart (
+    ad_id INTEGER NOT NULL,
+    bicycle_id INTEGER NOT NULL,
+    FOREIGN KEY (ad_id) REFERENCES Ad(id),
+    FOREIGN KEY (bicycle_id) REFERENCES Bicycle(id),
+    PRIMARY KEY (ad_id, bicycle_id)
+);
+CREATE INDEX idx_adbicyclepart_bicycle_id ON AdBicyclePart(bicycle_id);
+CREATE INDEX idx_adbicyclepart_ad_id ON AdBicyclePart(ad_id);
+
+CREATE TABLE AdAg (
+    ad_id INTEGER NOT NULL,
+    ag_id INTEGER NOT NULL,
+    FOREIGN KEY (ad_id) REFERENCES Ad(id),
+    FOREIGN KEY (ag_id) REFERENCES Ag(id),
+    PRIMARY KEY (ad_id, ag_id)
+);
+CREATE INDEX idx_adag_ad_id ON AdAg(ad_id);
+CREATE INDEX idx_adag_ag_id ON AdAg(ag_id);
+
+CREATE TABLE AdAgPart (
+    ad_id INTEGER NOT NULL,
+    ag_id INTEGER NOT NULL,
+    FOREIGN KEY (ad_id) REFERENCES Ad(id),
+    FOREIGN KEY (ag_id) REFERENCES Ag(id),
+    PRIMARY KEY (ad_id, ag_id)
+);
+CREATE INDEX idx_adagpart_ad_id ON AdAgPart(ad_id);
+CREATE INDEX idx_adagpart_ag_id ON AdAgPart(ag_id);
 
 CREATE TABLE BookmarkedAd (
     user_id INTEGER NOT NULL,
@@ -160,10 +279,6 @@ CREATE TABLE UserSearch (
 );
 CREATE INDEX idx_usersearch_user_id ON UserSearch(user_id);
 CREATE INDEX idx_usersearch_created_at ON UserSearch(created_at);
-
-
-
-
 
 -- Messaging system tables
 CREATE TABLE Conversation (
