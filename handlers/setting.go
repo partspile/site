@@ -9,3 +9,8 @@ func HandleSettings(c *fiber.Ctx) error {
 	currentUser, _ := CurrentUser(c)
 	return render(c, ui.SettingsPage(currentUser, c.Path()))
 }
+
+func HandleUserMenu(c *fiber.Ctx) error {
+	currentUser, _ := CurrentUser(c)
+	return render(c, ui.UserMenuPopup(currentUser, c.Path()))
+}

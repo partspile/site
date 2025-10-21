@@ -5,11 +5,10 @@ import (
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/user"
 )
 
-func HomePage(currentUser *user.User, path string, view string) g.Node {
+func HomePage(currentUser *user.User, path string, view string, adCategory string) g.Node {
 	userID := 0
 	if currentUser != nil {
 		userID = currentUser.ID
@@ -19,7 +18,7 @@ func HomePage(currentUser *user.User, path string, view string) g.Node {
 		currentUser,
 		path,
 		[]g.Node{
-			InitialSearchResults(userID, view, ad.CarParts),
+			InitialSearchResults(userID, view, adCategory),
 		},
 	)
 }
@@ -302,16 +301,16 @@ func PrivacyPolicyPage(currentUser *user.User, path string) g.Node {
 
 					Div(Class("ml-4 mb-4"),
 						H5(Class("text-sm font-semibold mb-1"), g.Text("last_view")),
-						P(Class("text-sm mb-2"), g.Text("Purpose: Saves your preferred view layout (list, grid, tree, or map) for a seamless browsing experience.")),
-						P(Class("text-sm mb-2"), g.Text("Data collected: Single view preference value (e.g., 'list', 'grid', 'tree', 'map').")),
+						P(Class("text-sm mb-2"), g.Text("Purpose: Saves your preferred view layout (list, grid, or tree) for a seamless browsing experience.")),
+						P(Class("text-sm mb-2"), g.Text("Data collected: Single view preference value (e.g., 'list', 'grid', 'tree').")),
 						P(Class("text-sm mb-2"), g.Text("Retention: Expires after 30 days.")),
 						P(Class("text-sm mb-2"), g.Text("Third parties: None.")),
 					),
 
 					Div(Class("ml-4 mb-4"),
-						H5(Class("text-sm font-semibold mb-1"), g.Text("map_min_lat, map_max_lat, map_min_lon, map_max_lon")),
-						P(Class("text-sm mb-2"), g.Text("Purpose: Saves your last viewed map area (geographic bounds) to restore the same view when returning to map view.")),
-						P(Class("text-sm mb-2"), g.Text("Data collected: Four coordinate values defining the geographic bounding box of your last map view (latitude and longitude ranges).")),
+						H5(Class("text-sm font-semibold mb-1"), g.Text("ad_category")),
+						P(Class("text-sm mb-2"), g.Text("Purpose: Saves your preferred ad category (CarPart, MotorcyclePart, BicyclePart, AgPart) to remember your browsing preference.")),
+						P(Class("text-sm mb-2"), g.Text("Data collected: Single category preference value (e.g., 'CarPart', 'MotorcyclePart').")),
 						P(Class("text-sm mb-2"), g.Text("Retention: Expires after 30 days.")),
 						P(Class("text-sm mb-2"), g.Text("Third parties: None.")),
 					),

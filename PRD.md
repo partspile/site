@@ -232,7 +232,7 @@ The platform supports multiple ad categories, each with appropriate vehicle/part
 - No full page reload or navigation is required; browser back/forward preserves the previous state.
 - This is implemented using htmx and Gomponents, with no custom JavaScript.
 - New endpoints:
-  - `GET /ad/card/:id` — Returns the ad card partial for in-place collapse.
+  - `GET /ad/collapse/:id` — Returns the ad card partial for in-place collapse.
   - `GET /ad/detail/:id` — Returns the ad detail partial for in-place expand.
 - This provides a seamless, SPA-like user experience while maintaining server-side rendering and progressive enhancement.
 

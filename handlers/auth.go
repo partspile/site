@@ -241,8 +241,3 @@ func RequireOwnership(c *fiber.Ctx, resourceUserID int) (*user.User, error) {
 	}
 	return u, nil
 }
-
-func HandleUserMenu(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
-	return render(c, ui.UserMenuPopup(currentUser, c.Path()))
-}

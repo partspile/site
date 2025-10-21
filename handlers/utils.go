@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"time"
-
 	"github.com/gofiber/fiber/v2"
 	g "maragu.dev/gomponents"
 )
@@ -23,11 +21,6 @@ func getQueryParam(ctx *fiber.Ctx, key string) string {
 	return ctx.FormValue(key)
 }
 
-// getLocation gets the timezone location from context
-func getLocation(c *fiber.Ctx) *time.Location {
-	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
-	return loc
-}
 func getView(c *fiber.Ctx) string {
 	return c.Query("view", "list")
 }

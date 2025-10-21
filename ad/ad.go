@@ -11,47 +11,50 @@ import (
 	"github.com/parts-pile/site/user"
 )
 
-// Ad represents an advertisement in the system
+// Ad represents the minimal advertisement data needed for list/grid views
 type Ad struct {
 	// Core database fields
-	ID                int        `json:"id" db:"id"`
-	AdCategoryID      int        `json:"ad_category_id" db:"ad_category_id"`
-	Title             string     `json:"title" db:"title"`
-	Description       string     `json:"description" db:"description"`
-	Price             float64    `json:"price" db:"price"`
-	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
-	DeletedAt         *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
-	PartSubcategoryID int        `json:"part_subcategory_id" db:"part_subcategory_id"`
-	UserID            int        `json:"user_id" db:"user_id"`
-	ImageCount        int        `json:"image_count" db:"image_count"`
-	LocationID        int        `json:"location_id" db:"location_id"`
-	ClickCount        int        `json:"click_count" db:"click_count"`
-	LastClickedAt     *time.Time `json:"last_clicked_at,omitempty" db:"last_clicked_at"`
-	HasVector         bool       `json:"has_vector" db:"has_vector"`
+	ID           int        `json:"id" db:"id"`
+	AdCategoryID int        `json:"ad_category_id" db:"ad_category_id"`
+	Title        string     `json:"title" db:"title"`
+	Price        float64    `json:"price" db:"price"`
+	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
+	DeletedAt    *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
+	UserID       int        `json:"user_id" db:"user_id"`
+	ImageCount   int        `json:"image_count" db:"image_count"`
 
-	// Computed/derived fields from joins
-	RawLocation     sql.NullString  `json:"raw_location,omitempty" db:"raw_location"`
-	City            sql.NullString  `json:"city,omitempty" db:"city"`
-	AdminArea       sql.NullString  `json:"admin_area,omitempty" db:"admin_area"`
-	Country         sql.NullString  `json:"country,omitempty" db:"country"`
-	PartSubcategory sql.NullString  `json:"part_subcategory,omitempty" db:"part_subcategory"`
-	PartCategory    sql.NullString  `json:"part_category,omitempty" db:"part_category"`
-	Latitude        sql.NullFloat64 `json:"latitude,omitempty" db:"latitude"`
-	Longitude       sql.NullFloat64 `json:"longitude,omitempty" db:"longitude"`
+	// Location fields from joins
+	City      sql.NullString `json:"city,omitempty" db:"city"`
+	AdminArea sql.NullString `json:"admin_area,omitempty" db:"admin_area"`
+	Country   sql.NullString `json:"country,omitempty" db:"country"`
+
+	// User-specific computed fields
+	Bookmarked bool `json:"bookmarked" db:"is_bookmarked"`
+}
+
+// AdDetail extends Ad with additional fields needed for detail view
+type AdDetail struct {
+	Ad // Embed the minimal Ad struct
+
+	// Additional fields for detail view
+	Description       string         `json:"description" db:"description"`
+	PartSubcategoryID int            `json:"part_subcategory_id" db:"part_subcategory_id"`
+	LocationID        int            `json:"location_id" db:"location_id"`
+	HasVector         bool           `json:"has_vector" db:"has_vector"`
+	RawLocation       sql.NullString `json:"raw_location,omitempty" db:"raw_location"`
+	PartSubcategory   sql.NullString `json:"part_subcategory,omitempty" db:"part_subcategory"`
+	PartCategory      sql.NullString `json:"part_category,omitempty" db:"part_category"`
 
 	// Vehicle compatibility fields from vehicle joins
 	Make    string   `json:"make" db:"make"`
 	Years   []string `json:"years" db:"years"`
 	Models  []string `json:"models" db:"models"`
 	Engines []string `json:"engines" db:"engines"`
-
-	// User-specific computed fields
-	Bookmarked bool `json:"bookmarked" db:"is_bookmarked"`
 }
 
-// GetCategory returns the AdCategory for this ad
-func (a Ad) GetCategory() AdCategory {
-	return AdCategory(a.AdCategoryID)
+// GetAdCategory returns the AdCategory string for this ad
+func (a Ad) GetAdCategory() string {
+	return GetAdCategoryFromID(a.AdCategoryID)
 }
 
 // IsArchived returns true if the ad is archived (deleted)
@@ -78,64 +81,33 @@ func GetAdsByIDsWithDeleted(ids []int, currentUser *user.User, includeDeleted bo
 		return nil, err
 	}
 
-	// For single ID, just return the first result directly
-	if len(ids) == 1 {
-		return ads, nil
-	}
-
-	// For multiple IDs, create a map for quick lookup and preserve order
-	adMap := make(map[int]Ad)
-	for _, ad := range ads {
-		adMap[ad.ID] = ad
-	}
-
-	// Preserve order of ids
-	result := make([]Ad, 0, len(ids))
-	for _, id := range ids {
-		if ad, ok := adMap[id]; ok {
-			result = append(result, ad)
-		}
-	}
-
-	log.Printf("[GetAdsByIDs] Returning ads in order: %v", func() []int {
-		debugResult := make([]int, len(result))
-		for i, ad := range result {
-			debugResult[i] = ad.ID
-		}
-		return debugResult
-	}())
-	return result, nil
+	log.Printf("[GetAdsByIDs] Returning %d ads", len(ads))
+	return ads, nil
 }
 
-// buildAdQueryWithDeleted builds the complete query for fetching ads with IDs and user context, optionally including deleted ads
+// buildAdQueryWithDeleted builds the minimal query for fetching ads with IDs and user context, optionally including deleted ads
 func buildAdQueryWithDeleted(ids []int, currentUser *user.User, includeDeleted bool) (string, []interface{}) {
 	var query string
 	var args []interface{}
 
 	if currentUser != nil {
-		// Query with bookmark status
+		// Query with bookmark status - minimal fields only
 		query = `
-			SELECT a.id, a.title, a.description, a.price, a.created_at, a.deleted_at, a.part_subcategory_id,
-			       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_count,
-			       l.raw_text as raw_location, l.city, l.admin_area, l.country, l.latitude, l.longitude,
-			       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked, a.category_id
+			SELECT a.id, a.ad_category_id, a.title, a.price, a.created_at, a.deleted_at, a.user_id, a.image_count,
+			       l.city, l.admin_area, l.country,
+			       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 			FROM Ad a
-			LEFT JOIN PartSubCategory psc ON a.part_subcategory_id = psc.id
-			LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
 			LEFT JOIN Location l ON a.location_id = l.id
 			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
 		`
 		args = append(args, currentUser.ID)
 	} else {
-		// Query without bookmark status (default to false)
+		// Query without bookmark status (default to false) - minimal fields only
 		query = `
-			SELECT a.id, a.title, a.description, a.price, a.created_at, a.deleted_at, a.part_subcategory_id,
-			       a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_count,
-			       l.raw_text as raw_location, l.city, l.admin_area, l.country, l.latitude, l.longitude,
-			       0 as is_bookmarked, a.category_id
+			SELECT a.id, a.ad_category_id, a.title, a.price, a.created_at, a.deleted_at, a.user_id, a.image_count,
+			       l.city, l.admin_area, l.country,
+			       0 as is_bookmarked
 			FROM Ad a
-			LEFT JOIN PartSubCategory psc ON a.part_subcategory_id = psc.id
-			LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
 			LEFT JOIN Location l ON a.location_id = l.id
 		`
 	}
@@ -153,6 +125,14 @@ func buildAdQueryWithDeleted(ids []int, currentUser *user.User, includeDeleted b
 	} else {
 		query += " AND a.id IN (" + strings.Join(placeholders, ",") + ")"
 	}
+
+	// Add ORDER BY to preserve the input order using CASE statement
+	query += " ORDER BY CASE a.id"
+	for i, id := range ids {
+		query += fmt.Sprintf(" WHEN %d THEN %d", id, i)
+	}
+	query += " END"
+
 	for _, id := range ids {
 		args = append(args, id)
 	}
@@ -160,14 +140,65 @@ func buildAdQueryWithDeleted(ids []int, currentUser *user.User, includeDeleted b
 	return query, args
 }
 
-// GetAdCategoryIDFromID returns the category for a given ad ID
-func GetAdCategoryIDFromID(adID int) (AdCategory, error) {
-	var categoryID int
-	err := db.QueryRow("SELECT ad_category_id FROM Ad WHERE id = ?", adID).Scan(&categoryID)
+// GetAdByID returns a single ad by ID
+func GetAdByID(adID int, currentUser *user.User) (*Ad, error) {
+	ads, err := GetAdsByIDs([]int{adID}, currentUser)
 	if err != nil {
-		return CarParts, err
+		return nil, err
 	}
-	return AdCategory(categoryID), nil
+	if len(ads) == 0 {
+		return nil, fmt.Errorf("ad with ID %d not found", adID)
+	}
+	return &ads[0], nil
+}
+
+// GetAdDetailByID returns the full AdDetail for a single ad ID
+func GetAdDetailByID(adID int, currentUser *user.User) (*AdDetail, error) {
+	var query string
+	var args []interface{}
+
+	if currentUser != nil {
+		// Query with bookmark status - full fields for detail view
+		query = `
+			SELECT a.id, a.title, a.description, a.price, a.created_at, a.deleted_at, a.part_subcategory_id,
+			       a.user_id, psc.name as part_subcategory, pc.name as part_category, a.location_id, a.image_count, a.has_vector,
+			       l.raw_text as raw_location, l.city, l.admin_area, l.country,
+			       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked, a.ad_category_id
+			FROM Ad a
+			LEFT JOIN PartSubCategory psc ON a.part_subcategory_id = psc.id
+			LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
+			LEFT JOIN Location l ON a.location_id = l.id
+			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
+			WHERE a.id = ?
+		`
+		args = append(args, currentUser.ID, adID)
+	} else {
+		// Query without bookmark status (default to false) - full fields for detail view
+		query = `
+			SELECT a.id, a.title, a.description, a.price, a.created_at, a.deleted_at, a.part_subcategory_id,
+			       a.user_id, psc.name as part_subcategory, pc.name as part_category, a.location_id, a.image_count, a.has_vector,
+			       l.raw_text as raw_location, l.city, l.admin_area, l.country,
+			       0 as is_bookmarked, a.ad_category_id
+			FROM Ad a
+			LEFT JOIN PartSubCategory psc ON a.part_subcategory_id = psc.id
+			LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
+			LEFT JOIN Location l ON a.location_id = l.id
+			WHERE a.id = ?
+		`
+		args = append(args, adID)
+	}
+
+	var adDetails []AdDetail
+	err := db.Select(&adDetails, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(adDetails) == 0 {
+		return nil, fmt.Errorf("ad with ID %d not found", adID)
+	}
+
+	return &adDetails[0], nil
 }
 
 // GetMostPopularAds returns the top n ads by popularity using SQL
@@ -175,13 +206,10 @@ func GetMostPopularAds(n int) []Ad {
 	log.Printf("[GetMostPopularAds] Querying for top %d popular ads", n)
 	query := `
 		SELECT 
-			a.id, a.title, a.description, a.price, a.created_at, 
-			a.part_subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_count,
-			l.raw_text as raw_location, l.city, l.admin_area, l.country, l.latitude, l.longitude,
-			0 as is_bookmarked, a.ad_category_id
+			a.id, a.ad_category_id, a.title, a.price, a.created_at, a.deleted_at, a.user_id, a.image_count,
+			l.city, l.admin_area, l.country,
+			0 as is_bookmarked
 		FROM Ad a
-		LEFT JOIN PartSubCategory psc ON a.part_subcategory_id = psc.id
-		LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
 		LEFT JOIN Location l ON a.location_id = l.id
 		WHERE a.deleted_at IS NULL
 		ORDER BY (
@@ -201,14 +229,6 @@ func GetMostPopularAds(n int) []Ad {
 
 	log.Printf("[GetMostPopularAds] Found %d ads from SQL query", len(ads))
 	return ads
-}
-
-// AddAd creates a new ad in the database and returns the ad ID
-func AddAd(adObj Ad) (int, error) {
-	// This is a placeholder implementation
-	// In a real implementation, this would insert the ad into the database
-	// and return the generated ID
-	return 0, fmt.Errorf("AddAd not implemented yet")
 }
 
 // ArchiveAd archives an ad by setting its deleted_at timestamp

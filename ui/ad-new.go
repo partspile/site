@@ -9,7 +9,6 @@ import (
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
-	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/user"
 )
 
@@ -34,7 +33,7 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 				ModelsSelector([]string{}),
 				EnginesSelector([]string{}),
 				categoriesSelector(categories, ""),
-				SubCategoriesSelector([]part.SubAdCategory{}, ""),
+				SubCategoriesSelector([]string{}, ""),
 				imagesInputField(),
 				descriptionTextareaField(),
 				priceInputField(),
@@ -52,11 +51,11 @@ func DuplicateAdPage(
 	path string,
 	makes []string,
 	categories []string,
-	originalAd ad.Ad,
+	originalAd ad.AdDetail,
 	years []string,
 	models []string,
 	engines []string,
-	subcategories []part.SubAdCategory,
+	subcategoryNames []string,
 	selectedSubcategory string,
 ) g.Node {
 	categoryName := ""
@@ -82,7 +81,7 @@ func DuplicateAdPage(
 				ModelsSelector(models, originalAd.Models),
 				EnginesSelector(engines, originalAd.Engines),
 				categoriesSelector(categories, categoryName),
-				SubCategoriesSelector(subcategories, selectedSubcategory),
+				SubCategoriesSelector(subcategoryNames, selectedSubcategory),
 				imagesInputField(),
 				descriptionTextareaField(),
 				priceInputField(),
@@ -337,14 +336,14 @@ func categoriesSelector(categories []string, selectedCategory string) g.Node {
 	)
 }
 
-func SubCategoriesSelector(subCategories []part.SubAdCategory, selectedSubCategory string) g.Node {
+func SubCategoriesSelector(subCategoryNames []string, selectedSubCategory string) g.Node {
 	options := []g.Node{
 		Option(Value(""), g.Text("Select a subcategory")),
 	}
 
-	for _, subCategory := range subCategories {
-		attrs := []g.Node{Value(subCategory.Name), g.Text(subCategory.Name)}
-		if subCategory.Name == selectedSubCategory {
+	for _, subCategoryName := range subCategoryNames {
+		attrs := []g.Node{Value(subCategoryName), g.Text(subCategoryName)}
+		if subCategoryName == selectedSubCategory {
 			attrs = append(attrs, Selected())
 		}
 		options = append(options, Option(attrs...))

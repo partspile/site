@@ -68,8 +68,7 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 	name, level, parts := parsePath(path)
 
 	// Get category from query parameter
-	categoryStr := c.Query("category", "CarParts")
-	category := ad.ParseCategoryFromQuery(categoryStr)
+	category := AdCategory(c)
 
 	// Browse mode: No ad IDs filtering needed
 	log.Printf("[tree-view] Browse mode: no ad ID filtering")
@@ -80,25 +79,25 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 	var err error
 	switch level {
 	case 0: // Root level - get makes
-		children, err = vehicle.GetAdMakes(category.ToID())
+		children, err = vehicle.GetAdMakes(category)
 	case 1: // Make level - get years
 		makeName := parts[0]
-		children, err = vehicle.GetAdYears(category.ToID(), makeName)
+		children, err = vehicle.GetAdYears(category, makeName)
 	case 2: // Year level - get models
 		makeName, year := parts[0], parts[1]
-		children, err = vehicle.GetAdModels(category.ToID(), makeName, year)
+		children, err = vehicle.GetAdModels(category, makeName, year)
 	case 3: // Model level - get engines
 		makeName, year, model := parts[0], parts[1], parts[2]
-		children, err = vehicle.GetAdEngines(category.ToID(), makeName, year, model)
+		children, err = vehicle.GetAdEngines(category, makeName, year, model)
 	case 4: // Engine level - get categories
 		makeName, year, model, engine := parts[0], parts[1], parts[2], parts[3]
-		children, err = part.GetAdCategories(makeName, year, model, engine)
+		children, err = part.GetAdCategories(category, makeName, year, model, engine)
 	case 5: // Category level - get subcategories
-		makeName, year, model, engine, category := parts[0], parts[1], parts[2], parts[3], parts[4]
-		children, err = part.GetAdSubCategories(makeName, year, model, engine, category)
+		makeName, year, model, engine, partCategory := parts[0], parts[1], parts[2], parts[3], parts[4]
+		children, err = part.GetAdSubCategories(category, makeName, year, model, engine, partCategory)
 	case 6: // Subcategory level - get ads
-		makeName, year, model, engine, category, subcategory := parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]
-		log.Printf("[tree-view] Getting ads for make=%s, year=%s, model=%s, engine=%s, category=%s, subcategory=%s", makeName, year, model, engine, category, subcategory)
+		makeName, year, model, engine, partCategory, subcategory := parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]
+		log.Printf("[tree-view] Getting ads for make=%s, year=%s, model=%s, engine=%s, category=%s, subcategory=%s", makeName, year, model, engine, partCategory, subcategory)
 		ads, err = ad.GetAdsForAll()
 		if err != nil {
 			return err
@@ -159,16 +158,10 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 		children, err = vehicle.GetAdEnginesForAdIDs(adIDs, makeName, year, model)
 	case 4: // Engine level - get categories
 		makeName, year, model, engine := parts[0], parts[1], parts[2], parts[3]
-		log.Printf("[tree-search] Getting categories for make=%s, year=%s, model=%s, engine=%s with %d ad IDs", makeName, year, model, engine, len(adIDs))
-		children, err = part.GetAdCategoriesForAdIDs(adIDs, makeName, year, model, engine)
-		if err != nil {
-			log.Printf("[tree-search] Error getting categories: %v", err)
-		} else {
-			log.Printf("[tree-search] Found %d categories: %v", len(children), children)
-		}
+		children, err = part.GetCategoriesForAds(adIDs, makeName, year, model, engine)
 	case 5: // Category level - get subcategories
 		makeName, year, model, engine, category := parts[0], parts[1], parts[2], parts[3], parts[4]
-		children, err = part.GetAdSubCategoriesForAdIDs(adIDs, makeName, year, model, engine, category)
+		children, err = part.GetSubCategoriesForAds(adIDs, makeName, year, model, engine, category)
 	case 6: // Subcategory level - get ads
 		ads, err = ad.GetAdsForAdIDs(adIDs)
 		if err != nil {

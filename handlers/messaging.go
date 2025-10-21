@@ -108,11 +108,10 @@ func HandleStartConversation(c *fiber.Ctx) error {
 	}
 
 	// Get ad details to check ownership
-	ads, err := ad.GetAdsByIDs([]int{adID}, currentUser)
-	if err != nil || len(ads) == 0 {
+	adObj, err := ad.GetAdByID(adID, currentUser)
+	if err != nil {
 		return render(c, ui.ErrorPage(404, "Ad not found"))
 	}
-	adObj := ads[0]
 
 	// Check if user can message this ad
 	err = messaging.CanUserMessageAd(currentUser.ID, adObj.UserID)
@@ -215,11 +214,10 @@ func HandleModalMessaging(c *fiber.Ctx) error {
 	}
 
 	// Get ad details to check ownership
-	ads, err := ad.GetAdsByIDs([]int{adID}, currentUser)
-	if err != nil || len(ads) == 0 {
+	adObj, err := ad.GetAdByID(adID, currentUser)
+	if err != nil {
 		return render(c, ui.ErrorPage(404, "Ad not found"))
 	}
-	adObj := ads[0]
 
 	// Check if user can message this ad
 	err = messaging.CanUserMessageAd(currentUser.ID, adObj.UserID)
@@ -245,7 +243,7 @@ func HandleModalMessaging(c *fiber.Ctx) error {
 	}
 
 	// Return the modal messaging interface
-	return render(c, ui.ModalMessagingInterface(currentUser, adObj, conversation, messages))
+	return render(c, ui.ModalMessagingInterface(currentUser, *adObj, conversation, messages))
 }
 
 // HandleMessagesAPI handles AJAX requests for messages
@@ -349,4 +347,56 @@ func HandleSSEConversationUpdate(c *fiber.Ctx) error {
 
 	// Return the updated conversation item HTML
 	return render(c, ui.ConversationListItem(conversation, currentUser.ID))
+}
+
+// HandleMessageModal shows the message modal for an ad
+func HandleMessageModal(c *fiber.Ctx) error {
+	adID, err := AdID(c)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+
+	currentUser, userID := CurrentUser(c)
+	adObj, err := ad.GetAdByID(adID, currentUser)
+	if err != nil {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
+
+	// Check if user is logged in and not viewing their own ad
+	if userID == 0 {
+		return fiber.NewError(fiber.StatusUnauthorized, "Must be logged in to message")
+	}
+	if adObj.UserID == userID {
+		return fiber.NewError(fiber.StatusBadRequest, "Cannot message yourself")
+	}
+	if adObj.IsArchived() {
+		return fiber.NewError(fiber.StatusBadRequest, "Cannot message about archived ad")
+	}
+
+	// Check if user can message this ad
+	err = messaging.CanUserMessageAd(currentUser.ID, adObj.UserID)
+	if err != nil {
+		return ValidationErrorResponse(c, err.Error())
+	}
+
+	// Get or create conversation
+	conversationID, err := messaging.GetOrCreateConversation(currentUser.ID, adObj.UserID, adID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create conversation")
+	}
+
+	// Get conversation details and messages
+	conversation, err := messaging.GetConversationWithDetails(conversationID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to load conversation")
+	}
+
+	messages, err := messaging.GetMessages(conversationID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to load messages")
+	}
+
+	// Return the complete modal with conversation content
+	conversationContent := ui.ModalMessagingInterface(currentUser, *adObj, conversation, messages)
+	return render(c, ui.MessageModal(*adObj, conversationContent))
 }

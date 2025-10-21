@@ -22,15 +22,15 @@ func saveCookieLastView(c *fiber.Ctx, view string) {
 	})
 }
 
-func getCookieAdCategoryID(c *fiber.Ctx) ad.AdCategory {
-	categoryStr := c.Cookies("ad_category", "CarParts") // default to CarParts
+func getCookieAdCategory(c *fiber.Ctx) string {
+	categoryStr := c.Cookies("ad_category", "CarPart")
 	return ad.ParseCategoryFromQuery(categoryStr)
 }
 
-func saveCookieAdCategoryID(c *fiber.Ctx, category ad.AdCategory) {
+func saveCookieAdCategory(c *fiber.Ctx, category string) {
 	c.Cookie(&fiber.Cookie{
 		Name:     "ad_category",
-		Value:    category.String(),
+		Value:    category,
 		Expires:  time.Now().Add(30 * 24 * time.Hour),
 		HTTPOnly: false,
 		Path:     "/",

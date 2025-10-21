@@ -32,6 +32,7 @@ func adminNavigation(activeSection string) g.Node {
 		{"b2-cache", "B2 Cache", "/admin/b2-cache"},
 		{"embedding-cache", "Embedding Cache", "/admin/embedding-cache"},
 		{"vehicle-cache", "Vehicle Cache", "/admin/vehicle-cache"},
+		{"part-cache", "Part Cache", "/admin/part-cache"},
 	}
 
 	var tabNodes []g.Node
@@ -153,5 +154,14 @@ func AdminVehicleCacheSection(stats map[string]interface{}) g.Node {
 		Div(Class("text-lg font-medium text-gray-900"), g.Text("Vehicle Cache Management")),
 		Div(Class("text-gray-600 text-sm"), g.Text("Manage vehicle data cache performance and statistics.")),
 		CacheStatsPanel("Cache Statistics", stats, "/api/admin/vehicle-cache/clear", "/api/admin/vehicle-cache/refresh"),
+	)
+}
+
+func AdminPartCacheSection(stats map[string]interface{}) g.Node {
+	return Div(
+		Class("space-y-4"),
+		Div(Class("text-lg font-medium text-gray-900"), g.Text("Part Cache Management")),
+		Div(Class("text-gray-600 text-sm"), g.Text("Manage part data cache performance and statistics.")),
+		CacheStatsPanel("Cache Statistics", stats, "/api/admin/part-cache/clear", "/api/admin/part-cache/refresh"),
 	)
 }

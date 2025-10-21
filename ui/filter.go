@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"github.com/parts-pile/site/ad"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
@@ -140,7 +139,7 @@ func applyFilters() g.Node {
 }
 
 // FiltersShow renders the search form with filters
-func FiltersShow(view string, query string, activeAdCategory ad.AdCategory) g.Node {
+func FiltersShow(view string, query string, activeAdCategory string) g.Node {
 	// Return search form with filters panel
 	return searchForm(view, query, activeAdCategory, Div(
 		Class("border rounded-lg p-4"),

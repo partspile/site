@@ -336,8 +336,8 @@ func calculateSiteLevelVector() ([]float32, error) {
 	log.Printf("[site-level] Popular ads being used:")
 	for i, adObj := range ads {
 		if i < 5 { // Only show first 5 for brevity
-			log.Printf("[site-level]   %d. Ad %d: %s (clicks: %d)",
-				i+1, adObj.ID, adObj.Title, adObj.ClickCount)
+			log.Printf("[site-level]   %d. Ad %d: %s",
+				i+1, adObj.ID, adObj.Title)
 		}
 	}
 	if len(ads) > 5 {
@@ -407,7 +407,7 @@ func calculateSiteLevelVector() ([]float32, error) {
 }
 
 // BuildAdEmbedding builds and stores an embedding for a single ad
-func BuildAdEmbedding(adObj ad.Ad) error {
+func BuildAdEmbedding(adObj ad.AdDetail) error {
 	log.Printf("[BuildAdEmbedding] Building embedding for ad %d: %s", adObj.ID, adObj.Title)
 
 	// Build the prompt for embedding
@@ -442,7 +442,7 @@ func BuildAdEmbedding(adObj ad.Ad) error {
 }
 
 // BuildAdEmbeddings builds and stores embeddings for multiple ads in batch
-func BuildAdEmbeddings(ads []ad.Ad) error {
+func BuildAdEmbeddings(ads []ad.AdDetail) error {
 	if len(ads) == 0 {
 		return nil
 	}
@@ -451,7 +451,7 @@ func BuildAdEmbeddings(ads []ad.Ad) error {
 
 	// Build prompts for all ads
 	var prompts []string
-	var validAds []ad.Ad
+	var validAds []ad.AdDetail
 	for _, adObj := range ads {
 		prompt := buildAdEmbeddingPrompt(adObj)
 		if prompt != "" {
@@ -535,7 +535,7 @@ func BuildAdEmbeddings(ads []ad.Ad) error {
 }
 
 // buildAdEmbeddingPrompt creates a prompt for generating embeddings
-func buildAdEmbeddingPrompt(adObj ad.Ad) string {
+func buildAdEmbeddingPrompt(adObj ad.AdDetail) string {
 	// Get parent company information for the make
 	var parentCompanyStr, parentCompanyCountry string
 	if adObj.Make != "" {
@@ -594,12 +594,12 @@ Quality Indicator: %s`
 }
 
 // BuildAdEmbeddingMetadata creates metadata for embeddings
-func BuildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
+func BuildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 	// Get location data for geo filtering
 	var lat, lon float64
 	if adObj.LocationID != 0 {
 		// Get coordinates from Location table
-		_, _, _, _, lat, lon, _ = ad.GetLocation(adObj.LocationID)
+		lat, lon, _ = ad.GetLatLon(adObj.LocationID)
 	}
 
 	// Get tree path data for navigation filtering
@@ -635,6 +635,9 @@ func BuildAdEmbeddingMetadata(adObj ad.Ad) map[string]interface{} {
 		"engines":     engines,
 		"category":    category,
 		"subcategory": subcategory,
+
+		// Ad category for filtering
+		"ad_category_id": strconv.Itoa(adObj.AdCategoryID),
 
 		// Price for filtering/sorting
 		"price": adObj.Price,

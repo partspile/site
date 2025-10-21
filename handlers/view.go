@@ -70,13 +70,19 @@ func getAdIDs(ctx *fiber.Ctx) ([]int, string, error) {
 }
 
 // buildSearchFilter builds a combined Qdrant filter from all available filter parameters
-func buildSearchFilter(ctx *fiber.Ctx) *qdrant.Filter {
+func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 	var conditions []*qdrant.Condition
 
+	// Ad category condition (required filter)
+	category := AdCategory(c)
+	adCategoryCondition := qdrant.NewMatch("ad_category_id", strconv.Itoa(ad.GetAdCategoryID(category)))
+	conditions = append(conditions, adCategoryCondition)
+	log.Printf("[buildSearchFilters] Added ad_category_id filter: %s (ID: %d)", category, ad.GetAdCategoryID(category))
+
 	// Location condition (geo radius) - only apply if location is provided
-	locationText := getQueryParam(ctx, "location")
+	locationText := getQueryParam(c, "location")
 	if locationText != "" {
-		radiusStr := getQueryParam(ctx, "radius")
+		radiusStr := getQueryParam(c, "radius")
 		var radius float64 = 25 // default to 25 miles
 		if radiusStr != "" {
 			if _, err := fmt.Sscanf(radiusStr, "%f", &radius); err != nil {
@@ -97,7 +103,7 @@ func buildSearchFilter(ctx *fiber.Ctx) *qdrant.Filter {
 	}
 
 	// Make condition (exact string match)
-	makeFilter := getQueryParam(ctx, "make")
+	makeFilter := getQueryParam(c, "make")
 	if makeFilter != "" {
 		makeCondition := qdrant.NewMatch("make", makeFilter)
 		conditions = append(conditions, makeCondition)
@@ -105,8 +111,8 @@ func buildSearchFilter(ctx *fiber.Ctx) *qdrant.Filter {
 	}
 
 	// Year condition (range - min/max years converted to keywords)
-	minYearStr := getQueryParam(ctx, "min_year")
-	maxYearStr := getQueryParam(ctx, "max_year")
+	minYearStr := getQueryParam(c, "min_year")
+	maxYearStr := getQueryParam(c, "max_year")
 	if minYearStr != "" || maxYearStr != "" {
 		var minYear, maxYear int
 		var hasMin, hasMax bool
@@ -152,8 +158,8 @@ func buildSearchFilter(ctx *fiber.Ctx) *qdrant.Filter {
 	}
 
 	// Price condition (range - min/max price)
-	minPriceStr := getQueryParam(ctx, "min_price")
-	maxPriceStr := getQueryParam(ctx, "max_price")
+	minPriceStr := getQueryParam(c, "min_price")
+	maxPriceStr := getQueryParam(c, "max_price")
 	if minPriceStr != "" || maxPriceStr != "" {
 		var minPrice, maxPrice *float64
 
@@ -179,50 +185,20 @@ func buildSearchFilter(ctx *fiber.Ctx) *qdrant.Filter {
 	}
 
 	// Category condition (exact string match)
-	categoryFilter := getQueryParam(ctx, "category")
+	categoryFilter := getQueryParam(c, "ad_category")
 	if categoryFilter != "" {
 		categoryCondition := qdrant.NewMatch("category", categoryFilter)
 		conditions = append(conditions, categoryCondition)
 		log.Printf("[buildSearchFilters] Added category filter: %s", categoryFilter)
 	}
 
-	// If no conditions, return nil (no filter conditions)
-	if len(conditions) == 0 {
-		return nil
-	}
-
-	// Create filter with all filter conditions
+	// Create filter with all filter conditions (always has ad_category)
 	filter := &qdrant.Filter{
 		Must: conditions,
 	}
 
 	log.Printf("[buildSearchFilters] Built filter with %d filter conditions", len(conditions))
 	return filter
-}
-
-// resolveLocationForFilter resolves a location text to lat/lon coordinates
-// Checks database first, then uses Grok if not found, but doesn't store the result
-func resolveLocationForFilter(locationText string) (latitude, longitude float64, err error) {
-	if locationText == "" {
-		return 0, 0, fmt.Errorf("empty location text")
-	}
-
-	// First try to find existing location in database
-	lat, lon, found, err := ad.GetLocationCoordinates(locationText)
-	if err != nil {
-		return 0, 0, fmt.Errorf("database error looking up location: %w", err)
-	}
-	if found {
-		return lat, lon, nil
-	}
-
-	// If not found in database, use Grok to resolve it but don't store
-	loc, err := ad.ResolveLocation(locationText)
-	if err != nil {
-		return 0, 0, fmt.Errorf("failed to resolve location: %w", err)
-	}
-
-	return *loc.Latitude, *loc.Longitude, nil
 }
 
 // NewView creates the appropriate view implementation based on view type

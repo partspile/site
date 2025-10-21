@@ -40,7 +40,23 @@ func StartBackgroundProcessor() {
 		processChunk:
 			log.Printf("[vector] Processing chunk of %d ads from queue", len(ads))
 
-			err := BuildAdEmbeddings(ads)
+			// Convert minimal ads to full ad details for processing
+			var adDetails []ad.AdDetail
+			for _, adObj := range ads {
+				adDetail, err := ad.GetAdDetailByID(adObj.ID, nil)
+				if err != nil {
+					log.Printf("[vector] Failed to get ad detail for %d: %v", adObj.ID, err)
+					continue
+				}
+				adDetails = append(adDetails, *adDetail)
+			}
+
+			if len(adDetails) == 0 {
+				log.Printf("[vector] No valid ad details found for chunk")
+				continue
+			}
+
+			err := BuildAdEmbeddings(adDetails)
 			if err != nil {
 				log.Printf("[vector] Error building embeddings for chunk: %v", err)
 			} else {

@@ -56,9 +56,9 @@ func main() {
 		log.Fatalf("Failed to initialize vehicle cache: %v", err)
 	}
 
-	// Initialize parts static data
-	if err := part.InitPartsData(); err != nil {
-		log.Fatalf("Failed to initialize parts data: %v", err)
+	// Initialize part cache
+	if err := part.InitPartCache(); err != nil {
+		log.Fatalf("Failed to initialize part cache: %v", err)
 	}
 
 	if err := vector.SetupPayloadIndexes(); err != nil {
@@ -111,7 +111,7 @@ func main() {
 	app.Get("/tree-search-collapse/*", handlers.HandleTreeCollapseSearch) // x
 
 	// Ad in-place expand/collapse partials for htmx
-	app.Get("/ad/card/:id", handlers.HandleAdCard)                   // x
+	app.Get("/ad/collapse/:id", handlers.HandleAdCollapse)           // x
 	app.Get("/ad/detail/:id", handlers.HandleAdDetail)               // x
 	app.Get("/ad/image/:adID/:idx", handlers.HandleAdImage)          // x
 	app.Get("/ad/grid-image/:adID/:idx", handlers.HandleAdGridImage) // x
@@ -148,7 +148,6 @@ func main() {
 	api.Get("/years", handlers.HandleYears)
 	api.Get("/models", handlers.HandleModels)
 	api.Get("/engines", handlers.HandleEngines)
-	api.Get("/categories", handlers.HandleCategories)
 	api.Get("/subcategories", handlers.HandleSubCategories)
 	api.Get("/ad-image-url/:adID", handlers.HandleAdImageSignedURL)
 
@@ -164,6 +163,7 @@ func main() {
 	admin.Get("/b2-cache", handlers.HandleAdminB2Cache)
 	admin.Get("/embedding-cache", handlers.HandleAdminEmbeddingCache)
 	admin.Get("/vehicle-cache", handlers.HandleAdminVehicleCache)
+	admin.Get("/part-cache", handlers.HandleAdminPartCache)
 
 	// Admin API group
 	adminAPI := api.Group("/admin", handlers.AdminRequired)
@@ -176,6 +176,8 @@ func main() {
 	adminAPI.Post("/embedding-cache/site/clear", handlers.HandleClearSiteEmbeddingCache)
 	adminAPI.Post("/vehicle-cache/clear", handlers.HandleClearVehicleCache)
 	adminAPI.Get("/vehicle-cache/refresh", handlers.HandleRefreshVehicleCache)
+	adminAPI.Post("/part-cache/clear", handlers.HandleClearPartCache)
+	adminAPI.Get("/part-cache/refresh", handlers.HandleRefreshPartCache)
 
 	// User registration/authentication
 	app.Get("/register", handlers.HandleRegistrationStep1)

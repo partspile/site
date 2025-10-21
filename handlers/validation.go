@@ -182,34 +182,34 @@ func ValidateAndParsePrice(c *fiber.Ctx) (float64, error) {
 }
 
 // BuildAdFromForm builds an Ad struct from form data
-func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.Ad, []*multipart.FileHeader, []int, error) {
+func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.AdDetail, []*multipart.FileHeader, []int, error) {
 	title, err := ValidateCleanText(c, "title", "Title", 35)
 	if err != nil {
-		return ad.Ad{}, nil, nil, err
+		return ad.AdDetail{}, nil, nil, err
 	}
 	make, err := ValidateRequired(c, "make", "Make")
 	if err != nil {
-		return ad.Ad{}, nil, nil, err
+		return ad.AdDetail{}, nil, nil, err
 	}
 	form, err := c.MultipartForm()
 	if err != nil {
-		return ad.Ad{}, nil, nil, err
+		return ad.AdDetail{}, nil, nil, err
 	}
 	years, models, engines, err := validateAdFormMultipart(form)
 	if err != nil {
-		return ad.Ad{}, nil, nil, err
+		return ad.AdDetail{}, nil, nil, err
 	}
 
 	// Validate category as single field
 	category, err := ValidateRequired(c, "category", "Category")
 	if err != nil {
-		return ad.Ad{}, nil, nil, err
+		return ad.AdDetail{}, nil, nil, err
 	}
 
 	// Validate subcategory as single field
 	subcategoryName, err := ValidateRequired(c, "subcategory", "Subcategory")
 	if err != nil {
-		return ad.Ad{}, nil, nil, err
+		return ad.AdDetail{}, nil, nil, err
 	}
 
 	// Extract image files
@@ -217,11 +217,11 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 
 	description, err := ValidateCleanText(c, "description", "Description", 500)
 	if err != nil {
-		return ad.Ad{}, nil, nil, err
+		return ad.AdDetail{}, nil, nil, err
 	}
 	price, err := ValidateAndParsePrice(c)
 	if err != nil {
-		return ad.Ad{}, nil, nil, err
+		return ad.AdDetail{}, nil, nil, err
 	}
 
 	id := 0
@@ -247,27 +247,28 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	}
 
 	// Parse category to determine which concrete Ad type to create
-	categoryEnum, err := ad.FromString(category)
-	if err != nil {
-		return ad.Ad{}, nil, nil, fmt.Errorf("invalid category: %s", category)
-	}
+	categoryEnum := ad.ParseCategoryFromQuery(category)
 
-	// Create a simple Ad struct with the specified category
-	newAd := ad.Ad{
-		ID:              id,
-		Title:           title,
-		Make:            make,
-		Years:           years,
-		Models:          models,
-		Engines:         engines,
-		PartCategory:    sql.NullString{String: category, Valid: category != ""},
-		PartSubcategory: sql.NullString{String: subcategoryName, Valid: subcategoryName != ""},
-		Description:     description,
-		Price:           price,
-		UserID:          userID,
-		LocationID:      locationID,
-		ImageCount:      imageCount,
-		AdCategoryID:    categoryEnum.ToID(),
+	// Create a simple AdDetail struct with the specified category
+	newAd := ad.AdDetail{
+		Ad: ad.Ad{
+			ID:           id,
+			AdCategoryID: ad.GetAdCategoryID(categoryEnum),
+			Title:        title,
+			Price:        price,
+			UserID:       userID,
+			ImageCount:   imageCount,
+		},
+		Description:       description,
+		PartSubcategoryID: 0, // TODO: Get actual subcategory ID from name
+		LocationID:        locationID,
+		HasVector:         false, // New ads start without vectors
+		PartCategory:      sql.NullString{String: category, Valid: category != ""},
+		PartSubcategory:   sql.NullString{String: subcategoryName, Valid: subcategoryName != ""},
+		Make:              make,
+		Years:             years,
+		Models:            models,
+		Engines:           engines,
 	}
 
 	return newAd, imageFiles, deletedImages, nil

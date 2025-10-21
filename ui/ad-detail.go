@@ -16,7 +16,7 @@ import (
 	"github.com/parts-pile/site/config"
 )
 
-func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
+func AdDetail(ad ad.AdDetail, loc *time.Location, userID int, view string) g.Node {
 	// Determine full class strings based on deleted status
 	var containerClass, contentClass string
 	if ad.IsArchived() {
@@ -30,27 +30,27 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 	isOwner := userID == ad.UserID && userID != 0
 
 	return Div(
-		ID(adID(ad)),
+		ID(adID(ad.Ad)),
 		Class(containerClass),
-		imageNode(ad, view),
-		closeButton(ad, view),
+		imageNode(ad.Ad, view),
+		closeButton(ad.Ad, view),
 		g.If(ad.IsArchived(), deletedWatermark()),
 		Div(
 			Class(contentClass),
 			// Title row
 			Div(
 				Class("font-semibold text-xl"),
-				titleNode(ad),
+				titleNode(ad.Ad),
 			),
 			// Age and location row with inline edit for owner
 			Div(
 				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-4"),
-				Div(Class("text-gray-400"), ageNode(ad, loc)),
+				Div(Class("text-gray-400"), ageNode(ad.Ad, loc)),
 				g.If(isOwner && !ad.IsArchived(),
 					locationEditable(ad),
 				),
 				g.If(!isOwner || ad.IsArchived(),
-					location(ad),
+					location(ad.Ad),
 				),
 			),
 			// Price row with inline edit for owner and action buttons
@@ -64,15 +64,15 @@ func AdDetail(ad ad.Ad, loc *time.Location, userID int, view string) g.Node {
 				),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
 					// For active ads: show bookmark, message, and delete
-					g.If(!ad.IsArchived() && userID != 0, BookmarkButton(ad)),
-					g.If(!ad.IsArchived() && userID != 0, messageButton(ad, userID)),
-					g.If(!ad.IsArchived(), deleteButton(ad, userID)),
+					g.If(!ad.IsArchived() && userID != 0, BookmarkButton(ad.Ad)),
+					g.If(!ad.IsArchived() && userID != 0, messageButton(ad.Ad, userID)),
+					g.If(!ad.IsArchived(), deleteButton(ad.Ad, userID)),
 					// For deleted ads: show restore button (owner only)
-					g.If(ad.IsArchived(), restoreButton(ad, userID)),
+					g.If(ad.IsArchived(), restoreButton(ad.Ad, userID)),
 					// Share button (visible to everyone)
-					shareButton(ad),
+					shareButton(ad.Ad),
 					// Duplicate button (logged in users only)
-					g.If(userID != 0, duplicateButton(ad)),
+					g.If(userID != 0, duplicateButton(ad.Ad)),
 				),
 			),
 			// Description with inline edit for owner
@@ -103,7 +103,7 @@ func closeButton(ad ad.Ad, view string) g.Node {
 	return Button(
 		Type("button"),
 		Class("absolute top-2 right-2 bg-white border-2 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-100 focus:outline-none cursor-pointer"),
-		hx.Get(fmt.Sprintf("/ad/card/%d?view=%s", ad.ID, view)),
+		hx.Get(fmt.Sprintf("/ad/collapse/%d?view=%s", ad.ID, view)),
 		hx.Target(adTarget(ad)),
 		hx.Swap("outerHTML"),
 		icon("/images/close.svg", "Close", "w-6 h-6"),
@@ -290,16 +290,16 @@ func restoreButton(ad ad.Ad, userID int) g.Node {
 	)
 }
 
-func description(ad ad.Ad) g.Node {
+func description(ad ad.AdDetail) g.Node {
 	return Div(Class("text-base mt-2 whitespace-pre-wrap"), g.Text(ad.Description))
 }
 
-func price(ad ad.Ad) g.Node {
-	return Div(Class("text-2xl font-bold text-green-600"), priceNode(ad))
+func price(ad ad.AdDetail) g.Node {
+	return Div(Class("text-2xl font-bold text-green-600"), priceNode(ad.Ad))
 }
 
 // Editable field components
-func priceEditable(ad ad.Ad) g.Node {
+func priceEditable(ad ad.AdDetail) g.Node {
 	return Div(
 		Class("flex items-center gap-3"),
 		price(ad),
@@ -314,10 +314,10 @@ func priceEditable(ad ad.Ad) g.Node {
 	)
 }
 
-func locationEditable(ad ad.Ad) g.Node {
+func locationEditable(ad ad.AdDetail) g.Node {
 	return Div(
 		Class("flex items-center gap-2"),
-		location(ad),
+		location(ad.Ad),
 		button("Edit",
 			withClass("px-4 h-10"),
 			withAttributes(
@@ -329,7 +329,7 @@ func locationEditable(ad ad.Ad) g.Node {
 	)
 }
 
-func descriptionEditable(ad ad.Ad) g.Node {
+func descriptionEditable(ad ad.AdDetail) g.Node {
 	return Div(
 		Class("mt-2"),
 		description(ad),
@@ -389,7 +389,7 @@ type editModalConfig struct {
 	submitBtnText string
 }
 
-func editModal(ad ad.Ad, cfg editModalConfig) g.Node {
+func editModal(ad ad.AdDetail, cfg editModalConfig) g.Node {
 	return Div(
 		ID(cfg.modalID),
 		Class("fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-8"),
@@ -402,7 +402,7 @@ func editModal(ad ad.Ad, cfg editModalConfig) g.Node {
 				H3(Class("text-2xl font-bold mb-6 text-gray-900"), g.Text(cfg.title)),
 				Form(
 					hx.Post(cfg.apiEndpoint),
-					hx.Target(adTarget(ad)),
+					hx.Target(adTarget(ad.Ad)),
 					hx.Swap("outerHTML"),
 					g.Attr("hx-on::after-swap", "this.closest('.fixed').remove();"),
 					cfg.formContent,
@@ -420,7 +420,7 @@ func editModal(ad ad.Ad, cfg editModalConfig) g.Node {
 	)
 }
 
-func PriceEditModal(ad ad.Ad, view string) g.Node {
+func PriceEditModal(ad ad.AdDetail, view string) g.Node {
 	modalID := fmt.Sprintf("price-modal-%d", ad.ID)
 	return editModal(ad, editModalConfig{
 		modalID:       modalID,
@@ -444,7 +444,7 @@ func PriceEditModal(ad ad.Ad, view string) g.Node {
 	})
 }
 
-func LocationEditModal(ad ad.Ad, view string) g.Node {
+func LocationEditModal(ad ad.AdDetail, view string) g.Node {
 	modalID := fmt.Sprintf("location-modal-%d", ad.ID)
 	currentLocation := ""
 	if ad.RawLocation.Valid {
@@ -472,7 +472,7 @@ func LocationEditModal(ad ad.Ad, view string) g.Node {
 	})
 }
 
-func DescriptionEditModal(ad ad.Ad, view string) g.Node {
+func DescriptionEditModal(ad ad.AdDetail, view string) g.Node {
 	modalID := fmt.Sprintf("description-modal-%d", ad.ID)
 	return editModal(ad, editModalConfig{
 		modalID:       modalID,
@@ -712,7 +712,7 @@ func commaSeparatedLinks(text string, accumulatedSegments []string) g.Node {
 	return g.Group(linkNodes)
 }
 
-func partTypePath(ad ad.Ad) g.Node {
+func partTypePath(ad ad.AdDetail) g.Node {
 	var segments []string  // Keep strings for building cumulative queries
 	var linkNodes []g.Node // Build link nodes
 

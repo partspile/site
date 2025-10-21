@@ -27,7 +27,7 @@ func encodeAdIDs(adIDs []int) string {
 	return base64.URLEncoding.EncodeToString(buf)
 }
 
-func TreeViewResults(adIDs []int, userPrompt string, category int) g.Node {
+func TreeViewResults(adIDs []int, userPrompt string, category string) g.Node {
 	var viewContent = NoSearchResultsMessage()
 
 	if userPrompt == "" && len(adIDs) == 0 {
@@ -48,7 +48,7 @@ func TreeViewResults(adIDs []int, userPrompt string, category int) g.Node {
 }
 
 // treeBrowseMakes returns the initial tree view for browsing
-func treeBrowseMakes(category int) g.Node {
+func treeBrowseMakes(category string) g.Node {
 	makes, err := vehicle.GetAdMakes(category)
 	if err != nil {
 		log.Printf("[tree-view] Error getting makes: %v", err)

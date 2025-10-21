@@ -10,7 +10,7 @@ import (
 // Handler to bookmark an ad
 func HandleBookmarkAd(c *fiber.Ctx) error {
 	currentUser, userID := CurrentUser(c)
-	adID, err := ParseIntParam(c, "id")
+	adID, err := AdID(c)
 	if err != nil {
 		return err
 	}
@@ -20,19 +20,18 @@ func HandleBookmarkAd(c *fiber.Ctx) error {
 	// Queue user for background embedding update
 	vector.QueueUserForUpdate(userID)
 	// Get the updated ad with bookmark status
-	ads, err := ad.GetAdsByIDs([]int{adID}, currentUser)
-	if err != nil || len(ads) == 0 {
+	adObj, err := ad.GetAdByID(adID, currentUser)
+	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	adObj := ads[0]
 	// Return the bookmarked button HTML for HTMX swap
-	return render(c, ui.BookmarkButton(adObj))
+	return render(c, ui.BookmarkButton(*adObj))
 }
 
 // Handler to unbookmark an ad
 func HandleUnbookmarkAd(c *fiber.Ctx) error {
 	currentUser, userID := CurrentUser(c)
-	adID, err := ParseIntParam(c, "id")
+	adID, err := AdID(c)
 	if err != nil {
 		return err
 	}
@@ -42,11 +41,10 @@ func HandleUnbookmarkAd(c *fiber.Ctx) error {
 	// Queue user for background embedding update
 	vector.QueueUserForUpdate(userID)
 	// Get the updated ad with bookmark status
-	ads, err := ad.GetAdsByIDs([]int{adID}, currentUser)
-	if err != nil || len(ads) == 0 {
+	adObj, err := ad.GetAdByID(adID, currentUser)
+	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	adObj := ads[0]
 	// Return the unbookmarked button HTML for HTMX swap
-	return render(c, ui.BookmarkButton(adObj))
+	return render(c, ui.BookmarkButton(*adObj))
 }

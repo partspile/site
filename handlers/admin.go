@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/b2util"
+	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/vehicle"
@@ -137,4 +138,32 @@ func HandleClearVehicleCache(c *fiber.Ctx) error {
 func HandleRefreshVehicleCache(c *fiber.Ctx) error {
 	stats := vehicle.GetVehicleCacheStats()
 	return render(c, ui.AdminVehicleCacheSection(stats))
+}
+
+func HandleAdminPartCache(c *fiber.Ctx) error {
+	currentUser, _ := CurrentUser(c)
+
+	stats := part.GetPartCacheStats()
+
+	if c.Get("HX-Request") != "" {
+		return render(c, ui.AdminSectionPage(currentUser, c.Path(), "part-cache", ui.AdminPartCacheSection(stats)))
+	}
+	return render(c, ui.Page(
+		"Admin Dashboard",
+		currentUser,
+		c.Path(),
+		[]g.Node{ui.AdminSectionPage(currentUser, c.Path(), "part-cache", ui.AdminPartCacheSection(stats))},
+	))
+}
+
+func HandleClearPartCache(c *fiber.Ctx) error {
+	part.ClearPartCache()
+
+	stats := part.GetPartCacheStats()
+	return render(c, ui.AdminPartCacheSection(stats))
+}
+
+func HandleRefreshPartCache(c *fiber.Ctx) error {
+	stats := part.GetPartCacheStats()
+	return render(c, ui.AdminPartCacheSection(stats))
 }

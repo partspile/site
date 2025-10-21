@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -37,12 +36,8 @@ func (v *TreeView) GetAdIDs() ([]int, string, error) {
 
 func (v *TreeView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
-	categoryStr := getQueryParam(v.ctx, "category")
-	if categoryStr == "" {
-		categoryStr = "CarParts"
-	}
-	category := ad.ParseCategoryFromQuery(categoryStr)
-	return render(v.ctx, ui.TreeViewResults(adIDs, userPrompt, category.ToID()))
+	category := AdCategory(v.ctx)
+	return render(v.ctx, ui.TreeViewResults(adIDs, userPrompt, category))
 }
 
 func (v *TreeView) RenderSearchPage(adIDs []int, nextCursor string) error {

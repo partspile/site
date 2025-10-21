@@ -148,12 +148,12 @@ func HandleSearch(c *fiber.Ctx) error {
 // handleSearchContainer handles requests targeting the search container (from category pills)
 func handleSearchContainer(c *fiber.Ctx, viewType string) error {
 	// Get category from query param or cookie
-	categoryStr := c.Query("category", "")
-	var activeAdCategory ad.AdCategory
+	categoryStr := c.Query("ad_category", "")
+	var activeAdCategory string
 	if categoryStr != "" {
 		activeAdCategory = ad.ParseCategoryFromQuery(categoryStr)
 	} else {
-		activeAdCategory = getCookieAdCategoryID(c)
+		activeAdCategory = getCookieAdCategory(c)
 	}
 
 	view, err := NewView(c, viewType)
@@ -178,7 +178,7 @@ func handleSearchContainer(c *fiber.Ctx, viewType string) error {
 	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, viewType)
 
 	// Save category preference
-	saveCookieAdCategoryID(c, activeAdCategory)
+	saveCookieAdCategory(c, activeAdCategory)
 
 	// Render the full search container
 	return render(c, ui.SearchPage(userID, userPrompt, ads, getLocation(c), loaderURL, activeAdCategory))
@@ -189,12 +189,12 @@ func HandleSearchQuery(c *fiber.Ctx) error {
 	c.Set("Content-Type", "text/html")
 
 	// Get category from query param or cookie
-	categoryStr := c.Query("category", "")
-	var activeAdCategory ad.AdCategory
+	categoryStr := c.Query("ad_category", "")
+	var activeAdCategory string
 	if categoryStr != "" {
 		activeAdCategory = ad.ParseCategoryFromQuery(categoryStr)
 	} else {
-		activeAdCategory = getCookieAdCategoryID(c)
+		activeAdCategory = getCookieAdCategory(c)
 	}
 
 	view, err := NewView(c, "list")
@@ -219,7 +219,7 @@ func HandleSearchQuery(c *fiber.Ctx) error {
 	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list")
 
 	// Save category preference
-	saveCookieAdCategoryID(c, activeAdCategory)
+	saveCookieAdCategory(c, activeAdCategory)
 
 	// Render full page with search widget and results
 	return render(c, ui.Page(
@@ -287,8 +287,7 @@ func HandleFiltersShow(c *fiber.Ctx) error {
 	// Get view and query parameters
 	view := c.Query("view", "list")
 	query := c.Query("q", "")
-	categoryStr := c.Query("category", "CarParts")
-	category := ad.ParseCategoryFromQuery(categoryStr)
+	category := AdCategory(c)
 
 	// Return the search form with filters
 	return render(c, ui.FiltersShow(view, query, category))

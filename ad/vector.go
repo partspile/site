@@ -12,13 +12,10 @@ func GetAdsWithoutVectors() ([]Ad, error) {
 	log.Printf("[GetAdsWithoutVectors] Querying for ads without vectors")
 	query := `
 		SELECT 
-			a.id, a.title, a.description, a.price, a.created_at, 
-			a.part_subcategory_id, a.user_id, psc.name as subcategory, pc.name as category, a.click_count, a.last_clicked_at, a.location_id, a.image_count,
-			l.city, l.admin_area, l.country, l.latitude, l.longitude,
-			0 as is_bookmarked, a.ad_category_id
+			a.id, a.ad_category_id, a.title, a.price, a.created_at, a.deleted_at, a.user_id, a.image_count,
+			l.city, l.admin_area, l.country,
+			0 as is_bookmarked
 		FROM Ad a
-		LEFT JOIN PartSubCategory psc ON a.part_subcategory_id = psc.id
-		LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
 		LEFT JOIN Location l ON a.location_id = l.id
 		WHERE a.has_vector = 0 AND a.deleted_at IS NULL
 	`

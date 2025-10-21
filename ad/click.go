@@ -28,16 +28,6 @@ func IncrementAdClickForUser(adID int, userID int) error {
 	return err
 }
 
-// GetAdClickCount returns the global click count for an ad
-func GetAdClickCount(adID int) (int, error) {
-	var count int
-	err := db.QueryRow("SELECT click_count FROM Ad WHERE id = ?", adID).Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
 // GetRecentlyClickedAdIDsByUser returns ad IDs the user has clicked, most recent first.
 func GetRecentlyClickedAdIDsByUser(userID, limit int) ([]int, error) {
 	log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser called with userID=%d, limit=%d", userID, limit)

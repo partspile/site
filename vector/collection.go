@@ -77,6 +77,7 @@ func SetupPayloadIndexes() error {
 		{"engines", qdrant.FieldType_FieldTypeKeyword},
 		{"category", qdrant.FieldType_FieldTypeKeyword},
 		{"subcategory", qdrant.FieldType_FieldTypeKeyword},
+		{"ad_category_id", qdrant.FieldType_FieldTypeKeyword},
 		{"price", qdrant.FieldType_FieldTypeFloat},
 		{"location", qdrant.FieldType_FieldTypeGeo},
 	}

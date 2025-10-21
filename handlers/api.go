@@ -5,7 +5,6 @@ import (
 	"net/url"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/sms"
 	"github.com/parts-pile/site/ui"
@@ -15,18 +14,16 @@ import (
 )
 
 func HandleMakes(c *fiber.Ctx) error {
-	categoryStr := c.Query("category", "CarParts")
-	category := ad.ParseCategoryFromQuery(categoryStr)
-	makes := vehicle.GetMakes(category.ToID())
+	category := AdCategory(c)
+	makes := vehicle.GetMakes(category)
 	return c.JSON(makes)
 }
 
 // HandleFilterMakes returns makes that have existing ads for filter dropdowns
 func HandleFilterMakes(c *fiber.Ctx) error {
-	categoryStr := c.Query("category", "CarParts")
-	category := ad.ParseCategoryFromQuery(categoryStr)
+	category := AdCategory(c)
 
-	makes, err := vehicle.GetAdMakes(category.ToID())
+	makes, err := vehicle.GetAdMakes(category)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to get makes"})
 	}
@@ -38,21 +35,19 @@ func HandleFilterMakes(c *fiber.Ctx) error {
 
 func HandleYears(c *fiber.Ctx) error {
 	makeName := c.Query("make")
-	categoryStr := c.Query("category", "CarParts")
-	category := ad.ParseCategoryFromQuery(categoryStr)
+	category := AdCategory(c)
 	if makeName == "" {
 		// Return empty div when make is not selected
 		return render(c, ui.YearsSelector([]string{}))
 	}
 
-	years := vehicle.GetYears(category.ToID(), makeName)
+	years := vehicle.GetYears(category, makeName)
 	return render(c, ui.YearsSelector(years))
 }
 
 func HandleModels(c *fiber.Ctx) error {
 	makeName := c.Query("make")
-	categoryStr := c.Query("category", "CarParts")
-	category := ad.ParseCategoryFromQuery(categoryStr)
+	category := AdCategory(c)
 	if makeName == "" {
 		// Return empty div when make is not selected
 		return render(c, ui.ModelsSelector([]string{}))
@@ -68,7 +63,7 @@ func HandleModels(c *fiber.Ctx) error {
 		return render(c, ui.ModelsSelector([]string{}))
 	}
 
-	models := vehicle.GetModels(category.ToID(), makeName, years)
+	models := vehicle.GetModels(category, makeName, years)
 	if len(models) == 0 {
 		// Return empty message when no models are available for all selected years
 		return render(c, ui.ModelsDivEmpty())
@@ -78,8 +73,7 @@ func HandleModels(c *fiber.Ctx) error {
 
 func HandleEngines(c *fiber.Ctx) error {
 	makeName := c.Query("make")
-	categoryStr := c.Query("category", "CarParts")
-	category := ad.ParseCategoryFromQuery(categoryStr)
+	category := AdCategory(c)
 	if makeName == "" {
 		// Return empty div when make is not selected
 		return render(c, ui.EnginesSelector([]string{}))
@@ -101,7 +95,7 @@ func HandleEngines(c *fiber.Ctx) error {
 		return render(c, ui.EnginesSelector([]string{}))
 	}
 
-	engines := vehicle.GetEngines(category.ToID(), makeName, years, models)
+	engines := vehicle.GetEngines(category, makeName, years, models)
 	if len(engines) == 0 {
 		// Return empty message when no engines are available for all selected year-model combinations
 		return render(c, ui.EnginesDivEmpty())
@@ -109,30 +103,16 @@ func HandleEngines(c *fiber.Ctx) error {
 	return render(c, ui.EnginesSelector(engines))
 }
 
-func HandleCategories(c *fiber.Ctx) error {
-	categoryStr := c.Query("category", "CarParts")
-	category := ad.ParseCategoryFromQuery(categoryStr)
-	categories, err := part.GetAllCategories(category)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get categories")
-	}
-	return c.JSON(categories)
-}
-
 func HandleSubCategories(c *fiber.Ctx) error {
 	categoryName := c.Query("category")
-	categoryStr := c.Query("ad_category", "CarParts")
-	category := ad.ParseCategoryFromQuery(categoryStr)
+	category := AdCategory(c)
 	if categoryName == "" {
 		// Return empty div when category is not selected
-		return render(c, ui.SubCategoriesSelector([]part.SubAdCategory{}, ""))
+		return render(c, ui.SubCategoriesSelector([]string{}, ""))
 	}
 
-	subCategories, err := part.GetSubCategoriesForAdCategory(category, categoryName)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get subcategories")
-	}
-	return render(c, ui.SubCategoriesSelector(subCategories, ""))
+	subCategoryNames := part.GetSubCategories(category, categoryName)
+	return render(c, ui.SubCategoriesSelector(subCategoryNames, ""))
 }
 
 // HandleSMSWebhook processes Twilio webhook callbacks for SMS status updates

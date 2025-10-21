@@ -153,7 +153,7 @@ func BookmarkButton(ad ad.Ad) g.Node {
 	)
 }
 
-func AdPage(adObj ad.Ad, currentUser *user.User, userID int, path string, loc *time.Location, view string) g.Node {
+func AdPage(adObj ad.AdDetail, currentUser *user.User, userID int, path string, loc *time.Location, view string) g.Node {
 	return Page(
 		fmt.Sprintf("Ad %d - Parts Pile", adObj.ID),
 		currentUser,

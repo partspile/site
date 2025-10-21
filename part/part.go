@@ -7,209 +7,297 @@ import (
 	"strings"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/cache"
 	"github.com/parts-pile/site/db"
 )
 
-type AdCategory struct {
+type PartCategory struct {
 	ID   int    `db:"id"`
 	Name string `db:"name"`
 }
 
-type SubAdCategory struct {
-	ID           int    `db:"id"`
-	AdCategoryID int    `db:"category_id"`
-	Name         string `db:"name"`
+type PartSubCategory struct {
+	ID             int    `db:"id"`
+	PartCategoryID int    `db:"part_category_id"`
+	Name           string `db:"name"`
 }
 
 var (
-	// Simple maps for static data that never changes
-	allCategories    []string
-	allSubCategories = make(map[string][]string) // category -> subcategories
+	// Cache part categories and subcategories by ad category
+	categories    = make(map[string][]string)            // adCat -> []categoryNames
+	subCategories = make(map[string]map[string][]string) // adCat -> categoryName -> []subcategoryNames
+
+	// Cache for expensive ad-related queries
+	partCache *cache.Cache[[]string]
 )
 
-// Initialize parts static data
-func InitPartsData() error {
-	// Load all categories for CarParts (default category)
-	categories, err := GetAllCategories(ad.CarParts)
+// getCategories returns the part categories for the given ad category
+func getCategories(adCat string) ([]string, error) {
+	query := "SELECT name FROM PartCategory WHERE ad_category_id = ? ORDER BY name"
+	var names []string
+	err := db.Select(&names, query, ad.GetAdCategoryID(adCat))
+	return names, err
+}
+
+// GetCategories returns all categories for a specific ad category
+func GetCategories(adCat string) []string {
+	if cats, exists := categories[adCat]; exists {
+		return cats
+	}
+
+	cats, err := getCategories(adCat)
 	if err != nil {
-		return fmt.Errorf("failed to load categories: %w", err)
+		log.Printf("[parts] Failed to load categories for %s: %v", adCat, err)
+		return []string{}
 	}
+	categories[adCat] = cats
 
-	allCategories = make([]string, len(categories))
-	for i, cat := range categories {
-		allCategories[i] = cat.Name
-	}
+	return cats
+}
 
-	// Load subcategories for each category
-	for _, categoryName := range allCategories {
-		subCategories, err := GetSubCategoriesForAdCategory(ad.CarParts, categoryName)
-		if err != nil {
-			continue
+// getSubCategories returns the subcategories for the given ad category and category
+func getSubCategories(adCat, category string) ([]string, error) {
+	query := `
+		SELECT psc.name 
+		FROM PartSubAdCategory psc
+		JOIN PartCategory pc ON psc.part_category_id = pc.id
+		WHERE pc.name = ? AND pc.ad_category_id = ?
+		ORDER BY psc.name
+	`
+	var names []string
+	err := db.Select(&names, query, category, ad.GetAdCategoryID(adCat))
+	return names, err
+}
+
+// GetSubCategories returns all subcategories for a specific ad category and category
+func GetSubCategories(adCat, category string) []string {
+	// Check if subcategories map exists for this ad category
+	if subCategoriesMap, exists := subCategories[adCat]; exists {
+		// Check if subcategories exist for this specific category
+		if subCats, exists := subCategoriesMap[category]; exists {
+			return subCats
 		}
-
-		subAdCategoryNames := make([]string, len(subCategories))
-		for i, subCat := range subCategories {
-			subAdCategoryNames[i] = subCat.Name
-		}
-		allSubCategories[categoryName] = subAdCategoryNames
+	} else {
+		// Initialize subcategories map for this ad category
+		subCategories[adCat] = make(map[string][]string)
 	}
 
-	log.Printf("[parts] Static data loaded - %d categories", len(allCategories))
+	subCats, err := getSubCategories(adCat, category)
+	if err != nil {
+		log.Printf("[parts] Failed to load subcategories for %s/%s: %v", adCat, category, err)
+		return []string{}
+	}
+
+	subCategories[adCat][category] = subCats
+
+	return subCats
+}
+
+// InitPartCache initializes the part cache for expensive queries
+func InitPartCache() error {
+	var err error
+	partCache, err = cache.New(func(value []string) int64 {
+		return int64(len(value) * 50) // Estimate 50 bytes per string
+	}, "Part Data Cache")
+	if err != nil {
+		return fmt.Errorf("failed to initialize part cache: %w", err)
+	}
+	log.Printf("[part-cache] Initialized successfully")
 	return nil
 }
 
-// ============================================================================
-// STATIC DATA FUNCTIONS (No cache needed - loaded once)
-// ============================================================================
+// GetPartCacheStats returns cache statistics for admin monitoring
+func GetPartCacheStats() map[string]any {
+	return partCache.Stats()
+}
 
-// GetCategories returns all categories (static data, no cache needed)
-func GetCategories() []string {
-	return allCategories
+// ClearPartCache clears all items from the part cache
+func ClearPartCache() {
+	partCache.Clear()
+	log.Printf("[part-cache] Cache cleared")
 }
 
 // ============================================================================
-// AD DATA FUNCTIONS (For tree view)
+// SQL QUERY BUILDERS (Internal helper functions)
 // ============================================================================
 
-// GetAdCategoriesForAdIDs returns categories that have existing ads for make/year/model/engine, filtered by ad IDs (for tree view)
-func GetAdCategoriesForAdIDs(adIDs []int, makeName, year, model, engine string) ([]string, error) {
-	return GetCategoriesForAdIDs(adIDs, makeName, year, model, engine)
+// buildAdCategoriesQuery builds the SQL query for finding categories that have existing ads for make/year/model/engine
+func buildAdCategoriesQuery(adCat, makeName, year, model, engine string) (string, []interface{}) {
+	associationTable, vehicleTable, vehicleIDColumn := ad.GetTableInfo(adCat)
+
+	var query string
+	var args []interface{}
+
+	// Build common query parts
+	baseQuery := fmt.Sprintf(`
+		SELECT DISTINCT pc.name
+		FROM PartCategory pc
+		JOIN PartSubAdCategory psc ON pc.id = psc.category_id
+		JOIN Ad a ON psc.id = a.part_subcategory_id
+		JOIN %s ac ON a.id = ac.ad_id
+		JOIN %s c ON ac.%s_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Model mo ON c.model_id = mo.id
+	`, associationTable, vehicleTable, vehicleIDColumn)
+
+	// Add conditional JOINs and WHERE clauses based on ad category
+	switch adCat {
+	case "Car", "CarPart", "Motorcycle", "MotorcyclePart":
+		// Cars and Motorcycles: make, year, model, engine
+		query = baseQuery + `
+			JOIN Year y ON c.year_id = y.id
+			JOIN Engine e ON c.engine_id = e.id
+			WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ?
+			ORDER BY pc.name
+		`
+		args = []interface{}{makeName, year, model, engine}
+
+	case "Ag", "AgPart":
+		// Ag Equipment: make, year, model (no engine)
+		query = baseQuery + `
+			JOIN Year y ON c.year_id = y.id
+			WHERE m.name = ? AND y.year = ? AND mo.name = ?
+			ORDER BY pc.name
+		`
+		args = []interface{}{makeName, year, model}
+
+	case "Bicycle", "BicyclePart":
+		// Bicycles: make, model (no year, no engine)
+		query = baseQuery + `
+			WHERE m.name = ? AND mo.name = ?
+			ORDER BY pc.name
+		`
+		args = []interface{}{makeName, model}
+
+	default:
+		// Unknown ad category - panic to catch programming errors
+		panic(fmt.Sprintf("unsupported ad category: %v", adCat))
+	}
+
+	return query, args
 }
 
-// GetAdSubCategoriesForAdIDs returns subcategories that have existing ads for make/year/model/engine/category, filtered by ad IDs (for tree view)
-func GetAdSubCategoriesForAdIDs(adIDs []int, makeName, year, model, engine, category string) ([]string, error) {
-	return GetSubCategoriesForAdIDs(adIDs, makeName, year, model, engine, category)
+// buildAdSubCategoriesQuery builds the SQL query for finding subcategories that have existing ads for make/year/model/engine/category
+func buildAdSubCategoriesQuery(adCat, makeName, year, model, engine, category string) (string, []interface{}) {
+	associationTable, vehicleTable, vehicleIDColumn := ad.GetTableInfo(adCat)
+
+	var query string
+	var args []interface{}
+
+	// Build common query parts
+	baseQuery := fmt.Sprintf(`
+		SELECT DISTINCT psc.name
+		FROM PartSubAdCategory psc
+		JOIN PartCategory pc ON psc.part_category_id = pc.id
+		JOIN Ad a ON psc.id = a.part_subcategory_id
+		JOIN %s ac ON a.id = ac.ad_id
+		JOIN %s c ON ac.%s_id = c.id
+		JOIN Make m ON c.make_id = m.id
+		JOIN Model mo ON c.model_id = mo.id
+	`, associationTable, vehicleTable, vehicleIDColumn)
+
+	// Add conditional JOINs and WHERE clauses based on ad category
+	switch adCat {
+	case "Car", "CarPart", "Motorcycle", "MotorcyclePart":
+		// Cars and Motorcycles: make, year, model, engine
+		query = baseQuery + `
+			JOIN Year y ON c.year_id = y.id
+			JOIN Engine e ON c.engine_id = e.id
+			WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND pc.name = ?
+			ORDER BY psc.name
+		`
+		args = []interface{}{makeName, year, model, engine, category}
+
+	case "Ag", "AgPart":
+		// Ag Equipment: make, year, model (no engine)
+		query = baseQuery + `
+			JOIN Year y ON c.year_id = y.id
+			WHERE m.name = ? AND y.year = ? AND mo.name = ? AND pc.name = ?
+			ORDER BY psc.name
+		`
+		args = []interface{}{makeName, year, model, category}
+
+	case "Bicycle", "BicyclePart":
+		// Bicycles: make, model (no year, no engine)
+		query = baseQuery + `
+			WHERE m.name = ? AND mo.name = ? AND pc.name = ?
+			ORDER BY psc.name
+		`
+		args = []interface{}{makeName, model, category}
+
+	default:
+		// Unknown ad category - panic to catch programming errors
+		panic(fmt.Sprintf("unsupported ad category: %v", adCat))
+	}
+
+	return query, args
 }
+
+// ============================================================================
+// TREE VIEW FUNCTIONS BROWSE MODE (q == "")
+// ============================================================================
 
 // GetAdCategories returns categories that have existing ads for make/year/model/engine (for tree view)
-func GetAdCategories(makeName, year, model, engine string) ([]string, error) {
+func GetAdCategories(adCat, makeName, year, model, engine string) ([]string, error) {
 	makeName, _ = url.QueryUnescape(makeName)
 	year, _ = url.QueryUnescape(year)
 	model, _ = url.QueryUnescape(model)
 	engine, _ = url.QueryUnescape(engine)
 
-	query := `
-		SELECT DISTINCT pc.name
-		FROM PartCategory pc
-		JOIN PartSubAdCategory psc ON pc.id = psc.category_id
-		JOIN Ad a ON psc.id = a.part_subcategory_id
-		JOIN AdCar ac ON a.id = ac.ad_id
-		JOIN Car c ON ac.car_id = c.id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Year y ON c.year_id = y.id
-		JOIN Model mo ON c.model_id = mo.id
-		JOIN Engine e ON c.engine_id = e.id
-		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ?
-		ORDER BY pc.name
-	`
+	// Create cache key
+	cacheKey := fmt.Sprintf("ad:categories:%d:%s:%s:%s:%s", ad.GetAdCategoryID(adCat), makeName, year, model, engine)
+
+	// Check cache first
+	if cached, found := partCache.Get(cacheKey); found {
+		return cached, nil
+	}
+
+	query, args := buildAdCategoriesQuery(adCat, makeName, year, model, engine)
 	var categories []string
-	err := db.Select(&categories, query, makeName, year, model, engine)
-	return categories, err
+	err := db.Select(&categories, query, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the results
+	partCache.Set(cacheKey, categories, int64(len(categories)*50))
+	return categories, nil
 }
 
 // GetAdSubCategories returns subcategories that have existing ads for make/year/model/engine/category (for tree view)
-func GetAdSubCategories(makeName, year, model, engine, category string) ([]string, error) {
+func GetAdSubCategories(adCat, makeName, year, model, engine, category string) ([]string, error) {
 	makeName, _ = url.QueryUnescape(makeName)
 	year, _ = url.QueryUnescape(year)
 	model, _ = url.QueryUnescape(model)
 	engine, _ = url.QueryUnescape(engine)
 	category, _ = url.QueryUnescape(category)
 
-	query := `
-		SELECT DISTINCT psc.name
-		FROM PartSubAdCategory psc
-		JOIN PartCategory pc ON psc.part_category_id = pc.id
-		JOIN Ad a ON psc.id = a.part_subcategory_id
-		JOIN AdCar ac ON a.id = ac.ad_id
-		JOIN Car c ON ac.car_id = c.id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Year y ON c.year_id = y.id
-		JOIN Model mo ON c.model_id = mo.id
-		JOIN Engine e ON c.engine_id = e.id
-		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND pc.name = ?
-		ORDER BY psc.name
-	`
+	// Create cache key
+	cacheKey := fmt.Sprintf("ad:subcategories:%d:%s:%s:%s:%s:%s", ad.GetAdCategoryID(adCat), makeName, year, model, engine, category)
+
+	// Check cache first
+	if cached, found := partCache.Get(cacheKey); found {
+		return cached, nil
+	}
+
+	query, args := buildAdSubCategoriesQuery(adCat, makeName, year, model, engine, category)
 	var subCategories []string
-	err := db.Select(&subCategories, query, makeName, year, model, engine, category)
-	return subCategories, err
-}
-
-func GetAllCategories(ad_category ad.AdCategory) ([]AdCategory, error) {
-	query := "SELECT id, name FROM PartCategory WHERE ad_category_id = ? ORDER BY name"
-	var categories []AdCategory
-	err := db.Select(&categories, query, ad_category.ToID())
-	return categories, err
-}
-
-func GetSubCategoriesForAdCategory(ad_category ad.AdCategory, categoryName string) ([]SubAdCategory, error) {
-	query := `
-		SELECT psc.id, psc.category_id, psc.name 
-		FROM PartSubAdCategory psc
-		JOIN PartCategory pc ON psc.part_category_id = pc.id
-		WHERE pc.name = ? AND pc.ad_category_id = ?
-		ORDER BY psc.name
-	`
-	var subCategories []SubAdCategory
-	err := db.Select(&subCategories, query, categoryName, ad_category.ToID())
-	return subCategories, err
-}
-
-func GetSubAdCategoryIDByName(subcategoryName string) (int, error) {
-	query := `SELECT id FROM PartSubAdCategory WHERE name = ?`
-	var id int
-	err := db.QueryRow(query, subcategoryName).Scan(&id)
+	err := db.Select(&subCategories, query, args...)
 	if err != nil {
-		return 0, err
-	}
-	return id, nil
-}
-
-func GetSubAdCategoryNameByID(subcategoryID int) (string, error) {
-	query := `SELECT name FROM PartSubAdCategory WHERE id = ?`
-	var name string
-	err := db.QueryRow(query, subcategoryID).Scan(&name)
-	if err != nil {
-		return "", err
-	}
-	return name, nil
-}
-
-func getMakes(query string) ([]string, error) {
-	// If there's a search query, filter makes based on matching ads
-	if query != "" {
-		querySQL := `
-			SELECT DISTINCT m.name
-			FROM Make m
-			JOIN Car c ON m.id = c.make_id
-			JOIN AdCar ac ON c.id = ac.car_id
-			JOIN Ad a ON ac.ad_id = a.id
-			WHERE a.description LIKE ?
-			ORDER BY m.name
-		`
-		var makes []string
-		err := db.Select(&makes, querySQL, "%"+query+"%")
-		return makes, err
+		return nil, err
 	}
 
-	// If no query, return all makes
-	querySQL := `
-		SELECT DISTINCT m.name
-		FROM Make m
-		JOIN Car c ON m.id = c.make_id
-		JOIN AdCar ac ON c.id = ac.car_id
-		ORDER BY m.name
-	`
-	var makes []string
-	err := db.Select(&makes, querySQL)
-	return makes, err
+	// Cache the results
+	partCache.Set(cacheKey, subCategories, int64(len(subCategories)*50))
+	return subCategories, nil
 }
 
 // ============================================================================
-// NEW TREE VIEW FUNCTIONS - Filtered by ad IDs (for search mode)
+// TREE VIEW FUNCTIONS SEARCH MODE (q != "")
 // ============================================================================
 
-// GetCategoriesForAdIDs returns categories for a specific make/year/model/engine, filtered by ad IDs
-func GetCategoriesForAdIDs(adIDs []int, makeName, year, model, engine string) ([]string, error) {
+// GetCategoriesForAds returns categories for a specific make/year/model/engine, filtered by ad IDs
+func GetCategoriesForAds(adIDs []int, makeName, year, model, engine string) ([]string, error) {
 	if len(adIDs) == 0 {
 		return []string{}, nil
 	}
@@ -256,8 +344,8 @@ func GetCategoriesForAdIDs(adIDs []int, makeName, year, model, engine string) ([
 	return categories, err
 }
 
-// GetSubCategoriesForAdIDs returns subcategories for a specific make/year/model/engine/category, filtered by ad IDs
-func GetSubCategoriesForAdIDs(adIDs []int, makeName, year, model, engine, category string) ([]string, error) {
+// GetSubCategoriesForAds returns subcategories for a specific make/year/model/engine/category, filtered by ad IDs
+func GetSubCategoriesForAds(adIDs []int, makeName, year, model, engine, category string) ([]string, error) {
 	if len(adIDs) == 0 {
 		return []string{}, nil
 	}
@@ -299,92 +387,4 @@ func GetSubCategoriesForAdIDs(adIDs []int, makeName, year, model, engine, catego
 	var subCategories []string
 	err := db.Select(&subCategories, query, args...)
 	return subCategories, err
-}
-
-// ============================================================================
-// NEW TREE VIEW FUNCTIONS - Browse mode (when adIDs is nil/empty)
-// ============================================================================
-
-// GetMakesForAll returns all makes that have ads for a specific category
-func GetMakesForAll(ad_category int) ([]string, error) {
-	query := `
-		SELECT DISTINCT m.name
-		FROM Make m
-		JOIN Car c ON m.id = c.make_id
-		JOIN AdCar ac ON c.id = ac.car_id
-		JOIN Ad a ON ac.ad_id = a.id
-		WHERE a.ad_category_id = ?
-		ORDER BY m.name
-	`
-	var makes []string
-	err := db.Select(&makes, query, ad_category)
-	return makes, err
-}
-
-// GetYearsForAll returns all years for a specific make and category
-func GetYearsForAll(ad_category int, makeName string) ([]string, error) {
-	makeName, _ = url.QueryUnescape(makeName)
-	query := `
-		SELECT DISTINCT y.year
-		FROM Year y
-		JOIN Car c ON y.id = c.year_id
-		JOIN Make m ON c.make_id = m.id
-		JOIN AdCar ac ON c.id = ac.car_id
-		JOIN Ad a ON ac.ad_id = a.id
-		WHERE m.name = ? AND a.ad_category_id = ?
-		ORDER BY y.year DESC
-	`
-	var yearInts []int
-	err := db.Select(&yearInts, query, makeName, ad_category)
-	if err != nil {
-		return nil, err
-	}
-
-	var years []string
-	for _, year := range yearInts {
-		years = append(years, fmt.Sprintf("%d", year))
-	}
-	return years, nil
-}
-
-// GetModelsForAll returns all models for a specific make/year and category
-func GetModelsForAll(ad_category int, makeName, year string) ([]string, error) {
-	makeName, _ = url.QueryUnescape(makeName)
-	year, _ = url.QueryUnescape(year)
-	query := `
-		SELECT DISTINCT mo.name
-		FROM Model mo
-		JOIN Car c ON mo.id = c.model_id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Year y ON c.year_id = y.id
-		JOIN AdCar ac ON c.id = ac.car_id
-		JOIN Ad a ON ac.ad_id = a.id
-		WHERE m.name = ? AND y.year = ? AND a.ad_category_id = ?
-		ORDER BY mo.name
-	`
-	var models []string
-	err := db.Select(&models, query, makeName, year, ad_category)
-	return models, err
-}
-
-// GetEnginesForAll returns all engines for a specific make/year/model and category
-func GetEnginesForAll(ad_category int, makeName, year, model string) ([]string, error) {
-	makeName, _ = url.QueryUnescape(makeName)
-	year, _ = url.QueryUnescape(year)
-	model, _ = url.QueryUnescape(model)
-	query := `
-		SELECT DISTINCT e.name
-		FROM Engine e
-		JOIN Car c ON e.id = c.engine_id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Year y ON c.year_id = y.id
-		JOIN Model mo ON c.model_id = mo.id
-		JOIN AdCar ac ON c.id = ac.car_id
-		JOIN Ad a ON ac.ad_id = a.id
-		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND a.ad_category_id = ?
-		ORDER BY e.name
-	`
-	var engines []string
-	err := db.Select(&engines, query, makeName, year, model, ad_category)
-	return engines, err
 }
