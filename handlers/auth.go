@@ -59,9 +59,7 @@ func logoutUser(c *fiber.Ctx) error {
 }
 
 func HandleLogout(c *fiber.Ctx) error {
-	if err := logoutUser(c); err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to log you out.")
-	}
+	logoutUser(c)
 	return render(c, ui.LoginPage(nil, "/login"))
 }
 

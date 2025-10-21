@@ -600,15 +600,16 @@ func GetParentCompanyInfoForMake(makeName string) (*ParentCompanyInfo, error) {
 	return nil, nil
 }
 
-// GetVehicleCacheStats returns cache statistics for admin monitoring
-func GetVehicleCacheStats() map[string]any {
+// GetCacheStats returns cache statistics for admin monitoring
+func GetCacheStats() map[string]any {
 	return vehicleCache.Stats()
 }
 
-// ClearVehicleCache clears all items from the vehicle cache
-func ClearVehicleCache() {
+// ClearCache clears all items from the vehicle cache and returns updated stats
+func ClearCache() map[string]any {
 	vehicleCache.Clear()
 	log.Printf("[vehicle-cache] Cache cleared")
+	return vehicleCache.Stats()
 }
 
 // ============================================================================

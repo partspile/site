@@ -111,10 +111,11 @@ func GetPartCacheStats() map[string]any {
 	return partCache.Stats()
 }
 
-// ClearPartCache clears all items from the part cache
-func ClearPartCache() {
+// ClearPartCache clears all items from the part cache and returns updated stats
+func ClearPartCache() map[string]any {
 	partCache.Clear()
 	log.Printf("[part-cache] Cache cleared")
+	return partCache.Stats()
 }
 
 // ============================================================================

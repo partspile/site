@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"log"
+	"net/url"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
@@ -92,4 +93,90 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	}
 
 	return render(c, ui.SuccessMessage("Ad created successfully", "/"))
+}
+
+// HandleYears handles the years dropdown for new ad form
+func HandleYears(c *fiber.Ctx) error {
+	makeName := c.Query("make")
+	category := AdCategory(c)
+	if makeName == "" {
+		// Return empty div when make is not selected
+		return render(c, ui.YearsSelector([]string{}))
+	}
+
+	years := vehicle.GetYears(category, makeName)
+	return render(c, ui.YearsSelector(years))
+}
+
+// HandleModels handles the models dropdown for new ad form
+func HandleModels(c *fiber.Ctx) error {
+	makeName := c.Query("make")
+	category := AdCategory(c)
+	if makeName == "" {
+		// Return empty div when make is not selected
+		return render(c, ui.ModelsSelector([]string{}))
+	}
+
+	q, err := url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return err
+	}
+	years := q["years"]
+	if len(years) == 0 {
+		// Return empty div instead of error when no years are selected
+		return render(c, ui.ModelsSelector([]string{}))
+	}
+
+	models := vehicle.GetModels(category, makeName, years)
+	if len(models) == 0 {
+		// Return empty message when no models are available for all selected years
+		return render(c, ui.ModelsDivEmpty())
+	}
+	return render(c, ui.ModelsSelector(models))
+}
+
+// HandleEngines handles the engines dropdown for new ad form
+func HandleEngines(c *fiber.Ctx) error {
+	makeName := c.Query("make")
+	category := AdCategory(c)
+	if makeName == "" {
+		// Return empty div when make is not selected
+		return render(c, ui.EnginesSelector([]string{}))
+	}
+
+	q, err := url.ParseQuery(string(c.Request().URI().QueryString()))
+	if err != nil {
+		return err
+	}
+	years := q["years"]
+	if len(years) == 0 {
+		// Return empty div instead of error when no years are selected
+		return render(c, ui.EnginesSelector([]string{}))
+	}
+
+	models := q["models"]
+	if len(models) == 0 {
+		// Return empty div instead of error when no models are selected
+		return render(c, ui.EnginesSelector([]string{}))
+	}
+
+	engines := vehicle.GetEngines(category, makeName, years, models)
+	if len(engines) == 0 {
+		// Return empty message when no engines are available for all selected year-model combinations
+		return render(c, ui.EnginesDivEmpty())
+	}
+	return render(c, ui.EnginesSelector(engines))
+}
+
+// HandleSubCategories handles the subcategories dropdown for new ad form
+func HandleSubCategories(c *fiber.Ctx) error {
+	categoryName := c.Query("category")
+	category := AdCategory(c)
+	if categoryName == "" {
+		// Return empty div when category is not selected
+		return render(c, ui.SubCategoriesSelector([]string{}, ""))
+	}
+
+	subCategoryNames := part.GetSubCategories(category, categoryName)
+	return render(c, ui.SubCategoriesSelector(subCategoryNames, ""))
 }

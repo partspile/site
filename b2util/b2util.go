@@ -56,9 +56,10 @@ func GetCacheStats() map[string]interface{} {
 	return stats
 }
 
-// ClearCache clears all cached tokens
-func ClearCache() {
+// ClearCache clears all cached tokens and returns updated stats
+func ClearCache() map[string]interface{} {
 	tokenCache.Clear()
+	return GetCacheStats()
 }
 
 // ForceRefreshToken forces a refresh of the token for a specific prefix
