@@ -37,7 +37,7 @@ func ListViewPage(ads []ad.Ad, u *user.User, loc *time.Location, loaderURL strin
 func listNodes(ads []ad.Ad, u *user.User, loc *time.Location) []g.Node {
 	nodes := make([]g.Node, 0, len(ads)*2) // *2 because we'll add separators between ads
 	for _, ad := range ads {
-		nodes = append(nodes, AdListNode(ad, loc, u))
+		nodes = append(nodes, AdListNode(ad, u, loc))
 		// Add separator after each ad
 		nodes = append(nodes, Div(
 			Class("border-b border-gray-200"),

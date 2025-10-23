@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"time"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 )
@@ -15,8 +13,9 @@ func saveCookieLastView(c *fiber.Ctx, view string) {
 	c.Cookie(&fiber.Cookie{
 		Name:     "last_view",
 		Value:    view,
-		Expires:  time.Now().Add(30 * 24 * time.Hour),
-		HTTPOnly: false,
+		MaxAge:   30 * 24 * 60 * 60, // 30 days
+		HTTPOnly: true,
+		Secure:   true,
 		Path:     "/",
 		SameSite: "Strict",
 	})
@@ -31,9 +30,29 @@ func saveCookieAdCategory(c *fiber.Ctx, category string) {
 	c.Cookie(&fiber.Cookie{
 		Name:     "ad_category",
 		Value:    category,
-		Expires:  time.Now().Add(30 * 24 * time.Hour),
-		HTTPOnly: false,
+		MaxAge:   30 * 24 * 60 * 60, // 30 days
+		HTTPOnly: true,
+		Secure:   true,
 		Path:     "/",
 		SameSite: "Strict",
 	})
+}
+
+func setJWTCookie(c *fiber.Ctx, token string) {
+	c.Cookie(&fiber.Cookie{
+		Name:     "auth_token",
+		Value:    token,
+		HTTPOnly: true,
+		Secure:   true,
+		SameSite: "Strict",
+		MaxAge:   24 * 60 * 60, // 24 hours
+	})
+}
+
+func clearJWTCookie(c *fiber.Ctx) {
+	c.ClearCookie("auth_token")
+}
+
+func getJWTCookie(c *fiber.Ctx) string {
+	return c.Cookies("auth_token")
 }

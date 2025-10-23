@@ -77,8 +77,8 @@ func main() {
 		Expiration: config.ServerRateLimitExp,
 	}))
 
-	// Add user session middleware
-	app.Use(h.SessionMiddleware)
+	// Add JWT middleware
+	app.Use(h.JWTMiddleware)
 
 	// Add logger middleware
 	app.Use(logger.New())

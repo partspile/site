@@ -5,15 +5,15 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/jwt"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 )
 
 func logoutUser(c *fiber.Ctx) {
-	u := getUser(c)
-	redisSetUserInvalid(u.ID)
-	sessionDestroy(c)
+	// Clear JWT cookie
+	clearJWTCookie(c)
 }
 
 func redirectToLogin(c *fiber.Ctx) error {
@@ -24,6 +24,39 @@ func redirectToLogin(c *fiber.Ctx) error {
 	}
 	// For regular requests, redirect to login page
 	return c.Redirect("/login", fiber.StatusSeeOther)
+}
+
+func getUser(c *fiber.Ctx) *user.User {
+	u, _ := c.Locals("user").(*user.User)
+	return u
+}
+
+func setUser(c *fiber.Ctx, u *user.User) {
+	c.Locals("user", u)
+}
+
+// JWTMiddleware is a middleware that validates a JWT token and sets the user in the context.
+func JWTMiddleware(c *fiber.Ctx) error {
+	// Get JWT token from cookie
+	tokenString := getJWTCookie(c)
+	if tokenString == "" {
+		setUser(c, nil)
+		return c.Next()
+	}
+
+	// Validate JWT token
+	claims, err := jwt.ValidateToken(tokenString)
+	if err != nil {
+		// Invalid token, clear cookie
+		clearJWTCookie(c)
+		setUser(c, nil)
+		return c.Next()
+	}
+
+	// Create user object from JWT claims
+	u := jwt.ExtractUserFromClaims(claims)
+	setUser(c, u)
+	return c.Next()
 }
 
 // AuthRequired is a middleware that requires a user to be logged in.
@@ -38,10 +71,38 @@ func AuthRequired(c *fiber.Ctx) error {
 // AdminRequired is a middleware that requires a user to be an admin.
 func AdminRequired(c *fiber.Ctx) error {
 	u := getUser(c)
-	if u == nil || !u.IsAdmin {
+	if u == nil {
+		return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
+	}
+
+	// Fetch current admin status from database
+	currentUser, err := user.GetUser(u.ID)
+	if err != nil || currentUser.IsArchived() {
+		return c.Status(fiber.StatusUnauthorized).SendString("User not found")
+	}
+
+	if !currentUser.IsAdmin {
 		return c.Status(fiber.StatusForbidden).SendString("Forbidden")
 	}
+
+	// Update the user in context with fresh admin status
+	setUser(c, &currentUser)
 	return c.Next()
+}
+
+// IsUserAdmin checks if the current user is an admin by fetching from database
+func IsUserAdmin(c *fiber.Ctx) bool {
+	u := getUser(c)
+	if u == nil {
+		return false
+	}
+
+	currentUser, err := user.GetUser(u.ID)
+	if err != nil || currentUser.IsArchived() {
+		return false
+	}
+
+	return currentUser.IsAdmin
 }
 
 func HandleLogin(c *fiber.Ctx) error {
@@ -70,12 +131,14 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, "Invalid username or password")
 	}
 
-	if err := sessionSetUser(c, &u); err != nil {
-		log.Printf("[AUTH] Login failed: session set user error: %v", err)
+	// Generate JWT token
+	token, err := jwt.GenerateToken(&u)
+	if err != nil {
+		log.Printf("[AUTH] Login failed: JWT generation error: %v", err)
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to log you in.")
 	}
 
-	redisSetUserValid(u.ID)
+	setJWTCookie(c, token)
 
 	log.Printf("[AUTH] Login successful: userID=%d, name=%s", u.ID, name)
 	return render(c, ui.SuccessMessage("Login successful", "/"))

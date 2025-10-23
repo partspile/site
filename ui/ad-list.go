@@ -13,7 +13,7 @@ import (
 )
 
 // AdListNode renders a list view of ad
-func AdListNode(ad ad.Ad, loc *time.Location, u *user.User) g.Node {
+func AdListNode(ad ad.Ad, u *user.User, loc *time.Location) g.Node {
 	// Determine styling based on deleted status
 	var classes string
 	if ad.IsArchived() {

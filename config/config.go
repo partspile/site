@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"time"
 )
@@ -83,9 +82,8 @@ var (
 	TwilioSendGridAPIKey = getEnvWithDefault("TWILIO_SENDGRID_API_KEY", "")
 	TwilioFromEmail      = getEnvWithDefault("TWILIO_FROM_EMAIL", "")
 
-	// Redis configuration
-	RedisAddress  = getEnvWithDefault("REDIS_ADDRESS", "localhost:6379")
-	RedisPassword = getEnvWithDefault("REDIS_PASSWORD", "")
+	// JWT configuration
+	JWTSecret = getEnvWithDefault("JWT_SECRET", "your-super-secret-jwt-key-change-in-production")
 
 	// Server configuration
 	ServerPort = getEnvWithDefault("PORT", "8000")
@@ -98,10 +96,4 @@ func getEnvWithDefault(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
-}
-
-// GetB2ImageURL returns the complete B2 image URL for a given ad and image index
-func GetB2ImageURL(adID, imageIndex int, size string, token string) string {
-	return fmt.Sprintf("https://f004.backblazeb2.com/file/%s/%d/%d-%s.webp?Authorization=%s",
-		B2BucketName, adID, imageIndex, size, token)
 }

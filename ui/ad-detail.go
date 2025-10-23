@@ -13,7 +13,6 @@ import (
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
-	"github.com/parts-pile/site/config"
 )
 
 func AdDetail(ad ad.AdDetail, loc *time.Location, userID int, view string) g.Node {
@@ -119,7 +118,7 @@ func AdCarouselImageSrc(adID int, idx int) string {
 		return ""
 	}
 
-	return config.GetB2ImageURL(adID, idx, "1200w", token)
+	return b2util.GetB2ImageURL(adID, idx, "1200w", token)
 }
 
 func AdCarouselImage(adID int, idx int) g.Node {
@@ -204,7 +203,7 @@ func adThumbnailImageSrc(adID int, idx int) string {
 		return ""
 	}
 
-	return config.GetB2ImageURL(adID, idx, "160w", token)
+	return b2util.GetB2ImageURL(adID, idx, "160w", token)
 }
 
 func adThumbnailImage(adID int, idx int, alt string) g.Node {

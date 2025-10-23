@@ -128,3 +128,9 @@ func getB2DownloadTokenForPrefix(prefix string) (string, error) {
 	}
 	return tokenResp.AuthorizationToken, nil
 }
+
+// GetB2ImageURL returns the complete B2 image URL for a given ad and image index
+func GetB2ImageURL(adID, imageIndex int, size string, token string) string {
+	return fmt.Sprintf("https://f004.backblazeb2.com/file/%s/%d/%d-%s.webp?Authorization=%s",
+		config.B2BucketName, adID, imageIndex, size, token)
+}

@@ -16,7 +16,17 @@ func HandleSettings(c *fiber.Ctx) error {
 
 func HandleUserMenu(c *fiber.Ctx) error {
 	u := getUser(c)
-	return render(c, ui.UserMenuPopup(u, c.Path()))
+	if u == nil {
+		return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
+	}
+
+	// Fetch current user data with admin status
+	currentUser, err := user.GetUser(u.ID)
+	if err != nil || currentUser.IsArchived() {
+		return c.Status(fiber.StatusUnauthorized).SendString("User not found")
+	}
+
+	return render(c, ui.UserMenuPopup(&currentUser, c.Path()))
 }
 
 // HandleUpdateNotificationMethod updates the user's notification method preference

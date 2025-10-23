@@ -10,12 +10,11 @@ import (
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
-	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/user"
 )
 
 // AdGridNode renders a grid view of ad
-func AdGridNode(ad ad.Ad, loc *time.Location, u *user.User) g.Node {
+func AdGridNode(ad ad.Ad, u *user.User, loc *time.Location) g.Node {
 	var containerClass string = "flex flex-col cursor-pointer"
 	if ad.IsArchived() {
 		containerClass += " bg-red-100"
@@ -66,7 +65,7 @@ func adGridImageSrc(adID int, idx int) string {
 		return ""
 	}
 
-	return config.GetB2ImageURL(adID, idx, "480w", token)
+	return b2util.GetB2ImageURL(adID, idx, "480w", token)
 }
 
 func gridImageWithIndex(adID int, idx int, alt string) g.Node {
