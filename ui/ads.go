@@ -101,7 +101,7 @@ func BookmarkedAdsPage(ads []ad.Ad, currentUser *user.User, path string, loc *ti
 			Div(Class("text-gray-400 text-sm"), g.Text("Start browsing ads and bookmark the ones you're interested in!")),
 		)
 	} else {
-		adNodes := listNodes(ads, currentUser.ID, loc)
+		adNodes := listNodes(ads, currentUser, loc)
 		viewContent = Div(
 			g.Group(adNodes),
 		)
@@ -130,7 +130,7 @@ func ActiveAdsPage(ads []ad.Ad, currentUser *user.User, path string, loc *time.L
 			),
 		)
 	} else {
-		adNodes := listNodes(ads, currentUser.ID, loc)
+		adNodes := listNodes(ads, currentUser, loc)
 		viewContent = Div(
 			g.Group(adNodes),
 		)
@@ -154,7 +154,7 @@ func DeletedAdsPage(ads []ad.Ad, currentUser *user.User, path string, loc *time.
 			Div(Class("text-gray-400 text-sm"), g.Text("Deleted ads will appear here.")),
 		)
 	} else {
-		adNodes := listNodes(ads, currentUser.ID, loc)
+		adNodes := listNodes(ads, currentUser, loc)
 		viewContent = Div(
 			g.Group(adNodes),
 		)

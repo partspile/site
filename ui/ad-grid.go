@@ -11,10 +11,11 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/user"
 )
 
 // AdGridNode renders a grid view of ad
-func AdGridNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
+func AdGridNode(ad ad.Ad, loc *time.Location, u *user.User) g.Node {
 	var containerClass string = "flex flex-col cursor-pointer"
 	if ad.IsArchived() {
 		containerClass += " bg-red-100"
@@ -40,7 +41,7 @@ func AdGridNode(ad ad.Ad, loc *time.Location, userID int) g.Node {
 					Class("font-semibold text-base"),
 					priceNode(ad),
 				),
-				g.If(userID != 0, BookmarkButton(ad)),
+				g.If(u != nil, BookmarkButton(ad)),
 			),
 
 			// Title

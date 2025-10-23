@@ -34,7 +34,7 @@ func (v *GridView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	// Create loader URL for infinite scroll
 	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid")
 
-	return render(v.ctx, ui.GridViewResults(ads, u.ID, loc, loaderURL))
+	return render(v.ctx, ui.GridViewResults(ads, u, loc, loaderURL))
 }
 
 func (v *GridView) RenderSearchPage(adIDs []int, nextCursor string) error {
@@ -49,5 +49,6 @@ func (v *GridView) RenderSearchPage(adIDs []int, nextCursor string) error {
 	}
 	// Create loader URL for infinite scroll
 	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid")
-	return render(v.ctx, ui.GridViewPage(ads, u.ID, loc, loaderURL))
+
+	return render(v.ctx, ui.GridViewPage(ads, u, loc, loaderURL))
 }

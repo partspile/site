@@ -34,7 +34,7 @@ func (v *ListView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	// Create loader URL for infinite scroll
 	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list")
 
-	return render(v.ctx, ui.ListViewResults(ads, u.ID, loc, loaderURL))
+	return render(v.ctx, ui.ListViewResults(ads, u, loc, loaderURL))
 }
 
 func (v *ListView) RenderSearchPage(adIDs []int, nextCursor string) error {
@@ -51,5 +51,5 @@ func (v *ListView) RenderSearchPage(adIDs []int, nextCursor string) error {
 	// Create loader URL for infinite scroll
 	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list")
 
-	return render(v.ctx, ui.ListViewPage(ads, u.ID, loc, loaderURL))
+	return render(v.ctx, ui.ListViewPage(ads, u, loc, loaderURL))
 }

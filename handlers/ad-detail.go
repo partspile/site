@@ -50,9 +50,9 @@ func HandleAdCollapse(c *fiber.Ctx) error {
 	view := getView(c)
 	switch view {
 	case "list", "tree":
-		return render(c, ui.AdListNode(*adObj, loc, u.ID))
+		return render(c, ui.AdListNode(*adObj, loc, u))
 	case "grid":
-		return render(c, ui.AdGridNode(*adObj, loc, u.ID))
+		return render(c, ui.AdGridNode(*adObj, loc, u))
 	}
 	return nil
 }

@@ -114,7 +114,7 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 		return render(c, ui.EmptyResponse())
 	}
 
-	return render(c, ui.ExpandedTreeNodeBrowse(name, path, level, loc, u.ID, children, ads))
+	return render(c, ui.ExpandedTreeNodeBrowse(name, path, level, loc, u, children, ads))
 }
 
 func HandleTreeCollapseSearch(c *fiber.Ctx) error {
@@ -178,5 +178,5 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 		return render(c, ui.EmptyResponse())
 	}
 
-	return render(c, ui.ExpandedTreeNodeSearch(name, path, level, loc, u.ID, children, ads))
+	return render(c, ui.ExpandedTreeNodeSearch(name, path, level, loc, u, children, ads))
 }

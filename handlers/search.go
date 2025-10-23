@@ -181,7 +181,7 @@ func handleSearchContainer(c *fiber.Ctx, viewType string) error {
 	saveCookieAdCategory(c, activeAdCategory)
 
 	// Render the full search container
-	return render(c, ui.SearchPage(u.ID, userPrompt, ads, getLocation(c), loaderURL, activeAdCategory))
+	return render(c, ui.SearchPage(u, userPrompt, ads, getLocation(c), loaderURL, activeAdCategory))
 }
 
 // HandleSearchQuery renders a full search page with search widget and results
@@ -227,7 +227,7 @@ func HandleSearchQuery(c *fiber.Ctx) error {
 		u,
 		c.Path(),
 		[]g.Node{
-			ui.SearchPage(u.ID, userPrompt, ads, getLocation(c), loaderURL, activeAdCategory),
+			ui.SearchPage(u, userPrompt, ads, getLocation(c), loaderURL, activeAdCategory),
 		},
 	))
 }
@@ -277,6 +277,9 @@ func HandleSearchAPI(c *fiber.Ctx) error {
 func saveUserSearch(c *fiber.Ctx) {
 	userPrompt := getQueryParam(c, "q")
 	u := getUser(c)
+	if u == nil {
+		return // No user, no search to save
+	}
 	saveUserSearchAndQueue(userPrompt, u.ID)
 }
 
