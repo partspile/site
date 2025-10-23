@@ -18,8 +18,8 @@ import (
 
 // HandleRegistrationStep1 handles the first step of registration (collecting user info)
 func HandleRegistrationStep1(c *fiber.Ctx) error {
-	currentUser, _ := GetCurrentUser(c)
-	return render(c, ui.RegisterPage(currentUser, c.Path()))
+	u := getUser(c)
+	return render(c, ui.RegisterPage(u, c.Path()))
 }
 
 // HandleRegistrationStep1Submission handles the first step submission and sends SMS
@@ -208,9 +208,9 @@ func HandleRegistrationVerification(c *fiber.Ctx) error {
 		return c.Redirect("/register")
 	}
 
-	currentUser, _ := GetCurrentUser(c)
+	u := getUser(c)
 	username := name.(string) // We know this exists from the check above
-	return render(c, ui.VerificationPage(currentUser, c.Path(), username))
+	return render(c, ui.VerificationPage(u, c.Path(), username))
 }
 
 // HandleRegistrationStep2Submission handles verification code submission and completes registration

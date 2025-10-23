@@ -14,20 +14,19 @@ import (
 
 // HandleUpdateAdPrice updates only the price of an ad
 func HandleUpdateAdPrice(c *fiber.Ctx) error {
-	currentUser, _ := CurrentUser(c)
+	u := getUser(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	existingAd, err := ad.GetAdByID(adID, currentUser)
+	existingAd, err := ad.GetAdByID(adID, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	_, err = RequireOwnership(c, existingAd.UserID)
-	if err != nil {
-		return err
+	if existingAd.UserID != u.ID {
+		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
 	}
 
 	// Validate and parse price
@@ -44,7 +43,7 @@ func HandleUpdateAdPrice(c *fiber.Ctx) error {
 	}
 
 	// Fetch updated ad for display
-	updatedAd, err := ad.GetAdDetailByID(adID, currentUser)
+	updatedAd, err := ad.GetAdDetailByID(adID, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to fetch updated ad")
@@ -54,26 +53,25 @@ func HandleUpdateAdPrice(c *fiber.Ctx) error {
 	vector.QueueAd(updatedAd.Ad)
 
 	return render(c, ui.AdDetail(*updatedAd, getLocation(c),
-		currentUser.ID, getView(c)))
+		u.ID, getView(c)))
 }
 
 // HandleUpdateAdDescription appends to the description of an ad
 func HandleUpdateAdDescription(c *fiber.Ctx) error {
-	currentUser, _ := CurrentUser(c)
+	u := getUser(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
 	// Get full ad detail for description access
-	existingAd, err := ad.GetAdDetailByID(adID, currentUser)
+	existingAd, err := ad.GetAdDetailByID(adID, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	_, err = RequireOwnership(c, existingAd.UserID)
-	if err != nil {
-		return err
+	if existingAd.UserID != u.ID {
+		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
 	}
 
 	// Handle description addition
@@ -110,7 +108,7 @@ func HandleUpdateAdDescription(c *fiber.Ctx) error {
 	}
 
 	// Fetch updated ad for display
-	updatedAd, err := ad.GetAdDetailByID(adID, currentUser)
+	updatedAd, err := ad.GetAdDetailByID(adID, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to fetch updated ad")
@@ -120,25 +118,24 @@ func HandleUpdateAdDescription(c *fiber.Ctx) error {
 	vector.QueueAd(updatedAd.Ad)
 
 	return render(c, ui.AdDetail(*updatedAd, getLocation(c),
-		currentUser.ID, getView(c)))
+		u.ID, getView(c)))
 }
 
 // HandleUpdateAdLocation updates only the location of an ad
 func HandleUpdateAdLocation(c *fiber.Ctx) error {
-	currentUser, _ := CurrentUser(c)
+	u := getUser(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	existingAd, err := ad.GetAdByID(adID, currentUser)
+	existingAd, err := ad.GetAdByID(adID, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	_, err = RequireOwnership(c, existingAd.UserID)
-	if err != nil {
-		return err
+	if existingAd.UserID != u.ID {
+		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
 	}
 
 	// Resolve and store location
@@ -156,7 +153,7 @@ func HandleUpdateAdLocation(c *fiber.Ctx) error {
 	}
 
 	// Fetch updated ad for display
-	updatedAd, err := ad.GetAdDetailByID(adID, currentUser)
+	updatedAd, err := ad.GetAdDetailByID(adID, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to fetch updated ad")
@@ -166,7 +163,7 @@ func HandleUpdateAdLocation(c *fiber.Ctx) error {
 	vector.QueueAd(updatedAd.Ad)
 
 	return render(c, ui.AdDetail(*updatedAd, getLocation(c),
-		currentUser.ID, getView(c)))
+		u.ID, getView(c)))
 }
 
 // HandlePriceModal shows the price edit modal for an ad
@@ -176,14 +173,14 @@ func HandlePriceModal(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	currentUser, userID := CurrentUser(c)
-	adObj, err := ad.GetAdDetailByID(adID, currentUser)
+	u := getUser(c)
+	adObj, err := ad.GetAdDetailByID(adID, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
 	// Check ownership and archived status
-	if adObj.UserID != userID {
+	if adObj.UserID != u.ID {
 		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
 	}
 	if adObj.IsArchived() {
@@ -200,14 +197,14 @@ func HandleDescriptionModal(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	currentUser, userID := CurrentUser(c)
-	adObj, err := ad.GetAdDetailByID(adID, currentUser)
+	u := getUser(c)
+	adObj, err := ad.GetAdDetailByID(adID, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
 	// Check ownership and archived status
-	if adObj.UserID != userID {
+	if adObj.UserID != u.ID {
 		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
 	}
 	if adObj.IsArchived() {
@@ -224,14 +221,14 @@ func HandleLocationModal(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	currentUser, userID := CurrentUser(c)
-	adObj, err := ad.GetAdDetailByID(adID, currentUser)
+	u := getUser(c)
+	adObj, err := ad.GetAdDetailByID(adID, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
 	// Check ownership and archived status
-	if adObj.UserID != userID {
+	if adObj.UserID != u.ID {
 		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
 	}
 	if adObj.IsArchived() {

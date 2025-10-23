@@ -10,18 +10,18 @@ import (
 )
 
 func HandleSettings(c *fiber.Ctx) error {
-	currentUser, _ := CurrentUser(c)
-	return render(c, ui.SettingsPage(currentUser, c.Path()))
+	u := getUser(c)
+	return render(c, ui.SettingsPage(u, c.Path()))
 }
 
 func HandleUserMenu(c *fiber.Ctx) error {
-	currentUser, _ := CurrentUser(c)
-	return render(c, ui.UserMenuPopup(currentUser, c.Path()))
+	u := getUser(c)
+	return render(c, ui.UserMenuPopup(u, c.Path()))
 }
 
 // HandleUpdateNotificationMethod updates the user's notification method preference
 func HandleUpdateNotificationMethod(c *fiber.Ctx) error {
-	currentUser, _ := CurrentUser(c)
+	u := getUser(c)
 
 	var request struct {
 		NotificationMethod string  `json:"notificationMethod"`
@@ -55,8 +55,8 @@ func HandleUpdateNotificationMethod(c *fiber.Ctx) error {
 	}
 
 	// Update both notification method and email address
-	if err := user.UpdateNotificationPreferences(currentUser.ID, request.NotificationMethod, request.EmailAddress); err != nil {
-		log.Printf("[API] Failed to update notification preferences for user %d: %v", currentUser.ID, err)
+	if err := user.UpdateNotificationPreferences(u.ID, request.NotificationMethod, request.EmailAddress); err != nil {
+		log.Printf("[API] Failed to update notification preferences for user %d: %v", u.ID, err)
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update notification preferences")
 	}
 
@@ -66,7 +66,7 @@ func HandleUpdateNotificationMethod(c *fiber.Ctx) error {
 // HandleNotificationMethodChanged handles HTMX requests when notification method changes
 func HandleNotificationMethodChanged(c *fiber.Ctx) error {
 	// Get the current user to retrieve their saved email address
-	currentUser, _ := CurrentUser(c)
+	u := getUser(c)
 
 	// Get the selected notification method from the form data
 	notificationMethod := c.FormValue("notificationMethod")
@@ -81,8 +81,8 @@ func HandleNotificationMethodChanged(c *fiber.Ctx) error {
 			Name("emailAddress"),
 			Placeholder("Enter email address"),
 			Value(func() string {
-				if currentUser.EmailAddress != nil {
-					return *currentUser.EmailAddress
+				if u.EmailAddress != nil {
+					return *u.EmailAddress
 				}
 				return ""
 			}()),
@@ -97,8 +97,8 @@ func HandleNotificationMethodChanged(c *fiber.Ctx) error {
 			Name("emailAddress"),
 			Placeholder("Enter email address"),
 			Value(func() string {
-				if currentUser.EmailAddress != nil {
-					return *currentUser.EmailAddress
+				if u.EmailAddress != nil {
+					return *u.EmailAddress
 				}
 				return ""
 			}()),

@@ -9,18 +9,18 @@ import (
 
 // Handler to bookmark an ad
 func HandleBookmarkAd(c *fiber.Ctx) error {
-	currentUser, userID := CurrentUser(c)
+	u := getUser(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return err
 	}
-	if err := ad.BookmarkAd(userID, adID); err != nil {
+	if err := ad.BookmarkAd(u.ID, adID); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to bookmark ad")
 	}
 	// Queue user for background embedding update
-	vector.QueueUserForUpdate(userID)
+	vector.QueueUserForUpdate(u.ID)
 	// Get the updated ad with bookmark status
-	adObj, err := ad.GetAdByID(adID, currentUser)
+	adObj, err := ad.GetAdByID(adID, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
@@ -30,18 +30,18 @@ func HandleBookmarkAd(c *fiber.Ctx) error {
 
 // Handler to unbookmark an ad
 func HandleUnbookmarkAd(c *fiber.Ctx) error {
-	currentUser, userID := CurrentUser(c)
+	u := getUser(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return err
 	}
-	if err := ad.UnbookmarkAd(userID, adID); err != nil {
+	if err := ad.UnbookmarkAd(u.ID, adID); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to unbookmark ad")
 	}
 	// Queue user for background embedding update
-	vector.QueueUserForUpdate(userID)
+	vector.QueueUserForUpdate(u.ID)
 	// Get the updated ad with bookmark status
-	adObj, err := ad.GetAdByID(adID, currentUser)
+	adObj, err := ad.GetAdByID(adID, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}

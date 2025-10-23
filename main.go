@@ -9,11 +9,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
-	"github.com/parts-pile/site/handlers"
+	h "github.com/parts-pile/site/handlers"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -72,24 +71,17 @@ func main() {
 		WriteTimeout: 30 * time.Second, // Prevent long-running responses
 	})
 
-	// Add session middleware
-	store := session.New()
-	app.Use(func(c *fiber.Ctx) error {
-		c.Locals("session_store", store)
-		return c.Next()
-	})
-
 	// Add rate limiter
 	app.Use(limiter.New(limiter.Config{
 		Max:        config.ServerRateLimitMax,
 		Expiration: config.ServerRateLimitExp,
 	}))
 
+	// Add user session middleware
+	app.Use(h.SessionMiddleware)
+
 	// Add logger middleware
 	app.Use(logger.New())
-
-	// Add global user stashing middleware - populates c.Locals("user") for all requests
-	app.Use(handlers.StashUser)
 
 	// Static files and utility
 	app.Static("/", "./static")
@@ -98,131 +90,131 @@ func main() {
 	})
 
 	// Main pages
-	app.Get("/", handlers.HandleHome)                    // x
-	app.Get("/search", handlers.HandleSearch)            // x
-	app.Get("/search-page", handlers.HandleSearchPage)   // x
-	app.Get("/search-query", handlers.HandleSearchQuery) // x
-	app.Get("/filters/show", handlers.HandleFiltersShow) // x
+	app.Get("/", h.HandleHome)                    // x
+	app.Get("/search", h.HandleSearch)            // x
+	app.Get("/search-page", h.HandleSearchPage)   // x
+	app.Get("/search-query", h.HandleSearchQuery) // x
+	app.Get("/filters/show", h.HandleFiltersShow) // x
 
 	// Tree view routes - split by browse vs search mode
-	app.Get("/tree-browse-expand/*", handlers.HandleTreeExpandBrowse)     // x
-	app.Get("/tree-browse-collapse/*", handlers.HandleTreeCollapseBrowse) // x
-	app.Get("/tree-search-expand/*", handlers.HandleTreeExpandSearch)     // x
-	app.Get("/tree-search-collapse/*", handlers.HandleTreeCollapseSearch) // x
+	app.Get("/tree-browse-expand/*", h.HandleTreeExpandBrowse)     // x
+	app.Get("/tree-browse-collapse/*", h.HandleTreeCollapseBrowse) // x
+	app.Get("/tree-search-expand/*", h.HandleTreeExpandSearch)     // x
+	app.Get("/tree-search-collapse/*", h.HandleTreeCollapseSearch) // x
 
 	// Ad in-place expand/collapse partials for htmx
-	app.Get("/ad/collapse/:id", handlers.HandleAdCollapse)           // x
-	app.Get("/ad/detail/:id", handlers.HandleAdDetail)               // x
-	app.Get("/ad/image/:adID/:idx", handlers.HandleAdImage)          // x
-	app.Get("/ad/grid-image/:adID/:idx", handlers.HandleAdGridImage) // x
+	app.Get("/ad/collapse/:id", h.HandleAdCollapse)           // x
+	app.Get("/ad/detail/:id", h.HandleAdDetail)               // x
+	app.Get("/ad/image/:adID/:idx", h.HandleAdImage)          // x
+	app.Get("/ad/grid-image/:adID/:idx", h.HandleAdGridImage) // x
 
 	// Modal routes for HTMX-based modals
-	app.Get("/modal/ad/price/:id", handlers.AuthRequired, handlers.HandlePriceModal)
-	app.Get("/modal/ad/location/:id", handlers.AuthRequired, handlers.HandleLocationModal)
-	app.Get("/modal/ad/description/:id", handlers.AuthRequired, handlers.HandleDescriptionModal)
-	app.Get("/modal/ad/share/:id", handlers.HandleShareModal) // No auth required
-	app.Get("/modal/ad/message/:id", handlers.AuthRequired, handlers.HandleMessageModal)
+	app.Get("/modal/ad/price/:id", h.AuthRequired, h.HandlePriceModal)
+	app.Get("/modal/ad/location/:id", h.AuthRequired, h.HandleLocationModal)
+	app.Get("/modal/ad/description/:id", h.AuthRequired, h.HandleDescriptionModal)
+	app.Get("/modal/ad/share/:id", h.HandleShareModal) // No auth required
+	app.Get("/modal/ad/message/:id", h.AuthRequired, h.HandleMessageModal)
 
 	// Ad management
-	app.Get("/ad/:id", handlers.HandleAdPage)                                       // x
-	app.Get("/new-ad", handlers.AuthRequired, handlers.HandleNewAd)                 // x
-	app.Get("/duplicate-ad/:id", handlers.AuthRequired, handlers.HandleDuplicateAd) // x
-	app.Delete("/delete-ad/:id", handlers.AuthRequired, handlers.HandleDeleteAd)
-	app.Post("/restore-ad/:id", handlers.AuthRequired, handlers.HandleRestoreAd)
+	app.Get("/ad/:id", h.HandleAdPage)                                // x
+	app.Get("/new-ad", h.AuthRequired, h.HandleNewAd)                 // x
+	app.Get("/duplicate-ad/:id", h.AuthRequired, h.HandleDuplicateAd) // x
+	app.Delete("/delete-ad/:id", h.AuthRequired, h.HandleDeleteAd)
+	app.Post("/restore-ad/:id", h.AuthRequired, h.HandleRestoreAd)
 
 	// API group
 	api := app.Group("/api")
 
 	// Search API
-	api.Get("/search", handlers.HandleSearchAPI)
+	api.Get("/search", h.HandleSearchAPI)
 
 	// Ad management (API)
-	api.Post("/new-ad", handlers.AuthRequired, handlers.HandleNewAdSubmission) // x
-	api.Post("/update-ad-price/:id", handlers.AuthRequired, handlers.HandleUpdateAdPrice)
-	api.Post("/update-ad-location/:id", handlers.AuthRequired, handlers.HandleUpdateAdLocation)
-	api.Post("/update-ad-description/:id", handlers.AuthRequired, handlers.HandleUpdateAdDescription)
-	api.Post("/bookmark-ad/:id", handlers.AuthRequired, handlers.HandleBookmarkAd)
-	api.Delete("/bookmark-ad/:id", handlers.AuthRequired, handlers.HandleUnbookmarkAd)
-	api.Get("/filter-makes", handlers.HandleFilterMakes)
-	api.Get("/years", handlers.HandleYears)
-	api.Get("/models", handlers.HandleModels)
-	api.Get("/engines", handlers.HandleEngines)
-	api.Get("/subcategories", handlers.HandleSubCategories)
-	api.Get("/ad-image-url/:adID", handlers.HandleAdImageSignedURL)
+	api.Post("/new-ad", h.AuthRequired, h.HandleNewAdSubmission) // x
+	api.Post("/update-ad-price/:id", h.AuthRequired, h.HandleUpdateAdPrice)
+	api.Post("/update-ad-location/:id", h.AuthRequired, h.HandleUpdateAdLocation)
+	api.Post("/update-ad-description/:id", h.AuthRequired, h.HandleUpdateAdDescription)
+	api.Post("/bookmark-ad/:id", h.AuthRequired, h.HandleBookmarkAd)
+	api.Delete("/bookmark-ad/:id", h.AuthRequired, h.HandleUnbookmarkAd)
+	api.Get("/filter-makes", h.HandleFilterMakes)
+	api.Get("/years", h.HandleYears)
+	api.Get("/models", h.HandleModels)
+	api.Get("/engines", h.HandleEngines)
+	api.Get("/subcategories", h.HandleSubCategories)
+	api.Get("/ad-image-url/:adID", h.HandleAdImageSignedURL)
 
 	// Rock system (API)
-	api.Get("/ad-rocks/:id", handlers.HandleAdRocks)
-	api.Post("/throw-rock/:id", handlers.AuthRequired, handlers.HandleThrowRock)
-	api.Get("/ad-rocks/:id/conversations", handlers.HandleViewRockConversations)
-	api.Post("/resolve-rock/:id", handlers.AuthRequired, handlers.HandleResolveRock)
+	api.Get("/ad-rocks/:id", h.HandleAdRocks)
+	api.Post("/throw-rock/:id", h.AuthRequired, h.HandleThrowRock)
+	api.Get("/ad-rocks/:id/conversations", h.HandleViewRockConversations)
+	api.Post("/resolve-rock/:id", h.AuthRequired, h.HandleResolveRock)
 
 	// Admin dashboard and management
-	admin := app.Group("/admin", handlers.AdminRequired)
-	admin.Get("/", handlers.HandleAdminDashboard)
-	admin.Get("/b2-cache", handlers.HandleAdminB2Cache)
-	admin.Get("/embedding-cache", handlers.HandleAdminEmbeddingCache)
-	admin.Get("/vehicle-cache", handlers.HandleAdminVehicleCache)
-	admin.Get("/part-cache", handlers.HandleAdminPartCache)
+	admin := app.Group("/admin", h.AdminRequired)
+	admin.Get("/", h.HandleAdminDashboard)
+	admin.Get("/b2-cache", h.HandleAdminB2Cache)
+	admin.Get("/embedding-cache", h.HandleAdminEmbeddingCache)
+	admin.Get("/vehicle-cache", h.HandleAdminVehicleCache)
+	admin.Get("/part-cache", h.HandleAdminPartCache)
 
 	// Admin API group
-	adminAPI := api.Group("/admin", handlers.AdminRequired)
-	adminAPI.Post("/b2-cache/clear", handlers.HandleClearB2Cache)
-	adminAPI.Get("/b2-cache/refresh", handlers.HandleRefreshB2Cache)
-	adminAPI.Get("/embedding-cache/refresh", handlers.HandleRefreshEmbeddingCache)
-	adminAPI.Post("/embedding-cache/query/clear", handlers.HandleClearQueryEmbeddingCache)
-	adminAPI.Post("/embedding-cache/user/clear", handlers.HandleClearUserEmbeddingCache)
-	adminAPI.Post("/embedding-cache/site/clear", handlers.HandleClearSiteEmbeddingCache)
-	adminAPI.Post("/vehicle-cache/clear", handlers.HandleClearVehicleCache)
-	adminAPI.Get("/vehicle-cache/refresh", handlers.HandleRefreshVehicleCache)
-	adminAPI.Post("/part-cache/clear", handlers.HandleClearPartCache)
-	adminAPI.Get("/part-cache/refresh", handlers.HandleRefreshPartCache)
+	adminAPI := api.Group("/admin", h.AdminRequired)
+	adminAPI.Post("/b2-cache/clear", h.HandleClearB2Cache)
+	adminAPI.Get("/b2-cache/refresh", h.HandleRefreshB2Cache)
+	adminAPI.Get("/embedding-cache/refresh", h.HandleRefreshEmbeddingCache)
+	adminAPI.Post("/embedding-cache/query/clear", h.HandleClearQueryEmbeddingCache)
+	adminAPI.Post("/embedding-cache/user/clear", h.HandleClearUserEmbeddingCache)
+	adminAPI.Post("/embedding-cache/site/clear", h.HandleClearSiteEmbeddingCache)
+	adminAPI.Post("/vehicle-cache/clear", h.HandleClearVehicleCache)
+	adminAPI.Get("/vehicle-cache/refresh", h.HandleRefreshVehicleCache)
+	adminAPI.Post("/part-cache/clear", h.HandleClearPartCache)
+	adminAPI.Get("/part-cache/refresh", h.HandleRefreshPartCache)
 
 	// User registration/authentication
-	app.Get("/register", handlers.HandleRegistrationStep1)
-	api.Post("/register/step1", handlers.HandleRegistrationStep1Submission)
-	app.Get("/register/verify", handlers.HandleRegistrationVerification)
-	api.Post("/register/verify", handlers.HandleRegistrationStep2Submission)
-	api.Post("/sms/webhook", handlers.HandleSMSWebhook)
-	app.Get("/rocks", handlers.HandleRocksPage)
-	app.Get("/login", handlers.HandleLogin)
-	api.Post("/login", handlers.HandleLoginSubmission)
-	app.Post("/logout", handlers.HandleLogout)
+	app.Get("/register", h.HandleRegistrationStep1)
+	api.Post("/register/step1", h.HandleRegistrationStep1Submission)
+	app.Get("/register/verify", h.HandleRegistrationVerification)
+	api.Post("/register/verify", h.HandleRegistrationStep2Submission)
+	api.Post("/sms/webhook", h.HandleSMSWebhook)
+	app.Get("/rocks", h.HandleRocksPage)
+	app.Get("/login", h.HandleLogin)
+	api.Post("/login", h.HandleLoginSubmission)
+	app.Post("/logout", h.HandleLogout)
 
 	// Legal pages
-	app.Get("/terms", handlers.HandleTermsOfService)
-	app.Get("/privacy", handlers.HandlePrivacyPolicy)
-	app.Get("/about", handlers.HandleAbout)
+	app.Get("/terms", h.HandleTermsOfService)
+	app.Get("/privacy", h.HandlePrivacyPolicy)
+	app.Get("/about", h.HandleAbout)
 
 	// Sitemap
-	app.Get("/sitemap.xml", handlers.HandleSitemap)
+	app.Get("/sitemap.xml", h.HandleSitemap)
 
 	// User settings
-	app.Get("/settings", handlers.AuthRequired, handlers.HandleSettings)                // x
-	app.Get("/ads", handlers.AuthRequired, handlers.HandleAdsPage)                      // x
-	app.Get("/ads/bookmarked", handlers.AuthRequired, handlers.HandleBookmarkedAdsPage) // x
-	app.Get("/ads/active", handlers.AuthRequired, handlers.HandleActiveAdsPage)         // x
-	app.Get("/ads/deleted", handlers.AuthRequired, handlers.HandleDeletedAdsPage)       // x
-	api.Post("/change-password", handlers.AuthRequired, handlers.HandleChangePassword)
-	api.Post("/update-notification-method", handlers.AuthRequired, handlers.HandleUpdateNotificationMethod)
-	api.Post("/notification-method-changed", handlers.AuthRequired, handlers.HandleNotificationMethodChanged)
-	api.Post("/delete-account", handlers.AuthRequired, handlers.HandleDeleteAccount)
-	app.Get("/user-menu", handlers.AuthRequired, handlers.HandleUserMenu) // x
+	app.Get("/settings", h.AuthRequired, h.HandleSettings)                // x
+	app.Get("/ads", h.AuthRequired, h.HandleAdsPage)                      // x
+	app.Get("/ads/bookmarked", h.AuthRequired, h.HandleBookmarkedAdsPage) // x
+	app.Get("/ads/active", h.AuthRequired, h.HandleActiveAdsPage)         // x
+	app.Get("/ads/deleted", h.AuthRequired, h.HandleDeletedAdsPage)       // x
+	api.Post("/change-password", h.AuthRequired, h.HandleChangePassword)
+	api.Post("/update-notification-method", h.AuthRequired, h.HandleUpdateNotificationMethod)
+	api.Post("/notification-method-changed", h.AuthRequired, h.HandleNotificationMethodChanged)
+	api.Post("/delete-account", h.AuthRequired, h.HandleDeleteAccount)
+	app.Get("/user-menu", h.AuthRequired, h.HandleUserMenu) // x
 
 	// Messaging system
-	app.Get("/messages", handlers.AuthRequired, handlers.HandleMessagesPage)
-	app.Get("/messages/:id/expand", handlers.AuthRequired, handlers.HandleExpandConversation)
-	app.Get("/messages/:id/collapse", handlers.AuthRequired, handlers.HandleCollapseConversation)
+	app.Get("/messages", h.AuthRequired, h.HandleMessagesPage)
+	app.Get("/messages/:id/expand", h.AuthRequired, h.HandleExpandConversation)
+	app.Get("/messages/:id/collapse", h.AuthRequired, h.HandleCollapseConversation)
 
-	app.Get("/messages/sse", handlers.AuthRequired, handlers.HandleSSE)
-	app.Get("/messages/:id/sse-update", handlers.AuthRequired, handlers.HandleSSEConversationUpdate)
-	app.Post("/messages/:id/send", handlers.AuthRequired, handlers.HandleSendMessage)
-	app.Get("/messages/start/:adID", handlers.AuthRequired, handlers.HandleStartConversation)
-	api.Get("/messages/:action", handlers.AuthRequired, handlers.HandleMessagesAPI)
+	app.Get("/messages/sse", h.AuthRequired, h.HandleSSE)
+	app.Get("/messages/:id/sse-update", h.AuthRequired, h.HandleSSEConversationUpdate)
+	app.Post("/messages/:id/send", h.AuthRequired, h.HandleSendMessage)
+	app.Get("/messages/start/:adID", h.AuthRequired, h.HandleStartConversation)
+	api.Get("/messages/:action", h.AuthRequired, h.HandleMessagesAPI)
 
 	// Views for HTMX view switching
-	app.Post("/view/list", handlers.HandleListView) // x
-	app.Post("/view/tree", handlers.HandleTreeView) // x
-	app.Post("/view/grid", handlers.HandleGridView) // x
+	app.Post("/view/list", h.HandleListView) // x
+	app.Post("/view/tree", h.HandleTreeView) // x
+	app.Post("/view/grid", h.HandleGridView) // x
 
 	// Start background user embedding processor
 	vector.StartUserBackgroundProcessor()

@@ -6,8 +6,8 @@ import (
 )
 
 func HandleHome(c *fiber.Ctx) error {
-	currentUser, _ := CurrentUser(c)
+	u := getUser(c)
 	view := getCookieLastView(c)
 	adCategory := getCookieAdCategory(c)
-	return render(c, ui.HomePage(currentUser, c.Path(), view, adCategory))
+	return render(c, ui.HomePage(u, c.Path(), view, adCategory))
 }

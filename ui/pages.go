@@ -8,14 +8,15 @@ import (
 	"github.com/parts-pile/site/user"
 )
 
-func HomePage(currentUser *user.User, path string, view string, adCategory string) g.Node {
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
+func HomePage(u *user.User, path string, view string, adCategory string) g.Node {
+	var userID int
+	if u != nil {
+		userID = u.ID
 	}
+
 	return Page(
 		"Parts Pile",
-		currentUser,
+		u,
 		path,
 		[]g.Node{
 			InitialSearchResults(userID, view, adCategory),
@@ -23,10 +24,10 @@ func HomePage(currentUser *user.User, path string, view string, adCategory strin
 	)
 }
 
-func RegisterPage(currentUser *user.User, path string) g.Node {
+func RegisterPage(u *user.User, path string) g.Node {
 	return Page(
 		"Register",
-		currentUser,
+		u,
 		path,
 		[]g.Node{
 			pageHeader("Register"),
@@ -116,10 +117,10 @@ func RegisterPage(currentUser *user.User, path string) g.Node {
 	)
 }
 
-func LoginPage(currentUser *user.User, path string) g.Node {
+func LoginPage(u *user.User, path string) g.Node {
 	return Page(
 		"Login",
-		currentUser,
+		u,
 		path,
 		[]g.Node{
 			pageHeader("Login"),
@@ -147,10 +148,10 @@ func LoginPage(currentUser *user.User, path string) g.Node {
 	)
 }
 
-func VerificationPage(currentUser *user.User, path string, username string) g.Node {
+func VerificationPage(u *user.User, path string, username string) g.Node {
 	return Page(
 		"Verify Phone Number",
-		currentUser,
+		u,
 		path,
 		[]g.Node{
 			pageHeader("Verify Your Phone Number"),
@@ -212,10 +213,10 @@ func VerificationPage(currentUser *user.User, path string, username string) g.No
 	)
 }
 
-func TermsOfServicePage(currentUser *user.User, path string) g.Node {
+func TermsOfServicePage(u *user.User, path string) g.Node {
 	return Page(
 		"Terms of Service",
-		currentUser,
+		u,
 		path,
 		[]g.Node{
 			pageHeader("Terms of Service"),
@@ -254,10 +255,10 @@ func TermsOfServicePage(currentUser *user.User, path string) g.Node {
 	)
 }
 
-func PrivacyPolicyPage(currentUser *user.User, path string) g.Node {
+func PrivacyPolicyPage(u *user.User, path string) g.Node {
 	return Page(
 		"Privacy Policy",
-		currentUser,
+		u,
 		path,
 		[]g.Node{
 			pageHeader("Privacy Policy"),
@@ -337,10 +338,10 @@ func PrivacyPolicyPage(currentUser *user.User, path string) g.Node {
 	)
 }
 
-func RocksPage(currentUser *user.User, path string) g.Node {
+func RocksPage(u *user.User, path string) g.Node {
 	return Page(
 		"Your Rocks - Parts Pile",
-		currentUser,
+		u,
 		path,
 		[]g.Node{
 			pageHeader("Your Rocks"),

@@ -16,7 +16,7 @@ func HandleAdRocks(c *fiber.Ctx) error {
 		return c.Status(400).SendString("Invalid ad ID")
 	}
 
-	currentUser, err := GetCurrentUser(c)
+	u := getUser(c)
 	if err != nil {
 		return c.Status(401).SendString("Unauthorized")
 	}
@@ -29,8 +29,8 @@ func HandleAdRocks(c *fiber.Ctx) error {
 
 	// Check if current user can throw a rock
 	canThrow := false
-	if currentUser != nil {
-		canThrow, err = rock.CanThrowRock(currentUser.ID)
+	if u != nil {
+		canThrow, err = rock.CanThrowRock(u.ID)
 		if err != nil {
 			canThrow = false
 		}
@@ -38,8 +38,8 @@ func HandleAdRocks(c *fiber.Ctx) error {
 
 	// Get user's rock count
 	userRockCount := 0
-	if currentUser != nil {
-		userRocks, err := rock.GetUserRocks(currentUser.ID)
+	if u != nil {
+		userRocks, err := rock.GetUserRocks(u.ID)
 		if err == nil {
 			userRockCount = userRocks.RockCount
 		}
@@ -57,7 +57,7 @@ func HandleThrowRock(c *fiber.Ctx) error {
 		return c.Status(400).SendString("Invalid ad ID")
 	}
 
-	currentUser, err := GetCurrentUser(c)
+	u := getUser(c)
 	if err != nil {
 		return c.Status(401).SendString("Unauthorized")
 	}
@@ -69,7 +69,7 @@ func HandleThrowRock(c *fiber.Ctx) error {
 	}
 
 	// Throw the rock
-	err = rock.ThrowRock(currentUser.ID, adID, message)
+	err = rock.ThrowRock(u.ID, adID, message)
 	if err != nil {
 		return c.Status(400).SendString(fmt.Sprintf("Failed to throw rock: %v", err))
 	}
@@ -81,13 +81,13 @@ func HandleThrowRock(c *fiber.Ctx) error {
 	}
 
 	// Check if user can still throw rocks
-	canThrow, err := rock.CanThrowRock(currentUser.ID)
+	canThrow, err := rock.CanThrowRock(u.ID)
 	if err != nil {
 		canThrow = false
 	}
 
 	// Get user's updated rock count
-	userRocks, err := rock.GetUserRocks(currentUser.ID)
+	userRocks, err := rock.GetUserRocks(u.ID)
 	userRockCount := 0
 	if err == nil {
 		userRockCount = userRocks.RockCount
@@ -123,13 +123,13 @@ func HandleResolveRock(c *fiber.Ctx) error {
 		return c.Status(400).SendString("Invalid rock ID")
 	}
 
-	currentUser, err := GetCurrentUser(c)
+	u := getUser(c)
 	if err != nil {
 		return c.Status(401).SendString("Unauthorized")
 	}
 
 	// Resolve the rock
-	err = rock.ResolveRock(rockID, currentUser.ID)
+	err = rock.ResolveRock(rockID, u.ID)
 	if err != nil {
 		return c.Status(400).SendString(fmt.Sprintf("Failed to resolve rock: %v", err))
 	}

@@ -8,57 +8,57 @@ import (
 
 // HandleAdsPage handles the main /ads page
 func HandleAdsPage(c *fiber.Ctx) error {
-	currentUser, _ := CurrentUser(c)
-	return render(c, ui.AdsPage(currentUser, c.Path(), "bookmarked"))
+	u := getUser(c)
+	return render(c, ui.AdsPage(u, c.Path(), "bookmarked"))
 }
 
 // HandleBookmarkedAdsPage handles the /ads/bookmarked sub-page
 func HandleBookmarkedAdsPage(c *fiber.Ctx) error {
-	currentUser, userID := CurrentUser(c)
-	adIDs, err := ad.GetBookmarkedAdIDs(userID)
+	u := getUser(c)
+	adIDs, err := ad.GetBookmarkedAdIDs(u.ID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ad IDs")
 	}
-	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
+	ads, err := ad.GetAdsByIDs(adIDs, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ads")
 	}
 
 	// Return navigation with content
-	content := ui.BookmarkedAdsPage(ads, currentUser, c.Path(), getLocation(c))
-	return render(c, ui.AdsPageWithContent(currentUser, c.Path(), "bookmarked", content))
+	content := ui.BookmarkedAdsPage(ads, u, c.Path(), getLocation(c))
+	return render(c, ui.AdsPageWithContent(u, c.Path(), "bookmarked", content))
 }
 
 // HandleActiveAdsPage handles the /ads/active sub-page
 func HandleActiveAdsPage(c *fiber.Ctx) error {
-	currentUser, userID := CurrentUser(c)
-	adIDs, err := ad.GetUserActiveAdIDs(userID)
+	u := getUser(c)
+	adIDs, err := ad.GetUserActiveAdIDs(u.ID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get active ad IDs")
 	}
-	ads, err := ad.GetAdsByIDs(adIDs, currentUser)
+	ads, err := ad.GetAdsByIDs(adIDs, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get active ads")
 	}
 
 	// Return navigation with content
-	content := ui.ActiveAdsPage(ads, currentUser, c.Path(), getLocation(c))
-	return render(c, ui.AdsPageWithContent(currentUser, c.Path(), "active", content))
+	content := ui.ActiveAdsPage(ads, u, c.Path(), getLocation(c))
+	return render(c, ui.AdsPageWithContent(u, c.Path(), "active", content))
 }
 
 // HandleDeletedAdsPage handles the /ads/deleted sub-page
 func HandleDeletedAdsPage(c *fiber.Ctx) error {
-	currentUser, userID := CurrentUser(c)
-	adIDs, err := ad.GetUserDeletedAdIDs(userID)
+	u := getUser(c)
+	adIDs, err := ad.GetUserDeletedAdIDs(u.ID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get deleted ad IDs")
 	}
-	ads, err := ad.GetAdsByIDsWithDeleted(adIDs, currentUser, true)
+	ads, err := ad.GetAdsByIDsWithDeleted(adIDs, u, true)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get deleted ads")
 	}
 
 	// Return navigation with content
-	content := ui.DeletedAdsPage(ads, currentUser, c.Path(), getLocation(c))
-	return render(c, ui.AdsPageWithContent(currentUser, c.Path(), "deleted", content))
+	content := ui.DeletedAdsPage(ads, u, c.Path(), getLocation(c))
+	return render(c, ui.AdsPageWithContent(u, c.Path(), "deleted", content))
 }

@@ -15,12 +15,12 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	currentUser, _ := CurrentUser(c)
-	adObj, err := ad.GetAdByID(adID, currentUser)
+	u := getUser(c)
+	adObj, err := ad.GetAdByID(adID, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	if adObj.UserID != currentUser.ID {
+	if adObj.UserID != u.ID {
 		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
 	}
 	if err := ad.ArchiveAd(adID); err != nil {
@@ -50,12 +50,12 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	currentUser, userID := CurrentUser(c)
-	adObj, err := ad.GetAdDetailByID(adID, currentUser)
+	u := getUser(c)
+	adObj, err := ad.GetAdDetailByID(adID, u)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	if adObj.UserID != userID {
+	if adObj.UserID != u.ID {
 		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
 	}
 	if !adObj.IsArchived() {

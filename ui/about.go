@@ -6,10 +6,10 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-func AboutPage(currentUser *user.User, path string) g.Node {
+func AboutPage(u *user.User, path string) g.Node {
 	return Page(
 		"About",
-		currentUser,
+		u,
 		path,
 		[]g.Node{
 			pageHeader("About Parts Pile"),

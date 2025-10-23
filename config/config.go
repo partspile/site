@@ -83,6 +83,10 @@ var (
 	TwilioSendGridAPIKey = getEnvWithDefault("TWILIO_SENDGRID_API_KEY", "")
 	TwilioFromEmail      = getEnvWithDefault("TWILIO_FROM_EMAIL", "")
 
+	// Redis configuration
+	RedisAddress  = getEnvWithDefault("REDIS_ADDRESS", "localhost:6379")
+	RedisPassword = getEnvWithDefault("REDIS_PASSWORD", "")
+
 	// Server configuration
 	ServerPort = getEnvWithDefault("PORT", "8000")
 	BaseURL    = getEnvWithDefault("BASE_URL", "http://localhost:8000")
