@@ -8,7 +8,7 @@ import (
 )
 
 // CustomErrorHandler handles application errors with user context
-func CustomErrorHandler(ctx *fiber.Ctx, err error) error {
+func CustomErrorHandler(c *fiber.Ctx, err error) error {
 	// Status code defaults to 500
 	code := fiber.StatusInternalServerError
 
@@ -19,10 +19,10 @@ func CustomErrorHandler(ctx *fiber.Ctx, err error) error {
 	}
 
 	// Get user context using handler functions
-	userID := getUserID(ctx)
-	userName := getUserName(ctx)
+	userID := getUserID(c)
+	userName := getUserName(c)
 
 	// Send custom error page
-	ctx.Set(fiber.HeaderContentType, fiber.MIMETextHTML)
-	return ui.ErrorPage(code, err.Error(), userID, userName).Render(ctx)
+	c.Set(fiber.HeaderContentType, fiber.MIMETextHTML)
+	return ui.ErrorPage(code, err.Error(), userID, userName).Render(c)
 }

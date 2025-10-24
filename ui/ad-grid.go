@@ -25,7 +25,7 @@ func AdGridNode(ad ad.Ad, userID int, loc *time.Location) g.Node {
 
 		hx.Get(fmt.Sprintf("/ad/detail/%d?view=grid", ad.ID)),
 		hx.Target(adTarget(ad)),
-		hx.Swap("outerHTML"),
+		hx.Swap("outerHTML show:bottom"),
 
 		gridImageNode(ad),
 		Div(
