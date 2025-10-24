@@ -9,14 +9,14 @@ import (
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/messaging"
-	"github.com/parts-pile/site/user"
 )
 
 // MessagesPage renders the main messages page
-func MessagesPage(currentUser *user.User, conversations []messaging.Conversation) g.Node {
+func MessagesPage(userID int, userName string, conversations []messaging.Conversation) g.Node {
 	return Page(
 		"Messages",
-		currentUser,
+		userID,
+		userName,
 		"/messages",
 		[]g.Node{
 			pageHeader("Messages"),
@@ -29,7 +29,7 @@ func MessagesPage(currentUser *user.User, conversations []messaging.Conversation
 					),
 				),
 				g.If(len(conversations) > 0,
-					ConversationsList(conversations, currentUser.ID),
+					ConversationsList(conversations, userID),
 				),
 			),
 		},
@@ -37,7 +37,7 @@ func MessagesPage(currentUser *user.User, conversations []messaging.Conversation
 }
 
 // MessagesPageWithExpanded renders the messages page with a specific conversation pre-expanded
-func MessagesPageWithExpanded(currentUser *user.User, conversations []messaging.Conversation, expandID string) g.Node {
+func MessagesPageWithExpanded(userID int, userName string, conversations []messaging.Conversation, expandID string) g.Node {
 	// Find the conversation to expand
 	var expandedConversation *messaging.Conversation
 	var expandedMessages []messaging.Message
@@ -59,7 +59,8 @@ func MessagesPageWithExpanded(currentUser *user.User, conversations []messaging.
 
 	return Page(
 		"Messages",
-		currentUser,
+		userID,
+		userName,
 		"/messages",
 		[]g.Node{
 			pageHeader("Messages"),
@@ -72,7 +73,7 @@ func MessagesPageWithExpanded(currentUser *user.User, conversations []messaging.
 					),
 				),
 				g.If(len(conversations) > 0,
-					ConversationsListWithExpanded(conversations, currentUser, expandedConversation, expandedMessages),
+					ConversationsListWithExpanded(conversations, userID, userName, expandedConversation, expandedMessages),
 				),
 			),
 		},
@@ -93,15 +94,15 @@ func ConversationsList(conversations []messaging.Conversation, currentUserID int
 }
 
 // ConversationsListWithExpanded renders the list of conversations with one pre-expanded
-func ConversationsListWithExpanded(conversations []messaging.Conversation, currentUser *user.User, expandedConversation *messaging.Conversation, expandedMessages []messaging.Message) g.Node {
+func ConversationsListWithExpanded(conversations []messaging.Conversation, userID int, userName string, expandedConversation *messaging.Conversation, expandedMessages []messaging.Message) g.Node {
 	var conversationNodes []g.Node
 	for _, conv := range conversations {
 		if expandedConversation != nil && conv.ID == expandedConversation.ID {
 			// Render the expanded conversation
-			conversationNodes = append(conversationNodes, ExpandedConversation(currentUser, conv, expandedMessages))
+			conversationNodes = append(conversationNodes, ExpandedConversation(userID, userName, conv, expandedMessages))
 		} else {
 			// Render the collapsed conversation
-			conversationNodes = append(conversationNodes, ConversationListItem(conv, currentUser.ID))
+			conversationNodes = append(conversationNodes, ConversationListItem(conv, userID))
 		}
 	}
 
@@ -173,10 +174,10 @@ func ConversationListItem(conv messaging.Conversation, currentUserID int) g.Node
 }
 
 // ExpandedConversation renders an expanded conversation view within the list
-func ExpandedConversation(currentUser *user.User, conversation messaging.Conversation, messages []messaging.Message) g.Node {
+func ExpandedConversation(userID int, userName string, conversation messaging.Conversation, messages []messaging.Message) g.Node {
 	// Determine the other participant's name
 	otherUserName := conversation.User1Name
-	if currentUser.ID == conversation.User1ID {
+	if userID == conversation.User1ID {
 		otherUserName = conversation.User2Name
 	}
 
@@ -212,7 +213,7 @@ func ExpandedConversation(currentUser *user.User, conversation messaging.Convers
 			),
 			Div(
 				Class("bg-white rounded-lg border h-96 flex flex-col"),
-				MessagesList(messages, currentUser.ID),
+				MessagesList(messages, userID),
 				MessageForm(conversation.ID),
 			),
 		),
@@ -297,10 +298,10 @@ func MessageForm(conversationID int) g.Node {
 }
 
 // ModalMessagingInterface renders a messaging interface specifically for modal display
-func ModalMessagingInterface(currentUser *user.User, ad ad.Ad, conversation messaging.Conversation, messages []messaging.Message) g.Node {
+func ModalMessagingInterface(userID int, userName string, ad ad.Ad, conversation messaging.Conversation, messages []messaging.Message) g.Node {
 	// Determine the other participant's name
 	otherUserName := conversation.User1Name
-	if currentUser.ID == conversation.User1ID {
+	if userID == conversation.User1ID {
 		otherUserName = conversation.User2Name
 	}
 
@@ -336,7 +337,7 @@ func ModalMessagingInterface(currentUser *user.User, ad ad.Ad, conversation mess
 						g.Group(func() []g.Node {
 							var messageNodes []g.Node
 							for _, msg := range messages {
-								messageNodes = append(messageNodes, ModalMessageItem(msg, currentUser.ID))
+								messageNodes = append(messageNodes, ModalMessageItem(msg, userID))
 							}
 							return messageNodes
 						}()),

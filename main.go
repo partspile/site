@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"time"
@@ -14,7 +13,6 @@ import (
 	"github.com/parts-pile/site/db"
 	h "github.com/parts-pile/site/handlers"
 	"github.com/parts-pile/site/part"
-	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/vehicle"
 )
@@ -65,7 +63,7 @@ func main() {
 	}
 
 	app := fiber.New(fiber.Config{
-		ErrorHandler: customErrorHandler,
+		ErrorHandler: h.CustomErrorHandler,
 		BodyLimit:    config.ServerUploadLimit,
 		ReadTimeout:  30 * time.Second, // Prevent long-running requests
 		WriteTimeout: 30 * time.Second, // Prevent long-running responses
@@ -227,19 +225,4 @@ func main() {
 
 	fmt.Printf("Starting server on port %s...\n", config.ServerPort)
 	log.Fatal(app.Listen(":" + config.ServerPort))
-}
-
-func customErrorHandler(ctx *fiber.Ctx, err error) error {
-	// Status code defaults to 500
-	code := fiber.StatusInternalServerError
-
-	// Retrieve the custom status code if it's a *fiber.Error
-	var e *fiber.Error
-	if errors.As(err, &e) {
-		code = e.Code
-	}
-
-	// Send custom error page
-	ctx.Set(fiber.HeaderContentType, fiber.MIMETextHTML)
-	return ui.ErrorPage(code, err.Error()).Render(ctx)
 }

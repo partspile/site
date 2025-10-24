@@ -14,8 +14,8 @@ func HandleAdDetail(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	u := getUser(c)
-	adObj, err := ad.GetAdDetailByID(adID, u)
+	userID := getUserID(c)
+	adObj, err := ad.GetAdDetailByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
@@ -23,16 +23,16 @@ func HandleAdDetail(c *fiber.Ctx) error {
 	// Only increment click counts for non-deleted ads
 	if !adObj.IsArchived() {
 		_ = ad.IncrementAdClick(adID)
-		if u.ID != 0 {
-			_ = ad.IncrementAdClickForUser(adID, u.ID)
+		if userID != 0 {
+			_ = ad.IncrementAdClickForUser(adID, userID)
 			// Queue user for background embedding update
-			vector.QueueUserForUpdate(u.ID)
+			vector.QueueUserForUpdate(userID)
 		}
 	}
 
 	loc := getLocation(c)
 	view := getView(c)
-	return render(c, ui.AdDetail(*adObj, loc, u.ID, view))
+	return render(c, ui.AdDetail(*adObj, loc, userID, view))
 }
 
 // HandleAdCollapse handles ad collapse
@@ -41,8 +41,8 @@ func HandleAdCollapse(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
-	u := getUser(c)
-	adObj, err := ad.GetAdByID(adID, u)
+	userID := getUserID(c)
+	adObj, err := ad.GetAdByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
@@ -50,9 +50,9 @@ func HandleAdCollapse(c *fiber.Ctx) error {
 	view := getView(c)
 	switch view {
 	case "list", "tree":
-		return render(c, ui.AdListNode(*adObj, u, loc))
+		return render(c, ui.AdListNode(*adObj, userID, loc))
 	case "grid":
-		return render(c, ui.AdGridNode(*adObj, u, loc))
+		return render(c, ui.AdGridNode(*adObj, userID, loc))
 	}
 	return nil
 }

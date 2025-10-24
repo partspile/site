@@ -9,8 +9,8 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-func getUserInitial(currentUser *user.User) string {
-	return strings.ToUpper(string([]rune(currentUser.Name)[0]))
+func getUserInitial(userName string) string {
+	return strings.ToUpper(string([]rune(userName)[0]))
 }
 
 func indicator() g.Node {
@@ -24,7 +24,7 @@ func indicator() g.Node {
 	)
 }
 
-func navLoggedIn(currentUser *user.User) g.Node {
+func navLoggedIn(userName string) g.Node {
 	return Div(
 		Span(
 			Class("bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-semibold text-sm cursor-pointer hover:bg-red-600"),
@@ -32,7 +32,7 @@ func navLoggedIn(currentUser *user.User) g.Node {
 			hx.Target("body"),
 			hx.Swap("beforeend"),
 			hx.Headers(`js:{'X-Requested-With': 'XMLHttpRequest'}`),
-			g.Text(getUserInitial(currentUser)),
+			g.Text(getUserInitial(userName)),
 		),
 	)
 }
@@ -62,13 +62,13 @@ func navLoggedOut(currentPath string) g.Node {
 	}
 }
 
-func navigation(currentUser *user.User, currentPath string) g.Node {
+func navigation(userID int, userName string, currentPath string) g.Node {
 	return Nav(
 		Class("mb-8 border-b pb-4 flex items-center justify-between w-full"),
 		A(Href("/"), Class("text-xl font-bold"), g.Text("Parts Pile")),
 		indicator(),
-		g.Iff(currentUser != nil, func() g.Node { return navLoggedIn(currentUser) }),
-		g.Iff(currentUser == nil, func() g.Node { return navLoggedOut(currentPath) }),
+		g.Iff(userID != 0, func() g.Node { return navLoggedIn(userName) }),
+		g.Iff(userID == 0, func() g.Node { return navLoggedOut(currentPath) }),
 	)
 }
 
@@ -77,7 +77,7 @@ func menuHeader(currentUser *user.User) g.Node {
 		Class("px-4 py-3 border-b border-gray-100 text-center"),
 		Div(
 			Class("w-12 h-12 bg-red-500 text-white rounded-full flex items-center justify-center font-semibold text-lg mx-auto mb-2"),
-			g.Text(getUserInitial(currentUser)),
+			g.Text(getUserInitial(currentUser.Name)),
 		),
 		Div(
 			Class("text-sm font-medium text-gray-900"),

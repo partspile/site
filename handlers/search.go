@@ -6,8 +6,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/ui"
-	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/vector"
 	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
@@ -42,9 +42,9 @@ func queryEmbedding(userPrompt string, cursor string, threshold float64, k int, 
 }
 
 // Embedding-based search with user embedding
-func userEmbedding(currentUser *user.User, cursor string, threshold float64, k int, filter *qdrant.Filter) ([]int, string, error) {
-	log.Printf("[userEmbedding] called with userID=%d, cursor=%s, threshold=%.2f", currentUser.ID, cursor, threshold)
-	embedding, err := vector.GetUserPersonalizedEmbedding(currentUser.ID, false)
+func userEmbedding(userID int, cursor string, threshold float64, k int, filter *qdrant.Filter) ([]int, string, error) {
+	log.Printf("[userEmbedding] called with userID=%d, cursor=%s, threshold=%.2f", userID, cursor, threshold)
+	embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
 	if err != nil {
 		log.Printf("[userEmbedding] GetUserPersonalizedEmbedding error: %v", err)
 		// If user has no activity, fall back to site-level embedding
@@ -77,11 +77,7 @@ func siteEmbedding(cursor string, threshold float64, k int, filter *qdrant.Filte
 }
 
 // performSearch performs the search based on the user prompt and returns IDs
-func performSearch(userPrompt string, currentUser *user.User, cursorStr string, threshold float64, k int, filter *qdrant.Filter) ([]int, string, error) {
-	userID := 0
-	if currentUser != nil {
-		userID = currentUser.ID
-	}
+func performSearch(userPrompt string, userID int, cursorStr string, threshold float64, k int, filter *qdrant.Filter) ([]int, string, error) {
 	log.Printf("[performSearch] userPrompt='%s', userID=%d, cursorStr='%s', threshold=%.2f, k=%d, filter=%v", userPrompt, userID, cursorStr, threshold, k, filter)
 
 	if userPrompt != "" {
@@ -89,7 +85,7 @@ func performSearch(userPrompt string, currentUser *user.User, cursorStr string, 
 	}
 
 	if userPrompt == "" && userID != 0 {
-		return userEmbedding(currentUser, cursorStr, threshold, k, filter)
+		return userEmbedding(userID, cursorStr, threshold, k, filter)
 	}
 
 	if userPrompt == "" && userID == 0 {
@@ -112,7 +108,7 @@ func handleSearch(c *fiber.Ctx, viewType string) error {
 	}
 
 	saveUserSearch(c)
-	saveCookieLastView(c, viewType)
+	cookie.SetLastView(c, viewType)
 
 	return view.RenderSearchResults(adIDs, nextCursor)
 }
@@ -147,13 +143,15 @@ func HandleSearch(c *fiber.Ctx) error {
 
 // handleSearchContainer handles requests targeting the search container (from category pills)
 func handleSearchContainer(c *fiber.Ctx, viewType string) error {
+	userID := getUserID(c)
+	userName := getUserName(c)
 	// Get category from query param or cookie
 	categoryStr := c.Query("ad_category", "")
 	var activeAdCategory string
 	if categoryStr != "" {
 		activeAdCategory = ad.ParseCategoryFromQuery(categoryStr)
 	} else {
-		activeAdCategory = getCookieAdCategory(c)
+		activeAdCategory = cookie.GetAdCategory(c)
 	}
 
 	view, err := NewView(c, viewType)
@@ -167,8 +165,7 @@ func handleSearchContainer(c *fiber.Ctx, viewType string) error {
 	}
 
 	// Convert ad IDs to full ad objects for UI rendering
-	u := getUser(c)
-	ads, err := ad.GetAdsByIDs(adIDs, u)
+	ads, err := ad.GetAdsByIDs(adIDs, userID)
 	if err != nil {
 		return err
 	}
@@ -178,14 +175,16 @@ func handleSearchContainer(c *fiber.Ctx, viewType string) error {
 	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, viewType)
 
 	// Save category preference
-	saveCookieAdCategory(c, activeAdCategory)
+	cookie.SetAdCategory(c, activeAdCategory)
 
 	// Render the full search container
-	return render(c, ui.SearchPage(u, userPrompt, ads, getLocation(c), loaderURL, activeAdCategory))
+	return render(c, ui.SearchPage(userID, userName, userPrompt, ads, getLocation(c), loaderURL, activeAdCategory))
 }
 
 // HandleSearchQuery renders a full search page with search widget and results
 func HandleSearchQuery(c *fiber.Ctx) error {
+	userID := getUserID(c)
+	userName := getUserName(c)
 	c.Set("Content-Type", "text/html")
 
 	// Get category from query param or cookie
@@ -194,7 +193,7 @@ func HandleSearchQuery(c *fiber.Ctx) error {
 	if categoryStr != "" {
 		activeAdCategory = ad.ParseCategoryFromQuery(categoryStr)
 	} else {
-		activeAdCategory = getCookieAdCategory(c)
+		activeAdCategory = cookie.GetAdCategory(c)
 	}
 
 	view, err := NewView(c, "list")
@@ -208,8 +207,7 @@ func HandleSearchQuery(c *fiber.Ctx) error {
 	}
 
 	// Convert ad IDs to full ad objects for UI rendering
-	u := getUser(c)
-	ads, err := ad.GetAdsByIDs(adIDs, u)
+	ads, err := ad.GetAdsByIDs(adIDs, userID)
 	if err != nil {
 		return err
 	}
@@ -219,21 +217,23 @@ func HandleSearchQuery(c *fiber.Ctx) error {
 	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list")
 
 	// Save category preference
-	saveCookieAdCategory(c, activeAdCategory)
+	cookie.SetAdCategory(c, activeAdCategory)
 
 	// Render full page with search widget and results
 	return render(c, ui.Page(
 		"Search Results",
-		u,
+		userID,
+		userName,
 		c.Path(),
 		[]g.Node{
-			ui.SearchPage(u, userPrompt, ads, getLocation(c), loaderURL, activeAdCategory),
+			ui.SearchPage(userID, userName, userPrompt, ads, getLocation(c), loaderURL, activeAdCategory),
 		},
 	))
 }
 
 // HandleSearchAPI returns search results as JSON for JavaScript consumption
 func HandleSearchAPI(c *fiber.Ctx) error {
+	userID := getUserID(c)
 	view, err := NewView(c, c.Query("view", "list"))
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{
@@ -241,7 +241,6 @@ func HandleSearchAPI(c *fiber.Ctx) error {
 			"ads":   []ad.Ad{},
 		})
 	}
-	u := getUser(c)
 
 	adIDs, nextCursor, err := view.GetAdIDs()
 	if err != nil {
@@ -252,7 +251,7 @@ func HandleSearchAPI(c *fiber.Ctx) error {
 		})
 	}
 
-	ads, err := ad.GetAdsByIDs(adIDs, u)
+	ads, err := ad.GetAdsByIDs(adIDs, userID)
 	if err != nil {
 		log.Printf("[HandleSearchAPI] GetAdsByIDs error: %v", err)
 		return c.Status(500).JSON(fiber.Map{
@@ -276,11 +275,11 @@ func HandleSearchAPI(c *fiber.Ctx) error {
 // saveUserSearch saves user search and queues user for embedding update
 func saveUserSearch(c *fiber.Ctx) {
 	userPrompt := getQueryParam(c, "q")
-	u := getUser(c)
-	if u == nil {
+	userID := getUserID(c)
+	if userID == 0 {
 		return // No user, no search to save
 	}
-	saveUserSearchAndQueue(userPrompt, u.ID)
+	saveUserSearchAndQueue(userPrompt, userID)
 }
 
 // HandleFiltersShow shows the filters area

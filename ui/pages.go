@@ -4,19 +4,13 @@ import (
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
-
-	"github.com/parts-pile/site/user"
 )
 
-func HomePage(u *user.User, path string, view string, adCategory string) g.Node {
-	var userID int
-	if u != nil {
-		userID = u.ID
-	}
-
+func HomePage(userID int, userName string, path string, view string, adCategory string) g.Node {
 	return Page(
 		"Parts Pile",
-		u,
+		userID,
+		userName,
 		path,
 		[]g.Node{
 			InitialSearchResults(userID, view, adCategory),
@@ -24,10 +18,11 @@ func HomePage(u *user.User, path string, view string, adCategory string) g.Node 
 	)
 }
 
-func RegisterPage(u *user.User, path string) g.Node {
+func RegisterPage(userID int, userName string, path string) g.Node {
 	return Page(
 		"Register",
-		u,
+		userID,
+		userName,
 		path,
 		[]g.Node{
 			pageHeader("Register"),
@@ -117,10 +112,11 @@ func RegisterPage(u *user.User, path string) g.Node {
 	)
 }
 
-func LoginPage(u *user.User, path string) g.Node {
+func LoginPage(userID int, userName string, path string) g.Node {
 	return Page(
 		"Login",
-		u,
+		userID,
+		userName,
 		path,
 		[]g.Node{
 			pageHeader("Login"),
@@ -148,10 +144,11 @@ func LoginPage(u *user.User, path string) g.Node {
 	)
 }
 
-func VerificationPage(u *user.User, path string, username string) g.Node {
+func VerificationPage(userID int, userName string, path string, username string) g.Node {
 	return Page(
 		"Verify Phone Number",
-		u,
+		userID,
+		userName,
 		path,
 		[]g.Node{
 			pageHeader("Verify Your Phone Number"),
@@ -213,10 +210,11 @@ func VerificationPage(u *user.User, path string, username string) g.Node {
 	)
 }
 
-func TermsOfServicePage(u *user.User, path string) g.Node {
+func TermsOfServicePage(userID int, userName string, path string) g.Node {
 	return Page(
 		"Terms of Service",
-		u,
+		userID,
+		userName,
 		path,
 		[]g.Node{
 			pageHeader("Terms of Service"),
@@ -255,10 +253,11 @@ func TermsOfServicePage(u *user.User, path string) g.Node {
 	)
 }
 
-func PrivacyPolicyPage(u *user.User, path string) g.Node {
+func PrivacyPolicyPage(userID int, userName string, path string) g.Node {
 	return Page(
 		"Privacy Policy",
-		u,
+		userID,
+		userName,
 		path,
 		[]g.Node{
 			pageHeader("Privacy Policy"),
@@ -338,10 +337,11 @@ func PrivacyPolicyPage(u *user.User, path string) g.Node {
 	)
 }
 
-func RocksPage(u *user.User, path string) g.Node {
+func RocksPage(userID int, userName string, path string) g.Node {
 	return Page(
 		"Your Rocks - Parts Pile",
-		u,
+		userID,
+		userName,
 		path,
 		[]g.Node{
 			pageHeader("Your Rocks"),
@@ -398,10 +398,11 @@ func RocksPage(u *user.User, path string) g.Node {
 	)
 }
 
-func AdDeletedPage(currentUser *user.User, path string) g.Node {
+func AdDeletedPage(userID int, userName string, path string) g.Node {
 	return Page(
 		"Ad Deleted - Parts Pile",
-		currentUser,
+		userID,
+		userName,
 		path,
 		[]g.Node{
 			contentContainer(

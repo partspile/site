@@ -1,15 +1,15 @@
-package handlers
+package cookie
 
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 )
 
-func getCookieLastView(c *fiber.Ctx) string {
+func GetLastView(c *fiber.Ctx) string {
 	return c.Cookies("last_view", "list") // default to list
 }
 
-func saveCookieLastView(c *fiber.Ctx, view string) {
+func SetLastView(c *fiber.Ctx, view string) {
 	c.Cookie(&fiber.Cookie{
 		Name:     "last_view",
 		Value:    view,
@@ -21,12 +21,12 @@ func saveCookieLastView(c *fiber.Ctx, view string) {
 	})
 }
 
-func getCookieAdCategory(c *fiber.Ctx) string {
+func GetAdCategory(c *fiber.Ctx) string {
 	categoryStr := c.Cookies("ad_category", "CarPart")
 	return ad.ParseCategoryFromQuery(categoryStr)
 }
 
-func saveCookieAdCategory(c *fiber.Ctx, category string) {
+func SetAdCategory(c *fiber.Ctx, category string) {
 	c.Cookie(&fiber.Cookie{
 		Name:     "ad_category",
 		Value:    category,
@@ -38,7 +38,7 @@ func saveCookieAdCategory(c *fiber.Ctx, category string) {
 	})
 }
 
-func setJWTCookie(c *fiber.Ctx, token string) {
+func SetJWT(c *fiber.Ctx, token string) {
 	c.Cookie(&fiber.Cookie{
 		Name:     "auth_token",
 		Value:    token,
@@ -49,10 +49,10 @@ func setJWTCookie(c *fiber.Ctx, token string) {
 	})
 }
 
-func clearJWTCookie(c *fiber.Ctx) {
+func ClearJWT(c *fiber.Ctx) {
 	c.ClearCookie("auth_token")
 }
 
-func getJWTCookie(c *fiber.Ctx) string {
+func GetJWT(c *fiber.Ctx) string {
 	return c.Cookies("auth_token")
 }

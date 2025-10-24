@@ -7,7 +7,6 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/config"
-	"github.com/parts-pile/site/user"
 )
 
 // ---- Page Layout ----
@@ -30,7 +29,7 @@ func seoMetaTags(title, currentPath string) []g.Node {
 	}
 }
 
-func Page(title string, currentUser *user.User, currentPath string, content []g.Node) g.Node {
+func Page(title string, userID int, userName string, currentPath string, content []g.Node) g.Node {
 	return components.HTML5(components.HTML5Props{
 		Title:    title,
 		Language: "en",
@@ -67,7 +66,7 @@ func Page(title string, currentUser *user.User, currentPath string, content []g.
 				Class("container mx-auto px-4 py-8"),
 				hx.Headers(`js:{'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone}`),
 				hx.Indicator("#indicator"),
-				navigation(currentUser, currentPath),
+				navigation(userID, userName, currentPath),
 				g.Group(content),
 			),
 		},

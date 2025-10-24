@@ -9,11 +9,10 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/user"
 )
 
 // AdListNode renders a list view of ad
-func AdListNode(ad ad.Ad, u *user.User, loc *time.Location) g.Node {
+func AdListNode(ad ad.Ad, userID int, loc *time.Location) g.Node {
 	// Determine styling based on deleted status
 	var classes string
 	if ad.IsArchived() {
@@ -30,7 +29,7 @@ func AdListNode(ad ad.Ad, u *user.User, loc *time.Location) g.Node {
 		hx.Target(adTarget(ad)),
 		hx.Swap("outerHTML"),
 
-		g.If(u != nil, BookmarkButton(ad)),
+		g.If(userID != 0, BookmarkButton(ad)),
 
 		Div(
 			Class("flex-1 text-blue-600 hover:text-blue-800"),

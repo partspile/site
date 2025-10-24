@@ -18,8 +18,9 @@ import (
 
 // HandleRegistrationStep1 handles the first step of registration (collecting user info)
 func HandleRegistrationStep1(c *fiber.Ctx) error {
-	u := getUser(c)
-	return render(c, ui.RegisterPage(u, c.Path()))
+	userID := getUserID(c)
+	userName := getUserName(c)
+	return render(c, ui.RegisterPage(userID, userName, c.Path()))
 }
 
 // HandleRegistrationStep1Submission handles the first step submission and sends SMS
@@ -190,6 +191,8 @@ func waitForSMSDelivery(messageSid string, timeout time.Duration) (bool, error) 
 
 // HandleRegistrationVerification shows the verification code input page
 func HandleRegistrationVerification(c *fiber.Ctx) error {
+	userID := getUserID(c)
+	userName := getUserName(c)
 	store := c.Locals("session_store").(*session.Store)
 	sess, err := store.Get(c)
 	if err != nil {
@@ -208,9 +211,8 @@ func HandleRegistrationVerification(c *fiber.Ctx) error {
 		return c.Redirect("/register")
 	}
 
-	u := getUser(c)
 	username := name.(string) // We know this exists from the check above
-	return render(c, ui.VerificationPage(u, c.Path(), username))
+	return render(c, ui.VerificationPage(userID, userName, c.Path(), username))
 }
 
 // HandleRegistrationStep2Submission handles verification code submission and completes registration
@@ -293,7 +295,9 @@ func HandleRegistrationStep2Submission(c *fiber.Ctx) error {
 
 // HandleRocksPage displays the rocks page for newly verified users
 func HandleRocksPage(c *fiber.Ctx) error {
+	userID := getUserID(c)
+	userName := getUserName(c)
 	// This page should only be accessible to newly verified users
 	// For now, we'll allow access but in production you might want to add session checks
-	return render(c, ui.RocksPage(nil, c.Path()))
+	return render(c, ui.RocksPage(userID, userName, c.Path()))
 }

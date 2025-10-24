@@ -7,5 +7,7 @@ import (
 
 // HandleAbout displays the About page
 func HandleAbout(c *fiber.Ctx) error {
-	return render(c, ui.AboutPage(getUser(c), c.Path()))
+	userID := getUserID(c)
+	userName := getUserName(c)
+	return render(c, ui.AboutPage(userID, userName, c.Path()))
 }

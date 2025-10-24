@@ -1,15 +1,15 @@
 package ui
 
 import (
-	"github.com/parts-pile/site/user"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
 
-func AboutPage(u *user.User, path string) g.Node {
+func AboutPage(userID int, userName string, path string) g.Node {
 	return Page(
 		"About",
-		u,
+		userID,
+		userName,
 		path,
 		[]g.Node{
 			pageHeader("About Parts Pile"),

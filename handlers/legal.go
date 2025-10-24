@@ -7,12 +7,14 @@ import (
 
 // HandleTermsOfService displays the Terms of Service page
 func HandleTermsOfService(c *fiber.Ctx) error {
-	u := getUser(c)
-	return render(c, ui.TermsOfServicePage(u, c.Path()))
+	userID := getUserID(c)
+	userName := getUserName(c)
+	return render(c, ui.TermsOfServicePage(userID, userName, c.Path()))
 }
 
 // HandlePrivacyPolicy displays the Privacy Policy page
 func HandlePrivacyPolicy(c *fiber.Ctx) error {
-	u := getUser(c)
-	return render(c, ui.PrivacyPolicyPage(u, c.Path()))
+	userID := getUserID(c)
+	userName := getUserName(c)
+	return render(c, ui.PrivacyPolicyPage(userID, userName, c.Path()))
 }

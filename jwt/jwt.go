@@ -11,17 +11,17 @@ import (
 
 var jwtSecret = []byte(config.JWTSecret)
 
-type Claims struct {
-	UserID   int    `json:"user_id"`
-	Username string `json:"username"`
+type claims struct {
+	userID   int    `json:"user_id"`
+	userName string `json:"user_name"`
 	jwt.RegisteredClaims
 }
 
 // GenerateToken creates a JWT token for a user
 func GenerateToken(u *user.User) (string, error) {
-	claims := Claims{
-		UserID:   u.ID,
-		Username: u.Name,
+	claims := claims{
+		userID:   u.ID,
+		userName: u.Name,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -35,8 +35,8 @@ func GenerateToken(u *user.User) (string, error) {
 }
 
 // ValidateToken validates a JWT token and returns the claims
-func ValidateToken(tokenString string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+func ValidateToken(tokenString string) (*claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &claims{}, func(token *jwt.Token) (interface{}, error) {
 		if token.Method != jwt.SigningMethodHS256 {
 			return nil, errors.New("unexpected signing method")
 		}
@@ -47,17 +47,19 @@ func ValidateToken(tokenString string) (*Claims, error) {
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+	if claims, ok := token.Claims.(*claims); ok && token.Valid {
 		return claims, nil
 	}
 
 	return nil, errors.New("invalid token")
 }
 
-// ExtractUserFromClaims creates a User object from JWT claims
-func ExtractUserFromClaims(claims *Claims) *user.User {
-	return &user.User{
-		ID:   claims.UserID,
-		Name: claims.Username,
-	}
+// GetUserID extracts the user ID from validated claims
+func GetUserID(claims *claims) int {
+	return claims.userID
+}
+
+// GetUserName extracts the username from validated claims
+func GetUserName(claims *claims) string {
+	return claims.userName
 }

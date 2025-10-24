@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/jwt"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/ui"
@@ -12,8 +13,25 @@ import (
 )
 
 func logoutUser(c *fiber.Ctx) {
-	// Clear JWT cookie
-	clearJWTCookie(c)
+	cookie.ClearJWT(c)
+}
+
+func getUserID(c *fiber.Ctx) int {
+	userID, _ := c.Locals("userID").(int)
+	return userID
+}
+
+func setUserID(c *fiber.Ctx, userID int) {
+	c.Locals("userID", userID)
+}
+
+func setUserName(c *fiber.Ctx, userName string) {
+	c.Locals("userName", userName)
+}
+
+func getUserName(c *fiber.Ctx) string {
+	userName, _ := c.Locals("userName").(string)
+	return userName
 }
 
 func redirectToLogin(c *fiber.Ctx) error {
@@ -26,21 +44,13 @@ func redirectToLogin(c *fiber.Ctx) error {
 	return c.Redirect("/login", fiber.StatusSeeOther)
 }
 
-func getUser(c *fiber.Ctx) *user.User {
-	u, _ := c.Locals("user").(*user.User)
-	return u
-}
-
-func setUser(c *fiber.Ctx, u *user.User) {
-	c.Locals("user", u)
-}
-
 // JWTMiddleware is a middleware that validates a JWT token and sets the user in the context.
 func JWTMiddleware(c *fiber.Ctx) error {
 	// Get JWT token from cookie
-	tokenString := getJWTCookie(c)
+	tokenString := cookie.GetJWT(c)
 	if tokenString == "" {
-		setUser(c, nil)
+		setUserID(c, 0)
+		setUserName(c, "")
 		return c.Next()
 	}
 
@@ -48,21 +58,22 @@ func JWTMiddleware(c *fiber.Ctx) error {
 	claims, err := jwt.ValidateToken(tokenString)
 	if err != nil {
 		// Invalid token, clear cookie
-		clearJWTCookie(c)
-		setUser(c, nil)
+		cookie.ClearJWT(c)
+		setUserID(c, 0)
+		setUserName(c, "")
 		return c.Next()
 	}
 
-	// Create user object from JWT claims
-	u := jwt.ExtractUserFromClaims(claims)
-	setUser(c, u)
+	// Set user ID and username in context
+	setUserID(c, jwt.GetUserID(claims))
+	setUserName(c, jwt.GetUserName(claims))
 	return c.Next()
 }
 
 // AuthRequired is a middleware that requires a user to be logged in.
 func AuthRequired(c *fiber.Ctx) error {
-	u := getUser(c)
-	if u == nil {
+	userID := getUserID(c)
+	if userID == 0 {
 		return redirectToLogin(c)
 	}
 	return c.Next()
@@ -70,43 +81,28 @@ func AuthRequired(c *fiber.Ctx) error {
 
 // AdminRequired is a middleware that requires a user to be an admin.
 func AdminRequired(c *fiber.Ctx) error {
-	u := getUser(c)
-	if u == nil {
+	userID := getUserID(c)
+	if userID == 0 {
 		return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
 	}
 
 	// Fetch current admin status from database
-	currentUser, err := user.GetUser(u.ID)
-	if err != nil || currentUser.IsArchived() {
+	u, err := user.GetUser(userID)
+	if err != nil || u.IsArchived() {
 		return c.Status(fiber.StatusUnauthorized).SendString("User not found")
 	}
 
-	if !currentUser.IsAdmin {
+	if !u.IsAdmin {
 		return c.Status(fiber.StatusForbidden).SendString("Forbidden")
 	}
 
-	// Update the user in context with fresh admin status
-	setUser(c, &currentUser)
 	return c.Next()
 }
 
-// IsUserAdmin checks if the current user is an admin by fetching from database
-func IsUserAdmin(c *fiber.Ctx) bool {
-	u := getUser(c)
-	if u == nil {
-		return false
-	}
-
-	currentUser, err := user.GetUser(u.ID)
-	if err != nil || currentUser.IsArchived() {
-		return false
-	}
-
-	return currentUser.IsAdmin
-}
-
 func HandleLogin(c *fiber.Ctx) error {
-	return render(c, ui.LoginPage(getUser(c), c.Path()))
+	userID := getUserID(c)
+	userName := getUserName(c)
+	return render(c, ui.LoginPage(userID, userName, c.Path()))
 }
 
 func HandleLogout(c *fiber.Ctx) error {
@@ -138,7 +134,7 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to log you in.")
 	}
 
-	setJWTCookie(c, token)
+	cookie.SetJWT(c, token)
 
 	log.Printf("[AUTH] Login successful: userID=%d, name=%s", u.ID, name)
 	return render(c, ui.SuccessMessage("Login successful", "/"))
@@ -157,7 +153,11 @@ func HandleChangePassword(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, err.Error())
 	}
 
-	u := getUser(c)
+	userID := getUserID(c)
+	u, err := user.GetUser(userID)
+	if err != nil || u.IsArchived() {
+		return ValidationErrorResponse(c, "User not found")
+	}
 	if !password.VerifyPassword(currentUserPassword, u.PasswordHash, u.PasswordSalt) {
 		return ValidationErrorResponse(c, "Invalid current password")
 	}
@@ -176,9 +176,14 @@ func HandleChangePassword(c *fiber.Ctx) error {
 func HandleDeleteAccount(c *fiber.Ctx) error {
 	userPassword := c.FormValue("password")
 
-	u := getUser(c)
-	if u == nil {
+	userID := getUserID(c)
+	if userID == 0 {
 		return ValidationErrorResponseWithStatus(c, "You must be logged in to delete your account", fiber.StatusUnauthorized)
+	}
+
+	u, err := user.GetUser(userID)
+	if err != nil || u.IsArchived() {
+		return ValidationErrorResponseWithStatus(c, "User not found", fiber.StatusUnauthorized)
 	}
 
 	if !password.VerifyPassword(userPassword, u.PasswordHash, u.PasswordSalt) {
@@ -186,9 +191,9 @@ func HandleDeleteAccount(c *fiber.Ctx) error {
 	}
 
 	// Archive all ads by this user
-	err := ad.ArchiveAdsByUserID(u.ID)
-	if err != nil {
-		log.Printf("Warning: Failed to archive user's ads: %v", err)
+	err2 := ad.ArchiveAdsByUserID(u.ID)
+	if err2 != nil {
+		log.Printf("Warning: Failed to archive user's ads: %v", err2)
 		// Continue with user deletion even if ad archiving fails
 	}
 

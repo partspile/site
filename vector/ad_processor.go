@@ -43,7 +43,7 @@ func StartBackgroundProcessor() {
 			// Convert minimal ads to full ad details for processing
 			var adDetails []ad.AdDetail
 			for _, adObj := range ads {
-				adDetail, err := ad.GetAdDetailByID(adObj.ID, nil)
+				adDetail, err := ad.GetAdDetailByID(adObj.ID, 0)
 				if err != nil {
 					log.Printf("[vector] Failed to get ad detail for %d: %v", adObj.ID, err)
 					continue

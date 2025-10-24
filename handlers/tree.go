@@ -62,7 +62,8 @@ func HandleTreeCollapseBrowse(c *fiber.Ctx) error {
 }
 
 func HandleTreeExpandBrowse(c *fiber.Ctx) error {
-	u := getUser(c)
+	userID := getUserID(c)
+	userName := getUserName(c)
 	loc := getLocation(c)
 	path := c.Params("*")
 	name, level, parts := parsePath(path)
@@ -114,7 +115,7 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 		return render(c, ui.EmptyResponse())
 	}
 
-	return render(c, ui.ExpandedTreeNodeBrowse(name, path, level, loc, u, children, ads))
+	return render(c, ui.ExpandedTreeNodeBrowse(name, path, level, loc, userID, userName, children, ads))
 }
 
 func HandleTreeCollapseSearch(c *fiber.Ctx) error {
@@ -124,7 +125,8 @@ func HandleTreeCollapseSearch(c *fiber.Ctx) error {
 }
 
 func HandleTreeExpandSearch(c *fiber.Ctx) error {
-	u := getUser(c)
+	userID := getUserID(c)
+	userName := getUserName(c)
 	loc := getLocation(c)
 	path := c.Params("*")
 	name, level, parts := parsePath(path)
@@ -178,5 +180,5 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 		return render(c, ui.EmptyResponse())
 	}
 
-	return render(c, ui.ExpandedTreeNodeSearch(name, path, level, loc, u, children, ads))
+	return render(c, ui.ExpandedTreeNodeSearch(name, path, level, loc, userID, userName, children, ads))
 }

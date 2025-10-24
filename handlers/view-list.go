@@ -22,11 +22,12 @@ func (v *ListView) GetAdIDs() ([]int, string, error) {
 
 func (v *ListView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
-	u := getUser(v.ctx)
+	userID := getUserID(v.ctx)
+	userName := getUserName(v.ctx)
 	loc := getLocation(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering
-	ads, err := ad.GetAdsByIDs(adIDs, u)
+	ads, err := ad.GetAdsByIDs(adIDs, userID)
 	if err != nil {
 		return err
 	}
@@ -34,16 +35,17 @@ func (v *ListView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	// Create loader URL for infinite scroll
 	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list")
 
-	return render(v.ctx, ui.ListViewResults(ads, u, loc, loaderURL))
+	return render(v.ctx, ui.ListViewResults(ads, userID, userName, loc, loaderURL))
 }
 
 func (v *ListView) RenderSearchPage(adIDs []int, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
-	u := getUser(v.ctx)
+	userID := getUserID(v.ctx)
+	userName := getUserName(v.ctx)
 	loc := getLocation(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering
-	ads, err := ad.GetAdsByIDs(adIDs, u)
+	ads, err := ad.GetAdsByIDs(adIDs, userID)
 	if err != nil {
 		return err
 	}
@@ -51,5 +53,5 @@ func (v *ListView) RenderSearchPage(adIDs []int, nextCursor string) error {
 	// Create loader URL for infinite scroll
 	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list")
 
-	return render(v.ctx, ui.ListViewPage(ads, u, loc, loaderURL))
+	return render(v.ctx, ui.ListViewPage(ads, userID, userName, loc, loaderURL))
 }

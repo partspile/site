@@ -4,21 +4,20 @@ import (
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
-
-	"github.com/parts-pile/site/user"
 )
 
-func SettingsPage(currentUser *user.User, currentPath string) g.Node {
+func SettingsPage(userID int, userName string, currentPath string) g.Node {
 	return Page(
 		"Settings",
-		currentUser,
+		userID,
+		userName,
 		currentPath,
 		[]g.Node{
 			pageHeader("Settings"),
 			contentContainer(
 				sectionHeader("Notification Preferences", "Choose how you'd like to receive notifications."),
 				formContainer("notificationForm",
-					notificationMethodRadioGroup(currentUser.NotificationMethod, currentUser.EmailAddress, currentUser.Phone),
+					notificationMethodRadioGroup("", nil, ""),
 					actionButtons(
 						button("Update Preferences",
 							withAttributes(

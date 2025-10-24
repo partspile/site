@@ -12,15 +12,18 @@ import (
 
 // renderAdminSection renders an admin section with HX-Request handling
 func renderAdminSection(c *fiber.Ctx, sectionID string, sectionContent g.Node) error {
-	u := getUser(c)
+	userID := getUserID(c)
+	userName := getUserName(c)
+	path := c.Path()
 	if c.Get("HX-Request") != "" {
-		return render(c, ui.AdminSectionPage(u, c.Path(), sectionID, sectionContent))
+		return render(c, ui.AdminSectionPage(userID, userName, path, sectionID, sectionContent))
 	}
 	return render(c, ui.Page(
 		"Admin Dashboard",
-		u,
+		userID,
+		userName,
 		c.Path(),
-		[]g.Node{ui.AdminSectionPage(u, c.Path(), sectionID, sectionContent)},
+		[]g.Node{ui.AdminSectionPage(userID, userName, path, sectionID, sectionContent)},
 	))
 }
 

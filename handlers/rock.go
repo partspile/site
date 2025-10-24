@@ -11,13 +11,13 @@ import (
 
 // HandleAdRocks displays the rock section for an ad
 func HandleAdRocks(c *fiber.Ctx) error {
+	userID := getUserID(c)
 	adID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(400).SendString("Invalid ad ID")
 	}
 
-	u := getUser(c)
-	if err != nil {
+	if userID == 0 {
 		return c.Status(401).SendString("Unauthorized")
 	}
 
@@ -29,8 +29,8 @@ func HandleAdRocks(c *fiber.Ctx) error {
 
 	// Check if current user can throw a rock
 	canThrow := false
-	if u != nil {
-		canThrow, err = rock.CanThrowRock(u.ID)
+	if userID != 0 {
+		canThrow, err = rock.CanThrowRock(userID)
 		if err != nil {
 			canThrow = false
 		}
@@ -38,8 +38,8 @@ func HandleAdRocks(c *fiber.Ctx) error {
 
 	// Get user's rock count
 	userRockCount := 0
-	if u != nil {
-		userRocks, err := rock.GetUserRocks(u.ID)
+	if userID != 0 {
+		userRocks, err := rock.GetUserRocks(userID)
 		if err == nil {
 			userRockCount = userRocks.RockCount
 		}
@@ -52,13 +52,13 @@ func HandleAdRocks(c *fiber.Ctx) error {
 
 // HandleThrowRock handles throwing a rock at an ad
 func HandleThrowRock(c *fiber.Ctx) error {
+	userID := getUserID(c)
 	adID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(400).SendString("Invalid ad ID")
 	}
 
-	u := getUser(c)
-	if err != nil {
+	if userID == 0 {
 		return c.Status(401).SendString("Unauthorized")
 	}
 
@@ -69,7 +69,7 @@ func HandleThrowRock(c *fiber.Ctx) error {
 	}
 
 	// Throw the rock
-	err = rock.ThrowRock(u.ID, adID, message)
+	err = rock.ThrowRock(userID, adID, message)
 	if err != nil {
 		return c.Status(400).SendString(fmt.Sprintf("Failed to throw rock: %v", err))
 	}
@@ -81,13 +81,13 @@ func HandleThrowRock(c *fiber.Ctx) error {
 	}
 
 	// Check if user can still throw rocks
-	canThrow, err := rock.CanThrowRock(u.ID)
+	canThrow, err := rock.CanThrowRock(userID)
 	if err != nil {
 		canThrow = false
 	}
 
 	// Get user's updated rock count
-	userRocks, err := rock.GetUserRocks(u.ID)
+	userRocks, err := rock.GetUserRocks(userID)
 	userRockCount := 0
 	if err == nil {
 		userRockCount = userRocks.RockCount
@@ -118,18 +118,18 @@ func HandleViewRockConversations(c *fiber.Ctx) error {
 
 // HandleResolveRock resolves a rock dispute
 func HandleResolveRock(c *fiber.Ctx) error {
+	userID := getUserID(c)
 	rockID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(400).SendString("Invalid rock ID")
 	}
 
-	u := getUser(c)
-	if err != nil {
+	if userID == 0 {
 		return c.Status(401).SendString("Unauthorized")
 	}
 
 	// Resolve the rock
-	err = rock.ResolveRock(rockID, u.ID)
+	err = rock.ResolveRock(rockID, userID)
 	if err != nil {
 		return c.Status(400).SendString(fmt.Sprintf("Failed to resolve rock: %v", err))
 	}

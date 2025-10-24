@@ -9,15 +9,15 @@ import (
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
-	"github.com/parts-pile/site/user"
 )
 
 // ---- New Ad Page ----
 
-func NewAdPage(currentUser *user.User, path string, makes []string, categories []string) g.Node {
+func NewAdPage(userID int, userName string, path string, makes []string, categories []string) g.Node {
 	return Page(
 		"New Ad - Parts Pile",
-		currentUser,
+		userID,
+		userName,
 		path,
 		[]g.Node{
 			pageHeader("Create New Ad"),
@@ -47,7 +47,8 @@ func NewAdPage(currentUser *user.User, path string, makes []string, categories [
 
 // DuplicateAdPage renders the new ad form pre-filled with data from an existing ad
 func DuplicateAdPage(
-	currentUser *user.User,
+	userID int,
+	userName string,
 	path string,
 	makes []string,
 	categories []string,
@@ -65,7 +66,8 @@ func DuplicateAdPage(
 
 	return Page(
 		"Duplicate Ad - Parts Pile",
-		currentUser,
+		userID,
+		userName,
 		path,
 		[]g.Node{
 			pageHeader("Create New Ad"),

@@ -189,6 +189,7 @@ func HandleAdImage(c *fiber.Ctx) error {
 
 // HandleAdGridImage serves grid view images with navigation
 func HandleAdGridImage(c *fiber.Ctx) error {
+	userID := getUserID(c)
 	adID, err := strconv.Atoi(c.Params("adID"))
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -199,8 +200,7 @@ func HandleAdGridImage(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid image index")
 	}
 
-	u := getUser(c)
-	adObj, err := ad.GetAdByID(adID, u)
+	adObj, err := ad.GetAdByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}

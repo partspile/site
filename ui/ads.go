@@ -8,14 +8,14 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/user"
 )
 
 // AdsPage renders the main ads page with navigation tabs
-func AdsPage(currentUser *user.User, path string, activeTab string) g.Node {
+func AdsPage(userID int, userName string, path string, activeTab string) g.Node {
 	return Page(
 		"My Ads",
-		currentUser,
+		userID,
+		userName,
 		path,
 		[]g.Node{
 			pageHeader("My Ads"),
@@ -37,7 +37,7 @@ func AdsPage(currentUser *user.User, path string, activeTab string) g.Node {
 }
 
 // AdsPageWithContent renders the ads page with navigation and content for HTMX updates
-func AdsPageWithContent(currentUser *user.User, path string, activeTab string, content g.Node) g.Node {
+func AdsPageWithContent(userID int, userName string, path string, activeTab string, content g.Node) g.Node {
 	return Div(
 		ID("ads-navigation"),
 		adsNavigation(activeTab),
@@ -92,7 +92,7 @@ func adsNavigation(activeTab string) g.Node {
 }
 
 // BookmarkedAdsPage renders the bookmarked ads sub-page
-func BookmarkedAdsPage(ads []ad.Ad, currentUser *user.User, path string, loc *time.Location) g.Node {
+func BookmarkedAdsPage(ads []ad.Ad, userID int, userName string, path string, loc *time.Location) g.Node {
 	var viewContent g.Node
 
 	if len(ads) == 0 {
@@ -101,7 +101,7 @@ func BookmarkedAdsPage(ads []ad.Ad, currentUser *user.User, path string, loc *ti
 			Div(Class("text-gray-400 text-sm"), g.Text("Start browsing ads and bookmark the ones you're interested in!")),
 		)
 	} else {
-		adNodes := listNodes(ads, currentUser, loc)
+		adNodes := listNodes(ads, userID, loc)
 		viewContent = Div(
 			g.Group(adNodes),
 		)
@@ -116,7 +116,7 @@ func BookmarkedAdsPage(ads []ad.Ad, currentUser *user.User, path string, loc *ti
 }
 
 // ActiveAdsPage renders the active ads sub-page
-func ActiveAdsPage(ads []ad.Ad, currentUser *user.User, path string, loc *time.Location) g.Node {
+func ActiveAdsPage(ads []ad.Ad, userID int, userName string, path string, loc *time.Location) g.Node {
 	var viewContent g.Node
 
 	if len(ads) == 0 {
@@ -130,7 +130,7 @@ func ActiveAdsPage(ads []ad.Ad, currentUser *user.User, path string, loc *time.L
 			),
 		)
 	} else {
-		adNodes := listNodes(ads, currentUser, loc)
+		adNodes := listNodes(ads, userID, loc)
 		viewContent = Div(
 			g.Group(adNodes),
 		)
@@ -145,7 +145,7 @@ func ActiveAdsPage(ads []ad.Ad, currentUser *user.User, path string, loc *time.L
 }
 
 // DeletedAdsPage renders the deleted ads sub-page
-func DeletedAdsPage(ads []ad.Ad, currentUser *user.User, path string, loc *time.Location) g.Node {
+func DeletedAdsPage(ads []ad.Ad, userID int, userName string, path string, loc *time.Location) g.Node {
 	var viewContent g.Node
 
 	if len(ads) == 0 {
@@ -154,7 +154,7 @@ func DeletedAdsPage(ads []ad.Ad, currentUser *user.User, path string, loc *time.
 			Div(Class("text-gray-400 text-sm"), g.Text("Deleted ads will appear here.")),
 		)
 	} else {
-		adNodes := listNodes(ads, currentUser, loc)
+		adNodes := listNodes(ads, userID, loc)
 		viewContent = Div(
 			g.Group(adNodes),
 		)

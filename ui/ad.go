@@ -10,7 +10,6 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/user"
 )
 
 func adID(ad ad.Ad) string {
@@ -153,10 +152,11 @@ func BookmarkButton(ad ad.Ad) g.Node {
 	)
 }
 
-func AdPage(adObj ad.AdDetail, currentUser *user.User, userID int, path string, loc *time.Location, view string) g.Node {
+func AdPage(adObj ad.AdDetail, userID int, userName string, path string, loc *time.Location, view string) g.Node {
 	return Page(
 		fmt.Sprintf("Ad %d - Parts Pile", adObj.ID),
-		currentUser,
+		userID,
+		userName,
 		path,
 		[]g.Node{
 			AdDetail(adObj, loc, userID, view),

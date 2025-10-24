@@ -10,7 +10,6 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/user"
 )
 
 // htmlEscape escapes HTML special characters
@@ -188,18 +187,13 @@ func MakeFilterOptions(makes []string) g.Node {
 }
 
 // SearchPage renders a full search page with search widget and results
-func SearchPage(u *user.User, query string, ads []ad.Ad, loc *time.Location, loaderURL string, activeAdCategory string) g.Node {
-	userID := 0
-	if u != nil {
-		userID = u.ID
-	}
-
+func SearchPage(userID int, userName string, query string, ads []ad.Ad, loc *time.Location, loaderURL string, activeAdCategory string) g.Node {
 	return Div(
 		ID("searchContainer"),
 		SearchWidget(userID, "list", query, activeAdCategory),
 		Div(
 			ID("searchResults"),
-			ListViewResults(ads, u, loc, loaderURL),
+			ListViewResults(ads, userID, userName, loc, loaderURL),
 		),
 	)
 }

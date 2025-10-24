@@ -15,16 +15,18 @@ import (
 
 // HandleNewAd shows the new ad form
 func HandleNewAd(c *fiber.Ctx) error {
-	u := getUser(c)
+	userID := getUserID(c)
+	userName := getUserName(c)
 	adCat := AdCategory(c)
 	makes := vehicle.GetMakes(adCat)
 	partCategories := part.GetCategories(adCat)
-	return render(c, ui.NewAdPage(u, c.Path(), makes, partCategories))
+	return render(c, ui.NewAdPage(userID, userName, c.Path(), makes, partCategories))
 }
 
 // HandleDuplicateAd shows the duplicate ad form with pre-filled data
 func HandleDuplicateAd(c *fiber.Ctx) error {
-	u := getUser(c)
+	userID := getUserID(c)
+	userName := getUserName(c)
 	adCat := AdCategory(c)
 
 	adID, err := AdID(c)
@@ -33,7 +35,7 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 	}
 
 	// Fetch the original ad
-	adDetail, err := ad.GetAdDetailByID(adID, u)
+	adDetail, err := ad.GetAdDetailByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
@@ -50,13 +52,13 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 	}
 
 	return render(c, ui.DuplicateAdPage(
-		u, c.Path(), makes, categoryNames,
+		userID, userName, c.Path(), makes, categoryNames,
 		*adDetail, years, models, engines, subcategoryNames, adDetail.PartSubcategory.String))
 }
 
 // HandleNewAdSubmission processes the new ad form submission
 func HandleNewAdSubmission(c *fiber.Ctx) error {
-	u := getUser(c)
+	userID := getUserID(c)
 
 	// Resolve and store location first
 	locationRaw := c.FormValue("location")
@@ -65,7 +67,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, "Could not resolve location.")
 	}
 
-	newAd, imageFiles, _, err := BuildAdFromForm(c, u.ID, locID)
+	newAd, imageFiles, _, err := BuildAdFromForm(c, userID, locID)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}

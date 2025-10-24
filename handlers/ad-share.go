@@ -8,13 +8,13 @@ import (
 
 // HandleShareModal shows the share modal for an ad
 func HandleShareModal(c *fiber.Ctx) error {
+	userID := getUserID(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	u := getUser(c)
-	adObj, err := ad.GetAdByID(adID, u)
+	adObj, err := ad.GetAdByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}

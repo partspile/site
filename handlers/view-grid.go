@@ -22,11 +22,12 @@ func (v *GridView) GetAdIDs() ([]int, string, error) {
 
 func (v *GridView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
-	u := getUser(v.ctx)
+	userID := getUserID(v.ctx)
+	userName := getUserName(v.ctx)
 	loc := getLocation(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering
-	ads, err := ad.GetAdsByIDs(adIDs, u)
+	ads, err := ad.GetAdsByIDs(adIDs, userID)
 	if err != nil {
 		return err
 	}
@@ -34,21 +35,22 @@ func (v *GridView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	// Create loader URL for infinite scroll
 	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid")
 
-	return render(v.ctx, ui.GridViewResults(ads, u, loc, loaderURL))
+	return render(v.ctx, ui.GridViewResults(ads, userID, userName, loc, loaderURL))
 }
 
 func (v *GridView) RenderSearchPage(adIDs []int, nextCursor string) error {
 	userPrompt := getQueryParam(v.ctx, "q")
-	u := getUser(v.ctx)
+	userID := getUserID(v.ctx)
+	userName := getUserName(v.ctx)
 	loc := getLocation(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering
-	ads, err := ad.GetAdsByIDs(adIDs, u)
+	ads, err := ad.GetAdsByIDs(adIDs, userID)
 	if err != nil {
 		return err
 	}
 	// Create loader URL for infinite scroll
 	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid")
 
-	return render(v.ctx, ui.GridViewPage(ads, u, loc, loaderURL))
+	return render(v.ctx, ui.GridViewPage(ads, userID, userName, loc, loaderURL))
 }

@@ -1,14 +1,13 @@
 package ui
 
 import (
-	"github.com/parts-pile/site/user"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 )
 
 // AdminSectionPage renders the admin section navigation and the current section content.
-func AdminSectionPage(currentUser *user.User, path, activeSection string, content g.Node) g.Node {
+func AdminSectionPage(userID int, userName string, path, activeSection string, content g.Node) g.Node {
 	return Div(
 		ID("admin-section"),
 		H1(Class("text-4xl font-bold mb-8"), g.Text("Admin Dashboard")),

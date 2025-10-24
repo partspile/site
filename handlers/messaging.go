@@ -18,26 +18,28 @@ import (
 
 // HandleMessagesPage handles the main messages page
 func HandleMessagesPage(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	userID := getUserID(c)
+	userName := getUserName(c)
 
-	conversations, err := messaging.GetConversationsForUser(currentUser.ID)
+	conversations, err := messaging.GetConversationsForUser(userID)
 	if err != nil {
-		return render(c, ui.ErrorPage(500, "Failed to load conversations"))
+		return render(c, ui.ErrorPage(500, "Failed to load conversations", userID, userName))
 	}
 
 	// Check if we should expand a specific conversation
 	expandID := c.Query("expand")
 	if expandID != "" {
 		// Return the page with the conversation pre-expanded
-		return render(c, ui.MessagesPageWithExpanded(currentUser, conversations, expandID))
+		return render(c, ui.MessagesPageWithExpanded(userID, userName, conversations, expandID))
 	}
 
-	return render(c, ui.MessagesPage(currentUser, conversations))
+	return render(c, ui.MessagesPage(userID, userName, conversations))
 }
 
 // HandleExpandConversation handles expanding a conversation in-place
 func HandleExpandConversation(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	userID := getUserID(c)
+	userName := getUserName(c)
 
 	conversationID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -50,18 +52,18 @@ func HandleExpandConversation(c *fiber.Ctx) error {
 	}
 
 	// Check if user is part of this conversation
-	if conversation.User1ID != currentUser.ID && conversation.User2ID != currentUser.ID {
+	if conversation.User1ID != userID && conversation.User2ID != userID {
 		return c.Status(403).SendString("Access denied")
 	}
 
 	// Mark conversation as read for current user
-	err = messaging.MarkConversationAsRead(conversationID, currentUser.ID)
+	err = messaging.MarkConversationAsRead(conversationID, userID)
 	if err != nil {
 		log.Printf("Failed to mark conversation as read: %v", err)
 	}
 
 	// Mark messages as read
-	err = messaging.MarkMessagesAsRead(conversationID, currentUser.ID)
+	err = messaging.MarkMessagesAsRead(conversationID, userID)
 	if err != nil {
 		log.Printf("Failed to mark messages as read: %v", err)
 	}
@@ -71,13 +73,13 @@ func HandleExpandConversation(c *fiber.Ctx) error {
 		return c.Status(500).SendString("Failed to load messages")
 	}
 
-	component := ui.ExpandedConversation(currentUser, conversation, messages)
+	component := ui.ExpandedConversation(userID, userName, conversation, messages)
 	return render(c, component)
 }
 
 // HandleCollapseConversation handles collapsing a conversation back to the list view
 func HandleCollapseConversation(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	userID := getUserID(c)
 
 	conversationID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -90,39 +92,40 @@ func HandleCollapseConversation(c *fiber.Ctx) error {
 	}
 
 	// Check if user is part of this conversation
-	if conversation.User1ID != currentUser.ID && conversation.User2ID != currentUser.ID {
+	if conversation.User1ID != userID && conversation.User2ID != userID {
 		return c.Status(403).SendString("Access denied")
 	}
 
 	// Return just the collapsed conversation item
-	return render(c, ui.ConversationListItem(conversation, currentUser.ID))
+	return render(c, ui.ConversationListItem(conversation, userID))
 }
 
 // HandleStartConversation handles starting a new conversation about an ad
 func HandleStartConversation(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	userID := getUserID(c)
+	userName := getUserName(c)
 
 	adID, err := strconv.Atoi(c.Params("adID"))
 	if err != nil {
-		return render(c, ui.ErrorPage(400, "Invalid ad ID"))
+		return render(c, ui.ErrorPage(400, "Invalid ad ID", userID, userName))
 	}
 
 	// Get ad details to check ownership
-	adObj, err := ad.GetAdByID(adID, currentUser)
+	adObj, err := ad.GetAdByID(adID, userID)
 	if err != nil {
-		return render(c, ui.ErrorPage(404, "Ad not found"))
+		return render(c, ui.ErrorPage(404, "Ad not found", userID, userName))
 	}
 
 	// Check if user can message this ad
-	err = messaging.CanUserMessageAd(currentUser.ID, adObj.UserID)
+	err = messaging.CanUserMessageAd(userID, adObj.UserID)
 	if err != nil {
-		return render(c, ui.ErrorPage(400, err.Error()))
+		return render(c, ui.ErrorPage(400, err.Error(), userID, userName))
 	}
 
 	// Get or create conversation
-	conversationID, err := messaging.GetOrCreateConversation(currentUser.ID, adObj.UserID, adID)
+	conversationID, err := messaging.GetOrCreateConversation(userID, adObj.UserID, adID)
 	if err != nil {
-		return render(c, ui.ErrorPage(500, "Failed to create conversation"))
+		return render(c, ui.ErrorPage(500, "Failed to create conversation", userID, userName))
 	}
 
 	// Redirect to messages page with conversation expanded
@@ -131,38 +134,39 @@ func HandleStartConversation(c *fiber.Ctx) error {
 
 // HandleSendMessage handles sending a new message (works for both main messages page and modal)
 func HandleSendMessage(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	userID := getUserID(c)
+	userName := getUserName(c)
 
 	conversationID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
-		return render(c, ui.ErrorPage(400, "Invalid conversation ID"))
+		return render(c, ui.ErrorPage(400, "Invalid conversation ID", userID, userName))
 	}
 
 	conversation, err := messaging.GetConversationWithDetails(conversationID)
 	if err != nil {
-		return render(c, ui.ErrorPage(404, "Conversation not found"))
+		return render(c, ui.ErrorPage(404, "Conversation not found", userID, userName))
 	}
 
 	// Check if user is part of this conversation
-	if conversation.User1ID != currentUser.ID && conversation.User2ID != currentUser.ID {
-		return render(c, ui.ErrorPage(403, "Access denied"))
+	if conversation.User1ID != userID && conversation.User2ID != userID {
+		return render(c, ui.ErrorPage(403, "Access denied", userID, userName))
 	}
 
 	// Get message content from form
 	content := c.FormValue("message")
 	if content == "" {
-		return render(c, ui.ErrorPage(400, "Message cannot be empty"))
+		return render(c, ui.ErrorPage(400, "Message cannot be empty", userID, userName))
 	}
 
 	// Add message to conversation
-	_, err = messaging.AddMessage(conversationID, currentUser.ID, content)
+	_, err = messaging.AddMessage(conversationID, userID, content)
 	if err != nil {
-		return render(c, ui.ErrorPage(500, "Failed to send message"))
+		return render(c, ui.ErrorPage(500, "Failed to send message", userID, userName))
 	}
 
 	// Determine recipient ID
 	recipientID := conversation.User1ID
-	if currentUser.ID == conversation.User1ID {
+	if userID == conversation.User1ID {
 		recipientID = conversation.User2ID
 	}
 
@@ -173,7 +177,7 @@ func HandleSendMessage(c *fiber.Ctx) error {
 		log.Printf("Failed to create notification service: %v", err)
 	} else {
 		go func() {
-			err := notificationService.NotifyNewMessage(conversationID, currentUser.ID, recipientID, content)
+			err := notificationService.NotifyNewMessage(conversationID, userID, recipientID, content)
 			if err != nil {
 				log.Printf("Failed to send notification: %v", err)
 			}
@@ -183,7 +187,7 @@ func HandleSendMessage(c *fiber.Ctx) error {
 	// Get updated messages
 	updatedMessages, err := messaging.GetMessages(conversationID)
 	if err != nil {
-		return render(c, ui.ErrorPage(500, "Failed to load updated messages"))
+		return render(c, ui.ErrorPage(500, "Failed to load updated messages", userID, userName))
 	}
 
 	// Determine context from query parameter or form data
@@ -193,57 +197,58 @@ func HandleSendMessage(c *fiber.Ctx) error {
 	switch context {
 	case "modal":
 		// Return modal conversation for ad detail modal
-		return render(c, ui.ModalConversation(updatedMessages, currentUser.ID))
+		return render(c, ui.ModalConversation(updatedMessages, userID))
 	default:
 		// Return expanded conversation for main messages page
 		updatedConversation, err := messaging.GetConversationWithDetails(conversationID)
 		if err != nil {
-			return render(c, ui.ErrorPage(500, "Failed to load updated conversation"))
+			return render(c, ui.ErrorPage(500, "Failed to load updated conversation", userID, userName))
 		}
-		return render(c, ui.ExpandedConversation(currentUser, updatedConversation, updatedMessages))
+		return render(c, ui.ExpandedConversation(userID, userName, updatedConversation, updatedMessages))
 	}
 }
 
 // HandleModalMessaging handles modal messaging interface for ad detail pages
 func HandleModalMessaging(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	userID := getUserID(c)
+	userName := getUserName(c)
 
 	adID, err := strconv.Atoi(c.Params("adID"))
 	if err != nil {
-		return render(c, ui.ErrorPage(400, "Invalid ad ID"))
+		return render(c, ui.ErrorPage(400, "Invalid ad ID", userID, userName))
 	}
 
 	// Get ad details to check ownership
-	adObj, err := ad.GetAdByID(adID, currentUser)
+	adObj, err := ad.GetAdByID(adID, userID)
 	if err != nil {
-		return render(c, ui.ErrorPage(404, "Ad not found"))
+		return render(c, ui.ErrorPage(404, "Ad not found", userID, userName))
 	}
 
 	// Check if user can message this ad
-	err = messaging.CanUserMessageAd(currentUser.ID, adObj.UserID)
+	err = messaging.CanUserMessageAd(userID, adObj.UserID)
 	if err != nil {
-		return render(c, ui.ErrorPage(400, err.Error()))
+		return render(c, ui.ErrorPage(400, err.Error(), userID, userName))
 	}
 
 	// Get or create conversation
-	conversationID, err := messaging.GetOrCreateConversation(currentUser.ID, adObj.UserID, adID)
+	conversationID, err := messaging.GetOrCreateConversation(userID, adObj.UserID, adID)
 	if err != nil {
-		return render(c, ui.ErrorPage(500, "Failed to create conversation"))
+		return render(c, ui.ErrorPage(500, "Failed to create conversation", userID, userName))
 	}
 
 	// Get conversation details and messages
 	conversation, err := messaging.GetConversationWithDetails(conversationID)
 	if err != nil {
-		return render(c, ui.ErrorPage(500, "Failed to load conversation"))
+		return render(c, ui.ErrorPage(500, "Failed to load conversation", userID, userName))
 	}
 
 	messages, err := messaging.GetMessages(conversationID)
 	if err != nil {
-		return render(c, ui.ErrorPage(500, "Failed to load messages"))
+		return render(c, ui.ErrorPage(500, "Failed to load messages", userID, userName))
 	}
 
 	// Return the modal messaging interface
-	return render(c, ui.ModalMessagingInterface(currentUser, *adObj, conversation, messages))
+	return render(c, ui.ModalMessagingInterface(userID, userName, *adObj, conversation, messages))
 }
 
 // HandleMessagesAPI handles AJAX requests for messages
@@ -328,7 +333,7 @@ func HandleSSE(c *fiber.Ctx) error {
 
 // HandleSSEConversationUpdate handles SSE requests for updated conversation items
 func HandleSSEConversationUpdate(c *fiber.Ctx) error {
-	currentUser := c.Locals("user").(*user.User)
+	userID := getUserID(c)
 	conversationID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(400).SendString("Invalid conversation ID")
@@ -341,32 +346,33 @@ func HandleSSEConversationUpdate(c *fiber.Ctx) error {
 	}
 
 	// Check if user is part of this conversation
-	if conversation.User1ID != currentUser.ID && conversation.User2ID != currentUser.ID {
+	if conversation.User1ID != userID && conversation.User2ID != userID {
 		return c.Status(403).SendString("Access denied")
 	}
 
 	// Return the updated conversation item HTML
-	return render(c, ui.ConversationListItem(conversation, currentUser.ID))
+	return render(c, ui.ConversationListItem(conversation, userID))
 }
 
 // HandleMessageModal shows the message modal for an ad
 func HandleMessageModal(c *fiber.Ctx) error {
+	userID := getUserID(c)
+	userName := getUserName(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	u := getUser(c)
-	adObj, err := ad.GetAdByID(adID, u)
+	adObj, err := ad.GetAdByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
 	// Check if user is logged in and not viewing their own ad
-	if u.ID == 0 {
+	if userID == 0 {
 		return fiber.NewError(fiber.StatusUnauthorized, "Must be logged in to message")
 	}
-	if adObj.UserID == u.ID {
+	if adObj.UserID == userID {
 		return fiber.NewError(fiber.StatusBadRequest, "Cannot message yourself")
 	}
 	if adObj.IsArchived() {
@@ -374,13 +380,13 @@ func HandleMessageModal(c *fiber.Ctx) error {
 	}
 
 	// Check if user can message this ad
-	err = messaging.CanUserMessageAd(u.ID, adObj.UserID)
+	err = messaging.CanUserMessageAd(userID, adObj.UserID)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
 
 	// Get or create conversation
-	conversationID, err := messaging.GetOrCreateConversation(u.ID, adObj.UserID, adID)
+	conversationID, err := messaging.GetOrCreateConversation(userID, adObj.UserID, adID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create conversation")
 	}
@@ -397,6 +403,6 @@ func HandleMessageModal(c *fiber.Ctx) error {
 	}
 
 	// Return the complete modal with conversation content
-	conversationContent := ui.ModalMessagingInterface(u, *adObj, conversation, messages)
+	conversationContent := ui.ModalMessagingInterface(userID, userName, *adObj, conversation, messages)
 	return render(c, ui.MessageModal(*adObj, conversationContent))
 }

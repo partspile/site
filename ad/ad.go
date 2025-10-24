@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/parts-pile/site/db"
-	"github.com/parts-pile/site/user"
 )
 
 // Ad represents the minimal advertisement data needed for list/grid views
@@ -63,17 +62,17 @@ func (a Ad) IsArchived() bool {
 }
 
 // GetAdsByIDs returns ads for a list of IDs
-func GetAdsByIDs(ids []int, u *user.User) ([]Ad, error) {
-	return GetAdsByIDsWithDeleted(ids, u, false)
+func GetAdsByIDs(ids []int, userID int) ([]Ad, error) {
+	return GetAdsByIDsWithDeleted(ids, userID, false)
 }
 
 // GetAdsByIDsWithDeleted returns ads for a list of IDs, optionally including deleted ads
-func GetAdsByIDsWithDeleted(ids []int, u *user.User, includeDeleted bool) ([]Ad, error) {
+func GetAdsByIDsWithDeleted(ids []int, userID int, includeDeleted bool) ([]Ad, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
 
-	query, args := buildAdQueryWithDeleted(ids, u, includeDeleted)
+	query, args := buildAdQueryWithDeleted(ids, userID, includeDeleted)
 
 	var ads []Ad
 	err := db.Select(&ads, query, args...)
@@ -86,11 +85,11 @@ func GetAdsByIDsWithDeleted(ids []int, u *user.User, includeDeleted bool) ([]Ad,
 }
 
 // buildAdQueryWithDeleted builds the minimal query for fetching ads with IDs and user context, optionally including deleted ads
-func buildAdQueryWithDeleted(ids []int, u *user.User, includeDeleted bool) (string, []interface{}) {
+func buildAdQueryWithDeleted(ids []int, userID int, includeDeleted bool) (string, []interface{}) {
 	var query string
 	var args []interface{}
 
-	if u != nil {
+	if userID != 0 {
 		// Query with bookmark status - minimal fields only
 		query = `
 			SELECT a.id, a.ad_category_id, a.title, a.price, a.created_at, a.deleted_at, a.user_id, a.image_count,
@@ -100,7 +99,7 @@ func buildAdQueryWithDeleted(ids []int, u *user.User, includeDeleted bool) (stri
 			LEFT JOIN Location l ON a.location_id = l.id
 			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
 		`
-		args = append(args, u.ID)
+		args = append(args, userID)
 	} else {
 		// Query without bookmark status (default to false) - minimal fields only
 		query = `
@@ -141,8 +140,8 @@ func buildAdQueryWithDeleted(ids []int, u *user.User, includeDeleted bool) (stri
 }
 
 // GetAdByID returns a single ad by ID
-func GetAdByID(adID int, u *user.User) (*Ad, error) {
-	ads, err := GetAdsByIDs([]int{adID}, u)
+func GetAdByID(adID int, userID int) (*Ad, error) {
+	ads, err := GetAdsByIDs([]int{adID}, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -153,11 +152,11 @@ func GetAdByID(adID int, u *user.User) (*Ad, error) {
 }
 
 // GetAdDetailByID returns the full AdDetail for a single ad ID
-func GetAdDetailByID(adID int, u *user.User) (*AdDetail, error) {
+func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 	var query string
 	var args []interface{}
 
-	if u != nil {
+	if userID != 0 {
 		// Query with bookmark status - full fields for detail view
 		query = `
 			SELECT a.id, a.title, a.description, a.price, a.created_at, a.deleted_at, a.part_subcategory_id,
@@ -171,7 +170,7 @@ func GetAdDetailByID(adID int, u *user.User) (*AdDetail, error) {
 			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
 			WHERE a.id = ?
 		`
-		args = append(args, u.ID, adID)
+		args = append(args, userID, adID)
 	} else {
 		// Query without bookmark status (default to false) - full fields for detail view
 		query = `

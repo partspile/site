@@ -10,18 +10,19 @@ import (
 )
 
 func HandleSettings(c *fiber.Ctx) error {
-	u := getUser(c)
-	return render(c, ui.SettingsPage(u, c.Path()))
+	userID := getUserID(c)
+	userName := getUserName(c)
+	return render(c, ui.SettingsPage(userID, userName, c.Path()))
 }
 
 func HandleUserMenu(c *fiber.Ctx) error {
-	u := getUser(c)
-	if u == nil {
+	userID := getUserID(c)
+	if userID == 0 {
 		return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
 	}
 
 	// Fetch current user data with admin status
-	currentUser, err := user.GetUser(u.ID)
+	currentUser, err := user.GetUser(userID)
 	if err != nil || currentUser.IsArchived() {
 		return c.Status(fiber.StatusUnauthorized).SendString("User not found")
 	}
@@ -31,7 +32,7 @@ func HandleUserMenu(c *fiber.Ctx) error {
 
 // HandleUpdateNotificationMethod updates the user's notification method preference
 func HandleUpdateNotificationMethod(c *fiber.Ctx) error {
-	u := getUser(c)
+	userID := getUserID(c)
 
 	var request struct {
 		NotificationMethod string  `json:"notificationMethod"`
@@ -65,8 +66,8 @@ func HandleUpdateNotificationMethod(c *fiber.Ctx) error {
 	}
 
 	// Update both notification method and email address
-	if err := user.UpdateNotificationPreferences(u.ID, request.NotificationMethod, request.EmailAddress); err != nil {
-		log.Printf("[API] Failed to update notification preferences for user %d: %v", u.ID, err)
+	if err := user.UpdateNotificationPreferences(userID, request.NotificationMethod, request.EmailAddress); err != nil {
+		log.Printf("[API] Failed to update notification preferences for user %d: %v", userID, err)
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update notification preferences")
 	}
 
@@ -75,8 +76,13 @@ func HandleUpdateNotificationMethod(c *fiber.Ctx) error {
 
 // HandleNotificationMethodChanged handles HTMX requests when notification method changes
 func HandleNotificationMethodChanged(c *fiber.Ctx) error {
+	userID := getUserID(c)
+
 	// Get the current user to retrieve their saved email address
-	u := getUser(c)
+	currentUser, err := user.GetUser(userID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get user")
+	}
 
 	// Get the selected notification method from the form data
 	notificationMethod := c.FormValue("notificationMethod")
@@ -91,8 +97,8 @@ func HandleNotificationMethodChanged(c *fiber.Ctx) error {
 			Name("emailAddress"),
 			Placeholder("Enter email address"),
 			Value(func() string {
-				if u.EmailAddress != nil {
-					return *u.EmailAddress
+				if currentUser.EmailAddress != nil {
+					return *currentUser.EmailAddress
 				}
 				return ""
 			}()),
@@ -107,8 +113,8 @@ func HandleNotificationMethodChanged(c *fiber.Ctx) error {
 			Name("emailAddress"),
 			Placeholder("Enter email address"),
 			Value(func() string {
-				if u.EmailAddress != nil {
-					return *u.EmailAddress
+				if currentUser.EmailAddress != nil {
+					return *currentUser.EmailAddress
 				}
 				return ""
 			}()),
