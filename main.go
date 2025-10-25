@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
@@ -22,6 +23,9 @@ func main() {
 	if err := db.Init(config.DatabaseURL); err != nil {
 		log.Fatalf("error initializing database: %v", err)
 	}
+
+	// Initialize ad category names cache
+	ad.SetAdCategoryNames()
 
 	// Initialize B2 cache
 	if err := b2util.Init(); err != nil {
@@ -87,12 +91,11 @@ func main() {
 		return c.SendStatus(fiber.StatusNoContent)
 	})
 
-	// Main pages
-	app.Get("/", h.HandleHome)                    // x
-	app.Get("/search", h.HandleSearch)            // x
-	app.Get("/search-page", h.HandleSearchPage)   // x
-	app.Get("/search-query", h.HandleSearchQuery) // x
-	app.Get("/filters/show", h.HandleFiltersShow) // x
+	// Main search page
+	app.Get("/", h.HandleHome)                                   // x
+	app.Get("/search", h.HandleSearch)                           // x
+	app.Get("/search-page", h.HandleSearchPage)                  // x
+	app.Get("/search-widget/:showFilters", h.HandleSearchWidget) // x
 
 	// Tree view routes - split by browse vs search mode
 	app.Get("/tree-browse-expand/*", h.HandleTreeExpandBrowse)     // x
@@ -110,8 +113,9 @@ func main() {
 	app.Get("/modal/ad/price/:id", h.AuthRequired, h.HandlePriceModal)
 	app.Get("/modal/ad/location/:id", h.AuthRequired, h.HandleLocationModal)
 	app.Get("/modal/ad/description/:id", h.AuthRequired, h.HandleDescriptionModal)
-	app.Get("/modal/ad/share/:id", h.HandleShareModal) // No auth required
 	app.Get("/modal/ad/message/:id", h.AuthRequired, h.HandleMessageModal)
+	app.Get("/modal/ad/share/:id", h.HandleShareModal)
+	app.Get("/modal/category-select", h.HandleAdCategoryModal)
 
 	// Ad management
 	app.Get("/ad/:id", h.HandleAdPage)                                // x
@@ -122,9 +126,6 @@ func main() {
 
 	// API group
 	api := app.Group("/api")
-
-	// Search API
-	api.Get("/search", h.HandleSearchAPI)
 
 	// Ad management (API)
 	api.Post("/new-ad", h.AuthRequired, h.HandleNewAdSubmission) // x

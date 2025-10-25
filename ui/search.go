@@ -2,8 +2,8 @@ package ui
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
-	"time"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -17,36 +17,71 @@ func htmlEscape(s string) string {
 	return strings.ReplaceAll(s, `"`, `\"`)
 }
 
-// AdAdCategoryPills renders the category selection pills above the search form
-func AdAdCategoryPills(activeAdCategory string) g.Node {
-	categories := ad.GetAllCategories()
+func createAdCategoryItems(activeCat int) []g.Node {
+	var adCatItems []g.Node
+	for adCat := range ad.AdCategoryNames {
 
-	var pills []g.Node
-	for _, category := range categories {
-		isActive := category == activeAdCategory
-		pillClass := "px-4 py-2 rounded-full text-sm font-medium transition-colors "
+		isActive := adCat == activeCat
+		itemClass := "flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer rounded-lg transition-colors "
 		if isActive {
-			pillClass += "bg-blue-500 text-white"
-		} else {
-			pillClass += "bg-gray-200 text-gray-700 hover:bg-gray-300"
+			itemClass += "bg-blue-50 border border-blue-200"
 		}
 
-		pill := Button(
-			Class(pillClass),
-			hx.Get("/search"),
-			hx.Target("#searchContainer"),
+		item := Div(
+			Class(itemClass),
+			hx.Get("/search-widget?showFilters=false&adCategory="+strconv.Itoa(adCat)),
+			hx.Target("#searchWidget"),
 			hx.Swap("outerHTML"),
 			hx.Include("form"),
-			hx.On("click", fmt.Sprintf("document.getElementById('ad-category-input').value = '%s'", category)),
-			g.Text(ad.GetDisplayName(category)),
+			Div(
+				Class("p-2 bg-gray-200 rounded-full flex items-center justify-center"),
+				Img(
+					Src(ad.CategoryIcon(adCat)),
+					Alt("Category icon"),
+					Class("w-6 h-6"),
+				),
+			),
+			Span(Class("text-gray-700 flex-1"), g.Text(ad.CategoryDisplayName(adCat))),
 		)
-		pills = append(pills, pill)
+		adCatItems = append(adCatItems, item)
 	}
+	return adCatItems
+}
 
-	// Create a slice with all the nodes
-	allNodes := []g.Node{Class("flex flex-wrap gap-2 mb-4")}
-	allNodes = append(allNodes, pills...)
-	return Div(allNodes...)
+func AdCategoryModal(activeCat int) g.Node {
+	adCatItems := createAdCategoryItems(activeCat)
+
+	return Div(
+		ID("category-select-modal"),
+		Class("fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-8"),
+		g.Attr("onclick", "this.remove()"),
+		Div(
+			Class("bg-white rounded-lg w-full shadow-2xl border-2 border-gray-300 flex flex-col"),
+			Style("max-width: 400px; max-height: 80vh"),
+			g.Attr("onclick", "event.stopPropagation()"),
+			Div(
+				Class("flex items-center justify-between p-6 border-b border-gray-200 flex-shrink-0"),
+				H3(Class("text-xl font-bold text-gray-900"), g.Text("Select Category")),
+				Button(
+					Type("button"),
+					Class("bg-white border-2 border-gray-800 rounded-full w-8 h-8 flex items-center justify-center shadow-lg hover:bg-gray-100 focus:outline-none cursor-pointer"),
+					g.Attr("onclick", "this.closest('.fixed').remove()"),
+					Img(
+						Src("/images/close.svg"),
+						Alt("Close"),
+						Class("w-4 h-4"),
+					),
+				),
+			),
+			Div(
+				Class("flex-1 overflow-y-auto p-6 pt-4"),
+				Div(
+					Class("space-y-2"),
+					g.Group(adCatItems),
+				),
+			),
+		),
+	)
 }
 
 func ViewToggleButtons(activeView string) g.Node {
@@ -84,30 +119,69 @@ func ViewToggleButtons(activeView string) g.Node {
 	)
 }
 
-func InitialSearchResults(userID int, view string, activeAdCategory string) g.Node {
+func SearchContainer(userID, view, adCategory int, params map[string]string) g.Node {
 	return Div(
 		ID("searchContainer"),
-		SearchWidget(userID, view, "", activeAdCategory),
-		Div(
-			ID("searchResults"),
-			Class("h-96"),
-			hx.Get("/search?q=&view="+view),
-			hx.Trigger("load"),
-			hx.Target("this"),
-			hx.Swap("outerHTML"),
-		),
+		SearchWidget(userID, view, adCategory, params, false),
+		SearchResults(),
 	)
 }
 
-func SearchWidget(userID int, view string, query string, activeAdCategory string) g.Node {
+func searchBox(q string) g.Node {
+	return Input(
+		Class("w-full p-2 border rounded"),
+		Type("search"),
+		ID("searchBox"),
+		Name("q"),
+		Value(q),
+		hx.Trigger("search"),
+		Placeholder("What are you looking for?"),
+	)
+}
+
+func searchWidgetWithFilters(params map[string]string) g.Node {
 	return Div(
-		Class("flex items-start gap-4"),
-		renderNewAdButton(userID),
-		searchForm(view, query, activeAdCategory, Div(
-			Class("flex gap-2 items-center"),
-			searchBox(query),
-			filtersButton(),
-		)),
+		Class("border rounded-lg p-4"),
+		searchBox(params["q"]),
+		filterControls(params),
+		filterActions(),
+	)
+}
+
+func searchWidgetSimple(query string) g.Node {
+	return Div(
+		Class("flex gap-2 items-center"),
+		searchBox(query),
+		filtersButton(),
+	)
+}
+
+func SearchWidget(userID, view, adCategory int, params map[string]string, showFilters bool) g.Node {
+	return Form(
+		ID("searchWidget"),
+		Class("flex flex-col gap-4"),
+		hx.Get("/search"),
+		hx.Target("#searchResults"),
+		hx.Swap("outerHTML"),
+		hx.Include("form"),
+		Div(
+			Class("flex items-center justify-between"),
+			adCatButton(adCategory),
+			Div(Class("flex-shrink-0"), newAdButton(userID)),
+		),
+		g.If(showFilters, searchWidgetWithFilters(params)),
+		g.If(!showFilters, searchWidgetSimple(params["q"])),
+	)
+}
+
+func SearchResults() g.Node {
+	return Div(
+		ID("searchResults"),
+		//Class("h-96"),
+		hx.Get("/search"),
+		hx.Trigger("load"),
+		hx.Target("this"),
+		hx.Swap("outerHTML"),
 	)
 }
 
@@ -117,58 +191,18 @@ func createInfiniteScrollTrigger(loaderURL string) g.Node {
 		hx.Get(loaderURL),
 		hx.Trigger("revealed"),
 		hx.Swap("outerHTML"),
-		hx.Include("#searchForm, #filtersArea"),
+		hx.Include("#searchWidget"),
 	))
 }
 
 // SearchCreateLoaderURL creates the loader URL for pagination
-func SearchCreateLoaderURL(userPrompt, nextCursor, view string) string {
+func SearchCreateLoaderURL(params map[string]string, nextCursor, view string) string {
 	if nextCursor == "" {
 		return ""
 	}
 
 	return fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s",
-		htmlEscape(userPrompt), htmlEscape(nextCursor), htmlEscape(view))
-}
-
-// Helper function to render new ad button based on user login
-func renderNewAdButton(userID int) g.Node {
-	if userID != 0 {
-		return button("New Ad", withHref("/new-ad"))
-	}
-	return button("New Ad", withDisabled())
-}
-
-// searchBox creates the search input field
-func searchBox(query string) g.Node {
-	return Input(
-		Type("search"),
-		ID("searchBox"),
-		Name("q"),
-		Value(query),
-		hx.Trigger("search"),
-		Class("w-full p-2 border rounded"),
-		Placeholder("What are you looking for?"),
-	)
-}
-
-// searchForm creates the common search form structure
-func searchForm(view string, query string, activeAdCategory string, content g.Node) g.Node {
-	return Div(
-		Class("flex-1 flex flex-col gap-4"),
-		AdAdCategoryPills(activeAdCategory),
-		Form(
-			ID("searchForm"),
-			Class("w-full"),
-			hx.Get("/search"),
-			hx.Target("#searchResults"),
-			hx.Swap("outerHTML"),
-			hx.Include("form"),
-			Input(Type("hidden"), Name("view"), Value(view), ID("view-type-input")),
-			Input(Type("hidden"), Name("ad_category"), Value(activeAdCategory), ID("ad-category-input")),
-			content,
-		),
-	)
+		htmlEscape(params["q"]), htmlEscape(nextCursor), htmlEscape(view))
 }
 
 // MakeFilterOptions returns HTML options for the make filter dropdown
@@ -186,14 +220,28 @@ func MakeFilterOptions(makes []string) g.Node {
 	return g.Group(options)
 }
 
-// SearchPage renders a full search page with search widget and results
-func SearchPage(userID int, userName string, query string, ads []ad.Ad, loc *time.Location, loaderURL string, activeAdCategory string) g.Node {
+// adCatButton renders the category selection button
+func adCatButton(adCategory int) g.Node {
 	return Div(
-		ID("searchContainer"),
-		SearchWidget(userID, "list", query, activeAdCategory),
 		Div(
-			ID("searchResults"),
-			ListViewResults(ads, userID, userName, loc, loaderURL),
+			Class("flex items-center gap-5"),
+			Label(
+				Class("text-base font-bold text-gray-900 whitespace-nowrap"),
+				g.Text("Category"),
+			),
+			Button(
+				Type("button"),
+				Class("py-2 px-5 flex items-center gap-2 rounded-full border-2 border-blue-500 bg-blue-100 hover:bg-blue-200"),
+				hx.Get("/modal/category-select"),
+				hx.Target("body"),
+				hx.Swap("beforeend"),
+				Img(
+					Src(ad.CategoryIcon(adCategory)),
+					Alt("Category icon"),
+					Class("w-6 h-6"),
+				),
+				Span(g.Text(ad.CategoryDisplayName(adCategory))),
+			),
 		),
 	)
 }

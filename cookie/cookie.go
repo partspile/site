@@ -1,18 +1,28 @@
 package cookie
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/ui"
 )
 
-func GetLastView(c *fiber.Ctx) string {
-	return c.Cookies("last_view", "list") // default to list
+func GetView(c *fiber.Ctx) int {
+	cookieValue := c.Cookies("view")
+
+	view, err := strconv.Atoi(cookieValue)
+	if err != nil {
+		return ui.ViewList
+	}
+
+	return view
 }
 
-func SetLastView(c *fiber.Ctx, view string) {
+func SetView(c *fiber.Ctx, view int) {
 	c.Cookie(&fiber.Cookie{
-		Name:     "last_view",
-		Value:    view,
+		Name:     "view",
+		Value:    strconv.Itoa(view),
 		MaxAge:   30 * 24 * 60 * 60, // 30 days
 		HTTPOnly: true,
 		Secure:   true,
@@ -21,15 +31,26 @@ func SetLastView(c *fiber.Ctx, view string) {
 	})
 }
 
-func GetAdCategory(c *fiber.Ctx) string {
-	categoryStr := c.Cookies("ad_category", "CarPart")
-	return ad.ParseCategoryFromQuery(categoryStr)
+func GetAdCategory(c *fiber.Ctx) int {
+	cookieValue := c.Cookies("ad_category")
+
+	categoryID, err := strconv.Atoi(cookieValue)
+	if err != nil {
+		return ad.AdCategoryCarPart
+	}
+
+	// Check if the category ID exists in our cached map
+	if _, exists := ad.AdCategoryNames[categoryID]; exists {
+		return categoryID
+	}
+
+	return ad.AdCategoryCarPart
 }
 
-func SetAdCategory(c *fiber.Ctx, category string) {
+func SetAdCategory(c *fiber.Ctx, adCategory int) {
 	c.Cookie(&fiber.Cookie{
 		Name:     "ad_category",
-		Value:    category,
+		Value:    strconv.Itoa(adCategory),
 		MaxAge:   30 * 24 * 60 * 60, // 30 days
 		HTTPOnly: true,
 		Secure:   true,

@@ -27,12 +27,12 @@ func encodeAdIDs(adIDs []int) string {
 	return base64.URLEncoding.EncodeToString(buf)
 }
 
-func TreeViewResults(adIDs []int, userPrompt string, category string) g.Node {
+func TreeViewResults(adIDs []int, adCat int, userPrompt string) g.Node {
 	var viewContent = NoSearchResultsMessage()
 
 	if userPrompt == "" && len(adIDs) == 0 {
 		// No search query and no filtered results - show full browse tree
-		viewContent = treeBrowseMakes(category)
+		viewContent = treeBrowseMakes(adCat)
 	} else {
 		// Either has search query or has filtered results - show filtered tree
 		if len(adIDs) > 0 {
@@ -48,8 +48,8 @@ func TreeViewResults(adIDs []int, userPrompt string, category string) g.Node {
 }
 
 // treeBrowseMakes returns the initial tree view for browsing
-func treeBrowseMakes(category string) g.Node {
-	makes, err := vehicle.GetAdMakes(category)
+func treeBrowseMakes(adCat int) g.Node {
+	makes, err := vehicle.GetAdMakes(adCat)
 	if err != nil {
 		log.Printf("[tree-view] Error getting makes: %v", err)
 		return Div(Class("text-red-500"), g.Text("Error loading makes"))

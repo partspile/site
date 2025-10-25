@@ -5,13 +5,23 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 	"github.com/qdrant/go-client/qdrant"
-	g "maragu.dev/gomponents"
 )
+
+func extractSearchParams(c *fiber.Ctx) map[string]string {
+	return map[string]string{
+		"q":         c.Query("q"),
+		"location":  c.Query("location"),
+		"make":      c.Query("make"),
+		"min_year":  c.Query("min_year"),
+		"max_year":  c.Query("max_year"),
+		"min_price": c.Query("min_price"),
+		"max_price": c.Query("max_price"),
+	}
+}
 
 // runEmbeddingSearch runs vector search with optional filters
 func runEmbeddingSearch(embedding []float32, cursor string, threshold float64, k int, filter *qdrant.Filter) ([]int, string, error) {
@@ -96,190 +106,44 @@ func performSearch(userPrompt string, userID int, cursorStr string, threshold fl
 	return nil, "", nil
 }
 
-func handleSearch(c *fiber.Ctx, viewType string) error {
-	view, err := NewView(c, viewType)
+func handleSearch(c *fiber.Ctx, view int) error {
+	userID := getUserID(c)
+	params := extractSearchParams(c)
+
+	v, err := NewView(c, view)
 	if err != nil {
 		return err
 	}
 
-	adIDs, nextCursor, err := view.GetAdIDs()
+	adIDs, nextCursor, err := v.GetAdIDs()
 	if err != nil {
 		return err
 	}
 
-	saveUserSearch(c)
-	cookie.SetLastView(c, viewType)
+	saveUserSearch(userID, params)
 
-	return view.RenderSearchResults(adIDs, nextCursor)
+	return v.RenderSearchResults(adIDs, nextCursor)
+}
+
+func HandleSearch(c *fiber.Ctx) error {
+	view := cookie.GetView(c)
+	return handleSearch(c, view)
 }
 
 func HandleSearchPage(c *fiber.Ctx) error {
 	c.Set("Content-Type", "text/html")
 
-	view, err := NewView(c, c.Query("view", "list"))
+	v, err := NewView(c, cookie.GetView(c))
 	if err != nil {
 		return err
 	}
 
-	adIDs, nextCursor, err := view.GetAdIDs()
+	adIDs, nextCursor, err := v.GetAdIDs()
 	if err != nil {
 		return err
 	}
 
-	return view.RenderSearchPage(adIDs, nextCursor)
-}
-
-func HandleSearch(c *fiber.Ctx) error {
-	// Check if this is a request targeting the search container (from category pills)
-	target := c.Get("HX-Target")
-	if target == "#searchContainer" {
-		// Return the full search container with updated category pills and results
-		return handleSearchContainer(c, c.Query("view", "list"))
-	}
-
-	// Default behavior - return just the search results
-	return handleSearch(c, c.Query("view", "list"))
-}
-
-// handleSearchContainer handles requests targeting the search container (from category pills)
-func handleSearchContainer(c *fiber.Ctx, viewType string) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
-	// Get category from query param or cookie
-	categoryStr := c.Query("ad_category", "")
-	var activeAdCategory string
-	if categoryStr != "" {
-		activeAdCategory = ad.ParseCategoryFromQuery(categoryStr)
-	} else {
-		activeAdCategory = cookie.GetAdCategory(c)
-	}
-
-	view, err := NewView(c, viewType)
-	if err != nil {
-		return err
-	}
-
-	adIDs, nextCursor, err := view.GetAdIDs()
-	if err != nil {
-		return err
-	}
-
-	// Convert ad IDs to full ad objects for UI rendering
-	ads, err := ad.GetAdsByIDs(adIDs, userID)
-	if err != nil {
-		return err
-	}
-
-	// Create loader URL for infinite scroll
-	userPrompt := getQueryParam(c, "q")
-	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, viewType)
-
-	// Save category preference
-	cookie.SetAdCategory(c, activeAdCategory)
-
-	// Render the full search container
-	return render(c, ui.SearchPage(userID, userName, userPrompt, ads, getLocation(c), loaderURL, activeAdCategory))
-}
-
-// HandleSearchQuery renders a full search page with search widget and results
-func HandleSearchQuery(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
-	c.Set("Content-Type", "text/html")
-
-	// Get category from query param or cookie
-	categoryStr := c.Query("ad_category", "")
-	var activeAdCategory string
-	if categoryStr != "" {
-		activeAdCategory = ad.ParseCategoryFromQuery(categoryStr)
-	} else {
-		activeAdCategory = cookie.GetAdCategory(c)
-	}
-
-	view, err := NewView(c, "list")
-	if err != nil {
-		return err
-	}
-
-	adIDs, nextCursor, err := view.GetAdIDs()
-	if err != nil {
-		return err
-	}
-
-	// Convert ad IDs to full ad objects for UI rendering
-	ads, err := ad.GetAdsByIDs(adIDs, userID)
-	if err != nil {
-		return err
-	}
-
-	// Create loader URL for infinite scroll
-	userPrompt := getQueryParam(c, "q")
-	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "list")
-
-	// Save category preference
-	cookie.SetAdCategory(c, activeAdCategory)
-
-	// Render full page with search widget and results
-	return render(c, ui.Page(
-		"Search Results",
-		userID,
-		userName,
-		c.Path(),
-		[]g.Node{
-			ui.SearchPage(userID, userName, userPrompt, ads, getLocation(c), loaderURL, activeAdCategory),
-		},
-	))
-}
-
-// HandleSearchAPI returns search results as JSON for JavaScript consumption
-func HandleSearchAPI(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	view, err := NewView(c, c.Query("view", "list"))
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{
-			"error": fmt.Sprintf("Invalid view type: %s", c.Query("view", "list")),
-			"ads":   []ad.Ad{},
-		})
-	}
-
-	adIDs, nextCursor, err := view.GetAdIDs()
-	if err != nil {
-		log.Printf("[HandleSearchAPI] Search error: %v", err)
-		return c.Status(500).JSON(fiber.Map{
-			"error": "Search failed",
-			"ads":   []ad.Ad{},
-		})
-	}
-
-	ads, err := ad.GetAdsByIDs(adIDs, userID)
-	if err != nil {
-		log.Printf("[HandleSearchAPI] GetAdsByIDs error: %v", err)
-		return c.Status(500).JSON(fiber.Map{
-			"error": "Failed to retrieve ads",
-			"ads":   []ad.Ad{},
-		})
-	}
-
-	saveUserSearch(c)
-
-	log.Printf("[HandleSearchAPI] ads returned: %d", len(ads))
-
-	// Return JSON response
-	return c.JSON(fiber.Map{
-		"ads":        ads,
-		"nextCursor": nextCursor,
-		"count":      len(ads),
-	})
-}
-
-// saveUserSearch saves user search and queues user for embedding update
-func saveUserSearch(c *fiber.Ctx) {
-	userPrompt := getQueryParam(c, "q")
-	userID := getUserID(c)
-	if userID == 0 {
-		return // No user, no search to save
-	}
-	saveUserSearchAndQueue(userPrompt, userID)
+	return v.RenderSearchPage(adIDs, nextCursor)
 }
 
 // HandleFiltersShow shows the filters area

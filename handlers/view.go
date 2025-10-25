@@ -8,9 +8,9 @@ import (
 	"database/sql"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/search"
+	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 	"github.com/qdrant/go-client/qdrant"
 )
@@ -40,7 +40,7 @@ func HandleTreeView(c *fiber.Ctx) error {
 }
 
 // saveUserSearchAndQueue saves user search and queues user for embedding update
-func saveUserSearchAndQueue(userPrompt string, userID int) {
+func saveUserSearchAndQueue(userID int, params map[string]string) {
 	if userPrompt != "" {
 		_ = search.SaveUserSearch(sql.NullInt64{Int64: int64(userID), Valid: userID != 0}, userPrompt)
 		if userID != 0 {
@@ -52,14 +52,14 @@ func saveUserSearchAndQueue(userPrompt string, userID int) {
 
 // getAdIDs performs the common ad ID retrieval logic
 func getAdIDs(ctx *fiber.Ctx) ([]int, string, error) {
-	userPrompt := getQueryParam(ctx, "q")
-	cursor := getQueryParam(ctx, "cursor")
+	q := ctx.Query("q")
+	cursor := ctx.Query("cursor")
 	userID := getUserID(ctx)
 	filter := buildSearchFilter(ctx)
 	threshold := config.QdrantSearchThreshold
 	k := config.QdrantSearchPageSize
 
-	adIDs, nextCursor, err := performSearch(userPrompt, userID, cursor, threshold, k, filter)
+	adIDs, nextCursor, err := performSearch(q, userID, cursor, threshold, k, filter)
 
 	if err == nil {
 		log.Printf("[getAdIDs] ad IDs returned: %d", len(adIDs))
@@ -72,17 +72,18 @@ func getAdIDs(ctx *fiber.Ctx) ([]int, string, error) {
 // buildSearchFilter builds a combined Qdrant filter from all available filter parameters
 func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 	var conditions []*qdrant.Condition
+	params := extractSearchParams(c)
 
 	// Ad category condition (required filter)
-	category := AdCategory(c)
-	adCategoryCondition := qdrant.NewMatch("ad_category_id", strconv.Itoa(ad.GetAdCategoryID(category)))
+	adCat := AdCategory(c)
+	adCategoryCondition := qdrant.NewMatch("ad_category_id", strconv.Itoa(adCat))
 	conditions = append(conditions, adCategoryCondition)
-	log.Printf("[buildSearchFilters] Added ad_category_id filter: %s (ID: %d)", category, ad.GetAdCategoryID(category))
+	log.Printf("[buildSearchFilters] Added ad_category_id filter: %d", adCat)
 
 	// Location condition (geo radius) - only apply if location is provided
-	locationText := getQueryParam(c, "location")
+	locationText := params["location"]
 	if locationText != "" {
-		radiusStr := getQueryParam(c, "radius")
+		radiusStr := params["radius"]
 		var radius float64 = 25 // default to 25 miles
 		if radiusStr != "" {
 			if _, err := fmt.Sscanf(radiusStr, "%f", &radius); err != nil {
@@ -103,7 +104,7 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 	}
 
 	// Make condition (exact string match)
-	makeFilter := getQueryParam(c, "make")
+	makeFilter := params["make"]
 	if makeFilter != "" {
 		makeCondition := qdrant.NewMatch("make", makeFilter)
 		conditions = append(conditions, makeCondition)
@@ -111,8 +112,8 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 	}
 
 	// Year condition (range - min/max years converted to keywords)
-	minYearStr := getQueryParam(c, "min_year")
-	maxYearStr := getQueryParam(c, "max_year")
+	minYearStr := params["min_year"]
+	maxYearStr := params["max_year"]
 	if minYearStr != "" || maxYearStr != "" {
 		var minYear, maxYear int
 		var hasMin, hasMax bool
@@ -158,8 +159,8 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 	}
 
 	// Price condition (range - min/max price)
-	minPriceStr := getQueryParam(c, "min_price")
-	maxPriceStr := getQueryParam(c, "max_price")
+	minPriceStr := params["min_price"]
+	maxPriceStr := params["max_price"]
 	if minPriceStr != "" || maxPriceStr != "" {
 		var minPrice, maxPrice *float64
 
@@ -185,7 +186,7 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 	}
 
 	// Category condition (exact string match)
-	categoryFilter := getQueryParam(c, "ad_category")
+	categoryFilter := c.Query("ad_category")
 	if categoryFilter != "" {
 		categoryCondition := qdrant.NewMatch("category", categoryFilter)
 		conditions = append(conditions, categoryCondition)
@@ -202,15 +203,15 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 }
 
 // NewView creates the appropriate view implementation based on view type
-func NewView(ctx *fiber.Ctx, viewType string) (View, error) {
-	switch viewType {
-	case "list":
+func NewView(ctx *fiber.Ctx, view int) (View, error) {
+	switch view {
+	case ui.ViewList:
 		return NewListView(ctx), nil
-	case "grid":
+	case ui.ViewGrid:
 		return NewGridView(ctx), nil
-	case "tree":
+	case ui.ViewTree:
 		return NewTreeView(ctx), nil
 	default:
-		return nil, fmt.Errorf("invalid view type: %s", viewType)
+		return nil, fmt.Errorf("invalid view: %d", view)
 	}
 }

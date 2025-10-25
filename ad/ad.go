@@ -51,11 +51,6 @@ type AdDetail struct {
 	Engines []string `json:"engines" db:"engines"`
 }
 
-// GetAdCategory returns the AdCategory string for this ad
-func (a Ad) GetAdCategory() string {
-	return GetAdCategoryFromID(a.AdCategoryID)
-}
-
 // IsArchived returns true if the ad is archived (deleted)
 func (a Ad) IsArchived() bool {
 	return a.DeletedAt != nil

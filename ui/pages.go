@@ -6,19 +6,19 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-func HomePage(userID int, userName string, path string, view string, adCategory string) g.Node {
+func HomePage(userID, view, adCategory int, userName, path string, params map[string]string) g.Node {
 	return Page(
 		"Parts Pile",
 		userID,
 		userName,
 		path,
 		[]g.Node{
-			InitialSearchResults(userID, view, adCategory),
+			SearchContainer(userID, view, adCategory, params),
 		},
 	)
 }
 
-func RegisterPage(userID int, userName string, path string) g.Node {
+func RegisterPage(userID int, userName, path string) g.Node {
 	return Page(
 		"Register",
 		userID,

@@ -46,14 +46,14 @@ func AddAd(ad AdDetail) (int, error) {
 // addAdVehicleAssociations creates the normalized vehicle associations for an ad
 func addAdVehicleAssociations(tx *sql.Tx, ad AdDetail) error {
 	// Handle different vehicle schemas based on ad category
-	switch ad.GetAdCategory() {
-	case Car, CarPart:
+	switch ad.AdCategoryID {
+	case AdCategoryCar, AdCategoryCarPart:
 		return addCarAssociations(tx, ad)
-	case Motorcycle, MotorcyclePart:
+	case AdCategoryMotorcycle, AdCategoryMotorcyclePart:
 		return addMotorcycleAssociations(tx, ad)
-	case Ag, AgPart:
+	case AdCategoryAg, AdCategoryAgPart:
 		return addAgAssociations(tx, ad)
-	case Bicycle, BicyclePart:
+	case AdCategoryBicycle, AdCategoryBicyclePart:
 		return addBicycleAssociations(tx, ad)
 	default:
 		return nil

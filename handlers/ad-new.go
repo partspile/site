@@ -100,20 +100,20 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 // HandleYears handles the years dropdown for new ad form
 func HandleYears(c *fiber.Ctx) error {
 	makeName := c.Query("make")
-	category := AdCategory(c)
+	adCat := AdCategory(c)
 	if makeName == "" {
 		// Return empty div when make is not selected
 		return render(c, ui.YearsSelector([]string{}))
 	}
 
-	years := vehicle.GetYears(category, makeName)
+	years := vehicle.GetYears(adCat, makeName)
 	return render(c, ui.YearsSelector(years))
 }
 
 // HandleModels handles the models dropdown for new ad form
 func HandleModels(c *fiber.Ctx) error {
 	makeName := c.Query("make")
-	category := AdCategory(c)
+	adCat := AdCategory(c)
 	if makeName == "" {
 		// Return empty div when make is not selected
 		return render(c, ui.ModelsSelector([]string{}))
@@ -129,7 +129,7 @@ func HandleModels(c *fiber.Ctx) error {
 		return render(c, ui.ModelsSelector([]string{}))
 	}
 
-	models := vehicle.GetModels(category, makeName, years)
+	models := vehicle.GetModels(adCat, makeName, years)
 	if len(models) == 0 {
 		// Return empty message when no models are available for all selected years
 		return render(c, ui.ModelsDivEmpty())
@@ -140,7 +140,7 @@ func HandleModels(c *fiber.Ctx) error {
 // HandleEngines handles the engines dropdown for new ad form
 func HandleEngines(c *fiber.Ctx) error {
 	makeName := c.Query("make")
-	category := AdCategory(c)
+	adCat := AdCategory(c)
 	if makeName == "" {
 		// Return empty div when make is not selected
 		return render(c, ui.EnginesSelector([]string{}))
@@ -162,7 +162,7 @@ func HandleEngines(c *fiber.Ctx) error {
 		return render(c, ui.EnginesSelector([]string{}))
 	}
 
-	engines := vehicle.GetEngines(category, makeName, years, models)
+	engines := vehicle.GetEngines(adCat, makeName, years, models)
 	if len(engines) == 0 {
 		// Return empty message when no engines are available for all selected year-model combinations
 		return render(c, ui.EnginesDivEmpty())
@@ -173,12 +173,12 @@ func HandleEngines(c *fiber.Ctx) error {
 // HandleSubCategories handles the subcategories dropdown for new ad form
 func HandleSubCategories(c *fiber.Ctx) error {
 	categoryName := c.Query("category")
-	category := AdCategory(c)
+	adCat := AdCategory(c)
 	if categoryName == "" {
 		// Return empty div when category is not selected
 		return render(c, ui.SubCategoriesSelector([]string{}, ""))
 	}
 
-	subCategoryNames := part.GetSubCategories(category, categoryName)
+	subCategoryNames := part.GetSubCategories(adCat, categoryName)
 	return render(c, ui.SubCategoriesSelector(subCategoryNames, ""))
 }

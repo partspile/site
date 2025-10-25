@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -17,13 +18,13 @@ func NewTreeView(ctx *fiber.Ctx) *TreeView {
 
 func (v *TreeView) GetAdIDs() ([]int, string, error) {
 	// Check if any filters are applied (search query, location, make, year range, price range)
-	hasFilters := getQueryParam(v.ctx, "q") != "" ||
-		getQueryParam(v.ctx, "location") != "" ||
-		getQueryParam(v.ctx, "make") != "" ||
-		getQueryParam(v.ctx, "min_year") != "" ||
-		getQueryParam(v.ctx, "max_year") != "" ||
-		getQueryParam(v.ctx, "min_price") != "" ||
-		getQueryParam(v.ctx, "max_price") != ""
+	hasFilters := v.ctx.Query("q") != "" ||
+		v.ctx.Query("location") != "" ||
+		v.ctx.Query("make") != "" ||
+		v.ctx.Query("min_year") != "" ||
+		v.ctx.Query("max_year") != "" ||
+		v.ctx.Query("min_price") != "" ||
+		v.ctx.Query("max_price") != ""
 
 	if !hasFilters {
 		// Browse mode - no search query and no filters, return empty slice for full tree
@@ -35,9 +36,9 @@ func (v *TreeView) GetAdIDs() ([]int, string, error) {
 }
 
 func (v *TreeView) RenderSearchResults(adIDs []int, nextCursor string) error {
-	userPrompt := getQueryParam(v.ctx, "q")
-	category := AdCategory(v.ctx)
-	return render(v.ctx, ui.TreeViewResults(adIDs, userPrompt, category))
+	userPrompt := v.ctx.Query("q")
+	adCat := cookie.GetAdCategory(v.ctx)
+	return render(v.ctx, ui.TreeViewResults(adIDs, adCat, userPrompt))
 }
 
 func (v *TreeView) RenderSearchPage(adIDs []int, nextCursor string) error {

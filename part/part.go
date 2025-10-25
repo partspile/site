@@ -24,23 +24,23 @@ type PartSubCategory struct {
 
 var (
 	// Cache part categories and subcategories by ad category
-	categories    = make(map[string][]string)            // adCat -> []categoryNames
-	subCategories = make(map[string]map[string][]string) // adCat -> categoryName -> []subcategoryNames
+	categories    = make(map[int][]string)            // adCat -> []categoryNames
+	subCategories = make(map[int]map[string][]string) // adCat -> categoryName -> []subcategoryNames
 
 	// Cache for expensive ad-related queries
 	partCache *cache.Cache[[]string]
 )
 
 // getCategories returns the part categories for the given ad category
-func getCategories(adCat string) ([]string, error) {
+func getCategories(adCat int) ([]string, error) {
 	query := "SELECT name FROM PartCategory WHERE ad_category_id = ? ORDER BY name"
 	var names []string
-	err := db.Select(&names, query, ad.GetAdCategoryID(adCat))
+	err := db.Select(&names, query, adCat)
 	return names, err
 }
 
 // GetCategories returns all categories for a specific ad category
-func GetCategories(adCat string) []string {
+func GetCategories(adCat int) []string {
 	if cats, exists := categories[adCat]; exists {
 		return cats
 	}
@@ -56,7 +56,7 @@ func GetCategories(adCat string) []string {
 }
 
 // getSubCategories returns the subcategories for the given ad category and category
-func getSubCategories(adCat, category string) ([]string, error) {
+func getSubCategories(adCat int, category string) ([]string, error) {
 	query := `
 		SELECT psc.name 
 		FROM PartSubAdCategory psc
@@ -65,12 +65,12 @@ func getSubCategories(adCat, category string) ([]string, error) {
 		ORDER BY psc.name
 	`
 	var names []string
-	err := db.Select(&names, query, category, ad.GetAdCategoryID(adCat))
+	err := db.Select(&names, query, category, adCat)
 	return names, err
 }
 
 // GetSubCategories returns all subcategories for a specific ad category and category
-func GetSubCategories(adCat, category string) []string {
+func GetSubCategories(adCat int, category string) []string {
 	// Check if subcategories map exists for this ad category
 	if subCategoriesMap, exists := subCategories[adCat]; exists {
 		// Check if subcategories exist for this specific category
@@ -123,7 +123,7 @@ func ClearPartCache() map[string]any {
 // ============================================================================
 
 // buildAdCategoriesQuery builds the SQL query for finding categories that have existing ads for make/year/model/engine
-func buildAdCategoriesQuery(adCat, makeName, year, model, engine string) (string, []interface{}) {
+func buildAdCategoriesQuery(adCat int, makeName, year, model, engine string) (string, []interface{}) {
 	associationTable, vehicleTable, vehicleIDColumn := ad.GetTableInfo(adCat)
 
 	var query string
@@ -143,7 +143,7 @@ func buildAdCategoriesQuery(adCat, makeName, year, model, engine string) (string
 
 	// Add conditional JOINs and WHERE clauses based on ad category
 	switch adCat {
-	case "Car", "CarPart", "Motorcycle", "MotorcyclePart":
+	case ad.AdCategoryCar, ad.AdCategoryCarPart, ad.AdCategoryMotorcycle, ad.AdCategoryMotorcyclePart:
 		// Cars and Motorcycles: make, year, model, engine
 		query = baseQuery + `
 			JOIN Year y ON c.year_id = y.id
@@ -153,7 +153,7 @@ func buildAdCategoriesQuery(adCat, makeName, year, model, engine string) (string
 		`
 		args = []interface{}{makeName, year, model, engine}
 
-	case "Ag", "AgPart":
+	case ad.AdCategoryAg, ad.AdCategoryAgPart:
 		// Ag Equipment: make, year, model (no engine)
 		query = baseQuery + `
 			JOIN Year y ON c.year_id = y.id
@@ -162,7 +162,7 @@ func buildAdCategoriesQuery(adCat, makeName, year, model, engine string) (string
 		`
 		args = []interface{}{makeName, year, model}
 
-	case "Bicycle", "BicyclePart":
+	case ad.AdCategoryBicycle, ad.AdCategoryBicyclePart:
 		// Bicycles: make, model (no year, no engine)
 		query = baseQuery + `
 			WHERE m.name = ? AND mo.name = ?
@@ -179,7 +179,7 @@ func buildAdCategoriesQuery(adCat, makeName, year, model, engine string) (string
 }
 
 // buildAdSubCategoriesQuery builds the SQL query for finding subcategories that have existing ads for make/year/model/engine/category
-func buildAdSubCategoriesQuery(adCat, makeName, year, model, engine, category string) (string, []interface{}) {
+func buildAdSubCategoriesQuery(adCat int, makeName, year, model, engine, category string) (string, []interface{}) {
 	associationTable, vehicleTable, vehicleIDColumn := ad.GetTableInfo(adCat)
 
 	var query string
@@ -199,7 +199,7 @@ func buildAdSubCategoriesQuery(adCat, makeName, year, model, engine, category st
 
 	// Add conditional JOINs and WHERE clauses based on ad category
 	switch adCat {
-	case "Car", "CarPart", "Motorcycle", "MotorcyclePart":
+	case ad.AdCategoryCar, ad.AdCategoryCarPart, ad.AdCategoryMotorcycle, ad.AdCategoryMotorcyclePart:
 		// Cars and Motorcycles: make, year, model, engine
 		query = baseQuery + `
 			JOIN Year y ON c.year_id = y.id
@@ -209,7 +209,7 @@ func buildAdSubCategoriesQuery(adCat, makeName, year, model, engine, category st
 		`
 		args = []interface{}{makeName, year, model, engine, category}
 
-	case "Ag", "AgPart":
+	case ad.AdCategoryAg, ad.AdCategoryAgPart:
 		// Ag Equipment: make, year, model (no engine)
 		query = baseQuery + `
 			JOIN Year y ON c.year_id = y.id
@@ -218,7 +218,7 @@ func buildAdSubCategoriesQuery(adCat, makeName, year, model, engine, category st
 		`
 		args = []interface{}{makeName, year, model, category}
 
-	case "Bicycle", "BicyclePart":
+	case ad.AdCategoryBicycle, ad.AdCategoryBicyclePart:
 		// Bicycles: make, model (no year, no engine)
 		query = baseQuery + `
 			WHERE m.name = ? AND mo.name = ? AND pc.name = ?
@@ -239,14 +239,14 @@ func buildAdSubCategoriesQuery(adCat, makeName, year, model, engine, category st
 // ============================================================================
 
 // GetAdCategories returns categories that have existing ads for make/year/model/engine (for tree view)
-func GetAdCategories(adCat, makeName, year, model, engine string) ([]string, error) {
+func GetAdCategories(adCat int, makeName, year, model, engine string) ([]string, error) {
 	makeName, _ = url.QueryUnescape(makeName)
 	year, _ = url.QueryUnescape(year)
 	model, _ = url.QueryUnescape(model)
 	engine, _ = url.QueryUnescape(engine)
 
 	// Create cache key
-	cacheKey := fmt.Sprintf("ad:categories:%d:%s:%s:%s:%s", ad.GetAdCategoryID(adCat), makeName, year, model, engine)
+	cacheKey := fmt.Sprintf("ad:categories:%d:%s:%s:%s:%s", adCat, makeName, year, model, engine)
 
 	// Check cache first
 	if cached, found := partCache.Get(cacheKey); found {
@@ -266,7 +266,7 @@ func GetAdCategories(adCat, makeName, year, model, engine string) ([]string, err
 }
 
 // GetAdSubCategories returns subcategories that have existing ads for make/year/model/engine/category (for tree view)
-func GetAdSubCategories(adCat, makeName, year, model, engine, category string) ([]string, error) {
+func GetAdSubCategories(adCat int, makeName, year, model, engine, category string) ([]string, error) {
 	makeName, _ = url.QueryUnescape(makeName)
 	year, _ = url.QueryUnescape(year)
 	model, _ = url.QueryUnescape(model)
@@ -274,7 +274,7 @@ func GetAdSubCategories(adCat, makeName, year, model, engine, category string) (
 	category, _ = url.QueryUnescape(category)
 
 	// Create cache key
-	cacheKey := fmt.Sprintf("ad:subcategories:%d:%s:%s:%s:%s:%s", ad.GetAdCategoryID(adCat), makeName, year, model, engine, category)
+	cacheKey := fmt.Sprintf("ad:subcategories:%d:%s:%s:%s:%s:%s", adCat, makeName, year, model, engine, category)
 
 	// Check cache first
 	if cached, found := partCache.Get(cacheKey); found {

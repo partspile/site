@@ -393,3 +393,11 @@ func EnginesDivEmpty() g.Node {
 		),
 	)
 }
+
+// newAdButton renders the new ad button based on user login
+func newAdButton(userID int) g.Node {
+	if userID != 0 {
+		return button("New Ad", withHref("/new-ad"))
+	}
+	return button("New Ad", withDisabled())
+}

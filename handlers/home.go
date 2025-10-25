@@ -9,7 +9,9 @@ import (
 func HandleHome(c *fiber.Ctx) error {
 	userID := getUserID(c)
 	userName := getUserName(c)
-	view := cookie.GetLastView(c)
+	view := cookie.GetView(c)
 	adCategory := cookie.GetAdCategory(c)
-	return render(c, ui.HomePage(userID, userName, c.Path(), view, adCategory))
+	params := extractSearchParams(c)
+	path := c.Path()
+	return render(c, ui.HomePage(userID, view, adCategory, userName, path, params))
 }

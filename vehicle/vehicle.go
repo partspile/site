@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/cache"
 	"github.com/parts-pile/site/db"
 )
@@ -40,15 +39,14 @@ func InitVehicleCache() error {
 // CACHED FUNCTIONS FOR STATIC VEHICLE DATA
 // ============================================================================
 
-func GetMakes(adCat string) []string {
-	adCatID := ad.GetAdCategoryID(adCat)
-	cacheKey := fmt.Sprintf("makes:%d", adCatID)
+func GetMakes(adCat int) []string {
+	cacheKey := fmt.Sprintf("makes:%d", adCat)
 
 	if cached, found := vehicleCache.Get(cacheKey); found {
 		return cached
 	}
 
-	query, args := buildMakesQuery(adCatID)
+	query, args := buildMakesQuery(adCat)
 	var makes []string
 	err := db.Select(&makes, query, args...)
 	if err != nil {
@@ -59,15 +57,14 @@ func GetMakes(adCat string) []string {
 	return makes
 }
 
-func GetYears(adCat string, makeName string) []string {
-	adCatID := ad.GetAdCategoryID(adCat)
-	cacheKey := fmt.Sprintf("years:%d:%s", adCatID, makeName)
+func GetYears(adCat int, makeName string) []string {
+	cacheKey := fmt.Sprintf("years:%d:%s", adCat, makeName)
 
 	if cached, found := vehicleCache.Get(cacheKey); found {
 		return cached
 	}
 
-	query, args := buildYearsQuery(adCatID, makeName)
+	query, args := buildYearsQuery(adCat, makeName)
 	var yearInts []int
 	err := db.Select(&yearInts, query, args...)
 	if err != nil {
@@ -82,20 +79,19 @@ func GetYears(adCat string, makeName string) []string {
 	return years
 }
 
-func GetModels(adCat string, makeName string, years []string) []string {
+func GetModels(adCat int, makeName string, years []string) []string {
 	if len(years) == 0 {
 		return []string{}
 	}
 
-	adCatID := ad.GetAdCategoryID(adCat)
 	// Create cache key with years as provided
-	cacheKey := fmt.Sprintf("models:%d:%s:%s", adCatID, makeName, strings.Join(years, ","))
+	cacheKey := fmt.Sprintf("models:%d:%s:%s", adCat, makeName, strings.Join(years, ","))
 
 	if cached, found := vehicleCache.Get(cacheKey); found {
 		return cached
 	}
 
-	query, args := buildModelsQuery(adCatID, makeName, years)
+	query, args := buildModelsQuery(adCat, makeName, years)
 	var models []string
 	err := db.Select(&models, query, args...)
 	if err != nil {
@@ -106,20 +102,19 @@ func GetModels(adCat string, makeName string, years []string) []string {
 	return models
 }
 
-func GetEngines(adCat string, makeName string, years []string, models []string) []string {
+func GetEngines(adCat int, makeName string, years []string, models []string) []string {
 	if len(years) == 0 || len(models) == 0 {
 		return []string{}
 	}
 
-	adCatID := ad.GetAdCategoryID(adCat)
 	// Create cache key: engines:BMW:2020,2021:M3,X5
-	cacheKey := fmt.Sprintf("engines:%d:%s:%s:%s", adCatID, makeName, strings.Join(years, ","), strings.Join(models, ","))
+	cacheKey := fmt.Sprintf("engines:%d:%s:%s:%s", adCat, makeName, strings.Join(years, ","), strings.Join(models, ","))
 
 	if cached, found := vehicleCache.Get(cacheKey); found {
 		return cached
 	}
 
-	query, args := buildEnginesQuery(adCatID, makeName, years, models)
+	query, args := buildEnginesQuery(adCat, makeName, years, models)
 	var engines []string
 	err := db.Select(&engines, query, args...)
 	if err != nil {
@@ -250,16 +245,15 @@ func buildEnginesQuery(adCat int, makeName string, years []string, models []stri
 // ============================================================================
 
 // GetAdMakes returns makes that have existing ads
-func GetAdMakes(adCat string) ([]string, error) {
-	adCatID := ad.GetAdCategoryID(adCat)
-	cacheKey := fmt.Sprintf("ad:makes:%d", adCatID)
+func GetAdMakes(adCat int) ([]string, error) {
+	cacheKey := fmt.Sprintf("ad:makes:%d", adCat)
 
 	if cached, found := vehicleCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
 	// Cache miss - query database and populate cache
-	makes, err := getMakesForAll(adCatID)
+	makes, err := getMakesForAll(adCat)
 	if err != nil {
 		return nil, err
 	}
@@ -269,16 +263,15 @@ func GetAdMakes(adCat string) ([]string, error) {
 }
 
 // GetAdYears returns years that have existing ads for a make
-func GetAdYears(adCat string, makeName string) ([]string, error) {
-	adCatID := ad.GetAdCategoryID(adCat)
-	cacheKey := fmt.Sprintf("ad:years:%d:%s", adCatID, makeName)
+func GetAdYears(adCat int, makeName string) ([]string, error) {
+	cacheKey := fmt.Sprintf("ad:years:%d:%s", adCat, makeName)
 
 	if cached, found := vehicleCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
 	// Cache miss - query database and populate cache
-	years, err := getYearsForAll(adCatID, makeName)
+	years, err := getYearsForAll(adCat, makeName)
 	if err != nil {
 		return nil, err
 	}
@@ -288,16 +281,15 @@ func GetAdYears(adCat string, makeName string) ([]string, error) {
 }
 
 // GetAdModels returns models that have existing ads for make/year
-func GetAdModels(adCat string, makeName, year string) ([]string, error) {
-	adCatID := ad.GetAdCategoryID(adCat)
-	cacheKey := fmt.Sprintf("ad:models:%d:%s:%s", adCatID, makeName, year)
+func GetAdModels(adCat int, makeName, year string) ([]string, error) {
+	cacheKey := fmt.Sprintf("ad:models:%d:%s:%s", adCat, makeName, year)
 
 	if cached, found := vehicleCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
 	// Cache miss - query database and populate cache
-	models, err := getModelsForAll(adCatID, makeName, year)
+	models, err := getModelsForAll(adCat, makeName, year)
 	if err != nil {
 		return nil, err
 	}
@@ -307,16 +299,15 @@ func GetAdModels(adCat string, makeName, year string) ([]string, error) {
 }
 
 // GetAdEngines returns engines that have existing ads for make/year/model
-func GetAdEngines(adCat string, makeName, year, model string) ([]string, error) {
-	adCatID := ad.GetAdCategoryID(adCat)
-	cacheKey := fmt.Sprintf("ad:engines:%d:%s:%s:%s", adCatID, makeName, year, model)
+func GetAdEngines(adCat int, makeName, year, model string) ([]string, error) {
+	cacheKey := fmt.Sprintf("ad:engines:%d:%s:%s:%s", adCat, makeName, year, model)
 
 	if cached, found := vehicleCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
 	// Cache miss - query database and populate cache
-	engines, err := getEnginesForAll(adCatID, makeName, year, model)
+	engines, err := getEnginesForAll(adCat, makeName, year, model)
 	if err != nil {
 		return nil, err
 	}

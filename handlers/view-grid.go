@@ -21,7 +21,7 @@ func (v *GridView) GetAdIDs() ([]int, string, error) {
 }
 
 func (v *GridView) RenderSearchResults(adIDs []int, nextCursor string) error {
-	userPrompt := getQueryParam(v.ctx, "q")
+	userPrompt := v.ctx.Query("q")
 	userID := getUserID(v.ctx)
 	userName := getUserName(v.ctx)
 	loc := getLocation(v.ctx)
@@ -39,7 +39,7 @@ func (v *GridView) RenderSearchResults(adIDs []int, nextCursor string) error {
 }
 
 func (v *GridView) RenderSearchPage(adIDs []int, nextCursor string) error {
-	userPrompt := getQueryParam(v.ctx, "q")
+	userPrompt := v.ctx.Query("q")
 	userID := getUserID(v.ctx)
 	userName := getUserName(v.ctx)
 	loc := getLocation(v.ctx)

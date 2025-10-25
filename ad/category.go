@@ -1,124 +1,85 @@
 package ad
 
 import (
-	"strings"
+	"log"
+
+	"github.com/parts-pile/site/db"
 )
 
-// Ad category constants as strings
+// Ad categories
 const (
-	Car            = "Car"
-	CarPart        = "CarPart"
-	Motorcycle     = "Motorcycle"
-	MotorcyclePart = "MotorcyclePart"
-	Bicycle        = "Bicycle"
-	BicyclePart    = "BicyclePart"
-	Ag             = "Ag"
-	AgPart         = "AgPart"
+	AdCategoryCar int = iota + 1
+	AdCategoryCarPart
+	AdCategoryMotorcycle
+	AdCategoryMotorcyclePart
+	AdCategoryBicycle
+	AdCategoryBicyclePart
+	AdCategoryAg
+	AdCategoryAgPart
 )
 
-// GetAdCategoryID returns the database ID for a category string
-func GetAdCategoryID(category string) int {
-	switch category {
-	case Car:
-		return 1
-	case CarPart:
-		return 2
-	case Motorcycle:
-		return 3
-	case MotorcyclePart:
-		return 4
-	case Bicycle:
-		return 5
-	case BicyclePart:
-		return 6
-	case Ag:
-		return 7
-	case AgPart:
-		return 8
+// Cached ad category names map
+var AdCategoryNames map[int]string
+
+// SetAdCategoryNames populates the cached AdCategoryNames map from the database
+func SetAdCategoryNames() {
+	AdCategoryNames = make(map[int]string)
+
+	rows, err := db.Query("SELECT id, name FROM AdCategory ORDER BY id")
+	if err != nil {
+		log.Printf("Failed to query AdCategory: %v", err)
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var id int
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			log.Printf("Failed to scan AdCategory row: %v", err)
+			continue
+		}
+		AdCategoryNames[id] = name
+	}
+}
+
+// CategoryIcon returns the appropriate icon for the category
+func CategoryIcon(adCategory int) string {
+	switch adCategory {
+	case AdCategoryCar, AdCategoryCarPart:
+		return "/images/car.svg"
+	case AdCategoryMotorcycle, AdCategoryMotorcyclePart:
+		return "/images/motorcycle.svg"
+	case AdCategoryBicycle, AdCategoryBicyclePart:
+		return "/images/bicycle.svg"
+	case AdCategoryAg, AdCategoryAgPart:
+		return "/images/ag.svg"
 	default:
-		return 2 // Default to CarPart
+		return "/images/car.svg" // Default fallback
 	}
 }
 
-// GetAdCategoryFromID returns the category string for a database ID
-func GetAdCategoryFromID(id int) string {
-	switch id {
-	case 1:
-		return Car
-	case 2:
-		return CarPart
-	case 3:
-		return Motorcycle
-	case 4:
-		return MotorcyclePart
-	case 5:
-		return Bicycle
-	case 6:
-		return BicyclePart
-	case 7:
-		return Ag
-	case 8:
-		return AgPart
+// CategoryDisplayName returns the display name for a category ID
+func CategoryDisplayName(adCategory int) string {
+	if name, exists := AdCategoryNames[adCategory]; exists {
+		return name
+	}
+	return "Unknown Category"
+}
+
+// GetTableInfo returns the association table, vehicle table, and vehicle ID column for a given ad category
+func GetTableInfo(adCategory int) (associationTable, vehicleTable, vehicleIDColumn string) {
+	switch adCategory {
+	case AdCategoryCar, AdCategoryCarPart:
+		return "AdCar", "Car", "car"
+	case AdCategoryMotorcycle, AdCategoryMotorcyclePart:
+		return "AdMotorcycle", "Motorcycle", "motorcycle"
+	case AdCategoryBicycle, AdCategoryBicyclePart:
+		return "AdBicycle", "Bicycle", "bicycle"
+	case AdCategoryAg, AdCategoryAgPart:
+		return "AdAg", "Ag", "ag"
 	default:
-		return CarPart // Default fallback
-	}
-}
-
-// GetDisplayName returns the human-readable display name for the category
-func GetDisplayName(category string) string {
-	switch category {
-	case Car:
-		return "Cars"
-	case CarPart:
-		return "Car Parts"
-	case Motorcycle:
-		return "Motorcycles"
-	case MotorcyclePart:
-		return "Motorcycle Parts"
-	case Bicycle:
-		return "Bicycle"
-	case BicyclePart:
-		return "Bicycle Parts"
-	case Ag:
-		return "Ag Equipment"
-	case AgPart:
-		return "Ag Equipment Parts"
-	default:
-		return "Unknown"
-	}
-}
-
-// GetTableInfo returns the vehicle table name, association table name, and vehicle ID column name
-func GetTableInfo(category string) (vehicleTable, associationTable, vehicleIDColumn string) {
-	if strings.HasSuffix(category, "Part") {
-		vehicleTable = strings.TrimSuffix(category, "Part")
-	} else {
-		vehicleTable = category
-	}
-	associationTable = "Ad" + category
-	vehicleIDColumn = strings.ToLower(vehicleTable)
-	return
-}
-
-// ParseCategoryFromQuery parses a category string from query parameters, with fallback to CarParts
-func ParseCategoryFromQuery(category string) string {
-	if category == "" {
-		return CarPart // Default fallback
-	}
-
-	// Validate the category string
-	switch category {
-	case Car, CarPart, Motorcycle, MotorcyclePart, Bicycle, BicyclePart, Ag, AgPart:
-		return category
-	default:
-		return CarPart // Default fallback on error
-	}
-}
-
-// GetAllCategories returns all valid category strings
-func GetAllCategories() []string {
-	return []string{
-		Car, CarPart, Motorcycle, MotorcyclePart,
-		Bicycle, BicyclePart, Ag, AgPart,
+		// Default fallback to car
+		return "AdCar", "Car", "car"
 	}
 }

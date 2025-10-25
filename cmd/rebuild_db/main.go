@@ -4,13 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"math/rand"
 	"os"
 	"os/exec"
 	"strings"
-	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/parts-pile/site/config"
@@ -21,9 +20,6 @@ import (
 type MakeYearModel map[string]map[string]map[string][]string
 
 func main() {
-	// Seed random number generator
-	rand.Seed(time.Now().UnixNano())
-
 	jsonFile := "cmd/rebuild_db/make-year-model.json"
 	partFile := "cmd/rebuild_db/part.json"
 	parentFile := "cmd/rebuild_db/parent.json"
@@ -79,7 +75,7 @@ func main() {
 	}
 
 	// Import type.json (AdCategory)
-	typeData, err := ioutil.ReadFile(typeFile)
+	typeData, err := os.ReadFile(typeFile)
 	if err != nil {
 		log.Fatalf("Failed to read type.json: %v", err)
 	}
@@ -118,10 +114,10 @@ func main() {
 	}
 
 	// Get CarParts category ID for use throughout the script
-	carPartsCategoryID := categoryMap["CarParts"]
+	carPartsCategoryID := categoryMap["Car Parts"]
 
 	// Import parent.json
-	parentData, err := ioutil.ReadFile(parentFile)
+	parentData, err := os.ReadFile(parentFile)
 	if err != nil {
 		log.Fatalf("Failed to read parent.json: %v", err)
 	}
@@ -143,7 +139,7 @@ func main() {
 	}
 
 	// Import make-parent.json
-	makeParentData, err := ioutil.ReadFile(makeParentFile)
+	makeParentData, err := os.ReadFile(makeParentFile)
 	if err != nil {
 		log.Fatalf("Failed to read make-parent.json: %v", err)
 	}
@@ -178,7 +174,7 @@ func main() {
 		log.Fatalf("Failed to open JSON: %v", err)
 	}
 	defer f.Close()
-	data, err := ioutil.ReadAll(f)
+	data, err := io.ReadAll(f)
 	if err != nil {
 		log.Fatalf("Failed to read JSON: %v", err)
 	}
@@ -272,7 +268,7 @@ func main() {
 
 		// Insert make with parent company relationship and category
 		var makeID int
-		carPartsCategoryID := categoryMap["CarParts"]
+		carPartsCategoryID := categoryMap["Car Parts"]
 		if parentCompanyID != nil {
 			makeID = getOrInsertWithParentAndCategory(database, "Make", "name", make, *parentCompanyID, carPartsCategoryID)
 		} else {
@@ -348,7 +344,7 @@ func main() {
 	fmt.Printf("Processed %d cars in optimized batches\n", carCount)
 
 	// Import part.json
-	partData, err := ioutil.ReadFile(partFile)
+	partData, err := os.ReadFile(partFile)
 	if err != nil {
 		log.Fatalf("Failed to read part.json: %v", err)
 	}
@@ -375,7 +371,7 @@ func main() {
 
 	// Import user.json
 	userFile := "cmd/rebuild_db/user.json"
-	userData, err := ioutil.ReadFile(userFile)
+	userData, err := os.ReadFile(userFile)
 	if err != nil {
 		log.Fatalf("Failed to read user.json: %v", err)
 	}
@@ -408,7 +404,7 @@ func main() {
 	}
 
 	// Import ad.json
-	adData, err := ioutil.ReadFile(adFile)
+	adData, err := os.ReadFile(adFile)
 	if err != nil {
 		log.Fatalf("Failed to read ad.json: %v", err)
 	}
