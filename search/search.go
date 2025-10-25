@@ -23,7 +23,7 @@ type TopSearch struct {
 }
 
 // SaveUserSearch saves a user's search query to the database
-func SaveUserSearch(userID sql.NullInt64, queryString string) error {
+func SaveUserSearch(userID int, queryString string) error {
 	_, err := db.Exec("INSERT INTO UserSearch (user_id, query_string) VALUES (?, ?)", userID, queryString)
 	if err != nil {
 		log.Printf("Error saving user search: %v", err)

@@ -1,7 +1,6 @@
 package vector
 
 import (
-	"encoding/base64"
 	"fmt"
 	"log"
 	"strconv"
@@ -27,40 +26,6 @@ var (
 	userEmbeddingCache  *cache.Cache[[]float32] // User ID keys, 24 hour TTL
 	siteEmbeddingCache  *cache.Cache[[]float32] // Campaign keys, 6 hour TTL
 )
-
-// EncodeCursor encodes an offset into a base64-encoded cursor string
-func EncodeCursor(offset uint64) string {
-	if offset == 0 {
-		return ""
-	}
-	offsetStr := strconv.FormatUint(offset, 10)
-	return base64.StdEncoding.EncodeToString([]byte(offsetStr))
-}
-
-// DecodeCursor decodes a base64-encoded cursor string into an offset
-func DecodeCursor(cursor string) uint64 {
-	if cursor == "" {
-		log.Printf("[qdrant] No cursor provided, starting from beginning")
-		return 0
-	}
-
-	// Decode cursor: format is "offset" base64 encoded
-	cursorBytes, err := base64.StdEncoding.DecodeString(cursor)
-	if err != nil {
-		log.Printf("[qdrant] Failed to decode cursor: %v", err)
-		return 0
-	}
-
-	cursorStr := string(cursorBytes)
-	offsetVal, err := strconv.ParseUint(cursorStr, 10, 64)
-	if err != nil {
-		log.Printf("[qdrant] Failed to parse cursor offset: %v", err)
-		return 0
-	}
-
-	log.Printf("[qdrant] Parsed cursor: offset=%d", offsetVal)
-	return offsetVal
-}
 
 // InitEmbeddingCaches initializes the specialized embedding caches. This should be called during application startup.
 func InitEmbeddingCaches() error {

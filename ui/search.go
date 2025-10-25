@@ -29,7 +29,7 @@ func createAdCategoryItems(activeCat int) []g.Node {
 
 		item := Div(
 			Class(itemClass),
-			hx.Get("/search-widget?showFilters=false&adCategory="+strconv.Itoa(adCat)),
+			hx.Get("/search-widget?show-filters=false&new-ad-category="+strconv.Itoa(adCat)),
 			hx.Target("#searchWidget"),
 			hx.Swap("outerHTML"),
 			hx.Include("form"),
@@ -196,13 +196,11 @@ func createInfiniteScrollTrigger(loaderURL string) g.Node {
 }
 
 // SearchCreateLoaderURL creates the loader URL for pagination
-func SearchCreateLoaderURL(params map[string]string, nextCursor, view string) string {
-	if nextCursor == "" {
+func SearchCreateLoaderURL(q string, cursor uint64) string {
+	if cursor == 0 {
 		return ""
 	}
-
-	return fmt.Sprintf("/search-page?q=%s&cursor=%s&view=%s",
-		htmlEscape(params["q"]), htmlEscape(nextCursor), htmlEscape(view))
+	return fmt.Sprintf("/search-page?q=%s&cursor=%d", q, cursor)
 }
 
 // MakeFilterOptions returns HTML options for the make filter dropdown

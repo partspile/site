@@ -9,7 +9,7 @@ import (
 	"github.com/parts-pile/site/ad"
 )
 
-func GridViewResults(ads []ad.Ad, userID int, userName string, loc *time.Location, loaderURL string) g.Node {
+func GridViewResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
 	var viewContent = NoSearchResultsMessage()
 
 	if len(ads) > 0 {
@@ -29,7 +29,7 @@ func GridViewResults(ads []ad.Ad, userID int, userName string, loc *time.Locatio
 	)
 }
 
-func GridViewPage(ads []ad.Ad, userID int, userName string, loc *time.Location, loaderURL string) g.Node {
+func GridViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
 	nodes := gridNodes(ads, userID, loc)
 	return g.Group(append(nodes, createInfiniteScrollTrigger(loaderURL)))
 }
