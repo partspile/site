@@ -29,7 +29,7 @@ func createAdCategoryItems(activeCat int) []g.Node {
 
 		item := Div(
 			Class(itemClass),
-			hx.Get("/?ad_category="+strconv.Itoa(adCat)),
+			hx.Get("/search?new_ad_category="+strconv.Itoa(adCat)),
 			hx.Target("body"),
 			hx.Swap("outerHTML"),
 			hx.Include("form"),
@@ -177,7 +177,6 @@ func SearchWidget(userID, view, adCategory int, params map[string]string, showFi
 func SearchResults() g.Node {
 	return Div(
 		ID("searchResults"),
-		//Class("h-96"),
 		hx.Get("/search"),
 		hx.Trigger("load"),
 		hx.Target("this"),
