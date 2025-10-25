@@ -9,6 +9,7 @@ import (
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
+	"github.com/parts-pile/site/vehicle"
 	"github.com/qdrant/go-client/qdrant"
 )
 
@@ -172,4 +173,24 @@ func HandleSearchWidget(c *fiber.Ctx) error {
 
 	// Return the search widget
 	return render(c, ui.SearchWidget(userID, view, adCategory, params, showFilters))
+}
+
+// HandleAdCategoryModal shows the ad category selector modal
+func HandleAdCategoryModal(c *fiber.Ctx) error {
+	c.Set("Content-Type", "text/html")
+
+	adCategory := cookie.GetAdCategory(c)
+
+	// Return the category modal
+	return render(c, ui.AdCategoryModal(adCategory))
+}
+
+// HandleFilterMakes handles the make filter dropdown for search filters
+func HandleFilterMakes(c *fiber.Ctx) error {
+	c.Set("Content-Type", "text/html")
+
+	adCategory := cookie.GetAdCategory(c)
+	makes := vehicle.GetMakes(adCategory)
+
+	return render(c, ui.MakeFilterOptions(makes))
 }

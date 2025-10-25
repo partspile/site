@@ -3,20 +3,20 @@
 -- Ad Category table
 CREATE TABLE AdCategory (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE CHECK (length(name) > 0)
 );
 
 -- Vehicle tables
 CREATE TABLE Make (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL UNIQUE CHECK (length(name) > 0),
     parent_company_id INTEGER REFERENCES ParentCompany(id),
     ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id)
 );
 
 CREATE TABLE ParentCompany (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL UNIQUE CHECK (length(name) > 0),
     country TEXT
 );
 
@@ -28,13 +28,13 @@ CREATE TABLE Year (
 
 CREATE TABLE Model (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL CHECK (length(name) > 0),
     ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id)
 );
 
 CREATE TABLE Engine (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL CHECK (length(name) > 0),
     ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id)
 );
 
@@ -91,15 +91,15 @@ CREATE INDEX idx_ag_make_year_model ON Ag(make_id, year_id, model_id);
 -- Part tables
 CREATE TABLE PartCategory (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
-    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id)
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
+    name TEXT NOT NULL UNIQUE CHECK (length(name) > 0)
 );
 CREATE INDEX idx_partcategory_name ON PartCategory(name);
 
 CREATE TABLE PartSubCategory (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     part_category_id INTEGER NOT NULL,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL CHECK (length(name) > 0),
     FOREIGN KEY (part_category_id) REFERENCES PartCategory(id),
     UNIQUE (part_category_id, name)
 );
@@ -108,7 +108,7 @@ CREATE INDEX idx_partsubcategory_part_category_id ON PartSubCategory(part_catego
 -- Location table
 CREATE TABLE Location (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    raw_text TEXT UNIQUE NOT NULL,
+    raw_text TEXT UNIQUE NOT NULL CHECK (length(raw_text) > 0),
     city TEXT,
     admin_area TEXT,
     country TEXT,
@@ -131,7 +131,7 @@ CREATE INDEX idx_phoneverification_expires ON PhoneVerification(expires_at);
 -- User tables
 CREATE TABLE User (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL UNIQUE CHECK (length(name) > 0),
     phone TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     password_salt TEXT NOT NULL,

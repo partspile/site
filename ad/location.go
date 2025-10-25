@@ -10,6 +10,9 @@ import (
 
 // GetLatLon fetches latitude and longitude for a location by ID
 func GetLatLon(id int) (latitude, longitude float64, err error) {
+	if id == 0 {
+		return
+	}
 	row := db.QueryRow("SELECT latitude, longitude FROM Location WHERE id = ?", id)
 	err = row.Scan(&latitude, &longitude)
 	return

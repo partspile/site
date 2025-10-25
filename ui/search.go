@@ -29,8 +29,8 @@ func createAdCategoryItems(activeCat int) []g.Node {
 
 		item := Div(
 			Class(itemClass),
-			hx.Get("/search-widget?show-filters=false&new-ad-category="+strconv.Itoa(adCat)),
-			hx.Target("#searchWidget"),
+			hx.Get("/?ad_category="+strconv.Itoa(adCat)),
+			hx.Target("body"),
 			hx.Swap("outerHTML"),
 			hx.Include("form"),
 			Div(

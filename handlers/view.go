@@ -79,7 +79,7 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 
 	// Ad category condition (required filter)
 	adCat := AdCategory(c)
-	adCategoryCondition := qdrant.NewMatch("ad_category_id", strconv.Itoa(adCat))
+	adCategoryCondition := qdrant.NewMatchInt("ad_category_id", int64(adCat))
 	conditions = append(conditions, adCategoryCondition)
 	log.Printf("[buildSearchFilters] Added ad_category_id filter: %d", adCat)
 

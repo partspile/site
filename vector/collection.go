@@ -77,7 +77,7 @@ func SetupPayloadIndexes() error {
 		{"engines", qdrant.FieldType_FieldTypeKeyword},
 		{"category", qdrant.FieldType_FieldTypeKeyword},
 		{"subcategory", qdrant.FieldType_FieldTypeKeyword},
-		{"ad_category_id", qdrant.FieldType_FieldTypeKeyword},
+		{"ad_category_id", qdrant.FieldType_FieldTypeInteger},
 		{"price", qdrant.FieldType_FieldTypeFloat},
 		{"location", qdrant.FieldType_FieldTypeGeo},
 	}
@@ -120,6 +120,8 @@ func SetupPayloadIndexes() error {
 		switch field.fieldSchema {
 		case qdrant.FieldType_FieldTypeKeyword:
 			fieldIndexParams = qdrant.NewPayloadIndexParamsKeyword(&qdrant.KeywordIndexParams{})
+		case qdrant.FieldType_FieldTypeInteger:
+			fieldIndexParams = qdrant.NewPayloadIndexParamsInt(&qdrant.IntegerIndexParams{})
 		case qdrant.FieldType_FieldTypeFloat:
 			fieldIndexParams = qdrant.NewPayloadIndexParamsFloat(&qdrant.FloatIndexParams{})
 		case qdrant.FieldType_FieldTypeGeo:
