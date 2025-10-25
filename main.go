@@ -92,10 +92,10 @@ func main() {
 	})
 
 	// Main search page
-	app.Get("/", h.HandleHome)                                   // x
-	app.Get("/search", h.HandleSearch)                           // x
-	app.Get("/search-page", h.HandleSearchPage)                  // x
-	app.Get("/search-widget/:showFilters", h.HandleSearchWidget) // x
+	app.Get("/", h.HandleHome)                      // x
+	app.Get("/search", h.HandleSearch)              // x
+	app.Get("/search-page", h.HandleSearchPage)     // x
+	app.Get("/search-widget", h.HandleSearchWidget) // x
 
 	// Tree view routes - split by browse vs search mode
 	app.Get("/tree-browse-expand/*", h.HandleTreeExpandBrowse)     // x

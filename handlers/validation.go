@@ -9,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -183,6 +184,8 @@ func ValidateAndParsePrice(c *fiber.Ctx) (float64, error) {
 
 // BuildAdFromForm builds an Ad struct from form data
 func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.AdDetail, []*multipart.FileHeader, []int, error) {
+	adCat := cookie.GetAdCategory(c)
+
 	title, err := ValidateCleanText(c, "title", "Title", 35)
 	if err != nil {
 		return ad.AdDetail{}, nil, nil, err
@@ -246,14 +249,11 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 		imageCount = 0
 	}
 
-	// Parse category to determine which concrete Ad type to create
-	categoryEnum := ad.ParseCategoryFromQuery(category)
-
 	// Create a simple AdDetail struct with the specified category
 	newAd := ad.AdDetail{
 		Ad: ad.Ad{
 			ID:           id,
-			AdCategoryID: ad.GetAdCategoryID(categoryEnum),
+			AdCategoryID: adCat,
 			Title:        title,
 			Price:        price,
 			UserID:       userID,

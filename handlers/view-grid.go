@@ -16,14 +16,13 @@ func NewGridView(ctx *fiber.Ctx) *GridView {
 	return &GridView{ctx: ctx}
 }
 
-func (v *GridView) GetAdIDs() ([]int, string, error) {
+func (v *GridView) GetAdIDs() ([]int, uint64, error) {
 	return getAdIDs(v.ctx)
 }
 
-func (v *GridView) RenderSearchResults(adIDs []int, nextCursor string) error {
-	userPrompt := v.ctx.Query("q")
+func (v *GridView) RenderSearchResults(adIDs []int, cursor uint64) error {
+	q := v.ctx.Query("q")
 	userID := getUserID(v.ctx)
-	userName := getUserName(v.ctx)
 	loc := getLocation(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering
@@ -33,15 +32,14 @@ func (v *GridView) RenderSearchResults(adIDs []int, nextCursor string) error {
 	}
 
 	// Create loader URL for infinite scroll
-	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid")
+	loaderURL := ui.SearchCreateLoaderURL(q, cursor)
 
-	return render(v.ctx, ui.GridViewResults(ads, userID, userName, loc, loaderURL))
+	return render(v.ctx, ui.GridViewResults(ads, userID, loc, loaderURL))
 }
 
-func (v *GridView) RenderSearchPage(adIDs []int, nextCursor string) error {
-	userPrompt := v.ctx.Query("q")
+func (v *GridView) RenderSearchPage(adIDs []int, cursor uint64) error {
+	q := v.ctx.Query("q")
 	userID := getUserID(v.ctx)
-	userName := getUserName(v.ctx)
 	loc := getLocation(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering
@@ -50,7 +48,7 @@ func (v *GridView) RenderSearchPage(adIDs []int, nextCursor string) error {
 		return err
 	}
 	// Create loader URL for infinite scroll
-	loaderURL := ui.SearchCreateLoaderURL(userPrompt, nextCursor, "grid")
+	loaderURL := ui.SearchCreateLoaderURL(q, cursor)
 
-	return render(v.ctx, ui.GridViewPage(ads, userID, userName, loc, loaderURL))
+	return render(v.ctx, ui.GridViewPage(ads, userID, loc, loaderURL))
 }

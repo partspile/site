@@ -5,8 +5,6 @@ import (
 	"log"
 	"strconv"
 
-	"database/sql"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/search"
@@ -18,55 +16,60 @@ import (
 // View interface defines the contract for different view implementations
 type View interface {
 	// GetAdIDs retrieves ad IDs for this view with appropriate search strategy
-	GetAdIDs() ([]int, string, error)
+	GetAdIDs() ([]int, uint64, error)
 
 	// RenderSearchResults renders the complete search results including container, ads, and pagination
-	RenderSearchResults(adIDs []int, nextCursor string) error
+	RenderSearchResults(adIDs []int, cursor uint64) error
 
 	// RenderSearchPage renders just the ads and infinite scroll for pagination
-	RenderSearchPage(adIDs []int, nextCursor string) error
+	RenderSearchPage(adIDs []int, cursor uint64) error
 }
 
 func HandleListView(c *fiber.Ctx) error {
-	return handleSearch(c, "list")
+	return handleSearch(c, ui.ViewList)
 }
 
 func HandleGridView(c *fiber.Ctx) error {
-	return handleSearch(c, "grid")
+	return handleSearch(c, ui.ViewGrid)
 }
 
 func HandleTreeView(c *fiber.Ctx) error {
-	return handleSearch(c, "tree")
+	return handleSearch(c, ui.ViewTree)
 }
 
 // saveUserSearchAndQueue saves user search and queues user for embedding update
 func saveUserSearchAndQueue(userID int, params map[string]string) {
-	if userPrompt != "" {
-		_ = search.SaveUserSearch(sql.NullInt64{Int64: int64(userID), Valid: userID != 0}, userPrompt)
-		if userID != 0 {
-			// Queue user for background embedding update
-			vector.QueueUserForUpdate(userID)
-		}
+	q := params["q"]
+	if q != "" {
+		_ = search.SaveUserSearch(userID, q)
+		// Queue user for background embedding update
+		vector.QueueUserForUpdate(userID)
 	}
 }
 
 // getAdIDs performs the common ad ID retrieval logic
-func getAdIDs(ctx *fiber.Ctx) ([]int, string, error) {
+func getAdIDs(ctx *fiber.Ctx) ([]int, uint64, error) {
 	q := ctx.Query("q")
-	cursor := ctx.Query("cursor")
+	cursorStr := ctx.Query("cursor")
 	userID := getUserID(ctx)
 	filter := buildSearchFilter(ctx)
 	threshold := config.QdrantSearchThreshold
 	k := config.QdrantSearchPageSize
 
-	adIDs, nextCursor, err := performSearch(q, userID, cursor, threshold, k, filter)
+	cursor, err := strconv.ParseUint(cursorStr, 10, 64)
+	if err != nil {
+		log.Printf("[getAdIDs] Failed to parse cursor offset: %v", err)
+		return nil, 0, err
+	}
+
+	adIDs, cursor, err := performSearch(q, userID, cursor, threshold, k, filter)
 
 	if err == nil {
 		log.Printf("[getAdIDs] ad IDs returned: %d", len(adIDs))
 		log.Printf("[getAdIDs] Final ad ID order: %v", adIDs)
 	}
 
-	return adIDs, nextCursor, err
+	return adIDs, cursor, err
 }
 
 // buildSearchFilter builds a combined Qdrant filter from all available filter parameters

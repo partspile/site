@@ -16,7 +16,7 @@ func NewTreeView(ctx *fiber.Ctx) *TreeView {
 	return &TreeView{ctx: ctx}
 }
 
-func (v *TreeView) GetAdIDs() ([]int, string, error) {
+func (v *TreeView) GetAdIDs() ([]int, uint64, error) {
 	// Check if any filters are applied (search query, location, make, year range, price range)
 	hasFilters := v.ctx.Query("q") != "" ||
 		v.ctx.Query("location") != "" ||
@@ -28,19 +28,19 @@ func (v *TreeView) GetAdIDs() ([]int, string, error) {
 
 	if !hasFilters {
 		// Browse mode - no search query and no filters, return empty slice for full tree
-		return []int{}, "", nil
+		return []int{}, 0, nil
 	}
 
 	// Search mode - get ad IDs from vector search for tree filtering
 	return getAdIDs(v.ctx)
 }
 
-func (v *TreeView) RenderSearchResults(adIDs []int, nextCursor string) error {
+func (v *TreeView) RenderSearchResults(adIDs []int, cursor uint64) error {
 	userPrompt := v.ctx.Query("q")
 	adCat := cookie.GetAdCategory(v.ctx)
 	return render(v.ctx, ui.TreeViewResults(adIDs, adCat, userPrompt))
 }
 
-func (v *TreeView) RenderSearchPage(adIDs []int, nextCursor string) error {
+func (v *TreeView) RenderSearchPage(adIDs []int, cursor uint64) error {
 	return nil
 }

@@ -204,14 +204,11 @@ func DeleteAdEmbedding(adID int) error {
 // QuerySimilarAdIDs queries Qdrant for similar ad IDs given an embedding
 // Returns a list of ad IDs, and a cursor for pagination
 // If filter is provided, it will be applied to the search
-func QuerySimilarAdIDs(embedding []float32, filter *qdrant.Filter, topK int, cursor string, threshold float64) ([]int, string, error) {
+func QuerySimilarAdIDs(embedding []float32, filter *qdrant.Filter, topK int, cursor uint64, threshold float64) ([]int, uint64, error) {
 	if qdrantClient == nil {
-		return nil, "", fmt.Errorf("Qdrant client not initialized")
+		return nil, 0, fmt.Errorf("Qdrant client not initialized")
 	}
 	ctx := context.Background()
-
-	// Parse cursor if provided
-	offset := DecodeCursor(cursor)
 
 	// Create search request using Query method
 	limit := uint64(topK)
@@ -221,7 +218,7 @@ func QuerySimilarAdIDs(embedding []float32, filter *qdrant.Filter, topK int, cur
 		Query:          qdrant.NewQueryDense(embedding),
 		Filter:         filter,
 		Limit:          &limit,
-		Offset:         &offset,
+		Offset:         &cursor,
 		ScoreThreshold: &scoreThreshold,
 		WithPayload: &qdrant.WithPayloadSelector{
 			SelectorOptions: &qdrant.WithPayloadSelector_Enable{Enable: true},
@@ -234,11 +231,11 @@ func QuerySimilarAdIDs(embedding []float32, filter *qdrant.Filter, topK int, cur
 	resp, err := qdrantClient.Query(ctx, queryRequest)
 	if err != nil {
 		if filter != nil {
-			return nil, "", fmt.Errorf("failed to query Qdrant with filter: %w", err)
+			return nil, 0, fmt.Errorf("failed to query Qdrant with filter: %w", err)
 		}
-		return nil, "", fmt.Errorf("failed to query Qdrant: %w", err)
+		return nil, 0, fmt.Errorf("failed to query Qdrant: %w", err)
 	}
-	log.Printf("[qdrant] Query returned %d results (requested %d, offset %d)", len(resp), topK, offset)
+	log.Printf("[qdrant] Query returned %d results (requested %d, offset %d)", len(resp), topK, cursor)
 
 	var results []int
 	for _, result := range resp {
@@ -249,16 +246,15 @@ func QuerySimilarAdIDs(embedding []float32, filter *qdrant.Filter, topK int, cur
 	}
 
 	// Generate next cursor if we have results
-	var nextCursor string
 	if len(results) > 0 {
-		nextOffset := offset + uint64(len(results))
-		nextCursor = EncodeCursor(nextOffset)
-		log.Printf("[qdrant] Generated next cursor: %s (offset: %d)", nextCursor, nextOffset)
+		cursor += uint64(len(results))
+		log.Printf("[qdrant] Generated next cursor: %d", cursor)
 	} else {
+		cursor = 0
 		log.Printf("[qdrant] No results, no next cursor generated")
 	}
 
-	return results, nextCursor, nil
+	return results, cursor, nil
 }
 
 // GetAdEmbeddings retrieves embeddings for multiple ad IDs from Qdrant in a single API call

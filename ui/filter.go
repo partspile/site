@@ -32,7 +32,7 @@ func filtersButton() g.Node {
 	return Button(
 		Type("button"),
 		Class("px-4 py-2 border border-blue-500 bg-white text-blue-500 rounded-full hover:bg-blue-50 whitespace-nowrap"),
-		hx.Get("/search-widget/true"),
+		hx.Get("/search-widget?show-filters=true"),
 		hx.Target("#searchWidget"),
 		hx.Swap("outerHTML"),
 		hx.Include("form"),
