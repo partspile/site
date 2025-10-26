@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/search"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -22,14 +23,17 @@ type View interface {
 }
 
 func HandleListView(c *fiber.Ctx) error {
+	cookie.SetView(c, ui.ViewList)
 	return handleSearch(c, ui.ViewList)
 }
 
 func HandleGridView(c *fiber.Ctx) error {
+	cookie.SetView(c, ui.ViewGrid)
 	return handleSearch(c, ui.ViewGrid)
 }
 
 func HandleTreeView(c *fiber.Ctx) error {
+	cookie.SetView(c, ui.ViewTree)
 	return handleSearch(c, ui.ViewTree)
 }
 

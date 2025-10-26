@@ -101,7 +101,6 @@ func ViewToggleButtons(activeView string) g.Node {
 			hx.Swap("outerHTML"),
 			hx.Include("form"),
 			hx.Trigger("click"),
-			hx.On("click", "document.getElementById('view-type-input').value = '"+view+"'"),
 			icon(view, alt),
 		)
 	}
@@ -118,6 +117,7 @@ func SearchContainer(userID, view, adCategory int, params map[string]string) g.N
 		ID("searchContainer"),
 		SearchWidget(userID, view, adCategory, params, false),
 		SearchResults(),
+		Script(g.Raw("document.getElementById('category-select-modal')?.remove();")),
 	)
 }
 

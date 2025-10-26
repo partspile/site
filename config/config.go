@@ -88,6 +88,9 @@ var (
 	// Server configuration
 	ServerPort = getEnvWithDefault("PORT", "8000")
 	BaseURL    = getEnvWithDefault("BASE_URL", "http://localhost:8000")
+
+	// Cookie security - set secure flag based on environment
+	CookieSecure = baseURLIsSecure()
 )
 
 // getEnvWithDefault returns the environment variable value or a default if not set
@@ -96,4 +99,8 @@ func getEnvWithDefault(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func baseURLIsSecure() bool {
+	return len(BaseURL) > 5 && BaseURL[:5] == "https"
 }

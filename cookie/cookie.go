@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -25,7 +26,7 @@ func SetView(c *fiber.Ctx, view int) {
 		Value:    strconv.Itoa(view),
 		MaxAge:   30 * 24 * 60 * 60, // 30 days
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   config.CookieSecure,
 		Path:     "/",
 		SameSite: "Strict",
 	})
@@ -53,7 +54,7 @@ func SetAdCategory(c *fiber.Ctx, adCategory int) {
 		Value:    strconv.Itoa(adCategory),
 		MaxAge:   30 * 24 * 60 * 60, // 30 days
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   config.CookieSecure,
 		Path:     "/",
 		SameSite: "Strict",
 	})
@@ -64,7 +65,8 @@ func SetJWT(c *fiber.Ctx, token string) {
 		Name:     "auth_token",
 		Value:    token,
 		HTTPOnly: true,
-		Secure:   true,
+		Secure:   config.CookieSecure,
+		Path:     "/",
 		SameSite: "Strict",
 		MaxAge:   24 * 60 * 60, // 24 hours
 	})

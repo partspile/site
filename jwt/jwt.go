@@ -12,16 +12,16 @@ import (
 var jwtSecret = []byte(config.JWTSecret)
 
 type claims struct {
-	userID   int    `json:"user_id"`
-	userName string `json:"user_name"`
+	UserID   int    `json:"user_id"`
+	UserName string `json:"user_name"`
 	jwt.RegisteredClaims
 }
 
 // GenerateToken creates a JWT token for a user
 func GenerateToken(u *user.User) (string, error) {
 	claims := claims{
-		userID:   u.ID,
-		userName: u.Name,
+		UserID:   u.ID,
+		UserName: u.Name,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -56,10 +56,10 @@ func ValidateToken(tokenString string) (*claims, error) {
 
 // GetUserID extracts the user ID from validated claims
 func GetUserID(claims *claims) int {
-	return claims.userID
+	return claims.UserID
 }
 
 // GetUserName extracts the username from validated claims
 func GetUserName(claims *claims) string {
-	return claims.userName
+	return claims.UserName
 }
