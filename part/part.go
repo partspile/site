@@ -124,22 +124,20 @@ func ClearPartCache() map[string]any {
 
 // buildAdCategoriesQuery builds the SQL query for finding categories that have existing ads for make/year/model/engine
 func buildAdCategoriesQuery(adCat int, makeName, year, model, engine string) (string, []interface{}) {
-	associationTable, vehicleTable, vehicleIDColumn := ad.GetTableInfo(adCat)
-
 	var query string
 	var args []interface{}
 
 	// Build common query parts
-	baseQuery := fmt.Sprintf(`
+	baseQuery := `
 		SELECT DISTINCT pc.name
 		FROM PartCategory pc
 		JOIN PartSubAdCategory psc ON pc.id = psc.category_id
 		JOIN Ad a ON psc.id = a.part_subcategory_id
-		JOIN %s ac ON a.id = ac.ad_id
-		JOIN %s c ON ac.%s_id = c.id
+		JOIN AdVehicle ac ON a.id = ac.ad_id
+		JOIN Vehicle c ON ac.vehicle_id = c.id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Model mo ON c.model_id = mo.id
-	`, associationTable, vehicleTable, vehicleIDColumn)
+	`
 
 	// Add conditional JOINs and WHERE clauses based on ad category
 	switch adCat {
@@ -180,22 +178,20 @@ func buildAdCategoriesQuery(adCat int, makeName, year, model, engine string) (st
 
 // buildAdSubCategoriesQuery builds the SQL query for finding subcategories that have existing ads for make/year/model/engine/category
 func buildAdSubCategoriesQuery(adCat int, makeName, year, model, engine, category string) (string, []interface{}) {
-	associationTable, vehicleTable, vehicleIDColumn := ad.GetTableInfo(adCat)
-
 	var query string
 	var args []interface{}
 
 	// Build common query parts
-	baseQuery := fmt.Sprintf(`
+	baseQuery := `
 		SELECT DISTINCT psc.name
 		FROM PartSubAdCategory psc
 		JOIN PartCategory pc ON psc.part_category_id = pc.id
 		JOIN Ad a ON psc.id = a.part_subcategory_id
-		JOIN %s ac ON a.id = ac.ad_id
-		JOIN %s c ON ac.%s_id = c.id
+		JOIN AdVehicle ac ON a.id = ac.ad_id
+		JOIN Vehicle c ON ac.vehicle_id = c.id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Model mo ON c.model_id = mo.id
-	`, associationTable, vehicleTable, vehicleIDColumn)
+	`
 
 	// Add conditional JOINs and WHERE clauses based on ad category
 	switch adCat {
@@ -320,8 +316,8 @@ func GetCategoriesForAds(adIDs []int, makeName, year, model, engine string) ([]s
 		FROM PartCategory pc
 		JOIN PartSubAdCategory psc ON pc.id = psc.category_id
 		JOIN Ad a ON psc.id = a.part_subcategory_id
-		JOIN AdCar ac ON a.id = ac.ad_id
-		JOIN Car c ON ac.car_id = c.id
+		JOIN AdVehicle ac ON a.id = ac.ad_id
+		JOIN Vehicle c ON ac.vehicle_id = c.id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Year y ON c.year_id = y.id
 		JOIN Model mo ON c.model_id = mo.id
@@ -369,8 +365,8 @@ func GetSubCategoriesForAds(adIDs []int, makeName, year, model, engine, category
 		FROM PartSubAdCategory psc
 		JOIN PartCategory pc ON psc.part_category_id = pc.id
 		JOIN Ad a ON psc.id = a.part_subcategory_id
-		JOIN AdCar ac ON a.id = ac.ad_id
-		JOIN Car c ON ac.car_id = c.id
+		JOIN AdVehicle ac ON a.id = ac.ad_id
+		JOIN Vehicle c ON ac.vehicle_id = c.id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Year y ON c.year_id = y.id
 		JOIN Model mo ON c.model_id = mo.id

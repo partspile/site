@@ -60,18 +60,51 @@ func addAdVehicleAssociations(tx *sql.Tx, ad AdDetail) error {
 	}
 }
 
+// findVehicle finds a vehicle ID from the unified Vehicle table
+func findVehicle(tx *sql.Tx, makeName, yearStr, modelName, engineName string, adCategoryID int) (int, error) {
+	// Use the unified Vehicle table
+	query := `
+		SELECT v.id FROM Vehicle v
+		JOIN Make m ON v.make_id = m.id
+		LEFT JOIN Year y ON v.year_id = y.id
+		JOIN Model mo ON v.model_id = mo.id
+		LEFT JOIN Engine e ON v.engine_id = e.id
+		WHERE m.name = ? AND mo.name = ? AND m.ad_category_id = ?
+		AND (? IS NULL OR y.year = ?) AND (? IS NULL OR e.name = ?)
+	`
+	var vehicleID int
+	var err error
+
+	if yearStr == "" && engineName == "" {
+		err = tx.QueryRow(query, makeName, modelName, adCategoryID, nil, nil, nil, nil).Scan(&vehicleID)
+	} else if yearStr == "" {
+		err = tx.QueryRow(query, makeName, modelName, adCategoryID, nil, nil, engineName, engineName).Scan(&vehicleID)
+	} else if engineName == "" {
+		err = tx.QueryRow(query, makeName, modelName, adCategoryID, yearStr, yearStr, nil, nil).Scan(&vehicleID)
+	} else {
+		err = tx.QueryRow(query, makeName, modelName, adCategoryID, yearStr, yearStr, engineName, engineName).Scan(&vehicleID)
+	}
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return 0, fmt.Errorf("vehicle not found for make=%s, year=%s, model=%s, engine=%s",
+				makeName, yearStr, modelName, engineName)
+		}
+		return 0, fmt.Errorf("error looking up vehicle: %w", err)
+	}
+	return vehicleID, nil
+}
+
 // addCarAssociations handles Cars: make, year, model, engine
 func addCarAssociations(tx *sql.Tx, ad AdDetail) error {
 	for _, yearStr := range ad.Years {
 		for _, modelName := range ad.Models {
 			for _, engineName := range ad.Engines {
-				vehicleID, err := findVehicleID(tx, "Car", ad.Make, yearStr,
-					modelName, engineName)
+				vehicleID, err := findVehicle(tx, ad.Make, yearStr, modelName, engineName, ad.AdCategoryID)
 				if err != nil {
 					return err
 				}
-				if err := insertVehicleAssociation(tx, ad.ID, "AdCar",
-					"car_id", vehicleID); err != nil {
+				if err := insertVehicleAssociation(tx, ad.ID, vehicleID); err != nil {
 					return err
 				}
 			}
@@ -85,13 +118,11 @@ func addMotorcycleAssociations(tx *sql.Tx, ad AdDetail) error {
 	for _, yearStr := range ad.Years {
 		for _, modelName := range ad.Models {
 			for _, engineName := range ad.Engines {
-				vehicleID, err := findVehicleID(tx, "Motorcycle", ad.Make, yearStr,
-					modelName, engineName)
+				vehicleID, err := findVehicle(tx, ad.Make, yearStr, modelName, engineName, ad.AdCategoryID)
 				if err != nil {
 					return err
 				}
-				if err := insertVehicleAssociation(tx, ad.ID, "AdMotorcycle",
-					"motorcycle_id", vehicleID); err != nil {
+				if err := insertVehicleAssociation(tx, ad.ID, vehicleID); err != nil {
 					return err
 				}
 			}
@@ -104,13 +135,11 @@ func addMotorcycleAssociations(tx *sql.Tx, ad AdDetail) error {
 func addAgAssociations(tx *sql.Tx, ad AdDetail) error {
 	for _, yearStr := range ad.Years {
 		for _, modelName := range ad.Models {
-			vehicleID, err := findAgVehicleID(tx, "Ag", ad.Make, yearStr,
-				modelName)
+			vehicleID, err := findVehicle(tx, ad.Make, yearStr, modelName, "", ad.AdCategoryID)
 			if err != nil {
 				return err
 			}
-			if err := insertVehicleAssociation(tx, ad.ID, "AdAg",
-				"ag_id", vehicleID); err != nil {
+			if err := insertVehicleAssociation(tx, ad.ID, vehicleID); err != nil {
 				return err
 			}
 		}
@@ -121,87 +150,23 @@ func addAgAssociations(tx *sql.Tx, ad AdDetail) error {
 // addBicycleAssociations handles Bicycles: make, model (no year, no engine)
 func addBicycleAssociations(tx *sql.Tx, ad AdDetail) error {
 	for _, modelName := range ad.Models {
-		vehicleID, err := findBicycleVehicleID(tx, "Bicycle", ad.Make,
-			modelName)
+		vehicleID, err := findVehicle(tx, ad.Make, "", modelName, "", ad.AdCategoryID)
 		if err != nil {
 			return err
 		}
-		if err := insertVehicleAssociation(tx, ad.ID, "AdBicycle",
-			"bicycle_id", vehicleID); err != nil {
+		if err := insertVehicleAssociation(tx, ad.ID, vehicleID); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// findVehicleID finds a vehicle ID for Cars/Motorcycles with make, year, model, engine
-func findVehicleID(tx *sql.Tx, vehicleTable, makeName, yearStr, modelName,
-	engineName string) (int, error) {
-	var vehicleID int
-	err := tx.QueryRow(fmt.Sprintf(`
-		SELECT v.id FROM %s v
-		JOIN Make m ON v.make_id = m.id
-		JOIN Year y ON v.year_id = y.id
-		JOIN Model mo ON v.model_id = mo.id
-		JOIN Engine e ON v.engine_id = e.id
-		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ?
-	`, vehicleTable), makeName, yearStr, modelName, engineName).Scan(&vehicleID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return 0, fmt.Errorf("vehicle not found for make=%s, year=%s, model=%s, engine=%s",
-				makeName, yearStr, modelName, engineName)
-		}
-		return 0, fmt.Errorf("error looking up vehicle: %w", err)
-	}
-	return vehicleID, nil
-}
-
-// findAgVehicleID finds a vehicle ID for Agricultural Equipment with make, year, model
-func findAgVehicleID(tx *sql.Tx, vehicleTable, makeName, yearStr, modelName string) (int, error) {
-	var vehicleID int
-	err := tx.QueryRow(fmt.Sprintf(`
-		SELECT v.id FROM %s v
-		JOIN Make m ON v.make_id = m.id
-		JOIN Year y ON v.year_id = y.id
-		JOIN Model mo ON v.model_id = mo.id
-		WHERE m.name = ? AND y.year = ? AND mo.name = ?
-	`, vehicleTable), makeName, yearStr, modelName).Scan(&vehicleID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return 0, fmt.Errorf("vehicle not found for make=%s, year=%s, model=%s",
-				makeName, yearStr, modelName)
-		}
-		return 0, fmt.Errorf("error looking up vehicle: %w", err)
-	}
-	return vehicleID, nil
-}
-
-// findBicycleVehicleID finds a vehicle ID for Bicycles with make, model
-func findBicycleVehicleID(tx *sql.Tx, vehicleTable, makeName, modelName string) (int, error) {
-	var vehicleID int
-	err := tx.QueryRow(fmt.Sprintf(`
-		SELECT v.id FROM %s v
-		JOIN Make m ON v.make_id = m.id
-		JOIN Model mo ON v.model_id = mo.id
-		WHERE m.name = ? AND mo.name = ?
-	`, vehicleTable), makeName, modelName).Scan(&vehicleID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return 0, fmt.Errorf("vehicle not found for make=%s, model=%s",
-				makeName, modelName)
-		}
-		return 0, fmt.Errorf("error looking up vehicle: %w", err)
-	}
-	return vehicleID, nil
-}
-
 // insertVehicleAssociation inserts the ad-vehicle association record
-func insertVehicleAssociation(tx *sql.Tx, adID int, associationTable, columnName string,
-	vehicleID int) error {
-	_, err := tx.Exec(fmt.Sprintf("INSERT OR IGNORE INTO %s (ad_id, %s) VALUES (?, ?)",
-		associationTable, columnName), adID, vehicleID)
+func insertVehicleAssociation(tx *sql.Tx, adID int, vehicleID int) error {
+	_, err := tx.Exec("INSERT OR IGNORE INTO AdVehicle (ad_id, vehicle_id) VALUES (?, ?)",
+		adID, vehicleID)
 	if err != nil {
-		return fmt.Errorf("failed to insert %s association: %w", associationTable, err)
+		return fmt.Errorf("failed to insert AdVehicle association: %w", err)
 	}
 	return nil
 }

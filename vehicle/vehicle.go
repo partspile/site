@@ -138,9 +138,9 @@ func buildMakesQuery(adCat int) (string, []interface{}) {
 
 // buildYearsQuery builds the SQL query for getting years for a specific make and category
 func buildYearsQuery(adCat int, makeName string) (string, []interface{}) {
-	query := `SELECT DISTINCT Year.year FROM Car
-	JOIN Make ON Car.make_id = Make.id
-	JOIN Year ON Car.year_id = Year.id
+	query := `SELECT DISTINCT Year.year FROM Vehicle
+	JOIN Make ON Vehicle.make_id = Make.id
+	JOIN Year ON Vehicle.year_id = Year.id
 	WHERE Make.name = ? AND Make.ad_category_id = ? AND Year.ad_category_id = ?
 	ORDER BY Year.year`
 	args := []interface{}{makeName, adCat, adCat}
@@ -153,18 +153,18 @@ func buildModelsQuery(adCat int, makeName string, years []string) (string, []int
 	// Build a query that finds models present in every selected year
 	query := `SELECT DISTINCT Model.name FROM Model
 	WHERE Model.id IN (
-		SELECT Car.model_id FROM Car
-		JOIN Make ON Car.make_id = Make.id
-		JOIN Year ON Car.year_id = Year.id
+		SELECT Vehicle.model_id FROM Vehicle
+		JOIN Make ON Vehicle.make_id = Make.id
+		JOIN Year ON Vehicle.year_id = Year.id
 		WHERE Make.name = ? AND Year.year = ? AND Make.ad_category_id = ? AND Year.ad_category_id = ? AND Model.ad_category_id = ?
 	)`
 
 	// Add additional year conditions for intersection
 	for i := 1; i < len(years); i++ {
 		query += ` AND Model.id IN (
-			SELECT Car.model_id FROM Car
-			JOIN Make ON Car.make_id = Make.id
-			JOIN Year ON Car.year_id = Year.id
+			SELECT Vehicle.model_id FROM Vehicle
+			JOIN Make ON Vehicle.make_id = Make.id
+			JOIN Year ON Vehicle.year_id = Year.id
 			WHERE Make.name = ? AND Year.year = ? AND Make.ad_category_id = ? AND Year.ad_category_id = ? AND Model.ad_category_id = ?
 		)`
 	}
@@ -194,10 +194,10 @@ func buildEnginesQuery(adCat int, makeName string, years []string, models []stri
 
 	query := `SELECT DISTINCT Engine.name FROM Engine
 	WHERE Engine.id IN (
-		SELECT Car.engine_id FROM Car
-		JOIN Make ON Car.make_id = Make.id
-		JOIN Model ON Car.model_id = Model.id
-		JOIN Year ON Car.year_id = Year.id
+		SELECT Vehicle.engine_id FROM Vehicle
+		JOIN Make ON Vehicle.make_id = Make.id
+		JOIN Model ON Vehicle.model_id = Model.id
+		JOIN Year ON Vehicle.year_id = Year.id
 		WHERE Make.name = ? AND Year.year = ? AND Model.name = ? AND Make.ad_category_id = ? AND Year.ad_category_id = ? AND Model.ad_category_id = ? AND Engine.ad_category_id = ?
 	)`
 
@@ -208,10 +208,10 @@ func buildEnginesQuery(adCat int, makeName string, years []string, models []stri
 		for j := 0; j < len(models); j++ {
 			if combinationCount > 0 {
 				query += ` AND Engine.id IN (
-					SELECT Car.engine_id FROM Car
-					JOIN Make ON Car.make_id = Make.id
-					JOIN Model ON Car.model_id = Model.id
-					JOIN Year ON Car.year_id = Year.id
+					SELECT Vehicle.engine_id FROM Vehicle
+					JOIN Make ON Vehicle.make_id = Make.id
+					JOIN Model ON Vehicle.model_id = Model.id
+					JOIN Year ON Vehicle.year_id = Year.id
 					WHERE Make.name = ? AND Year.year = ? AND Model.name = ? AND Make.ad_category_id = ? AND Year.ad_category_id = ? AND Model.ad_category_id = ? AND Engine.ad_category_id = ?
 				)`
 			}
@@ -372,8 +372,8 @@ func GetAdMakesForAdIDs(adIDs []int) ([]string, error) {
 	query := fmt.Sprintf(`
 		SELECT DISTINCT m.name
 		FROM Make m
-		JOIN Car c ON m.id = c.make_id
-		JOIN AdCar ac ON c.id = ac.car_id
+		JOIN Vehicle c ON m.id = c.make_id
+		JOIN AdVehicle ac ON c.id = ac.vehicle_id
 		WHERE ac.ad_id IN (%s)
 		ORDER BY m.name
 	`, strings.Join(placeholders, ","))
@@ -423,9 +423,9 @@ func GetAdYearsForAdIDs(adIDs []int, makeName string) ([]string, error) {
 	query := fmt.Sprintf(`
 		SELECT DISTINCT y.year
 		FROM Year y
-		JOIN Car c ON y.id = c.year_id
+		JOIN Vehicle c ON y.id = c.year_id
 		JOIN Make m ON c.make_id = m.id
-		JOIN AdCar ac ON c.id = ac.car_id
+		JOIN AdVehicle ac ON c.id = ac.vehicle_id
 		WHERE m.name = ? AND ac.ad_id IN (%s)
 		ORDER BY y.year DESC
 	`, strings.Join(placeholders, ","))
@@ -483,10 +483,10 @@ func GetAdModelsForAdIDs(adIDs []int, makeName, year string) ([]string, error) {
 	query := fmt.Sprintf(`
 		SELECT DISTINCT mo.name
 		FROM Model mo
-		JOIN Car c ON mo.id = c.model_id
+		JOIN Vehicle c ON mo.id = c.model_id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Year y ON c.year_id = y.id
-		JOIN AdCar ac ON c.id = ac.car_id
+		JOIN AdVehicle ac ON c.id = ac.vehicle_id
 		WHERE m.name = ? AND y.year = ? AND ac.ad_id IN (%s)
 		ORDER BY mo.name
 	`, strings.Join(placeholders, ","))
@@ -540,11 +540,11 @@ func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, 
 	query := fmt.Sprintf(`
 		SELECT DISTINCT e.name
 		FROM Engine e
-		JOIN Car c ON e.id = c.engine_id
+		JOIN Vehicle c ON e.id = c.engine_id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Year y ON c.year_id = y.id
 		JOIN Model mo ON c.model_id = mo.id
-		JOIN AdCar ac ON c.id = ac.car_id
+		JOIN AdVehicle ac ON c.id = ac.vehicle_id
 		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND ac.ad_id IN (%s)
 		ORDER BY e.name
 	`, strings.Join(placeholders, ","))
@@ -612,8 +612,8 @@ func getMakesForAll(adCat int) ([]string, error) {
 	query := `
 		SELECT DISTINCT m.name
 		FROM Make m
-		JOIN Car c ON m.id = c.make_id
-		JOIN AdCar ac ON c.id = ac.car_id
+		JOIN Vehicle c ON m.id = c.make_id
+		JOIN AdVehicle ac ON c.id = ac.vehicle_id
 		JOIN Ad a ON ac.ad_id = a.id
 		WHERE a.ad_category_id = ?
 		ORDER BY m.name
@@ -629,9 +629,9 @@ func getYearsForAll(adCat int, makeName string) ([]string, error) {
 	query := `
 		SELECT DISTINCT y.year
 		FROM Year y
-		JOIN Car c ON y.id = c.year_id
+		JOIN Vehicle c ON y.id = c.year_id
 		JOIN Make m ON c.make_id = m.id
-		JOIN AdCar ac ON c.id = ac.car_id
+		JOIN AdVehicle ac ON c.id = ac.vehicle_id
 		JOIN Ad a ON ac.ad_id = a.id
 		WHERE m.name = ? AND a.ad_category_id = ?
 		ORDER BY y.year DESC
@@ -656,10 +656,10 @@ func getModelsForAll(adCat int, makeName, year string) ([]string, error) {
 	query := `
 		SELECT DISTINCT mo.name
 		FROM Model mo
-		JOIN Car c ON mo.id = c.model_id
+		JOIN Vehicle c ON mo.id = c.model_id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Year y ON c.year_id = y.id
-		JOIN AdCar ac ON c.id = ac.car_id
+		JOIN AdVehicle ac ON c.id = ac.vehicle_id
 		JOIN Ad a ON ac.ad_id = a.id
 		WHERE m.name = ? AND y.year = ? AND a.ad_category_id = ?
 		ORDER BY mo.name
@@ -677,11 +677,11 @@ func getEnginesForAll(adCat int, makeName, year, model string) ([]string, error)
 	query := `
 		SELECT DISTINCT e.name
 		FROM Engine e
-		JOIN Car c ON e.id = c.engine_id
+		JOIN Vehicle c ON e.id = c.engine_id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Year y ON c.year_id = y.id
 		JOIN Model mo ON c.model_id = mo.id
-		JOIN AdCar ac ON c.id = ac.car_id
+		JOIN AdVehicle ac ON c.id = ac.vehicle_id
 		JOIN Ad a ON ac.ad_id = a.id
 		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND a.ad_category_id = ?
 		ORDER BY e.name

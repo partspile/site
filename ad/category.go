@@ -67,23 +67,6 @@ func CategoryDisplayName(adCategory int) string {
 	return "Unknown Category"
 }
 
-// GetTableInfo returns the association table, vehicle table, and vehicle ID column for a given ad category
-func GetTableInfo(adCategory int) (associationTable, vehicleTable, vehicleIDColumn string) {
-	switch adCategory {
-	case AdCategoryCar, AdCategoryCarPart:
-		return "AdCar", "Car", "car"
-	case AdCategoryMotorcycle, AdCategoryMotorcyclePart:
-		return "AdMotorcycle", "Motorcycle", "motorcycle"
-	case AdCategoryBicycle, AdCategoryBicyclePart:
-		return "AdBicycle", "Bicycle", "bicycle"
-	case AdCategoryAg, AdCategoryAgPart:
-		return "AdAg", "Ag", "ag"
-	default:
-		// Default fallback to car
-		return "AdCar", "Car", "car"
-	}
-}
-
 // HasYears returns true if the vehicle type for this category has years
 func HasYears(adCategory int) bool {
 	return adCategory != AdCategoryBicycle && adCategory != AdCategoryBicyclePart

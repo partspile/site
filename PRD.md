@@ -308,7 +308,7 @@ The platform supports multiple ad categories, each with appropriate vehicle/part
   - Archived data includes:
     - User profiles (marked with deleted_at in User table)
     - User's ads (marked with deleted_at in Ad table)
-    - Vehicle associations remain intact in the single AdCar table
+    - Vehicle associations remain intact in the single AdVehicle table
   - Benefits of soft delete approach:
     - No data duplication between active and archived tables
     - Simpler database schema and maintenance
@@ -423,12 +423,12 @@ The platform is built with the following technologies:
 - **Year**: id, year
 - **Model**: id, name
 - **Engine**: id, name
-- **Car**: id, make_id, year_id, model_id, engine_id
+- **Vehicle**: id, ad_category_id, make_id, year_id, model_id, engine_id
 - **PartCategory**: id, name
 - **PartSubCategory**: id, category_id, name
 - **Location**: id, raw_text, city, admin_area, country, latitude, longitude
 - **Ad**: id, title, description, price, created_at, deleted_at, subcategory_id, user_id, location_id, image_count, click_count, last_clicked_at, has_vector
-- **AdCar**: ad_id, car_id (single table for all vehicle associations)
+- **AdVehicle**: ad_id, vehicle_id (single table for all vehicle associations)
 - **User**: id, name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin, deleted_at
 - **UserSearch**: id, user_id (nullable), query_string, created_at
 
@@ -441,7 +441,7 @@ The platform is built with the following technologies:
 ### Data Archiving Strategy
 - **Soft Delete for Ads**: Ads are marked as archived by setting `deleted_at` timestamp instead of being moved to separate tables
 - **Soft Delete for Users**: Users are marked as archived by setting `deleted_at` timestamp instead of being moved to separate tables
-- **Unified Vehicle Data**: All vehicle associations remain in the single `AdCar` table, accessible for both active and archived ads
+- **Unified Vehicle Data**: All vehicle associations remain in the single `AdVehicle` table, accessible for both active and archived ads
 - **Benefits**: 
   - Eliminates data duplication between active and archived states
   - Simplifies database schema and maintenance
@@ -466,7 +466,7 @@ The platform is built with the following technologies:
   - `GetArchivedAd()` uses unified `getAd()` function then loads `deleted_at` separately
   - `GetArchivedUser()` uses unified `getUser()` function then loads `deleted_at` separately
   - Archive/Restore operations use simple UPDATE statements instead of complex table operations
-- **Database Schema**: Simplified from separate `ArchivedAd`/`ArchivedAdCar` and `ArchivedUser` tables to single tables with soft delete
+- **Database Schema**: Simplified from separate `ArchivedAd`/`ArchivedAdVehicle` and `ArchivedUser` tables to single tables with soft delete
 
 ### Database Layer Implementation (sqlx)
 - **sqlx Integration**: The system uses [sqlx](https://github.com/jmoiron/sqlx) for enhanced database operations with automatic struct scanning and reduced boilerplate code.
