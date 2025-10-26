@@ -19,11 +19,11 @@ const (
 )
 
 // Cached ad category names map
-var AdCategoryNames map[int]string
+var adCategoryNames map[int]string
 
-// SetAdCategoryNames populates the cached AdCategoryNames map from the database
+// SetAdCategoryNames populates the cached adCategoryNames map from the database
 func SetAdCategoryNames() {
-	AdCategoryNames = make(map[int]string)
+	adCategoryNames = make(map[int]string)
 
 	rows, err := db.Query("SELECT id, name FROM AdCategory ORDER BY id")
 	if err != nil {
@@ -39,32 +39,43 @@ func SetAdCategoryNames() {
 			log.Printf("Failed to scan AdCategory row: %v", err)
 			continue
 		}
-		AdCategoryNames[id] = name
+		adCategoryNames[id] = name
 	}
 }
 
-// CategoryIcon returns the appropriate icon for the category
-func CategoryIcon(adCategory int) string {
-	switch adCategory {
-	case AdCategoryCar, AdCategoryCarPart:
-		return "/images/car.svg"
-	case AdCategoryMotorcycle, AdCategoryMotorcyclePart:
-		return "/images/motorcycle.svg"
-	case AdCategoryBicycle, AdCategoryBicyclePart:
-		return "/images/bicycle.svg"
-	case AdCategoryAg, AdCategoryAgPart:
-		return "/images/ag.svg"
-	default:
-		return "/images/car.svg" // Default fallback
+// GetCategoryIDs returns all category IDs in order
+func GetCategoryIDs() []int {
+	var ids []int
+	for i := 1; ; i++ {
+		if _, exists := adCategoryNames[i]; !exists {
+			break
+		}
+		ids = append(ids, i)
 	}
+	return ids
 }
 
-// CategoryDisplayName returns the display name for a category ID
-func CategoryDisplayName(adCategory int) string {
-	if name, exists := AdCategoryNames[adCategory]; exists {
+// GetCategoryNames returns all category names in order
+func GetCategoryNames() []string {
+	var names []string
+	for _, id := range GetCategoryIDs() {
+		names = append(names, GetCategoryName(id))
+	}
+	return names
+}
+
+// GetCategoryName returns the name for a category ID
+func GetCategoryName(categoryID int) string {
+	if name, exists := adCategoryNames[categoryID]; exists {
 		return name
 	}
 	return "Unknown Category"
+}
+
+// IsValidCategory returns true if the category ID is valid
+func IsValidCategory(categoryID int) bool {
+	_, exists := adCategoryNames[categoryID]
+	return exists
 }
 
 // HasYears returns true if the vehicle type for this category has years

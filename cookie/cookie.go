@@ -40,8 +40,8 @@ func GetAdCategory(c *fiber.Ctx) int {
 		return ad.AdCategoryCarPart
 	}
 
-	// Check if the category ID exists in our cached map
-	if _, exists := ad.AdCategoryNames[categoryID]; exists {
+	// Check if the category ID exists
+	if ad.IsValidCategory(categoryID) {
 		return categoryID
 	}
 

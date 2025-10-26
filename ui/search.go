@@ -13,8 +13,7 @@ import (
 
 func createAdCategoryItems(activeCat int) []g.Node {
 	var adCatItems []g.Node
-	for adCat := range ad.AdCategoryNames {
-
+	for _, adCat := range ad.GetCategoryIDs() {
 		isActive := adCat == activeCat
 		itemClass := "flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer rounded-lg transition-colors "
 		if isActive {
@@ -30,12 +29,12 @@ func createAdCategoryItems(activeCat int) []g.Node {
 			Div(
 				Class("p-2 bg-gray-200 rounded-full flex items-center justify-center"),
 				Img(
-					Src(ad.CategoryIcon(adCat)),
+					Src(adCategoryIcon(adCat)),
 					Alt("Category icon"),
 					Class("w-6 h-6"),
 				),
 			),
-			Span(Class("text-gray-700 flex-1"), g.Text(ad.CategoryDisplayName(adCat))),
+			Span(Class("text-gray-700 flex-1"), g.Text(ad.GetCategoryName(adCat))),
 		)
 		adCatItems = append(adCatItems, item)
 	}
@@ -227,11 +226,11 @@ func adCatButton(adCategory int) g.Node {
 				hx.Target("body"),
 				hx.Swap("beforeend"),
 				Img(
-					Src(ad.CategoryIcon(adCategory)),
+					Src(adCategoryIcon(adCategory)),
 					Alt("Category icon"),
 					Class("w-6 h-6"),
 				),
-				Span(g.Text(ad.CategoryDisplayName(adCategory))),
+				Span(g.Text(ad.GetCategoryName(adCategory))),
 			),
 		),
 	)

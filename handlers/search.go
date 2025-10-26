@@ -350,7 +350,7 @@ func HandleSwitchAdCategory(c *fiber.Ctx) error {
 	}
 
 	// Validate that the category exists
-	if _, exists := ad.AdCategoryNames[adCategory]; !exists {
+	if !ad.IsValidCategory(adCategory) {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid ad category")
 	}
 

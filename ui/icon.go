@@ -70,3 +70,19 @@ func largeIcon(iconSrc, alt string, size string) g.Node {
 		Class(fmt.Sprintf("w-%s h-%s", size, size)),
 	)
 }
+
+// adCategoryIcon returns the appropriate icon path for an ad category ID
+func adCategoryIcon(adCategory int) string {
+	switch adCategory {
+	case 1, 2: // AdCategoryCar, AdCategoryCarPart
+		return "/images/car.svg"
+	case 3, 4: // AdCategoryMotorcycle, AdCategoryMotorcyclePart
+		return "/images/motorcycle.svg"
+	case 5, 6: // AdCategoryBicycle, AdCategoryBicyclePart
+		return "/images/bicycle.svg"
+	case 7, 8: // AdCategoryAg, AdCategoryAgPart
+		return "/images/ag.svg"
+	default:
+		return "/images/car.svg" // Default fallback
+	}
+}

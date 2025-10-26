@@ -114,7 +114,7 @@ func main() {
 	}
 
 	// Get CarParts category ID for use throughout the script
-	carPartsCategoryID := categoryMap["Car Parts"]
+	carPartsCategoryID := categoryMap["Cars & Trucks Parts"]
 
 	// Import parent.json
 	parentData, err := os.ReadFile(parentFile)
@@ -268,7 +268,6 @@ func main() {
 
 		// Insert make with parent company relationship and category
 		var makeID int
-		carPartsCategoryID := categoryMap["Car Parts"]
 		if parentCompanyID != nil {
 			makeID = getOrInsertWithParentAndCategory(database, "Make", "name", make, *parentCompanyID, carPartsCategoryID)
 		} else {

@@ -1,10 +1,10 @@
 [
-  {"name": "Car/Truck"},
-  {"name": "Car/Truck Parts"},
+  {"name": "Cars & Trucks"},
+  {"name": "Cars & Trucks Parts"},
   {"name": "Motorcycles"},
   {"name": "Motorcycle Parts"},
-  {"name": "Bicycle"},
+  {"name": "Bicycles"},
   {"name": "Bicycle Parts"},
-  {"name": "Ag Equipment"},
-  {"name": "Ag Equipment Parts"}
+  {"name": "Agricultural Equipment"},
+  {"name": "Agricultural Equipment Parts"}
 ]
