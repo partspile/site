@@ -148,18 +148,12 @@ func GetConversationWithDetails(id int) (Conversation, error) {
 		ORDER BY created_at DESC 
 		LIMIT 1
 	`, id)
-	var lastMessage sql.NullString
-	var lastMessageAt sql.NullString
+	var lastMessage string
+	var lastMessageAt time.Time
 	err = row.Scan(&lastMessage, &lastMessageAt)
 	if err == nil {
-		if lastMessage.Valid {
-			conv.LastMessage = &lastMessage.String
-		}
-		if lastMessageAt.Valid {
-			if parsedTime, parseErr := time.Parse(time.RFC3339Nano, lastMessageAt.String); parseErr == nil {
-				conv.LastMessageAt = &parsedTime
-			}
-		}
+		conv.LastMessage = &lastMessage
+		conv.LastMessageAt = &lastMessageAt
 	}
 
 	return conv, nil

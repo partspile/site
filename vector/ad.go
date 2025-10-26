@@ -126,9 +126,9 @@ Quality Indicator: %s`
 		joinStrings(adObj.Models),
 		joinStrings(adObj.Engines),
 		adObj.PartCategory,
-		adObj.City.String,
-		adObj.AdminArea.String,
-		adObj.Country.String,
+		adObj.City,
+		adObj.AdminArea,
+		adObj.Country,
 		rockContext,
 	)
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vehicle"
@@ -68,8 +69,7 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 	path := c.Params("*")
 	name, level, parts := parsePath(path)
 
-	// Get category from query parameter
-	category := AdCategory(c)
+	category := cookie.GetAdCategory(c)
 
 	// Browse mode: No ad IDs filtering needed
 	log.Printf("[tree-view] Browse mode: no ad ID filtering")

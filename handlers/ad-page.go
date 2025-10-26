@@ -16,16 +16,16 @@ func HandleAdPage(c *fiber.Ctx) error {
 	userID := getUserID(c)
 	userName := getUserName(c)
 
-	ad, err := ad.GetAdDetailByID(adID, userID)
+	a, err := ad.GetAdDetailByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
 	// If ad is deleted and user is not the owner, show deleted message
-	if ad.IsArchived() && ad.UserID != userID {
+	if a.IsArchived() && a.UserID != userID {
 		return render(c, ui.AdDeletedPage(userID, userName, c.Path()))
 	}
 
 	// Owner can see their deleted ads, or anyone can see active ads
-	return render(c, ui.AdPage(ad, userID, userName, c.Path(), getLocation(c)))
+	return render(c, ui.AdPage(*a, userID, userName, c.Path(), getLocation(c)))
 }

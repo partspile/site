@@ -14,10 +14,10 @@ func HandleShareModal(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	adObj, err := ad.GetAdByID(adID, userID)
+	a, err := ad.GetAdByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	return render(c, ui.ShareModal(*adObj))
+	return render(c, ui.ShareModal(*a, userID))
 }

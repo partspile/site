@@ -16,13 +16,13 @@ func HandleAdDetail(c *fiber.Ctx) error {
 	}
 
 	userID := getUserID(c)
-	adObj, err := ad.GetAdDetailByID(adID, userID)
+	a, err := ad.GetAdDetailByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
 	// Only increment click counts for non-deleted ads
-	if !adObj.IsArchived() {
+	if !a.IsArchived() {
 		_ = ad.IncrementAdClick(adID)
 		if userID != 0 {
 			_ = ad.IncrementAdClickForUser(adID, userID)
@@ -32,9 +32,8 @@ func HandleAdDetail(c *fiber.Ctx) error {
 	}
 
 	loc := getLocation(c)
-	view := cookie.GetView(c)
 
-	return render(c, ui.AdDetail(adObj, userID, view, loc))
+	return render(c, ui.AdDetail(*a, userID, loc))
 }
 
 // HandleAdCollapse handles ad collapse
@@ -44,17 +43,17 @@ func HandleAdCollapse(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 	userID := getUserID(c)
-	adObj, err := ad.GetAdByID(adID, userID)
+	a, err := ad.GetAdByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 	loc := getLocation(c)
-	view := getView(c)
+	view := cookie.GetView(c)
 	switch view {
-	case "list", "tree":
-		return render(c, ui.AdListNode(*adObj, userID, loc))
-	case "grid":
-		return render(c, ui.AdGridNode(*adObj, userID, loc))
+	case ui.ViewList, ui.ViewTree:
+		return render(c, ui.AdListNode(*a, userID, loc))
+	case ui.ViewGrid:
+		return render(c, ui.AdGridNode(*a, userID, loc))
 	}
 	return nil
 }

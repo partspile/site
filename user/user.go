@@ -1,7 +1,6 @@
 package user
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -96,33 +95,29 @@ func GetUserByID(id int) (User, UserStatus, bool) {
 
 // GetUserByPhone retrieves a user by phone number
 func GetUserByPhone(phone string) (User, error) {
-	row := db.QueryRow(`SELECT id, name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin, deleted_at FROM User WHERE phone = ? AND deleted_at IS NULL`, phone)
+	row := db.QueryRow(`SELECT id, name, phone, password_hash,
+		password_salt, password_algo, phone_verified, verification_code,
+		notification_method, email_address, created_at, is_admin, deleted_at
+		FROM User WHERE phone = ? AND deleted_at IS NULL`, phone)
 	var u User
-	var createdAt string
+	var createdAt time.Time
 	var isAdmin int
 	var phoneVerified int
 	var verificationCode *string
 	var notificationMethod string
 	var emailAddress *string
-	var deletedAt sql.NullString
+	var deletedAt *time.Time
 	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &emailAddress, &createdAt, &isAdmin, &deletedAt)
 	if err != nil {
 		return User{}, err
 	}
-	u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+	u.CreatedAt = createdAt
 	u.IsAdmin = isAdmin == 1
 	u.PhoneVerified = phoneVerified == 1
 	u.VerificationCode = verificationCode
 	u.NotificationMethod = notificationMethod
 	u.EmailAddress = emailAddress
-
-	// Parse deleted_at field
-	if deletedAt.Valid && deletedAt.String != "" {
-		if parsedTime, err := time.Parse(time.RFC3339Nano, deletedAt.String); err == nil {
-			u.DeletedAt = &parsedTime
-		}
-	}
-
+	u.DeletedAt = deletedAt
 	return u, nil
 }
 
@@ -130,30 +125,24 @@ func GetUserByPhone(phone string) (User, error) {
 func GetUser(id int) (User, error) {
 	row := db.QueryRow(`SELECT id, name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin, deleted_at FROM User WHERE id = ?`, id)
 	var u User
-	var createdAt string
+	var createdAt time.Time
 	var isAdmin int
 	var phoneVerified int
 	var verificationCode *string
 	var notificationMethod string
 	var emailAddress *string
-	var deletedAt sql.NullString
+	var deletedAt *time.Time
 	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &emailAddress, &createdAt, &isAdmin, &deletedAt)
 	if err != nil {
 		return User{}, err
 	}
-	u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+	u.CreatedAt = createdAt
 	u.IsAdmin = isAdmin == 1
 	u.PhoneVerified = phoneVerified == 1
 	u.VerificationCode = verificationCode
 	u.NotificationMethod = notificationMethod
 	u.EmailAddress = emailAddress
-
-	// Parse deleted_at field
-	if deletedAt.Valid && deletedAt.String != "" {
-		if parsedTime, err := time.Parse(time.RFC3339Nano, deletedAt.String); err == nil {
-			u.DeletedAt = &parsedTime
-		}
-	}
+	u.DeletedAt = deletedAt
 
 	return u, nil
 }
@@ -165,30 +154,24 @@ func GetUserByName(name string) (User, error) {
 		notification_method, email_address, created_at, is_admin, deleted_at
 		FROM User WHERE name = ? AND deleted_at IS NULL`, name)
 	var u User
-	var createdAt string
+	var createdAt time.Time
 	var isAdmin int
 	var phoneVerified int
 	var verificationCode *string
 	var notificationMethod string
 	var emailAddress *string
-	var deletedAt sql.NullString
+	var deletedAt *time.Time
 	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &emailAddress, &createdAt, &isAdmin, &deletedAt)
 	if err != nil {
 		return User{}, err
 	}
-	u.CreatedAt, _ = time.Parse(time.RFC3339Nano, createdAt)
+	u.CreatedAt = createdAt
 	u.IsAdmin = isAdmin == 1
 	u.PhoneVerified = phoneVerified == 1
 	u.VerificationCode = verificationCode
 	u.NotificationMethod = notificationMethod
 	u.EmailAddress = emailAddress
-
-	// Parse deleted_at field
-	if deletedAt.Valid && deletedAt.String != "" {
-		if parsedTime, err := time.Parse(time.RFC3339Nano, deletedAt.String); err == nil {
-			u.DeletedAt = &parsedTime
-		}
-	}
+	u.DeletedAt = deletedAt
 
 	return u, nil
 }

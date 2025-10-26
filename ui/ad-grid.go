@@ -13,21 +13,21 @@ import (
 )
 
 // AdGridNode renders a grid view of ad
-func AdGridNode(adObj *ad.AdDetail, userID int, loc *time.Location) g.Node {
+func AdGridNode(a ad.Ad, userID int, loc *time.Location) g.Node {
 	var containerClass string = "flex flex-col cursor-pointer"
-	if adObj.IsArchived() {
+	if a.IsArchived() {
 		containerClass += " bg-red-100"
 	}
 
 	return Div(
-		ID(adID(adObj.Ad)),
+		ID(adID(a)),
 		Class(containerClass),
 
-		hx.Get(fmt.Sprintf("/ad/detail/%d?view=grid", adObj.ID)),
-		hx.Target(adTarget(adObj.Ad)),
+		hx.Get(fmt.Sprintf("/ad/detail/%d?view=grid", a.ID)),
+		hx.Target(adTarget(a)),
 		hx.Swap("outerHTML show:bottom"),
 
-		gridImageNode(adObj.Ad),
+		gridImageNode(a),
 		Div(
 			Class("p-2 flex flex-col gap-1"),
 
@@ -37,19 +37,19 @@ func AdGridNode(adObj *ad.AdDetail, userID int, loc *time.Location) g.Node {
 				Div(
 					Class("text-green-600 font-semibold text-base"),
 					Class("font-semibold text-base"),
-					priceNode(adObj.Ad),
+					priceNode(a),
 				),
-				g.If(userID != 0, BookmarkButton(&adObj.Ad)),
+				g.If(userID != 0, BookmarkButton(a)),
 			),
 
 			// Title
-			titleNode(adObj.Ad),
+			titleNode(a),
 
 			// Age and location row
 			Div(
 				Class("flex flex-row items-center justify-between text-xs text-gray-500"),
-				ageNode(adObj.Ad, loc),
-				location(adObj.Ad),
+				ageNode(a, loc),
+				location(a),
 			),
 		),
 	)
@@ -86,35 +86,35 @@ func gridNoImage() g.Node {
 	)
 }
 
-func gridImageNode(ad ad.Ad) g.Node {
-	if ad.ImageCount == 0 {
+func gridImageNode(a ad.Ad) g.Node {
+	if a.ImageCount == 0 {
 		return gridNoImage()
 	}
-	return gridImageWithNav(ad, 1)
+	return gridImageWithNav(a, 1)
 }
 
-func gridImageWithNav(ad ad.Ad, currentIdx int) g.Node {
-	containerID := fmt.Sprintf("grid-image-container-%d", ad.ID)
+func gridImageWithNav(a ad.Ad, currentIdx int) g.Node {
+	containerID := fmt.Sprintf("grid-image-container-%d", a.ID)
 
 	return Div(
 		ID(containerID),
 		Class("relative group"),
-		gridImageWithIndex(ad.ID, currentIdx, ad.Title),
-		g.If(ad.ImageCount > 1, gridNavButtons(ad, currentIdx)),
+		gridImageWithIndex(a.ID, currentIdx, a.Title),
+		g.If(a.ImageCount > 1, gridNavButtons(a, currentIdx)),
 	)
 }
 
-func gridNavButtons(ad ad.Ad, currentIdx int) g.Node {
-	prevIdx := (currentIdx-2+ad.ImageCount)%ad.ImageCount + 1
-	nextIdx := currentIdx%ad.ImageCount + 1
+func gridNavButtons(a ad.Ad, currentIdx int) g.Node {
+	prevIdx := (currentIdx-2+a.ImageCount)%a.ImageCount + 1
+	nextIdx := currentIdx%a.ImageCount + 1
 
 	return g.Group([]g.Node{
 		// Left button
 		Button(
 			Type("button"),
 			Class("absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"),
-			hx.Get(fmt.Sprintf("/ad/grid-image/%d/%d", ad.ID, prevIdx)),
-			hx.Target(fmt.Sprintf("#grid-image-container-%d", ad.ID)),
+			hx.Get(fmt.Sprintf("/ad/grid-image/%d/%d", a.ID, prevIdx)),
+			hx.Target(fmt.Sprintf("#grid-image-container-%d", a.ID)),
 			hx.Swap("outerHTML"),
 			g.Attr("onclick", "event.stopPropagation()"),
 			icon("/images/left.svg", "Previous", "w-6 h-6"),
@@ -123,8 +123,8 @@ func gridNavButtons(ad ad.Ad, currentIdx int) g.Node {
 		Button(
 			Type("button"),
 			Class("absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"),
-			hx.Get(fmt.Sprintf("/ad/grid-image/%d/%d", ad.ID, nextIdx)),
-			hx.Target(fmt.Sprintf("#grid-image-container-%d", ad.ID)),
+			hx.Get(fmt.Sprintf("/ad/grid-image/%d/%d", a.ID, nextIdx)),
+			hx.Target(fmt.Sprintf("#grid-image-container-%d", a.ID)),
 			hx.Swap("outerHTML"),
 			g.Attr("onclick", "event.stopPropagation()"),
 			icon("/images/right.svg", "Next", "w-6 h-6"),
@@ -133,6 +133,6 @@ func gridNavButtons(ad ad.Ad, currentIdx int) g.Node {
 }
 
 // GridImageWithNav creates the grid image container for HTMX swapping
-func GridImageWithNav(ad ad.Ad, currentIdx int) g.Node {
-	return gridImageWithNav(ad, currentIdx)
+func GridImageWithNav(a ad.Ad, currentIdx int) g.Node {
+	return gridImageWithNav(a, currentIdx)
 }

@@ -1,7 +1,6 @@
 package search
 
 import (
-	"database/sql"
 	"log"
 	"time"
 
@@ -10,10 +9,10 @@ import (
 
 // UserSearch represents a user's search query
 type UserSearch struct {
-	ID          int           `db:"id"`
-	UserID      sql.NullInt64 `db:"user_id"`
-	QueryString string        `db:"query_string"`
-	CreatedAt   time.Time     `db:"created_at"`
+	ID          int       `db:"id"`
+	UserID      int       `db:"user_id"`
+	QueryString string    `db:"query_string"`
+	CreatedAt   time.Time `db:"created_at"`
 }
 
 // TopSearch represents a popular search query with its count

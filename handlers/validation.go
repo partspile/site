@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"fmt"
 	"mime/multipart"
 	"strconv"
@@ -263,8 +262,8 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 		PartSubcategoryID: 0, // TODO: Get actual subcategory ID from name
 		LocationID:        locationID,
 		HasVector:         false, // New ads start without vectors
-		PartCategory:      sql.NullString{String: category, Valid: category != ""},
-		PartSubcategory:   sql.NullString{String: subcategoryName, Valid: subcategoryName != ""},
+		PartCategory:      category,
+		PartSubcategory:   subcategoryName,
 		Make:              make,
 		Years:             years,
 		Models:            models,

@@ -1,7 +1,6 @@
 package ad
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -23,9 +22,9 @@ type Ad struct {
 	ImageCount   int        `json:"image_count" db:"image_count"`
 
 	// Location fields from joins
-	City      sql.NullString `json:"city,omitempty" db:"city"`
-	AdminArea sql.NullString `json:"admin_area,omitempty" db:"admin_area"`
-	Country   sql.NullString `json:"country,omitempty" db:"country"`
+	City      string `json:"city" db:"city"`
+	AdminArea string `json:"admin_area" db:"admin_area"`
+	Country   string `json:"country" db:"country"`
 
 	// User-specific computed fields
 	Bookmarked bool `json:"bookmarked" db:"is_bookmarked"`

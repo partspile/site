@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -17,7 +18,7 @@ import (
 func HandleNewAd(c *fiber.Ctx) error {
 	userID := getUserID(c)
 	userName := getUserName(c)
-	adCat := AdCategory(c)
+	adCat := cookie.GetAdCategory(c)
 	makes := vehicle.GetMakes(adCat)
 	partCategories := part.GetCategories(adCat)
 	return render(c, ui.NewAdPage(userID, userName, c.Path(), makes, partCategories))
@@ -27,7 +28,7 @@ func HandleNewAd(c *fiber.Ctx) error {
 func HandleDuplicateAd(c *fiber.Ctx) error {
 	userID := getUserID(c)
 	userName := getUserName(c)
-	adCat := AdCategory(c)
+	adCat := cookie.GetAdCategory(c)
 
 	adID, err := AdID(c)
 	if err != nil {
@@ -46,14 +47,11 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 	years := vehicle.GetYears(adCat, adDetail.Make)
 	models := vehicle.GetModels(adCat, adDetail.Make, adDetail.Years)
 	engines := vehicle.GetEngines(adCat, adDetail.Make, adDetail.Years, adDetail.Models)
-	var subcategoryNames []string
-	if adDetail.PartCategory.Valid {
-		subcategoryNames = part.GetSubCategories(adCat, adDetail.PartCategory.String)
-	}
+	subcategoryNames := part.GetSubCategories(adCat, adDetail.PartCategory)
 
 	return render(c, ui.DuplicateAdPage(
 		userID, userName, c.Path(), makes, categoryNames,
-		*adDetail, years, models, engines, subcategoryNames, adDetail.PartSubcategory.String))
+		*adDetail, years, models, engines, subcategoryNames, adDetail.PartSubcategory))
 }
 
 // HandleNewAdSubmission processes the new ad form submission
@@ -100,7 +98,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 // HandleYears handles the years dropdown for new ad form
 func HandleYears(c *fiber.Ctx) error {
 	makeName := c.Query("make")
-	adCat := AdCategory(c)
+	adCat := cookie.GetAdCategory(c)
 	if makeName == "" {
 		// Return empty div when make is not selected
 		return render(c, ui.YearsSelector([]string{}))
@@ -113,7 +111,7 @@ func HandleYears(c *fiber.Ctx) error {
 // HandleModels handles the models dropdown for new ad form
 func HandleModels(c *fiber.Ctx) error {
 	makeName := c.Query("make")
-	adCat := AdCategory(c)
+	adCat := cookie.GetAdCategory(c)
 	if makeName == "" {
 		// Return empty div when make is not selected
 		return render(c, ui.ModelsSelector([]string{}))
@@ -140,7 +138,7 @@ func HandleModels(c *fiber.Ctx) error {
 // HandleEngines handles the engines dropdown for new ad form
 func HandleEngines(c *fiber.Ctx) error {
 	makeName := c.Query("make")
-	adCat := AdCategory(c)
+	adCat := cookie.GetAdCategory(c)
 	if makeName == "" {
 		// Return empty div when make is not selected
 		return render(c, ui.EnginesSelector([]string{}))
@@ -173,7 +171,7 @@ func HandleEngines(c *fiber.Ctx) error {
 // HandleSubCategories handles the subcategories dropdown for new ad form
 func HandleSubCategories(c *fiber.Ctx) error {
 	categoryName := c.Query("category")
-	adCat := AdCategory(c)
+	adCat := cookie.GetAdCategory(c)
 	if categoryName == "" {
 		// Return empty div when category is not selected
 		return render(c, ui.SubCategoriesSelector([]string{}, ""))

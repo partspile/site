@@ -363,7 +363,7 @@ func HandleMessageModal(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	adObj, err := ad.GetAdByID(adID, userID)
+	a, err := ad.GetAdByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
@@ -372,21 +372,21 @@ func HandleMessageModal(c *fiber.Ctx) error {
 	if userID == 0 {
 		return fiber.NewError(fiber.StatusUnauthorized, "Must be logged in to message")
 	}
-	if adObj.UserID == userID {
+	if a.UserID == userID {
 		return fiber.NewError(fiber.StatusBadRequest, "Cannot message yourself")
 	}
-	if adObj.IsArchived() {
+	if a.IsArchived() {
 		return fiber.NewError(fiber.StatusBadRequest, "Cannot message about archived ad")
 	}
 
 	// Check if user can message this ad
-	err = messaging.CanUserMessageAd(userID, adObj.UserID)
+	err = messaging.CanUserMessageAd(userID, a.UserID)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
 
 	// Get or create conversation
-	conversationID, err := messaging.GetOrCreateConversation(userID, adObj.UserID, adID)
+	conversationID, err := messaging.GetOrCreateConversation(userID, a.UserID, adID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create conversation")
 	}
@@ -403,6 +403,6 @@ func HandleMessageModal(c *fiber.Ctx) error {
 	}
 
 	// Return the complete modal with conversation content
-	conversationContent := ui.ModalMessagingInterface(userID, userName, *adObj, conversation, messages)
-	return render(c, ui.MessageModal(*adObj, conversationContent))
+	conversationContent := ui.ModalMessagingInterface(userID, userName, *a, conversation, messages)
+	return render(c, ui.MessageModal(*a, conversationContent))
 }

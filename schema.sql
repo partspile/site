@@ -109,12 +109,13 @@ CREATE INDEX idx_partsubcategory_part_category_id ON PartSubCategory(part_catego
 CREATE TABLE Location (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     raw_text TEXT UNIQUE NOT NULL CHECK (length(raw_text) > 0),
-    city TEXT,
-    admin_area TEXT,
-    country TEXT,
-    latitude REAL,
-    longitude REAL
+    city TEXT NOT NULL,
+    admin_area TEXT NOT NULL,
+    country TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL
 );
+CREATE INDEX idx_location_raw_text ON Location(raw_text);
 
 -- Phone verification table
 CREATE TABLE PhoneVerification (
@@ -137,9 +138,9 @@ CREATE TABLE User (
     password_salt TEXT NOT NULL,
     password_algo TEXT NOT NULL DEFAULT 'argon2id',
     phone_verified INTEGER NOT NULL DEFAULT 0,
-    verification_code TEXT,
+    verification_code TEXT NOT NULL,
     notification_method TEXT NOT NULL DEFAULT 'sms',
-    email_address TEXT,
+    email_address TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_admin INTEGER NOT NULL DEFAULT 0,
     deleted_at DATETIME
@@ -150,12 +151,12 @@ CREATE INDEX idx_user_deleted_at ON User(deleted_at);
 CREATE TABLE Ad (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
-    title TEXT,
-    description TEXT,
-    price REAL,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    price REAL NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     deleted_at DATETIME,
-    part_subcategory_id INTEGER,
+    part_subcategory_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     image_count INTEGER DEFAULT 0,
     location_id INTEGER REFERENCES Location(id),
@@ -272,7 +273,7 @@ CREATE TABLE UserAdClick (
 
 CREATE TABLE UserSearch (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
+    user_id INTEGER NOT NULL,
     query_string TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES User(id)

@@ -40,39 +40,27 @@ func countryFlag(country string) string {
 }
 
 // location returns a Div containing flag and location text
-func location(ad ad.Ad) g.Node {
-	var city string
-	if ad.City.Valid {
-		city = ad.City.String
-	}
-	var adminArea string
-	if ad.AdminArea.Valid {
-		adminArea = ad.AdminArea.String
-	}
-	var country string
-	if ad.Country.Valid {
-		country = ad.Country.String
-	}
+func location(a ad.Ad) g.Node {
 
 	// Return nil if no location data
-	if city == "" && adminArea == "" && country == "" {
+	if a.City == "" && a.AdminArea == "" && a.Country == "" {
 		return nil
 	}
 
 	// Build location text
 	var locationText string
-	if city != "" && adminArea != "" {
-		locationText = city + ", " + adminArea
-	} else if city != "" {
-		locationText = city
-	} else if adminArea != "" {
-		locationText = adminArea
+	if a.City != "" && a.AdminArea != "" {
+		locationText = a.City + ", " + a.AdminArea
+	} else if a.City != "" {
+		locationText = a.City
+	} else if a.AdminArea != "" {
+		locationText = a.AdminArea
 	}
 
 	// Return Div with flag and location text
 	return Div(
 		Class("flex items-center"),
-		g.Text(countryFlag(country)),
+		g.Text(countryFlag(a.Country)),
 		Span(Class("ml-1"), g.Text(locationText)),
 	)
 }
@@ -132,34 +120,34 @@ func bookmarkIconSrc(bookmarked bool) string {
 }
 
 // BookmarkButton returns the bookmark toggle button
-func BookmarkButton(adObj ad.Ad) g.Node {
+func BookmarkButton(a ad.Ad) g.Node {
 	var hxMethod g.Node
-	if adObj.Bookmarked {
-		hxMethod = hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", adObj.ID))
+	if a.Bookmarked {
+		hxMethod = hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", a.ID))
 	} else {
-		hxMethod = hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", adObj.ID))
+		hxMethod = hx.Post(fmt.Sprintf("/api/bookmark-ad/%d", a.ID))
 	}
 
 	return iconButton(
-		bookmarkIconSrc(ad.Bookmarked),
+		bookmarkIconSrc(a.Bookmarked),
 		"Bookmark",
 		"Toggle bookmark",
 		hxMethod,
 		hx.Target("this"),
 		hx.Swap("outerHTML"),
-		ID(fmt.Sprintf("bookmark-btn-%d", adObj.ID)),
+		ID(fmt.Sprintf("bookmark-btn-%d", a.ID)),
 		g.Attr("onclick", "event.stopPropagation()"),
 	)
 }
 
-func AdPage(adObj *ad.AdDetail, userID int, userName string, path string, loc *time.Location) g.Node {
+func AdPage(a ad.AdDetail, userID int, userName string, path string, loc *time.Location) g.Node {
 	return Page(
-		fmt.Sprintf("Ad %d - Parts Pile", adObj.ID),
+		fmt.Sprintf("Ad %d - Parts Pile", a.ID),
 		userID,
 		userName,
 		path,
 		[]g.Node{
-			AdDetail(adObj, userID, loc),
+			AdDetail(a, userID, loc),
 		},
 	)
 }
