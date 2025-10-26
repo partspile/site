@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 Allow: /terms
 Allow: /privacy
+Allow: /about
 Allow: /register
 Allow: /login
 Allow: /ad/
@@ -16,12 +17,19 @@ Disallow: /settings/
 Disallow: /ads/
 Disallow: /user-menu/
 Disallow: /new-ad
-Disallow: /edit-ad/
+Disallow: /duplicate-ad/
+Disallow: /delete-ad/
+Disallow: /restore-ad/
 Disallow: /rocks
 
 # Block access to dynamic content that doesn't add SEO value
 Disallow: /tree-*
 Disallow: /view/
+Disallow: /modal/
+Disallow: /ad/collapse/
+Disallow: /ad/detail/
+Disallow: /ad/image/
+Disallow: /ad/grid-image/
 Disallow: /*?*
 Disallow: /*#*
 
