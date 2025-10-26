@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -11,11 +10,6 @@ import (
 
 	"github.com/parts-pile/site/ad"
 )
-
-// htmlEscape escapes HTML special characters
-func htmlEscape(s string) string {
-	return strings.ReplaceAll(s, `"`, `\"`)
-}
 
 func createAdCategoryItems(activeCat int) []g.Node {
 	var adCatItems []g.Node
@@ -29,8 +23,8 @@ func createAdCategoryItems(activeCat int) []g.Node {
 
 		item := Div(
 			Class(itemClass),
-			hx.Get("/search?new_ad_category="+strconv.Itoa(adCat)),
-			hx.Target("body"),
+			hx.Get("/switch-ad-category/"+strconv.Itoa(adCat)),
+			hx.Target("#searchContainer"),
 			hx.Swap("outerHTML"),
 			hx.Include("form"),
 			Div(

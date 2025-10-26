@@ -4,15 +4,37 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"strings"
-	"time"
 
 	"github.com/parts-pile/site/config"
 	"github.com/qdrant/go-client/qdrant"
 )
 
-// EnsureCollectionExists creates the Qdrant collection if it doesn't exist
-func EnsureCollectionExists() error {
+// QdrantFieldSchema defines the schema for a field in Qdrant
+type QdrantFieldSchema struct {
+	Name       string
+	QdrantType qdrant.FieldType
+	IsArray    bool
+	IsStruct   bool
+}
+
+// GetIndexedFields returns the list of fields that need indexes
+func GetIndexedFields() []QdrantFieldSchema {
+	return []QdrantFieldSchema{
+		{Name: "make", QdrantType: qdrant.FieldType_FieldTypeKeyword},
+		{Name: "years", QdrantType: qdrant.FieldType_FieldTypeKeyword, IsArray: true},
+		{Name: "models", QdrantType: qdrant.FieldType_FieldTypeKeyword, IsArray: true},
+		{Name: "engines", QdrantType: qdrant.FieldType_FieldTypeKeyword, IsArray: true},
+		{Name: "category", QdrantType: qdrant.FieldType_FieldTypeKeyword},
+		{Name: "subcategory", QdrantType: qdrant.FieldType_FieldTypeKeyword},
+		{Name: "ad_category_id", QdrantType: qdrant.FieldType_FieldTypeInteger},
+		{Name: "price", QdrantType: qdrant.FieldType_FieldTypeFloat},
+		{Name: "rock_count", QdrantType: qdrant.FieldType_FieldTypeInteger},
+		{Name: "location", QdrantType: qdrant.FieldType_FieldTypeGeo, IsStruct: true},
+	}
+}
+
+// InitQdrantCollection creates the Qdrant collection if it doesn't exist
+func InitQdrantCollection() error {
 	if qdrantClient == nil {
 		return fmt.Errorf("Qdrant client not initialized")
 	}
@@ -52,13 +74,12 @@ func EnsureCollectionExists() error {
 		}
 		log.Printf("[qdrant] Successfully created collection: %s", collectionName)
 	}
-	// Note: Collection already exists logging is handled in InitQdrantClient
 
 	return nil
 }
 
-// SetupPayloadIndexes creates all necessary payload indexes for filtering
-func SetupPayloadIndexes() error {
+// InitQdrantIndexes creates all necessary payload indexes for filtering
+func InitQdrantIndexes() error {
 	if qdrantClient == nil {
 		return fmt.Errorf("Qdrant client not initialized")
 	}
@@ -66,21 +87,8 @@ func SetupPayloadIndexes() error {
 	collectionName := config.QdrantCollection
 	ctx := context.Background()
 
-	// Define the fields that need indexes for filtering
-	indexFields := []struct {
-		fieldName   string
-		fieldSchema qdrant.FieldType
-	}{
-		{"make", qdrant.FieldType_FieldTypeKeyword},
-		{"years", qdrant.FieldType_FieldTypeKeyword},
-		{"models", qdrant.FieldType_FieldTypeKeyword},
-		{"engines", qdrant.FieldType_FieldTypeKeyword},
-		{"category", qdrant.FieldType_FieldTypeKeyword},
-		{"subcategory", qdrant.FieldType_FieldTypeKeyword},
-		{"ad_category_id", qdrant.FieldType_FieldTypeInteger},
-		{"price", qdrant.FieldType_FieldTypeFloat},
-		{"location", qdrant.FieldType_FieldTypeGeo},
-	}
+	// Get the fields that need indexes for filtering
+	indexFields := GetIndexedFields()
 
 	log.Printf("[qdrant] Setting up payload indexes for collection: %s", collectionName)
 
@@ -101,23 +109,20 @@ func SetupPayloadIndexes() error {
 		}
 	}
 
-	// Track which indexes we create
-	createdIndexes := make([]string, 0)
-
 	for _, field := range indexFields {
 		// Check if index already exists
-		if existingIndexedFields[field.fieldName] {
-			log.Printf("[qdrant] Index for field %s already exists, skipping", field.fieldName)
+		if existingIndexedFields[field.Name] {
+			log.Printf("[qdrant] Index for field %s already exists, skipping", field.Name)
 			continue
 		}
 
-		log.Printf("[qdrant] Creating index for field: %s", field.fieldName)
+		log.Printf("[qdrant] Creating index for field: %s", field.Name)
 
 		// Create the appropriate index parameters based on field type
 		var fieldIndexParams *qdrant.PayloadIndexParams
 		wait := true
 
-		switch field.fieldSchema {
+		switch field.QdrantType {
 		case qdrant.FieldType_FieldTypeKeyword:
 			fieldIndexParams = qdrant.NewPayloadIndexParamsKeyword(&qdrant.KeywordIndexParams{})
 		case qdrant.FieldType_FieldTypeInteger:
@@ -134,73 +139,18 @@ func SetupPayloadIndexes() error {
 		// Try to create the index
 		_, err := qdrantClient.CreateFieldIndex(ctx, &qdrant.CreateFieldIndexCollection{
 			CollectionName:   collectionName,
-			FieldName:        field.fieldName,
-			FieldType:        &field.fieldSchema,
+			FieldName:        field.Name,
+			FieldType:        &field.QdrantType,
 			FieldIndexParams: fieldIndexParams,
 			Wait:             &wait,
 		})
 
 		if err != nil {
-			// Check if index already exists - look for various error messages
-			errorStr := fmt.Sprintf("%v", err)
-			if strings.Contains(strings.ToLower(errorStr), "already exists") ||
-				strings.Contains(strings.ToLower(errorStr), "alreadyexists") ||
-				strings.Contains(strings.ToLower(errorStr), "index already exists") ||
-				strings.Contains(strings.ToLower(errorStr), "field already exists") {
-				log.Printf("[qdrant] Index for field %s already exists", field.fieldName)
-			} else {
-				log.Printf("[qdrant] Failed to create index for field %s: %v", field.fieldName, err)
-				return fmt.Errorf("failed to create index for field %s: %w", field.fieldName, err)
-			}
-		} else {
-			log.Printf("[qdrant] Successfully created index for field: %s", field.fieldName)
-			createdIndexes = append(createdIndexes, field.fieldName)
+			log.Printf("[qdrant] Failed to create index for %s: %v", field.Name, err)
+			return fmt.Errorf("failed to create index for field %s: %w", field.Name, err)
 		}
-	}
 
-	// Verify that indexes were actually created by checking collection info again
-	if len(createdIndexes) > 0 {
-		log.Printf("[qdrant] Verifying that %d indexes were created...", len(createdIndexes))
-
-		// Wait for indexes to be created and become available
-		maxRetries := config.QdrantMaxRetries
-		retryDelay := config.QdrantRetryDelay
-
-		for retry := 0; retry < maxRetries; retry++ {
-			time.Sleep(retryDelay)
-
-			// Check collection info again
-			verifyInfo, err := qdrantClient.GetCollectionInfo(ctx, collectionName)
-			if err != nil {
-				log.Printf("[qdrant] Failed to verify collection info (attempt %d/%d): %v", retry+1, maxRetries, err)
-				continue
-			}
-
-			if verifyInfo.PayloadSchema != nil {
-				allIndexesCreated := true
-
-				for _, field := range indexFields {
-					if schemaInfo, exists := verifyInfo.PayloadSchema[field.fieldName]; exists {
-						if schemaInfo.Params == nil {
-							allIndexesCreated = false
-						}
-					} else {
-						allIndexesCreated = false
-					}
-				}
-
-				if allIndexesCreated {
-					log.Printf("[qdrant] All indexes successfully created and verified")
-					break
-				}
-			}
-
-			if retry == maxRetries-1 {
-				log.Printf("[qdrant] Warning: Some indexes may not be fully created after %d attempts", maxRetries)
-			}
-		}
-	} else {
-		log.Printf("[qdrant] No new indexes were created (all already existed)")
+		log.Printf("[qdrant] Successfully created index for field: %s", field.Name)
 	}
 
 	log.Printf("[qdrant] Payload indexes setup completed")

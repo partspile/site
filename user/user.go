@@ -160,7 +160,10 @@ func GetUser(id int) (User, error) {
 
 // GetUserByName retrieves a user by name (username)
 func GetUserByName(name string) (User, error) {
-	row := db.QueryRow(`SELECT id, name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin, deleted_at FROM User WHERE name = ? AND deleted_at IS NULL`, name)
+	row := db.QueryRow(`SELECT id, name, phone, password_hash,
+		password_salt, password_algo, phone_verified, verification_code,
+		notification_method, email_address, created_at, is_admin, deleted_at
+		FROM User WHERE name = ? AND deleted_at IS NULL`, name)
 	var u User
 	var createdAt string
 	var isAdmin int

@@ -27,5 +27,5 @@ func HandleAdPage(c *fiber.Ctx) error {
 	}
 
 	// Owner can see their deleted ads, or anyone can see active ads
-	return render(c, ui.AdPage(*ad, userID, userName, c.Path(), getLocation(c), getView(c)))
+	return render(c, ui.AdPage(ad, userID, userName, c.Path(), getLocation(c)))
 }

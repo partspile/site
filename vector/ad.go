@@ -46,7 +46,7 @@ func BuildAdEmbeddings(ads []ad.AdDetail) error {
 	var adIDs []int
 	var metadatas []map[string]interface{}
 
-	for i, adObj := range ads {
+	for _, adObj := range ads {
 		meta := buildAdEmbeddingMetadata(adObj)
 		adIDs = append(adIDs, adObj.ID)
 		metadatas = append(metadatas, meta)
@@ -125,7 +125,7 @@ Quality Indicator: %s`
 		joinStrings(adObj.Years),
 		joinStrings(adObj.Models),
 		joinStrings(adObj.Engines),
-		adObj.PartCategory.String,
+		adObj.PartCategory,
 		adObj.City.String,
 		adObj.AdminArea.String,
 		adObj.Country.String,
@@ -137,15 +137,6 @@ Quality Indicator: %s`
 func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 
 	lat, lon, _ := ad.GetLatLon(adObj.LocationID)
-
-	var category, subcategory string
-	if adObj.PartCategory.Valid {
-		category = adObj.PartCategory.String
-	}
-	if adObj.PartSubcategory.Valid {
-		subcategory = adObj.PartSubcategory.String
-	}
-
 	rockCount, _ := rock.GetAdRockCount(adObj.ID)
 
 	metadata := map[string]interface{}{
@@ -154,8 +145,8 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 		"years":          adObj.Years,
 		"models":         adObj.Models,
 		"engines":        adObj.Engines,
-		"category":       category,
-		"subcategory":    subcategory,
+		"category":       adObj.PartCategory,
+		"subcategory":    adObj.PartSubcategory,
 		"price":          adObj.Price,
 		"rock_count":     rockCount,
 	}

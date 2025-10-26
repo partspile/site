@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 )
@@ -31,8 +32,9 @@ func HandleAdDetail(c *fiber.Ctx) error {
 	}
 
 	loc := getLocation(c)
-	view := getView(c)
-	return render(c, ui.AdDetail(*adObj, loc, userID, view))
+	view := cookie.GetView(c)
+
+	return render(c, ui.AdDetail(adObj, userID, view, loc))
 }
 
 // HandleAdCollapse handles ad collapse

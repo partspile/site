@@ -27,6 +27,16 @@ func main() {
 	// Initialize ad category names cache
 	ad.SetAdCategoryNames()
 
+	// Initialize vehicle cache
+	if err := vehicle.InitVehicleCache(); err != nil {
+		log.Fatalf("Failed to initialize vehicle cache: %v", err)
+	}
+
+	// Initialize part cache
+	if err := part.InitPartCache(); err != nil {
+		log.Fatalf("Failed to initialize part cache: %v", err)
+	}
+
 	// Initialize B2 cache
 	if err := b2util.Init(); err != nil {
 		log.Fatalf("Failed to initialize B2 cache: %v", err)
@@ -48,21 +58,11 @@ func main() {
 	}
 
 	// Ensure collection exists and setup indexes
-	if err := vector.EnsureCollectionExists(); err != nil {
+	if err := vector.InitQdrantCollection(); err != nil {
 		log.Fatalf("Failed to ensure collection exists: %v", err)
 	}
 
-	// Initialize vehicle cache
-	if err := vehicle.InitVehicleCache(); err != nil {
-		log.Fatalf("Failed to initialize vehicle cache: %v", err)
-	}
-
-	// Initialize part cache
-	if err := part.InitPartCache(); err != nil {
-		log.Fatalf("Failed to initialize part cache: %v", err)
-	}
-
-	if err := vector.SetupPayloadIndexes(); err != nil {
+	if err := vector.InitQdrantIndexes(); err != nil {
 		log.Fatalf("Failed to setup payload indexes: %v", err)
 	}
 
@@ -96,6 +96,7 @@ func main() {
 	app.Get("/search", h.HandleSearch)              // x
 	app.Get("/search-page", h.HandleSearchPage)     // x
 	app.Get("/search-widget", h.HandleSearchWidget) // x
+	app.Get("/switch-ad-category/:adCategory", h.HandleSwitchAdCategory)
 
 	// Tree view routes - split by browse vs search mode
 	app.Get("/tree-browse-expand/*", h.HandleTreeExpandBrowse)     // x

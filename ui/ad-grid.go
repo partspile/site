@@ -13,21 +13,21 @@ import (
 )
 
 // AdGridNode renders a grid view of ad
-func AdGridNode(ad ad.Ad, userID int, loc *time.Location) g.Node {
+func AdGridNode(adObj *ad.AdDetail, userID int, loc *time.Location) g.Node {
 	var containerClass string = "flex flex-col cursor-pointer"
-	if ad.IsArchived() {
+	if adObj.IsArchived() {
 		containerClass += " bg-red-100"
 	}
 
 	return Div(
-		ID(adID(ad)),
+		ID(adID(adObj.Ad)),
 		Class(containerClass),
 
-		hx.Get(fmt.Sprintf("/ad/detail/%d?view=grid", ad.ID)),
-		hx.Target(adTarget(ad)),
+		hx.Get(fmt.Sprintf("/ad/detail/%d?view=grid", adObj.ID)),
+		hx.Target(adTarget(adObj.Ad)),
 		hx.Swap("outerHTML show:bottom"),
 
-		gridImageNode(ad),
+		gridImageNode(adObj.Ad),
 		Div(
 			Class("p-2 flex flex-col gap-1"),
 
@@ -37,19 +37,19 @@ func AdGridNode(ad ad.Ad, userID int, loc *time.Location) g.Node {
 				Div(
 					Class("text-green-600 font-semibold text-base"),
 					Class("font-semibold text-base"),
-					priceNode(ad),
+					priceNode(adObj.Ad),
 				),
-				g.If(userID != 0, BookmarkButton(ad)),
+				g.If(userID != 0, BookmarkButton(&adObj.Ad)),
 			),
 
 			// Title
-			titleNode(ad),
+			titleNode(adObj.Ad),
 
 			// Age and location row
 			Div(
 				Class("flex flex-row items-center justify-between text-xs text-gray-500"),
-				ageNode(ad, loc),
-				location(ad),
+				ageNode(adObj.Ad, loc),
+				location(adObj.Ad),
 			),
 		),
 	)

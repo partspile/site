@@ -36,13 +36,13 @@ type AdDetail struct {
 	Ad // Embed the minimal Ad struct
 
 	// Additional fields for detail view
-	Description       string         `json:"description" db:"description"`
-	PartSubcategoryID int            `json:"part_subcategory_id" db:"part_subcategory_id"`
-	LocationID        int            `json:"location_id" db:"location_id"`
-	HasVector         bool           `json:"has_vector" db:"has_vector"`
-	RawLocation       sql.NullString `json:"raw_location,omitempty" db:"raw_location"`
-	PartSubcategory   sql.NullString `json:"part_subcategory,omitempty" db:"part_subcategory"`
-	PartCategory      sql.NullString `json:"part_category,omitempty" db:"part_category"`
+	Description       string `json:"description" db:"description"`
+	PartSubcategoryID int    `json:"part_subcategory_id" db:"part_subcategory_id"`
+	LocationID        int    `json:"location_id" db:"location_id"`
+	HasVector         bool   `json:"has_vector" db:"has_vector"`
+	RawLocation       string `json:"raw_location" db:"raw_location"`
+	PartSubcategory   string `json:"part_subcategory" db:"part_subcategory"`
+	PartCategory      string `json:"part_category" db:"part_category"`
 
 	// Vehicle compatibility fields from vehicle joins
 	Make    string   `json:"make" db:"make"`

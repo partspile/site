@@ -15,10 +15,10 @@ import (
 	"github.com/parts-pile/site/b2util"
 )
 
-func AdDetail(ad ad.AdDetail, loc *time.Location, userID int, view string) g.Node {
+func AdDetail(a ad.AdDetail, userID int, loc *time.Location) g.Node {
 	// Determine full class strings based on deleted status
 	var containerClass, contentClass string
-	if ad.IsArchived() {
+	if a.IsArchived() {
 		containerClass = "rounded-lg shadow-xl/50 bg-red-100 flex flex-col relative my-4 mx-2 col-span-full overflow-hidden"
 		contentClass = "p-4 flex flex-col bg-red-100"
 	} else {
@@ -26,63 +26,63 @@ func AdDetail(ad ad.AdDetail, loc *time.Location, userID int, view string) g.Nod
 		contentClass = "p-4 flex flex-col"
 	}
 
-	isOwner := userID == ad.UserID && userID != 0
+	isOwner := userID == a.UserID && userID != 0
 
 	return Div(
-		ID(adID(ad.Ad)),
+		ID(adID(a.Ad)),
 		Class(containerClass),
-		imageNode(ad.Ad, view),
-		closeButton(ad.Ad, view),
-		g.If(ad.IsArchived(), deletedWatermark()),
+		imageNode(a),
+		closeButton(a),
+		g.If(a.IsArchived(), deletedWatermark()),
 		Div(
 			Class(contentClass),
 			// Title row
 			Div(
 				Class("font-semibold text-xl"),
-				titleNode(ad.Ad),
+				titleNode(a.Ad),
 			),
 			// Age and location row with inline edit for owner
 			Div(
 				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-4"),
-				Div(Class("text-gray-400"), ageNode(ad.Ad, loc)),
-				g.If(isOwner && !ad.IsArchived(),
-					locationEditable(ad),
+				Div(Class("text-gray-400"), ageNode(a.Ad, loc)),
+				g.If(isOwner && !a.IsArchived(),
+					locationEditable(a),
 				),
-				g.If(!isOwner || ad.IsArchived(),
-					location(ad.Ad),
+				g.If(!isOwner || a.IsArchived(),
+					location(a.Ad),
 				),
 			),
 			// Price row with inline edit for owner and action buttons
 			Div(
 				Class("flex flex-row items-center justify-between mb-4"),
-				g.If(isOwner && !ad.IsArchived(),
-					priceEditable(ad),
+				g.If(isOwner && !a.IsArchived(),
+					priceEditable(a),
 				),
-				g.If(!isOwner || ad.IsArchived(),
-					price(ad),
+				g.If(!isOwner || a.IsArchived(),
+					price(a),
 				),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
 					// For active ads: show bookmark, message, and delete
-					g.If(!ad.IsArchived() && userID != 0, BookmarkButton(ad.Ad)),
-					g.If(!ad.IsArchived() && userID != 0, messageButton(ad.Ad, userID)),
-					g.If(!ad.IsArchived(), deleteButton(ad.Ad, userID)),
+					g.If(!a.IsArchived() && userID != 0, BookmarkButton(a.Ad)),
+					g.If(!a.IsArchived() && userID != 0, messageButton(a, userID)),
+					g.If(!a.IsArchived(), deleteButton(a, userID)),
 					// For deleted ads: show restore button (owner only)
-					g.If(ad.IsArchived(), restoreButton(ad.Ad, userID)),
+					g.If(a.IsArchived(), restoreButton(a, userID)),
 					// Share button (visible to everyone)
-					shareButton(ad.Ad),
+					shareButton(a.Ad),
 					// Duplicate button (logged in users only)
-					g.If(userID != 0, duplicateButton(ad.Ad)),
+					g.If(userID != 0, duplicateButton(a.Ad)),
 				),
 			),
 			// Description with inline edit for owner
-			g.If(isOwner && !ad.IsArchived(),
-				descriptionEditable(ad),
+			g.If(isOwner && !a.IsArchived(),
+				descriptionEditable(a),
 			),
-			g.If(!isOwner || ad.IsArchived(),
-				description(ad),
+			g.If(!isOwner || a.IsArchived(),
+				description(a),
 			),
 			// Part type path
-			partTypePath(ad),
+			partTypePath(a),
 		),
 	)
 }
@@ -98,12 +98,12 @@ func deletedWatermark() g.Node {
 	)
 }
 
-func closeButton(ad ad.Ad, view string) g.Node {
+func closeButton(adObj *ad.AdDetail) g.Node {
 	return Button(
 		Type("button"),
 		Class("absolute top-2 right-2 bg-white border-2 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-100 focus:outline-none cursor-pointer"),
-		hx.Get(fmt.Sprintf("/ad/collapse/%d?view=%s", ad.ID, view)),
-		hx.Target(adTarget(ad)),
+		hx.Get(fmt.Sprintf("/ad/collapse/%d", adObj.ID)),
+		hx.Target(adTarget(adObj.Ad)),
 		hx.Swap("outerHTML"),
 		icon("/images/close.svg", "Close", "w-6 h-6"),
 	)
@@ -137,43 +137,43 @@ func AdNoImage() g.Node {
 	)
 }
 
-func imageNode(ad ad.Ad, view string) g.Node {
+func imageNode(a ad.AdDetail) g.Node {
 	return Div(
 		Class("w-full h-full flex flex-col overflow-hidden rounded-t-lg"),
-		carouselImageContainer(ad, 1),
-		g.If(ad.ImageCount > 0, Div(
-			thumbnails(ad),
+		carouselImageContainer(a, 1),
+		g.If(a.ImageCount > 0, Div(
+			thumbnails(a),
 		)),
 	)
 }
 
-func carouselImageContainer(ad ad.Ad, currentIdx int) g.Node {
-	containerID := fmt.Sprintf("carousel-image-container-%d", ad.ID)
+func carouselImageContainer(a ad.AdDetail, currentIdx int) g.Node {
+	containerID := fmt.Sprintf("carousel-image-container-%d", a.ID)
 
 	return Div(
 		ID(containerID),
 		Class("relative group"),
-		g.If(ad.ImageCount > 0, AdCarouselImage(ad.ID, currentIdx)),
-		g.If(ad.ImageCount == 0, AdNoImage()),
-		g.If(ad.ImageCount > 1, carouselNavButtons(ad, currentIdx)),
+		g.If(a.ImageCount > 0, AdCarouselImage(a.ID, currentIdx)),
+		g.If(a.ImageCount == 0, AdNoImage()),
+		g.If(a.ImageCount > 1, carouselNavButtons(a, currentIdx)),
 	)
 }
 
-func carouselNavButtons(ad ad.Ad, currentIdx int) g.Node {
-	if ad.ImageCount == 0 {
+func carouselNavButtons(adObj *ad.AdDetail, currentIdx int) g.Node {
+	if adObj.ImageCount == 0 {
 		return g.Node(nil)
 	}
 
-	prevIdx := (currentIdx-2+ad.ImageCount)%ad.ImageCount + 1
-	nextIdx := currentIdx%ad.ImageCount + 1
+	prevIdx := (currentIdx-2+adObj.ImageCount)%adObj.ImageCount + 1
+	nextIdx := currentIdx%adObj.ImageCount + 1
 
 	return g.Group([]g.Node{
 		// Left button
 		Button(
 			Type("button"),
 			Class("absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"),
-			hx.Get(fmt.Sprintf("/ad/image/%d/%d", ad.ID, prevIdx)),
-			hx.Target(fmt.Sprintf("#carousel-image-container-%d", ad.ID)),
+			hx.Get(fmt.Sprintf("/ad/image/%d/%d", adObj.ID, prevIdx)),
+			hx.Target(fmt.Sprintf("#carousel-image-container-%d", adObj.ID)),
 			hx.Swap("outerHTML"),
 			icon("/images/left.svg", "Previous", "w-6 h-6"),
 		),
@@ -181,8 +181,8 @@ func carouselNavButtons(ad ad.Ad, currentIdx int) g.Node {
 		Button(
 			Type("button"),
 			Class("absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"),
-			hx.Get(fmt.Sprintf("/ad/image/%d/%d", ad.ID, nextIdx)),
-			hx.Target(fmt.Sprintf("#carousel-image-container-%d", ad.ID)),
+			hx.Get(fmt.Sprintf("/ad/image/%d/%d", adObj.ID, nextIdx)),
+			hx.Target(fmt.Sprintf("#carousel-image-container-%d", adObj.ID)),
 			hx.Swap("outerHTML"),
 			icon("/images/right.svg", "Next", "w-6 h-6"),
 		),
@@ -190,8 +190,8 @@ func carouselNavButtons(ad ad.Ad, currentIdx int) g.Node {
 }
 
 // CarouselImageContainer creates the carousel image container for HTMX swapping
-func CarouselImageContainer(ad ad.Ad, currentIdx int) g.Node {
-	return carouselImageContainer(ad, currentIdx)
+func CarouselImageContainer(adObj *ad.AdDetail, currentIdx int) g.Node {
+	return carouselImageContainer(adObj, currentIdx)
 }
 
 // adThumbnailImageSrc generates a single signed B2 image URL for thumbnail context
@@ -216,19 +216,19 @@ func adThumbnailImage(adID int, idx int, alt string) g.Node {
 	)
 }
 
-func thumbnails(ad ad.Ad) g.Node {
+func thumbnails(adObj *ad.AdDetail) g.Node {
 	return Div(
 		Class("flex flex-row gap-2 mt-2 px-4 justify-center"),
 		g.Group(func() []g.Node {
 			nodes := []g.Node{}
-			for i := 1; i <= ad.ImageCount; i++ {
+			for i := 1; i <= adObj.ImageCount; i++ {
 				nodes = append(nodes, Button(
 					Type("button"),
 					Class("rounded w-16 h-16 overflow-hidden"),
-					hx.Get(fmt.Sprintf("/ad/image/%d/%d", ad.ID, i)),
-					hx.Target(fmt.Sprintf("#carousel-image-container-%d", ad.ID)),
+					hx.Get(fmt.Sprintf("/ad/image/%d/%d", adObj.ID, i)),
+					hx.Target(fmt.Sprintf("#carousel-image-container-%d", adObj.ID)),
 					hx.Swap("outerHTML"),
-					adThumbnailImage(ad.ID, i, fmt.Sprintf("Image %d", i)),
+					adThumbnailImage(adObj.ID, i, fmt.Sprintf("Image %d", i)),
 				))
 			}
 			return nodes
@@ -236,9 +236,9 @@ func thumbnails(ad ad.Ad) g.Node {
 	)
 }
 
-func messageButton(ad ad.Ad, userID int) g.Node {
+func messageButton(adObj *ad.AdDetail, userID int) g.Node {
 	// Don't show message button if user is viewing their own ad
-	if userID == ad.UserID {
+	if userID == adObj.UserID {
 		return g.Node(nil)
 	}
 
@@ -251,14 +251,14 @@ func messageButton(ad ad.Ad, userID int) g.Node {
 		"/images/message.svg",
 		"Message",
 		"Message seller",
-		hx.Get(fmt.Sprintf("/modal/ad/message/%d", ad.ID)),
+		hx.Get(fmt.Sprintf("/modal/ad/message/%d", adObj.ID)),
 		hx.Target("body"),
 		hx.Swap("beforeend"),
 	)
 }
 
-func deleteButton(ad ad.Ad, userID int) g.Node {
-	if userID != ad.UserID {
+func deleteButton(adObj *ad.AdDetail, userID int) g.Node {
+	if userID != adObj.UserID {
 		return g.Node(nil)
 	}
 
@@ -266,15 +266,15 @@ func deleteButton(ad ad.Ad, userID int) g.Node {
 		"/images/trashcan.svg",
 		"Delete",
 		"Delete ad",
-		hx.Delete(fmt.Sprintf("/delete-ad/%d", ad.ID)),
-		hx.Target(adTarget(ad)),
+		hx.Delete(fmt.Sprintf("/delete-ad/%d", adObj.ID)),
+		hx.Target(adTarget(adObj.Ad)),
 		hx.Swap("delete"),
 		hx.Confirm("Are you sure you want to delete this ad? This action cannot be undone."),
 	)
 }
 
-func restoreButton(ad ad.Ad, userID int) g.Node {
-	if userID != ad.UserID {
+func restoreButton(adObj *ad.AdDetail, userID int) g.Node {
+	if userID != adObj.UserID {
 		return g.Node(nil)
 	}
 
@@ -282,30 +282,30 @@ func restoreButton(ad ad.Ad, userID int) g.Node {
 		"/images/restore.svg",
 		"Restore",
 		"Restore ad",
-		hx.Post(fmt.Sprintf("/restore-ad/%d", ad.ID)),
-		hx.Target(adTarget(ad)),
+		hx.Post(fmt.Sprintf("/restore-ad/%d", adObj.ID)),
+		hx.Target(adTarget(adObj.Ad)),
 		hx.Swap("outerHTML"),
 		hx.Confirm("Are you sure you want to restore this ad?"),
 	)
 }
 
-func description(ad ad.AdDetail) g.Node {
-	return Div(Class("text-base mt-2 whitespace-pre-wrap"), g.Text(ad.Description))
+func description(adObj *ad.AdDetail) g.Node {
+	return Div(Class("text-base mt-2 whitespace-pre-wrap"), g.Text(adObj.Description))
 }
 
-func price(ad ad.AdDetail) g.Node {
-	return Div(Class("text-2xl font-bold text-green-600"), priceNode(ad.Ad))
+func price(adObj *ad.AdDetail) g.Node {
+	return Div(Class("text-2xl font-bold text-green-600"), priceNode(adObj.Ad))
 }
 
 // Editable field components
-func priceEditable(ad ad.AdDetail) g.Node {
+func priceEditable(adObj *ad.AdDetail) g.Node {
 	return Div(
 		Class("flex items-center gap-3"),
-		price(ad),
+		price(adObj),
 		button("Edit",
 			withClass("px-4 h-10"),
 			withAttributes(
-				hx.Get(fmt.Sprintf("/modal/ad/price/%d", ad.ID)),
+				hx.Get(fmt.Sprintf("/modal/ad/price/%d", adObj.ID)),
 				hx.Target("body"),
 				hx.Swap("beforeend"),
 			),
@@ -313,14 +313,14 @@ func priceEditable(ad ad.AdDetail) g.Node {
 	)
 }
 
-func locationEditable(ad ad.AdDetail) g.Node {
+func locationEditable(adObj *ad.AdDetail) g.Node {
 	return Div(
 		Class("flex items-center gap-2"),
-		location(ad.Ad),
+		location(adObj.Ad),
 		button("Edit",
 			withClass("px-4 h-10"),
 			withAttributes(
-				hx.Get(fmt.Sprintf("/modal/ad/location/%d", ad.ID)),
+				hx.Get(fmt.Sprintf("/modal/ad/location/%d", adObj.ID)),
 				hx.Target("body"),
 				hx.Swap("beforeend"),
 			),
@@ -328,14 +328,14 @@ func locationEditable(ad ad.AdDetail) g.Node {
 	)
 }
 
-func descriptionEditable(ad ad.AdDetail) g.Node {
+func descriptionEditable(adObj *ad.AdDetail) g.Node {
 	return Div(
 		Class("mt-2"),
-		description(ad),
+		description(adObj),
 		button("Edit",
 			withClass("px-4 h-10"),
 			withAttributes(
-				hx.Get(fmt.Sprintf("/modal/ad/description/%d", ad.ID)),
+				hx.Get(fmt.Sprintf("/modal/ad/description/%d", adObj.ID)),
 				hx.Target("body"),
 				hx.Swap("beforeend"),
 			),
@@ -388,7 +388,7 @@ type editModalConfig struct {
 	submitBtnText string
 }
 
-func editModal(ad ad.AdDetail, cfg editModalConfig) g.Node {
+func editModal(adObj *ad.AdDetail, cfg editModalConfig) g.Node {
 	return Div(
 		ID(cfg.modalID),
 		Class("fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-8"),
@@ -401,7 +401,7 @@ func editModal(ad ad.AdDetail, cfg editModalConfig) g.Node {
 				H3(Class("text-2xl font-bold mb-6 text-gray-900"), g.Text(cfg.title)),
 				Form(
 					hx.Post(cfg.apiEndpoint),
-					hx.Target(adTarget(ad.Ad)),
+					hx.Target(adTarget(adObj.Ad)),
 					hx.Swap("outerHTML"),
 					g.Attr("hx-on::after-swap", "this.closest('.fixed').remove();"),
 					cfg.formContent,
@@ -419,12 +419,12 @@ func editModal(ad ad.AdDetail, cfg editModalConfig) g.Node {
 	)
 }
 
-func PriceEditModal(ad ad.AdDetail, view string) g.Node {
-	modalID := fmt.Sprintf("price-modal-%d", ad.ID)
-	return editModal(ad, editModalConfig{
+func PriceEditModal(adObj *ad.AdDetail, view string) g.Node {
+	modalID := fmt.Sprintf("price-modal-%d", adObj.ID)
+	return editModal(adObj, editModalConfig{
 		modalID:       modalID,
 		title:         "Update Price",
-		apiEndpoint:   fmt.Sprintf("/api/update-ad-price/%d", ad.ID),
+		apiEndpoint:   fmt.Sprintf("/api/update-ad-price/%d", adObj.ID),
 		submitBtnText: "Save",
 		formContent: Div(Class("mb-6"),
 			Label(For("price"), Class("block text-sm font-semibold text-gray-800 mb-3"), g.Text("Price")),
@@ -435,7 +435,7 @@ func PriceEditModal(ad ad.AdDetail, view string) g.Node {
 				Class("w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"),
 				Step("0.01"),
 				Min("0"),
-				Value(fmt.Sprintf("%.2f", ad.Price)),
+				Value(fmt.Sprintf("%.2f", adObj.Price)),
 				Required(),
 				g.Attr("autofocus"),
 			),
@@ -443,16 +443,12 @@ func PriceEditModal(ad ad.AdDetail, view string) g.Node {
 	})
 }
 
-func LocationEditModal(ad ad.AdDetail, view string) g.Node {
-	modalID := fmt.Sprintf("location-modal-%d", ad.ID)
-	currentLocation := ""
-	if ad.RawLocation.Valid {
-		currentLocation = ad.RawLocation.String
-	}
-	return editModal(ad, editModalConfig{
+func LocationEditModal(adObj *ad.AdDetail, view string) g.Node {
+	modalID := fmt.Sprintf("location-modal-%d", adObj.ID)
+	return editModal(adObj, editModalConfig{
 		modalID:       modalID,
 		title:         "Update Location",
-		apiEndpoint:   fmt.Sprintf("/api/update-ad-location/%d", ad.ID),
+		apiEndpoint:   fmt.Sprintf("/api/update-ad-location/%d", adObj.ID),
 		submitBtnText: "Save",
 		formContent: Div(Class("mb-6"),
 			Label(For("location"), Class("block text-sm font-semibold text-gray-800 mb-3"), g.Text("Location (Zipcode or City)")),
@@ -462,7 +458,7 @@ func LocationEditModal(ad ad.AdDetail, view string) g.Node {
 				Name("location"),
 				Class("w-full p-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"),
 				Placeholder("e.g., 90210 or Portland, OR"),
-				Value(currentLocation),
+				Value(adObj.RawLocation),
 				g.Attr("autofocus"),
 			),
 			Div(Class("text-sm text-gray-600 mt-2 bg-blue-50 p-2 rounded"),
@@ -471,18 +467,18 @@ func LocationEditModal(ad ad.AdDetail, view string) g.Node {
 	})
 }
 
-func DescriptionEditModal(ad ad.AdDetail, view string) g.Node {
-	modalID := fmt.Sprintf("description-modal-%d", ad.ID)
-	return editModal(ad, editModalConfig{
+func DescriptionEditModal(adObj *ad.AdDetail, view string) g.Node {
+	modalID := fmt.Sprintf("description-modal-%d", adObj.ID)
+	return editModal(adObj, editModalConfig{
 		modalID:       modalID,
 		title:         "Add to Description",
-		apiEndpoint:   fmt.Sprintf("/api/update-ad-description/%d", ad.ID),
+		apiEndpoint:   fmt.Sprintf("/api/update-ad-description/%d", adObj.ID),
 		submitBtnText: "Add",
 		formContent: g.Group([]g.Node{
 			Div(
 				Class("mb-6 p-4 bg-gray-100 rounded-lg border-2 border-gray-200 max-h-40 overflow-y-auto"),
 				Div(Class("text-sm font-semibold text-gray-800 mb-3"), g.Text("Current Description:")),
-				Div(Class("text-sm whitespace-pre-wrap text-gray-700"), g.Text(ad.Description)),
+				Div(Class("text-sm whitespace-pre-wrap text-gray-700"), g.Text(adObj.Description)),
 			),
 			Div(Class("mb-6"),
 				Label(For("description_addition"), Class("block text-sm font-semibold text-gray-800 mb-3"), g.Text("Add to Description")),
@@ -711,47 +707,47 @@ func commaSeparatedLinks(text string, accumulatedSegments []string) g.Node {
 	return g.Group(linkNodes)
 }
 
-func partTypePath(ad ad.AdDetail) g.Node {
+func partTypePath(adObj *ad.AdDetail) g.Node {
 	var segments []string  // Keep strings for building cumulative queries
 	var linkNodes []g.Node // Build link nodes
 
 	// Add make
-	if ad.Make != "" {
-		segments = append(segments, ad.Make)
-		linkNodes = append(linkNodes, pathSegmentLink(ad.Make, segments))
+	if adObj.Make != "" {
+		segments = append(segments, adObj.Make)
+		linkNodes = append(linkNodes, pathSegmentLink(adObj.Make, segments))
 	}
 
 	// Add years (format as ranges when possible, comma-separated for individual years)
-	if len(ad.Years) > 0 {
-		yearRanges := formatYearRanges(ad.Years)
+	if len(adObj.Years) > 0 {
+		yearRanges := formatYearRanges(adObj.Years)
 		segments = append(segments, yearRanges)
 		linkNodes = append(linkNodes, commaSeparatedLinks(yearRanges, segments))
 	}
 
 	// Add models (join multiple with comma)
-	if len(ad.Models) > 0 {
-		models := strings.Join(ad.Models, ", ")
+	if len(adObj.Models) > 0 {
+		models := strings.Join(adObj.Models, ", ")
 		segments = append(segments, models)
 		linkNodes = append(linkNodes, commaSeparatedLinks(models, segments))
 	}
 
 	// Add engines (join multiple with comma)
-	if len(ad.Engines) > 0 {
-		engines := strings.Join(ad.Engines, ", ")
+	if len(adObj.Engines) > 0 {
+		engines := strings.Join(adObj.Engines, ", ")
 		segments = append(segments, engines)
 		linkNodes = append(linkNodes, commaSeparatedLinks(engines, segments))
 	}
 
 	// Add category
-	if ad.PartCategory.Valid && ad.PartCategory.String != "" {
-		segments = append(segments, ad.PartCategory.String)
-		linkNodes = append(linkNodes, pathSegmentLink(ad.PartCategory.String, segments))
+	if adObj.PartCategory != "" {
+		segments = append(segments, adObj.PartCategory)
+		linkNodes = append(linkNodes, pathSegmentLink(adObj.PartCategory, segments))
 	}
 
 	// Add subcategory
-	if ad.PartSubcategory.Valid && ad.PartSubcategory.String != "" {
-		segments = append(segments, ad.PartSubcategory.String)
-		linkNodes = append(linkNodes, pathSegmentLink(ad.PartSubcategory.String, segments))
+	if adObj.PartSubcategory != "" {
+		segments = append(segments, adObj.PartSubcategory)
+		linkNodes = append(linkNodes, pathSegmentLink(adObj.PartSubcategory, segments))
 	}
 
 	// If no path parts, return empty node

@@ -24,8 +24,6 @@ func InitQdrantClient() error {
 		return fmt.Errorf("missing Qdrant API key")
 	}
 
-	log.Printf("[qdrant] Initializing client with host: %s", host)
-
 	// Remove any protocol prefix if present
 	if strings.HasPrefix(host, "https://") {
 		host = strings.TrimPrefix(host, "https://")
@@ -42,7 +40,7 @@ func InitQdrantClient() error {
 		SkipCompatibilityCheck: true,              // Skip version check for cloud service
 	}
 
-	log.Printf("[qdrant] Client config: %+v", clientConfig)
+	log.Printf("[qdrant] Client config: Host=%s, Port=%d", clientConfig.Host, clientConfig.Port)
 
 	// Create Qdrant client
 	client, err := qdrant.NewClient(clientConfig)
@@ -54,12 +52,57 @@ func InitQdrantClient() error {
 	return nil
 }
 
-// UpsertAdEmbedding upserts an ad's embedding and metadata into Qdrant
-func UpsertAdEmbedding(adID int, embedding []float32, metadata map[string]interface{}) error {
-	return UpsertAdEmbeddings([]int{adID}, [][]float32{embedding}, []map[string]interface{}{metadata})
+// convertMetadataToQdrant converts metadata from Go types to Qdrant values
+// based on the known field types
+func convertMetadataToQdrant(metadata map[string]interface{}) map[string]*qdrant.Value {
+	if metadata == nil {
+		return nil
+	}
+
+	qdrantMetadata := make(map[string]*qdrant.Value)
+	for k, v := range metadata {
+		switch k {
+		case "location":
+			// Handle geo location struct
+			if geoMap, ok := v.(map[string]interface{}); ok {
+				geoStruct := &qdrant.Struct{Fields: make(map[string]*qdrant.Value)}
+				for geoKey, geoVal := range geoMap {
+					if geoFloat, ok := geoVal.(float64); ok {
+						geoStruct.Fields[geoKey] = &qdrant.Value{Kind: &qdrant.Value_DoubleValue{DoubleValue: geoFloat}}
+					}
+				}
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StructValue{StructValue: geoStruct}}
+			}
+		case "years", "models", "engines":
+			// Handle array fields
+			strArray := v.([]string)
+			qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_ListValue{ListValue: &qdrant.ListValue{
+				Values: func() []*qdrant.Value {
+					result := make([]*qdrant.Value, len(strArray))
+					for j, s := range strArray {
+						result[j] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: s}}
+					}
+					return result
+				}(),
+			}}}
+		case "ad_category_id", "rock_count":
+			// Handle integer fields
+			intVal := v.(int)
+			qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(intVal)}}
+		case "price":
+			// Handle float fields
+			floatVal := v.(float64)
+			qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_DoubleValue{DoubleValue: floatVal}}
+		case "make", "category", "subcategory":
+			// Handle keyword/string fields
+			strVal := v.(string)
+			qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: strVal}}
+		}
+	}
+	return qdrantMetadata
 }
 
-// UpsertAdEmbeddings upserts multiple ads' embeddings and metadata into Qdrant in a single API call
+// UpsertAdEmbeddings upserts multiple ads' embeddings and metadata into Qdrant
 func UpsertAdEmbeddings(adIDs []int, embeddings [][]float32, metadatas []map[string]interface{}) error {
 	if qdrantClient == nil {
 		return fmt.Errorf("Qdrant client not initialized")
@@ -83,50 +126,7 @@ func UpsertAdEmbeddings(adIDs []int, embeddings [][]float32, metadatas []map[str
 		metadata := metadatas[i]
 
 		// Convert metadata to Qdrant format
-		var qdrantMetadata map[string]*qdrant.Value
-		if metadata != nil {
-			qdrantMetadata = make(map[string]*qdrant.Value)
-			for k, v := range metadata {
-				switch val := v.(type) {
-				case string:
-					qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: val}}
-				case int:
-					qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(val)}}
-				case float64:
-					qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_DoubleValue{DoubleValue: val}}
-				case bool:
-					qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_BoolValue{BoolValue: val}}
-				case []string:
-					// Handle array of strings (years, models, engines)
-					qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_ListValue{ListValue: &qdrant.ListValue{
-						Values: func() []*qdrant.Value {
-							result := make([]*qdrant.Value, len(val))
-							for j, s := range val {
-								result[j] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: s}}
-							}
-							return result
-						}(),
-					}}}
-				case map[string]interface{}:
-					// Handle geo metadata (lat/lon coordinates)
-					if k == "location" {
-						geoStruct := &qdrant.Struct{Fields: make(map[string]*qdrant.Value)}
-						for geoKey, geoVal := range val {
-							if geoFloat, ok := geoVal.(float64); ok {
-								geoStruct.Fields[geoKey] = &qdrant.Value{Kind: &qdrant.Value_DoubleValue{DoubleValue: geoFloat}}
-							}
-						}
-						qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StructValue{StructValue: geoStruct}}
-					} else {
-						// Convert other maps to string
-						qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: fmt.Sprintf("%v", val)}}
-					}
-				default:
-					// Convert to string for other types
-					qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: fmt.Sprintf("%v", val)}}
-				}
-			}
-		}
+		qdrantMetadata := convertMetadataToQdrant(metadata)
 
 		// Create Qdrant point with numeric ID instead of UUID
 		point := &qdrant.PointStruct{

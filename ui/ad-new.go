@@ -59,11 +59,6 @@ func DuplicateAdPage(
 	subcategoryNames []string,
 	selectedSubcategory string,
 ) g.Node {
-	categoryName := ""
-	if originalAd.PartCategory.Valid {
-		categoryName = originalAd.PartCategory.String
-	}
-
 	return Page(
 		"Duplicate Ad - Parts Pile",
 		userID,
@@ -82,7 +77,7 @@ func DuplicateAdPage(
 				YearsSelector(years, originalAd.Years),
 				ModelsSelector(models, originalAd.Models),
 				EnginesSelector(engines, originalAd.Engines),
-				categoriesSelector(categories, categoryName),
+				categoriesSelector(categories, originalAd.PartCategory),
 				SubCategoriesSelector(subcategoryNames, selectedSubcategory),
 				imagesInputField(),
 				descriptionTextareaField(),

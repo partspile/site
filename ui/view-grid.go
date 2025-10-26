@@ -37,7 +37,7 @@ func GridViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string)
 func gridNodes(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
 	nodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
-		nodes = append(nodes, AdGridNode(ad, userID, loc))
+		nodes = append(nodes, AdGridNode(&ad, userID, loc))
 	}
 	return nodes
 }
