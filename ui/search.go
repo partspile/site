@@ -77,7 +77,7 @@ func AdCategoryModal(activeCat int) g.Node {
 	)
 }
 
-func ViewToggleButtons(activeView string) g.Node {
+func ViewToggleButtons(activeView string, userID int) g.Node {
 	icon := func(name, alt string) g.Node {
 		return Img(
 			Src("/images/"+name+".svg"),
@@ -104,10 +104,14 @@ func ViewToggleButtons(activeView string) g.Node {
 		)
 	}
 	return Div(
-		Class("flex justify-end gap-2 mb-4 mt-6"),
-		button("list", "List View"),
-		button("tree", "Tree View"),
-		button("grid", "Grid View"),
+		Class("flex justify-between items-center gap-2 mb-4 mt-6"),
+		newAdButton(userID),
+		Div(
+			Class("flex gap-2"),
+			button("list", "List View"),
+			button("tree", "Tree View"),
+			button("grid", "Grid View"),
+		),
 	)
 }
 
@@ -157,11 +161,7 @@ func SearchWidget(userID, view, adCategory int, params map[string]string, showFi
 		hx.Target("#searchResults"),
 		hx.Swap("outerHTML"),
 		hx.Include("form"),
-		Div(
-			Class("flex items-center justify-between"),
-			adCatButton(adCategory),
-			Div(Class("flex-shrink-0"), newAdButton(userID)),
-		),
+		adCatButton(adCategory),
 		g.If(showFilters, searchWidgetWithFilters(params)),
 		g.If(!showFilters, searchWidgetSimple(params["q"])),
 	)

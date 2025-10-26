@@ -23,7 +23,7 @@ func ListViewResults(ads []ad.Ad, userID int, userName string, loc *time.Locatio
 
 	return Div(
 		ID("searchResults"),
-		ViewToggleButtons("list"),
+		ViewToggleButtons("list", userID),
 		viewContent,
 	)
 }

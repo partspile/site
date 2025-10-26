@@ -8,15 +8,12 @@ import (
 
 func filterControls(params map[string]string) g.Node {
 	return Div(
-		Class("grid grid-cols-1 md:grid-cols-3 gap-4 mt-4"),
+		Class("grid grid-cols-2 gap-4 mt-4"),
 		locationFilter(params["location"]),
 		radiusFilter(params["radius"]),
 		makeFilter(params["make"]),
-		Div(
-			Class("grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"),
-			yearFilter(params["min_year"], params["max_year"]),
-			priceFilter(params["min_price"], params["max_price"]),
-		),
+		yearFilter(params["min_year"], params["max_year"]),
+		priceFilter(params["min_price"], params["max_price"]),
 	)
 }
 

@@ -38,7 +38,8 @@ func (v *TreeView) GetAdIDs() ([]int, uint64, error) {
 func (v *TreeView) RenderSearchResults(adIDs []int, cursor uint64) error {
 	userPrompt := v.ctx.Query("q")
 	adCat := cookie.GetAdCategory(v.ctx)
-	return render(v.ctx, ui.TreeViewResults(adIDs, adCat, userPrompt))
+	userID := getUserID(v.ctx)
+	return render(v.ctx, ui.TreeViewResults(adIDs, adCat, userPrompt, userID))
 }
 
 func (v *TreeView) RenderSearchPage(adIDs []int, cursor uint64) error {

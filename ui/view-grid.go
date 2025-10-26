@@ -24,7 +24,7 @@ func GridViewResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL stri
 
 	return Div(
 		ID("searchResults"),
-		ViewToggleButtons("grid"),
+		ViewToggleButtons("grid", userID),
 		viewContent,
 	)
 }
