@@ -240,10 +240,14 @@ func getAdIDs(c *fiber.Ctx) ([]int, uint64, error) {
 	threshold := config.QdrantSearchThreshold
 	k := config.QdrantSearchPageSize
 
-	cursor, err := strconv.ParseUint(cursorStr, 10, 64)
-	if err != nil {
-		log.Printf("[getAdIDs] Failed to parse cursor offset: %v", err)
-		return nil, 0, err
+	cursor := uint64(0)
+	if cursorStr != "" {
+		var err error
+		cursor, err = strconv.ParseUint(cursorStr, 10, 64)
+		if err != nil {
+			log.Printf("[getAdIDs] Failed to parse cursor offset: %v", err)
+			return nil, 0, err
+		}
 	}
 
 	adIDs, cursor, err := performSearch(q, userID, cursor, threshold, k, filter)

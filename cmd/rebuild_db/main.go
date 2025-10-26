@@ -292,15 +292,15 @@ func main() {
 		}
 	}
 
-	// Second pass: Insert all cars in batches
-	fmt.Println("Inserting cars in optimized batches...")
-	carCount := 0
+	// Second pass: Insert all vehicles in batches
+	fmt.Println("Inserting vehicles in optimized batches...")
+	vehicleCount := 0
 	batchSize := 1000
-	carBatch := make([]struct {
-		makeID, yearID, modelID, engineID int
+	vehicleBatch := make([]struct {
+		adCategoryID, makeID, yearID, modelID, engineID int
 	}, 0, batchSize)
 
-	// Start transaction for bulk Car operations
+	// Start transaction for bulk Vehicle operations
 	tx, err := database.Begin()
 	if err != nil {
 		log.Fatalf("Failed to begin transaction: %v", err)
@@ -315,33 +315,33 @@ func main() {
 				for _, engine := range engines {
 					engineID := engineMap[engine]
 
-					// Add to batch for bulk insertion
-					carBatch = append(carBatch, struct {
-						makeID, yearID, modelID, engineID int
-					}{makeID, yearID, modelID, engineID})
-					carCount++
+					// Add to batch for bulk insertion (using Car Parts category)
+					vehicleBatch = append(vehicleBatch, struct {
+						adCategoryID, makeID, yearID, modelID, engineID int
+					}{carPartsCategoryID, makeID, yearID, modelID, engineID})
+					vehicleCount++
 
 					// Execute batch when it reaches the batch size
-					if len(carBatch) >= batchSize {
-						executeCarBatch(tx, carBatch)
-						carBatch = carBatch[:0] // Reset slice while keeping capacity
+					if len(vehicleBatch) >= batchSize {
+						executeVehicleBatch(tx, vehicleBatch)
+						vehicleBatch = vehicleBatch[:0] // Reset slice while keeping capacity
 					}
 				}
 			}
 		}
 	}
 
-	// Execute remaining cars in the batch
-	if len(carBatch) > 0 {
-		executeCarBatch(tx, carBatch)
+	// Execute remaining vehicles in the batch
+	if len(vehicleBatch) > 0 {
+		executeVehicleBatch(tx, vehicleBatch)
 	}
 
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
-		log.Fatalf("Failed to commit Car transaction: %v", err)
+		log.Fatalf("Failed to commit Vehicle transaction: %v", err)
 	}
 
-	fmt.Printf("Processed %d cars in optimized batches\n", carCount)
+	fmt.Printf("Processed %d vehicles in optimized batches\n", vehicleCount)
 
 	// Import part.json
 	partData, err := os.ReadFile(partFile)
@@ -391,7 +391,11 @@ func main() {
 			log.Printf("Failed to hash password for user %s: %v", u.Name, err)
 			continue
 		}
-		_, err = database.Exec(`INSERT INTO User (name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, is_admin) VALUES (?, ?, ?, ?, ?, 0, NULL, 'sms', NULL, ?)`, u.Name, u.Phone, hash, salt, "argon2id", u.IsAdmin)
+		_, err = database.Exec(`INSERT INTO User (name, phone,
+			password_hash, password_salt, password_algo, phone_verified,
+			verification_code, notification_method, email_address, is_admin)
+			VALUES (?, ?, ?, ?, ?, 0, '', 'sms', '', ?)`,
+			u.Name, u.Phone, hash, salt, "argon2id", u.IsAdmin)
 		if err != nil {
 			log.Printf("Failed to insert user %s: %v", u.Name, err)
 		} else {
@@ -542,31 +546,31 @@ func main() {
 		}
 		adID, _ := res.LastInsertId()
 
-		// Create AdCar relationships for all combinations
+		// Create AdVehicle relationships for all combinations
 		for _, year := range ad.Years {
 			for _, model := range ad.Models {
 				for _, engine := range ad.Engines {
-					// Get car ID
-					var carID int
+					// Get vehicle ID
+					var vehicleID int
 					makeID := makeMap[ad.Make]
 					yearID := yearMap[year]
 					modelID := modelMap[model]
 					engineID := engineMap[engine]
 
-					err := database.QueryRow(`SELECT id FROM Car WHERE make_id=? AND year_id=? AND model_id=? AND engine_id=?`,
-						makeID, yearID, modelID, engineID).Scan(&carID)
+					err := database.QueryRow(`SELECT id FROM Vehicle WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=?`,
+						carPartsCategoryID, makeID, yearID, modelID, engineID).Scan(&vehicleID)
 					if err == sql.ErrNoRows {
-						// Car doesn't exist, skip this combination
+						// Vehicle doesn't exist, skip this combination
 						continue
 					} else if err != nil {
-						log.Printf("Car lookup error: %v", err)
+						log.Printf("Vehicle lookup error: %v", err)
 						continue
 					}
 
-					// Insert AdCarPart relationship (renamed from AdCar)
-					_, err = database.Exec(`INSERT INTO AdCarPart (ad_id, car_id) VALUES (?, ?)`, adID, carID)
+					// Insert AdVehicle relationship
+					_, err = database.Exec(`INSERT INTO AdVehicle (ad_id, vehicle_id) VALUES (?, ?)`, adID, vehicleID)
 					if err != nil {
-						log.Printf("Failed to insert AdCarPart: %v", err)
+						log.Printf("Failed to insert AdVehicle: %v", err)
 					}
 				}
 			}
@@ -581,9 +585,9 @@ func main() {
 	fmt.Println("Vector embeddings will be processed by the main application background processor.")
 }
 
-// executeCarBatch executes a batch of Car insertions using a single INSERT statement
-func executeCarBatch(tx *sql.Tx, batch []struct {
-	makeID, yearID, modelID, engineID int
+// executeVehicleBatch executes a batch of Vehicle insertions using a single INSERT statement
+func executeVehicleBatch(tx *sql.Tx, batch []struct {
+	adCategoryID, makeID, yearID, modelID, engineID int
 }) {
 	// Use a single INSERT statement with multiple VALUES for better performance
 	if len(batch) == 0 {
@@ -592,20 +596,21 @@ func executeCarBatch(tx *sql.Tx, batch []struct {
 
 	// Build the VALUES clause
 	values := make([]string, len(batch))
-	args := make([]interface{}, len(batch)*4)
+	args := make([]interface{}, len(batch)*5)
 
-	for i, car := range batch {
-		values[i] = "(?, ?, ?, ?)"
-		args[i*4] = car.makeID
-		args[i*4+1] = car.yearID
-		args[i*4+2] = car.modelID
-		args[i*4+3] = car.engineID
+	for i, vehicle := range batch {
+		values[i] = "(?, ?, ?, ?, ?)"
+		args[i*5] = vehicle.adCategoryID
+		args[i*5+1] = vehicle.makeID
+		args[i*5+2] = vehicle.yearID
+		args[i*5+3] = vehicle.modelID
+		args[i*5+4] = vehicle.engineID
 	}
 
-	query := fmt.Sprintf("INSERT OR IGNORE INTO Car (make_id, year_id, model_id, engine_id) VALUES %s", strings.Join(values, ","))
+	query := fmt.Sprintf("INSERT OR IGNORE INTO Vehicle (ad_category_id, make_id, year_id, model_id, engine_id) VALUES %s", strings.Join(values, ","))
 	_, err := tx.Exec(query, args...)
 	if err != nil {
-		log.Printf("Failed to insert Car batch: %v", err)
+		log.Printf("Failed to insert Vehicle batch: %v", err)
 	}
 }
 

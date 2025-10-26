@@ -9,9 +9,9 @@ CREATE TABLE AdCategory (
 -- Vehicle tables
 CREATE TABLE Make (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
     name TEXT NOT NULL UNIQUE CHECK (length(name) > 0),
-    parent_company_id INTEGER REFERENCES ParentCompany(id),
-    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id)
+    parent_company_id INTEGER REFERENCES ParentCompany(id)
 );
 
 CREATE TABLE ParentCompany (
@@ -22,71 +22,37 @@ CREATE TABLE ParentCompany (
 
 CREATE TABLE Year (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    year INTEGER NOT NULL UNIQUE,
-    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id)
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
+    year INTEGER NOT NULL UNIQUE
 );
 
 CREATE TABLE Model (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL CHECK (length(name) > 0),
-    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id)
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
+    name TEXT NOT NULL CHECK (length(name) > 0)
 );
 
 CREATE TABLE Engine (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL CHECK (length(name) > 0),
-    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id)
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
+    name TEXT NOT NULL CHECK (length(name) > 0)
 );
 
-CREATE TABLE Car (
+CREATE TABLE Vehicle (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
     make_id INTEGER NOT NULL,
-    year_id INTEGER NOT NULL,
+    year_id INTEGER,
     model_id INTEGER NOT NULL,
-    engine_id INTEGER NOT NULL,
+    engine_id INTEGER,
     FOREIGN KEY (make_id) REFERENCES Make(id),
     FOREIGN KEY (year_id) REFERENCES Year(id),
     FOREIGN KEY (model_id) REFERENCES Model(id),
     FOREIGN KEY (engine_id) REFERENCES Engine(id),
-    UNIQUE (make_id, year_id, model_id, engine_id)
+    UNIQUE (ad_category_id, make_id, year_id, model_id, engine_id)
 );
-CREATE INDEX idx_car_make_year_model_engine ON Car(make_id, year_id, model_id, engine_id);
-
-CREATE TABLE Motorcycle (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    make_id INTEGER NOT NULL,
-    year_id INTEGER NOT NULL,
-    model_id INTEGER NOT NULL,
-    engine_id INTEGER NOT NULL,
-    FOREIGN KEY (make_id) REFERENCES Make(id),
-    FOREIGN KEY (year_id) REFERENCES Year(id),
-    FOREIGN KEY (model_id) REFERENCES Model(id),
-    FOREIGN KEY (engine_id) REFERENCES Engine(id),
-    UNIQUE (make_id, year_id, model_id, engine_id)
-);
-CREATE INDEX idx_motorcycle_make_year_model_engine ON Motorcycle(make_id, year_id, model_id, engine_id);
-
-CREATE TABLE Bicycle (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    make_id INTEGER NOT NULL,
-    model_id INTEGER NOT NULL,
-    FOREIGN KEY (make_id) REFERENCES Make(id),
-    FOREIGN KEY (model_id) REFERENCES Model(id),
-    UNIQUE (make_id, model_id)
-);
-CREATE INDEX idx_bicycle_make_model ON Bicycle(make_id, model_id);
-
-CREATE TABLE Ag (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    make_id INTEGER NOT NULL,
-    year_id INTEGER NOT NULL,
-    model_id INTEGER NOT NULL,
-    FOREIGN KEY (make_id) REFERENCES Make(id),
-    FOREIGN KEY (year_id) REFERENCES Year(id),
-    FOREIGN KEY (model_id) REFERENCES Model(id),
-    UNIQUE (make_id, year_id, model_id)
-);
-CREATE INDEX idx_ag_make_year_model ON Ag(make_id, year_id, model_id);
+CREATE INDEX idx_vehicle_ad_category ON Vehicle(ad_category_id);
+CREATE INDEX idx_vehicle_make_year_model_engine ON Vehicle(make_id, year_id, model_id, engine_id);
 
 -- Part tables
 CREATE TABLE PartCategory (
@@ -138,9 +104,9 @@ CREATE TABLE User (
     password_salt TEXT NOT NULL,
     password_algo TEXT NOT NULL DEFAULT 'argon2id',
     phone_verified INTEGER NOT NULL DEFAULT 0,
-    verification_code TEXT NOT NULL,
+    verification_code TEXT NOT NULL DEFAULT '',
     notification_method TEXT NOT NULL DEFAULT 'sms',
-    email_address TEXT NOT NULL,
+    email_address TEXT NOT NULL DEFAULT '',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_admin INTEGER NOT NULL DEFAULT 0,
     deleted_at DATETIME
@@ -170,85 +136,15 @@ CREATE INDEX idx_ad_created_at_id ON Ad(created_at, id);
 CREATE INDEX idx_ad_deleted_at ON Ad(deleted_at);
 CREATE INDEX idx_ad_ad_category_id ON Ad(ad_category_id);
 
-CREATE TABLE AdCarPart (
+CREATE TABLE AdVehicle (
     ad_id INTEGER NOT NULL,
-    car_id INTEGER NOT NULL,
+    vehicle_id INTEGER NOT NULL,
     FOREIGN KEY (ad_id) REFERENCES Ad(id),
-    FOREIGN KEY (car_id) REFERENCES Car(id),
-    PRIMARY KEY (ad_id, car_id)
+    FOREIGN KEY (vehicle_id) REFERENCES Vehicle(id),
+    PRIMARY KEY (ad_id, vehicle_id)
 );
-CREATE INDEX idx_adcarpart_car_id ON AdCarPart(car_id);
-CREATE INDEX idx_adcarpart_ad_id ON AdCarPart(ad_id);
-
-CREATE TABLE AdCar (
-    ad_id INTEGER NOT NULL,
-    car_id INTEGER NOT NULL,
-    FOREIGN KEY (ad_id) REFERENCES Ad(id),
-    FOREIGN KEY (car_id) REFERENCES Car(id),
-    PRIMARY KEY (ad_id, car_id)
-);
-CREATE INDEX idx_adcar_car_id ON AdCar(car_id);
-CREATE INDEX idx_adcar_ad_id ON AdCar(ad_id);
-
-CREATE TABLE AdMotorcycle (
-    ad_id INTEGER NOT NULL,
-    motorcycle_id INTEGER NOT NULL,
-    FOREIGN KEY (ad_id) REFERENCES Ad(id),
-    FOREIGN KEY (motorcycle_id) REFERENCES Motorcycle(id),
-    PRIMARY KEY (ad_id, motorcycle_id)
-);
-CREATE INDEX idx_admotorcycle_motorcycle_id ON AdMotorcycle(motorcycle_id);
-CREATE INDEX idx_admotorcycle_ad_id ON AdMotorcycle(ad_id);
-
-CREATE TABLE AdMotorcyclePart (
-    ad_id INTEGER NOT NULL,
-    motorcycle_id INTEGER NOT NULL,
-    FOREIGN KEY (ad_id) REFERENCES Ad(id),
-    FOREIGN KEY (motorcycle_id) REFERENCES Motorcycle(id),
-    PRIMARY KEY (ad_id, motorcycle_id)
-);
-CREATE INDEX idx_admotorcyclepart_motorcycle_id ON AdMotorcyclePart(motorcycle_id);
-CREATE INDEX idx_admotorcyclepart_ad_id ON AdMotorcyclePart(ad_id);
-
-CREATE TABLE AdBicycle (
-    ad_id INTEGER NOT NULL,
-    bicycle_id INTEGER NOT NULL,
-    FOREIGN KEY (ad_id) REFERENCES Ad(id),
-    FOREIGN KEY (bicycle_id) REFERENCES Bicycle(id),
-    PRIMARY KEY (ad_id, bicycle_id)
-);
-CREATE INDEX idx_adbicycle_bicycle_id ON AdBicycle(bicycle_id);
-CREATE INDEX idx_adbicycle_ad_id ON AdBicycle(ad_id);
-
-CREATE TABLE AdBicyclePart (
-    ad_id INTEGER NOT NULL,
-    bicycle_id INTEGER NOT NULL,
-    FOREIGN KEY (ad_id) REFERENCES Ad(id),
-    FOREIGN KEY (bicycle_id) REFERENCES Bicycle(id),
-    PRIMARY KEY (ad_id, bicycle_id)
-);
-CREATE INDEX idx_adbicyclepart_bicycle_id ON AdBicyclePart(bicycle_id);
-CREATE INDEX idx_adbicyclepart_ad_id ON AdBicyclePart(ad_id);
-
-CREATE TABLE AdAg (
-    ad_id INTEGER NOT NULL,
-    ag_id INTEGER NOT NULL,
-    FOREIGN KEY (ad_id) REFERENCES Ad(id),
-    FOREIGN KEY (ag_id) REFERENCES Ag(id),
-    PRIMARY KEY (ad_id, ag_id)
-);
-CREATE INDEX idx_adag_ad_id ON AdAg(ad_id);
-CREATE INDEX idx_adag_ag_id ON AdAg(ag_id);
-
-CREATE TABLE AdAgPart (
-    ad_id INTEGER NOT NULL,
-    ag_id INTEGER NOT NULL,
-    FOREIGN KEY (ad_id) REFERENCES Ad(id),
-    FOREIGN KEY (ag_id) REFERENCES Ag(id),
-    PRIMARY KEY (ad_id, ag_id)
-);
-CREATE INDEX idx_adagpart_ad_id ON AdAgPart(ad_id);
-CREATE INDEX idx_adagpart_ag_id ON AdAgPart(ag_id);
+CREATE INDEX idx_advehicle_vehicle_id ON AdVehicle(vehicle_id);
+CREATE INDEX idx_advehicle_ad_id ON AdVehicle(ad_id);
 
 CREATE TABLE BookmarkedAd (
     user_id INTEGER NOT NULL,

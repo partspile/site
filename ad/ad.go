@@ -55,6 +55,81 @@ func (a Ad) IsArchived() bool {
 	return a.DeletedAt != nil
 }
 
+// populateVehicleData fills in the Make, Years, Models, and Engines fields
+func populateVehicleData(adDetail *AdDetail) error {
+	query := `
+		SELECT DISTINCT 
+			m.name as make,
+			y.year,
+			mo.name as model,
+			e.name as engine
+		FROM AdVehicle av
+		JOIN Vehicle v ON av.vehicle_id = v.id AND v.ad_category_id = ?
+		JOIN Make m ON v.make_id = m.id
+		JOIN Model mo ON v.model_id = mo.id
+		LEFT JOIN Year y ON v.year_id = y.id
+		LEFT JOIN Engine e ON v.engine_id = e.id
+		WHERE av.ad_id = ?
+	`
+
+	type vehicleRow struct {
+		Make   string
+		Year   *int
+		Model  string
+		Engine *string
+	}
+
+	var rows []vehicleRow
+	err := db.Select(&rows, query, adDetail.AdCategoryID, adDetail.ID)
+	if err != nil {
+		return fmt.Errorf("failed to query vehicle data: %w", err)
+	}
+
+	if len(rows) == 0 {
+		return fmt.Errorf("no vehicle data found for ad")
+	}
+
+	// Extract unique values using maps to deduplicate
+	makeSet := make(map[string]bool)
+	yearSet := make(map[string]bool)
+	modelSet := make(map[string]bool)
+	engineSet := make(map[string]bool)
+
+	for _, row := range rows {
+		makeSet[row.Make] = true
+		if row.Year != nil {
+			yearSet[fmt.Sprintf("%d", *row.Year)] = true
+		}
+		modelSet[row.Model] = true
+		if row.Engine != nil {
+			engineSet[*row.Engine] = true
+		}
+	}
+
+	// Get first make as the ad's make
+	for make := range makeSet {
+		adDetail.Make = make
+		break
+	}
+
+	// Convert year sets to slice
+	for year := range yearSet {
+		adDetail.Years = append(adDetail.Years, year)
+	}
+
+	// Convert model sets to slice
+	for model := range modelSet {
+		adDetail.Models = append(adDetail.Models, model)
+	}
+
+	// Convert engine sets to slice
+	for engine := range engineSet {
+		adDetail.Engines = append(adDetail.Engines, engine)
+	}
+
+	return nil
+}
+
 // GetAdsByIDs returns ads for a list of IDs
 func GetAdsByIDs(ids []int, userID int) ([]Ad, error) {
 	return GetAdsByIDsWithDeleted(ids, userID, false)
@@ -191,7 +266,15 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 		return nil, fmt.Errorf("ad with ID %d not found", adID)
 	}
 
-	return &adDetails[0], nil
+	adDetail := &adDetails[0]
+
+	// Populate vehicle data
+	err = populateVehicleData(adDetail)
+	if err != nil {
+		return nil, fmt.Errorf("failed to populate vehicle data: %w", err)
+	}
+
+	return adDetail, nil
 }
 
 // GetMostPopularAds returns the top n ads by popularity using SQL
