@@ -188,6 +188,9 @@ func main() {
 	// Sitemap
 	app.Get("/sitemap.xml", h.HandleSitemap)
 
+	// Health check
+	app.Get("/health", h.HandleHealth)
+
 	// User settings
 	app.Get("/settings", h.AuthRequired, h.HandleSettings)                // x
 	app.Get("/ads", h.AuthRequired, h.HandleAdsPage)                      // x
