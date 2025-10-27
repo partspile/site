@@ -105,16 +105,5 @@ func calculateSiteLevelVector() ([]float32, error) {
 		return nil, fmt.Errorf("AggregateEmbeddings returned nil")
 	}
 
-	// Enhance site-level vector with rock preference for anonymous users
-	rockPreferencePrompt := "Show me high-quality ads with fewer reported issues (rocks thrown). I prefer reliable, trustworthy listings."
-	rockPreferenceEmbedding, err := GetQueryEmbedding(rockPreferencePrompt)
-	if err == nil && rockPreferenceEmbedding != nil {
-		// Blend the site-level vector with rock preference
-		enhancedVectors := [][]float32{result, rockPreferenceEmbedding}
-		enhancedWeights := []float32{1.0, 1.5} // Site-level gets weight 1.0, rock preference gets 1.5
-		result = AggregateEmbeddings(enhancedVectors, enhancedWeights)
-		log.Printf("[site-level] Enhanced site-level vector with rock preference")
-	}
-
 	return result, nil
 }
