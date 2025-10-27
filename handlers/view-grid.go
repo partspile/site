@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -22,7 +23,7 @@ func (v *GridView) GetAdIDs() ([]int, uint64, error) {
 
 func (v *GridView) RenderSearchResults(adIDs []int, cursor uint64) error {
 	q := v.ctx.Query("q")
-	userID := getUserID(v.ctx)
+	userID := local.GetUserID(v.ctx)
 	loc := getLocation(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering
@@ -39,7 +40,7 @@ func (v *GridView) RenderSearchResults(adIDs []int, cursor uint64) error {
 
 func (v *GridView) RenderSearchPage(adIDs []int, cursor uint64) error {
 	q := v.ctx.Query("q")
-	userID := getUserID(v.ctx)
+	userID := local.GetUserID(v.ctx)
 	loc := getLocation(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering

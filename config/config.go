@@ -7,10 +7,12 @@ import (
 
 const (
 	// Server configuration
-	ServerUploadLimit   = 20 * 1024 * 1024 // 20 MB
-	ServerRedirectDelay = 1 * time.Second
-	ServerRateLimitMax  = 600
-	ServerRateLimitExp  = 1 * time.Minute
+	ServerUploadLimit        = 20 * 1024 * 1024 // 20 MB
+	ServerRedirectDelay      = 1 * time.Second
+	ServerRateLimitMax       = 600
+	ServerRateLimitExp       = 1 * time.Minute
+	RegistrationRateLimitMax = 3                // Allow 3 registration attempts per IP
+	RegistrationRateLimitExp = 15 * time.Minute // Within 15 minutes
 
 	// Backblaze B2 configuration
 	B2TokenCacheDuration   = 55 * time.Minute

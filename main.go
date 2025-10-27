@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
@@ -73,11 +72,8 @@ func main() {
 		WriteTimeout: 30 * time.Second, // Prevent long-running responses
 	})
 
-	// Add rate limiter
-	app.Use(limiter.New(limiter.Config{
-		Max:        config.ServerRateLimitMax,
-		Expiration: config.ServerRateLimitExp,
-	}))
+	// Add global rate limiter
+	app.Use(h.GlobalRateLimiter)
 
 	// Add JWT middleware
 	app.Use(h.JWTMiddleware)
@@ -171,7 +167,7 @@ func main() {
 
 	// User registration/authentication
 	app.Get("/register", h.HandleRegistrationStep1)
-	api.Post("/register/step1", h.HandleRegistrationStep1Submission)
+	api.Post("/register/step1", h.RegistrationRateLimiter, h.HandleRegistrationStep1Submission)
 	app.Get("/register/verify", h.HandleRegistrationVerification)
 	api.Post("/register/verify", h.HandleRegistrationStep2Submission)
 	api.Post("/sms/webhook", h.HandleSMSWebhook)

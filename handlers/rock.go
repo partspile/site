@@ -5,13 +5,14 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/rock"
 	"github.com/parts-pile/site/ui"
 )
 
 // HandleAdRocks displays the rock section for an ad
 func HandleAdRocks(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	adID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(400).SendString("Invalid ad ID")
@@ -52,7 +53,7 @@ func HandleAdRocks(c *fiber.Ctx) error {
 
 // HandleThrowRock handles throwing a rock at an ad
 func HandleThrowRock(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	adID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(400).SendString("Invalid ad ID")
@@ -118,7 +119,7 @@ func HandleViewRockConversations(c *fiber.Ctx) error {
 
 // HandleResolveRock resolves a rock dispute
 func HandleResolveRock(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	rockID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(400).SendString("Invalid rock ID")
@@ -135,4 +136,13 @@ func HandleResolveRock(c *fiber.Ctx) error {
 	}
 
 	return c.SendString("Rock resolved successfully")
+}
+
+// HandleRocksPage displays the rocks page for newly verified users
+func HandleRocksPage(c *fiber.Ctx) error {
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
+	// This page should only be accessible to newly verified users
+	// For now, we'll allow access but in production you might want to add session checks
+	return render(c, ui.RocksPage(userID, userName, c.Path()))
 }

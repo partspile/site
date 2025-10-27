@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -13,8 +14,8 @@ func HandleAdPage(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 
 	a, err := ad.GetAdDetailByID(adID, userID)
 	if err != nil {

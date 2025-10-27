@@ -19,6 +19,7 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 	"golang.org/x/image/draw"
 	"gopkg.in/kothar/go-backblaze.v0"
@@ -189,7 +190,7 @@ func HandleAdImage(c *fiber.Ctx) error {
 
 // HandleAdGridImage serves grid view images with navigation
 func HandleAdGridImage(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	adID, err := strconv.Atoi(c.Params("adID"))
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")

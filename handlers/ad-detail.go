@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/cookie"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 )
@@ -15,7 +16,7 @@ func HandleAdDetail(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	a, err := ad.GetAdDetailByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
@@ -42,7 +43,7 @@ func HandleAdCollapse(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	a, err := ad.GetAdByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")

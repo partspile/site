@@ -9,6 +9,7 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/vehicle"
@@ -243,7 +244,7 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 func getAdIDs(c *fiber.Ctx) ([]int, uint64, error) {
 	q := c.Query("q")
 	cursorStr := c.Query("cursor")
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	filter := buildSearchFilter(c)
 	threshold := config.QdrantSearchThreshold
 	k := config.QdrantSearchPageSize
@@ -269,7 +270,7 @@ func getAdIDs(c *fiber.Ctx) ([]int, uint64, error) {
 }
 
 func handleSearch(c *fiber.Ctx, view int) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 
 	v, err := NewView(c, view)
 	if err != nil {
@@ -310,7 +311,7 @@ func HandleSearchPage(c *fiber.Ctx) error {
 
 // HandleSearchWidget handles the search widget with query parameters
 func HandleSearchWidget(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	view := cookie.GetView(c)
 	adCategory := cookie.GetAdCategory(c)
 
@@ -358,7 +359,7 @@ func HandleSwitchAdCategory(c *fiber.Ctx) error {
 	cookie.SetAdCategory(c, adCategory)
 
 	// Get current user and view settings
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	view := cookie.GetView(c)
 
 	// Extract search parameters from form data

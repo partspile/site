@@ -3,20 +3,21 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 )
 
 // HandleAdsPage handles the main /ads page
 func HandleAdsPage(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	return render(c, ui.AdsPage(userID, userName, c.Path(), "bookmarked"))
 }
 
 // HandleBookmarkedAdsPage handles the /ads/bookmarked sub-page
 func HandleBookmarkedAdsPage(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	adIDs, err := ad.GetBookmarkedAdIDs(userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get bookmarked ad IDs")
@@ -33,8 +34,8 @@ func HandleBookmarkedAdsPage(c *fiber.Ctx) error {
 
 // HandleActiveAdsPage handles the /ads/active sub-page
 func HandleActiveAdsPage(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	adIDs, err := ad.GetUserActiveAdIDs(userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get active ad IDs")
@@ -51,8 +52,8 @@ func HandleActiveAdsPage(c *fiber.Ctx) error {
 
 // HandleDeletedAdsPage handles the /ads/deleted sub-page
 func HandleDeletedAdsPage(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	adIDs, err := ad.GetUserDeletedAdIDs(userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get deleted ad IDs")

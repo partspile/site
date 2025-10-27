@@ -7,6 +7,7 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/jwt"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
@@ -14,24 +15,6 @@ import (
 
 func logoutUser(c *fiber.Ctx) {
 	cookie.ClearJWT(c)
-}
-
-func getUserID(c *fiber.Ctx) int {
-	userID, _ := c.Locals("userID").(int)
-	return userID
-}
-
-func setUserID(c *fiber.Ctx, userID int) {
-	c.Locals("userID", userID)
-}
-
-func setUserName(c *fiber.Ctx, userName string) {
-	c.Locals("userName", userName)
-}
-
-func getUserName(c *fiber.Ctx) string {
-	userName, _ := c.Locals("userName").(string)
-	return userName
 }
 
 func redirectToLogin(c *fiber.Ctx) error {
@@ -49,8 +32,8 @@ func JWTMiddleware(c *fiber.Ctx) error {
 	// Get JWT token from cookie
 	tokenString := cookie.GetJWT(c)
 	if tokenString == "" {
-		setUserID(c, 0)
-		setUserName(c, "")
+		local.SetUserID(c, 0)
+		local.SetUserName(c, "")
 		return c.Next()
 	}
 
@@ -59,20 +42,20 @@ func JWTMiddleware(c *fiber.Ctx) error {
 	if err != nil {
 		// Invalid token, clear cookie
 		cookie.ClearJWT(c)
-		setUserID(c, 0)
-		setUserName(c, "")
+		local.SetUserID(c, 0)
+		local.SetUserName(c, "")
 		return c.Next()
 	}
 
 	// Set user ID and username in context
-	setUserID(c, jwt.GetUserID(claims))
-	setUserName(c, jwt.GetUserName(claims))
+	local.SetUserID(c, jwt.GetUserID(claims))
+	local.SetUserName(c, jwt.GetUserName(claims))
 	return c.Next()
 }
 
 // AuthRequired is a middleware that requires a user to be logged in.
 func AuthRequired(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	if userID == 0 {
 		return redirectToLogin(c)
 	}
@@ -81,7 +64,7 @@ func AuthRequired(c *fiber.Ctx) error {
 
 // AdminRequired is a middleware that requires a user to be an admin.
 func AdminRequired(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	if userID == 0 {
 		return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
 	}
@@ -100,8 +83,8 @@ func AdminRequired(c *fiber.Ctx) error {
 }
 
 func HandleLogin(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	return render(c, ui.LoginPage(userID, userName, c.Path()))
 }
 
@@ -153,7 +136,7 @@ func HandleChangePassword(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, err.Error())
 	}
 
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	u, err := user.GetUser(userID)
 	if err != nil || u.IsArchived() {
 		return ValidationErrorResponse(c, "User not found")
@@ -176,7 +159,7 @@ func HandleChangePassword(c *fiber.Ctx) error {
 func HandleDeleteAccount(c *fiber.Ctx) error {
 	userPassword := c.FormValue("password")
 
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	if userID == 0 {
 		return ValidationErrorResponseWithStatus(c, "You must be logged in to delete your account", fiber.StatusUnauthorized)
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/cookie"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vehicle"
@@ -63,8 +64,8 @@ func HandleTreeCollapseBrowse(c *fiber.Ctx) error {
 }
 
 func HandleTreeExpandBrowse(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	loc := getLocation(c)
 	path := c.Params("*")
 	name, level, parts := parsePath(path)
@@ -125,8 +126,8 @@ func HandleTreeCollapseSearch(c *fiber.Ctx) error {
 }
 
 func HandleTreeExpandSearch(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	loc := getLocation(c)
 	path := c.Params("*")
 	name, level, parts := parsePath(path)

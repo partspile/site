@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/b2util"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -12,8 +13,8 @@ import (
 
 // renderAdminSection renders an admin section with HX-Request handling
 func renderAdminSection(c *fiber.Ctx, sectionID string, sectionContent g.Node) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	path := c.Path()
 	if c.Get("HX-Request") != "" {
 		return render(c, ui.AdminSectionPage(userID, userName, path, sectionID, sectionContent))

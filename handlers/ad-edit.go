@@ -8,13 +8,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 )
 
 // HandleUpdateAdPrice updates only the price of an ad
 func HandleUpdateAdPrice(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -56,7 +57,7 @@ func HandleUpdateAdPrice(c *fiber.Ctx) error {
 
 // HandleUpdateAdDescription appends to the description of an ad
 func HandleUpdateAdDescription(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -120,7 +121,7 @@ func HandleUpdateAdDescription(c *fiber.Ctx) error {
 
 // HandleUpdateAdLocation updates only the location of an ad
 func HandleUpdateAdLocation(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -164,7 +165,7 @@ func HandleUpdateAdLocation(c *fiber.Ctx) error {
 
 // HandlePriceModal shows the price edit modal for an ad
 func HandlePriceModal(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -188,7 +189,7 @@ func HandlePriceModal(c *fiber.Ctx) error {
 
 // HandleDescriptionModal shows the description edit modal for an ad
 func HandleDescriptionModal(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -212,7 +213,7 @@ func HandleDescriptionModal(c *fiber.Ctx) error {
 
 // HandleLocationModal shows the location edit modal for an ad
 func HandleLocationModal(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")

@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/cookie"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -38,7 +39,7 @@ func (v *TreeView) GetAdIDs() ([]int, uint64, error) {
 func (v *TreeView) RenderSearchResults(adIDs []int, cursor uint64) error {
 	userPrompt := v.ctx.Query("q")
 	adCat := cookie.GetAdCategory(v.ctx)
-	userID := getUserID(v.ctx)
+	userID := local.GetUserID(v.ctx)
 	return render(v.ctx, ui.TreeViewResults(adIDs, adCat, userPrompt, userID))
 }
 

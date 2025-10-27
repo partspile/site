@@ -4,19 +4,20 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
 	. "maragu.dev/gomponents/html"
 )
 
 func HandleSettings(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	return render(c, ui.SettingsPage(userID, userName, c.Path()))
 }
 
 func HandleUserMenu(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	if userID == 0 {
 		return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
 	}
@@ -32,7 +33,7 @@ func HandleUserMenu(c *fiber.Ctx) error {
 
 // HandleUpdateNotificationMethod updates the user's notification method preference
 func HandleUpdateNotificationMethod(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 
 	var request struct {
 		NotificationMethod string  `json:"notificationMethod"`
@@ -76,7 +77,7 @@ func HandleUpdateNotificationMethod(c *fiber.Ctx) error {
 
 // HandleNotificationMethodChanged handles HTMX requests when notification method changes
 func HandleNotificationMethodChanged(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 
 	// Get the current user to retrieve their saved email address
 	currentUser, err := user.GetUser(userID)

@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/parts-pile/site/grok"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/sms"
 	"github.com/parts-pile/site/ui"
@@ -18,8 +19,8 @@ import (
 
 // HandleRegistrationStep1 handles the first step of registration (collecting user info)
 func HandleRegistrationStep1(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	return render(c, ui.RegisterPage(userID, userName, c.Path()))
 }
 
@@ -60,13 +61,9 @@ func HandleRegistrationStep1Submission(c *fiber.Ctx) error {
 		}
 	}
 
-	// Check for existing username and phone
+	// Check for existing username
 	if _, err := user.GetUserByName(name); err == nil {
-		return ValidationErrorResponse(c, "Username already exists. Please choose a different username.")
-	}
-
-	if _, err := user.GetUserByPhone(phone); err == nil {
-		return ValidationErrorResponse(c, "Phone number is already registered. Please use a different phone number.")
+		return ValidationErrorResponse(c, "Unable to complete registration with these credentials. Please try different information.")
 	}
 
 	// GROK username screening
@@ -84,16 +81,21 @@ Examples of unacceptable usernames:
 - hate speech
 - explicit sexual content
 
-If the user name is acceptable, return only: OK
+If the user name is acceptable, return only: OK.
 If the user name is unacceptable, return a short, direct error message (1-2 sentences), and do not mention yourself, AI, or Grok in the response.
 Only reject names that are truly offensive to a general audience.`
 
 	resp, err := grok.CallGrok(systemPrompt, name)
 	if err != nil {
-		return ValidationErrorResponse(c, "Could not validate username. Please try again later.")
+		return ValidationErrorResponse(c, "Unable to complete registration with these credentials. Please try different information.")
 	}
 	if resp != "OK" {
 		return ValidationErrorResponse(c, resp)
+	}
+
+	// Check for existing phone (do this after username checks to avoid revealing phone existence prematurely)
+	if _, err := user.GetUserByPhone(phone); err == nil {
+		return ValidationErrorResponse(c, "Unable to complete registration with these credentials. Please try different information.")
 	}
 
 	// Generate verification code
@@ -191,8 +193,8 @@ func waitForSMSDelivery(messageSid string, timeout time.Duration) (bool, error) 
 
 // HandleRegistrationVerification shows the verification code input page
 func HandleRegistrationVerification(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	store := c.Locals("session_store").(*session.Store)
 	sess, err := store.Get(c)
 	if err != nil {
@@ -291,13 +293,4 @@ func HandleRegistrationStep2Submission(c *fiber.Ctx) error {
 
 	// Return success response with delay before redirecting to rocks page
 	return render(c, ui.SuccessMessage("Registration successful! Redirecting to rocks page...", "/rocks"))
-}
-
-// HandleRocksPage displays the rocks page for newly verified users
-func HandleRocksPage(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
-	// This page should only be accessible to newly verified users
-	// For now, we'll allow access but in production you might want to add session checks
-	return render(c, ui.RocksPage(userID, userName, c.Path()))
 }

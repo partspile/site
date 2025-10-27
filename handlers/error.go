@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -19,10 +20,10 @@ func CustomErrorHandler(c *fiber.Ctx, err error) error {
 	}
 
 	// Get user context using handler functions
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 
 	// Send custom error page
-	c.Set(fiber.HeaderContentType, fiber.MIMETextHTML)
-	return ui.ErrorPage(code, err.Error(), userID, userName).Render(c)
+	c.Status(code)
+	return render(c, ui.ErrorPage(code, err.Error(), userID, userName))
 }

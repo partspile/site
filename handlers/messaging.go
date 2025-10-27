@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/messaging"
 	"github.com/parts-pile/site/notification"
 	"github.com/parts-pile/site/ui"
@@ -18,8 +19,8 @@ import (
 
 // HandleMessagesPage handles the main messages page
 func HandleMessagesPage(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 
 	conversations, err := messaging.GetConversationsForUser(userID)
 	if err != nil {
@@ -38,8 +39,8 @@ func HandleMessagesPage(c *fiber.Ctx) error {
 
 // HandleExpandConversation handles expanding a conversation in-place
 func HandleExpandConversation(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 
 	conversationID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -79,7 +80,7 @@ func HandleExpandConversation(c *fiber.Ctx) error {
 
 // HandleCollapseConversation handles collapsing a conversation back to the list view
 func HandleCollapseConversation(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 
 	conversationID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -102,8 +103,8 @@ func HandleCollapseConversation(c *fiber.Ctx) error {
 
 // HandleStartConversation handles starting a new conversation about an ad
 func HandleStartConversation(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 
 	adID, err := strconv.Atoi(c.Params("adID"))
 	if err != nil {
@@ -134,8 +135,8 @@ func HandleStartConversation(c *fiber.Ctx) error {
 
 // HandleSendMessage handles sending a new message (works for both main messages page and modal)
 func HandleSendMessage(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 
 	conversationID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -210,8 +211,8 @@ func HandleSendMessage(c *fiber.Ctx) error {
 
 // HandleModalMessaging handles modal messaging interface for ad detail pages
 func HandleModalMessaging(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 
 	adID, err := strconv.Atoi(c.Params("adID"))
 	if err != nil {
@@ -333,7 +334,7 @@ func HandleSSE(c *fiber.Ctx) error {
 
 // HandleSSEConversationUpdate handles SSE requests for updated conversation items
 func HandleSSEConversationUpdate(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 	conversationID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
 		return c.Status(400).SendString("Invalid conversation ID")
@@ -356,8 +357,8 @@ func HandleSSEConversationUpdate(c *fiber.Ctx) error {
 
 // HandleMessageModal shows the message modal for an ad
 func HandleMessageModal(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	adID, err := AdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")

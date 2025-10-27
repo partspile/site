@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 )
@@ -15,12 +16,12 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	userID := getUserID(c)
-	adObj, err := ad.GetAdByID(adID, userID)
+	userID := local.GetUserID(c)
+	a, err := ad.GetAdByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	if adObj.UserID != userID {
+	if a.UserID != userID {
 		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
 	}
 	if err := ad.ArchiveAd(adID); err != nil {
@@ -50,15 +51,15 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	userID := getUserID(c)
-	adObj, err := ad.GetAdDetailByID(adID, userID)
+	userID := local.GetUserID(c)
+	a, err := ad.GetAdDetailByID(adID, userID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	if adObj.UserID != userID {
+	if a.UserID != userID {
 		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
 	}
-	if !adObj.IsArchived() {
+	if !a.IsArchived() {
 		return fiber.NewError(fiber.StatusBadRequest, "Ad is not deleted")
 	}
 	if err := ad.RestoreAd(adID); err != nil {
@@ -66,7 +67,7 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 	}
 
 	// Queue ad for background re-addition to vector database (Qdrant)
-	vector.QueueAd(adObj.Ad)
+	vector.QueueAd(a.Ad)
 
 	// Return empty response to remove the ad from the deleted ads list
 	log.Printf("Restore ad %d, removing from DOM", adID)

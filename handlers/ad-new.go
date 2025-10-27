@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/cookie"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -16,8 +17,8 @@ import (
 
 // HandleNewAd shows the new ad form
 func HandleNewAd(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	adCat := cookie.GetAdCategory(c)
 	makes := vehicle.GetMakes(adCat)
 	partCategories := part.GetCategories(adCat)
@@ -26,8 +27,8 @@ func HandleNewAd(c *fiber.Ctx) error {
 
 // HandleDuplicateAd shows the duplicate ad form with pre-filled data
 func HandleDuplicateAd(c *fiber.Ctx) error {
-	userID := getUserID(c)
-	userName := getUserName(c)
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
 	adCat := cookie.GetAdCategory(c)
 
 	adID, err := AdID(c)
@@ -56,7 +57,7 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 
 // HandleNewAdSubmission processes the new ad form submission
 func HandleNewAdSubmission(c *fiber.Ctx) error {
-	userID := getUserID(c)
+	userID := local.GetUserID(c)
 
 	// Resolve and store location first
 	locationRaw := c.FormValue("location")
