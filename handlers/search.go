@@ -295,8 +295,6 @@ func HandleSearch(c *fiber.Ctx) error {
 }
 
 func HandleSearchPage(c *fiber.Ctx) error {
-	c.Set("Content-Type", "text/html")
-
 	v, err := NewView(c, cookie.GetView(c))
 	if err != nil {
 		return err
@@ -312,8 +310,6 @@ func HandleSearchPage(c *fiber.Ctx) error {
 
 // HandleSearchWidget handles the search widget with query parameters
 func HandleSearchWidget(c *fiber.Ctx) error {
-	c.Set("Content-Type", "text/html")
-
 	userID := getUserID(c)
 	view := cookie.GetView(c)
 	adCategory := cookie.GetAdCategory(c)
@@ -338,8 +334,6 @@ func HandleSearchWidget(c *fiber.Ctx) error {
 
 // HandleAdCategoryModal shows the ad category selector modal
 func HandleAdCategoryModal(c *fiber.Ctx) error {
-	c.Set("Content-Type", "text/html")
-
 	adCategory := cookie.GetAdCategory(c)
 
 	// Return the category modal
@@ -348,8 +342,6 @@ func HandleAdCategoryModal(c *fiber.Ctx) error {
 
 // HandleSwitchAdCategory switches the ad category and returns updated search container
 func HandleSwitchAdCategory(c *fiber.Ctx) error {
-	c.Set("Content-Type", "text/html")
-
 	// Extract ad category from URL parameter
 	adCategoryStr := c.Params("adCategory")
 	adCategory, err := strconv.Atoi(adCategoryStr)
@@ -378,8 +370,6 @@ func HandleSwitchAdCategory(c *fiber.Ctx) error {
 
 // HandleFilterMakes handles the make filter dropdown for search filters
 func HandleFilterMakes(c *fiber.Ctx) error {
-	c.Set("Content-Type", "text/html")
-
 	adCategory := cookie.GetAdCategory(c)
 	makes := vehicle.GetMakes(adCategory)
 
