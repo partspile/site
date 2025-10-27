@@ -13,14 +13,16 @@ import (
 
 // ---- New Ad Page ----
 
-func NewAdPage(userID int, userName string, path string, makes []string, categories []string) g.Node {
+func NewAdPage(adCat int, userID int, userName string, path string, makes []string, categories []string) g.Node {
+	categoryName := ad.GetCategoryName(adCat)
+	headerText := fmt.Sprintf("Create New %s Ad", categoryName)
 	return Page(
 		"New Ad - Parts Pile",
 		userID,
 		userName,
 		path,
 		[]g.Node{
-			pageHeader("Create New Ad"),
+			pageHeader(headerText),
 			Form(
 				ID("newAdForm"),
 				Class("space-y-6"),

@@ -1,0 +1,68 @@
+{
+  "HARLEY-DAVIDSON": {
+    "2020": {
+      "SPORTSTER 1200": [
+        "1.2L V-TWIN"
+      ],
+      "FAT BOY": [
+        "1.8L V-TWIN"
+      ]
+    },
+    "2021": {
+      "SPORTSTER 1200": [
+        "1.2L V-TWIN"
+      ],
+      "ELECTRA GLIDE": [
+        "1.7L V-TWIN"
+      ]
+    },
+    "2022": {
+      "STREET GLIDE": [
+        "1.8L V-TWIN"
+      ],
+      "ROAD GLIDE": [
+        "1.8L V-TWIN"
+      ]
+    }
+  },
+  "YAMAHA": {
+    "2020": {
+      "MT-07": [
+        "689cc L-TWIN"
+      ],
+      "YZF-R6": [
+        "599cc INLINE-4"
+      ]
+    },
+    "2021": {
+      "MT-07": [
+        "689cc L-TWIN"
+      ],
+      "YZF-R1": [
+        "998cc INLINE-4"
+      ],
+      "FZ-09": [
+        "847cc INLINE-3"
+      ]
+    }
+  },
+  "HONDA": {
+    "2020": {
+      "CBR1000RR": [
+        "999cc INLINE-4"
+      ],
+      "GOLD WING": [
+        "1.8L BOXER-6"
+      ]
+    },
+    "2021": {
+      "CBR650R": [
+        "649cc INLINE-4"
+      ],
+      "AFRICA TWIN": [
+        "1.0L PARALLEL-TWIN"
+      ]
+    }
+  }
+}
+

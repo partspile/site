@@ -1,0 +1,54 @@
+[
+  {
+    "make": "JOHN DEERE",
+    "years": [
+      "2020"
+    ],
+    "models": [
+      "8410"
+    ],
+    "engines": [
+      "6.8L TURBO DIESEL"
+    ],
+    "title": "2020 John Deere 8410 Tractor",
+    "description": "Excellent condition 2020 John Deere 8410. Low hours, well maintained. Ready for field work. Includes all standard features and attachments.",
+    "price": 75000,
+    "created_at": "2024-05-01T00:00:00Z",
+    "user_id": 1,
+    "category": "",
+    "subcategory": "",
+    "location": {
+      "city": "Moline",
+      "admin_area": "IL",
+      "country": "US",
+      "latitude": 41.5067,
+      "longitude": -90.5150
+    }
+  },
+  {
+    "make": "CASE IH",
+    "years": [
+      "2020"
+    ],
+    "models": [
+      "STEIGER 450"
+    ],
+    "engines": [
+      "9.0L TURBO DIESEL"
+    ],
+    "title": "2020 Case IH Steiger 450 Tractor",
+    "description": "2020 Case IH Steiger 450 with low hours. Excellent condition, always garaged. Perfect for large farming operations. All service records available.",
+    "price": 120000,
+    "created_at": "2024-05-15T00:00:00Z",
+    "user_id": 1,
+    "category": "",
+    "subcategory": "",
+    "location": {
+      "city": "Racine",
+      "admin_area": "WI",
+      "country": "US",
+      "latitude": 42.7261,
+      "longitude": -87.7829
+    }
+  }
+]

@@ -80,11 +80,23 @@ func IsValidCategory(categoryID int) bool {
 
 // HasYears returns true if the vehicle type for this category has years
 func HasYears(adCategory int) bool {
-	return adCategory != AdCategoryBicycle && adCategory != AdCategoryBicyclePart
+	switch adCategory {
+	case AdCategoryCar, AdCategoryCarPart,
+		AdCategoryMotorcycle, AdCategoryMotorcyclePart,
+		AdCategoryAg, AdCategoryAgPart:
+		return true
+	default:
+		return false
+	}
 }
 
 // HasEngines returns true if the vehicle type for this category has engines
 func HasEngines(adCategory int) bool {
-	return adCategory == AdCategoryCar || adCategory == AdCategoryCarPart ||
-		adCategory == AdCategoryMotorcycle || adCategory == AdCategoryMotorcyclePart
+	switch adCategory {
+	case AdCategoryCar, AdCategoryCarPart,
+		AdCategoryMotorcycle, AdCategoryMotorcyclePart:
+		return true
+	default:
+		return false
+	}
 }

@@ -21,7 +21,7 @@ func HandleNewAd(c *fiber.Ctx) error {
 	adCat := cookie.GetAdCategory(c)
 	makes := vehicle.GetMakes(adCat)
 	partCategories := part.GetCategories(adCat)
-	return render(c, ui.NewAdPage(userID, userName, c.Path(), makes, partCategories))
+	return render(c, ui.NewAdPage(adCat, userID, userName, c.Path(), makes, partCategories))
 }
 
 // HandleDuplicateAd shows the duplicate ad form with pre-filled data

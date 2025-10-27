@@ -1,0 +1,56 @@
+{
+  "Engine": [
+    "Piston & Rings",
+    "Cylinder Head",
+    "Cam Chain",
+    "Starter Motor"
+  ],
+  "Transmission": [
+    "Clutch",
+    "Sprocket",
+    "Chain",
+    "Shift Lever"
+  ],
+  "Fuel System": [
+    "Carburetor",
+    "Fuel Pump",
+    "Injector",
+    "Air Filter"
+  ],
+  "Electrical": [
+    "Battery",
+    "Alternator",
+    "Stator",
+    "Regulator/Rectifier",
+    "Spark Plug"
+  ],
+  "Cooling System": [
+    "Radiator",
+    "Coolant Pump",
+    "Thermostat"
+  ],
+  "Suspension": [
+    "Fork",
+    "Shock Absorber",
+    "Front Fork Seal",
+    "Rear Shock Spring"
+  ],
+  "Brakes": [
+    "Brake Pad",
+    "Brake Disc",
+    "Brake Line",
+    "Brake Master Cylinder"
+  ],
+  "Body & Frame": [
+    "Fairing",
+    "Tank",
+    "Seat",
+    "Windshield"
+  ],
+  "Exhaust": [
+    "Muffler",
+    "Exhaust Pipe",
+    "Catalytic Converter"
+  ]
+}
+

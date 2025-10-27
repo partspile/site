@@ -1,0 +1,107 @@
+{
+	"Belt Drive": [
+		"Belt",
+		"Idler Pulley"
+	],
+	"Body & Lamp Assembly": [
+		"Headlamp Assembly",
+		"Headlight Assembly",
+		"Lamp Assembly",
+		"Body & Lamp",
+		"Grille Assembly",
+		"Fender Assembly",
+		"Body and Lamp"
+	],
+	"Brakes & Wheel Hub": [
+		"Brake Rotor",
+		"Brake and Wheel Hub",
+		"Brake and Wheel Hub Kit",
+		"Wheel Hub Assembly",
+		"Brake Drums and Wheel Hubs",
+		"Brake Drum"
+	],
+	"Cooling System": [
+		"Radiator",
+		"Heater Core",
+		"Water Pump",
+		"Coolant Pump"
+	],
+	"Drivetrain": [
+		"Driveshaft",
+		"Differential Assembly",
+		"Transfer Case",
+		"Transmission Assembly",
+		"Transmission",
+		"Automatic Transmission",
+		"Axle Assembly",
+		"Rear Axle Assembly",
+		"Cylinder Head"
+	],
+	"Electrical": [
+		"Alternator",
+		"Alternator Brush",
+		"Alternator Commutator End Bearing",
+		"Alternator Drive End Bearing",
+		"Battery",
+		"Battery Cable"
+	],
+	"Electrical-Bulb & Socket": [
+		"Bulb and Socket",
+		"Bulb and Socket Assembly",
+		"Headlight Bulb and Socket",
+		"Headlight Bulb Socket"
+	],
+	"Electrical-Connector": [
+		"Electrical Connector",
+		"Connector"
+	],
+	"Electrical-Switch & Relay": [
+		"Switch and Relay",
+		"Relay Switch",
+		"Ignition Switch",
+		"Headlight Switch",
+		"Electrical Relay",
+		"Relay",
+		"Switch"
+	],
+	"Engine": [
+		"Engine Assembly",
+		"Engine",
+		"Rebuilt Engine",
+		"Engine Block",
+		"Motor Assembly",
+		"Water Pump",
+		"Turbocharger",
+		"Cylinder Head",
+		"Intake Manifold"
+	],
+	"Exhaust & Emission": [
+		"Exhaust Manifold",
+		"Catalytic Converter",
+		"Muffler",
+		"Exhaust System",
+		"Exhaust Pipe",
+		"Emission Control Sensor",
+		"Emission Control Module",
+		"Emission Control Valve"
+	],
+	"Fuel & Air": [
+		"Fuel Filter",
+		"Fuel Pump",
+		"Fuel Injector",
+		"Air Filter",
+		"Carburetor"
+	],
+	"Heat & Air Conditioning": [
+		"AC Compressor",
+		"AC Condenser",
+		"A/C Compressor",
+		"A/C Condenser",
+		"AC Evaporator",
+		"Evaporator",
+		"Heater Core",
+		"Blower Motor",
+		"Climate Control Module",
+		"HVAC Control Unit"
+	]
+}

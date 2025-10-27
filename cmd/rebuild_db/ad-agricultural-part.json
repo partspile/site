@@ -1,0 +1,80 @@
+[
+  {
+    "make": "JOHN DEERE",
+    "years": [
+      "2020"
+    ],
+    "models": [
+      "8410"
+    ],
+    "engines": [
+      "6.8L TURBO DIESEL"
+    ],
+    "title": "John Deere 8410 Turbocharger",
+    "description": "Replacement turbocharger for John Deere 8410. OEM quality. Rebuilt unit with warranty. Complete with gaskets and hardware. Improves power and efficiency significantly.",
+    "price": 1850,
+    "created_at": "2024-08-15T00:00:00Z",
+    "user_id": 1,
+    "category": "Engine",
+    "subcategory": "Turbocharger",
+    "location": {
+      "city": "Moline",
+      "admin_area": "IL",
+      "country": "US",
+      "latitude": 41.5067,
+      "longitude": -90.5150
+    }
+  },
+  {
+    "make": "CASE IH",
+    "years": [
+      "2020"
+    ],
+    "models": [
+      "STEIGER 450"
+    ],
+    "engines": [
+      "9.0L TURBO DIESEL"
+    ],
+    "title": "Case IH Steiger 450 Hydraulic Pump",
+    "description": "Refurbished hydraulic pump for Steiger 450. Tested and guaranteed. Perfect for field work restoration. Includes mounting hardware and seals.",
+    "price": 2250,
+    "created_at": "2024-08-16T00:00:00Z",
+    "user_id": 1,
+    "category": "Hydraulics",
+    "subcategory": "Hydraulic Pump",
+    "location": {
+      "city": "Racine",
+      "admin_area": "WI",
+      "country": "US",
+      "latitude": 42.7261,
+      "longitude": -87.7829
+    }
+  },
+  {
+    "make": "NEW HOLLAND",
+    "years": [
+      "2020"
+    ],
+    "models": [
+      "T8.420"
+    ],
+    "engines": [
+      "6.7L DIESEL"
+    ],
+    "title": "New Holland T8.420 Starter Motor",
+    "description": "Heavy-duty starter motor for New Holland T8.420. High torque design, excellent for cold weather starts. Includes solenoid and mounting hardware.",
+    "price": 450,
+    "created_at": "2024-08-17T00:00:00Z",
+    "user_id": 1,
+    "category": "Electrical",
+    "subcategory": "Starter Motor",
+    "location": {
+      "city": "New Holland",
+      "admin_area": "PA",
+      "country": "US",
+      "latitude": 40.0612,
+      "longitude": -76.0857
+    }
+  }
+]

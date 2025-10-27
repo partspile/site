@@ -228,10 +228,13 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 	if userID != 0 {
 		// Query with bookmark status - full fields for detail view
 		query = `
-			SELECT a.id, a.title, a.description, a.price, a.created_at, a.deleted_at, a.part_subcategory_id,
-			       a.user_id, psc.name as part_subcategory, pc.name as part_category, a.location_id, a.image_count, a.has_vector,
-			       l.raw_text as raw_location, l.city, l.admin_area, l.country,
-			       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked, a.ad_category_id
+			SELECT a.id, a.title, a.description, a.price,
+				a.created_at, a.deleted_at, a.part_subcategory_id,
+				a.user_id, COALESCE(psc.name, '') as part_subcategory,
+				COALESCE(pc.name, '') as part_category, a.location_id,
+				a.image_count, a.has_vector, l.raw_text as raw_location,
+				l.city, l.admin_area, l.country,
+			CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked, a.ad_category_id
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.part_subcategory_id = psc.id
 			LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
@@ -243,10 +246,13 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 	} else {
 		// Query without bookmark status (default to false) - full fields for detail view
 		query = `
-			SELECT a.id, a.title, a.description, a.price, a.created_at, a.deleted_at, a.part_subcategory_id,
-			       a.user_id, psc.name as part_subcategory, pc.name as part_category, a.location_id, a.image_count, a.has_vector,
-			       l.raw_text as raw_location, l.city, l.admin_area, l.country,
-			       0 as is_bookmarked, a.ad_category_id
+			SELECT a.id, a.title, a.description, a.price,
+				a.created_at, a.deleted_at, a.part_subcategory_id,
+				a.user_id, COALESCE(psc.name, '') as part_subcategory,
+				COALESCE(pc.name, '') as part_category, a.location_id,
+				a.image_count, a.has_vector, l.raw_text as raw_location,
+				l.city, l.admin_area, l.country, 0 as is_bookmarked,
+				a.ad_category_id
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.part_subcategory_id = psc.id
 			LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id

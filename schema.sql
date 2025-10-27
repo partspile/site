@@ -10,7 +10,7 @@ CREATE TABLE AdCategory (
 CREATE TABLE Make (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
-    name TEXT NOT NULL UNIQUE CHECK (length(name) > 0),
+    name TEXT NOT NULL CHECK (length(name) > 0),
     parent_company_id INTEGER REFERENCES ParentCompany(id)
 );
 
@@ -23,7 +23,7 @@ CREATE TABLE ParentCompany (
 CREATE TABLE Year (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
-    year INTEGER NOT NULL UNIQUE
+    year INTEGER NOT NULL
 );
 
 CREATE TABLE Model (
@@ -58,7 +58,7 @@ CREATE INDEX idx_vehicle_make_year_model_engine ON Vehicle(make_id, year_id, mod
 CREATE TABLE PartCategory (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
-    name TEXT NOT NULL UNIQUE CHECK (length(name) > 0)
+    name TEXT NOT NULL CHECK (length(name) > 0)
 );
 CREATE INDEX idx_partcategory_name ON PartCategory(name);
 

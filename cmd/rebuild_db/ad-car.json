@@ -1,0 +1,54 @@
+[
+  {
+    "make": "HONDA",
+    "years": [
+      "2020"
+    ],
+    "models": [
+      "CIVIC"
+    ],
+    "engines": [
+      "2.0L L4"
+    ],
+    "title": "2020 Honda Civic LX",
+    "description": "Clean 2020 Honda Civic in excellent condition. One owner, no accidents. Well maintained with all service records. Perfect daily driver.",
+    "price": 22500,
+    "created_at": "2024-01-15T00:00:00Z",
+    "user_id": 1,
+    "category": "",
+    "subcategory": "",
+    "location": {
+      "city": "Los Angeles",
+      "admin_area": "CA",
+      "country": "US",
+      "latitude": 34.0522,
+      "longitude": -118.2437
+    }
+  },
+  {
+    "make": "FORD",
+    "years": [
+      "2021"
+    ],
+    "models": [
+      "F-150"
+    ],
+    "engines": [
+      "3.5L V6 EcoBoost"
+    ],
+    "title": "2021 Ford F-150 XLT",
+    "description": "2021 Ford F-150 with low miles. 4WD, crew cab. All maintenance up to date. Excellent condition, no issues.",
+    "price": 35000,
+    "created_at": "2024-02-20T00:00:00Z",
+    "user_id": 1,
+    "category": "",
+    "subcategory": "",
+    "location": {
+      "city": "Dallas",
+      "admin_area": "TX",
+      "country": "US",
+      "latitude": 32.7767,
+      "longitude": -96.7970
+    }
+  }
+]

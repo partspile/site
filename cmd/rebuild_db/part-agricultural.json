@@ -1,0 +1,58 @@
+{
+  "Engine": [
+    "Piston & Rings",
+    "Cylinder Head",
+    "Turbocharger",
+    "Coolant Pump",
+    "Oil Filter"
+  ],
+  "Hydraulics": [
+    "Hydraulic Pump",
+    "Cylinder",
+    "Hose",
+    "Valve",
+    "Seal"
+  ],
+  "Electrical": [
+    "Battery",
+    "Alternator",
+    "Starter Motor",
+    "Sensor",
+    "Controller"
+  ],
+  "Cooling System": [
+    "Radiator",
+    "Fan",
+    "Thermostat",
+    "Hose"
+  ],
+  "Transmission": [
+    "Gear",
+    "Clutch",
+    "Axle",
+    "Final Drive"
+  ],
+  "Steering": [
+    "Power Steering Pump",
+    "Steering Cylinder",
+    "Tie Rod"
+  ],
+  "Attachments": [
+    "Bucket",
+    "Blade",
+    "Auger",
+    "Forks"
+  ],
+  "Tires & Wheels": [
+    "Tire",
+    "Rim",
+    "Valve"
+  ],
+  "Fuel System": [
+    "Injector",
+    "Fuel Pump",
+    "Filter",
+    "Tank"
+  ]
+}
+

@@ -1,0 +1,65 @@
+{
+  "JOHN DEERE": {
+    "2020": {
+      "8410": [
+        "6.8L TURBO DIESEL"
+      ],
+      "9620": [
+        "9.0L TURBO DIESEL"
+      ],
+      "7500": [
+        "4.5L DIESEL"
+      ]
+    },
+    "2021": {
+      "8410": [
+        "6.8L TURBO DIESEL"
+      ],
+      "9620": [
+        "9.0L TURBO DIESEL"
+      ],
+      "S680": [
+        "9.0L TURBO DIESEL"
+      ]
+    },
+    "2022": {
+      "9620": [
+        "9.0L TURBO DIESEL"
+      ]
+    }
+  },
+  "CASE IH": {
+    "2020": {
+      "STEIGER 450": [
+        "9.0L TURBO DIESEL"
+      ],
+      "MAGNUM 180": [
+        "6.7L DIESEL"
+      ]
+    },
+    "2021": {
+      "STEIGER 450": [
+        "9.0L TURBO DIESEL"
+      ],
+      "MAXXUM 140": [
+        "6.7L DIESEL"
+      ]
+    }
+  },
+  "NEW HOLLAND": {
+    "2020": {
+      "T8.420": [
+        "6.7L DIESEL"
+      ],
+      "CR8.70": [
+        "8.4L DIESEL"
+      ]
+    },
+    "2021": {
+      "T8.420": [
+        "6.7L DIESEL"
+      ]
+    }
+  }
+}
+

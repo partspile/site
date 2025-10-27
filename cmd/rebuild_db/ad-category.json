@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Cars & Trucks",
+    "vehicle_file": "vehicle-car.json",
+    "part_file": "",
+    "ad_file": "ad-car.json"
+  },
+  {
+    "name": "Car & Truck Parts",
+    "vehicle_file": "vehicle-car.json",
+    "part_file": "part-car.json",
+    "ad_file": "ad-car-part.json"
+  },
+  {
+    "name": "Motorcycles",
+    "vehicle_file": "vehicle-motorcycle.json",
+    "part_file": "",
+    "ad_file": "ad-motorcycle.json"
+  },
+  {
+    "name": "Motorcycle Parts",
+    "vehicle_file": "vehicle-motorcycle.json",
+    "part_file": "part-motorcycle.json",
+    "ad_file": "ad-motorcycle-part.json"
+  },
+  {
+    "name": "Bicycles",
+    "vehicle_file": "vehicle-bicycle.json",
+    "part_file": "",
+    "ad_file": "ad-bicycle.json"
+  },
+  {
+    "name": "Bicycle Parts",
+    "vehicle_file": "vehicle-bicycle.json",
+    "part_file": "part-bicycle.json",
+    "ad_file": "ad-bicycle-part.json"
+  },
+  {
+    "name": "Agricultural Equipment",
+    "vehicle_file": "vehicle-agricultural.json",
+    "part_file": "",
+    "ad_file": "ad-agricultural.json"
+  },
+  {
+    "name": "Agricultural Equipment Parts",
+    "vehicle_file": "vehicle-agricultural.json",
+    "part_file": "part-agricultural.json",
+    "ad_file": "ad-agricultural-part.json"
+  }
+]

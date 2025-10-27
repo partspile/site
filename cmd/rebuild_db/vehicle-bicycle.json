@@ -1,0 +1,63 @@
+{
+  "TREK": {
+    "2020": {
+      "DOMANE SL": [
+        "ROAD RACE"
+      ],
+      "FUEL EX": [
+        "MOUNTAIN TRAIL"
+      ]
+    },
+    "2021": {
+      "DOMANE SL": [
+        "ROAD RACE"
+      ],
+      "MADONE": [
+        "ROAD AERO"
+      ],
+      "FUEL EX": [
+        "MOUNTAIN TRAIL"
+      ]
+    }
+  },
+  "SPECIALIZED": {
+    "2020": {
+      "SHIV": [
+        "ROAD TRIATHLON"
+      ],
+      "TARMAC": [
+        "ROAD RACE"
+      ],
+      "EPIC": [
+        "MOUNTAIN XC"
+      ]
+    },
+    "2021": {
+      "TARMAC": [
+        "ROAD RACE"
+      ],
+      "STUMPJUMPER": [
+        "MOUNTAIN TRAIL"
+      ]
+    }
+  },
+  "GIANT": {
+    "2020": {
+      "DEFY": [
+        "ROAD ENDURANCE"
+      ],
+      "TCR": [
+        "ROAD RACE"
+      ]
+    },
+    "2021": {
+      "TCR": [
+        "ROAD RACE"
+      ],
+      "ANTHEM": [
+        "MOUNTAIN XC"
+      ]
+    }
+  }
+}
+

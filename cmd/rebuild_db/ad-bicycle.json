@@ -1,0 +1,42 @@
+[
+  {
+    "make": "TREK",
+    "models": [
+      "DOMANE SL"
+    ],
+    "title": "2020 Trek Domane SL Road Bike",
+    "description": "2020 Trek Domane SL road bike in excellent condition. Carbon frame, Shimano Ultegra components. Perfect for long rides or racing. Well maintained, garage kept.",
+    "price": 2500,
+    "created_at": "2024-04-15T00:00:00Z",
+    "user_id": 1,
+    "category": "",
+    "subcategory": "",
+    "location": {
+      "city": "Portland",
+      "admin_area": "OR",
+      "country": "US",
+      "latitude": 45.5152,
+      "longitude": -122.6784
+    }
+  },
+  {
+    "make": "SPECIALIZED",
+    "models": [
+      "TARMAC"
+    ],
+    "title": "2020 Specialized Tarmac Road Bike",
+    "description": "2020 Specialized Tarmac in great condition. Lightweight carbon frame, Shimano 105 groupset. Fast, responsive ride. Ready to race.",
+    "price": 2800,
+    "created_at": "2024-04-20T00:00:00Z",
+    "user_id": 1,
+    "category": "",
+    "subcategory": "",
+    "location": {
+      "city": "San Francisco",
+      "admin_area": "CA",
+      "country": "US",
+      "latitude": 37.7749,
+      "longitude": -122.4194
+    }
+  }
+]

@@ -1,0 +1,54 @@
+{
+  "Drivetrain": [
+    "Chain",
+    "Cassette",
+    "Chainring",
+    "Pedal",
+    "Crank"
+  ],
+  "Brakes": [
+    "Brake Pad",
+    "Brake Disc",
+    "Brake Cable",
+    "Brake Lever",
+    "Caliper"
+  ],
+  "Suspension": [
+    "Fork",
+    "Shock",
+    "Fork Seal",
+    "Shock Spring"
+  ],
+  "Wheels & Tires": [
+    "Rim",
+    "Spoke",
+    "Hub",
+    "Tire",
+    "Tube",
+    "Valve"
+  ],
+  "Electrical": [
+    "Battery",
+    "Light",
+    "Computer",
+    "Sensor"
+  ],
+  "Frame & Fork": [
+    "Frame",
+    "Fork",
+    "Stem",
+    "Handlebar"
+  ],
+  "Seat & Saddle": [
+    "Saddle",
+    "Seatpost",
+    "Seat Clamp"
+  ],
+  "Accessories": [
+    "Bottle Cage",
+    "Bag",
+    "Basket",
+    "Bell"
+  ]
+}
+

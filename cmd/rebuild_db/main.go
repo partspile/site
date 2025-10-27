@@ -20,12 +20,9 @@ import (
 type MakeYearModel map[string]map[string]map[string][]string
 
 func main() {
-	jsonFile := "cmd/rebuild_db/make-year-model.json"
-	partFile := "cmd/rebuild_db/part.json"
 	parentFile := "cmd/rebuild_db/parent.json"
 	makeParentFile := "cmd/rebuild_db/make-parent.json"
-	adFile := "cmd/rebuild_db/ad.json"
-	typeFile := "cmd/rebuild_db/type.json"
+	typeFile := "cmd/rebuild_db/ad-category.json"
 	dbFile := config.DatabaseURL
 	schemaFile := "schema.sql"
 
@@ -74,13 +71,16 @@ func main() {
 		log.Printf("Warning: Failed to set temp store: %v", err)
 	}
 
-	// Import type.json (AdCategory)
+	// Import ad-category.json (AdCategory)
 	typeData, err := os.ReadFile(typeFile)
 	if err != nil {
-		log.Fatalf("Failed to read type.json: %v", err)
+		log.Fatalf("Failed to read ad-category.json: %v", err)
 	}
 	type AdCategory struct {
-		Name string `json:"name"`
+		Name        string `json:"name"`
+		VehicleFile string `json:"vehicle_file,omitempty"`
+		PartFile    string `json:"part_file,omitempty"`
+		AdFile      string `json:"ad_file,omitempty"`
 	}
 	var adCategories []AdCategory
 	if err := json.Unmarshal(typeData, &adCategories); err != nil {
@@ -93,10 +93,9 @@ func main() {
 		_, err := database.Exec(`INSERT INTO AdCategory (name) VALUES (?)`, cat.Name)
 		if err != nil {
 			log.Printf("Failed to insert AdCategory %s: %v", cat.Name, err)
-		} else {
-			fmt.Printf("Inserted AdCategory: %s\n", cat.Name)
 		}
 	}
+	fmt.Printf("Inserted %d AdCategories\n", len(adCategories))
 
 	// Populate category map
 	categoryRows, err := database.Query(`SELECT id, name FROM AdCategory`)
@@ -112,9 +111,6 @@ func main() {
 		}
 		categoryMap[name] = id
 	}
-
-	// Get CarParts category ID for use throughout the script
-	carPartsCategoryID := categoryMap["Cars & Trucks Parts"]
 
 	// Import parent.json
 	parentData, err := os.ReadFile(parentFile)
@@ -133,10 +129,45 @@ func main() {
 		_, err := database.Exec(`INSERT INTO ParentCompany (name, country) VALUES (?, ?)`, pc.Name, pc.Country)
 		if err != nil {
 			log.Printf("Failed to insert ParentCompany %s: %v", pc.Name, err)
-		} else {
-			fmt.Printf("Inserted ParentCompany: %s (%s)\n", pc.Name, pc.Country)
 		}
 	}
+	fmt.Printf("Inserted %d ParentCompanies\n", len(parentCompanies))
+
+	// Import user.json
+	userFile := "cmd/rebuild_db/user.json"
+	userData, err := os.ReadFile(userFile)
+	if err != nil {
+		log.Fatalf("Failed to read user.json: %v", err)
+	}
+	type UserImport struct {
+		Name     string `json:"name"`
+		Password string `json:"password"`
+		Phone    string `json:"phone"`
+		IsAdmin  bool   `json:"is_admin"`
+	}
+	var users []UserImport
+	if err := json.Unmarshal(userData, &users); err != nil {
+		log.Fatalf("Failed to parse user.json: %v", err)
+	}
+	userCount := 0
+	for _, u := range users {
+		hash, salt, err := password.HashPassword(u.Password)
+		if err != nil {
+			log.Printf("Failed to hash password for user %s: %v", u.Name, err)
+			continue
+		}
+		_, err = database.Exec(`INSERT INTO User (name, phone,
+			password_hash, password_salt, password_algo, phone_verified,
+			verification_code, notification_method, email_address, is_admin)
+			VALUES (?, ?, ?, ?, ?, 0, '', 'sms', '', ?)`,
+			u.Name, u.Phone, hash, salt, "argon2id", u.IsAdmin)
+		if err != nil {
+			log.Printf("Failed to insert user %s: %v", u.Name, err)
+		} else {
+			userCount++
+		}
+	}
+	fmt.Printf("Inserted %d Users\n", userCount)
 
 	// Import make-parent.json
 	makeParentData, err := os.ReadFile(makeParentFile)
@@ -150,6 +181,18 @@ func main() {
 	var makeParents []MakeParent
 	if err := json.Unmarshal(makeParentData, &makeParents); err != nil {
 		log.Fatalf("Failed to parse make-parent.json: %v", err)
+	}
+
+	// Define MakeParentData for use in import functions
+	makeParentsData := make([]struct {
+		Make          string
+		ParentCompany string
+	}, len(makeParents))
+	for i, mp := range makeParents {
+		makeParentsData[i] = struct {
+			Make          string
+			ParentCompany string
+		}{mp.Make, mp.ParentCompany}
 	}
 
 	// Create a map of parent company names to IDs for efficient lookup
@@ -168,418 +211,60 @@ func main() {
 		parentCompanyMap[name] = id
 	}
 
-	// Import make-year-model.json with optimized Car insertion
-	f, err := os.Open(jsonFile)
-	if err != nil {
-		log.Fatalf("Failed to open JSON: %v", err)
-	}
-	defer f.Close()
-	data, err := io.ReadAll(f)
-	if err != nil {
-		log.Fatalf("Failed to read JSON: %v", err)
-	}
-	var mym MakeYearModel
-	if err := json.Unmarshal(data, &mym); err != nil {
-		log.Fatalf("Failed to parse JSON: %v", err)
-	}
+	// Create category to seed file mapping
+	categorySeedMap := make(map[string]struct {
+		vehicleFile string
+		partFile    string
+		adFile      string
+	})
 
-	// Create maps for efficient lookups
-	makeMap := make(map[string]int)
-	yearMap := make(map[string]int)
-	modelMap := make(map[string]int)
-	engineMap := make(map[string]int)
-
-	// Pre-populate all makes, years, models, and engines
-	fmt.Println("Pre-populating lookup maps...")
-
-	// Get all makes
-	makeRows, err := database.Query(`SELECT id, name FROM Make`)
-	if err != nil {
-		log.Fatalf("Failed to query Make: %v", err)
-	}
-	defer makeRows.Close()
-	for makeRows.Next() {
-		var id int
-		var name string
-		if err := makeRows.Scan(&id, &name); err != nil {
-			log.Fatalf("Failed to scan Make row: %v", err)
-		}
-		makeMap[name] = id
-	}
-
-	// Get all years
-	yearRows, err := database.Query(`SELECT id, year FROM Year`)
-	if err != nil {
-		log.Fatalf("Failed to query Year: %v", err)
-	}
-	defer yearRows.Close()
-	for yearRows.Next() {
-		var id int
-		var year string
-		if err := yearRows.Scan(&id, &year); err != nil {
-			log.Fatalf("Failed to scan Year row: %v", err)
-		}
-		yearMap[year] = id
-	}
-
-	// Get all models
-	modelRows, err := database.Query(`SELECT id, name FROM Model`)
-	if err != nil {
-		log.Fatalf("Failed to query Model: %v", err)
-	}
-	defer modelRows.Close()
-	for modelRows.Next() {
-		var id int
-		var name string
-		if err := modelRows.Scan(&id, &name); err != nil {
-			log.Fatalf("Failed to scan Model row: %v", err)
-		}
-		modelMap[name] = id
-	}
-
-	// Get all engines
-	engineRows, err := database.Query(`SELECT id, name FROM Engine`)
-	if err != nil {
-		log.Fatalf("Failed to query Engine: %v", err)
-	}
-	defer engineRows.Close()
-	for engineRows.Next() {
-		var id int
-		var name string
-		if err := engineRows.Scan(&id, &name); err != nil {
-			log.Fatalf("Failed to scan Engine row: %v", err)
-		}
-		engineMap[name] = id
-	}
-
-	// First pass: Insert all makes, years, models, and engines
-	fmt.Println("Inserting makes, years, models, and engines...")
-	for make, years := range mym {
-		// Find parent company ID for this make
-		var parentCompanyID *int
-		for _, mp := range makeParents {
-			if mp.Make == make {
-				if id, exists := parentCompanyMap[mp.ParentCompany]; exists {
-					parentCompanyID = &id
-				}
-				break
+	// Process each category from ad-category.json and add to seed map if it has files
+	for _, cat := range adCategories {
+		if cat.VehicleFile != "" || cat.AdFile != "" {
+			seedFiles := struct {
+				vehicleFile string
+				partFile    string
+				adFile      string
+			}{
+				vehicleFile: "cmd/rebuild_db/" + cat.VehicleFile,
+				partFile:    "",
+				adFile:      "cmd/rebuild_db/" + cat.AdFile,
 			}
-		}
-
-		// Insert make with parent company relationship and category
-		var makeID int
-		if parentCompanyID != nil {
-			makeID = getOrInsertWithParentAndCategory(database, "Make", "name", make, *parentCompanyID, carPartsCategoryID)
-		} else {
-			makeID = getOrInsertWithCategory(database, "Make", "name", make, carPartsCategoryID)
-		}
-		makeMap[make] = makeID
-
-		for year, models := range years {
-			yearID := getOrInsertWithCategory(database, "Year", "year", year, carPartsCategoryID)
-			yearMap[year] = yearID
-
-			for model, engines := range models {
-				modelID := getOrInsertWithCategory(database, "Model", "name", model, carPartsCategoryID)
-				modelMap[model] = modelID
-
-				for _, engine := range engines {
-					engineID := getOrInsertWithCategory(database, "Engine", "name", engine, carPartsCategoryID)
-					engineMap[engine] = engineID
-				}
+			if cat.PartFile != "" {
+				seedFiles.partFile = "cmd/rebuild_db/" + cat.PartFile
 			}
+			categorySeedMap[cat.Name] = seedFiles
 		}
 	}
 
-	// Second pass: Insert all vehicles in batches
-	fmt.Println("Inserting vehicles in optimized batches...")
-	vehicleCount := 0
-	batchSize := 1000
-	vehicleBatch := make([]struct {
-		adCategoryID, makeID, yearID, modelID, engineID int
-	}, 0, batchSize)
-
-	// Start transaction for bulk Vehicle operations
-	tx, err := database.Begin()
-	if err != nil {
-		log.Fatalf("Failed to begin transaction: %v", err)
-	}
-
-	for make, years := range mym {
-		makeID := makeMap[make]
-		for year, models := range years {
-			yearID := yearMap[year]
-			for model, engines := range models {
-				modelID := modelMap[model]
-				for _, engine := range engines {
-					engineID := engineMap[engine]
-
-					// Add to batch for bulk insertion (using Car Parts category)
-					vehicleBatch = append(vehicleBatch, struct {
-						adCategoryID, makeID, yearID, modelID, engineID int
-					}{carPartsCategoryID, makeID, yearID, modelID, engineID})
-					vehicleCount++
-
-					// Execute batch when it reaches the batch size
-					if len(vehicleBatch) >= batchSize {
-						executeVehicleBatch(tx, vehicleBatch)
-						vehicleBatch = vehicleBatch[:0] // Reset slice while keeping capacity
-					}
-				}
-			}
-		}
-	}
-
-	// Execute remaining vehicles in the batch
-	if len(vehicleBatch) > 0 {
-		executeVehicleBatch(tx, vehicleBatch)
-	}
-
-	// Commit the transaction
-	if err := tx.Commit(); err != nil {
-		log.Fatalf("Failed to commit Vehicle transaction: %v", err)
-	}
-
-	fmt.Printf("Processed %d vehicles in optimized batches\n", vehicleCount)
-
-	// Import part.json
-	partData, err := os.ReadFile(partFile)
-	if err != nil {
-		log.Fatalf("Failed to read part.json: %v", err)
-	}
-	var partMap map[string][]string
-	if err := json.Unmarshal(partData, &partMap); err != nil {
-		log.Fatalf("Failed to parse part.json: %v", err)
-	}
-	for cat, subcats := range partMap {
-		catID := getOrInsertWithCategory(database, "PartCategory", "name", cat, carPartsCategoryID)
-		for _, subcat := range subcats {
-			// Insert subcategory if not exists
-			var subcatID int
-			err := database.QueryRow(`SELECT id FROM PartSubCategory WHERE part_category_id=? AND name=?`, catID, subcat).Scan(&subcatID)
-			if err == sql.ErrNoRows {
-				_, err := database.Exec(`INSERT INTO PartSubCategory (part_category_id, name) VALUES (?, ?)`, catID, subcat)
-				if err != nil {
-					log.Printf("Failed to insert PartSubCategory: %v", err)
-				}
-			} else if err != nil {
-				log.Printf("PartSubCategory lookup error: %v", err)
-			}
-		}
-	}
-
-	// Import user.json
-	userFile := "cmd/rebuild_db/user.json"
-	userData, err := os.ReadFile(userFile)
-	if err != nil {
-		log.Fatalf("Failed to read user.json: %v", err)
-	}
-	type UserImport struct {
-		Name     string `json:"name"`
-		Password string `json:"password"`
-		Phone    string `json:"phone"`
-		IsAdmin  bool   `json:"is_admin"`
-	}
-	var users []UserImport
-	if err := json.Unmarshal(userData, &users); err != nil {
-		log.Fatalf("Failed to parse user.json: %v", err)
-	}
-	for _, u := range users {
-		hash, salt, err := password.HashPassword(u.Password)
-		if err != nil {
-			log.Printf("Failed to hash password for user %s: %v", u.Name, err)
-			continue
-		}
-		_, err = database.Exec(`INSERT INTO User (name, phone,
-			password_hash, password_salt, password_algo, phone_verified,
-			verification_code, notification_method, email_address, is_admin)
-			VALUES (?, ?, ?, ?, ?, 0, '', 'sms', '', ?)`,
-			u.Name, u.Phone, hash, salt, "argon2id", u.IsAdmin)
-		if err != nil {
-			log.Printf("Failed to insert user %s: %v", u.Name, err)
-		} else {
-			if u.IsAdmin {
-				fmt.Printf("Inserted admin user: %s\n", u.Name)
-			} else {
-				fmt.Printf("Inserted user: %s\n", u.Name)
-			}
-		}
-	}
-
-	// Import ad.json
-	adData, err := os.ReadFile(adFile)
-	if err != nil {
-		log.Fatalf("Failed to read ad.json: %v", err)
-	}
-	type AdImport struct {
-		Make        string   `json:"make"`
-		Years       []string `json:"years"`
-		Models      []string `json:"models"`
-		Engines     []string `json:"engines"`
-		Title       string   `json:"title"`
-		Description string   `json:"description"`
-		Price       float64  `json:"price"`
-		CreatedAt   string   `json:"created_at"`
-		UserID      int      `json:"user_id"`
-		Category    string   `json:"category"`
-		Subcategory string   `json:"subcategory"`
-		Location    struct {
-			City      string   `json:"city"`
-			AdminArea string   `json:"admin_area"`
-			Country   string   `json:"country"`
-			Latitude  *float64 `json:"latitude"`
-			Longitude *float64 `json:"longitude"`
-		} `json:"location"`
-	}
-	var ads []AdImport
-	if err := json.Unmarshal(adData, &ads); err != nil {
-		log.Fatalf("Failed to parse ad.json: %v", err)
-	}
-
-	// Create maps for efficient lookups
-	userMap := make(map[int]int)
-	partCategoryMap := make(map[string]int)
-	subcategoryMap := make(map[string]int)
-
-	// Declare variables for database queries
-	var userRows, partCategoryRows, subcategoryRows *sql.Rows
-
-	// Populate maps
-	userRows, err = database.Query(`SELECT id FROM User WHERE deleted_at IS NULL`)
-	if err != nil {
-		log.Fatalf("Failed to query User: %v", err)
-	}
-	defer userRows.Close()
-	for userRows.Next() {
-		var id int
-		if err := userRows.Scan(&id); err != nil {
-			log.Fatalf("Failed to scan User row: %v", err)
-		}
-		userMap[id] = id
-	}
-
-	partCategoryRows, err = database.Query(`SELECT id, name FROM PartCategory`)
-	if err != nil {
-		log.Fatalf("Failed to query PartCategory: %v", err)
-	}
-	defer partCategoryRows.Close()
-	for partCategoryRows.Next() {
-		var id int
-		var name string
-		if err := partCategoryRows.Scan(&id, &name); err != nil {
-			log.Fatalf("Failed to scan PartCategory row: %v", err)
-		}
-		partCategoryMap[name] = id
-	}
-
-	subcategoryRows, err = database.Query(`SELECT id, name FROM PartSubCategory`)
-	if err != nil {
-		log.Fatalf("Failed to query PartSubCategory: %v", err)
-	}
-	defer subcategoryRows.Close()
-	for subcategoryRows.Next() {
-		var id int
-		var name string
-		if err := subcategoryRows.Scan(&id, &name); err != nil {
-			log.Fatalf("Failed to scan PartSubCategory row: %v", err)
-		}
-		subcategoryMap[name] = id
-	}
-
-	// Process ads
-	adCount := 0
-	for _, ad := range ads {
-		// Insert or get location
-		locationKey := fmt.Sprintf("%s, %s, %s", ad.Location.City, ad.Location.AdminArea, ad.Location.Country)
-		var locationID int
-		err := database.QueryRow(`SELECT id FROM Location WHERE raw_text=?`, locationKey).Scan(&locationID)
-		if err == sql.ErrNoRows {
-			res, err := database.Exec(`INSERT INTO Location (raw_text, city, admin_area, country, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)`,
-				locationKey, ad.Location.City, ad.Location.AdminArea, ad.Location.Country, ad.Location.Latitude, ad.Location.Longitude)
-			if err != nil {
-				log.Printf("Failed to insert Location: %v", err)
-				continue
-			}
-			id64, _ := res.LastInsertId()
-			locationID = int(id64)
-		} else if err != nil {
-			log.Printf("Location lookup error: %v", err)
+	// Process each category that has seed data
+	for categoryName, seedFiles := range categorySeedMap {
+		categoryID, exists := categoryMap[categoryName]
+		if !exists {
+			log.Printf("Category %s not found, skipping", categoryName)
 			continue
 		}
 
-		// Get subcategory ID if specified, or use a default one
-		var subcategoryID int
-		if ad.Subcategory != "" {
-			if id, exists := subcategoryMap[ad.Subcategory]; exists {
-				subcategoryID = id
-			} else {
-				// If the specified subcategory doesn't exist, use the first available one
-				for _, id := range subcategoryMap {
-					subcategoryID = id
-					break
-				}
-			}
-		} else {
-			// If no subcategory specified, use the first available one
-			for _, id := range subcategoryMap {
-				subcategoryID = id
-				break
+		log.Printf("Processing category: %s", categoryName)
+
+		// Import vehicles for this category
+		if err := importVehicles(database, seedFiles.vehicleFile, categoryID, makeParentsData, parentCompanyMap); err != nil {
+			log.Printf("Failed to import vehicles for %s: %v", categoryName, err)
+		}
+
+		// Import parts for this category
+		if seedFiles.partFile != "" {
+			if err := importParts(database, seedFiles.partFile, categoryID); err != nil {
+				log.Printf("Failed to import parts for %s: %v", categoryName, err)
 			}
 		}
 
-		// Ensure we have a valid subcategory ID
-		if subcategoryID == 0 {
-			log.Printf("No valid subcategory found for ad: %s, skipping", ad.Title)
-			continue
+		// Import ads for this category
+		if err := importAds(database, seedFiles.adFile, categoryID, categoryMap); err != nil {
+			log.Printf("Failed to import ads for %s: %v", categoryName, err)
 		}
-
-		// Generate between 0 and 5 images per ad
-		numImages := rand.Intn(6) // 0 to 5 images
-
-		// Insert ad with image_count, has_vector (initially 0), and ad_category_id
-		res, err := database.Exec(`INSERT INTO Ad (title, description, price, created_at, part_subcategory_id, user_id, location_id, image_count, has_vector, ad_category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
-			ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryID, ad.UserID, locationID, numImages, carPartsCategoryID)
-		if err != nil {
-			log.Printf("Failed to insert Ad: %v", err)
-			continue
-		}
-		adID, _ := res.LastInsertId()
-
-		// Create AdVehicle relationships for all combinations
-		for _, year := range ad.Years {
-			for _, model := range ad.Models {
-				for _, engine := range ad.Engines {
-					// Get vehicle ID
-					var vehicleID int
-					makeID := makeMap[ad.Make]
-					yearID := yearMap[year]
-					modelID := modelMap[model]
-					engineID := engineMap[engine]
-
-					err := database.QueryRow(`SELECT id FROM Vehicle WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=?`,
-						carPartsCategoryID, makeID, yearID, modelID, engineID).Scan(&vehicleID)
-					if err == sql.ErrNoRows {
-						// Vehicle doesn't exist, skip this combination
-						continue
-					} else if err != nil {
-						log.Printf("Vehicle lookup error: %v", err)
-						continue
-					}
-
-					// Insert AdVehicle relationship
-					_, err = database.Exec(`INSERT INTO AdVehicle (ad_id, vehicle_id) VALUES (?, ?)`, adID, vehicleID)
-					if err != nil {
-						log.Printf("Failed to insert AdVehicle: %v", err)
-					}
-				}
-			}
-		}
-
-		fmt.Printf("Inserted ad: %s\n", ad.Title)
-		adCount++
 	}
 
-	fmt.Printf("Inserted %d ads total\n", adCount)
 	fmt.Println("Database rebuild and import complete.")
 	fmt.Println("Vector embeddings will be processed by the main application background processor.")
 }
@@ -645,22 +330,6 @@ func getOrInsertWithCategory(db *sql.DB, table, col, val string, categoryID int)
 	return id
 }
 
-func getOrInsertWithParentAndCategory(db *sql.DB, table, col, val string, parentID, categoryID int) int {
-	var id int
-	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=? AND parent_company_id=? AND ad_category_id=?", table, col), val, parentID, categoryID).Scan(&id)
-	if err == sql.ErrNoRows {
-		res, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s, parent_company_id, ad_category_id) VALUES (?, ?, ?)", table, col), val, parentID, categoryID)
-		if err != nil {
-			log.Fatalf("Failed to insert into %s: %v", table, err)
-		}
-		id64, _ := res.LastInsertId()
-		return int(id64)
-	} else if err != nil {
-		log.Fatalf("Failed to lookup %s: %v", table, err)
-	}
-	return id
-}
-
 // Helper functions for embedding generation
 func interfaceSlice(ss []string) []interface{} {
 	out := make([]interface{}, len(ss))
@@ -675,4 +344,272 @@ func joinStrings(ss []string) string {
 		return ""
 	}
 	return fmt.Sprintf("%s", ss)
+}
+
+// importVehicles loads vehicle data from a JSON file and imports it into the database
+func importVehicles(db *sql.DB, jsonFile string, categoryID int, makeParents []struct {
+	Make          string
+	ParentCompany string
+}, parentCompanyMap map[string]int) error {
+	f, err := os.Open(jsonFile)
+	if err != nil {
+		log.Printf("Failed to open %s: %v", jsonFile, err)
+		return nil // Skip missing files
+	}
+	defer f.Close()
+
+	data, err := io.ReadAll(f)
+	if err != nil {
+		log.Printf("Failed to read %s: %v", jsonFile, err)
+		return err
+	}
+
+	var mym MakeYearModel
+	if err := json.Unmarshal(data, &mym); err != nil {
+		log.Printf("Failed to parse %s: %v", jsonFile, err)
+		return err
+	}
+
+	// Import vehicles with the category
+	for make, years := range mym {
+		// Find parent company ID for this make
+		var parentCompanyID *int
+		for _, mp := range makeParents {
+			if mp.Make == make {
+				if id, exists := parentCompanyMap[mp.ParentCompany]; exists {
+					parentCompanyID = &id
+				}
+				break
+			}
+		}
+
+		for year, models := range years {
+			for model, engines := range models {
+				for _, engine := range engines {
+					makeID := getOrInsertWithParentAndCategoryHelper(db, "Make", "name", make, categoryID, parentCompanyID)
+					yearID := getOrInsertWithCategory(db, "Year", "year", year, categoryID)
+					modelID := getOrInsertWithCategory(db, "Model", "name", model, categoryID)
+					engineID := getOrInsertWithCategory(db, "Engine", "name", engine, categoryID)
+
+					// Insert vehicle
+					db.Exec(`INSERT OR IGNORE INTO Vehicle (ad_category_id, make_id, year_id, model_id, engine_id) VALUES (?, ?, ?, ?, ?)`,
+						categoryID, makeID, yearID, modelID, engineID)
+				}
+			}
+		}
+	}
+
+	fmt.Printf("Imported vehicles from %s\n", jsonFile)
+	return nil
+}
+
+// importParts loads part data from a JSON file and imports it into the database
+func importParts(db *sql.DB, jsonFile string, categoryID int) error {
+	partData, err := os.ReadFile(jsonFile)
+	if err != nil {
+		log.Printf("Failed to read %s: %v", jsonFile, err)
+		return nil // Skip missing files
+	}
+
+	var partMap map[string][]string
+	if err := json.Unmarshal(partData, &partMap); err != nil {
+		log.Printf("Failed to parse %s: %v", jsonFile, err)
+		return err
+	}
+
+	for cat, subcats := range partMap {
+		catID := getOrInsertWithCategory(db, "PartCategory", "name", cat, categoryID)
+		for _, subcat := range subcats {
+			var subcatID int
+			err := db.QueryRow(`SELECT id FROM PartSubCategory WHERE part_category_id=? AND name=?`, catID, subcat).Scan(&subcatID)
+			if err == sql.ErrNoRows {
+				_, err := db.Exec(`INSERT INTO PartSubCategory (part_category_id, name) VALUES (?, ?)`, catID, subcat)
+				if err != nil {
+					log.Printf("Failed to insert PartSubCategory: %v", err)
+				}
+			} else if err != nil {
+				log.Printf("PartSubCategory lookup error: %v", err)
+			}
+		}
+	}
+
+	fmt.Printf("Imported parts from %s\n", jsonFile)
+	return nil
+}
+
+// importAds loads ad data from a JSON file and imports it into the database
+func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[string]int) error {
+	adData, err := os.ReadFile(jsonFile)
+	if err != nil {
+		log.Printf("Failed to read %s: %v", jsonFile, err)
+		return nil // Skip missing files
+	}
+
+	type AdImport struct {
+		Make        string   `json:"make"`
+		Years       []string `json:"years"`
+		Models      []string `json:"models"`
+		Engines     []string `json:"engines"`
+		Title       string   `json:"title"`
+		Description string   `json:"description"`
+		Price       float64  `json:"price"`
+		CreatedAt   string   `json:"created_at"`
+		UserID      int      `json:"user_id"`
+		Category    string   `json:"category"`
+		Subcategory string   `json:"subcategory"`
+		Location    struct {
+			City      string   `json:"city"`
+			AdminArea string   `json:"admin_area"`
+			Country   string   `json:"country"`
+			Latitude  *float64 `json:"latitude"`
+			Longitude *float64 `json:"longitude"`
+		} `json:"location"`
+	}
+
+	var ads []AdImport
+	if err := json.Unmarshal(adData, &ads); err != nil {
+		log.Printf("Failed to parse %s: %v", jsonFile, err)
+		return err
+	}
+
+	// Get part categories and subcategories
+	partCategoryMap := make(map[string]int)
+	subcategoryMap := make(map[string]int)
+
+	rows, err := db.Query(`SELECT id, name FROM PartCategory WHERE ad_category_id=?`, categoryID)
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var id int
+			var name string
+			if err := rows.Scan(&id, &name); err == nil {
+				partCategoryMap[name] = id
+			}
+		}
+	}
+
+	rows2, err := db.Query(`SELECT id, name FROM PartSubCategory ps JOIN PartCategory pc ON ps.part_category_id=pc.id WHERE pc.ad_category_id=?`, categoryID)
+	if err == nil {
+		defer rows2.Close()
+		for rows2.Next() {
+			var id int
+			var name string
+			if err := rows2.Scan(&id, &name); err == nil {
+				subcategoryMap[name] = id
+			}
+		}
+	}
+
+	adCount := 0
+	for _, ad := range ads {
+		// Insert or get location
+		locationKey := fmt.Sprintf("%s, %s, %s", ad.Location.City, ad.Location.AdminArea, ad.Location.Country)
+		var locationID int
+		err := db.QueryRow(`SELECT id FROM Location WHERE raw_text=?`, locationKey).Scan(&locationID)
+		if err == sql.ErrNoRows {
+			res, err := db.Exec(`INSERT INTO Location (raw_text, city, admin_area, country, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)`,
+				locationKey, ad.Location.City, ad.Location.AdminArea, ad.Location.Country, ad.Location.Latitude, ad.Location.Longitude)
+			if err != nil {
+				log.Printf("Failed to insert Location: %v", err)
+				continue
+			}
+			id64, _ := res.LastInsertId()
+			locationID = int(id64)
+		} else if err != nil {
+			log.Printf("Location lookup error: %v", err)
+			continue
+		}
+
+		// Get subcategory ID
+		subcategoryID := 0
+		if ad.Subcategory != "" && partCategoryMap[ad.Category] > 0 {
+			subcatRows, err := db.Query(`SELECT id FROM PartSubCategory WHERE part_category_id=? AND name=?`, partCategoryMap[ad.Category], ad.Subcategory)
+			if err == nil {
+				if subcatRows.Next() {
+					subcatRows.Scan(&subcategoryID)
+				}
+				subcatRows.Close()
+			}
+		}
+
+		// If no subcategory found, use the first available one for this category (only for parts ads)
+		if subcategoryID == 0 && len(subcategoryMap) > 0 && ad.Category != "" {
+			for _, id := range subcategoryMap {
+				subcategoryID = id
+				break
+			}
+		}
+
+		// For non-parts ads (empty category), allow subcategoryID to be 0
+		if subcategoryID == 0 && ad.Category != "" {
+			log.Printf("No valid subcategory found for ad: %s, skipping", ad.Title)
+			continue
+		}
+
+		// Generate between 0 and 5 images per ad
+		numImages := rand.Intn(6)
+
+		// Insert ad
+		res, err := db.Exec(`INSERT INTO Ad (title, description, price, created_at, part_subcategory_id, user_id, location_id, image_count, has_vector, ad_category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
+			ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryID, ad.UserID, locationID, numImages, categoryID)
+		if err != nil {
+			log.Printf("Failed to insert Ad: %v", err)
+			continue
+		}
+		adID, _ := res.LastInsertId()
+
+		// Link to vehicles (only if ad has years/engines fields)
+		if len(ad.Years) > 0 && len(ad.Engines) > 0 {
+			for _, year := range ad.Years {
+				for _, model := range ad.Models {
+					for _, engine := range ad.Engines {
+						// Query for vehicle
+						var vehicleID int
+						err := db.QueryRow(`SELECT v.id FROM Vehicle v 
+							JOIN Make m ON v.make_id=m.id
+							JOIN Year y ON v.year_id=y.id
+							JOIN Model mdl ON v.model_id=mdl.id
+							JOIN Engine e ON v.engine_id=e.id
+							WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND v.ad_category_id=?`,
+							ad.Make, year, model, engine, categoryID).Scan(&vehicleID)
+						if err != nil {
+							continue
+						}
+
+						// Insert AdVehicle relationship
+						db.Exec(`INSERT OR IGNORE INTO AdVehicle (ad_id, vehicle_id) VALUES (?, ?)`, adID, vehicleID)
+					}
+				}
+			}
+		}
+
+		adCount++
+	}
+
+	fmt.Printf("Imported %d ads from %s\n", adCount, jsonFile)
+	return nil
+}
+
+// getOrInsertWithParentAndCategoryHelper helper that supports optional parentID
+func getOrInsertWithParentAndCategoryHelper(db *sql.DB, table, col, val string, categoryID int, parentID *int) int {
+	if parentID != nil && *parentID > 0 {
+		return getOrInsertWithParentAndCategoryFull(db, table, col, val, categoryID, *parentID)
+	}
+	return getOrInsertWithCategory(db, table, col, val, categoryID)
+}
+
+func getOrInsertWithParentAndCategoryFull(db *sql.DB, table, col, val string, categoryID, parentID int) int {
+	var id int
+	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=? AND parent_company_id=? AND ad_category_id=?", table, col), val, parentID, categoryID).Scan(&id)
+	if err == sql.ErrNoRows {
+		res, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s, parent_company_id, ad_category_id) VALUES (?, ?, ?)", table, col), val, parentID, categoryID)
+		if err != nil {
+			log.Fatalf("Failed to insert into %s: %v", table, err)
+		}
+		id64, _ := res.LastInsertId()
+		return int(id64)
+	} else if err != nil {
+		log.Fatalf("Failed to lookup %s: %v", table, err)
+	}
+	return id
 }
