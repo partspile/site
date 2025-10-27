@@ -63,31 +63,33 @@ func HandleRegistrationStep1Submission(c *fiber.Ctx) error {
 
 	// Check for existing username
 	if _, err := user.GetUserByName(name); err == nil {
-		return ValidationErrorResponse(c, "Unable to complete registration with these credentials. Please try different information.")
+		return ValidationErrorResponse(c,
+			"Unable to complete registration with these credentials. Please try different information.")
 	}
 
 	// GROK username screening
-	systemPrompt := `You are an expert parts technician. Your job is to screen potential user names for the parts-pile web site.
-Reject user names that the general public would find offensive.
-Car-guy humor, double entendres, and puns are allowed unless they are widely considered offensive or hateful.
-Examples of acceptable usernames:
-- rusty nuts
-- lugnut
-- fast wrench
-- shift happens
+	systemPrompt := `Your job is to screen potential user names for a web site.
+Reject user names that the general public would find offensive or inappropriate.
+The user name is displayed on the site for other to see and interact with, so we
+want polite names.
 
-Examples of unacceptable usernames:
+Unacceptable usernames:
 - racial slurs
 - hate speech
 - explicit sexual content
 
 If the user name is acceptable, return only: OK.
-If the user name is unacceptable, return a short, direct error message (1-2 sentences), and do not mention yourself, AI, or Grok in the response.
+
+If the user name is unacceptable, return a short, direct error message (1-2
+sentences), and do not mention yourself, AI, or Grok in the response.
+
 Only reject names that are truly offensive to a general audience.`
 
-	resp, err := grok.CallGrok(systemPrompt, name)
+	userPrompt := `Screen the following user name for the web site: ` + name
+	resp, err := grok.CallGrok(systemPrompt, userPrompt)
 	if err != nil {
-		return ValidationErrorResponse(c, "Unable to complete registration with these credentials. Please try different information.")
+		return ValidationErrorResponse(c,
+			"Unable to complete registration with these credentials. Please try different information.")
 	}
 	if resp != "OK" {
 		return ValidationErrorResponse(c, resp)
@@ -95,7 +97,8 @@ Only reject names that are truly offensive to a general audience.`
 
 	// Check for existing phone (do this after username checks to avoid revealing phone existence prematurely)
 	if _, err := user.GetUserByPhone(phone); err == nil {
-		return ValidationErrorResponse(c, "Unable to complete registration with these credentials. Please try different information.")
+		return ValidationErrorResponse(c,
+			"Unable to complete registration with these credentials. Please try different information.")
 	}
 
 	// Generate verification code
