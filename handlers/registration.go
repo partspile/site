@@ -143,8 +143,8 @@ Only reject names that are truly offensive to a general audience.`
 		}
 	}()
 
-	// Render verification page directly with the phone and name
-	return render(c, ui.VerificationPage(0, "", "/register", name, phone))
+	// Render verification form content (content only, no Page wrapper)
+	return render(c, ui.VerificationPageContent(name, phone))
 }
 
 // waitForSMSDelivery waits for SMS delivery confirmation with a timeout
@@ -217,6 +217,12 @@ func HandleRegistrationStep2(c *fiber.Ctx) error {
 	// Validate password strength
 	if err := password.ValidatePasswordStrength(userPassword); err != nil {
 		return ValidationErrorResponse(c, err.Error())
+	}
+
+	// Validate terms acceptance
+	terms := c.FormValue("terms")
+	if terms != "accepted" {
+		return ValidationErrorResponse(c, "You must accept the Terms of Service and Privacy Policy to continue.")
 	}
 
 	// Create the user

@@ -28,94 +28,97 @@ func RegisterPage(userID int, userName, path string) g.Node {
 			pageHeader("Register"),
 			contentContainer(
 				Div(
-					Class("text-center mb-6"),
-					P(
-						Class("text-gray-600"),
-						g.Text("Enter your information below. We'll send a verification code to your phone number to complete registration."),
+					ID("register-content"),
+					Div(
+						Class("text-center mb-6"),
+						P(
+							Class("text-gray-600"),
+							g.Text("Enter your information below. We'll send a verification code to your phone number to complete registration."),
+						),
 					),
-				),
 
-				formContainer("registerForm",
-					formGroup("Username", "name",
-						Div(
-							Input(
-								Type("text"),
-								ID("name"),
-								Name("name"),
-								Class("w-full p-2 border rounded"),
-								g.Attr("pattern", "^[a-zA-Z][a-zA-Z0-9]{2,19}$"),
-								g.Attr("maxlength", "20"),
-								g.Attr("placeholder", "JohnDoe"),
-								Required(),
-							),
-							Span(
-								Class("text-xs text-gray-500 mt-1"),
-								g.Text("3-20 characters, letters and digits only. Must start with a letter."),
+					formContainer("registerForm",
+						formGroup("Username", "name",
+							Div(
+								Input(
+									Type("text"),
+									ID("name"),
+									Name("name"),
+									Class("w-full p-2 border rounded"),
+									g.Attr("pattern", "^[a-zA-Z][a-zA-Z0-9]{2,19}$"),
+									g.Attr("maxlength", "20"),
+									g.Attr("placeholder", "JohnDoe"),
+									Required(),
+								),
+								Span(
+									Class("text-xs text-gray-500 mt-1"),
+									g.Text("3-20 characters, letters and digits only. Must start with a letter."),
+								),
 							),
 						),
-					),
-					formGroup("Phone Number", "phone",
-						Div(
-							Input(
-								Type("text"),
-								ID("phone"),
-								Name("phone"),
-								Class("w-full p-2 border rounded"),
-								g.Attr("placeholder", "+12025550123 or 202-555-0123"),
-								Required(),
+						formGroup("Phone Number", "phone",
+							Div(
+								Input(
+									Type("text"),
+									ID("phone"),
+									Name("phone"),
+									Class("w-full p-2 border rounded"),
+									g.Attr("placeholder", "+12025550123 or 202-555-0123"),
+									Required(),
+								),
+								Span(
+									Class("text-xs text-gray-500 mt-1"),
+									g.Text("Enter your phone in international format (e.g. +12025550123) or US/Canada format (e.g. 503-523-8780)."),
+								),
 							),
-							Span(
-								Class("text-xs text-gray-500 mt-1"),
-								g.Text("Enter your phone in international format (e.g. +12025550123) or US/Canada format (e.g. 503-523-8780)."),
+						),
+						Div(
+							Class("space-y-3"),
+							Checkbox("offers", "true", "I agree to receive informational text messages", false, false, Required()),
+						),
+						Div(
+							Class("text-xs text-gray-600 bg-gray-50 p-3 rounded border"),
+							g.Text("By providing your phone number you agree to receive informational text messages from Parts Pile. Message frequency will vary. Msg & data rates may apply. Reply HELP for help or STOP to cancel. We only use your phone for essential communications and verification."),
+						),
+						actionButtons(
+							button("Send Verification Code",
+								withAttributes(
+									hx.Post("/api/register/step1"),
+									hx.Target("#register-content"),
+									hx.Swap("outerHTML"),
+									hx.Indicator("#registerForm"),
+								),
 							),
 						),
 					),
 					Div(
-						Class("space-y-3"),
-						Checkbox("offers", "true", "I agree to receive informational text messages", false, false, Required()),
-					),
-					Div(
-						Class("text-xs text-gray-600 bg-gray-50 p-3 rounded border"),
-						g.Text("By providing your phone number you agree to receive informational text messages from Parts Pile. Message frequency will vary. Msg & data rates may apply. Reply HELP for help or STOP to cancel. We only use your phone for essential communications and verification."),
-					),
-					actionButtons(
-						button("Send Verification Code",
-							withAttributes(
-								hx.Post("/api/register/step1"),
-								hx.Target("#result"),
-								hx.Indicator("#registerForm"),
+						Class("bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6"),
+						H3(
+							Class("text-lg font-semibold text-blue-900 mb-2"),
+							g.Text("Privacy First"),
+						),
+						P(
+							Class("text-blue-800 text-sm leading-relaxed"),
+							g.Text("At parts-pile, we believe your privacy is important. We collect only the minimal personal information needed to operate our service:"),
+						),
+						Ul(
+							Class("text-blue-800 text-sm mt-2 space-y-1"),
+							Li(g.Text("• Phone number (required) - for verification and notifications")),
+							Li(g.Text("• Username (required) - to identify you on the platform")),
+							Li(g.Text("• Email (optional) - only if you choose email notifications in settings")),
+						),
+						P(
+							Class("text-blue-800 text-sm mt-2 leading-relaxed"),
+							g.Text("We don't collect real names, addresses, credit card information, or any other personal details. Your phone number requires verification to prevent abuse and ensure legitimate users. "),
+							A(
+								Href("/privacy"),
+								Class("text-blue-600 hover:text-blue-800 underline font-medium"),
+								g.Text("Learn more in our Privacy Policy"),
 							),
+							g.Text("."),
 						),
 					),
 				),
-				Div(
-					Class("bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6"),
-					H3(
-						Class("text-lg font-semibold text-blue-900 mb-2"),
-						g.Text("Privacy First"),
-					),
-					P(
-						Class("text-blue-800 text-sm leading-relaxed"),
-						g.Text("At parts-pile, we believe your privacy is important. We collect only the minimal personal information needed to operate our service:"),
-					),
-					Ul(
-						Class("text-blue-800 text-sm mt-2 space-y-1"),
-						Li(g.Text("• Phone number (required) - for verification and notifications")),
-						Li(g.Text("• Username (required) - to identify you on the platform")),
-						Li(g.Text("• Email (optional) - only if you choose email notifications in settings")),
-					),
-					P(
-						Class("text-blue-800 text-sm mt-2 leading-relaxed"),
-						g.Text("We don't collect real names, addresses, credit card information, or any other personal details. Your phone number requires verification to prevent abuse and ensure legitimate users. "),
-						A(
-							Href("/privacy"),
-							Class("text-blue-600 hover:text-blue-800 underline font-medium"),
-							g.Text("Learn more in our Privacy Policy"),
-						),
-						g.Text("."),
-					),
-				),
-				resultContainer(),
 			),
 		},
 	)
@@ -153,75 +156,68 @@ func LoginPage(userID int, userName string, path string) g.Node {
 	)
 }
 
-func VerificationPage(userID int, userName string, path string, username string, phone string) g.Node {
-	return Page(
-		"Verify Phone Number",
-		userID,
-		userName,
-		path,
-		[]g.Node{
-			pageHeader("Verify Your Phone Number"),
-			contentContainer(
-				Div(
-					Class("text-center mb-6"),
-					P(
-						Class("text-gray-600"),
-						g.Text("We've sent a verification code to your phone number. "+
-							"Please enter the code below to complete your registration."),
-					),
+// VerificationPageContent returns just the verification form content without the Page wrapper
+func VerificationPageContent(username string, phone string) g.Node {
+	return Div(
+		ID("register-content"),
+		Div(
+			Class("text-center mb-6"),
+			P(
+				Class("text-gray-600"),
+				g.Text("We've sent a verification code to your phone number. "+
+					"Please enter the code below to complete your registration."),
+			),
+		),
+		formContainer("verificationForm",
+			// Hidden reg_phone field
+			Input(
+				Type("hidden"),
+				Name("reg_phone"),
+				Value(phone),
+			),
+			// Hidden username field for password managers
+			Input(
+				Type("hidden"),
+				Name("username"),
+				Value(username),
+				g.Attr("autocomplete", "username"),
+			),
+			formGroup("Verification Code", "verification_code",
+				TextInput("verification_code", "verification_code", ""),
+			),
+			formGroup("Password", "password",
+				passwordInput("password", "password"),
+			),
+			formGroup("Confirm Password", "password2",
+				passwordInput("password2", "password2"),
+			),
+			Div(
+				Class("space-y-2"),
+				Checkbox("terms", "accepted", "I accept the ", false, false, Required()),
+				A(
+					Href("/terms"),
+					Class("text-blue-600 hover:text-blue-800 underline"),
+					g.Text("Terms of Service"),
 				),
-				formContainer("verificationForm",
-					// Hidden reg_phone field
-					Input(
-						Type("hidden"),
-						Name("reg_phone"),
-						Value(phone),
+				g.Text(" & "),
+				A(
+					Href("/privacy"),
+					Class("text-blue-600 hover:text-blue-800 underline"),
+					g.Text("Privacy Policy"),
+				),
+				g.Text("."),
+			),
+			actionButtons(
+				button("Complete Registration",
+					withAttributes(
+						hx.Post("/api/register/step2"),
+						hx.Target("#result"),
+						hx.Indicator("#verificationForm"),
 					),
-					// Hidden username field for password managers
-					Input(
-						Type("hidden"),
-						Name("username"),
-						Value(username),
-						g.Attr("autocomplete", "username"),
-					),
-					formGroup("Verification Code", "verification_code",
-						TextInput("verification_code", "verification_code", ""),
-					),
-					formGroup("Password", "password",
-						passwordInput("password", "password"),
-					),
-					formGroup("Confirm Password", "password2",
-						passwordInput("password2", "password2"),
-					),
-					Div(
-						Class("space-y-2"),
-						Checkbox("terms", "accepted", "I accept the ", false, false),
-						A(
-							Href("/terms"),
-							Class("text-blue-600 hover:text-blue-800 underline"),
-							g.Text("Terms of Service"),
-						),
-						g.Text(" & "),
-						A(
-							Href("/privacy"),
-							Class("text-blue-600 hover:text-blue-800 underline"),
-							g.Text("Privacy Policy"),
-						),
-						g.Text("."),
-					),
-					actionButtons(
-						button("Complete Registration",
-							withAttributes(
-								hx.Post("/api/register/step2"),
-								hx.Target("#result"),
-								hx.Indicator("#verificationForm"),
-							),
-						),
-					),
-					resultContainer(),
 				),
 			),
-		},
+			resultContainer(),
+		),
 	)
 }
 
