@@ -7,9 +7,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/parts-pile/site/grok"
-	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/sms"
 	"github.com/parts-pile/site/ui"
@@ -17,22 +15,22 @@ import (
 	"github.com/parts-pile/site/verification"
 )
 
-// HandleRegistrationStep1 handles the first step of registration (collecting user info)
-func HandleRegistrationStep1(c *fiber.Ctx) error {
-	userID := local.GetUserID(c)
-	userName := local.GetUserName(c)
-	return render(c, ui.RegisterPage(userID, userName, c.Path()))
+// HandleRegistration handles the first step of registration (collecting user info)
+func HandleRegistration(c *fiber.Ctx) error {
+	// Log out any currently logged-in user since they're starting a new registration
+	logoutUser(c)
+	return render(c, ui.RegisterPage(0, "", c.Path()))
 }
 
-// HandleRegistrationStep1Submission handles the first step submission and sends SMS
-func HandleRegistrationStep1Submission(c *fiber.Ctx) error {
+// HandleRegistrationStep1 handles the first step submission and sends SMS
+func HandleRegistrationStep1(c *fiber.Ctx) error {
 	name := c.FormValue("name")
 	phone := c.FormValue("phone")
 	phone = strings.TrimSpace(phone)
 
-	// Validate required fields
-	if strings.TrimSpace(name) == "" {
-		return ValidationErrorResponse(c, "Username is required.")
+	// Validate username format
+	if err := ValidateUsername(name); err != nil {
+		return ValidationErrorResponse(c, err.Error())
 	}
 
 	if phone == "" {
@@ -78,7 +76,7 @@ Unacceptable usernames:
 - hate speech
 - explicit sexual content
 
-If the user name is acceptable, return only: OK.
+If the user name is acceptable, return only: OK
 
 If the user name is unacceptable, return a short, direct error message (1-2
 sentences), and do not mention yourself, AI, or Grok in the response.
@@ -108,8 +106,8 @@ Only reject names that are truly offensive to a general audience.`
 		return ValidationErrorResponse(c, "Unable to generate verification code. Please try again.")
 	}
 
-	// Store verification code
-	err = verification.CreateVerificationCode(phone, code)
+	// Store verification code with registration name
+	err = verification.CreateRegistrationVerificationCode(phone, code, name)
 	if err != nil {
 		log.Printf("[REGISTRATION] Failed to store verification code: %v", err)
 		return ValidationErrorResponse(c, "Unable to create verification code. Please try again.")
@@ -129,24 +127,6 @@ Only reject names that are truly offensive to a general audience.`
 		return ValidationErrorResponse(c, "Unable to send verification code. Please try again.")
 	}
 
-	// Store registration data in session for step 2
-	store := c.Locals("session_store").(*session.Store)
-	sess, err := store.Get(c)
-	if err != nil {
-		log.Printf("[REGISTRATION] Failed to get session: %v", err)
-		return ValidationErrorResponse(c, "Session error. Please try again.")
-	}
-
-	sess.Set("reg_name", name)
-	sess.Set("reg_phone", phone)
-	sess.Set("reg_step", "waiting")
-	sess.Set("reg_message_sid", messageSid)
-
-	if err := sess.Save(); err != nil {
-		log.Printf("[REGISTRATION] Failed to save session: %v", err)
-		return ValidationErrorResponse(c, "Session error. Please try again.")
-	}
-
 	// Start SMS delivery monitoring in background
 	go func() {
 		// Wait for SMS delivery confirmation
@@ -163,9 +143,8 @@ Only reject names that are truly offensive to a general audience.`
 		}
 	}()
 
-	// Return success response immediately - user can proceed to verification
-	// The SMS delivery status will be checked during verification
-	return render(c, ui.SuccessMessage("Verification code sent! Please check your phone and enter the code below.", "/register/verify"))
+	// Render verification page directly with the phone and name
+	return render(c, ui.VerificationPage(0, "", "/register", name, phone))
 }
 
 // waitForSMSDelivery waits for SMS delivery confirmation with a timeout
@@ -194,52 +173,27 @@ func waitForSMSDelivery(messageSid string, timeout time.Duration) (bool, error) 
 	}
 }
 
-// HandleRegistrationVerification shows the verification code input page
-func HandleRegistrationVerification(c *fiber.Ctx) error {
-	userID := local.GetUserID(c)
-	userName := local.GetUserName(c)
-	store := c.Locals("session_store").(*session.Store)
-	sess, err := store.Get(c)
-	if err != nil {
+// HandleRegistrationStep2 handles verification code submission and completes registration
+func HandleRegistrationStep2(c *fiber.Ctx) error {
+	// Get phone from form (stored in hidden field)
+	phone := c.FormValue("reg_phone")
+	if phone == "" {
 		return c.Redirect("/register")
 	}
 
-	regStep := sess.Get("reg_step")
-	if regStep != "waiting" && regStep != "verification" {
-		return c.Redirect("/register")
-	}
-
-	// Check if we have the required session data
-	name := sess.Get("reg_name")
-	phone := sess.Get("reg_phone")
-	if name == nil || phone == nil {
-		return c.Redirect("/register")
-	}
-
-	username := name.(string) // We know this exists from the check above
-	return render(c, ui.VerificationPage(userID, userName, c.Path(), username))
-}
-
-// HandleRegistrationStep2Submission handles verification code submission and completes registration
-func HandleRegistrationStep2Submission(c *fiber.Ctx) error {
-	store := c.Locals("session_store").(*session.Store)
-	sess, err := store.Get(c)
-	if err != nil {
-		return c.Redirect("/register")
-	}
-
-	regStep := sess.Get("reg_step")
-	if regStep != "waiting" && regStep != "verification" {
-		return c.Redirect("/register")
-	}
-
-	name := sess.Get("reg_name").(string)
-	phone := sess.Get("reg_phone").(string)
 	code := c.FormValue("verification_code")
-
 	if code == "" {
 		return ValidationErrorResponse(c, "Please enter the verification code.")
 	}
+
+	// Get the registration name from the verification record
+	vc, err := verification.GetVerificationCode(phone)
+	if err != nil {
+		log.Printf("[REGISTRATION] Failed to get verification code: %v", err)
+		return c.Redirect("/register")
+	}
+
+	name := vc.RegistrationName
 
 	// Validate the code
 	valid, err := verification.ValidateCode(phone, code)
@@ -285,14 +239,27 @@ func HandleRegistrationStep2Submission(c *fiber.Ctx) error {
 		// Don't fail registration for this, but log it
 	}
 
-	// Clear registration session data
-	sess.Delete("reg_name")
-	sess.Delete("reg_phone")
-	sess.Delete("reg_step")
-	if err := sess.Save(); err != nil {
-		log.Printf("[REGISTRATION] Failed to save session cleanup: %v", err)
-		// Don't fail registration for session cleanup errors
+	// Clean up registration verification record
+	err = verification.InvalidateVerificationCodes(phone)
+	if err != nil {
+		log.Printf("[REGISTRATION] Failed to cleanup verification codes: %v", err)
+		// Don't fail registration for cleanup errors
 	}
+
+	// Get the newly created user to generate JWT
+	u, err := user.GetUser(userID)
+	if err != nil {
+		log.Printf("[REGISTRATION] Failed to get newly created user: %v", err)
+		return ValidationErrorResponse(c, "Registration completed but unable to log you in. Please log in manually.")
+	}
+
+	// Generate JWT token and log the user in
+	if err := loginUser(c, &u); err != nil {
+		log.Printf("[REGISTRATION] Failed to log in: %v", err)
+		return ValidationErrorResponse(c, "Registration completed but unable to log you in. Please log in manually.")
+	}
+
+	log.Printf("[REGISTRATION] Registration successful: userID=%d, name=%s", userID, name)
 
 	// Return success response with delay before redirecting to rocks page
 	return render(c, ui.SuccessMessage("Registration successful! Redirecting to rocks page...", "/rocks"))

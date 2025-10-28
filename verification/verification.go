@@ -25,12 +25,13 @@ const (
 
 // VerificationCode represents a phone verification code
 type VerificationCode struct {
-	ID        int
-	Phone     string
-	Code      string
-	ExpiresAt time.Time
-	Attempts  int
-	CreatedAt time.Time
+	ID               int
+	Phone            string
+	Code             string
+	ExpiresAt        time.Time
+	Attempts         int
+	RegistrationName string
+	CreatedAt        time.Time
 }
 
 // GenerateCode creates a new 6-digit verification code
@@ -64,10 +65,28 @@ func CreateVerificationCode(phone, code string) error {
 	return nil
 }
 
+// CreateRegistrationVerificationCode stores a new verification code with registration name
+func CreateRegistrationVerificationCode(phone, code, name string) error {
+	expiresAt := time.Now().Add(CodeExpiry)
+
+	_, err := db.Exec(`
+		INSERT INTO PhoneVerification (phone, verification_code, expires_at, attempts, registration_name) 
+		VALUES (?, ?, ?, 0, ?)
+	`, phone, code, expiresAt.Format(time.RFC3339), name)
+
+	if err != nil {
+		return fmt.Errorf("failed to create registration verification code: %w", err)
+	}
+
+	log.Printf("[VERIFICATION] Created registration verification code for %s, expires at %s",
+		phone, expiresAt.Format(time.RFC3339))
+	return nil
+}
+
 // GetVerificationCode retrieves the most recent verification code for a phone
 func GetVerificationCode(phone string) (*VerificationCode, error) {
 	row := db.QueryRow(`
-		SELECT id, phone, verification_code, expires_at, attempts, created_at
+		SELECT id, phone, verification_code, expires_at, attempts, registration_name, created_at
 		FROM PhoneVerification 
 		WHERE phone = ? 
 		ORDER BY created_at DESC 
@@ -78,7 +97,7 @@ func GetVerificationCode(phone string) (*VerificationCode, error) {
 	var expiresAtStr, createdAtStr string
 
 	err := row.Scan(&vc.ID, &vc.Phone, &vc.Code, &expiresAtStr,
-		&vc.Attempts, &createdAtStr)
+		&vc.Attempts, &vc.RegistrationName, &createdAtStr)
 	if err != nil {
 		return nil, fmt.Errorf("verification code not found: %w", err)
 	}

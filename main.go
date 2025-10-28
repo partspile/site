@@ -166,10 +166,9 @@ func main() {
 	adminAPI.Get("/part-cache/refresh", h.HandleRefreshPartCache)
 
 	// User registration/authentication
-	app.Get("/register", h.HandleRegistrationStep1)
-	api.Post("/register/step1", h.RegistrationRateLimiter, h.HandleRegistrationStep1Submission)
-	app.Get("/register/verify", h.HandleRegistrationVerification)
-	api.Post("/register/verify", h.HandleRegistrationStep2Submission)
+	app.Get("/register", h.HandleRegistration)
+	api.Post("/register/step1", h.RegistrationRateLimiter, h.HandleRegistrationStep1)
+	api.Post("/register/step2", h.RegistrationRateLimiter, h.HandleRegistrationStep2)
 	api.Post("/sms/webhook", h.HandleSMSWebhook)
 	app.Get("/rocks", h.HandleRocksPage)
 	app.Get("/login", h.HandleLogin)

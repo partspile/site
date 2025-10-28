@@ -37,12 +37,21 @@ func RegisterPage(userID int, userName, path string) g.Node {
 
 				formContainer("registerForm",
 					formGroup("Username", "name",
-						Input(
-							Type("text"),
-							ID("name"),
-							Name("name"),
-							Class("w-full p-2 border rounded"),
-							Required(),
+						Div(
+							Input(
+								Type("text"),
+								ID("name"),
+								Name("name"),
+								Class("w-full p-2 border rounded"),
+								g.Attr("pattern", "^[a-zA-Z][a-zA-Z0-9]{2,19}$"),
+								g.Attr("maxlength", "20"),
+								g.Attr("placeholder", "JohnDoe"),
+								Required(),
+							),
+							Span(
+								Class("text-xs text-gray-500 mt-1"),
+								g.Text("3-20 characters, letters and digits only. Must start with a letter."),
+							),
 						),
 					),
 					formGroup("Phone Number", "phone",
@@ -91,7 +100,7 @@ func RegisterPage(userID int, userName, path string) g.Node {
 					),
 					Ul(
 						Class("text-blue-800 text-sm mt-2 space-y-1"),
-						Li(g.Text("• Phone number (required) - for verification and communication")),
+						Li(g.Text("• Phone number (required) - for verification and notifications")),
 						Li(g.Text("• Username (required) - to identify you on the platform")),
 						Li(g.Text("• Email (optional) - only if you choose email notifications in settings")),
 					),
@@ -144,7 +153,7 @@ func LoginPage(userID int, userName string, path string) g.Node {
 	)
 }
 
-func VerificationPage(userID int, userName string, path string, username string) g.Node {
+func VerificationPage(userID int, userName string, path string, username string, phone string) g.Node {
 	return Page(
 		"Verify Phone Number",
 		userID,
@@ -162,6 +171,12 @@ func VerificationPage(userID int, userName string, path string, username string)
 					),
 				),
 				formContainer("verificationForm",
+					// Hidden reg_phone field
+					Input(
+						Type("hidden"),
+						Name("reg_phone"),
+						Value(phone),
+					),
 					// Hidden username field for password managers
 					Input(
 						Type("hidden"),
@@ -197,7 +212,7 @@ func VerificationPage(userID int, userName string, path string, username string)
 					actionButtons(
 						button("Complete Registration",
 							withAttributes(
-								hx.Post("/api/register/verify"),
+								hx.Post("/api/register/step2"),
 								hx.Target("#result"),
 								hx.Indicator("#verificationForm"),
 							),

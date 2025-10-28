@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"mime/multipart"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -47,6 +48,39 @@ func ValidateCleanText(c *fiber.Ctx, fieldName, displayName string, maxLength in
 	}
 
 	return value, nil
+}
+
+// ValidateUsername validates that a username follows conventions
+// Rules:
+// - 3 to 20 characters
+// - Only letters (a-z, A-Z) and digits (0-9)
+// - First character must be a letter (a-z, A-Z)
+func ValidateUsername(username string) error {
+	if username == "" {
+		return fmt.Errorf("username is required")
+	}
+
+	// Check length (3 to 20 characters)
+	if len(username) > 20 {
+		return fmt.Errorf("username must be 20 characters or less")
+	}
+	if len(username) < 3 {
+		return fmt.Errorf("username must be at least 3 characters")
+	}
+
+	// Check that first character is a letter
+	firstChar := username[0]
+	if !((firstChar >= 'a' && firstChar <= 'z') || (firstChar >= 'A' && firstChar <= 'Z')) {
+		return fmt.Errorf("username must start with a letter (a-z, A-Z)")
+	}
+
+	// Check that all characters are letters or digits
+	validPattern := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
+	if !validPattern.MatchString(username) {
+		return fmt.Errorf("username can only contain letters and digits")
+	}
+
+	return nil
 }
 
 // ValidateEmail validates that a string is a valid email address

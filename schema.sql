@@ -90,6 +90,7 @@ CREATE TABLE PhoneVerification (
     verification_code TEXT NOT NULL,
     expires_at DATETIME NOT NULL,
     attempts INTEGER NOT NULL DEFAULT 0,
+    registration_name TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_phoneverification_phone ON PhoneVerification(phone);
