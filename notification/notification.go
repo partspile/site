@@ -14,17 +14,13 @@ import (
 
 // NotificationService handles sending notifications for new messages
 type NotificationService struct {
-	smsService   *sms.SMSService
 	emailService *email.EmailService
+	hasSMS       bool
 }
 
 // NewNotificationService creates a new notification service
 func NewNotificationService() (*NotificationService, error) {
-	smsService, err := sms.NewSMSService()
-	if err != nil {
-		// Log error but don't fail - email notifications can still work
-		log.Printf("Warning: SMS service not available: %v", err)
-	}
+	hasSMS := true // SMS service is initialized at startup
 
 	emailService, err := email.NewEmailService()
 	if err != nil {
@@ -33,13 +29,13 @@ func NewNotificationService() (*NotificationService, error) {
 	}
 
 	// At least one service should be available
-	if smsService == nil && emailService == nil {
+	if !hasSMS && emailService == nil {
 		return nil, fmt.Errorf("no notification services available - check configuration")
 	}
 
 	return &NotificationService{
-		smsService:   smsService,
 		emailService: emailService,
+		hasSMS:       hasSMS,
 	}, nil
 }
 
@@ -85,7 +81,7 @@ func (n *NotificationService) NotifyNewMessage(conversationID int, senderID, rec
 
 // sendSMSNotification sends an SMS notification about a new message
 func (n *NotificationService) sendSMSNotification(phoneNumber, senderName, adTitle, messageContent string, conversationID int) error {
-	if n.smsService == nil {
+	if !n.hasSMS {
 		return fmt.Errorf("SMS service not available")
 	}
 
@@ -105,7 +101,7 @@ func (n *NotificationService) sendSMSNotification(phoneNumber, senderName, adTit
 		senderName, adTitle, truncatedContent, config.BaseURL, conversationID)
 
 	// Send SMS using Twilio
-	_, err := n.smsService.SendGeneralMessage(phoneNumber, message)
+	err := sms.SendMessage(phoneNumber, message)
 	if err != nil {
 		log.Printf("SMS notification failed for %s: %v", phoneNumber, err)
 		return err

@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/grok"
@@ -114,63 +114,16 @@ Only reject names that are truly offensive to a general audience.`
 	}
 
 	// Send SMS
-	smsService, err := sms.NewSMSService()
-	if err != nil {
-		log.Printf("[REGISTRATION] Failed to create SMS service: %v", err)
-		// For development, you might want to use mock service here
-		return ValidationErrorResponse(c, "Unable to send verification code. Please try again.")
-	}
-
-	messageSid, err := smsService.SendVerificationCode(phone, code)
+	message := fmt.Sprintf("Your Parts Pile verification code is: %s. "+
+		"This code expires in 10 minutes. Reply STOP to unsubscribe.", code)
+	err = sms.SendMessage(phone, message)
 	if err != nil {
 		log.Printf("[REGISTRATION] Failed to send SMS: %v", err)
 		return ValidationErrorResponse(c, "Unable to send verification code. Please try again.")
 	}
 
-	// Start SMS delivery monitoring in background
-	go func() {
-		// Wait for SMS delivery confirmation
-		delivered, err := waitForSMSDelivery(messageSid, 30*time.Second)
-		if err != nil {
-			log.Printf("[REGISTRATION] SMS delivery wait failed: %v", err)
-			return
-		}
-
-		if delivered {
-			log.Printf("[REGISTRATION] SMS delivered successfully for %s", phone)
-		} else {
-			log.Printf("[REGISTRATION] SMS delivery failed for %s", phone)
-		}
-	}()
-
 	// Render verification form content (content only, no Page wrapper)
 	return render(c, ui.VerificationPageContent(name, phone))
-}
-
-// waitForSMSDelivery waits for SMS delivery confirmation with a timeout
-func waitForSMSDelivery(messageSid string, timeout time.Duration) (bool, error) {
-	start := time.Now()
-	ticker := time.NewTicker(500 * time.Millisecond) // Check every 500ms
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			status := sms.GetGlobalStatusTracker().GetMessageStatus(messageSid)
-
-			switch status {
-			case sms.SMSStatusDelivered:
-				return true, nil
-			case sms.SMSStatusFailed, sms.SMSStatusUndelivered:
-				return false, nil
-			}
-
-			// Check if we've exceeded the timeout
-			if time.Since(start) > timeout {
-				return false, nil
-			}
-		}
-	}
 }
 
 // HandleRegistrationStep2 handles verification code submission and completes registration
