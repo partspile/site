@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/part"
@@ -22,7 +23,8 @@ func HandleNewAd(c *fiber.Ctx) error {
 	adCat := cookie.GetAdCategory(c)
 	makes := vehicle.GetMakes(adCat)
 	partCategories := part.GetCategories(adCat)
-	return render(c, ui.NewAdPage(adCat, userID, userName, c.Path(), makes, partCategories))
+	maxImagesPerAd := config.MaxImagesPerAd
+	return render(c, ui.NewAdPage(adCat, userID, userName, c.Path(), makes, partCategories, maxImagesPerAd))
 }
 
 // HandleDuplicateAd shows the duplicate ad form with pre-filled data
@@ -52,7 +54,7 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 
 	return render(c, ui.DuplicateAdPage(
 		userID, userName, c.Path(), makes, categoryNames,
-		*adDetail, years, models, engines, subcategoryNames, adDetail.PartSubcategory))
+		*adDetail, years, models, engines, subcategoryNames, adDetail.PartSubcategory, config.MaxImagesPerAd))
 }
 
 // HandleNewAdSubmission processes the new ad form submission
@@ -93,7 +95,8 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 		log.Printf("[embedding] Successfully processed ad %d inline", adID)
 	}
 
-	return render(c, ui.SuccessMessage("Ad created successfully", "/"))
+	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()
+	return render(c, ui.SuccessMessage("Ad created successfully", "/", redirectDelayMs))
 }
 
 // HandleYears handles the years dropdown for new ad form

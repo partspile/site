@@ -236,21 +236,9 @@ func HandleRegistrationStep2(c *fiber.Ctx) error {
 		// Don't fail registration for cleanup errors
 	}
 
-	// Get the newly created user to generate JWT
-	u, err := user.GetUser(userID)
-	if err != nil {
-		log.Printf("[REGISTRATION] Failed to get newly created user: %v", err)
-		return ValidationErrorResponse(c, "Registration completed but unable to log you in. Please log in manually.")
-	}
-
-	// Generate JWT token and log the user in
-	if err := loginUser(c, &u); err != nil {
-		log.Printf("[REGISTRATION] Failed to log in: %v", err)
-		return ValidationErrorResponse(c, "Registration completed but unable to log you in. Please log in manually.")
-	}
-
 	log.Printf("[REGISTRATION] Registration successful: userID=%d, name=%s", userID, name)
 
 	// Return success response with delay before redirecting to rocks page
-	return render(c, ui.SuccessMessage("Registration successful! Redirecting to rocks page...", "/rocks"))
+	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()
+	return render(c, ui.SuccessMessage("Registration successful! Redirecting to rocks page...", "/rocks", redirectDelayMs))
 }

@@ -8,23 +8,31 @@ import (
 	"github.com/parts-pile/site/sms"
 )
 
-// HandleSMSWebhook processes Twilio webhook callbacks for SMS status updates
+// HandleSMSWebhook processes Twilio webhook callbacks for SMS status updates and incoming messages
 func HandleSMSWebhook(c *fiber.Ctx) error {
 	// Parse the webhook data from Twilio
 	webhookData, err := sms.ParseWebhook(c)
 	if err != nil {
+		log.Printf("[SMS] Failed to parse webhook: %v", err)
 		return c.Status(400).JSON(fiber.Map{
 			"error": "Invalid webhook data",
 		})
 	}
 
-	// Update the status tracker
-	status := sms.SMSStatus(webhookData.MessageStatus)
-	sms.SetMessageStatus(webhookData.MessageSid, status)
+	// Log all incoming webhook data for debugging
+	log.Printf("[SMS] Webhook received - From: %s, To: %s, Body: %s, Status: %s, MessageSid: %s",
+		webhookData.From, webhookData.To, webhookData.Body, webhookData.MessageStatus, webhookData.MessageSid)
 
-	// Handle STOP/UNSTOP responses
+	// Update the status tracker if this is a status update
+	if webhookData.MessageStatus != "" && webhookData.MessageSid != "" {
+		status := sms.SMSStatus(webhookData.MessageStatus)
+		sms.SetMessageStatus(webhookData.MessageSid, status)
+	}
+
+	// Handle STOP/UNSTOP responses (incoming messages have Body populated)
 	body := strings.ToUpper(strings.TrimSpace(webhookData.Body))
 	if body == "STOP" {
+		log.Printf("[SMS] Processing STOP request from %s", webhookData.From)
 		if err := sms.HandleStopResponse(webhookData.From); err != nil {
 			log.Printf("[SMS] Failed to handle STOP response: %v", err)
 			return c.Status(500).JSON(fiber.Map{
@@ -33,6 +41,7 @@ func HandleSMSWebhook(c *fiber.Ctx) error {
 		}
 	}
 	if body == "UNSTOP" {
+		log.Printf("[SMS] Processing UNSTOP request from %s", webhookData.From)
 		if err := sms.HandleUnstopResponse(webhookData.From); err != nil {
 			log.Printf("[SMS] Failed to handle UNSTOP response: %v", err)
 			return c.Status(500).JSON(fiber.Map{

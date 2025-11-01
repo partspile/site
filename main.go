@@ -13,6 +13,7 @@ import (
 	"github.com/parts-pile/site/db"
 	h "github.com/parts-pile/site/handlers"
 	"github.com/parts-pile/site/part"
+	"github.com/parts-pile/site/sms"
 	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/vehicle"
 )
@@ -63,6 +64,11 @@ func main() {
 
 	if err := vector.InitQdrantIndexes(); err != nil {
 		log.Fatalf("Failed to setup payload indexes: %v", err)
+	}
+
+	// Initialize SMS service
+	if err := sms.InitSMS(); err != nil {
+		log.Fatalf("[SMS] Failed to initialize SMS service: %v", err)
 	}
 
 	app := fiber.New(fiber.Config{
@@ -196,7 +202,6 @@ func main() {
 	api.Post("/update-notification-method", h.AuthRequired, h.HandleUpdateNotificationMethod)
 	api.Post("/notification-method-changed", h.AuthRequired, h.HandleNotificationMethodChanged)
 	api.Post("/delete-account", h.AuthRequired, h.HandleDeleteAccount)
-	api.Post("/unstop-sms", h.AuthRequired, h.HandleUnstopSMS)
 	app.Get("/user-menu", h.AuthRequired, h.HandleUserMenu) // x
 
 	// Messaging system

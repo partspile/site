@@ -6,7 +6,7 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-func SettingsPage(userID int, userName string, currentPath string, notificationMethod string, emailAddress *string, phoneNumber string, smsOptedOut bool) g.Node {
+func SettingsPage(userID int, userName string, currentPath string, notificationMethod string, emailAddress *string, phoneNumber string, smsOptedOut bool, fromNumber string) g.Node {
 	return Page(
 		"Settings",
 		userID,
@@ -18,7 +18,7 @@ func SettingsPage(userID int, userName string, currentPath string, notificationM
 				sectionHeader("Notification Preferences", "Choose how you'd like to receive notifications."),
 				formContainer("notificationForm",
 					Div(ID("notificationMethodGroup"),
-						NotificationMethodRadioGroup(notificationMethod, emailAddress, phoneNumber, smsOptedOut),
+						NotificationMethodRadioGroup(notificationMethod, emailAddress, phoneNumber, smsOptedOut, fromNumber),
 					),
 					actionButtons(
 						button("Update Preferences",

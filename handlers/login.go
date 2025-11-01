@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/jwt"
 	"github.com/parts-pile/site/local"
@@ -74,5 +75,6 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 	}
 
 	log.Printf("[AUTH] Login successful: userID=%d, name=%s", u.ID, name)
-	return render(c, ui.SuccessMessage("Login successful", "/"))
+	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()
+	return render(c, ui.SuccessMessage("Login successful", "/", redirectDelayMs))
 }

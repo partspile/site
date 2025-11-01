@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/ui"
@@ -21,6 +22,7 @@ func HandleSettings(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).SendString("User not found")
 	}
 	log.Printf("[SETTINGS] Loading settings for user %d: SMSOptedOut=%v, NotificationMethod=%s", userID, currentUser.SMSOptedOut, currentUser.NotificationMethod)
+	fromNumber := config.TwilioFromNumber
 	return render(c, ui.SettingsPage(
 		userID,
 		userName,
@@ -29,6 +31,7 @@ func HandleSettings(c *fiber.Ctx) error {
 		currentUser.EmailAddress,
 		currentUser.Phone,
 		currentUser.SMSOptedOut,
+		fromNumber,
 	))
 }
 
@@ -88,7 +91,8 @@ func HandleUpdateNotificationMethod(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update notification preferences")
 	}
 
-	return render(c, ui.SuccessMessage("Notification preferences updated successfully", ""))
+	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()
+	return render(c, ui.SuccessMessage("Notification preferences updated successfully", "", redirectDelayMs))
 }
 
 // HandleNotificationMethodChanged handles HTMX requests when notification method changes
@@ -171,7 +175,8 @@ func HandleChangePassword(c *fiber.Ctx) error {
 	}
 	// Log out the user after password change
 	logoutUser(c)
-	return render(c, ui.SuccessMessage("Password changed successfully. Please log in with your new password.", "/login"))
+	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()
+	return render(c, ui.SuccessMessage("Password changed successfully. Please log in with your new password.", "/login", redirectDelayMs))
 }
 
 func HandleDeleteAccount(c *fiber.Ctx) error {
@@ -205,29 +210,6 @@ func HandleDeleteAccount(c *fiber.Ctx) error {
 
 	// Log out the user after account deletion
 	logoutUser(c)
-
-	return render(c, ui.SuccessMessage("Account deleted successfully", "/login"))
-}
-
-// HandleUnstopSMS clears the user's SMS opt-out flag
-func HandleUnstopSMS(c *fiber.Ctx) error {
-	userID := local.GetUserID(c)
-	if userID == 0 {
-		return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
-	}
-	if err := user.SetSMSOptOut(userID, false); err != nil {
-		log.Printf("[API] Failed to clear SMS opt-out for user %d: %v", userID, err)
-		return c.Status(fiber.StatusInternalServerError).SendString("Failed to resume SMS")
-	}
-	// Get updated user data and refresh the notification method group
-	currentUser, err := user.GetUser(userID)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Failed to get user")
-	}
-	// Return updated notification method group to refresh the entire section
-	return render(c, ui.NotificationMethodRadioGroup(
-		currentUser.NotificationMethod,
-		currentUser.EmailAddress,
-		currentUser.Phone,
-		currentUser.SMSOptedOut))
+	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()
+	return render(c, ui.SuccessMessage("Account deleted successfully", "/login", redirectDelayMs))
 }

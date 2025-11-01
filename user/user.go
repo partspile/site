@@ -195,7 +195,7 @@ func UpdateUserPassword(userID int, newHash, newSalt, newAlgo string) (int, erro
 
 // MarkPhoneVerified marks a user's phone number as verified
 func MarkPhoneVerified(userID int) error {
-	_, err := db.Exec(`UPDATE User SET phone_verified = 1, verification_code = NULL WHERE id = ?`, userID)
+	_, err := db.Exec(`UPDATE User SET phone_verified = 1, verification_code = '' WHERE id = ?`, userID)
 	if err != nil {
 		return fmt.Errorf("failed to mark phone verified: %w", err)
 	}

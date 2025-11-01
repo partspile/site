@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"fmt"
+
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
@@ -80,7 +82,8 @@ func passwordInput(id, name string) g.Node {
 }
 
 // NotificationMethodRadioGroup returns the notification method radio group UI component
-func NotificationMethodRadioGroup(selectedMethod string, emailAddress *string, phoneNumber string, smsOptedOut bool) g.Node {
+func NotificationMethodRadioGroup(selectedMethod string, emailAddress *string,
+	phoneNumber string, smsOptedOut bool, fromNumber string) g.Node {
 	radioButtons := []g.Node{
 		Div(Class("flex items-start flex-col"),
 			Div(Class("flex items-center"),
@@ -95,10 +98,14 @@ func NotificationMethodRadioGroup(selectedMethod string, emailAddress *string, p
 			g.If(smsOptedOut,
 				Div(ID("unstopControl"), Class("ml-6 mt-2 text-sm"),
 					Div(Class("text-red-600 mb-2"), g.Text("SMS is currently paused (STOP).")),
-					Button(Type("button"), Class("px-3 py-1 bg-green-600 text-white rounded"), g.Text("Resume SMS"),
-						hx.Post("/api/unstop-sms"),
-						hx.Target("#notificationMethodGroup"),
-						hx.Swap("innerHTML"),
+					Div(Class("text-gray-700 bg-yellow-50 border border-yellow-200 rounded p-3 mt-2"),
+						P(Class("font-medium mb-1"), g.Text("To resume SMS notifications:")),
+						P(g.Text(fmt.Sprintf(`Reply
+							UNSTOP to %s from this phone
+							number. Once you send UNSTOP,
+							refresh this page and the
+							opt-out status will be
+							cleared.`, fromNumber))),
 					),
 				),
 			),

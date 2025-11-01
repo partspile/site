@@ -5,6 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -42,7 +43,8 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 		return render(c, ui.EmptyResponse())
 	}
 	log.Printf("Returning success page for non-HTMX request to delete ad %d", adID)
-	return render(c, ui.SuccessMessage("Ad deleted successfully", "/"))
+	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()
+	return render(c, ui.SuccessMessage("Ad deleted successfully", "/", redirectDelayMs))
 }
 
 // HandleRestoreAd restores a deleted ad

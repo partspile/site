@@ -168,7 +168,7 @@ func CleanupExpiredCodes() error {
 func MarkPhoneVerified(userID int) error {
 	_, err := db.Exec(`
 		UPDATE User 
-		SET phone_verified = 1, verification_code = NULL 
+		SET phone_verified = 1, verification_code = '' 
 		WHERE id = ?
 	`, userID)
 

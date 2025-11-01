@@ -20,7 +20,7 @@ type NotificationService struct {
 
 // NewNotificationService creates a new notification service
 func NewNotificationService() (*NotificationService, error) {
-	hasSMS := true // SMS service is initialized at startup
+	hasSMS := sms.IsSMSAvailable()
 
 	emailService, err := email.NewEmailService()
 	if err != nil {

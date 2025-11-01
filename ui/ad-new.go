@@ -8,12 +8,11 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/config"
 )
 
 // ---- New Ad Page ----
 
-func NewAdPage(adCat int, userID int, userName string, path string, makes []string, categories []string) g.Node {
+func NewAdPage(adCat int, userID int, userName string, path string, makes []string, categories []string, maxImagesPerAd int) g.Node {
 	categoryName := ad.GetCategoryName(adCat)
 	headerText := fmt.Sprintf("Create New %s Ad", categoryName)
 	return Page(
@@ -36,7 +35,7 @@ func NewAdPage(adCat int, userID int, userName string, path string, makes []stri
 				EnginesSelector([]string{}),
 				categoriesSelector(categories, ""),
 				SubCategoriesSelector([]string{}, ""),
-				imagesInputField(),
+				imagesInputField(maxImagesPerAd),
 				descriptionTextareaField(),
 				priceInputField(),
 				locationInputField(),
@@ -60,6 +59,7 @@ func DuplicateAdPage(
 	engines []string,
 	subcategoryNames []string,
 	selectedSubcategory string,
+	maxImagesPerAd int,
 ) g.Node {
 	return Page(
 		"Duplicate Ad - Parts Pile",
@@ -81,7 +81,7 @@ func DuplicateAdPage(
 				EnginesSelector(engines, originalAd.Engines),
 				categoriesSelector(categories, originalAd.PartCategory),
 				SubCategoriesSelector(subcategoryNames, selectedSubcategory),
-				imagesInputField(),
+				imagesInputField(maxImagesPerAd),
 				descriptionTextareaField(),
 				priceInputField(),
 				locationInputField(),
@@ -136,7 +136,7 @@ func makeSelector(makes []string, defaultMake string) g.Node {
 	)
 }
 
-func imagesInputField() g.Node {
+func imagesInputField(maxImagesPerAd int) g.Node {
 	return formGroup("Images", "images",
 		Div(
 			Input(
@@ -181,7 +181,7 @@ func imagesInputField() g.Node {
 					Class("hidden image-preview flex flex-row flex-wrap gap-2 justify-center mt-4"),
 				),
 			),
-			g.Raw(fmt.Sprintf(`<script>const MAX_IMAGES_PER_AD = %d;</script>`, config.MaxImagesPerAd)),
+			g.Raw(fmt.Sprintf(`<script>const MAX_IMAGES_PER_AD = %d;</script>`, maxImagesPerAd)),
 			g.Raw(`<script src="/js/image-preview.js" defer></script>`),
 		),
 	)
