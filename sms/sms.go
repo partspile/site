@@ -3,11 +3,13 @@ package sms
 import (
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/verification"
 	"github.com/twilio/twilio-go"
 	Api "github.com/twilio/twilio-go/rest/api/v2010"
@@ -119,8 +121,38 @@ func checkOutstandingMessages() {
 	})
 }
 
+// ErrBlockedNumber indicates the phone number is blocked/opted out at Twilio
+var ErrBlockedNumber = fmt.Errorf("phone number blocked")
+
+// IsBlockedError checks if an error indicates the phone number is blocked/opted out
+func IsBlockedError(err error) bool {
+	if err == nil {
+		return false
+	}
+	errStr := err.Error()
+	// Check for Twilio error codes and messages that indicate blocked/opted out
+	blockedIndicators := []string{
+		"21614", // Unsubscribed recipient
+		"unsubscribed",
+		"opted out",
+		"blocked",
+		"not a valid",
+	}
+	for _, indicator := range blockedIndicators {
+		if strings.Contains(strings.ToLower(errStr), strings.ToLower(indicator)) {
+			return true
+		}
+	}
+	return false
+}
+
 // SendMessage sends an SMS message and tracks delivery
 func SendMessage(phoneNumber, message string) error {
+	// Respect user opt-out - fail silently
+	if IsOptedOut(phoneNumber) {
+		log.Printf("[SMS] Message blocked: user %s has opted out", phoneNumber)
+		return nil
+	}
 	params := &Api.CreateMessageParams{}
 	params.SetTo(phoneNumber)
 	params.SetFrom(config.TwilioFromNumber)
@@ -129,6 +161,10 @@ func SendMessage(phoneNumber, message string) error {
 
 	result, err := client.Api.CreateMessage(params)
 	if err != nil {
+		// Check if this is a blocked number error
+		if IsBlockedError(err) {
+			return fmt.Errorf("%w: %v", ErrBlockedNumber, err)
+		}
 		return fmt.Errorf("failed to send SMS: %w", err)
 	}
 
@@ -146,19 +182,48 @@ func SendMessage(phoneNumber, message string) error {
 func HandleStopResponse(phoneNumber string) error {
 	log.Printf("[SMS] STOP response received from %s", phoneNumber)
 
+	// Find user by phone and set opt-out flag
+	u, err := user.GetUserByPhone(phoneNumber)
+	if err == nil {
+		// User exists, set opt-out flag
+		if err := user.SetSMSOptOut(u.ID, true); err != nil {
+			log.Printf("[SMS] Failed to set opt-out for user %d: %v", u.ID, err)
+		}
+	}
+
 	// Invalidate any pending verification codes for this phone
-	err := verification.InvalidateVerificationCodes(phoneNumber)
+	err = verification.InvalidateVerificationCodes(phoneNumber)
 	if err != nil {
 		log.Printf("[SMS] Failed to invalidate verification codes for %s: %v", phoneNumber, err)
 		return err
 	}
 
-	// Note: In a production system, you might also want to:
-	// 1. Add the phone number to a "do not contact" list
-	// 2. Cancel any pending registration processes
-	// 3. Send a confirmation message that they've been unsubscribed
+	return nil
+}
+
+// HandleUnstopResponse processes when a user replies UNSTOP to opt back in
+func HandleUnstopResponse(phoneNumber string) error {
+	log.Printf("[SMS] UNSTOP response received from %s", phoneNumber)
+
+	// Find user by phone and clear opt-out flag
+	u, err := user.GetUserByPhone(phoneNumber)
+	if err == nil {
+		// User exists, clear opt-out flag
+		if err := user.SetSMSOptOut(u.ID, false); err != nil {
+			log.Printf("[SMS] Failed to clear opt-out for user %d: %v", u.ID, err)
+		}
+	}
 
 	return nil
+}
+
+// IsOptedOut checks if a phone number's user has opted out
+func IsOptedOut(phoneNumber string) bool {
+	u, err := user.GetUserByPhone(phoneNumber)
+	if err != nil {
+		return false
+	}
+	return u.SMSOptedOut
 }
 
 // HandleDeliveryFailure processes when an SMS fails to deliver

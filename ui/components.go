@@ -51,6 +51,18 @@ func ValidationError(message string) g.Node {
 	)
 }
 
+// ValidationErrorWithAction displays an error message with an action button
+func ValidationErrorWithAction(message string, buttonText string, buttonURL string) g.Node {
+	return Div(
+		Class("bg-red-100 border-red-500 text-red-700 px-4 py-3 rounded"),
+		Div(
+			Class("mb-3"),
+			g.Text(message),
+		),
+		button(buttonText, withHref(buttonURL)),
+	)
+}
+
 func SuccessMessage(message string, redirectURL string) g.Node {
 	nodes := []g.Node{
 		Class("bg-green-100 border-green-500 text-green-700 px-4 py-3 rounded"),

@@ -22,10 +22,19 @@ func HandleSMSWebhook(c *fiber.Ctx) error {
 	status := sms.SMSStatus(webhookData.MessageStatus)
 	sms.SetMessageStatus(webhookData.MessageSid, status)
 
-	// Handle STOP responses
-	if strings.ToUpper(strings.TrimSpace(webhookData.Body)) == "STOP" {
-		if err := sms.HandleStopResponse(webhookData.To); err != nil {
+	// Handle STOP/UNSTOP responses
+	body := strings.ToUpper(strings.TrimSpace(webhookData.Body))
+	if body == "STOP" {
+		if err := sms.HandleStopResponse(webhookData.From); err != nil {
 			log.Printf("[SMS] Failed to handle STOP response: %v", err)
+			return c.Status(500).JSON(fiber.Map{
+				"error": "Failed to process webhook",
+			})
+		}
+	}
+	if body == "UNSTOP" {
+		if err := sms.HandleUnstopResponse(webhookData.From); err != nil {
+			log.Printf("[SMS] Failed to handle UNSTOP response: %v", err)
 			return c.Status(500).JSON(fiber.Map{
 				"error": "Failed to process webhook",
 			})

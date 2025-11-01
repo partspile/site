@@ -15,7 +15,21 @@ import (
 func HandleSettings(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
-	return render(c, ui.SettingsPage(userID, userName, c.Path()))
+	// Fetch current user to prefill notification settings
+	currentUser, err := user.GetUser(userID)
+	if err != nil || currentUser.IsArchived() {
+		return c.Status(fiber.StatusUnauthorized).SendString("User not found")
+	}
+	log.Printf("[SETTINGS] Loading settings for user %d: SMSOptedOut=%v, NotificationMethod=%s", userID, currentUser.SMSOptedOut, currentUser.NotificationMethod)
+	return render(c, ui.SettingsPage(
+		userID,
+		userName,
+		c.Path(),
+		currentUser.NotificationMethod,
+		currentUser.EmailAddress,
+		currentUser.Phone,
+		currentUser.SMSOptedOut,
+	))
 }
 
 func HandleUserMenu(c *fiber.Ctx) error {
@@ -193,4 +207,27 @@ func HandleDeleteAccount(c *fiber.Ctx) error {
 	logoutUser(c)
 
 	return render(c, ui.SuccessMessage("Account deleted successfully", "/login"))
+}
+
+// HandleUnstopSMS clears the user's SMS opt-out flag
+func HandleUnstopSMS(c *fiber.Ctx) error {
+	userID := local.GetUserID(c)
+	if userID == 0 {
+		return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
+	}
+	if err := user.SetSMSOptOut(userID, false); err != nil {
+		log.Printf("[API] Failed to clear SMS opt-out for user %d: %v", userID, err)
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to resume SMS")
+	}
+	// Get updated user data and refresh the notification method group
+	currentUser, err := user.GetUser(userID)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to get user")
+	}
+	// Return updated notification method group to refresh the entire section
+	return render(c, ui.NotificationMethodRadioGroup(
+		currentUser.NotificationMethod,
+		currentUser.EmailAddress,
+		currentUser.Phone,
+		currentUser.SMSOptedOut))
 }

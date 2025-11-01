@@ -48,6 +48,9 @@ type AdDetail struct {
 	Years   []string `json:"years" db:"years"`
 	Models  []string `json:"models" db:"models"`
 	Engines []string `json:"engines" db:"engines"`
+
+	// Owner reachability (computed in query)
+	OwnerUnreachable int `json:"owner_unreachable" db:"owner_unreachable"`
 }
 
 // IsArchived returns true if the ad is archived (deleted)
@@ -234,12 +237,15 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 				COALESCE(pc.name, '') as part_category, a.location_id,
 				a.image_count, a.has_vector, l.raw_text as raw_location,
 				l.city, l.admin_area, l.country,
-			CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked, a.ad_category_id
+			CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
+			a.ad_category_id,
+			CASE WHEN u.sms_opted_out = 1 AND u.notification_method = 'sms' THEN 1 ELSE 0 END as owner_unreachable
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.part_subcategory_id = psc.id
 			LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
 			LEFT JOIN Location l ON a.location_id = l.id
 			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
+			LEFT JOIN User u ON a.user_id = u.id
 			WHERE a.id = ?
 		`
 		args = append(args, userID, adID)
@@ -252,11 +258,13 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 				COALESCE(pc.name, '') as part_category, a.location_id,
 				a.image_count, a.has_vector, l.raw_text as raw_location,
 				l.city, l.admin_area, l.country, 0 as is_bookmarked,
-				a.ad_category_id
+				a.ad_category_id,
+				CASE WHEN u.sms_opted_out = 1 AND u.notification_method = 'sms' THEN 1 ELSE 0 END as owner_unreachable
 			FROM Ad a
 			LEFT JOIN PartSubCategory psc ON a.part_subcategory_id = psc.id
 			LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
 			LEFT JOIN Location l ON a.location_id = l.id
+			LEFT JOIN User u ON a.user_id = u.id
 			WHERE a.id = ?
 		`
 		args = append(args, adID)

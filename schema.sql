@@ -110,6 +110,7 @@ CREATE TABLE User (
     email_address TEXT NOT NULL DEFAULT '',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_admin INTEGER NOT NULL DEFAULT 0,
+    sms_opted_out INTEGER NOT NULL DEFAULT 0,
     deleted_at DATETIME
 );
 CREATE INDEX idx_user_deleted_at ON User(deleted_at);

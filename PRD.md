@@ -206,10 +206,13 @@ The platform supports multiple ad categories, each with appropriate vehicle/part
   - Failed deliveries
   - Undelivered messages
   - User STOP responses
-- **STOP Response Handling**: When users reply "STOP" to SMS messages:
-  - All pending verification codes are immediately invalidated
-  - User is effectively blocked from completing registration
-  - Compliance with SMS opt-out regulations
+- **STOP/UNSTOP Handling**:
+  - When users reply "STOP":
+    - All pending verification codes are immediately invalidated
+    - The phone number is added to an opt-out list and no further SMS are sent
+    - Compliance with SMS opt-out regulations
+  - When users reply "UNSTOP":
+    - The phone number is removed from the opt-out list and SMS delivery resumes
 - **Failed Delivery Handling**: Automatic cleanup when SMS delivery fails:
   - Verification codes are invalidated for failed deliveries
   - Prevents registration completion with invalid phone numbers

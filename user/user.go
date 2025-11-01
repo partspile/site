@@ -40,6 +40,7 @@ type User struct {
 	EmailAddress       *string
 	CreatedAt          time.Time
 	IsAdmin            bool
+	SMSOptedOut        bool
 	DeletedAt          *time.Time
 }
 
@@ -97,7 +98,7 @@ func GetUserByID(id int) (User, UserStatus, bool) {
 func GetUserByPhone(phone string) (User, error) {
 	row := db.QueryRow(`SELECT id, name, phone, password_hash,
 		password_salt, password_algo, phone_verified, verification_code,
-		notification_method, email_address, created_at, is_admin, deleted_at
+		notification_method, email_address, created_at, is_admin, sms_opted_out, deleted_at
 		FROM User WHERE phone = ? AND deleted_at IS NULL`, phone)
 	var u User
 	var createdAt time.Time
@@ -106,8 +107,9 @@ func GetUserByPhone(phone string) (User, error) {
 	var verificationCode *string
 	var notificationMethod string
 	var emailAddress *string
+	var smsOptedOut int
 	var deletedAt *time.Time
-	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &emailAddress, &createdAt, &isAdmin, &deletedAt)
+	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &emailAddress, &createdAt, &isAdmin, &smsOptedOut, &deletedAt)
 	if err != nil {
 		return User{}, err
 	}
@@ -117,13 +119,14 @@ func GetUserByPhone(phone string) (User, error) {
 	u.VerificationCode = verificationCode
 	u.NotificationMethod = notificationMethod
 	u.EmailAddress = emailAddress
+	u.SMSOptedOut = smsOptedOut == 1
 	u.DeletedAt = deletedAt
 	return u, nil
 }
 
 // GetUser retrieves a user by ID (includes both active and archived users)
 func GetUser(id int) (User, error) {
-	row := db.QueryRow(`SELECT id, name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin, deleted_at FROM User WHERE id = ?`, id)
+	row := db.QueryRow(`SELECT id, name, phone, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, email_address, created_at, is_admin, sms_opted_out, deleted_at FROM User WHERE id = ?`, id)
 	var u User
 	var createdAt time.Time
 	var isAdmin int
@@ -131,8 +134,9 @@ func GetUser(id int) (User, error) {
 	var verificationCode *string
 	var notificationMethod string
 	var emailAddress *string
+	var smsOptedOut int
 	var deletedAt *time.Time
-	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &emailAddress, &createdAt, &isAdmin, &deletedAt)
+	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &emailAddress, &createdAt, &isAdmin, &smsOptedOut, &deletedAt)
 	if err != nil {
 		return User{}, err
 	}
@@ -142,6 +146,7 @@ func GetUser(id int) (User, error) {
 	u.VerificationCode = verificationCode
 	u.NotificationMethod = notificationMethod
 	u.EmailAddress = emailAddress
+	u.SMSOptedOut = smsOptedOut == 1
 	u.DeletedAt = deletedAt
 
 	return u, nil
@@ -151,7 +156,7 @@ func GetUser(id int) (User, error) {
 func GetUserByName(name string) (User, error) {
 	row := db.QueryRow(`SELECT id, name, phone, password_hash,
 		password_salt, password_algo, phone_verified, verification_code,
-		notification_method, email_address, created_at, is_admin, deleted_at
+		notification_method, email_address, created_at, is_admin, sms_opted_out, deleted_at
 		FROM User WHERE name = ? AND deleted_at IS NULL`, name)
 	var u User
 	var createdAt time.Time
@@ -160,8 +165,9 @@ func GetUserByName(name string) (User, error) {
 	var verificationCode *string
 	var notificationMethod string
 	var emailAddress *string
+	var smsOptedOut int
 	var deletedAt *time.Time
-	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &emailAddress, &createdAt, &isAdmin, &deletedAt)
+	err := row.Scan(&u.ID, &u.Name, &u.Phone, &u.PasswordHash, &u.PasswordSalt, &u.PasswordAlgo, &phoneVerified, &verificationCode, &notificationMethod, &emailAddress, &createdAt, &isAdmin, &smsOptedOut, &deletedAt)
 	if err != nil {
 		return User{}, err
 	}
@@ -171,6 +177,7 @@ func GetUserByName(name string) (User, error) {
 	u.VerificationCode = verificationCode
 	u.NotificationMethod = notificationMethod
 	u.EmailAddress = emailAddress
+	u.SMSOptedOut = smsOptedOut == 1
 	u.DeletedAt = deletedAt
 
 	return u, nil
@@ -218,4 +225,24 @@ func ArchiveUser(id int) error {
 func RestoreUser(userID int) error {
 	_, err := db.Exec("UPDATE User SET deleted_at = NULL WHERE id = ?", userID)
 	return err
+}
+
+// SetSMSOptOut sets the SMS opt-out flag for a user
+func SetSMSOptOut(userID int, optedOut bool) error {
+	val := 0
+	if optedOut {
+		val = 1
+	}
+	_, err := db.Exec("UPDATE User SET sms_opted_out = ? WHERE id = ?", val, userID)
+	return err
+}
+
+// IsUnreachable checks if a user is unreachable for notifications
+// A user is unreachable if they have SMS opted out AND their notification method is SMS
+func IsUnreachable(userID int) bool {
+	u, err := GetUser(userID)
+	if err != nil {
+		return false
+	}
+	return u.SMSOptedOut && u.NotificationMethod == NotificationMethodSMS
 }

@@ -79,16 +79,29 @@ func passwordInput(id, name string) g.Node {
 	)
 }
 
-func notificationMethodRadioGroup(selectedMethod string, emailAddress *string, phoneNumber string) g.Node {
+// NotificationMethodRadioGroup returns the notification method radio group UI component
+func NotificationMethodRadioGroup(selectedMethod string, emailAddress *string, phoneNumber string, smsOptedOut bool) g.Node {
 	radioButtons := []g.Node{
-		Div(Class("flex items-center"),
-			Input(Type("radio"), Name("notificationMethod"), Value("sms"), ID("notificationMethod-sms"), g.If(selectedMethod == "sms", Checked()), Class("mr-2"),
-				hx.Post("/api/notification-method-changed"),
-				hx.Target("#emailField"),
-				hx.Swap("innerHTML"),
-				hx.Include("this"),
+		Div(Class("flex items-start flex-col"),
+			Div(Class("flex items-center"),
+				Input(Type("radio"), Name("notificationMethod"), Value("sms"), ID("notificationMethod-sms"), g.If(selectedMethod == "sms", Checked()), Class("mr-2"),
+					hx.Post("/api/notification-method-changed"),
+					hx.Target("#emailField"),
+					hx.Swap("innerHTML"),
+					hx.Include("this"),
+				),
+				Label(For("notificationMethod-sms"), g.Text("Text to "+phoneNumber)),
 			),
-			Label(For("notificationMethod-sms"), g.Text("Text to "+phoneNumber)),
+			g.If(smsOptedOut,
+				Div(ID("unstopControl"), Class("ml-6 mt-2 text-sm"),
+					Div(Class("text-red-600 mb-2"), g.Text("SMS is currently paused (STOP).")),
+					Button(Type("button"), Class("px-3 py-1 bg-green-600 text-white rounded"), g.Text("Resume SMS"),
+						hx.Post("/api/unstop-sms"),
+						hx.Target("#notificationMethodGroup"),
+						hx.Swap("innerHTML"),
+					),
+				),
+			),
 		),
 		Div(Class("flex items-center"),
 			Input(Type("radio"), Name("notificationMethod"), Value("email"), ID("notificationMethod-email"), g.If(selectedMethod == "email", Checked()), Class("mr-2"),

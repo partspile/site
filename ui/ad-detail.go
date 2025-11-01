@@ -64,7 +64,7 @@ func AdDetail(a ad.AdDetail, userID int, loc *time.Location) g.Node {
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
 					// For active ads: show bookmark, message, and delete
 					g.If(!a.IsArchived() && userID != 0, BookmarkButton(a.Ad)),
-					g.If(!a.IsArchived() && userID != 0, messageButton(a, userID)),
+					g.If(!a.IsArchived() && userID != 0, messageButton(a, userID, a.OwnerUnreachable == 1)),
 					g.If(!a.IsArchived(), deleteButton(a, userID)),
 					// For deleted ads: show restore button (owner only)
 					g.If(a.IsArchived(), restoreButton(a, userID)),
@@ -236,7 +236,7 @@ func thumbnails(a ad.AdDetail) g.Node {
 	)
 }
 
-func messageButton(a ad.AdDetail, userID int) g.Node {
+func messageButton(a ad.AdDetail, userID int, ownerUnreachable bool) g.Node {
 	// Don't show message button if user is viewing their own ad
 	if userID == a.UserID {
 		return g.Node(nil)
@@ -245,6 +245,21 @@ func messageButton(a ad.AdDetail, userID int) g.Node {
 	// Don't show message button if user is not logged in
 	if userID == 0 {
 		return g.Node(nil)
+	}
+
+	// Show disabled button if owner is unreachable (opted out of SMS with SMS notification method)
+	if ownerUnreachable {
+		return Button(
+			Type("button"),
+			Class("ml-2 focus:outline-none opacity-50 cursor-not-allowed"),
+			Title("Seller is unreachable - they have opted out of SMS notifications. They can change their notification method in settings or reply UNSTOP to opt back in."),
+			Disabled(),
+			Img(
+				Src("/images/message.svg"),
+				Alt("Message"),
+				Class("w-6 h-6 inline align-middle"),
+			),
+		)
 	}
 
 	return iconButton(

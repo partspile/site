@@ -40,6 +40,17 @@ func AuthRequired(c *fiber.Ctx) error {
 	if userID == 0 {
 		return redirectToLogin(c)
 	}
+
+	// Verify that the user still exists and is not archived
+	u, err := user.GetUser(userID)
+	if err != nil || u.IsArchived() {
+		// User no longer exists or is archived, clear cookie and redirect to login
+		cookie.ClearJWT(c)
+		local.SetUserID(c, 0)
+		local.SetUserName(c, "")
+		return redirectToLogin(c)
+	}
+
 	return c.Next()
 }
 
@@ -53,6 +64,10 @@ func AdminRequired(c *fiber.Ctx) error {
 	// Fetch current admin status from database
 	u, err := user.GetUser(userID)
 	if err != nil || u.IsArchived() {
+		// User no longer exists or is archived, clear cookie
+		cookie.ClearJWT(c)
+		local.SetUserID(c, 0)
+		local.SetUserName(c, "")
 		return c.Status(fiber.StatusUnauthorized).SendString("User not found")
 	}
 

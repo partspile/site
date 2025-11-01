@@ -1,12 +1,14 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/sms"
@@ -119,6 +121,17 @@ Only reject names that are truly offensive to a general audience.`
 	err = sms.SendMessage(phone, message)
 	if err != nil {
 		log.Printf("[REGISTRATION] Failed to send SMS: %v", err)
+		// Check if this is a blocked number error
+		if errors.Is(err, sms.ErrBlockedNumber) {
+			unstopMessage := fmt.Sprintf(
+				"This phone number was previously opted out of SMS messages. "+
+					"To receive verification codes, please reply UNSTOP to %s from this phone number, then try registering again.",
+				config.TwilioFromNumber)
+			return render(c, ui.ValidationErrorWithAction(
+				unstopMessage,
+				"Try Again",
+				"/register"))
+		}
 		return ValidationErrorResponse(c, "Unable to send verification code. Please try again.")
 	}
 
@@ -178,6 +191,14 @@ func HandleRegistrationStep2(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, "You must accept the Terms of Service and Privacy Policy to continue.")
 	}
 
+	// Double-check for existing users (including archived) before creating
+	// This handles cases where step 1 might have passed but user exists
+	// Check username (includes archived users via GetUserByName which checks deleted_at)
+	if _, err := user.GetUserByName(name); err == nil {
+		log.Printf("[REGISTRATION] Username already exists: %s", name)
+		return ValidationErrorResponse(c, "Username already taken. Please choose a different username.")
+	}
+
 	// Create the user
 	hash, salt, err := password.HashPassword(userPassword)
 	if err != nil {
@@ -188,7 +209,17 @@ func HandleRegistrationStep2(c *fiber.Ctx) error {
 	userID, err := user.CreateUser(name, phone, hash, salt, "argon2id")
 	if err != nil {
 		log.Printf("[REGISTRATION] Failed to create user: %v", err)
-		return ValidationErrorResponse(c, "Unable to create account. Please try again.")
+		errStr := strings.ToLower(err.Error())
+		// Check if it's a unique constraint violation
+		if strings.Contains(errStr, "unique constraint") || strings.Contains(errStr, "constraint") {
+			if strings.Contains(errStr, "phone") || strings.Contains(errStr, "user.phone") {
+				return ValidationErrorResponse(c, "This phone number is already registered. If you have an account, please log in instead.")
+			}
+			if strings.Contains(errStr, "name") || strings.Contains(errStr, "user.name") {
+				return ValidationErrorResponse(c, "Username already taken. Please choose a different username.")
+			}
+		}
+		return ValidationErrorResponse(c, fmt.Sprintf("Unable to create account: %v. Please try again.", err))
 	}
 
 	// Mark phone as verified
