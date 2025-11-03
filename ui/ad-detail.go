@@ -388,7 +388,7 @@ func modalCopyButton(copyButtonID, urlInputID, copyFeedbackID string) g.Node {
 						feedback.classList.add('hidden');
 					}, 2000);
 				});
-			`, urlInputID, copyFeedbackID)),
+			`, fmt.Sprintf("%q", urlInputID), fmt.Sprintf("%q", copyFeedbackID))),
 			copyIcon(),
 		),
 	)
@@ -576,15 +576,17 @@ func ShareModal(a ad.Ad, userID int) g.Node {
 			),
 		),
 		// Script to set the full URL when modal is opened
+		// All values are safely escaped: modalID, urlInputID are IDs based on integer ad.ID
+		// adPath is /ad/{integer} so no user input is present
 		Script(
 			g.Raw(fmt.Sprintf(`
 				(function() {
-					const modal = document.getElementById('%s');
-					const urlInput = document.getElementById('%s');
+					const modal = document.getElementById(%s);
+					const urlInput = document.getElementById(%s);
 					// Set URL immediately since modal is now visible when loaded
-					urlInput.value = window.location.origin + '%s';
+					urlInput.value = window.location.origin + %s;
 				})();
-			`, modalID, urlInputID, adPath)),
+			`, fmt.Sprintf("%q", modalID), fmt.Sprintf("%q", urlInputID), fmt.Sprintf("%q", adPath))),
 		),
 	)
 }

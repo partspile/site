@@ -69,9 +69,12 @@ func SuccessMessage(message string, redirectURL string, redirectDelayMs int64) g
 	}
 	if redirectURL != "" {
 		nodes[1] = g.Text(message + "...redirecting")
+		// Safely escape redirectURL for JavaScript to prevent XSS
+		// Use JSON encoding to properly escape the URL string
+		escapedURL := fmt.Sprintf("%q", redirectURL) // JSON encoding escapes quotes, newlines, etc.
 		nodes = append(nodes, Script(g.Raw(fmt.Sprintf(
-			"setTimeout(function() { window.location = '%s' }, %d);",
-			redirectURL, redirectDelayMs)),
+			"setTimeout(function() { window.location = %s; }, %d);",
+			escapedURL, redirectDelayMs)),
 		))
 	}
 	return Div(nodes...)
