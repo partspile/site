@@ -292,16 +292,15 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 			UserID:       userID,
 			ImageCount:   imageCount,
 		},
-		Description:       description,
-		PartSubcategoryID: 0, // TODO: Get actual subcategory ID from name
-		LocationID:        locationID,
-		HasVector:         false, // New ads start without vectors
-		PartCategory:      category,
-		PartSubcategory:   subcategoryName,
-		Make:              make,
-		Years:             years,
-		Models:            models,
-		Engines:           engines,
+		Description:     description,
+		LocationID:      locationID,
+		HasVector:       false, // New ads start without vectors
+		PartCategory:    category,
+		PartSubcategory: subcategoryName,
+		Make:            make,
+		Years:           years,
+		Models:          models,
+		Engines:         engines,
 	}
 
 	return newAd, imageFiles, deletedImages, nil

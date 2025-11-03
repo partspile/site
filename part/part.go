@@ -59,7 +59,7 @@ func GetCategories(adCat int) []string {
 func getSubCategories(adCat int, category string) ([]string, error) {
 	query := `
 		SELECT psc.name 
-		FROM PartSubAdCategory psc
+		FROM PartSubCategory psc
 		JOIN PartCategory pc ON psc.part_category_id = pc.id
 		WHERE pc.name = ? AND pc.ad_category_id = ?
 		ORDER BY psc.name
@@ -131,10 +131,10 @@ func buildAdCategoriesQuery(adCat int, makeName, year, model, engine string) (st
 	baseQuery := `
 		SELECT DISTINCT pc.name
 		FROM PartCategory pc
-		JOIN PartSubAdCategory psc ON pc.id = psc.category_id
-		JOIN Ad a ON psc.id = a.part_subcategory_id
-		JOIN AdVehicle ac ON a.id = ac.ad_id
-		JOIN Vehicle c ON ac.vehicle_id = c.id
+		JOIN PartSubCategory psc ON pc.id = psc.part_category_id
+		JOIN Vehicle c ON c.part_subcategory_id = psc.id
+		JOIN AdVehicle ac ON c.id = ac.vehicle_id
+		JOIN Ad a ON ac.ad_id = a.id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Model mo ON c.model_id = mo.id
 	`
@@ -184,11 +184,11 @@ func buildAdSubCategoriesQuery(adCat int, makeName, year, model, engine, categor
 	// Build common query parts
 	baseQuery := `
 		SELECT DISTINCT psc.name
-		FROM PartSubAdCategory psc
+		FROM PartSubCategory psc
 		JOIN PartCategory pc ON psc.part_category_id = pc.id
-		JOIN Ad a ON psc.id = a.part_subcategory_id
-		JOIN AdVehicle ac ON a.id = ac.ad_id
-		JOIN Vehicle c ON ac.vehicle_id = c.id
+		JOIN Vehicle c ON c.part_subcategory_id = psc.id
+		JOIN AdVehicle ac ON c.id = ac.vehicle_id
+		JOIN Ad a ON ac.ad_id = a.id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Model mo ON c.model_id = mo.id
 	`
@@ -314,10 +314,10 @@ func GetCategoriesForAds(adIDs []int, makeName, year, model, engine string) ([]s
 	query := fmt.Sprintf(`
 		SELECT DISTINCT pc.name
 		FROM PartCategory pc
-		JOIN PartSubAdCategory psc ON pc.id = psc.category_id
-		JOIN Ad a ON psc.id = a.part_subcategory_id
-		JOIN AdVehicle ac ON a.id = ac.ad_id
-		JOIN Vehicle c ON ac.vehicle_id = c.id
+		JOIN PartSubCategory psc ON pc.id = psc.part_category_id
+		JOIN Vehicle c ON c.part_subcategory_id = psc.id
+		JOIN AdVehicle ac ON c.id = ac.vehicle_id
+		JOIN Ad a ON ac.ad_id = a.id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Year y ON c.year_id = y.id
 		JOIN Model mo ON c.model_id = mo.id
@@ -362,11 +362,11 @@ func GetSubCategoriesForAds(adIDs []int, makeName, year, model, engine, category
 
 	query := fmt.Sprintf(`
 		SELECT DISTINCT psc.name
-		FROM PartSubAdCategory psc
+		FROM PartSubCategory psc
 		JOIN PartCategory pc ON psc.part_category_id = pc.id
-		JOIN Ad a ON psc.id = a.part_subcategory_id
-		JOIN AdVehicle ac ON a.id = ac.ad_id
-		JOIN Vehicle c ON ac.vehicle_id = c.id
+		JOIN Vehicle c ON c.part_subcategory_id = psc.id
+		JOIN AdVehicle ac ON c.id = ac.vehicle_id
+		JOIN Ad a ON ac.ad_id = a.id
 		JOIN Make m ON c.make_id = m.id
 		JOIN Year y ON c.year_id = y.id
 		JOIN Model mo ON c.model_id = mo.id

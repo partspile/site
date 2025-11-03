@@ -1,6 +1,7 @@
 package ad
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -35,19 +36,18 @@ type AdDetail struct {
 	Ad // Embed the minimal Ad struct
 
 	// Additional fields for detail view
-	Description       string `json:"description" db:"description"`
-	PartSubcategoryID int    `json:"part_subcategory_id" db:"part_subcategory_id"`
-	LocationID        int    `json:"location_id" db:"location_id"`
-	HasVector         bool   `json:"has_vector" db:"has_vector"`
-	RawLocation       string `json:"raw_location" db:"raw_location"`
-	PartSubcategory   string `json:"part_subcategory" db:"part_subcategory"`
-	PartCategory      string `json:"part_category" db:"part_category"`
+	Description string `json:"description" db:"description"`
+	LocationID  int    `json:"location_id" db:"location_id"`
+	HasVector   bool   `json:"has_vector" db:"has_vector"`
+	RawLocation string `json:"raw_location" db:"raw_location"`
 
 	// Vehicle compatibility fields from vehicle joins
-	Make    string   `json:"make" db:"make"`
-	Years   []string `json:"years" db:"years"`
-	Models  []string `json:"models" db:"models"`
-	Engines []string `json:"engines" db:"engines"`
+	Make            string   `json:"make" db:"make"`
+	Years           []string `json:"years" db:"years"`
+	Models          []string `json:"models" db:"models"`
+	Engines         []string `json:"engines" db:"engines"`
+	PartCategory    string   `json:"part_category" db:"part_category"`
+	PartSubcategory string   `json:"part_subcategory" db:"part_subcategory"`
 
 	// Owner reachability (computed in query)
 	OwnerUnreachable int `json:"owner_unreachable" db:"owner_unreachable"`
@@ -58,76 +58,58 @@ func (a Ad) IsArchived() bool {
 	return a.DeletedAt != nil
 }
 
-// populateVehicleData fills in the Make, Years, Models, and Engines fields
+// populateVehicleData fills in the Make, Years, Models, Engines, and Part category/subcategory fields
 func populateVehicleData(adDetail *AdDetail) error {
 	query := `
-		SELECT DISTINCT 
-			m.name as make,
-			y.year,
-			mo.name as model,
-			e.name as engine
+		SELECT 
+			COALESCE(MIN(m.name), '') as make,
+			COALESCE(GROUP_CONCAT(DISTINCT CAST(y.year AS TEXT)), '') as years,
+			COALESCE(GROUP_CONCAT(DISTINCT mo.name), '') as models,
+			COALESCE(GROUP_CONCAT(DISTINCT e.name), '') as engines,
+			COALESCE(MIN(pc.name), '') as part_category,
+			COALESCE(MIN(psc.name), '') as part_subcategory
 		FROM AdVehicle av
 		JOIN Vehicle v ON av.vehicle_id = v.id AND v.ad_category_id = ?
-		JOIN Make m ON v.make_id = m.id
-		JOIN Model mo ON v.model_id = mo.id
+		LEFT JOIN Make m ON v.make_id = m.id
+		LEFT JOIN Model mo ON v.model_id = mo.id
 		LEFT JOIN Year y ON v.year_id = y.id
 		LEFT JOIN Engine e ON v.engine_id = e.id
+		LEFT JOIN PartSubCategory psc ON v.part_subcategory_id = psc.id
+		LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
 		WHERE av.ad_id = ?
 	`
 
-	type vehicleRow struct {
-		Make   string
-		Year   *int
-		Model  string
-		Engine *string
+	type vehicleData struct {
+		Make            string `db:"make"`
+		Years           string `db:"years"`
+		Models          string `db:"models"`
+		Engines         string `db:"engines"`
+		PartCategory    string `db:"part_category"`
+		PartSubcategory string `db:"part_subcategory"`
 	}
 
-	var rows []vehicleRow
-	err := db.Select(&rows, query, adDetail.AdCategoryID, adDetail.ID)
+	var data vehicleData
+	err := db.Get().Get(&data, query, adDetail.AdCategoryID, adDetail.ID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("no vehicle data found for ad")
+		}
 		return fmt.Errorf("failed to query vehicle data: %w", err)
 	}
 
-	if len(rows) == 0 {
-		return fmt.Errorf("no vehicle data found for ad")
+	adDetail.Make = data.Make
+	adDetail.PartCategory = data.PartCategory
+	adDetail.PartSubcategory = data.PartSubcategory
+
+	// Split comma-separated values from GROUP_CONCAT
+	if data.Years != "" {
+		adDetail.Years = strings.Split(data.Years, ",")
 	}
-
-	// Extract unique values using maps to deduplicate
-	makeSet := make(map[string]bool)
-	yearSet := make(map[string]bool)
-	modelSet := make(map[string]bool)
-	engineSet := make(map[string]bool)
-
-	for _, row := range rows {
-		makeSet[row.Make] = true
-		if row.Year != nil {
-			yearSet[fmt.Sprintf("%d", *row.Year)] = true
-		}
-		modelSet[row.Model] = true
-		if row.Engine != nil {
-			engineSet[*row.Engine] = true
-		}
+	if data.Models != "" {
+		adDetail.Models = strings.Split(data.Models, ",")
 	}
-
-	// Get first make as the ad's make
-	for make := range makeSet {
-		adDetail.Make = make
-		break
-	}
-
-	// Convert year sets to slice
-	for year := range yearSet {
-		adDetail.Years = append(adDetail.Years, year)
-	}
-
-	// Convert model sets to slice
-	for model := range modelSet {
-		adDetail.Models = append(adDetail.Models, model)
-	}
-
-	// Convert engine sets to slice
-	for engine := range engineSet {
-		adDetail.Engines = append(adDetail.Engines, engine)
+	if data.Engines != "" {
+		adDetail.Engines = strings.Split(data.Engines, ",")
 	}
 
 	return nil
@@ -232,17 +214,13 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 		// Query with bookmark status - full fields for detail view
 		query = `
 			SELECT a.id, a.title, a.description, a.price,
-				a.created_at, a.deleted_at, a.part_subcategory_id,
-				a.user_id, COALESCE(psc.name, '') as part_subcategory,
-				COALESCE(pc.name, '') as part_category, a.location_id,
-				a.image_count, a.has_vector, l.raw_text as raw_location,
-				l.city, l.admin_area, l.country,
-			CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
-			a.ad_category_id,
-			CASE WHEN u.sms_opted_out = 1 AND u.notification_method = 'sms' THEN 1 ELSE 0 END as owner_unreachable
+				a.created_at, a.deleted_at, a.user_id,
+				a.location_id, a.image_count, a.has_vector,
+				l.raw_text as raw_location, l.city, l.admin_area, l.country,
+				CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
+				a.ad_category_id,
+				CASE WHEN u.sms_opted_out = 1 AND u.notification_method = 'sms' THEN 1 ELSE 0 END as owner_unreachable
 			FROM Ad a
-			LEFT JOIN PartSubCategory psc ON a.part_subcategory_id = psc.id
-			LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
 			LEFT JOIN Location l ON a.location_id = l.id
 			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
 			LEFT JOIN User u ON a.user_id = u.id
@@ -253,16 +231,12 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 		// Query without bookmark status (default to false) - full fields for detail view
 		query = `
 			SELECT a.id, a.title, a.description, a.price,
-				a.created_at, a.deleted_at, a.part_subcategory_id,
-				a.user_id, COALESCE(psc.name, '') as part_subcategory,
-				COALESCE(pc.name, '') as part_category, a.location_id,
-				a.image_count, a.has_vector, l.raw_text as raw_location,
-				l.city, l.admin_area, l.country, 0 as is_bookmarked,
-				a.ad_category_id,
+				a.created_at, a.deleted_at, a.user_id,
+				a.location_id, a.image_count, a.has_vector,
+				l.raw_text as raw_location, l.city, l.admin_area, l.country,
+				0 as is_bookmarked, a.ad_category_id,
 				CASE WHEN u.sms_opted_out = 1 AND u.notification_method = 'sms' THEN 1 ELSE 0 END as owner_unreachable
 			FROM Ad a
-			LEFT JOIN PartSubCategory psc ON a.part_subcategory_id = psc.id
-			LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
 			LEFT JOIN Location l ON a.location_id = l.id
 			LEFT JOIN User u ON a.user_id = u.id
 			WHERE a.id = ?

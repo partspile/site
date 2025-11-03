@@ -520,38 +520,43 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 			continue
 		}
 
-		// Get subcategory ID
-		subcategoryID := 0
-		if ad.Subcategory != "" && partCategoryMap[ad.Category] > 0 {
-			subcatRows, err := db.Query(`SELECT id FROM PartSubCategory WHERE part_category_id=? AND name=?`, partCategoryMap[ad.Category], ad.Subcategory)
-			if err == nil {
-				if subcatRows.Next() {
-					subcatRows.Scan(&subcategoryID)
+		// Get subcategory ID (NULL for whole vehicle ads, ID for parts ads)
+		var subcategoryID *int
+		if ad.Category != "" {
+			// This is a parts ad
+			subcatID := 0
+			if ad.Subcategory != "" && partCategoryMap[ad.Category] > 0 {
+				subcatRows, err := db.Query(`SELECT id FROM PartSubCategory WHERE part_category_id=? AND name=?`, partCategoryMap[ad.Category], ad.Subcategory)
+				if err == nil {
+					if subcatRows.Next() {
+						subcatRows.Scan(&subcatID)
+					}
+					subcatRows.Close()
 				}
-				subcatRows.Close()
 			}
-		}
 
-		// If no subcategory found, use the first available one for this category (only for parts ads)
-		if subcategoryID == 0 && len(subcategoryMap) > 0 && ad.Category != "" {
-			for _, id := range subcategoryMap {
-				subcategoryID = id
-				break
+			// If no subcategory found, use the first available one for this category
+			if subcatID == 0 && len(subcategoryMap) > 0 {
+				for _, id := range subcategoryMap {
+					subcatID = id
+					break
+				}
 			}
-		}
 
-		// For non-parts ads (empty category), allow subcategoryID to be 0
-		if subcategoryID == 0 && ad.Category != "" {
-			log.Printf("No valid subcategory found for ad: %s, skipping", ad.Title)
-			continue
+			if subcatID == 0 {
+				log.Printf("No valid subcategory found for ad: %s, skipping", ad.Title)
+				continue
+			}
+			subcategoryID = &subcatID
 		}
+		// For whole vehicle ads (ad.Category == ""), subcategoryID stays nil
 
 		// Generate between 0 and 5 images per ad
 		numImages := rand.Intn(6)
 
 		// Insert ad
-		res, err := db.Exec(`INSERT INTO Ad (title, description, price, created_at, part_subcategory_id, user_id, location_id, image_count, has_vector, ad_category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
-			ad.Title, ad.Description, ad.Price, ad.CreatedAt, subcategoryID, ad.UserID, locationID, numImages, categoryID)
+		res, err := db.Exec(`INSERT INTO Ad (title, description, price, created_at, user_id, location_id, image_count, has_vector, ad_category_id) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)`,
+			ad.Title, ad.Description, ad.Price, ad.CreatedAt, ad.UserID, locationID, numImages, categoryID)
 		if err != nil {
 			log.Printf("Failed to insert Ad: %v", err)
 			continue
@@ -563,17 +568,86 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 			for _, year := range ad.Years {
 				for _, model := range ad.Models {
 					for _, engine := range ad.Engines {
-						// Query for vehicle
+						// Query for vehicle with part_subcategory_id (may be NULL)
 						var vehicleID int
-						err := db.QueryRow(`SELECT v.id FROM Vehicle v 
-							JOIN Make m ON v.make_id=m.id
-							JOIN Year y ON v.year_id=y.id
-							JOIN Model mdl ON v.model_id=mdl.id
-							JOIN Engine e ON v.engine_id=e.id
-							WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND v.ad_category_id=?`,
-							ad.Make, year, model, engine, categoryID).Scan(&vehicleID)
+						var query string
+						var args []interface{}
+						if subcategoryID != nil {
+							query = `SELECT v.id FROM Vehicle v 
+								LEFT JOIN Make m ON v.make_id=m.id
+								LEFT JOIN Year y ON v.year_id=y.id
+								LEFT JOIN Model mdl ON v.model_id=mdl.id
+								LEFT JOIN Engine e ON v.engine_id=e.id
+								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND v.ad_category_id=? AND v.part_subcategory_id=?`
+							args = []interface{}{ad.Make, year, model, engine, categoryID, *subcategoryID}
+						} else {
+							query = `SELECT v.id FROM Vehicle v 
+								LEFT JOIN Make m ON v.make_id=m.id
+								LEFT JOIN Year y ON v.year_id=y.id
+								LEFT JOIN Model mdl ON v.model_id=mdl.id
+								LEFT JOIN Engine e ON v.engine_id=e.id
+								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND v.ad_category_id=? AND v.part_subcategory_id IS NULL`
+							args = []interface{}{ad.Make, year, model, engine, categoryID}
+						}
+						err := db.QueryRow(query, args...).Scan(&vehicleID)
 						if err != nil {
-							continue
+							// Vehicle not found - need to create it
+							// First get the IDs for make, year, model, engine
+							var makeID, yearID, modelID, engineID int
+							err = db.QueryRow(`SELECT id FROM Make WHERE name=? AND ad_category_id=?`, ad.Make, categoryID).Scan(&makeID)
+							if err != nil {
+								log.Printf("Failed to find make: %v", err)
+								continue
+							}
+							err = db.QueryRow(`SELECT id FROM Year WHERE year=? AND ad_category_id=?`, year, categoryID).Scan(&yearID)
+							if err != nil {
+								log.Printf("Failed to find year: %v", err)
+								continue
+							}
+							err = db.QueryRow(`SELECT id FROM Model WHERE name=? AND ad_category_id=?`, model, categoryID).Scan(&modelID)
+							if err != nil {
+								log.Printf("Failed to find model: %v", err)
+								continue
+							}
+							err = db.QueryRow(`SELECT id FROM Engine WHERE name=? AND ad_category_id=?`, engine, categoryID).Scan(&engineID)
+							if err != nil {
+								log.Printf("Failed to find engine: %v", err)
+								continue
+							}
+
+							// Insert vehicle with part_subcategory_id (may be NULL)
+							var vehicleRes sql.Result
+							if subcategoryID != nil {
+								vehicleRes, err = db.Exec(`INSERT OR IGNORE INTO Vehicle (ad_category_id, make_id, year_id, model_id, engine_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, ?)`,
+									categoryID, makeID, yearID, modelID, engineID, *subcategoryID)
+							} else {
+								vehicleRes, err = db.Exec(`INSERT OR IGNORE INTO Vehicle (ad_category_id, make_id, year_id, model_id, engine_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, NULL)`,
+									categoryID, makeID, yearID, modelID, engineID)
+							}
+							if err != nil {
+								log.Printf("Failed to insert vehicle: %v", err)
+								continue
+							}
+							vehicleID64, _ := vehicleRes.LastInsertId()
+							if vehicleID64 == 0 {
+								// Vehicle already exists, fetch it
+								var lookupQuery string
+								var lookupArgs []interface{}
+								if subcategoryID != nil {
+									lookupQuery = `SELECT id FROM Vehicle WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_subcategory_id=?`
+									lookupArgs = []interface{}{categoryID, makeID, yearID, modelID, engineID, *subcategoryID}
+								} else {
+									lookupQuery = `SELECT id FROM Vehicle WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_subcategory_id IS NULL`
+									lookupArgs = []interface{}{categoryID, makeID, yearID, modelID, engineID}
+								}
+								err = db.QueryRow(lookupQuery, lookupArgs...).Scan(&vehicleID)
+								if err != nil {
+									log.Printf("Failed to find created vehicle: %v", err)
+									continue
+								}
+							} else {
+								vehicleID = int(vehicleID64)
+							}
 						}
 
 						// Insert AdVehicle relationship

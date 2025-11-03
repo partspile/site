@@ -7,6 +7,29 @@ import (
 	"github.com/parts-pile/site/db"
 )
 
+// getPartSubcategoryID looks up the PartSubCategory ID from category and subcategory names
+func getPartSubcategoryID(tx *sql.Tx, adCategoryID int, categoryName, subcategoryName string) (*int, error) {
+	if categoryName == "" || subcategoryName == "" {
+		return nil, nil
+	}
+
+	query := `
+		SELECT psc.id
+		FROM PartSubCategory psc
+		JOIN PartCategory pc ON psc.part_category_id = pc.id
+		WHERE pc.name = ? AND psc.name = ? AND pc.ad_category_id = ?
+	`
+	var id int
+	err := tx.QueryRow(query, categoryName, subcategoryName, adCategoryID).Scan(&id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("part subcategory not found: category=%s, subcategory=%s", categoryName, subcategoryName)
+		}
+		return nil, fmt.Errorf("failed to lookup part subcategory: %w", err)
+	}
+	return &id, nil
+}
+
 // AddAd creates a new ad in the database and returns the ad ID
 func AddAd(ad AdDetail) (int, error) {
 	tx, err := db.Begin()
@@ -18,10 +41,10 @@ func AddAd(ad AdDetail) (int, error) {
 	res, err := tx.Exec(`
 		INSERT INTO Ad (
 			ad_category_id, title, description, price, 
-			part_subcategory_id, user_id, location_id, image_count, has_vector
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			user_id, location_id, image_count, has_vector
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		ad.AdCategoryID, ad.Title, ad.Description, ad.Price,
-		ad.PartSubcategoryID, ad.UserID, ad.LocationID, ad.ImageCount, ad.HasVector)
+		ad.UserID, ad.LocationID, ad.ImageCount, ad.HasVector)
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert ad: %w", err)
 	}
@@ -61,34 +84,71 @@ func addAdVehicleAssociations(tx *sql.Tx, ad AdDetail) error {
 }
 
 // findVehicle finds a vehicle ID from the unified Vehicle table
-func findVehicle(tx *sql.Tx, makeName, yearStr, modelName, engineName string, adCategoryID int) (int, error) {
+func findVehicle(tx *sql.Tx, makeName, yearStr, modelName, engineName string, adCategoryID int, partSubcategoryID *int) (int, error) {
 	// Use the unified Vehicle table
-	query := `
-		SELECT v.id FROM Vehicle v
-		JOIN Make m ON v.make_id = m.id
-		LEFT JOIN Year y ON v.year_id = y.id
-		JOIN Model mo ON v.model_id = mo.id
-		LEFT JOIN Engine e ON v.engine_id = e.id
-		WHERE m.name = ? AND mo.name = ? AND m.ad_category_id = ?
-		AND (? IS NULL OR y.year = ?) AND (? IS NULL OR e.name = ?)
-	`
+	var query string
 	var vehicleID int
 	var err error
 
-	if yearStr == "" && engineName == "" {
-		err = tx.QueryRow(query, makeName, modelName, adCategoryID, nil, nil, nil, nil).Scan(&vehicleID)
-	} else if yearStr == "" {
-		err = tx.QueryRow(query, makeName, modelName, adCategoryID, nil, nil, engineName, engineName).Scan(&vehicleID)
-	} else if engineName == "" {
-		err = tx.QueryRow(query, makeName, modelName, adCategoryID, yearStr, yearStr, nil, nil).Scan(&vehicleID)
+	// Build query with appropriate part_subcategory_id check
+	if partSubcategoryID != nil {
+		query = `
+			SELECT v.id FROM Vehicle v
+			LEFT JOIN Make m ON v.make_id = m.id
+			LEFT JOIN Year y ON v.year_id = y.id
+			LEFT JOIN Model mo ON v.model_id = mo.id
+			LEFT JOIN Engine e ON v.engine_id = e.id
+			WHERE v.ad_category_id = ?
+			AND (? IS NULL OR m.name = ?) AND (? IS NULL OR mo.name = ?)
+			AND (? IS NULL OR y.year = ?) AND (? IS NULL OR e.name = ?)
+			AND v.part_subcategory_id = ?
+		`
 	} else {
-		err = tx.QueryRow(query, makeName, modelName, adCategoryID, yearStr, yearStr, engineName, engineName).Scan(&vehicleID)
+		query = `
+			SELECT v.id FROM Vehicle v
+			LEFT JOIN Make m ON v.make_id = m.id
+			LEFT JOIN Year y ON v.year_id = y.id
+			LEFT JOIN Model mo ON v.model_id = mo.id
+			LEFT JOIN Engine e ON v.engine_id = e.id
+			WHERE v.ad_category_id = ?
+			AND (? IS NULL OR m.name = ?) AND (? IS NULL OR mo.name = ?)
+			AND (? IS NULL OR y.year = ?) AND (? IS NULL OR e.name = ?)
+			AND v.part_subcategory_id IS NULL
+		`
+	}
+
+	// Build args: category, make (nullable), make name, model (nullable), model name, year (nullable), year value, engine (nullable), engine name, part_subcategory_id
+	var makeArg interface{} = makeName
+	if makeName == "" {
+		makeArg = nil
+	}
+	var modelArg interface{} = modelName
+	if modelName == "" {
+		modelArg = nil
+	}
+	var yearArg interface{} = yearStr
+	if yearStr == "" {
+		yearArg = nil
+	}
+	var engineArg interface{} = engineName
+	if engineName == "" {
+		engineArg = nil
+	}
+
+	if partSubcategoryID != nil {
+		err = tx.QueryRow(query, adCategoryID, makeArg, makeArg, modelArg, modelArg, yearArg, yearArg, engineArg, engineArg, *partSubcategoryID).Scan(&vehicleID)
+	} else {
+		err = tx.QueryRow(query, adCategoryID, makeArg, makeArg, modelArg, modelArg, yearArg, yearArg, engineArg, engineArg).Scan(&vehicleID)
 	}
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return 0, fmt.Errorf("vehicle not found for make=%s, year=%s, model=%s, engine=%s",
-				makeName, yearStr, modelName, engineName)
+			partSubcatStr := "NULL"
+			if partSubcategoryID != nil {
+				partSubcatStr = fmt.Sprintf("%d", *partSubcategoryID)
+			}
+			return 0, fmt.Errorf("vehicle not found for make=%s, year=%s, model=%s, engine=%s, part_subcategory_id=%s",
+				makeName, yearStr, modelName, engineName, partSubcatStr)
 		}
 		return 0, fmt.Errorf("error looking up vehicle: %w", err)
 	}
@@ -97,10 +157,18 @@ func findVehicle(tx *sql.Tx, makeName, yearStr, modelName, engineName string, ad
 
 // addCarAssociations handles Cars: make, year, model, engine
 func addCarAssociations(tx *sql.Tx, ad AdDetail) error {
+	var partSubcatID *int
+	var err error
+	if IsPartCategory(ad.AdCategoryID) && ad.PartCategory != "" && ad.PartSubcategory != "" {
+		partSubcatID, err = getPartSubcategoryID(tx, ad.AdCategoryID, ad.PartCategory, ad.PartSubcategory)
+		if err != nil {
+			return err
+		}
+	}
 	for _, yearStr := range ad.Years {
 		for _, modelName := range ad.Models {
 			for _, engineName := range ad.Engines {
-				vehicleID, err := findVehicle(tx, ad.Make, yearStr, modelName, engineName, ad.AdCategoryID)
+				vehicleID, err := findVehicle(tx, ad.Make, yearStr, modelName, engineName, ad.AdCategoryID, partSubcatID)
 				if err != nil {
 					return err
 				}
@@ -115,10 +183,18 @@ func addCarAssociations(tx *sql.Tx, ad AdDetail) error {
 
 // addMotorcycleAssociations handles Motorcycles: make, year, model, engine
 func addMotorcycleAssociations(tx *sql.Tx, ad AdDetail) error {
+	var partSubcatID *int
+	var err error
+	if IsPartCategory(ad.AdCategoryID) && ad.PartCategory != "" && ad.PartSubcategory != "" {
+		partSubcatID, err = getPartSubcategoryID(tx, ad.AdCategoryID, ad.PartCategory, ad.PartSubcategory)
+		if err != nil {
+			return err
+		}
+	}
 	for _, yearStr := range ad.Years {
 		for _, modelName := range ad.Models {
 			for _, engineName := range ad.Engines {
-				vehicleID, err := findVehicle(tx, ad.Make, yearStr, modelName, engineName, ad.AdCategoryID)
+				vehicleID, err := findVehicle(tx, ad.Make, yearStr, modelName, engineName, ad.AdCategoryID, partSubcatID)
 				if err != nil {
 					return err
 				}
@@ -133,9 +209,17 @@ func addMotorcycleAssociations(tx *sql.Tx, ad AdDetail) error {
 
 // addAgAssociations handles Agricultural Equipment: make, year, model (no engine)
 func addAgAssociations(tx *sql.Tx, ad AdDetail) error {
+	var partSubcatID *int
+	var err error
+	if IsPartCategory(ad.AdCategoryID) && ad.PartCategory != "" && ad.PartSubcategory != "" {
+		partSubcatID, err = getPartSubcategoryID(tx, ad.AdCategoryID, ad.PartCategory, ad.PartSubcategory)
+		if err != nil {
+			return err
+		}
+	}
 	for _, yearStr := range ad.Years {
 		for _, modelName := range ad.Models {
-			vehicleID, err := findVehicle(tx, ad.Make, yearStr, modelName, "", ad.AdCategoryID)
+			vehicleID, err := findVehicle(tx, ad.Make, yearStr, modelName, "", ad.AdCategoryID, partSubcatID)
 			if err != nil {
 				return err
 			}
@@ -149,8 +233,16 @@ func addAgAssociations(tx *sql.Tx, ad AdDetail) error {
 
 // addBicycleAssociations handles Bicycles: make, model (no year, no engine)
 func addBicycleAssociations(tx *sql.Tx, ad AdDetail) error {
+	var partSubcatID *int
+	var err error
+	if IsPartCategory(ad.AdCategoryID) && ad.PartCategory != "" && ad.PartSubcategory != "" {
+		partSubcatID, err = getPartSubcategoryID(tx, ad.AdCategoryID, ad.PartCategory, ad.PartSubcategory)
+		if err != nil {
+			return err
+		}
+	}
 	for _, modelName := range ad.Models {
-		vehicleID, err := findVehicle(tx, ad.Make, "", modelName, "", ad.AdCategoryID)
+		vehicleID, err := findVehicle(tx, ad.Make, "", modelName, "", ad.AdCategoryID, partSubcatID)
 		if err != nil {
 			return err
 		}

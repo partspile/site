@@ -100,3 +100,14 @@ func HasEngines(adCategory int) bool {
 		return false
 	}
 }
+
+// IsPartCategory returns true if the category is for parts (not whole vehicles)
+func IsPartCategory(adCategory int) bool {
+	switch adCategory {
+	case AdCategoryCarPart, AdCategoryMotorcyclePart,
+		AdCategoryBicyclePart, AdCategoryAgPart:
+		return true
+	default:
+		return false
+	}
+}
