@@ -47,7 +47,7 @@ func GetCategories(adCat int) []string {
 
 	cats, err := getCategories(adCat)
 	if err != nil {
-		log.Printf("[parts] Failed to load categories for %s: %v", adCat, err)
+		log.Printf("[parts] Failed to load categories for %d: %v", adCat, err)
 		return []string{}
 	}
 	categories[adCat] = cats
@@ -84,7 +84,7 @@ func GetSubCategories(adCat int, category string) []string {
 
 	subCats, err := getSubCategories(adCat, category)
 	if err != nil {
-		log.Printf("[parts] Failed to load subcategories for %s/%s: %v", adCat, category, err)
+		log.Printf("[parts] Failed to load subcategories for %d/%s: %v", adCat, category, err)
 		return []string{}
 	}
 
