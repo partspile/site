@@ -86,7 +86,7 @@ var (
 	TwilioFromEmail      = getEnvWithDefault("TWILIO_FROM_EMAIL", "")
 
 	// JWT configuration
-	JWTSecret = getEnvWithDefault("JWT_SECRET", "your-super-secret-jwt-key-change-in-production")
+	JWTSecret = getEnvWithDefault("JWT_SECRET", "")
 
 	// Server configuration
 	ServerPort = getEnvWithDefault("PORT", "8000")
