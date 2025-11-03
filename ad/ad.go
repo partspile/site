@@ -69,7 +69,7 @@ func populateVehicleData(adDetail *AdDetail) error {
 			COALESCE(MIN(pc.name), '') as part_category,
 			COALESCE(MIN(psc.name), '') as part_subcategory
 		FROM AdVehicle av
-		JOIN Vehicle v ON av.vehicle_id = v.id AND v.ad_category_id = ?
+		JOIN Vehicle v ON av.vehicle_id = v.id
 		LEFT JOIN Make m ON v.make_id = m.id
 		LEFT JOIN Model mo ON v.model_id = mo.id
 		LEFT JOIN Year y ON v.year_id = y.id
@@ -89,7 +89,7 @@ func populateVehicleData(adDetail *AdDetail) error {
 	}
 
 	var data vehicleData
-	err := db.Get().Get(&data, query, adDetail.AdCategoryID, adDetail.ID)
+	err := db.Get().Get(&data, query, adDetail.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return fmt.Errorf("no vehicle data found for ad")
@@ -101,7 +101,6 @@ func populateVehicleData(adDetail *AdDetail) error {
 	adDetail.PartCategory = data.PartCategory
 	adDetail.PartSubcategory = data.PartSubcategory
 
-	// Split comma-separated values from GROUP_CONCAT
 	if data.Years != "" {
 		adDetail.Years = strings.Split(data.Years, ",")
 	}

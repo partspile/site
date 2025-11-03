@@ -634,8 +634,6 @@ func formatYearRanges(years []string) string {
 	for i, yearStr := range years {
 		fmt.Sscanf(yearStr, "%d", &yearInts[i])
 	}
-
-	// Sort years numerically
 	sort.Ints(yearInts)
 
 	// Group consecutive years into ranges
