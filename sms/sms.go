@@ -302,25 +302,44 @@ func VerifyTwilioSignature(c *fiber.Ctx) bool {
 
 	// Get all POST parameters and sort them alphabetically
 	// CRITICAL: Twilio signs using the raw form-encoded values as they appear in the request body
-	// We need to get the raw form data, not decoded values, because '+' in phone numbers
-	// is encoded as '%2B' in form data, but Fiber's PostArgs() decodes it to '+'
+	// Try to parse raw body first, fallback to PostArgs() if raw body not available
 	params := make(map[string]string)
+	usingRawBody := false
 
-	// Get raw form data from request body
-	formData := c.Request().PostArgs()
-	formData.VisitAll(func(key, value []byte) {
-		// Get the raw encoded value from the original request
-		// Fiber's PostArgs() gives us decoded values, but Twilio signs with encoded values
-		keyStr := string(key)
-		valueStr := string(value)
+	// Try to get raw body - Fiber may have already parsed it, but c.Body() should still work
+	rawBody := c.Body()
+	if len(rawBody) > 0 {
+		// Parse raw form-urlencoded body manually
+		rawBodyStr := string(rawBody)
+		log.Printf("[SMS] DEBUG: Raw body length: %d", len(rawBody))
+		// Parse form-urlencoded string: key1=value1&key2=value2
+		for _, pair := range strings.Split(rawBodyStr, "&") {
+			if pair == "" {
+				continue
+			}
+			parts := strings.SplitN(pair, "=", 2)
+			if len(parts) == 2 {
+				key := parts[0]
+				value := parts[1]
+				// Don't decode - use raw encoded value for signature
+				params[key] = value
+				log.Printf("[SMS] DEBUG: Raw param: %s = %s", key, value)
+			}
+		}
+		if len(params) > 0 {
+			usingRawBody = true
+			log.Printf("[SMS] DEBUG: Using raw body parameters (already encoded)")
+		}
+	}
 
-		// For signature, we need to URL-encode values that contain special characters
-		// that would be encoded in form-urlencoded data
-		// Specifically: '+' should be '%2B', spaces should be '+' or '%20'
-		// But we need to preserve the exact encoding Twilio used
-		// Since Fiber decodes, we need to re-encode to match what Twilio signed
-		params[keyStr] = valueStr
-	})
+	// If we didn't get params from raw body, use PostArgs() (decoded values)
+	if len(params) == 0 {
+		log.Printf("[SMS] DEBUG: Using PostArgs() - raw body not available or empty")
+		formData := c.Request().PostArgs()
+		formData.VisitAll(func(key, value []byte) {
+			params[string(key)] = string(value)
+		})
+	}
 
 	log.Printf("[SMS] DEBUG: POST parameters (%d total):", len(params))
 	for k, v := range params {
@@ -329,6 +348,7 @@ func VerifyTwilioSignature(c *fiber.Ctx) bool {
 
 	// Also check query string parameters - Twilio includes ALL parameters
 	// (both query string and POST body) in signature calculation
+	// Query params from Fiber are decoded, so we'll need to encode them later if using raw body
 	queryParams := make(map[string]string)
 	c.Request().URI().QueryArgs().VisitAll(func(key, value []byte) {
 		queryKey := string(key)
@@ -341,6 +361,7 @@ func VerifyTwilioSignature(c *fiber.Ctx) bool {
 	})
 
 	// Merge query params into params map (POST params already added)
+	// Note: Query params are decoded by Fiber, so if usingRawBody=true, we'll encode them
 	for k, v := range queryParams {
 		params[k] = v
 	}
@@ -353,9 +374,9 @@ func VerifyTwilioSignature(c *fiber.Ctx) bool {
 	sort.Strings(keys)
 
 	// Build the signature string: sorted params + URL
-	// CRITICAL: Twilio signs using URL-encoded parameter values as they appear in form data
-	// The '+' character in phone numbers is encoded as '%2B' in form-urlencoded data
-	// We need to re-encode values to match what Twilio signed
+	// CRITICAL: Twilio signs using form-urlencoded parameter values as they appear in the raw request body
+	// If we have raw body params, use them directly (already encoded)
+	// If we have decoded params from PostArgs(), we need to re-encode them
 	var signatureStr strings.Builder
 	for _, k := range keys {
 		if signatureStr.Len() > 0 {
@@ -363,17 +384,29 @@ func VerifyTwilioSignature(c *fiber.Ctx) bool {
 		}
 		signatureStr.WriteString(k)
 		signatureStr.WriteString("=")
-		// URL-encode the value to match form-urlencoded format
-		// In form-urlencoded: '+' is used for spaces, literal '+' must be '%2B'
-		encodedValue := url.QueryEscape(params[k])
-		// url.QueryEscape encodes '+' as '%2B', but uses '+' for spaces
-		// For form-urlencoded, we need: spaces -> '+', '+' -> '%2B'
-		// So we need to convert spaces back to '+' after QueryEscape
-		// QueryEscape already handles '+' -> '%2B' correctly
-		// But we need to convert '%20' (spaces) back to '+' for form-urlencoded
-		encodedValue = strings.ReplaceAll(encodedValue, "%20", "+")
-		signatureStr.WriteString(encodedValue)
-		log.Printf("[SMS] DEBUG: Param %s: raw=%s, encoded=%s", k, params[k], encodedValue)
+
+		var valueToUse string
+		// Check if this param came from query string (query params are always decoded by Fiber)
+		_, isQueryParam := queryParams[k]
+		if usingRawBody && !isQueryParam {
+			// Raw body params are already encoded, use directly
+			valueToUse = params[k]
+			log.Printf("[SMS] DEBUG: Param %s: raw encoded=%s", k, valueToUse)
+		} else {
+			// PostArgs() gave us decoded values, or this is a query param (decoded)
+			// Need to re-encode using form-urlencoded rules
+			v := url.Values{}
+			v.Set("dummy", params[k])
+			encodedPair := v.Encode()
+			// Extract just the value part (remove "dummy=" prefix)
+			if strings.HasPrefix(encodedPair, "dummy=") {
+				valueToUse = encodedPair[len("dummy="):]
+			} else {
+				valueToUse = encodedPair
+			}
+			log.Printf("[SMS] DEBUG: Param %s: raw=%s, encoded=%s", k, params[k], valueToUse)
+		}
+		signatureStr.WriteString(valueToUse)
 	}
 	signatureStr.WriteString(fullURL)
 	log.Printf("[SMS] DEBUG: Signature string (params + URL): %s", signatureStr.String())
