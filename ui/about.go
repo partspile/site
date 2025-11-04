@@ -5,12 +5,13 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-func AboutPage(userID int, userName string, path string) g.Node {
+func AboutPage(userID int, userName, path, csrfToken string) g.Node {
 	return Page(
 		"About",
 		userID,
 		userName,
 		path,
+		csrfToken,
 		[]g.Node{
 			pageHeader("About Parts Pile"),
 			contentContainer(

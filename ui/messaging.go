@@ -12,12 +12,13 @@ import (
 )
 
 // MessagesPage renders the main messages page
-func MessagesPage(userID int, userName string, conversations []messaging.Conversation) g.Node {
+func MessagesPage(userID int, userName, csrfToken string, conversations []messaging.Conversation) g.Node {
 	return Page(
 		"Messages",
 		userID,
 		userName,
 		"/messages",
+		csrfToken,
 		[]g.Node{
 			pageHeader("Messages"),
 			contentContainer(
@@ -37,7 +38,7 @@ func MessagesPage(userID int, userName string, conversations []messaging.Convers
 }
 
 // MessagesPageWithExpanded renders the messages page with a specific conversation pre-expanded
-func MessagesPageWithExpanded(userID int, userName string, conversations []messaging.Conversation, expandID string) g.Node {
+func MessagesPageWithExpanded(userID int, userName, csrfToken string, conversations []messaging.Conversation, expandID string) g.Node {
 	// Find the conversation to expand
 	var expandedConversation *messaging.Conversation
 	var expandedMessages []messaging.Message
@@ -62,6 +63,7 @@ func MessagesPageWithExpanded(userID int, userName string, conversations []messa
 		userID,
 		userName,
 		"/messages",
+		csrfToken,
 		[]g.Node{
 			pageHeader("Messages"),
 			contentContainer(

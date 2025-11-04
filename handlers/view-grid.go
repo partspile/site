@@ -25,6 +25,7 @@ func (v *GridView) RenderSearchResults(adIDs []int, cursor uint64) error {
 	q := v.ctx.Query("q")
 	userID := local.GetUserID(v.ctx)
 	loc := getLocation(v.ctx)
+	csrfToken := local.GetCSRFToken(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering
 	ads, err := ad.GetAdsByIDs(adIDs, userID)
@@ -35,7 +36,7 @@ func (v *GridView) RenderSearchResults(adIDs []int, cursor uint64) error {
 	// Create loader URL for infinite scroll
 	loaderURL := ui.SearchCreateLoaderURL(q, cursor)
 
-	return render(v.ctx, ui.GridViewResults(ads, userID, loc, loaderURL))
+	return render(v.ctx, ui.GridViewResults(ads, userID, loc, loaderURL, csrfToken))
 }
 
 func (v *GridView) RenderSearchPage(adIDs []int, cursor uint64) error {

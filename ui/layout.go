@@ -29,42 +29,49 @@ func seoMetaTags(title, currentPath string) []g.Node {
 	}
 }
 
-func Page(title string, userID int, userName string, currentPath string, content []g.Node) g.Node {
+func Page(title string, userID int, userName string, currentPath string, csrfToken string, content []g.Node) g.Node {
+	headNodes := []g.Node{
+		// SEO Meta Tags (only on homepage)
+		g.If(currentPath == "/", g.Group(seoMetaTags(title, currentPath))),
+
+		// Favicons
+		Link(Rel("icon"), Type("image/png"), Href("/images/favicon-32x32.png"), g.Attr("sizes", "32x32")),
+		Link(Rel("icon"), Type("image/png"), Href("/images/favicon-16x16.png"), g.Attr("sizes", "16x16")),
+
+		// Stylesheets
+		Link(
+			Rel("stylesheet"),
+			Href("/css/output.css"),
+		),
+		Script(
+			Type("text/javascript"),
+			Src(config.HTMXURL),
+			Defer(),
+		),
+		Script(
+			Type("text/javascript"),
+			Src(config.HTMXSSEURL),
+			Defer(),
+		),
+		Script(
+			Type("text/javascript"),
+			Src("/js/timezone.js"),
+			Defer(),
+		),
+		// Script(
+		// 	Type("text/javascript"),
+		// 	g.Raw("if(window.htmx){htmx.logAll()} else {document.addEventListener('htmx:load',function(){htmx.logAll()})}"),
+		// ),
+	}
+
 	return components.HTML5(components.HTML5Props{
 		Title:    title,
 		Language: "en",
-		Head: []g.Node{
-			// SEO Meta Tags (only on homepage)
-			g.If(currentPath == "/", g.Group(seoMetaTags(title, currentPath))),
-
-			// Favicons
-			Link(Rel("icon"), Type("image/png"), Href("/images/favicon-32x32.png"), g.Attr("sizes", "32x32")),
-			Link(Rel("icon"), Type("image/png"), Href("/images/favicon-16x16.png"), g.Attr("sizes", "16x16")),
-
-			// Stylesheets
-			Link(
-				Rel("stylesheet"),
-				Href("/css/output.css"),
-			),
-			Script(
-				Type("text/javascript"),
-				Src(config.HTMXURL),
-				Defer(),
-			),
-			Script(
-				Type("text/javascript"),
-				Src(config.HTMXSSEURL),
-				Defer(),
-			),
-			// Script(
-			// 	Type("text/javascript"),
-			// 	g.Raw("if(window.htmx){htmx.logAll()} else {document.addEventListener('htmx:load',function(){htmx.logAll()})}"),
-			// ),
-		},
+		Head:     headNodes,
 		Body: []g.Node{
 			Div(
 				Class("container mx-auto px-4 py-8"),
-				hx.Headers(`js:{'X-Timezone': Intl.DateTimeFormat().resolvedOptions().timeZone}`),
+				hxHeadersCSRFToken(csrfToken),
 				hx.Indicator("#indicator"),
 				navigation(userID, userName, currentPath),
 				g.Group(content),

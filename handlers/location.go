@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/db"
 )
 
@@ -69,8 +70,17 @@ func resolveLocationForFilter(locationText string) (latitude, longitude float64,
 	return *loc.Latitude, *loc.Longitude, nil
 }
 
-// getLocation gets the timezone location from context
+// getLocation gets the timezone location from cookie
 func getLocation(c *fiber.Ctx) *time.Location {
-	loc, _ := time.LoadLocation(c.Get("X-Timezone"))
+	timezone := cookie.GetTimezone(c)
+	if timezone == "" {
+		// Default to UTC if no timezone cookie is set
+		return time.UTC
+	}
+	loc, err := time.LoadLocation(timezone)
+	if err != nil {
+		// Invalid timezone, default to UTC
+		return time.UTC
+	}
 	return loc
 }

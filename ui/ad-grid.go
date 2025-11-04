@@ -13,7 +13,7 @@ import (
 )
 
 // AdGridNode renders a grid view of ad
-func AdGridNode(a ad.Ad, userID int, loc *time.Location) g.Node {
+func AdGridNode(a ad.Ad, userID int, loc *time.Location, csrfToken string) g.Node {
 	var containerClass string = "flex flex-col cursor-pointer"
 	if a.IsArchived() {
 		containerClass += " bg-red-100"
@@ -39,7 +39,7 @@ func AdGridNode(a ad.Ad, userID int, loc *time.Location) g.Node {
 					Class("font-semibold text-base"),
 					priceNode(a),
 				),
-				g.If(userID != 0, BookmarkButton(a)),
+				g.If(userID != 0, BookmarkButton(a, csrfToken)),
 			),
 
 			// Title

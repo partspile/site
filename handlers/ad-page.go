@@ -24,9 +24,11 @@ func HandleAdPage(c *fiber.Ctx) error {
 
 	// If ad is deleted and user is not the owner, show deleted message
 	if a.IsArchived() && a.UserID != userID {
-		return render(c, ui.AdDeletedPage(userID, userName, c.Path()))
+		csrfToken := local.GetCSRFToken(c)
+		return render(c, ui.AdDeletedPage(userID, userName, c.Path(), csrfToken))
 	}
 
 	// Owner can see their deleted ads, or anyone can see active ads
-	return render(c, ui.AdPage(*a, userID, userName, c.Path(), getLocation(c)))
+	csrfToken := local.GetCSRFToken(c)
+	return render(c, ui.AdPage(*a, userID, userName, csrfToken, c.Path(), getLocation(c)))
 }

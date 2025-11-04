@@ -15,7 +15,7 @@ import (
 	"github.com/parts-pile/site/b2util"
 )
 
-func AdDetail(a ad.AdDetail, userID int, loc *time.Location) g.Node {
+func AdDetail(a ad.AdDetail, userID int, loc *time.Location, csrfToken string) g.Node {
 	// Determine full class strings based on deleted status
 	var containerClass, contentClass string
 	if a.IsArchived() {
@@ -63,7 +63,7 @@ func AdDetail(a ad.AdDetail, userID int, loc *time.Location) g.Node {
 				),
 				Div(Class("flex flex-row items-center gap-2 ml-2"),
 					// For active ads: show bookmark, message, and delete
-					g.If(!a.IsArchived() && userID != 0, BookmarkButton(a.Ad)),
+					g.If(!a.IsArchived() && userID != 0, BookmarkButton(a.Ad, csrfToken)),
 					g.If(!a.IsArchived() && userID != 0, messageButton(a, userID, a.OwnerUnreachable == 1)),
 					g.If(!a.IsArchived(), deleteButton(a, userID)),
 					// For deleted ads: show restore button (owner only)

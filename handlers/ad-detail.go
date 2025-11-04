@@ -33,8 +33,9 @@ func HandleAdDetail(c *fiber.Ctx) error {
 	}
 
 	loc := getLocation(c)
+	csrfToken := local.GetCSRFToken(c)
 
-	return render(c, ui.AdDetail(*a, userID, loc))
+	return render(c, ui.AdDetail(*a, userID, loc, csrfToken))
 }
 
 // HandleAdCollapse handles ad collapse
@@ -49,12 +50,13 @@ func HandleAdCollapse(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 	loc := getLocation(c)
+	csrfToken := local.GetCSRFToken(c)
 	view := cookie.GetView(c)
 	switch view {
 	case ui.ViewList, ui.ViewTree:
-		return render(c, ui.AdListNode(*a, userID, loc))
+		return render(c, ui.AdListNode(*a, userID, loc, csrfToken))
 	case ui.ViewGrid:
-		return render(c, ui.AdGridNode(*a, userID, loc))
+		return render(c, ui.AdGridNode(*a, userID, loc, csrfToken))
 	}
 	return nil
 }

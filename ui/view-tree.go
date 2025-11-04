@@ -27,7 +27,7 @@ func encodeAdIDs(adIDs []int) string {
 	return base64.URLEncoding.EncodeToString(buf)
 }
 
-func TreeViewResults(adIDs []int, adCat int, userPrompt string, userID int) g.Node {
+func TreeViewResults(adIDs []int, adCat int, userPrompt string, userID int, csrfToken string) g.Node {
 	var viewContent = NoSearchResultsMessage()
 
 	if userPrompt == "" && len(adIDs) == 0 {
@@ -42,7 +42,7 @@ func TreeViewResults(adIDs []int, adCat int, userPrompt string, userID int) g.No
 
 	return Div(
 		ID("searchResults"),
-		ViewToggleButtons("tree", userID),
+		ViewToggleButtons("tree", userID, csrfToken),
 		viewContent,
 	)
 }

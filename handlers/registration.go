@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/grok"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/sms"
 	"github.com/parts-pile/site/ui"
@@ -21,7 +22,8 @@ import (
 func HandleRegistration(c *fiber.Ctx) error {
 	// Log out any currently logged-in user since they're starting a new registration
 	logoutUser(c)
-	return render(c, ui.RegisterPage(0, "", c.Path()))
+	csrfToken := local.GetCSRFToken(c)
+	return render(c, ui.RegisterPage(0, "", c.Path(), csrfToken))
 }
 
 // HandleRegistrationStep1 handles the first step submission and sends SMS

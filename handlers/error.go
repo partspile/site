@@ -63,5 +63,6 @@ func CustomErrorHandler(c *fiber.Ctx, err error) error {
 
 	// Send sanitized error page
 	c.Status(code)
-	return render(c, ui.ErrorPage(code, userMessage, userID, userName))
+	csrfToken := local.GetCSRFToken(c)
+	return render(c, ui.ErrorPage(code, userMessage, userID, userName, csrfToken))
 }

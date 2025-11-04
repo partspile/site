@@ -9,11 +9,11 @@ import (
 	"github.com/parts-pile/site/ad"
 )
 
-func ListViewResults(ads []ad.Ad, userID int, userName string, loc *time.Location, loaderURL string) g.Node {
+func ListViewResults(ads []ad.Ad, userID int, userName string, loc *time.Location, loaderURL string, csrfToken string) g.Node {
 	var viewContent = NoSearchResultsMessage()
 
 	if len(ads) > 0 {
-		nodes := listNodes(ads, userID, loc)
+		nodes := listNodes(ads, userID, loc, csrfToken)
 		viewContent = Div(
 			ID("list-view"),
 			g.Group(append(nodes,
@@ -23,20 +23,20 @@ func ListViewResults(ads []ad.Ad, userID int, userName string, loc *time.Locatio
 
 	return Div(
 		ID("searchResults"),
-		ViewToggleButtons("list", userID),
+		ViewToggleButtons("list", userID, csrfToken),
 		viewContent,
 	)
 }
 
 func ListViewPage(ads []ad.Ad, userID int, userName string, loc *time.Location, loaderURL string) g.Node {
-	nodes := listNodes(ads, userID, loc)
+	nodes := listNodes(ads, userID, loc, "")
 	return g.Group(append(nodes, createInfiniteScrollTrigger(loaderURL)))
 }
 
-func listNodes(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
+func listNodes(ads []ad.Ad, userID int, loc *time.Location, csrfToken string) []g.Node {
 	nodes := make([]g.Node, 0, len(ads)*2) // *2 because we'll add separators between ads
 	for _, ad := range ads {
-		nodes = append(nodes, AdListNode(ad, userID, loc))
+		nodes = append(nodes, AdListNode(ad, userID, loc, csrfToken))
 		// Add separator after each ad
 		nodes = append(nodes, Div(
 			Class("border-b border-gray-200"),

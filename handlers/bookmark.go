@@ -26,7 +26,8 @@ func HandleBookmarkAd(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 	// Return the bookmarked button HTML for HTMX swap
-	return render(c, ui.BookmarkButton(*a))
+	csrfToken := local.GetCSRFToken(c)
+	return render(c, ui.BookmarkButton(*a, csrfToken))
 }
 
 // Handler to unbookmark an ad
@@ -47,5 +48,6 @@ func HandleUnbookmarkAd(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 	// Return the unbookmarked button HTML for HTMX swap
-	return render(c, ui.BookmarkButton(*a))
+	csrfToken := local.GetCSRFToken(c)
+	return render(c, ui.BookmarkButton(*a, csrfToken))
 }

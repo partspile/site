@@ -142,7 +142,8 @@ func HandleResolveRock(c *fiber.Ctx) error {
 func HandleRocksPage(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
+	csrfToken := local.GetCSRFToken(c)
 	// This page should only be accessible to newly verified users
 	// For now, we'll allow access but in production you might want to add session checks
-	return render(c, ui.RocksPage(userID, userName, c.Path()))
+	return render(c, ui.RocksPage(userID, userName, c.Path(), csrfToken))
 }

@@ -6,12 +6,13 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-func SettingsPage(userID int, userName string, currentPath string, notificationMethod string, emailAddress *string, phoneNumber string, smsOptedOut bool, fromNumber string) g.Node {
+func SettingsPage(userID int, userName, csrfToken string, currentPath string, notificationMethod string, emailAddress *string, phoneNumber string, smsOptedOut bool, fromNumber string) g.Node {
 	return Page(
 		"Settings",
 		userID,
 		userName,
 		currentPath,
+		csrfToken,
 		[]g.Node{
 			pageHeader("Settings"),
 			contentContainer(

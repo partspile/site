@@ -23,9 +23,11 @@ func HandleSettings(c *fiber.Ctx) error {
 	}
 	log.Printf("[SETTINGS] Loading settings for user %d: SMSOptedOut=%v, NotificationMethod=%s", userID, currentUser.SMSOptedOut, currentUser.NotificationMethod)
 	fromNumber := config.TwilioFromNumber
+	csrfToken := local.GetCSRFToken(c)
 	return render(c, ui.SettingsPage(
 		userID,
 		userName,
+		csrfToken,
 		c.Path(),
 		currentUser.NotificationMethod,
 		currentUser.EmailAddress,
@@ -47,7 +49,8 @@ func HandleUserMenu(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusUnauthorized).SendString("User not found")
 	}
 
-	return render(c, ui.UserMenuPopup(&currentUser, c.Path()))
+	csrfToken := local.GetCSRFToken(c)
+	return render(c, ui.UserMenuPopup(&currentUser, c.Path(), csrfToken))
 }
 
 // HandleUpdateNotificationMethod updates the user's notification method preference

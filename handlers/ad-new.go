@@ -24,7 +24,8 @@ func HandleNewAd(c *fiber.Ctx) error {
 	makes := vehicle.GetMakes(adCat)
 	partCategories := part.GetCategories(adCat)
 	maxImagesPerAd := config.MaxImagesPerAd
-	return render(c, ui.NewAdPage(adCat, userID, userName, c.Path(), makes, partCategories, maxImagesPerAd))
+	csrfToken := local.GetCSRFToken(c)
+	return render(c, ui.NewAdPage(adCat, userID, userName, csrfToken, c.Path(), makes, partCategories, maxImagesPerAd))
 }
 
 // HandleDuplicateAd shows the duplicate ad form with pre-filled data
@@ -51,9 +52,10 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 	models := vehicle.GetModels(adCat, adDetail.Make, adDetail.Years)
 	engines := vehicle.GetEngines(adCat, adDetail.Make, adDetail.Years, adDetail.Models)
 	subcategoryNames := part.GetSubCategories(adCat, adDetail.PartCategory)
+	csrfToken := local.GetCSRFToken(c)
 
 	return render(c, ui.DuplicateAdPage(
-		userID, userName, c.Path(), makes, categoryNames,
+		userID, userName, csrfToken, c.Path(), makes, categoryNames,
 		*adDetail, years, models, engines, subcategoryNames, adDetail.PartSubcategory, config.MaxImagesPerAd))
 }
 

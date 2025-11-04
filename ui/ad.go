@@ -120,7 +120,7 @@ func bookmarkIconSrc(bookmarked bool) string {
 }
 
 // BookmarkButton returns the bookmark toggle button
-func BookmarkButton(a ad.Ad) g.Node {
+func BookmarkButton(a ad.Ad, csrfToken string) g.Node {
 	var hxMethod g.Node
 	if a.Bookmarked {
 		hxMethod = hx.Delete(fmt.Sprintf("/api/bookmark-ad/%d", a.ID))
@@ -135,19 +135,21 @@ func BookmarkButton(a ad.Ad) g.Node {
 		hxMethod,
 		hx.Target("this"),
 		hx.Swap("outerHTML"),
+		hxHeadersCSRFToken(csrfToken),
 		ID(fmt.Sprintf("bookmark-btn-%d", a.ID)),
 		g.Attr("onclick", "event.stopPropagation()"),
 	)
 }
 
-func AdPage(a ad.AdDetail, userID int, userName string, path string, loc *time.Location) g.Node {
+func AdPage(a ad.AdDetail, userID int, userName, csrfToken string, path string, loc *time.Location) g.Node {
 	return Page(
 		fmt.Sprintf("Ad %d - Parts Pile", a.ID),
 		userID,
 		userName,
 		path,
+		csrfToken,
 		[]g.Node{
-			AdDetail(a, userID, loc),
+			AdDetail(a, userID, loc, csrfToken),
 		},
 	)
 }

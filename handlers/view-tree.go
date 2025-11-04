@@ -40,7 +40,8 @@ func (v *TreeView) RenderSearchResults(adIDs []int, cursor uint64) error {
 	userPrompt := v.ctx.Query("q")
 	adCat := cookie.GetAdCategory(v.ctx)
 	userID := local.GetUserID(v.ctx)
-	return render(v.ctx, ui.TreeViewResults(adIDs, adCat, userPrompt, userID))
+	csrfToken := local.GetCSRFToken(v.ctx)
+	return render(v.ctx, ui.TreeViewResults(adIDs, adCat, userPrompt, userID, csrfToken))
 }
 
 func (v *TreeView) RenderSearchPage(adIDs []int, cursor uint64) error {

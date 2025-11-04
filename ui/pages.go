@@ -6,24 +6,26 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-func HomePage(userID, view, adCategory int, userName, path string, params map[string]string) g.Node {
+func HomePage(userID int, userName, csrfToken string, view, adCategory int, path string, params map[string]string) g.Node {
 	return Page(
 		"Parts Pile",
 		userID,
 		userName,
 		path,
+		csrfToken,
 		[]g.Node{
 			SearchContainer(userID, view, adCategory, params),
 		},
 	)
 }
 
-func RegisterPage(userID int, userName, path string) g.Node {
+func RegisterPage(userID int, userName, path, csrfToken string) g.Node {
 	return Page(
 		"Register",
 		userID,
 		userName,
 		path,
+		csrfToken,
 		[]g.Node{
 			pageHeader("Register"),
 			contentContainer(
@@ -124,12 +126,13 @@ func RegisterPage(userID int, userName, path string) g.Node {
 	)
 }
 
-func LoginPage(userID int, userName string, path string) g.Node {
+func LoginPage(userID int, userName, path, csrfToken string) g.Node {
 	return Page(
 		"Login",
 		userID,
 		userName,
 		path,
+		csrfToken,
 		[]g.Node{
 			pageHeader("Login"),
 			contentContainer(
@@ -221,12 +224,13 @@ func VerificationPageContent(username string, phone string) g.Node {
 	)
 }
 
-func TermsOfServicePage(userID int, userName string, path string) g.Node {
+func TermsOfServicePage(userID int, userName, path, csrfToken string) g.Node {
 	return Page(
 		"Terms of Service",
 		userID,
 		userName,
 		path,
+		csrfToken,
 		[]g.Node{
 			pageHeader("Terms of Service"),
 			contentContainer(
@@ -264,12 +268,13 @@ func TermsOfServicePage(userID int, userName string, path string) g.Node {
 	)
 }
 
-func PrivacyPolicyPage(userID int, userName string, path string) g.Node {
+func PrivacyPolicyPage(userID int, userName, path, csrfToken string) g.Node {
 	return Page(
 		"Privacy Policy",
 		userID,
 		userName,
 		path,
+		csrfToken,
 		[]g.Node{
 			pageHeader("Privacy Policy"),
 			contentContainer(
@@ -348,12 +353,13 @@ func PrivacyPolicyPage(userID int, userName string, path string) g.Node {
 	)
 }
 
-func RocksPage(userID int, userName string, path string) g.Node {
+func RocksPage(userID int, userName, path, csrfToken string) g.Node {
 	return Page(
 		"Your Rocks - Parts Pile",
 		userID,
 		userName,
 		path,
+		csrfToken,
 		[]g.Node{
 			pageHeader("Your Rocks"),
 			contentContainer(
@@ -409,12 +415,13 @@ func RocksPage(userID int, userName string, path string) g.Node {
 	)
 }
 
-func AdDeletedPage(userID int, userName string, path string) g.Node {
+func AdDeletedPage(userID int, userName, path, csrfToken string) g.Node {
 	return Page(
 		"Ad Deleted - Parts Pile",
 		userID,
 		userName,
 		path,
+		csrfToken,
 		[]g.Node{
 			contentContainer(
 				Div(

@@ -14,5 +14,6 @@ func HandleHome(c *fiber.Ctx) error {
 	adCategory := cookie.GetAdCategory(c)
 	params := extractSearchParams(c)
 	path := c.Path()
-	return render(c, ui.HomePage(userID, view, adCategory, userName, path, params))
+	csrfToken := local.GetCSRFToken(c)
+	return render(c, ui.HomePage(userID, userName, csrfToken, view, adCategory, path, params))
 }

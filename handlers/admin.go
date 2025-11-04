@@ -19,11 +19,13 @@ func renderAdminSection(c *fiber.Ctx, sectionID string, sectionContent g.Node) e
 	if c.Get("HX-Request") != "" {
 		return render(c, ui.AdminSectionPage(userID, userName, path, sectionID, sectionContent))
 	}
+	csrfToken := local.GetCSRFToken(c)
 	return render(c, ui.Page(
 		"Admin Dashboard",
 		userID,
 		userName,
 		c.Path(),
+		csrfToken,
 		[]g.Node{ui.AdminSectionPage(userID, userName, path, sectionID, sectionContent)},
 	))
 }

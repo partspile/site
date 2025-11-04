@@ -12,7 +12,7 @@ import (
 
 // ---- New Ad Page ----
 
-func NewAdPage(adCat int, userID int, userName string, path string, makes []string, categories []string, maxImagesPerAd int) g.Node {
+func NewAdPage(adCat int, userID int, userName, csrfToken string, path string, makes []string, categories []string, maxImagesPerAd int) g.Node {
 	categoryName := ad.GetCategoryName(adCat)
 	headerText := fmt.Sprintf("Create New %s Ad", categoryName)
 	return Page(
@@ -20,6 +20,7 @@ func NewAdPage(adCat int, userID int, userName string, path string, makes []stri
 		userID,
 		userName,
 		path,
+		csrfToken,
 		[]g.Node{
 			pageHeader(headerText),
 			Form(
@@ -49,7 +50,7 @@ func NewAdPage(adCat int, userID int, userName string, path string, makes []stri
 // DuplicateAdPage renders the new ad form pre-filled with data from an existing ad
 func DuplicateAdPage(
 	userID int,
-	userName string,
+	userName, csrfToken string,
 	path string,
 	makes []string,
 	categories []string,
@@ -66,6 +67,7 @@ func DuplicateAdPage(
 		userID,
 		userName,
 		path,
+		csrfToken,
 		[]g.Node{
 			pageHeader("Create New Ad"),
 			Form(

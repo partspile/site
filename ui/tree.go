@@ -28,13 +28,13 @@ func collapsedTreeNode(mode, name, path string) g.Node {
 	)
 }
 
-func expandedTreeNode(mode, name, path string, level int, loc *time.Location, userID int, children []string, ads []ad.Ad) g.Node {
+func expandedTreeNode(mode, name, path string, level int, loc *time.Location, userID int, children []string, ads []ad.Ad, csrfToken string) g.Node {
 
 	var childNodes []g.Node
 
 	// Handle ads at leaf level (level 6)
 	if level == 6 && len(ads) > 0 {
-		childNodes = listNodes(ads, userID, loc)
+		childNodes = listNodes(ads, userID, loc, csrfToken)
 	} else if level == 6 && len(ads) == 0 {
 		childNodes = append(childNodes, NoSearchResultsMessage())
 	} else {
@@ -61,9 +61,9 @@ func expandedTreeNode(mode, name, path string, level int, loc *time.Location, us
 	)
 }
 
-func ExpandedTreeNodeBrowse(name, currentPath string, level int, loc *time.Location, userID int, userName string, children []string, ads []ad.Ad) g.Node {
+func ExpandedTreeNodeBrowse(name, currentPath string, level int, loc *time.Location, userID int, userName string, children []string, ads []ad.Ad, csrfToken string) g.Node {
 	decodedName, _ := url.QueryUnescape(name)
-	return expandedTreeNode("browse", decodedName, currentPath, level, loc, userID, children, ads)
+	return expandedTreeNode("browse", decodedName, currentPath, level, loc, userID, children, ads, csrfToken)
 }
 
 func CollapsedTreeNodeBrowse(name string, path string) g.Node {
@@ -76,7 +76,7 @@ func CollapsedTreeNodeSearch(name string, path string) g.Node {
 	return collapsedTreeNode("search", decodedName, path)
 }
 
-func ExpandedTreeNodeSearch(name, currentPath string, level int, loc *time.Location, userID int, userName string, children []string, ads []ad.Ad) g.Node {
+func ExpandedTreeNodeSearch(name, currentPath string, level int, loc *time.Location, userID int, userName string, children []string, ads []ad.Ad, csrfToken string) g.Node {
 	decodedName, _ := url.QueryUnescape(name)
-	return expandedTreeNode("search", decodedName, currentPath, level, loc, userID, children, ads)
+	return expandedTreeNode("search", decodedName, currentPath, level, loc, userID, children, ads, csrfToken)
 }

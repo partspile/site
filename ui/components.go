@@ -87,12 +87,13 @@ func resultContainer() g.Node {
 	)
 }
 
-func ErrorPage(code int, message string, userID int, userName string) g.Node {
+func ErrorPage(code int, message string, userID int, userName, csrfToken string) g.Node {
 	return Page(
 		fmt.Sprintf("Error %d", code),
 		userID,
 		userName,
 		"", // no current path
+		csrfToken,
 		[]g.Node{
 			pageHeader(fmt.Sprintf("Error %d", code)),
 			P(g.Text(message)),

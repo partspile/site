@@ -11,12 +11,13 @@ import (
 )
 
 // AdsPage renders the main ads page with navigation tabs
-func AdsPage(userID int, userName string, path string, activeTab string) g.Node {
+func AdsPage(userID int, userName, csrfToken string, path string, activeTab string) g.Node {
 	return Page(
 		"My Ads",
 		userID,
 		userName,
 		path,
+		csrfToken,
 		[]g.Node{
 			pageHeader("My Ads"),
 			Div(Class("text-gray-600 text-sm mb-6"), g.Text("Manage your ads and bookmarks.")),
@@ -92,7 +93,7 @@ func adsNavigation(activeTab string) g.Node {
 }
 
 // BookmarkedAdsPage renders the bookmarked ads sub-page
-func BookmarkedAdsPage(ads []ad.Ad, userID int, userName string, path string, loc *time.Location) g.Node {
+func BookmarkedAdsPage(ads []ad.Ad, userID int, userName string, path string, loc *time.Location, csrfToken string) g.Node {
 	var viewContent g.Node
 
 	if len(ads) == 0 {
@@ -101,7 +102,7 @@ func BookmarkedAdsPage(ads []ad.Ad, userID int, userName string, path string, lo
 			Div(Class("text-gray-400 text-sm"), g.Text("Start browsing ads and bookmark the ones you're interested in!")),
 		)
 	} else {
-		adNodes := listNodes(ads, userID, loc)
+		adNodes := listNodes(ads, userID, loc, csrfToken)
 		viewContent = Div(
 			g.Group(adNodes),
 		)
@@ -116,7 +117,7 @@ func BookmarkedAdsPage(ads []ad.Ad, userID int, userName string, path string, lo
 }
 
 // ActiveAdsPage renders the active ads sub-page
-func ActiveAdsPage(ads []ad.Ad, userID int, userName string, path string, loc *time.Location) g.Node {
+func ActiveAdsPage(ads []ad.Ad, userID int, userName string, path string, loc *time.Location, csrfToken string) g.Node {
 	var viewContent g.Node
 
 	if len(ads) == 0 {
@@ -130,7 +131,7 @@ func ActiveAdsPage(ads []ad.Ad, userID int, userName string, path string, loc *t
 			),
 		)
 	} else {
-		adNodes := listNodes(ads, userID, loc)
+		adNodes := listNodes(ads, userID, loc, csrfToken)
 		viewContent = Div(
 			g.Group(adNodes),
 		)
@@ -145,7 +146,7 @@ func ActiveAdsPage(ads []ad.Ad, userID int, userName string, path string, loc *t
 }
 
 // DeletedAdsPage renders the deleted ads sub-page
-func DeletedAdsPage(ads []ad.Ad, userID int, userName string, path string, loc *time.Location) g.Node {
+func DeletedAdsPage(ads []ad.Ad, userID int, userName string, path string, loc *time.Location, csrfToken string) g.Node {
 	var viewContent g.Node
 
 	if len(ads) == 0 {
@@ -154,7 +155,7 @@ func DeletedAdsPage(ads []ad.Ad, userID int, userName string, path string, loc *
 			Div(Class("text-gray-400 text-sm"), g.Text("Deleted ads will appear here.")),
 		)
 	} else {
-		adNodes := listNodes(ads, userID, loc)
+		adNodes := listNodes(ads, userID, loc, csrfToken)
 		viewContent = Div(
 			g.Group(adNodes),
 		)

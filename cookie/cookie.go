@@ -79,3 +79,7 @@ func ClearJWT(c *fiber.Ctx) {
 func GetJWT(c *fiber.Ctx) string {
 	return c.Cookies("auth_token")
 }
+
+func GetTimezone(c *fiber.Ctx) string {
+	return c.Cookies("timezone")
+}

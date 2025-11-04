@@ -9,11 +9,11 @@ import (
 	"github.com/parts-pile/site/ad"
 )
 
-func GridViewResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
+func GridViewResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL string, csrfToken string) g.Node {
 	var viewContent = NoSearchResultsMessage()
 
 	if len(ads) > 0 {
-		nodes := gridNodes(ads, userID, loc)
+		nodes := gridNodes(ads, userID, loc, csrfToken)
 		viewContent = Div(
 			ID("grid-view"),
 			Class("grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"),
@@ -24,20 +24,20 @@ func GridViewResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL stri
 
 	return Div(
 		ID("searchResults"),
-		ViewToggleButtons("grid", userID),
+		ViewToggleButtons("grid", userID, csrfToken),
 		viewContent,
 	)
 }
 
 func GridViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	nodes := gridNodes(ads, userID, loc)
+	nodes := gridNodes(ads, userID, loc, "")
 	return g.Group(append(nodes, createInfiniteScrollTrigger(loaderURL)))
 }
 
-func gridNodes(ads []ad.Ad, userID int, loc *time.Location) []g.Node {
+func gridNodes(ads []ad.Ad, userID int, loc *time.Location, csrfToken string) []g.Node {
 	nodes := make([]g.Node, 0, len(ads))
 	for _, ad := range ads {
-		nodes = append(nodes, AdGridNode(ad, userID, loc))
+		nodes = append(nodes, AdGridNode(ad, userID, loc, csrfToken))
 	}
 	return nodes
 }

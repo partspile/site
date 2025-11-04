@@ -10,6 +10,14 @@ import (
 
 // HandleSMSWebhook processes Twilio webhook callbacks for SMS status updates and incoming messages
 func HandleSMSWebhook(c *fiber.Ctx) error {
+	// Verify Twilio signature to ensure request is authentic
+	if !sms.VerifyTwilioSignature(c) {
+		log.Printf("[SMS] Webhook rejected: invalid signature from %s", c.IP())
+		return c.Status(403).JSON(fiber.Map{
+			"error": "Invalid signature",
+		})
+	}
+
 	// Parse the webhook data from Twilio
 	webhookData, err := sms.ParseWebhook(c)
 	if err != nil {

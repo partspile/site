@@ -26,6 +26,7 @@ func (v *ListView) RenderSearchResults(adIDs []int, cursor uint64) error {
 	userID := local.GetUserID(v.ctx)
 	userName := local.GetUserName(v.ctx)
 	loc := getLocation(v.ctx)
+	csrfToken := local.GetCSRFToken(v.ctx)
 
 	// Convert ad IDs to full ad objects for UI rendering
 	ads, err := ad.GetAdsByIDs(adIDs, userID)
@@ -36,7 +37,7 @@ func (v *ListView) RenderSearchResults(adIDs []int, cursor uint64) error {
 	// Create loader URL for infinite scroll
 	loaderURL := ui.SearchCreateLoaderURL(q, cursor)
 
-	return render(v.ctx, ui.ListViewResults(ads, userID, userName, loc, loaderURL))
+	return render(v.ctx, ui.ListViewResults(ads, userID, userName, loc, loaderURL, csrfToken))
 }
 
 func (v *ListView) RenderSearchPage(adIDs []int, cursor uint64) error {

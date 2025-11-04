@@ -11,7 +11,8 @@ import (
 func HandleAdsPage(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
-	return render(c, ui.AdsPage(userID, userName, c.Path(), "bookmarked"))
+	csrfToken := local.GetCSRFToken(c)
+	return render(c, ui.AdsPage(userID, userName, csrfToken, c.Path(), "bookmarked"))
 }
 
 // HandleBookmarkedAdsPage handles the /ads/bookmarked sub-page
@@ -28,7 +29,8 @@ func HandleBookmarkedAdsPage(c *fiber.Ctx) error {
 	}
 
 	// Return navigation with content
-	content := ui.BookmarkedAdsPage(ads, userID, userName, c.Path(), getLocation(c))
+	csrfToken := local.GetCSRFToken(c)
+	content := ui.BookmarkedAdsPage(ads, userID, userName, c.Path(), getLocation(c), csrfToken)
 	return render(c, ui.AdsPageWithContent(userID, userName, c.Path(), "bookmarked", content))
 }
 
@@ -46,7 +48,8 @@ func HandleActiveAdsPage(c *fiber.Ctx) error {
 	}
 
 	// Return navigation with content
-	content := ui.ActiveAdsPage(ads, userID, userName, c.Path(), getLocation(c))
+	csrfToken := local.GetCSRFToken(c)
+	content := ui.ActiveAdsPage(ads, userID, userName, c.Path(), getLocation(c), csrfToken)
 	return render(c, ui.AdsPageWithContent(userID, userName, c.Path(), "active", content))
 }
 
@@ -64,6 +67,7 @@ func HandleDeletedAdsPage(c *fiber.Ctx) error {
 	}
 
 	// Return navigation with content
-	content := ui.DeletedAdsPage(ads, userID, userName, c.Path(), getLocation(c))
+	csrfToken := local.GetCSRFToken(c)
+	content := ui.DeletedAdsPage(ads, userID, userName, c.Path(), getLocation(c), csrfToken)
 	return render(c, ui.AdsPageWithContent(userID, userName, c.Path(), "deleted", content))
 }

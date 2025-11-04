@@ -31,7 +31,6 @@ func navLoggedIn(userName string) g.Node {
 			hx.Get("/user-menu"),
 			hx.Target("body"),
 			hx.Swap("beforeend"),
-			hx.Headers(`js:{'X-Requested-With': 'XMLHttpRequest'}`),
 			g.Text(getUserInitial(userName)),
 		),
 	)
@@ -90,7 +89,7 @@ func menuHeader(currentUser *user.User) g.Node {
 	)
 }
 
-func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
+func UserMenuPopup(currentUser *user.User, currentPath string, csrfToken string) g.Node {
 	var menuItems []g.Node
 
 	if currentUser.IsAdmin {
@@ -147,7 +146,8 @@ func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
 			hx.Post("/logout"),
 			hx.Target("body"),
 			hx.Swap("outerHTML"),
-			hx.Indicator("#htmx-indicator"),
+			hx.Indicator("#indicator"),
+			hxHeadersCSRFToken(csrfToken),
 			navigationIcon("/images/logout.svg", "Logout"),
 			g.Text("Logout"),
 		),
@@ -169,4 +169,9 @@ func UserMenuPopup(currentUser *user.User, currentPath string) g.Node {
 			),
 		),
 	)
+}
+
+func hxHeadersCSRFToken(csrfToken string) g.Node {
+	headersJSON := `{"X-Csrf-Token": "` + csrfToken + `"}`
+	return hx.Headers(headersJSON)
 }

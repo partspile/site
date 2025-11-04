@@ -14,8 +14,24 @@ import (
 	"github.com/parts-pile/site/user"
 )
 
-func logoutUser(c *fiber.Ctx) {
+// regenerateSession regenerates the session to invalidate old CSRF tokens
+// This MUST be called when authorization status changes (login/logout)
+func regenerateSession(c *fiber.Ctx) error {
+	sess, err := sessionStore.Get(c)
+	if err != nil {
+		return err
+	}
+	// Regenerate session - this will delete the old CSRF token and create a new session
+	return sess.Regenerate()
+}
+
+func logoutUser(c *fiber.Ctx) error {
+	// Regenerate session to invalidate CSRF token (per Fiber CSRF docs)
+	if err := regenerateSession(c); err != nil {
+		log.Printf("[AUTH] Error regenerating session on logout: %v", err)
+	}
 	cookie.ClearJWT(c)
+	return nil
 }
 
 // loginUser logs in a user by generating a JWT and setting it in the cookie
@@ -43,11 +59,14 @@ func redirectToLogin(c *fiber.Ctx) error {
 func HandleLogin(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
-	return render(c, ui.LoginPage(userID, userName, c.Path()))
+	csrfToken := local.GetCSRFToken(c)
+	return render(c, ui.LoginPage(userID, userName, c.Path(), csrfToken))
 }
 
 func HandleLogout(c *fiber.Ctx) error {
-	logoutUser(c)
+	if err := logoutUser(c); err != nil {
+		return err
+	}
 	return redirectToLogin(c)
 }
 
@@ -66,6 +85,12 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 	if !password.VerifyPassword(userPassword, u.PasswordHash, u.PasswordSalt) {
 		log.Printf("[AUTH] Login failed: bad password for user=%s", name)
 		return ValidationErrorResponse(c, "Invalid username or password")
+	}
+
+	// Regenerate session to invalidate old CSRF token and create new one (per Fiber CSRF docs)
+	if err := regenerateSession(c); err != nil {
+		log.Printf("[AUTH] Error regenerating session on login: %v", err)
+		// Continue with login even if session regeneration fails
 	}
 
 	// Generate JWT token and log the user in

@@ -9,5 +9,6 @@ import (
 func HandleAbout(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
-	return render(c, ui.AboutPage(userID, userName, c.Path()))
+	csrfToken := local.GetCSRFToken(c)
+	return render(c, ui.AboutPage(userID, userName, c.Path(), csrfToken))
 }

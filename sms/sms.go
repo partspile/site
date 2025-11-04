@@ -1,10 +1,14 @@
 package sms
 
 import (
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -244,6 +248,84 @@ func HandleDeliveryFailure(phoneNumber, errorMessage string) error {
 	}
 
 	return nil
+}
+
+// VerifyTwilioSignature verifies that the webhook request is authentic from Twilio
+// using HMAC-SHA1 signature validation as per Twilio's security requirements
+func VerifyTwilioSignature(c *fiber.Ctx) bool {
+	signature := c.Get("X-Twilio-Signature")
+	if signature == "" {
+		log.Printf("[SMS] Webhook rejected: missing X-Twilio-Signature header")
+		return false
+	}
+
+	if config.TwilioAuthToken == "" {
+		log.Printf("[SMS] Webhook rejected: Twilio auth token not configured")
+		return false
+	}
+
+	// Get the full URL that Twilio called
+	// Use BASE_URL (the URL Twilio is configured to call) rather than reconstructing
+	// from headers, since we may be behind a proxy
+	baseURL := config.BaseURL
+	if baseURL == "" {
+		// Fallback: reconstruct from request if BASE_URL not set
+		protocol := "https"
+		if c.Protocol() == "http" {
+			protocol = "http"
+		}
+		host := c.Hostname()
+		if host == "" {
+			host = c.Get("X-Forwarded-Host")
+		}
+		baseURL = fmt.Sprintf("%s://%s", protocol, host)
+	}
+	// Ensure BASE_URL doesn't end with / and path doesn't start with /
+	path := strings.TrimPrefix(c.Path(), "/")
+	fullURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(baseURL, "/"), path)
+	// Include query string if present (from OriginalURL which includes query params)
+	originalURL := c.OriginalURL()
+	if idx := strings.Index(originalURL, "?"); idx != -1 {
+		fullURL += originalURL[idx:]
+	}
+
+	// Get all POST parameters and sort them alphabetically
+	params := make(map[string]string)
+	c.Request().PostArgs().VisitAll(func(key, value []byte) {
+		params[string(key)] = string(value)
+	})
+
+	// Sort parameters by key
+	keys := make([]string, 0, len(params))
+	for k := range params {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	// Build the signature string: sorted params + URL
+	var signatureStr strings.Builder
+	for _, k := range keys {
+		if signatureStr.Len() > 0 {
+			signatureStr.WriteString("&")
+		}
+		signatureStr.WriteString(k)
+		signatureStr.WriteString("=")
+		signatureStr.WriteString(params[k])
+	}
+	signatureStr.WriteString(fullURL)
+
+	// Compute HMAC-SHA1
+	mac := hmac.New(sha1.New, []byte(config.TwilioAuthToken))
+	mac.Write([]byte(signatureStr.String()))
+	expectedSignature := base64.StdEncoding.EncodeToString(mac.Sum(nil))
+
+	// Compare signatures (use constant-time comparison to prevent timing attacks)
+	if !hmac.Equal([]byte(signature), []byte(expectedSignature)) {
+		log.Printf("[SMS] Webhook rejected: signature mismatch")
+		return false
+	}
+
+	return true
 }
 
 // ParseWebhook parses webhook data from Fiber context

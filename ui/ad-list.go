@@ -12,7 +12,7 @@ import (
 )
 
 // AdListNode renders a list view of ad
-func AdListNode(adObj ad.Ad, userID int, loc *time.Location) g.Node {
+func AdListNode(adObj ad.Ad, userID int, loc *time.Location, csrfToken string) g.Node {
 	// Determine styling based on deleted status
 	var classes string
 	if adObj.IsArchived() {
@@ -29,7 +29,7 @@ func AdListNode(adObj ad.Ad, userID int, loc *time.Location) g.Node {
 		hx.Target(adTarget(adObj)),
 		hx.Swap("outerHTML show:bottom"),
 
-		g.If(userID != 0, BookmarkButton(adObj)),
+		g.If(userID != 0, BookmarkButton(adObj, csrfToken)),
 
 		Div(
 			Class("flex-1 text-blue-600 hover:text-blue-800"),

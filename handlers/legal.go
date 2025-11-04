@@ -10,12 +10,14 @@ import (
 func HandleTermsOfService(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
-	return render(c, ui.TermsOfServicePage(userID, userName, c.Path()))
+	csrfToken := local.GetCSRFToken(c)
+	return render(c, ui.TermsOfServicePage(userID, userName, c.Path(), csrfToken))
 }
 
 // HandlePrivacyPolicy displays the Privacy Policy page
 func HandlePrivacyPolicy(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
-	return render(c, ui.PrivacyPolicyPage(userID, userName, c.Path()))
+	csrfToken := local.GetCSRFToken(c)
+	return render(c, ui.PrivacyPolicyPage(userID, userName, c.Path(), csrfToken))
 }
