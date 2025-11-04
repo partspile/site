@@ -19,6 +19,9 @@ import (
 )
 
 func main() {
+	// Validate security configuration first
+	config.InitSecurityConfig()
+
 	// Initialize database
 	if err := db.Init(config.DatabaseURL); err != nil {
 		log.Fatalf("error initializing database: %v", err)
@@ -180,7 +183,9 @@ func main() {
 	// User registration/authentication
 	app.Get("/register", h.HandleRegistration)
 	api.Post("/register/step1", h.RegistrationRateLimiter, h.HandleRegistrationStep1)
-	api.Post("/register/step2", h.RegistrationRateLimiter, h.HandleRegistrationStep2)
+	// Step 2 doesn't need rate limiting - it's protected by verification code from step1
+	// and password validation failures don't create accounts or cost money
+	api.Post("/register/step2", h.HandleRegistrationStep2)
 	api.Post("/sms/webhook", h.HandleSMSWebhook)
 	app.Get("/rocks", h.HandleRocksPage)
 	app.Get("/login", h.HandleLogin)

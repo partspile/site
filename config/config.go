@@ -1,6 +1,10 @@
 package config
 
 import (
+	"crypto/rand"
+	"encoding/base64"
+	"fmt"
+	"log"
 	"os"
 	"time"
 )
@@ -106,4 +110,56 @@ func getEnvWithDefault(key, defaultValue string) string {
 
 func baseURLIsSecure() bool {
 	return len(BaseURL) > 5 && BaseURL[:5] == "https"
+}
+
+// ValidateJWTSecret validates that JWT secret is set and sufficiently strong
+// Minimum requirements: at least 32 bytes (256 bits) of entropy
+func ValidateJWTSecret() error {
+	if JWTSecret == "" {
+		return fmt.Errorf("JWT_SECRET environment variable is required but not set")
+	}
+
+	// Require at least 32 bytes (256 bits) for HS256
+	// Base64 encoding adds ~33% overhead, so 32 bytes = ~43 base64 chars
+	minLength := 32
+	if len(JWTSecret) < minLength {
+		return fmt.Errorf("JWT_SECRET must be at least %d characters long for security", minLength)
+	}
+
+	return nil
+}
+
+// GenerateSecureJWTSecret generates a cryptographically secure random JWT secret
+// Returns a base64-encoded 32-byte (256-bit) secret suitable for HS256
+func GenerateSecureJWTSecret() (string, error) {
+	bytes := make([]byte, 32)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", fmt.Errorf("failed to generate random secret: %w", err)
+	}
+	return base64.RawURLEncoding.EncodeToString(bytes), nil
+}
+
+// ValidateSecurityConfig validates critical security configuration
+func ValidateSecurityConfig() error {
+	if err := ValidateJWTSecret(); err != nil {
+		return fmt.Errorf("security configuration error: %w", err)
+	}
+	return nil
+}
+
+// InitSecurityConfig initializes and validates security configuration
+// Logs warnings for missing optional configs, fatal errors for required ones
+func InitSecurityConfig() {
+	// Validate JWT secret (required)
+	if err := ValidateJWTSecret(); err != nil {
+		log.Fatalf("[SECURITY] %v", err)
+	}
+
+	// Log security status
+	log.Printf("[SECURITY] JWT secret configured (length: %d)", len(JWTSecret))
+
+	// Warn about insecure defaults in production
+	if len(BaseURL) >= 5 && BaseURL[:5] != "https" && os.Getenv("ENVIRONMENT") != "development" {
+		log.Printf("[SECURITY] WARNING: BaseURL is not HTTPS (%s)", BaseURL)
+	}
 }

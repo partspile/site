@@ -3,12 +3,14 @@ package handlers
 import (
 	"fmt"
 	"mime/multipart"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/ui"
 )
@@ -215,6 +217,83 @@ func ValidateAndParsePrice(c *fiber.Ctx) (float64, error) {
 	return price, nil
 }
 
+// Allowed image MIME types
+var allowedImageMIMETypes = map[string]bool{
+	"image/jpeg": true,
+	"image/jpg":  true,
+	"image/png":  true,
+	"image/gif":  true,
+}
+
+// Allowed image file extensions
+var allowedImageExtensions = map[string]bool{
+	".jpg":  true,
+	".jpeg": true,
+	".png":  true,
+	".gif":  true,
+}
+
+// ValidateImageFile validates a single image file
+// Checks file extension, MIME type, and size
+func ValidateImageFile(fileHeader *multipart.FileHeader) error {
+	// Check file extension
+	ext := strings.ToLower(filepath.Ext(fileHeader.Filename))
+	if !allowedImageExtensions[ext] {
+		return fmt.Errorf("file %s has invalid extension. Only .jpg, .jpeg, .png, and .gif are allowed", fileHeader.Filename)
+	}
+
+	// Check MIME type
+	mimeType := fileHeader.Header.Get("Content-Type")
+	if mimeType == "" {
+		// If MIME type is not provided, infer from extension
+		switch ext {
+		case ".jpg", ".jpeg":
+			mimeType = "image/jpeg"
+		case ".png":
+			mimeType = "image/png"
+		case ".gif":
+			mimeType = "image/gif"
+		default:
+			return fmt.Errorf("unable to determine MIME type for file %s", fileHeader.Filename)
+		}
+	}
+	if !allowedImageMIMETypes[mimeType] {
+		return fmt.Errorf("file %s has invalid MIME type %s. Only image/jpeg, image/png, and image/gif are allowed", fileHeader.Filename, mimeType)
+	}
+
+	// Check file size
+	if fileHeader.Size > config.ServerUploadLimit {
+		return fmt.Errorf("file %s exceeds maximum size of %d MB", fileHeader.Filename, config.ServerUploadLimit/(1024*1024))
+	}
+
+	// Check minimum file size (reject empty or suspiciously small files)
+	minSize := int64(100) // 100 bytes minimum
+	if fileHeader.Size < minSize {
+		return fmt.Errorf("file %s is too small and may be invalid", fileHeader.Filename)
+	}
+
+	return nil
+}
+
+// ValidateImageFiles validates a collection of image files
+// Checks file count, and validates each file
+func ValidateImageFiles(files []*multipart.FileHeader) error {
+	// Check file count
+	maxFiles := config.MaxImagesPerAd
+	if len(files) > maxFiles {
+		return fmt.Errorf("too many images. Maximum %d images allowed per ad", maxFiles)
+	}
+
+	// Validate each file
+	for _, fileHeader := range files {
+		if err := ValidateImageFile(fileHeader); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // BuildAdFromForm builds an Ad struct from form data
 func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.AdDetail, []*multipart.FileHeader, []int, error) {
 	adCat := cookie.GetAdCategory(c)
@@ -250,6 +329,13 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 
 	// Extract image files
 	imageFiles := form.File["images"]
+
+	// Validate image files before processing
+	if len(imageFiles) > 0 {
+		if err := ValidateImageFiles(imageFiles); err != nil {
+			return ad.AdDetail{}, nil, nil, err
+		}
+	}
 
 	description, err := ValidateCleanText(c, "description", "Description", 500)
 	if err != nil {

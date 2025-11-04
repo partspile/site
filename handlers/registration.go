@@ -9,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/password"
@@ -20,8 +21,11 @@ import (
 
 // HandleRegistration handles the first step of registration (collecting user info)
 func HandleRegistration(c *fiber.Ctx) error {
-	// Log out any currently logged-in user since they're starting a new registration
-	logoutUser(c)
+	// Clear JWT cookie if user is logged in (but don't regenerate session here)
+	// The CSRF middleware will handle token generation for the new request
+	cookie.ClearJWT(c)
+	local.SetUserID(c, 0)
+	local.SetUserName(c, "")
 	csrfToken := local.GetCSRFToken(c)
 	return render(c, ui.RegisterPage(0, "", c.Path(), csrfToken))
 }

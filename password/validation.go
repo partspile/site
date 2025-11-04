@@ -27,16 +27,29 @@ func ValidatePasswordStrength(password string) error {
 		return ValidationError{Message: "Password must be at least 8 characters long"}
 	}
 
-	// Check for at least one letter and one number
+	// Check for at least one letter, one number, one uppercase, one lowercase, and one special character
 	hasLetter := false
 	hasNumber := false
+	hasUpper := false
+	hasLower := false
+	hasSpecial := false
 
 	for _, char := range password {
 		if unicode.IsLetter(char) {
 			hasLetter = true
+			if unicode.IsUpper(char) {
+				hasUpper = true
+			}
+			if unicode.IsLower(char) {
+				hasLower = true
+			}
 		}
 		if unicode.IsNumber(char) {
 			hasNumber = true
+		}
+		// Check for special characters (printable ASCII that's not letter, number, or space)
+		if !unicode.IsLetter(char) && !unicode.IsNumber(char) && !unicode.IsSpace(char) && char >= 33 && char <= 126 {
+			hasSpecial = true
 		}
 	}
 
@@ -46,6 +59,18 @@ func ValidatePasswordStrength(password string) error {
 
 	if !hasNumber {
 		return ValidationError{Message: "Password must contain at least one number"}
+	}
+
+	if !hasUpper {
+		return ValidationError{Message: "Password must contain at least one uppercase letter"}
+	}
+
+	if !hasLower {
+		return ValidationError{Message: "Password must contain at least one lowercase letter"}
+	}
+
+	if !hasSpecial {
+		return ValidationError{Message: "Password must contain at least one special character (e.g., !@#$%^&*)"}
 	}
 
 	return nil

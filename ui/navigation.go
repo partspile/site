@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/parts-pile/site/user"
@@ -172,6 +173,8 @@ func UserMenuPopup(currentUser *user.User, currentPath string, csrfToken string)
 }
 
 func hxHeadersCSRFToken(csrfToken string) g.Node {
-	headersJSON := `{"X-Csrf-Token": "` + csrfToken + `"}`
+	// Properly escape the CSRF token for JSON
+	// Use JSON encoding to ensure special characters are escaped
+	headersJSON := fmt.Sprintf(`{"X-Csrf-Token": %q}`, csrfToken)
 	return hx.Headers(headersJSON)
 }
