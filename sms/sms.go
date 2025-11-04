@@ -268,37 +268,37 @@ func VerifyTwilioSignature(c *fiber.Ctx) bool {
 	}
 
 	// Get the full URL that Twilio called
-	// Use BASE_URL (the URL Twilio is configured to call) rather than reconstructing
-	// from headers, since we may be behind a proxy
+	// CRITICAL: Twilio signs using the exact URL configured in webhook settings
+	// This should match BASE_URL + path exactly as configured
 	baseURL := config.BaseURL
 	if baseURL == "" {
-		// Fallback: reconstruct from request if BASE_URL not set
-		protocol := "https"
-		if c.Protocol() == "http" {
-			protocol = "http"
-		}
-		host := c.Hostname()
-		if host == "" {
-			host = c.Get("X-Forwarded-Host")
-		}
-		baseURL = fmt.Sprintf("%s://%s", protocol, host)
+		log.Printf("[SMS] ERROR: BASE_URL not configured, cannot verify signature")
+		return false
 	}
-	log.Printf("[SMS] DEBUG: Using BASE_URL: %s", baseURL)
-	log.Printf("[SMS] DEBUG: Request protocol: %s", c.Protocol())
-	log.Printf("[SMS] DEBUG: Request hostname: %s", c.Hostname())
-	log.Printf("[SMS] DEBUG: X-Forwarded-Host header: %s", c.Get("X-Forwarded-Host"))
-	log.Printf("[SMS] DEBUG: Request path: %s", c.Path())
-	log.Printf("[SMS] DEBUG: Original URL: %s", c.OriginalURL())
 
-	// Ensure BASE_URL doesn't end with / and path doesn't start with /
+	// Remove trailing slash from BASE_URL if present
+	baseURL = strings.TrimSuffix(baseURL, "/")
+
+	// Get path (remove leading slash)
 	path := strings.TrimPrefix(c.Path(), "/")
-	fullURL := fmt.Sprintf("%s/%s", strings.TrimSuffix(baseURL, "/"), path)
-	// Include query string if present (from OriginalURL which includes query params)
-	originalURL := c.OriginalURL()
-	if idx := strings.Index(originalURL, "?"); idx != -1 {
-		fullURL += originalURL[idx:]
+
+	// Build full URL: BASE_URL + "/" + path
+	fullURL := fmt.Sprintf("%s/%s", baseURL, path)
+
+	// Include query string if present (from request)
+	queryString := c.Queries()
+	if len(queryString) > 0 {
+		vals := url.Values{}
+		for k, v := range queryString {
+			vals.Set(k, v)
+		}
+		fullURL += "?" + vals.Encode()
 	}
-	log.Printf("[SMS] DEBUG: Constructed full URL for signature: %s", fullURL)
+
+	log.Printf("[SMS] DEBUG: BASE_URL: %s", config.BaseURL)
+	log.Printf("[SMS] DEBUG: Path: %s", c.Path())
+	log.Printf("[SMS] DEBUG: Query string: %v", queryString)
+	log.Printf("[SMS] DEBUG: Final URL for signature: %s", fullURL)
 
 	// Get all POST parameters and sort them alphabetically
 	// CRITICAL: Twilio signs using the raw form-encoded values as they appear in the request body
@@ -313,17 +313,25 @@ func VerifyTwilioSignature(c *fiber.Ctx) bool {
 		rawBodyStr := string(rawBody)
 		log.Printf("[SMS] DEBUG: Raw body length: %d", len(rawBody))
 		// Parse form-urlencoded string: key1=value1&key2=value2
+		// CRITICAL: Parameter keys are typically not URL-encoded in form data,
+		// but values are. We need to decode keys (to handle any edge cases)
+		// but keep values as-is (they're already encoded correctly)
 		for _, pair := range strings.Split(rawBodyStr, "&") {
 			if pair == "" {
 				continue
 			}
 			parts := strings.SplitN(pair, "=", 2)
 			if len(parts) == 2 {
-				key := parts[0]
+				// URL-decode the key (parameter names are rarely encoded, but handle it)
+				decodedKey, err := url.QueryUnescape(parts[0])
+				if err != nil {
+					// If decoding fails, use original key
+					decodedKey = parts[0]
+				}
+				// Keep the value as-is (already URL-encoded in form data)
 				value := parts[1]
-				// Don't decode - use raw encoded value for signature
-				params[key] = value
-				log.Printf("[SMS] DEBUG: Raw param: %s = %s", key, value)
+				params[decodedKey] = value
+				log.Printf("[SMS] DEBUG: Raw param: %s = %s (key decoded: %s)", decodedKey, value, parts[0])
 			}
 		}
 		if len(params) > 0 {
