@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Stage 1: Build Go application
-FROM golang:1.24.1 AS go-builder
+FROM golang:1.25.3 AS go-builder
 WORKDIR /app
 COPY . .
 RUN go build -o /site ./
