@@ -1,14 +1,10 @@
 package sms
 
 import (
-	"crypto/hmac"
-	"crypto/sha1"
-	"encoding/base64"
 	"fmt"
 	"log"
 	"net"
 	"net/url"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -18,6 +14,7 @@ import (
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/verification"
 	"github.com/twilio/twilio-go"
+	"github.com/twilio/twilio-go/client"
 	Api "github.com/twilio/twilio-go/rest/api/v2010"
 )
 
@@ -42,7 +39,7 @@ type SMSWebhookData struct {
 	ErrorMessage  string `form:"ErrorMessage"`
 }
 
-var client = twilio.NewRestClientWithParams(twilio.ClientParams{
+var twilioClient = twilio.NewRestClientWithParams(twilio.ClientParams{
 	Username: config.TwilioAccountSID,
 	Password: config.TwilioAuthToken,
 })
@@ -169,7 +166,7 @@ func SendMessage(phoneNumber, message string) error {
 	params.SetBody(message)
 	params.SetStatusCallback(fmt.Sprintf("%s/api/sms/webhook", config.BaseURL))
 
-	result, err := client.Api.CreateMessage(params)
+	result, err := twilioClient.Api.CreateMessage(params)
 	if err != nil {
 		// Check if this is a blocked number error
 		if IsBlockedError(err) {
@@ -251,205 +248,44 @@ func HandleDeliveryFailure(phoneNumber, errorMessage string) error {
 }
 
 // VerifyTwilioSignature verifies that the webhook request is authentic from Twilio
-// using HMAC-SHA1 signature validation as per Twilio's security requirements
-// In development mode (when BASE_URL contains ngrok), signature verification is bypassed
+// using the official Twilio SDK's RequestValidator
 func VerifyTwilioSignature(c *fiber.Ctx) bool {
 	signature := c.Get("X-Twilio-Signature")
-	if signature == "" {
-		log.Printf("[SMS] Webhook rejected: missing X-Twilio-Signature header")
+	if signature == "" || config.TwilioAuthToken == "" {
 		return false
 	}
 
-	log.Printf("[SMS] DEBUG: Received signature header: %s", signature)
-
-	if config.TwilioAuthToken == "" {
-		log.Printf("[SMS] Webhook rejected: Twilio auth token not configured")
-		return false
+	// Construct the full URL that Twilio called
+	protocol := c.Get("X-Forwarded-Proto")
+	if protocol == "" {
+		protocol = c.Protocol()
+	}
+	if protocol == "" {
+		protocol = "https"
 	}
 
-	// Get the full URL that Twilio called
-	// CRITICAL: Twilio signs using the exact URL configured in webhook settings
-	// This should match BASE_URL + path exactly as configured
-	baseURL := config.BaseURL
-	if baseURL == "" {
-		log.Printf("[SMS] ERROR: BASE_URL not configured, cannot verify signature")
-		return false
+	host := c.Get("X-Forwarded-Host")
+	if host == "" {
+		host = c.Hostname()
 	}
 
-	// Remove trailing slash from BASE_URL if present
-	baseURL = strings.TrimSuffix(baseURL, "/")
+	webhookURL := fmt.Sprintf("%s://%s%s", protocol, host, c.OriginalURL())
 
-	// Get path (remove leading slash)
-	path := strings.TrimPrefix(c.Path(), "/")
-
-	// Build full URL: BASE_URL + "/" + path
-	fullURL := fmt.Sprintf("%s/%s", baseURL, path)
-
-	// Include query string if present (from request)
-	queryString := c.Queries()
-	if len(queryString) > 0 {
-		vals := url.Values{}
-		for k, v := range queryString {
-			vals.Set(k, v)
-		}
-		fullURL += "?" + vals.Encode()
-	}
-
-	log.Printf("[SMS] DEBUG: BASE_URL: %s", config.BaseURL)
-	log.Printf("[SMS] DEBUG: Path: %s", c.Path())
-	log.Printf("[SMS] DEBUG: Query string: %v", queryString)
-	log.Printf("[SMS] DEBUG: Final URL for signature: %s", fullURL)
-
-	// Get all POST parameters and sort them alphabetically
-	// CRITICAL: Twilio signs using the raw form-encoded values as they appear in the request body
-	// Try to parse raw body first, fallback to PostArgs() if raw body not available
+	// Extract all form parameters (POST body and query string)
 	params := make(map[string]string)
-	usingRawBody := false
-
-	// Try to get raw body - Fiber may have already parsed it, but c.Body() should still work
-	rawBody := c.Body()
-	if len(rawBody) > 0 {
-		// Parse raw form-urlencoded body manually
-		rawBodyStr := string(rawBody)
-		log.Printf("[SMS] DEBUG: Raw body length: %d", len(rawBody))
-		// Parse form-urlencoded string: key1=value1&key2=value2
-		// CRITICAL: Parameter keys are typically not URL-encoded in form data,
-		// but values are. We need to decode keys (to handle any edge cases)
-		// but keep values as-is (they're already encoded correctly)
-		for _, pair := range strings.Split(rawBodyStr, "&") {
-			if pair == "" {
-				continue
-			}
-			parts := strings.SplitN(pair, "=", 2)
-			if len(parts) == 2 {
-				// URL-decode the key (parameter names are rarely encoded, but handle it)
-				decodedKey, err := url.QueryUnescape(parts[0])
-				if err != nil {
-					// If decoding fails, use original key
-					decodedKey = parts[0]
-				}
-				// Keep the value as-is (already URL-encoded in form data)
-				value := parts[1]
-				params[decodedKey] = value
-				log.Printf("[SMS] DEBUG: Raw param: %s = %s (key decoded: %s)", decodedKey, value, parts[0])
-			}
-		}
-		if len(params) > 0 {
-			usingRawBody = true
-			log.Printf("[SMS] DEBUG: Using raw body parameters (already encoded)")
-		}
-	}
-
-	// If we didn't get params from raw body, use PostArgs() (decoded values)
-	if len(params) == 0 {
-		log.Printf("[SMS] DEBUG: Using PostArgs() - raw body not available or empty")
-		formData := c.Request().PostArgs()
-		formData.VisitAll(func(key, value []byte) {
-			params[string(key)] = string(value)
-		})
-	}
-
-	log.Printf("[SMS] DEBUG: POST parameters (%d total):", len(params))
-	for k, v := range params {
-		log.Printf("[SMS] DEBUG:   %s = %s", k, v)
-	}
-
-	// Also check query string parameters - Twilio includes ALL parameters
-	// (both query string and POST body) in signature calculation
-	// Query params from Fiber are decoded, so we'll need to encode them later if using raw body
-	queryParams := make(map[string]string)
+	c.Request().PostArgs().VisitAll(func(key, value []byte) {
+		params[string(key)] = string(value)
+	})
 	c.Request().URI().QueryArgs().VisitAll(func(key, value []byte) {
-		queryKey := string(key)
-		queryValue := string(value)
-		// Only add if not already in POST params (POST params take precedence)
-		if _, exists := params[queryKey]; !exists {
-			queryParams[queryKey] = queryValue
-			log.Printf("[SMS] DEBUG: Query param: %s = %s", queryKey, queryValue)
+		keyStr := string(key)
+		if _, exists := params[keyStr]; !exists {
+			params[keyStr] = string(value)
 		}
 	})
 
-	// Merge query params into params map (POST params already added)
-	// Note: Query params are decoded by Fiber, so if usingRawBody=true, we'll encode them
-	for k, v := range queryParams {
-		params[k] = v
-	}
-
-	// Sort parameters by key
-	keys := make([]string, 0, len(params))
-	for k := range params {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	// Build the signature string: sorted params + URL
-	// CRITICAL: Twilio signs using form-urlencoded parameter values as they appear in the raw request body
-	// If we have raw body params, use them directly (already encoded)
-	// If we have decoded params from PostArgs(), we need to re-encode them
-	var signatureStr strings.Builder
-	for _, k := range keys {
-		if signatureStr.Len() > 0 {
-			signatureStr.WriteString("&")
-		}
-		signatureStr.WriteString(k)
-		signatureStr.WriteString("=")
-
-		var valueToUse string
-		// Check if this param came from query string (query params are always decoded by Fiber)
-		_, isQueryParam := queryParams[k]
-		if usingRawBody && !isQueryParam {
-			// Raw body params are already encoded, use directly
-			valueToUse = params[k]
-			log.Printf("[SMS] DEBUG: Param %s: raw encoded=%s", k, valueToUse)
-		} else {
-			// PostArgs() gave us decoded values, or this is a query param (decoded)
-			// Need to re-encode using form-urlencoded rules
-			v := url.Values{}
-			v.Set("dummy", params[k])
-			encodedPair := v.Encode()
-			// Extract just the value part (remove "dummy=" prefix)
-			if strings.HasPrefix(encodedPair, "dummy=") {
-				valueToUse = encodedPair[len("dummy="):]
-			} else {
-				valueToUse = encodedPair
-			}
-			log.Printf("[SMS] DEBUG: Param %s: raw=%s, encoded=%s", k, params[k], valueToUse)
-		}
-		signatureStr.WriteString(valueToUse)
-	}
-	signatureStr.WriteString(fullURL)
-	log.Printf("[SMS] DEBUG: Signature string (params + URL): %s", signatureStr.String())
-	log.Printf("[SMS] DEBUG: Signature string length: %d", signatureStr.Len())
-
-	// Compute HMAC-SHA1
-	mac := hmac.New(sha1.New, []byte(config.TwilioAuthToken))
-	mac.Write([]byte(signatureStr.String()))
-	expectedSignature := base64.StdEncoding.EncodeToString(mac.Sum(nil))
-	log.Printf("[SMS] DEBUG: Expected signature (base64): %s", expectedSignature)
-	log.Printf("[SMS] DEBUG: Received signature (base64): %s", signature)
-
-	// Skip signature verification in development when using ngrok
-	// ngrok URLs cause signature mismatches because Twilio signs based on the configured URL
-	// but ngrok may modify headers or the URL structure, causing slight differences
-	// In production with direct HTTPS, signature verification should work correctly
-	if strings.Contains(config.BaseURL, "ngrok") || strings.Contains(config.BaseURL, "localhost") {
-		log.Printf("[SMS] Development mode: skipping signature verification for %s", config.BaseURL)
-		log.Printf("[SMS] DEBUG: Would have compared - received=%s vs expected=%s", signature, expectedSignature)
-		if signature != expectedSignature {
-			log.Printf("[SMS] DEBUG: Signatures do not match (expected in dev mode due to ngrok proxy)")
-		}
-		return true
-	}
-
-	// Compare signatures (use constant-time comparison to prevent timing attacks)
-	if !hmac.Equal([]byte(signature), []byte(expectedSignature)) {
-		log.Printf("[SMS] Webhook rejected: signature mismatch")
-		log.Printf("[SMS] DEBUG: Signature comparison failed - lengths: received=%d, expected=%d",
-			len(signature), len(expectedSignature))
-		return false
-	}
-
-	log.Printf("[SMS] DEBUG: Signature verification successful")
-	return true
+	// Validate using Twilio SDK
+	validator := client.NewRequestValidator(config.TwilioAuthToken)
+	return validator.Validate(webhookURL, params, signature)
 }
 
 // ParseWebhook parses webhook data from Fiber context
@@ -547,7 +383,7 @@ func UpdatePhoneNumberWebhook() error {
 	params := &Api.ListIncomingPhoneNumberParams{}
 	params.SetPhoneNumber(config.TwilioFromNumber)
 
-	resp, err := client.Api.ListIncomingPhoneNumber(params)
+	resp, err := twilioClient.Api.ListIncomingPhoneNumber(params)
 	if err != nil {
 		return fmt.Errorf("failed to list phone numbers: %w", err)
 	}
@@ -563,7 +399,7 @@ func UpdatePhoneNumberWebhook() error {
 	updateParams.SetSmsUrl(webhookURL)
 	updateParams.SetSmsMethod("POST")
 
-	_, err = client.Api.UpdateIncomingPhoneNumber(phoneNumberSid, updateParams)
+	_, err = twilioClient.Api.UpdateIncomingPhoneNumber(phoneNumberSid, updateParams)
 	if err != nil {
 		return fmt.Errorf("failed to update phone number webhook: %w", err)
 	}
