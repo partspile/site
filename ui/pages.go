@@ -195,7 +195,7 @@ func VerificationPageContent(username string, phone string) g.Node {
 				passwordInput("password2", "password2"),
 			),
 			Div(
-				Class("space-y-2"),
+				Class("flex items-center gap-2"),
 				Checkbox("terms", "accepted", "I accept the ", false, false, Required()),
 				A(
 					Href("/terms"),

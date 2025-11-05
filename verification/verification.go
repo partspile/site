@@ -2,6 +2,7 @@ package verification
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"fmt"
 	"log"
 	"math/big"
@@ -139,8 +140,19 @@ func ValidateCode(phone, code string) (bool, error) {
 		log.Printf("[VERIFICATION] Failed to update attempts: %v", err)
 	}
 
-	// Check if code matches
-	if vc.Code == code {
+	// Check if code matches using constant-time comparison to prevent timing attacks
+	// Convert codes to byte slices for comparison
+	codeBytes := []byte(vc.Code)
+	inputBytes := []byte(code)
+
+	// Ensure both slices are the same length for constant-time comparison
+	if len(codeBytes) != len(inputBytes) {
+		log.Printf("[VERIFICATION] Invalid code for %s (length mismatch)", phone)
+		return false, nil
+	}
+
+	// Use constant-time comparison to prevent timing attacks
+	if subtle.ConstantTimeCompare(codeBytes, inputBytes) == 1 {
 		log.Printf("[VERIFICATION] Code validated successfully for %s", phone)
 		return true, nil
 	}

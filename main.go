@@ -90,8 +90,8 @@ func main() {
 	// Add JWT middleware
 	app.Use(h.JWTMiddleware)
 
-	// Add CSRF protection using Fiber's built-in middleware (session-based)
-	app.Use(h.CSRFMiddleware())
+	// Add CSRF protection using Fiber's built-in middleware (cookie-based)
+	app.Use(h.CSRFMiddleware)
 
 	// Add logger middleware
 	app.Use(logger.New())

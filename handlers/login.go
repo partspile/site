@@ -14,22 +14,7 @@ import (
 	"github.com/parts-pile/site/user"
 )
 
-// regenerateSession regenerates the session to invalidate old CSRF tokens
-// This MUST be called when authorization status changes (login/logout)
-func regenerateSession(c *fiber.Ctx) error {
-	sess, err := sessionStore.Get(c)
-	if err != nil {
-		return err
-	}
-	// Regenerate session - this will delete the old CSRF token and create a new session
-	return sess.Regenerate()
-}
-
 func logoutUser(c *fiber.Ctx) error {
-	// Regenerate session to invalidate CSRF token (per Fiber CSRF docs)
-	if err := regenerateSession(c); err != nil {
-		log.Printf("[AUTH] Error regenerating session on logout: %v", err)
-	}
 	cookie.ClearJWT(c)
 	return nil
 }
@@ -77,20 +62,29 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 	log.Printf("[AUTH] Login attempt: name=%s", name)
 
 	u, err := user.GetUserByName(name)
-	if err != nil {
-		log.Printf("[AUTH] Login failed: user not found: %s", name)
-		return ValidationErrorResponse(c, "Invalid username or password")
+	userExists := err == nil
+
+	// Always perform password verification to prevent timing attacks
+	// If user doesn't exist, use a dummy hash/salt to maintain constant-time behavior
+	// The dummy hash/salt are valid base64 strings that will cause verification to fail
+	// but still perform the full Argon2id computation, preventing timing differences
+	var passwordValid bool
+	if userExists {
+		passwordValid = password.VerifyPassword(userPassword, u.PasswordHash, u.PasswordSalt)
+	} else {
+		// Use dummy hash/salt with valid base64 encoding to ensure full Argon2id computation
+		// This prevents timing attacks that could reveal user existence
+		// The hash and salt are 32 and 16 bytes respectively (base64 RawStdEncoding, no padding)
+		// They are intentionally invalid to ensure verification always fails
+		dummyHash := "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" // 32 bytes = 43 chars base64 RawStdEncoding
+		dummySalt := "AAAAAAAAAAAAAAAAAAAAAA"                  // 16 bytes = 22 chars base64 RawStdEncoding
+		password.VerifyPassword(userPassword, dummyHash, dummySalt)
+		passwordValid = false
 	}
 
-	if !password.VerifyPassword(userPassword, u.PasswordHash, u.PasswordSalt) {
-		log.Printf("[AUTH] Login failed: bad password for user=%s", name)
+	if !userExists || !passwordValid {
+		log.Printf("[AUTH] Login failed: user=%s, exists=%v, password_valid=%v", name, userExists, passwordValid)
 		return ValidationErrorResponse(c, "Invalid username or password")
-	}
-
-	// Regenerate session to invalidate old CSRF token and create new one (per Fiber CSRF docs)
-	if err := regenerateSession(c); err != nil {
-		log.Printf("[AUTH] Error regenerating session on login: %v", err)
-		// Continue with login even if session regeneration fails
 	}
 
 	// Generate JWT token and log the user in
