@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/logger"
 )
 
 // EmailService handles sending emails via Twilio SendGrid
@@ -84,7 +84,8 @@ func (s *EmailService) SendEmail(to, subject, htmlBody string) error {
 		return fmt.Errorf("SendGrid API error: %d", resp.StatusCode)
 	}
 
-	log.Printf("[EMAIL] Email sent successfully to %s", to)
+	logger.Info("Email sent successfully",
+		"component", "EMAIL", "to", to)
 	return nil
 }
 
@@ -157,7 +158,8 @@ func (m *MockEmailService) SendEmail(to, subject, htmlBody string) error {
 		subject string
 		body    string
 	}{to, subject, htmlBody})
-	log.Printf("[MOCK EMAIL] Email sent to %s: %s", to, subject)
+	logger.Info("Email sent (mock)",
+		"component", "MOCK EMAIL", "to", to, "subject", subject)
 	return nil
 }
 

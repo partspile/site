@@ -2,13 +2,13 @@ package part
 
 import (
 	"fmt"
-	"log"
 	"net/url"
 	"strings"
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/cache"
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/logger"
 )
 
 type PartCategory struct {
@@ -47,7 +47,8 @@ func GetCategories(adCat int) []string {
 
 	cats, err := getCategories(adCat)
 	if err != nil {
-		log.Printf("[parts] Failed to load categories for %d: %v", adCat, err)
+		logger.Error("Failed to load categories",
+			"error", err, "component", "parts", "adCat", adCat)
 		return []string{}
 	}
 	categories[adCat] = cats
@@ -84,7 +85,9 @@ func GetSubCategories(adCat int, category string) []string {
 
 	subCats, err := getSubCategories(adCat, category)
 	if err != nil {
-		log.Printf("[parts] Failed to load subcategories for %d/%s: %v", adCat, category, err)
+		logger.Error("Failed to load subcategories",
+			"error", err, "component", "parts", "adCat",
+			adCat, "category", category)
 		return []string{}
 	}
 
@@ -102,7 +105,8 @@ func InitPartCache() error {
 	if err != nil {
 		return fmt.Errorf("failed to initialize part cache: %w", err)
 	}
-	log.Printf("[part-cache] Initialized successfully")
+	logger.Info("Initialized successfully",
+		"component", "part-cache")
 	return nil
 }
 
@@ -114,7 +118,8 @@ func GetPartCacheStats() map[string]any {
 // ClearPartCache clears all items from the part cache and returns updated stats
 func ClearPartCache() map[string]any {
 	partCache.Clear()
-	log.Printf("[part-cache] Cache cleared")
+	logger.Info("Cache cleared",
+		"component", "part-cache")
 	return partCache.Stats()
 }
 
@@ -332,12 +337,15 @@ func GetCategoriesForAds(adIDs []int, makeName, year, model, engine string) ([]s
 		args = append(args, id)
 	}
 
-	log.Printf("[GetCategoriesForAdIDs] Query: %s", query)
-	log.Printf("[GetCategoriesForAdIDs] Args: %v", args)
+	logger.Debug("GetCategoriesForAdIDs query",
+		"component", "GetCategoriesForAdIDs", "query", query,
+		"args", args)
 
 	var categories []string
 	err := db.Select(&categories, query, args...)
-	log.Printf("[GetCategoriesForAdIDs] Result: %d categories, error: %v", len(categories), err)
+	logger.Debug("GetCategoriesForAdIDs result",
+		"component", "GetCategoriesForAdIDs", "count",
+		len(categories), "error", err)
 	return categories, err
 }
 

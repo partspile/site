@@ -1,12 +1,10 @@
 package config
 
 import (
-	"crypto/rand"
-	"encoding/base64"
-	"fmt"
-	"log"
 	"os"
 	"time"
+
+	"github.com/parts-pile/site/logger"
 )
 
 const (
@@ -90,7 +88,7 @@ var (
 	TwilioFromEmail      = getEnvWithDefault("TWILIO_FROM_EMAIL", "")
 
 	// JWT configuration
-	JWTSecret = getEnvWithDefault("JWT_SECRET", "")
+	JWTSecret = []byte(getEnvWithDefault("JWT_SECRET", ""))
 
 	// Server configuration
 	ServerPort = getEnvWithDefault("PORT", "8000")
@@ -98,6 +96,11 @@ var (
 
 	// Cookie security - set secure flag based on environment
 	CookieSecure = baseURLIsSecure()
+
+	// Logging configuration
+	LogLevel  = getEnvWithDefault("LOG_LEVEL", "info")
+	LogFormat = getEnvWithDefault("LOG_FORMAT", "json")
+	LogFile   = getEnvWithDefault("LOG_FILE", "")
 )
 
 // getEnvWithDefault returns the environment variable value or a default if not set
@@ -112,54 +115,28 @@ func baseURLIsSecure() bool {
 	return len(BaseURL) > 5 && BaseURL[:5] == "https"
 }
 
-// ValidateJWTSecret validates that JWT secret is set and sufficiently strong
-// Minimum requirements: at least 32 bytes (256 bits) of entropy
-func ValidateJWTSecret() error {
-	if JWTSecret == "" {
-		return fmt.Errorf("JWT_SECRET environment variable is required but not set")
+// SecurityCheck validates security configuration and logs warnings
+// Logs fatal errors for required configs, warnings for insecure defaults
+func SecurityCheck() {
+	// Validate JWT secret (required)
+	if len(JWTSecret) == 0 {
+		logger.Fatal("Security configuration error",
+			"error", "JWT_SECRET environment variable is required but not set")
 	}
 
 	// Require at least 32 bytes (256 bits) for HS256
-	// Base64 encoding adds ~33% overhead, so 32 bytes = ~43 base64 chars
 	minLength := 32
 	if len(JWTSecret) < minLength {
-		return fmt.Errorf("JWT_SECRET must be at least %d characters long for security", minLength)
-	}
-
-	return nil
-}
-
-// GenerateSecureJWTSecret generates a cryptographically secure random JWT secret
-// Returns a base64-encoded 32-byte (256-bit) secret suitable for HS256
-func GenerateSecureJWTSecret() (string, error) {
-	bytes := make([]byte, 32)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", fmt.Errorf("failed to generate random secret: %w", err)
-	}
-	return base64.RawURLEncoding.EncodeToString(bytes), nil
-}
-
-// ValidateSecurityConfig validates critical security configuration
-func ValidateSecurityConfig() error {
-	if err := ValidateJWTSecret(); err != nil {
-		return fmt.Errorf("security configuration error: %w", err)
-	}
-	return nil
-}
-
-// InitSecurityConfig initializes and validates security configuration
-// Logs warnings for missing optional configs, fatal errors for required ones
-func InitSecurityConfig() {
-	// Validate JWT secret (required)
-	if err := ValidateJWTSecret(); err != nil {
-		log.Fatalf("[SECURITY] %v", err)
+		logger.Fatal("Security configuration error",
+			"error", "JWT_SECRET must be at least 32 characters long for security")
 	}
 
 	// Log security status
-	log.Printf("[SECURITY] JWT secret configured (length: %d)", len(JWTSecret))
+	logger.Info("JWT secret configured", "length", len(JWTSecret))
 
 	// Warn about insecure defaults in production
-	if len(BaseURL) >= 5 && BaseURL[:5] != "https" && os.Getenv("ENVIRONMENT") != "development" {
-		log.Printf("[SECURITY] WARNING: BaseURL is not HTTPS (%s)", BaseURL)
+	if len(BaseURL) >= 5 && BaseURL[:5] != "https" &&
+		os.Getenv("ENVIRONMENT") != "development" {
+		logger.Warn("BaseURL is not HTTPS", "baseURL", BaseURL)
 	}
 }

@@ -3,11 +3,11 @@ package ad
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/logger"
 )
 
 // Ad represents the minimal advertisement data needed for list/grid views
@@ -133,7 +133,8 @@ func GetAdsByIDsWithDeleted(ids []int, userID int, includeDeleted bool) ([]Ad, e
 		return nil, err
 	}
 
-	log.Printf("[GetAdsByIDs] Returning %d ads", len(ads))
+	logger.Debug("Returning ads by IDs",
+		"component", "ad", "count", len(ads))
 	return ads, nil
 }
 
@@ -266,7 +267,8 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 
 // GetMostPopularAds returns the top n ads by popularity using SQL
 func GetMostPopularAds(n int) []Ad {
-	log.Printf("[GetMostPopularAds] Querying for top %d popular ads", n)
+	logger.Debug("Querying for top popular ads",
+		"component", "ad", "limit", n)
 	query := `
 		SELECT 
 			a.id, a.ad_category_id, a.title, a.price, a.created_at, a.deleted_at, a.user_id, a.image_count,
@@ -286,11 +288,13 @@ func GetMostPopularAds(n int) []Ad {
 	var ads []Ad
 	err := db.Select(&ads, query, n)
 	if err != nil {
-		log.Printf("[GetMostPopularAds] SQL error: %v", err)
+		logger.Error("SQL error querying popular ads",
+			"error", err, "component", "ad")
 		return nil
 	}
 
-	log.Printf("[GetMostPopularAds] Found %d ads from SQL query", len(ads))
+	logger.Debug("Found ads from SQL query",
+		"component", "ad", "count", len(ads))
 	return ads
 }
 

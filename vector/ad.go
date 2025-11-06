@@ -2,11 +2,11 @@ package vector
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/rock"
 	"github.com/parts-pile/site/spec"
 )
@@ -25,7 +25,8 @@ func BuildAdEmbeddings(ads []ad.AdDetail) error {
 		return nil
 	}
 
-	log.Printf("[BuildAdEmbeddings] Building embeddings for %d ads in batch", len(ads))
+	logger.Debug("Building embeddings for ads in batch",
+		"count", len(ads))
 
 	// Build prompts for all ads
 	var prompts []string
@@ -35,10 +36,12 @@ func BuildAdEmbeddings(ads []ad.AdDetail) error {
 	}
 
 	// Generate embeddings in batch
-	log.Printf("[BuildAdEmbeddings] Generating batch embeddings for %d ads", len(ads))
+	logger.Debug("Generating batch embeddings",
+		"count", len(ads))
 	embeddings, err := EmbedTexts(prompts)
 	if err != nil {
-		log.Printf("[BuildAdEmbeddings] Failed to generate batch embeddings: %v", err)
+		logger.Error("Failed to generate batch embeddings",
+			"error", err, "count", len(ads))
 		return err
 	}
 
@@ -55,17 +58,21 @@ func BuildAdEmbeddings(ads []ad.AdDetail) error {
 	// Batch upsert to Qdrant
 	err = UpsertAdEmbeddings(adIDs, embeddings, metadatas)
 	if err != nil {
-		log.Printf("[BuildAdEmbeddings] Failed to batch upsert vectors: %v", err)
+		logger.Error("Failed to batch upsert vectors",
+			"error", err, "count", len(adIDs))
 	} else {
-		log.Printf("[BuildAdEmbeddings] Successfully batch upserted %d vectors", len(adIDs))
+		logger.Debug("Successfully batch upserted vectors",
+			"count", len(adIDs))
 	}
 
 	// Mark ads as having vectors in database
 	err = ad.MarkAdsAsHavingVector(adIDs)
 	if err != nil {
-		log.Printf("[BuildAdEmbeddings] Failed to mark ads as having vector: %v", err)
+		logger.Error("Failed to mark ads as having vector",
+			"error", err, "count", len(adIDs))
 	} else {
-		log.Printf("[BuildAdEmbeddings] Successfully marked %d ads as having vector", len(adIDs))
+		logger.Debug("Successfully marked ads as having vector",
+			"count", len(adIDs))
 	}
 
 	return nil
@@ -173,7 +180,8 @@ func joinStrings(ss []string) string {
 // StartBackgroundProcessor starts the background processor
 func StartBackgroundProcessor() {
 	go func() {
-		log.Printf("[vector] Background vector processor started (queue-based)")
+		logger.Info("Background vector processor started",
+			"component", "vector", "queueSize", config.QdrantProcessingQueueSize)
 
 		const chunkSize = 50
 
@@ -197,29 +205,33 @@ func StartBackgroundProcessor() {
 			}
 
 		processChunk:
-			log.Printf("[vector] Processing chunk of %d ads from queue", len(ads))
+			logger.Debug("Processing chunk of ads from queue",
+				"count", len(ads))
 
 			// Convert minimal ads to full ad details for processing
 			var adDetails []ad.AdDetail
 			for _, adObj := range ads {
 				adDetail, err := ad.GetAdDetailByID(adObj.ID, 0)
 				if err != nil {
-					log.Printf("[vector] Failed to get ad detail for %d: %v", adObj.ID, err)
+					logger.Error("Failed to get ad detail",
+						"error", err, "adID", adObj.ID)
 					continue
 				}
 				adDetails = append(adDetails, *adDetail)
 			}
 
 			if len(adDetails) == 0 {
-				log.Printf("[vector] No valid ad details found for chunk")
+				logger.Debug("No valid ad details found for chunk")
 				continue
 			}
 
 			err := BuildAdEmbeddings(adDetails)
 			if err != nil {
-				log.Printf("[vector] Error building embeddings for chunk: %v", err)
+				logger.Error("Error building embeddings for chunk",
+					"error", err, "count", len(ads))
 			} else {
-				log.Printf("[vector] Successfully processed chunk of %d ads", len(ads))
+				logger.Debug("Successfully processed chunk of ads",
+					"count", len(ads))
 			}
 
 			// Sleep to avoid rate limits
@@ -238,16 +250,19 @@ func ProcessAdsWithoutVectors() {
 	go func() {
 		ads, err := ad.GetAdsWithoutVectors()
 		if err != nil {
-			log.Printf("[vector] Error getting ads without vectors: %v", err)
+			logger.Error("Error getting ads without vectors",
+				"error", err, "component", "vector")
 			return
 		}
 
 		if len(ads) == 0 {
-			log.Printf("[vector] No ads without vectors found")
+			logger.Debug("No ads without vectors found",
+				"component", "vector")
 			return
 		}
 
-		log.Printf("[vector] Queueing %d ads without vectors for processing", len(ads))
+		logger.Info("Queueing ads without vectors for processing",
+			"component", "vector", "count", len(ads))
 
 		// Queue all ads for background processing
 		for _, adObj := range ads {

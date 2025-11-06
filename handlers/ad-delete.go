@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"log"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/local"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 )
@@ -32,17 +31,21 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 	// Delete from vector database (Qdrant) - this is done after DB commit
 	if err := vector.DeleteAdEmbedding(adID); err != nil {
 		// Log the error but don't fail the entire operation since DB is already committed
-		log.Printf("Warning: Failed to delete ad %d from vector database: %v", adID, err)
+		logger.Warn("Failed to delete ad from vector database",
+			"error", err, "adID", adID)
 	}
 
-	log.Printf("Delete ad %d: HX-Request header = '%s'", adID, c.Get("HX-Request"))
+	logger.Debug("Delete ad",
+		"adID", adID, "hxRequest", c.Get("HX-Request"))
 	if c.Get("HX-Request") != "" {
-		log.Printf("Returning 200 with empty body for HTMX request to delete ad %d", adID)
+		logger.Debug("Returning 200 with empty body for HTMX request",
+			"adID", adID)
 		// Return 200 with empty body instead of 204 because HTMX only swaps on 200/300 responses
 		// See: https://github.com/bigskysoftware/htmx/issues/1130
 		return render(c, ui.EmptyResponse())
 	}
-	log.Printf("Returning success page for non-HTMX request to delete ad %d", adID)
+	logger.Debug("Returning success page for non-HTMX request",
+		"adID", adID)
 	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()
 	return render(c, ui.SuccessMessage("Ad deleted successfully", "/", redirectDelayMs))
 }
@@ -72,6 +75,7 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 	vector.QueueAd(a.Ad)
 
 	// Return empty response to remove the ad from the deleted ads list
-	log.Printf("Restore ad %d, removing from DOM", adID)
+	logger.Debug("Restore ad, removing from DOM",
+		"adID", adID)
 	return render(c, ui.EmptyResponse())
 }

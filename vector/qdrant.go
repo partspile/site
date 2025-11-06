@@ -3,10 +3,10 @@ package vector
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/logger"
 	"github.com/qdrant/go-client/qdrant"
 )
 
@@ -40,7 +40,8 @@ func InitQdrantClient() error {
 		SkipCompatibilityCheck: true,              // Skip version check for cloud service
 	}
 
-	log.Printf("[qdrant] Client config: Host=%s, Port=%d", clientConfig.Host, clientConfig.Port)
+	logger.Debug("Qdrant client config",
+		"host", clientConfig.Host, "port", clientConfig.Port)
 
 	// Create Qdrant client
 	client, err := qdrant.NewClient(clientConfig)
@@ -117,7 +118,8 @@ func UpsertAdEmbeddings(adIDs []int, embeddings [][]float32, metadatas []map[str
 			len(adIDs), len(embeddings), len(metadatas))
 	}
 
-	log.Printf("[qdrant] Upserting vectors for %d ads in batch", len(adIDs))
+	logger.Debug("Upserting vectors for ads in batch",
+		"component", "qdrant", "count", len(adIDs))
 
 	// Convert all metadata to Qdrant format and create points
 	var points []*qdrant.PointStruct
@@ -150,7 +152,8 @@ func UpsertAdEmbeddings(adIDs []int, embeddings [][]float32, metadatas []map[str
 		points = append(points, point)
 	}
 
-	log.Printf("[qdrant] Upserting %d vectors in batch", len(points))
+	logger.Debug("Upserting vectors in batch",
+		"component", "qdrant", "count", len(points))
 
 	ctx := context.Background()
 	_, err := qdrantClient.Upsert(ctx, &qdrant.UpsertPoints{
@@ -161,7 +164,8 @@ func UpsertAdEmbeddings(adIDs []int, embeddings [][]float32, metadatas []map[str
 		return fmt.Errorf("failed to upsert vectors: %w", err)
 	}
 
-	log.Printf("[qdrant] Successfully upserted %d vectors in batch", len(points))
+	logger.Debug("Successfully upserted vectors in batch",
+		"component", "qdrant", "count", len(points))
 	return nil
 }
 
@@ -170,7 +174,8 @@ func DeleteAdEmbedding(adID int) error {
 	if qdrantClient == nil {
 		return fmt.Errorf("Qdrant client not initialized")
 	}
-	log.Printf("[qdrant] Deleting vector for ad %d", adID)
+	logger.Debug("Deleting vector for ad",
+		"component", "qdrant", "adID", adID)
 
 	ctx := context.Background()
 	pointID := qdrant.NewIDNum(uint64(adID))
@@ -185,11 +190,13 @@ func DeleteAdEmbedding(adID int) error {
 		},
 	})
 	if err != nil {
-		log.Printf("[qdrant] Failed to delete vector for ad %d: %v", adID, err)
+		logger.Error("Failed to delete vector",
+			"error", err, "component", "qdrant", "adID", adID)
 		return fmt.Errorf("failed to delete vector: %w", err)
 	}
 
-	log.Printf("[qdrant] Successfully deleted vector for ad %d", adID)
+	logger.Debug("Successfully deleted vector for ad",
+		"component", "qdrant", "adID", adID)
 	return nil
 }
 
@@ -227,23 +234,27 @@ func QuerySimilarAdIDs(embedding []float32, filter *qdrant.Filter, topK int, cur
 		}
 		return nil, 0, fmt.Errorf("failed to query Qdrant: %w", err)
 	}
-	log.Printf("[qdrant] Query returned %d results (requested %d, offset %d)", len(resp), topK, cursor)
+	logger.Debug("Query returned results",
+		"component", "qdrant", "count", len(resp), "requested", topK, "offset", cursor)
 
 	var results []int
 	for _, result := range resp {
 		// Extract ID
 		adID := int(result.Id.GetNum())
 		results = append(results, adID)
-		log.Printf("[qdrant] Added result with ID: %d, Score: %f", adID, result.Score)
+		logger.Debug("Added query result",
+			"component", "qdrant", "adID", adID, "score", result.Score)
 	}
 
 	// Generate next cursor if we have results
 	if len(results) > 0 {
 		cursor += uint64(len(results))
-		log.Printf("[qdrant] Generated next cursor: %d", cursor)
+		logger.Debug("Generated next cursor",
+			"component", "qdrant", "cursor", cursor)
 	} else {
 		cursor = 0
-		log.Printf("[qdrant] No results, no next cursor generated")
+		logger.Debug("No results, no next cursor generated",
+			"component", "qdrant")
 	}
 
 	return results, cursor, nil
@@ -259,7 +270,8 @@ func GetAdEmbeddings(adIDs []int) ([][]float32, error) {
 		return nil, nil
 	}
 
-	log.Printf("[qdrant] Fetching vectors for %d ads in batch", len(adIDs))
+	logger.Debug("Fetching vectors for ads in batch",
+		"component", "qdrant", "count", len(adIDs))
 
 	// Create point IDs for batch retrieval
 	var pointIDs []*qdrant.PointId
@@ -275,11 +287,13 @@ func GetAdEmbeddings(adIDs []int) ([][]float32, error) {
 		WithVectors:    &qdrant.WithVectorsSelector{SelectorOptions: &qdrant.WithVectorsSelector_Enable{Enable: true}},
 	})
 	if err != nil {
-		log.Printf("[qdrant] Batch fetch error for %d ads: %v", len(adIDs), err)
+		logger.Error("Batch fetch error",
+			"error", err, "component", "qdrant", "count", len(adIDs))
 		return nil, fmt.Errorf("Qdrant batch fetch error: %w", err)
 	}
 
-	log.Printf("[qdrant] Batch fetch response: found %d points", len(resp))
+	logger.Debug("Batch fetch response",
+		"component", "qdrant", "pointsFound", len(resp))
 
 	// Create a map of ad ID to embedding for easy lookup
 	embeddingMap := make(map[int][]float32)
@@ -287,7 +301,8 @@ func GetAdEmbeddings(adIDs []int) ([][]float32, error) {
 		adID := int(point.Id.GetNum())
 
 		if point.Vectors == nil {
-			log.Printf("[qdrant] Vector values are nil for ad %d", adID)
+			logger.Debug("Vector values are nil for ad",
+				"component", "qdrant", "adID", adID)
 			continue
 		}
 
@@ -306,9 +321,11 @@ func GetAdEmbeddings(adIDs []int) ([][]float32, error) {
 
 		if vectorData != nil {
 			embeddingMap[adID] = vectorData
-			log.Printf("[qdrant] Successfully retrieved vector for ad %d with length %d", adID, len(vectorData))
+			logger.Debug("Successfully retrieved vector for ad",
+				"component", "qdrant", "adID", adID, "length", len(vectorData))
 		} else {
-			log.Printf("[qdrant] No vector data found for ad %d", adID)
+			logger.Debug("No vector data found for ad",
+				"component", "qdrant", "adID", adID)
 		}
 	}
 
@@ -322,6 +339,7 @@ func GetAdEmbeddings(adIDs []int) ([][]float32, error) {
 		}
 	}
 
-	log.Printf("[qdrant] Successfully retrieved %d embeddings in batch", len(result))
+	logger.Debug("Successfully retrieved embeddings in batch",
+		"component", "qdrant", "count", len(result))
 	return result, nil
 }

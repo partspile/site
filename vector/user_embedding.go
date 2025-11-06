@@ -2,37 +2,42 @@ package vector
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/search"
 )
 
 // GetUserPersonalizedEmbedding loads from cache first, then generates new embedding if not found.
 func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, error) {
-	log.Printf("[DEBUG] GetUserPersonalizedEmbedding called with userID=%d, forceRecompute=%v", userID, forceRecompute)
+	logger.Debug("GetUserPersonalizedEmbedding called",
+		"userID", userID, "forceRecompute", forceRecompute)
 
 	if !forceRecompute {
 		// Try cache first
 		cached, err := GetUserEmbedding(userID)
 		if err == nil && cached != nil {
-			log.Printf("[DEBUG] Cache hit for userID=%d", userID)
+			logger.Debug("Cache hit for user embedding",
+				"userID", userID)
 			return cached, nil
 		}
 
 		// Cache miss, will generate new embedding below
-		log.Printf("[DEBUG] Cache miss for userID=%d, will generate new embedding", userID)
+		logger.Debug("Cache miss for user embedding, will generate new",
+			"userID", userID)
 	}
-	log.Printf("[embedding] Calculating personalized user embedding for userID=%d", userID)
+	logger.Info("Calculating personalized user embedding",
+		"userID", userID)
 	const (
 		bookmarkWeight = 3
 		clickWeight    = 2
 		searchWeight   = 1
 		limit          = config.QdrantUserEmbeddingLimit
 	)
-	log.Printf("[DEBUG] Using limit=%d for userID=%d", limit, userID)
+	logger.Debug("Using limit for user embedding",
+		"limit", limit, "userID", userID)
 
 	var vectors [][]float32
 	var weights []float32
@@ -40,14 +45,17 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 	if err != nil {
 		return nil, fmt.Errorf("fetch bookmarks: %w", err)
 	}
-	log.Printf("[embedding][debug] userID=%d bookmarks: %v (count=%d)", userID, bookmarkIDs, len(bookmarkIDs))
+	logger.Debug("User bookmarks",
+		"userID", userID, "bookmarkIDs", bookmarkIDs, "count",
+		len(bookmarkIDs))
 
 	// Batch fetch bookmark embeddings
 	var bookmarkEmbeddings [][]float32
 	if len(bookmarkIDs) > 0 {
 		embeddings, err := GetAdEmbeddings(bookmarkIDs)
 		if err != nil {
-			log.Printf("[embedding][debug] Batch bookmark embedding error: %v", err)
+			logger.Debug("Batch bookmark embedding error",
+				"error", err, "userID", userID)
 		} else {
 			bookmarkEmbeddings = embeddings
 		}
@@ -61,27 +69,33 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 				weights = append(weights, 1)
 			}
 		} else {
-			log.Printf("[embedding][debug] Qdrant embedding missing for bookmarked adID=%d", adID)
+			logger.Debug("Qdrant embedding missing for bookmarked ad",
+				"adID", adID, "userID", userID)
 		}
 		if len(vectors) >= limit*bookmarkWeight {
 			break
 		}
 	}
 
-	log.Printf("[DEBUG] About to call GetRecentlyClickedAdIDsByUser for userID=%d with limit=%d", userID, limit)
+	logger.Debug("About to call GetRecentlyClickedAdIDsByUser",
+		"userID", userID, "limit", limit)
 	clickedIDs, err := ad.GetRecentlyClickedAdIDsByUser(userID, limit)
 	if err != nil {
-		log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser error: %v", err)
+		logger.Error("GetRecentlyClickedAdIDsByUser error",
+			"error", err, "userID", userID)
 		return nil, fmt.Errorf("fetch clicks: %w", err)
 	}
-	log.Printf("[embedding][debug] userID=%d clicked: %v (count=%d)", userID, clickedIDs, len(clickedIDs))
+	logger.Debug("User clicked ads",
+		"userID", userID, "clickedIDs", clickedIDs, "count",
+		len(clickedIDs))
 
 	// Batch fetch click embeddings
 	var clickEmbeddings [][]float32
 	if len(clickedIDs) > 0 {
 		embeddings, err := GetAdEmbeddings(clickedIDs)
 		if err != nil {
-			log.Printf("[embedding][debug] Batch click embedding error: %v", err)
+			logger.Debug("Batch click embedding error",
+				"error", err, "userID", userID)
 		} else {
 			clickEmbeddings = embeddings
 		}
@@ -95,14 +109,16 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 				weights = append(weights, 1)
 			}
 		} else {
-			log.Printf("[embedding][debug] Qdrant embedding missing for clicked adID=%d", adID)
+			logger.Debug("Qdrant embedding missing for clicked ad",
+				"adID", adID, "userID", userID)
 		}
 	}
 	searches, err := search.GetRecentUserSearches(userID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("fetch searches: %w", err)
 	}
-	log.Printf("[embedding][debug] userID=%d recent searches: %v (count=%d)", userID, searches, len(searches))
+	logger.Debug("User recent searches",
+		"userID", userID, "searches", searches, "count", len(searches))
 
 	// Collect valid search queries for batch processing
 	var searchQueries []string
@@ -112,17 +128,20 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 			searchQueries = append(searchQueries, s.QueryString)
 			validSearches = append(validSearches, s)
 		} else {
-			log.Printf("[embedding][debug] Skipping empty search query")
+			logger.Debug("Skipping empty search query",
+				"userID", userID)
 		}
 	}
 
 	// Generate embeddings for all search queries in batch
 	var searchEmbeddings [][]float32
 	if len(searchQueries) > 0 {
-		log.Printf("[embedding][debug] Generating batch embeddings for %d user search queries", len(searchQueries))
+		logger.Debug("Generating batch embeddings for user search queries",
+			"userID", userID, "count", len(searchQueries))
 		embeddings, err := GetQueryEmbeddings(searchQueries)
 		if err != nil {
-			log.Printf("[embedding][debug] Batch embedding error for user searches: %v", err)
+			logger.Debug("Batch embedding error for user searches",
+				"error", err, "userID", userID)
 		} else {
 			searchEmbeddings = embeddings
 		}
@@ -135,15 +154,20 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 				vectors = append(vectors, emb)
 				weights = append(weights, 1)
 			}
-			log.Printf("[embedding][debug] Added embedding for search query: %s", validSearches[i].QueryString)
+			logger.Debug("Added embedding for search query",
+				"userID", userID, "query", validSearches[i].QueryString)
 		} else {
-			log.Printf("[embedding][debug] Failed to generate embedding for search query: %s", validSearches[i].QueryString)
+			logger.Debug("Failed to generate embedding for search query",
+				"userID", userID, "query", validSearches[i].QueryString)
 		}
 	}
 
-	log.Printf("[embedding][debug] userID=%d vectors aggregated: %d, weights: %d", userID, len(vectors), len(weights))
+	logger.Debug("Vectors aggregated",
+		"userID", userID, "vectors", len(vectors), "weights",
+		len(weights))
 	if len(vectors) == 0 {
-		log.Printf("[embedding][warn] userID=%d: No vectors could be aggregated from user activity", userID)
+		logger.Warn("No vectors could be aggregated from user activity",
+			"userID", userID)
 		return nil, fmt.Errorf("no user activity to aggregate")
 	}
 
@@ -151,10 +175,13 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 
 	// Cache the result for future use
 	if err := SetUserEmbedding(userID, emb); err != nil {
-		log.Printf("[embedding][warn] failed to cache user embedding for userID=%d: %v", userID, err)
+		logger.Warn("Failed to cache user embedding",
+			"error", err, "userID", userID)
 	}
 
-	log.Printf("[embedding][info] userID=%d: Successfully created user embedding from %d vectors (bookmarks: %d, clicks: %d, searches: %d)",
-		userID, len(vectors), len(bookmarkIDs), len(clickedIDs), len(searches))
+	logger.Info("Successfully created user embedding",
+		"userID", userID, "vectors", len(vectors), "bookmarks",
+		len(bookmarkIDs), "clicks", len(clickedIDs), "searches",
+		len(searches))
 	return emb, nil
 }

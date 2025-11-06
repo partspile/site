@@ -2,10 +2,10 @@ package ad
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/logger"
 )
 
 // IncrementAdClick increments the global click count for an ad
@@ -30,12 +30,14 @@ func IncrementAdClickForUser(adID int, userID int) error {
 
 // GetRecentlyClickedAdIDsByUser returns ad IDs the user has clicked, most recent first.
 func GetRecentlyClickedAdIDsByUser(userID, limit int) ([]int, error) {
-	log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser called with userID=%d, limit=%d", userID, limit)
+	logger.Debug("GetRecentlyClickedAdIDsByUser called",
+		"component", "ad", "userID", userID, "limit", limit)
 
 	query := `SELECT ad_id FROM UserAdClick WHERE user_id = ? ORDER BY last_clicked_at DESC LIMIT ?`
 	var adIDs []int
 	err := db.Select(&adIDs, query, userID, limit)
 
-	log.Printf("[DEBUG] GetRecentlyClickedAdIDsByUser returning %d adIDs: %v", len(adIDs), adIDs)
+	logger.Debug("GetRecentlyClickedAdIDsByUser returning",
+		"component", "ad", "userID", userID, "count", len(adIDs), "adIDs", adIDs)
 	return adIDs, err
 }

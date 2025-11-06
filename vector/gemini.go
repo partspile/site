@@ -3,10 +3,10 @@ package vector
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/logger"
 	genai "google.golang.org/genai"
 )
 
@@ -58,7 +58,8 @@ func EmbedTexts(texts []string) ([][]float32, error) {
 		contents = append(contents, genai.Text(text)...)
 	}
 
-	log.Printf("[embedding] Calculating batch embedding vectors for %d texts", len(texts))
+	logger.Debug("Calculating batch embedding vectors",
+		"count", len(texts))
 	ctx := context.Background()
 	dimensions := int32(config.GeminiEmbeddingDimensions)
 	resp, err := geminiClient.Models.EmbedContent(ctx, config.GeminiEmbeddingModel, contents,
@@ -82,6 +83,7 @@ func EmbedTexts(texts []string) ([][]float32, error) {
 		embeddings = append(embeddings, embedding.Values)
 	}
 
-	log.Printf("[embedding] Successfully generated %d embeddings in batch", len(embeddings))
+	logger.Debug("Successfully generated batch embeddings",
+		"count", len(embeddings))
 	return embeddings, nil
 }

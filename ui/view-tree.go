@@ -3,11 +3,11 @@ package ui
 import (
 	"encoding/base64"
 	"encoding/binary"
-	"log"
 
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/spec"
 )
 
@@ -51,7 +51,8 @@ func TreeViewResults(adIDs []int, adCat int, userPrompt string, userID int, csrf
 func treeBrowseMakes(adCat int) g.Node {
 	makes, err := spec.GetAdMakes(adCat)
 	if err != nil {
-		log.Printf("[tree-view] Error getting makes: %v", err)
+		logger.Error("Error getting makes",
+			"error", err, "component", "tree-view")
 		return Div(Class("text-red-500"), g.Text("Error loading makes"))
 	}
 
@@ -62,7 +63,8 @@ func treeBrowseMakes(adCat int) g.Node {
 func treeSearchMakes(adIDs []int) g.Node {
 	makes, err := spec.GetAdMakesForAdIDs(adIDs)
 	if err != nil {
-		log.Printf("[tree-search] Error getting makes for ad IDs: %v", err)
+		logger.Error("Error getting makes for ad IDs",
+			"error", err, "component", "tree-search")
 		return Div(Class("text-red-500"), g.Text("Error loading makes"))
 	}
 

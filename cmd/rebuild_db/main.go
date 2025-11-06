@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -14,12 +13,19 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/password"
 )
 
 type MakeYearModel map[string]map[string]map[string][]string
 
 func main() {
+	// Initialize logging
+	config.InitLoggingConfig()
+	if err := logger.Init(config.LogLevel, config.LogFormat, config.LogFile); err != nil {
+		logger.Fatal("Failed to initialize logger", "error", err)
+	}
+
 	parentFile := "cmd/rebuild_db/parent.json"
 	makeParentFile := "cmd/rebuild_db/make-parent.json"
 	typeFile := "cmd/rebuild_db/ad-category.json"
@@ -29,12 +35,12 @@ func main() {
 	dbFileOnDisk := strings.TrimPrefix(dbFile, "file:")
 	// Remove old DB if exists
 	if _, err := os.Stat(dbFileOnDisk); err == nil {
-		log.Printf("Removing existing database file: %s", dbFileOnDisk)
+		logger.Info("Removing existing database file", "file", dbFileOnDisk)
 		if err := os.Remove(dbFileOnDisk); err != nil {
-			log.Fatalf("Failed to remove old DB: %v", err)
+			logger.Fatal("Failed to remove old DB", "error", err, "file", dbFileOnDisk)
 		}
 	} else {
-		log.Printf("No existing database file to remove: %s", dbFileOnDisk)
+		logger.Info("No existing database file to remove", "file", dbFileOnDisk)
 	}
 
 	// Create new DB from schema.sql
@@ -42,39 +48,39 @@ func main() {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		log.Fatalf("Failed to create DB from schema.sql: %v", err)
+		logger.Fatal("Failed to create DB from schema.sql", "error", err, "schemaFile", schemaFile)
 	}
 
 	// Initialize database
 	if err := db.Init(dbFile); err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		logger.Fatal("Failed to initialize database", "error", err, "databaseURL", dbFile)
 	}
 
 	// Open DB for direct access
 	database, err := sql.Open("sqlite3", dbFile)
 	if err != nil {
-		log.Fatalf("Failed to open DB: %v", err)
+		logger.Fatal("Failed to open DB", "error", err, "databaseURL", dbFile)
 	}
 	defer database.Close()
 
 	// Enable WAL mode and other optimizations for bulk operations
 	if _, err := database.Exec("PRAGMA journal_mode=WAL"); err != nil {
-		log.Printf("Warning: Failed to enable WAL mode: %v", err)
+		logger.Warn("Failed to enable WAL mode", "error", err)
 	}
 	if _, err := database.Exec("PRAGMA synchronous=NORMAL"); err != nil {
-		log.Printf("Warning: Failed to set synchronous mode: %v", err)
+		logger.Warn("Failed to set synchronous mode", "error", err)
 	}
 	if _, err := database.Exec("PRAGMA cache_size=10000"); err != nil {
-		log.Printf("Warning: Failed to set cache size: %v", err)
+		logger.Warn("Failed to set cache size", "error", err)
 	}
 	if _, err := database.Exec("PRAGMA temp_store=MEMORY"); err != nil {
-		log.Printf("Warning: Failed to set temp store: %v", err)
+		logger.Warn("Failed to set temp store", "error", err)
 	}
 
 	// Import ad-category.json (AdCategory)
 	typeData, err := os.ReadFile(typeFile)
 	if err != nil {
-		log.Fatalf("Failed to read ad-category.json: %v", err)
+		logger.Fatal("Failed to read ad-category.json", "error", err, "file", typeFile)
 	}
 	type AdCategory struct {
 		Name     string `json:"name"`
@@ -84,7 +90,7 @@ func main() {
 	}
 	var adCategories []AdCategory
 	if err := json.Unmarshal(typeData, &adCategories); err != nil {
-		log.Fatalf("Failed to parse type.json: %v", err)
+		logger.Fatal("Failed to parse type.json", "error", err, "file", typeFile)
 	}
 
 	// Create map for category lookups
@@ -92,7 +98,7 @@ func main() {
 	for _, cat := range adCategories {
 		_, err := database.Exec(`INSERT INTO AdCategory (name) VALUES (?)`, cat.Name)
 		if err != nil {
-			log.Printf("Failed to insert AdCategory %s: %v", cat.Name, err)
+			logger.Warn("Failed to insert AdCategory", "name", cat.Name, "error", err)
 		}
 	}
 	fmt.Printf("Inserted %d AdCategories\n", len(adCategories))
@@ -100,14 +106,14 @@ func main() {
 	// Populate category map
 	categoryRows, err := database.Query(`SELECT id, name FROM AdCategory`)
 	if err != nil {
-		log.Fatalf("Failed to query AdCategory: %v", err)
+		logger.Fatal("Failed to query AdCategory", "error", err)
 	}
 	defer categoryRows.Close()
 	for categoryRows.Next() {
 		var id int
 		var name string
 		if err := categoryRows.Scan(&id, &name); err != nil {
-			log.Fatalf("Failed to scan ad_category_id row: %v", err)
+			logger.Fatal("Failed to scan ad_category_id row", "error", err)
 		}
 		categoryMap[name] = id
 	}
@@ -115,7 +121,7 @@ func main() {
 	// Import parent.json
 	parentData, err := os.ReadFile(parentFile)
 	if err != nil {
-		log.Fatalf("Failed to read parent.json: %v", err)
+		logger.Fatal("Failed to read parent.json", "error", err, "file", parentFile)
 	}
 	type ParentCompany struct {
 		Name    string `json:"name"`
@@ -123,12 +129,12 @@ func main() {
 	}
 	var parentCompanies []ParentCompany
 	if err := json.Unmarshal(parentData, &parentCompanies); err != nil {
-		log.Fatalf("Failed to parse parent.json: %v", err)
+		logger.Fatal("Failed to parse parent.json", "error", err, "file", parentFile)
 	}
 	for _, pc := range parentCompanies {
 		_, err := database.Exec(`INSERT INTO ParentCompany (name, country) VALUES (?, ?)`, pc.Name, pc.Country)
 		if err != nil {
-			log.Printf("Failed to insert ParentCompany %s: %v", pc.Name, err)
+			logger.Warn("Failed to insert ParentCompany", "name", pc.Name, "error", err)
 		}
 	}
 	fmt.Printf("Inserted %d ParentCompanies\n", len(parentCompanies))
@@ -137,7 +143,7 @@ func main() {
 	userFile := "cmd/rebuild_db/user.json"
 	userData, err := os.ReadFile(userFile)
 	if err != nil {
-		log.Fatalf("Failed to read user.json: %v", err)
+		logger.Fatal("Failed to read user.json", "error", err, "file", userFile)
 	}
 	type UserImport struct {
 		Name     string `json:"name"`
@@ -147,13 +153,13 @@ func main() {
 	}
 	var users []UserImport
 	if err := json.Unmarshal(userData, &users); err != nil {
-		log.Fatalf("Failed to parse user.json: %v", err)
+		logger.Fatal("Failed to parse user.json", "error", err, "file", userFile)
 	}
 	userCount := 0
 	for _, u := range users {
 		hash, salt, err := password.HashPassword(u.Password)
 		if err != nil {
-			log.Printf("Failed to hash password for user %s: %v", u.Name, err)
+			logger.Warn("Failed to hash password for user", "name", u.Name, "error", err)
 			continue
 		}
 		_, err = database.Exec(`INSERT INTO User (name, phone,
@@ -162,7 +168,7 @@ func main() {
 			VALUES (?, ?, ?, ?, ?, 0, '', 'sms', '', ?)`,
 			u.Name, u.Phone, hash, salt, "argon2id", u.IsAdmin)
 		if err != nil {
-			log.Printf("Failed to insert user %s: %v", u.Name, err)
+			logger.Warn("Failed to insert user", "name", u.Name, "error", err)
 		} else {
 			userCount++
 		}
@@ -172,7 +178,7 @@ func main() {
 	// Import make-parent.json
 	makeParentData, err := os.ReadFile(makeParentFile)
 	if err != nil {
-		log.Fatalf("Failed to read make-parent.json: %v", err)
+		logger.Fatal("Failed to read make-parent.json", "error", err, "file", makeParentFile)
 	}
 	type MakeParent struct {
 		Make          string `json:"make"`
@@ -180,7 +186,7 @@ func main() {
 	}
 	var makeParents []MakeParent
 	if err := json.Unmarshal(makeParentData, &makeParents); err != nil {
-		log.Fatalf("Failed to parse make-parent.json: %v", err)
+		logger.Fatal("Failed to parse make-parent.json", "error", err, "file", makeParentFile)
 	}
 
 	// Define MakeParentData for use in import functions
@@ -199,14 +205,14 @@ func main() {
 	parentCompanyMap := make(map[string]int)
 	rows, err := database.Query(`SELECT id, name FROM ParentCompany`)
 	if err != nil {
-		log.Fatalf("Failed to query ParentCompany: %v", err)
+		logger.Fatal("Failed to query ParentCompany", "error", err)
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var id int
 		var name string
 		if err := rows.Scan(&id, &name); err != nil {
-			log.Fatalf("Failed to scan ParentCompany row: %v", err)
+			logger.Fatal("Failed to scan ParentCompany row", "error", err)
 		}
 		parentCompanyMap[name] = id
 	}
@@ -241,30 +247,31 @@ func main() {
 	for categoryName, seedFiles := range categorySeedMap {
 		categoryID, exists := categoryMap[categoryName]
 		if !exists {
-			log.Printf("Category %s not found, skipping", categoryName)
+			logger.Warn("Category not found, skipping", "category", categoryName)
 			continue
 		}
 
-		log.Printf("Processing category: %s", categoryName)
+		logger.Info("Processing category", "category", categoryName)
 
 		// Import specs for this category
 		if err := importSpecs(database, seedFiles.specFile, categoryID, makeParentsData, parentCompanyMap); err != nil {
-			log.Printf("Failed to import specs for %s: %v", categoryName, err)
+			logger.Warn("Failed to import specs for category", "category", categoryName, "error", err)
 		}
 
 		// Import parts for this category
 		if seedFiles.partFile != "" {
 			if err := importParts(database, seedFiles.partFile, categoryID); err != nil {
-				log.Printf("Failed to import parts for %s: %v", categoryName, err)
+				logger.Warn("Failed to import parts for category", "category", categoryName, "error", err)
 			}
 		}
 
 		// Import ads for this category
 		if err := importAds(database, seedFiles.adFile, categoryID, categoryMap); err != nil {
-			log.Printf("Failed to import ads for %s: %v", categoryName, err)
+			logger.Warn("Failed to import ads for category", "category", categoryName, "error", err)
 		}
 	}
 
+	logger.Info("Database rebuild and import complete")
 	fmt.Println("Database rebuild and import complete.")
 	fmt.Println("Vector embeddings will be processed by the main application background processor.")
 }
@@ -294,7 +301,7 @@ func executeSpecBatch(tx *sql.Tx, batch []struct {
 	query := fmt.Sprintf("INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id) VALUES %s", strings.Join(values, ","))
 	_, err := tx.Exec(query, args...)
 	if err != nil {
-		log.Printf("Failed to insert Specification batch: %v", err)
+		logger.Warn("Failed to insert Specification batch", "error", err)
 	}
 }
 
@@ -304,12 +311,12 @@ func getOrInsert(db *sql.DB, table, col, val string) int {
 	if err == sql.ErrNoRows {
 		res, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s) VALUES (?)", table, col), val)
 		if err != nil {
-			log.Fatalf("Failed to insert into %s: %v", table, err)
+			logger.Fatal("Failed to insert into table", "table", table, "error", err)
 		}
 		id64, _ := res.LastInsertId()
 		return int(id64)
 	} else if err != nil {
-		log.Fatalf("Failed to lookup %s: %v", table, err)
+		logger.Fatal("Failed to lookup table", "table", table, "error", err)
 	}
 	return id
 }
@@ -320,12 +327,12 @@ func getOrInsertWithCategory(db *sql.DB, table, col, val string, categoryID int)
 	if err == sql.ErrNoRows {
 		res, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s, ad_category_id) VALUES (?, ?)", table, col), val, categoryID)
 		if err != nil {
-			log.Fatalf("Failed to insert into %s: %v", table, err)
+			logger.Fatal("Failed to insert into table", "table", table, "error", err)
 		}
 		id64, _ := res.LastInsertId()
 		return int(id64)
 	} else if err != nil {
-		log.Fatalf("Failed to lookup %s: %v", table, err)
+		logger.Fatal("Failed to lookup table", "table", table, "error", err)
 	}
 	return id
 }
@@ -353,20 +360,20 @@ func importSpecs(db *sql.DB, jsonFile string, categoryID int, makeParents []stru
 }, parentCompanyMap map[string]int) error {
 	f, err := os.Open(jsonFile)
 	if err != nil {
-		log.Printf("Failed to open %s: %v", jsonFile, err)
+		logger.Debug("Failed to open spec file, skipping", "error", err, "file", jsonFile)
 		return nil // Skip missing files
 	}
 	defer f.Close()
 
 	data, err := io.ReadAll(f)
 	if err != nil {
-		log.Printf("Failed to read %s: %v", jsonFile, err)
+		logger.Warn("Failed to read spec file", "error", err, "file", jsonFile)
 		return err
 	}
 
 	var mym MakeYearModel
 	if err := json.Unmarshal(data, &mym); err != nil {
-		log.Printf("Failed to parse %s: %v", jsonFile, err)
+		logger.Warn("Failed to parse spec file", "error", err, "file", jsonFile)
 		return err
 	}
 
@@ -407,13 +414,13 @@ func importSpecs(db *sql.DB, jsonFile string, categoryID int, makeParents []stru
 func importParts(db *sql.DB, jsonFile string, categoryID int) error {
 	partData, err := os.ReadFile(jsonFile)
 	if err != nil {
-		log.Printf("Failed to read %s: %v", jsonFile, err)
+		logger.Debug("Failed to read part file, skipping", "error", err, "file", jsonFile)
 		return nil // Skip missing files
 	}
 
 	var partMap map[string][]string
 	if err := json.Unmarshal(partData, &partMap); err != nil {
-		log.Printf("Failed to parse %s: %v", jsonFile, err)
+		logger.Warn("Failed to parse part file", "error", err, "file", jsonFile)
 		return err
 	}
 
@@ -425,10 +432,10 @@ func importParts(db *sql.DB, jsonFile string, categoryID int) error {
 			if err == sql.ErrNoRows {
 				_, err := db.Exec(`INSERT INTO PartSubCategory (part_category_id, name) VALUES (?, ?)`, catID, subcat)
 				if err != nil {
-					log.Printf("Failed to insert PartSubCategory: %v", err)
+					logger.Warn("Failed to insert PartSubCategory", "error", err)
 				}
 			} else if err != nil {
-				log.Printf("PartSubCategory lookup error: %v", err)
+				logger.Warn("PartSubCategory lookup error", "error", err)
 			}
 		}
 	}
@@ -441,7 +448,7 @@ func importParts(db *sql.DB, jsonFile string, categoryID int) error {
 func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[string]int) error {
 	adData, err := os.ReadFile(jsonFile)
 	if err != nil {
-		log.Printf("Failed to read %s: %v", jsonFile, err)
+		logger.Debug("Failed to read ad file, skipping", "error", err, "file", jsonFile)
 		return nil // Skip missing files
 	}
 
@@ -468,7 +475,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 
 	var ads []AdImport
 	if err := json.Unmarshal(adData, &ads); err != nil {
-		log.Printf("Failed to parse %s: %v", jsonFile, err)
+		logger.Warn("Failed to parse ad file", "error", err, "file", jsonFile)
 		return err
 	}
 
@@ -510,13 +517,13 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 			res, err := db.Exec(`INSERT INTO Location (raw_text, city, admin_area, country, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)`,
 				locationKey, ad.Location.City, ad.Location.AdminArea, ad.Location.Country, ad.Location.Latitude, ad.Location.Longitude)
 			if err != nil {
-				log.Printf("Failed to insert Location: %v", err)
+				logger.Warn("Failed to insert Location", "error", err)
 				continue
 			}
 			id64, _ := res.LastInsertId()
 			locationID = int(id64)
 		} else if err != nil {
-			log.Printf("Location lookup error: %v", err)
+			logger.Warn("Location lookup error", "error", err)
 			continue
 		}
 
@@ -544,7 +551,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 			}
 
 			if subcatID == 0 {
-				log.Printf("No valid subcategory found for ad: %s, skipping", ad.Title)
+				logger.Warn("No valid subcategory found for ad, skipping", "title", ad.Title)
 				continue
 			}
 			subcategoryID = &subcatID
@@ -558,7 +565,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 		res, err := db.Exec(`INSERT INTO Ad (title, description, price, created_at, user_id, location_id, image_count, has_vector, ad_category_id) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)`,
 			ad.Title, ad.Description, ad.Price, ad.CreatedAt, ad.UserID, locationID, numImages, categoryID)
 		if err != nil {
-			log.Printf("Failed to insert Ad: %v", err)
+			logger.Warn("Failed to insert Ad", "error", err, "title", ad.Title)
 			continue
 		}
 		adID, _ := res.LastInsertId()
@@ -596,17 +603,17 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 							var makeID, yearID, modelID, engineID int
 							err = db.QueryRow(`SELECT id FROM Make WHERE name=? AND ad_category_id=?`, ad.Make, categoryID).Scan(&makeID)
 							if err != nil {
-								log.Printf("Failed to find make: %v", err)
+								logger.Warn("Failed to find make", "make", ad.Make, "error", err)
 								continue
 							}
 							err = db.QueryRow(`SELECT id FROM Year WHERE year=? AND ad_category_id=?`, year, categoryID).Scan(&yearID)
 							if err != nil {
-								log.Printf("Failed to find year: %v", err)
+								logger.Warn("Failed to find year", "year", year, "error", err)
 								continue
 							}
 							err = db.QueryRow(`SELECT id FROM Model WHERE name=? AND ad_category_id=?`, model, categoryID).Scan(&modelID)
 							if err != nil {
-								log.Printf("Failed to find model: %v", err)
+								logger.Warn("Failed to find model", "model", model, "error", err)
 								continue
 							}
 							// Use getOrInsertWithCategory to create engine if it doesn't exist
@@ -622,7 +629,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 									categoryID, makeID, yearID, modelID, engineID)
 							}
 							if err != nil {
-								log.Printf("Failed to insert spec: %v", err)
+								logger.Warn("Failed to insert spec", "error", err)
 								continue
 							}
 							specID64, _ := specRes.LastInsertId()
@@ -639,7 +646,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 								}
 								err = db.QueryRow(lookupQuery, lookupArgs...).Scan(&specID)
 								if err != nil {
-									log.Printf("Failed to find created spec: %v", err)
+									logger.Warn("Failed to find created spec", "error", err)
 									continue
 								}
 							} else {
@@ -675,12 +682,12 @@ func getOrInsertWithParentAndCategoryFull(db *sql.DB, table, col, val string, ca
 	if err == sql.ErrNoRows {
 		res, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s, parent_company_id, ad_category_id) VALUES (?, ?, ?)", table, col), val, parentID, categoryID)
 		if err != nil {
-			log.Fatalf("Failed to insert into %s: %v", table, err)
+			logger.Fatal("Failed to insert into table", "table", table, "error", err)
 		}
 		id64, _ := res.LastInsertId()
 		return int(id64)
 	} else if err != nil {
-		log.Fatalf("Failed to lookup %s: %v", table, err)
+		logger.Fatal("Failed to lookup table", "table", table, "error", err)
 	}
 	return id
 }

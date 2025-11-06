@@ -2,9 +2,9 @@ package vector
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/logger"
 )
 
 // AdResult represents a search result from Qdrant
@@ -45,17 +45,8 @@ func AggregateEmbeddings(vectors [][]float32, weights []float32) []float32 {
 // calculateSiteLevelVector averages the embeddings of the most popular ads
 func calculateSiteLevelVector() ([]float32, error) {
 	ads := ad.GetMostPopularAds(50)
-	log.Printf("[site-level] Calculating site-level vector from %d popular ads", len(ads))
-	log.Printf("[site-level] Popular ads being used:")
-	for i, adObj := range ads {
-		if i < 5 { // Only show first 5 for brevity
-			log.Printf("[site-level]   %d. Ad %d: %s",
-				i+1, adObj.ID, adObj.Title)
-		}
-	}
-	if len(ads) > 5 {
-		log.Printf("[site-level]   ... and %d more ads", len(ads)-5)
-	}
+	logger.Debug("Calculating site-level vector from popular ads",
+		"component", "site-level", "count", len(ads))
 
 	// Extract ad IDs for batch retrieval
 	var adIDs []int
@@ -64,10 +55,12 @@ func calculateSiteLevelVector() ([]float32, error) {
 	}
 
 	// Fetch all embeddings in batch
-	log.Printf("[site-level] Fetching embeddings for %d ads in batch", len(adIDs))
+	logger.Debug("Fetching embeddings for ads in batch",
+		"component", "site-level", "count", len(adIDs))
 	embeddings, err := GetAdEmbeddings(adIDs)
 	if err != nil {
-		log.Printf("[site-level] Batch fetch error: %v", err)
+		logger.Error("Batch fetch error",
+			"error", err, "component", "site-level")
 		return nil, err
 	}
 
@@ -78,17 +71,19 @@ func calculateSiteLevelVector() ([]float32, error) {
 		adID := adIDs[i]
 		if embedding == nil {
 			missingIDs = append(missingIDs, adID)
-			log.Printf("[site-level] Missing embedding for ad %d", adID)
+			logger.Debug("Missing embedding for ad",
+				"component", "site-level", "adID", adID)
 			continue
 		}
-		log.Printf("[site-level] Found embedding for ad %d (length=%d)", adID, len(embedding))
+		logger.Debug("Found embedding for ad",
+			"component", "site-level", "adID", adID,
+			"length", len(embedding))
 		vectors = append(vectors, embedding)
 	}
 
-	log.Printf("[site-level] Found embeddings for %d ads, missing for %d ads", len(vectors), len(missingIDs))
-	if len(missingIDs) > 0 {
-		log.Printf("[site-level] Missing embeddings for ad IDs: %v", missingIDs)
-	}
+	logger.Debug("Found embeddings",
+		"component", "site-level", "found", len(vectors),
+		"missing", len(missingIDs), "missingIDs", missingIDs)
 	if len(vectors) == 0 {
 		return nil, fmt.Errorf("no embeddings found for popular ads")
 	}
@@ -98,9 +93,12 @@ func calculateSiteLevelVector() ([]float32, error) {
 	for i := range weights {
 		weights[i] = 1.0
 	}
-	log.Printf("[site-level] Aggregating %d embeddings with equal weights", len(vectors))
+	logger.Debug("Aggregating embeddings",
+		"component", "site-level", "count", len(vectors))
 	result := AggregateEmbeddings(vectors, weights)
-	log.Printf("[site-level] AggregateEmbeddings returned result=%v (length=%d)", result != nil, len(result))
+	logger.Debug("AggregateEmbeddings returned",
+		"component", "site-level", "resultNonNil", result != nil,
+		"length", len(result))
 	if result == nil {
 		return nil, fmt.Errorf("AggregateEmbeddings returned nil")
 	}

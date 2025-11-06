@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"errors"
-	"log"
 	"runtime/debug"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/local"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -27,10 +27,27 @@ func CustomErrorHandler(c *fiber.Ctx, err error) error {
 	userName := local.GetUserName(c)
 
 	// Log detailed error information server-side only
-	log.Printf("[ERROR] %s %s - Status: %d, Error: %v, UserID: %d", c.Method(), c.Path(), code, err, userID)
+	fields := []any{
+		"method", c.Method(),
+		"path", c.Path(),
+		"status", code,
+		"error", err.Error(),
+		"userID", userID,
+	}
+	if userName != "" {
+		fields = append(fields, "userName", userName)
+	}
+
 	if code >= 500 {
 		// For server errors, log stack trace server-side
-		log.Printf("[ERROR] Stack trace: %s", string(debug.Stack()))
+		logger.Error("Server error occurred",
+			append(fields, "stack", string(debug.Stack()))...)
+	} else if code >= 400 {
+		// Client errors (4xx)
+		logger.Warn("Client error occurred", fields...)
+	} else {
+		// Other errors
+		logger.Error("Error occurred", fields...)
 	}
 
 	// Sanitize error message for client

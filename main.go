@@ -1,17 +1,16 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
+	fiberlogger "github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
 	h "github.com/parts-pile/site/handlers"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/metrics"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/sms"
@@ -20,15 +19,22 @@ import (
 )
 
 func main() {
-	// Validate security configuration first
-	config.InitSecurityConfig()
+	// Initialize logging first
+	if err := logger.Init(config.LogLevel, config.LogFormat,
+		config.LogFile); err != nil {
+		logger.Fatal("Failed to initialize logger", "error", err)
+	}
+
+	// Validate security configuration
+	config.SecurityCheck()
 
 	// Start metrics collector early to track startup stats
 	metrics.StartCollector()
 
 	// Initialize database
 	if err := db.Init(config.DatabaseURL); err != nil {
-		log.Fatalf("error initializing database: %v", err)
+		logger.Fatal("Failed to initialize database",
+			"error", err, "databaseURL", config.DatabaseURL)
 	}
 
 	// Initialize ad category names cache
@@ -36,46 +42,46 @@ func main() {
 
 	// Initialize spec cache
 	if err := spec.InitSpecCache(); err != nil {
-		log.Fatalf("Failed to initialize spec cache: %v", err)
+		logger.Fatal("Failed to initialize spec cache", "error", err)
 	}
 
 	// Initialize part cache
 	if err := part.InitPartCache(); err != nil {
-		log.Fatalf("Failed to initialize part cache: %v", err)
+		logger.Fatal("Failed to initialize part cache", "error", err)
 	}
 
 	// Initialize B2 cache
 	if err := b2util.Init(); err != nil {
-		log.Fatalf("Failed to initialize B2 cache: %v", err)
+		logger.Fatal("Failed to initialize B2 cache", "error", err)
 	}
 
 	// Initialize embedding caches
 	if err := vector.InitEmbeddingCaches(); err != nil {
-		log.Fatalf("Failed to initialize embedding caches: %v", err)
+		logger.Fatal("Failed to initialize embedding caches", "error", err)
 	}
 
 	// Initialize Gemini client
 	if err := vector.InitGeminiClient(); err != nil {
-		log.Fatalf("Failed to initialize Gemini client: %v", err)
+		logger.Fatal("Failed to initialize Gemini client", "error", err)
 	}
 
 	// Initialize Qdrant client
 	if err := vector.InitQdrantClient(); err != nil {
-		log.Fatalf("Failed to initialize Qdrant client: %v", err)
+		logger.Fatal("Failed to initialize Qdrant client", "error", err)
 	}
 
 	// Ensure collection exists and setup indexes
 	if err := vector.InitQdrantCollection(); err != nil {
-		log.Fatalf("Failed to ensure collection exists: %v", err)
+		logger.Fatal("Failed to ensure collection exists", "error", err)
 	}
 
 	if err := vector.InitQdrantIndexes(); err != nil {
-		log.Fatalf("Failed to setup payload indexes: %v", err)
+		logger.Fatal("Failed to setup payload indexes", "error", err)
 	}
 
 	// Initialize SMS service
 	if err := sms.InitSMS(); err != nil {
-		log.Fatalf("[SMS] Failed to initialize SMS service: %v", err)
+		logger.Fatal("Failed to initialize SMS service", "error", err)
 	}
 
 	app := fiber.New(fiber.Config{
@@ -97,8 +103,13 @@ func main() {
 	// Add CSRF protection using Fiber's built-in middleware (cookie-based)
 	app.Use(h.CSRFMiddleware)
 
-	// Add logger middleware
-	app.Use(logger.New())
+	// Add logger middleware - configured for HTTP request logging
+	// Use our custom logger for Fiber's HTTP request logs
+	// Custom format: status | latency | ip | method | path
+	app.Use(fiberlogger.New(fiberlogger.Config{
+		Output: logger.Writer(),
+		Format: "${status} | ${latency} | ${ip} | ${method} | ${path}\n",
+	}))
 
 	// Static files and utility
 	app.Static("/", "./static")
@@ -246,6 +257,9 @@ func main() {
 	// Initially process existing ads without vectors
 	vector.ProcessAdsWithoutVectors()
 
-	fmt.Printf("Starting server on port %s...\n", config.ServerPort)
-	log.Fatal(app.Listen(":" + config.ServerPort))
+	logger.Info("Starting server", "port", config.ServerPort)
+	if err := app.Listen(":" + config.ServerPort); err != nil {
+		logger.Fatal("Server failed to start", "error", err, "port",
+			config.ServerPort)
+	}
 }

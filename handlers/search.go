@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -10,6 +9,7 @@ import (
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/local"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 	"github.com/parts-pile/site/spec"
@@ -39,15 +39,17 @@ func runEmbeddingSearch(embedding []float32, cursor uint64, threshold float64, k
 	if err != nil {
 		return nil, 0, err
 	}
-	log.Printf("[runEmbeddingSearch] Qdrant returned %d results (threshold: %.2f, k: %d)", len(ids), threshold, k)
-	log.Printf("[runEmbeddingSearch] Qdrant result IDs: %v", ids)
+	logger.Debug("Qdrant returned results",
+		"component", "runEmbeddingSearch", "count", len(ids),
+		"threshold", threshold, "k", k, "ids", ids)
 
 	return ids, cursor, nil
 }
 
 // Embedding-based search with user query
 func queryEmbedding(userPrompt string, cursor uint64, threshold float64, k int, filter *qdrant.Filter) ([]int, uint64, error) {
-	log.Printf("[queryEmbedding] Generating embedding for user query: %s", userPrompt)
+	logger.Debug("Generating embedding for user query",
+		"component", "queryEmbedding", "userPrompt", userPrompt)
 	embedding, err := vector.GetQueryEmbedding(userPrompt)
 	if err != nil {
 		return nil, 0, err
@@ -57,19 +59,25 @@ func queryEmbedding(userPrompt string, cursor uint64, threshold float64, k int, 
 
 // Embedding-based search with user embedding
 func userEmbedding(userID int, cursor uint64, threshold float64, k int, filter *qdrant.Filter) ([]int, uint64, error) {
-	log.Printf("[userEmbedding] called with userID=%d, cursor=%d, threshold=%.2f", userID, cursor, threshold)
+	logger.Debug("userEmbedding called",
+		"component", "userEmbedding", "userID", userID,
+		"cursor", cursor, "threshold", threshold)
 	embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
 	if err != nil {
-		log.Printf("[userEmbedding] GetUserPersonalizedEmbedding error: %v", err)
+		logger.Debug("GetUserPersonalizedEmbedding error",
+			"error", err, "component", "userEmbedding",
+			"userID", userID)
 		// If user has no activity, fall back to site-level embedding
 		if err.Error() == "no user activity to aggregate" {
-			log.Printf("[userEmbedding] User has no activity, falling back to site-level embedding")
+			logger.Debug("User has no activity, falling back to site-level embedding",
+				"component", "userEmbedding", "userID", userID)
 			return siteEmbedding(cursor, threshold, k, filter)
 		}
 		return nil, 0, err
 	}
 	if embedding == nil {
-		log.Printf("[userEmbedding] GetUserPersonalizedEmbedding returned nil embedding, falling back to site-level embedding")
+		logger.Debug("GetUserPersonalizedEmbedding returned nil embedding, falling back to site-level embedding",
+			"component", "userEmbedding", "userID", userID)
 		return siteEmbedding(cursor, threshold, k, filter)
 	}
 	return runEmbeddingSearch(embedding, cursor, threshold, k, filter)
@@ -77,14 +85,18 @@ func userEmbedding(userID int, cursor uint64, threshold float64, k int, filter *
 
 // Embedding-based search with site-level vector
 func siteEmbedding(cursor uint64, threshold float64, k int, filter *qdrant.Filter) ([]int, uint64, error) {
-	log.Printf("[siteEmbedding] called with cursor=%d, threshold=%.2f", cursor, threshold)
+	logger.Debug("siteEmbedding called",
+		"component", "siteEmbedding", "cursor", cursor,
+		"threshold", threshold)
 	embedding, err := vector.GetSiteEmbedding("default")
 	if err != nil {
-		log.Printf("[siteEmbedding] GetSiteEmbedding error: %v", err)
+		logger.Error("GetSiteEmbedding error",
+			"error", err, "component", "siteEmbedding")
 		return nil, 0, err
 	}
 	if embedding == nil {
-		log.Printf("[siteEmbedding] GetSiteEmbedding returned nil embedding")
+		logger.Warn("GetSiteEmbedding returned nil embedding",
+			"component", "siteEmbedding")
 		return nil, 0, fmt.Errorf("site-level vector unavailable")
 	}
 	return runEmbeddingSearch(embedding, cursor, threshold, k, filter)
@@ -92,7 +104,10 @@ func siteEmbedding(cursor uint64, threshold float64, k int, filter *qdrant.Filte
 
 // performSearch performs the search based on the user prompt and returns IDs
 func performSearch(userPrompt string, userID int, cursor uint64, threshold float64, k int, filter *qdrant.Filter) ([]int, uint64, error) {
-	log.Printf("[performSearch] userPrompt='%s', userID=%d, cursor=%d, threshold=%.2f, k=%d, filter=%v", userPrompt, userID, cursor, threshold, k, filter)
+	logger.Debug("performSearch called",
+		"component", "performSearch", "userPrompt", userPrompt,
+		"userID", userID, "cursor", cursor, "threshold", threshold,
+		"k", k, "filter", filter)
 
 	if userPrompt != "" {
 		return queryEmbedding(userPrompt, cursor, threshold, k, filter)
@@ -117,7 +132,8 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 
 	ac := cookie.GetAdCategory(c)
 	conditions = append(conditions, qdrant.NewMatchInt("ad_category_id", int64(ac)))
-	log.Printf("[buildSearchFilters] Added ad_category_id filter: %d", ac)
+	logger.Debug("Added ad_category_id filter",
+		"component", "buildSearchFilters", "adCategoryID", ac)
 
 	// Location condition (geo radius) - only apply if location is provided
 	l := params["location"]
@@ -132,13 +148,17 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 
 		lat, lon, err := resolveLocationForFilter(l)
 		if err != nil {
-			log.Printf("[buildSearchFilters] Error resolving location '%s': %v", l, err)
+			logger.Debug("Error resolving location",
+				"error", err, "component", "buildSearchFilters",
+				"location", l)
 		} else {
 			// Convert miles to meters and create geo radius condition
 			rm := r * 1609.34
 			geoCondition := qdrant.NewGeoRadius("location", lat, lon, float32(rm))
 			conditions = append(conditions, geoCondition)
-			log.Printf("[buildSearchFilters] Added location filter: %s (%.6f, %.6f) radius %.0f miles", l, lat, lon, r)
+			logger.Debug("Added location filter",
+				"component", "buildSearchFilters", "location", l,
+				"lat", lat, "lon", lon, "radiusMiles", r)
 		}
 	}
 
@@ -147,7 +167,8 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 	if make != "" {
 		makeCondition := qdrant.NewMatch("make", make)
 		conditions = append(conditions, makeCondition)
-		log.Printf("[buildSearchFilters] Added make filter: %s", make)
+		logger.Debug("Added make filter",
+			"component", "buildSearchFilters", "make", make)
 	}
 
 	// Year condition (range - min/max years converted to keywords)
@@ -193,7 +214,8 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 		if len(yearList) > 0 {
 			yearCondition := qdrant.NewMatchKeywords("years", yearList...)
 			conditions = append(conditions, yearCondition)
-			log.Printf("[buildSearchFilters] Added year keywords filter: %v", yearList)
+			logger.Debug("Added year keywords filter",
+				"component", "buildSearchFilters", "yearList", yearList)
 		}
 	}
 
@@ -220,7 +242,9 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 				Lte: maxPrice,
 			})
 			conditions = append(conditions, priceCondition)
-			log.Printf("[buildSearchFilters] Added price range filter: min=%v, max=%v", minPrice, maxPrice)
+			logger.Debug("Added price range filter",
+				"component", "buildSearchFilters", "minPrice",
+				minPrice, "maxPrice", maxPrice)
 		}
 	}
 
@@ -230,14 +254,18 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 		Lte: qdrant.PtrOf(float64(config.MaxRockCount)),
 	})
 	conditions = append(conditions, rockCondition)
-	log.Printf("[buildSearchFilters] Added rock_count filter: 0-%d (integer field)", config.MaxRockCount)
+	logger.Debug("Added rock_count filter",
+		"component", "buildSearchFilters", "maxRockCount",
+		config.MaxRockCount)
 
 	// Create filter, all conditions MUST match
 	filter := &qdrant.Filter{
 		Must: conditions,
 	}
 
-	log.Printf("[buildSearchFilters] Built filter with %d filter conditions", len(conditions))
+	logger.Debug("Built filter",
+		"component", "buildSearchFilters", "conditionCount",
+		len(conditions))
 	return filter
 }
 
@@ -254,7 +282,8 @@ func getAdIDs(c *fiber.Ctx) ([]int, uint64, error) {
 		var err error
 		cursor, err = strconv.ParseUint(cursorStr, 10, 64)
 		if err != nil {
-			log.Printf("[getAdIDs] Failed to parse cursor offset: %v", err)
+			logger.Debug("Failed to parse cursor offset",
+				"error", err, "component", "getAdIDs")
 			return nil, 0, err
 		}
 	}
@@ -262,8 +291,9 @@ func getAdIDs(c *fiber.Ctx) ([]int, uint64, error) {
 	adIDs, cursor, err := performSearch(q, userID, cursor, threshold, k, filter)
 
 	if err == nil {
-		log.Printf("[getAdIDs] ad IDs returned: %d", len(adIDs))
-		log.Printf("[getAdIDs] Final ad ID order: %v", adIDs)
+	logger.Debug("ad IDs returned",
+		"component", "getAdIDs", "count", len(adIDs),
+		"adIDs", adIDs)
 	}
 
 	return adIDs, cursor, err

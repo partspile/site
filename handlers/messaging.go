@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strconv"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/local"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/messaging"
 	"github.com/parts-pile/site/notification"
 	"github.com/parts-pile/site/ui"
@@ -62,13 +62,17 @@ func HandleExpandConversation(c *fiber.Ctx) error {
 	// Mark conversation as read for current user
 	err = messaging.MarkConversationAsRead(conversationID, userID)
 	if err != nil {
-		log.Printf("Failed to mark conversation as read: %v", err)
+		logger.Debug("Failed to mark conversation as read",
+			"error", err, "conversationID", conversationID,
+			"userID", userID)
 	}
 
 	// Mark messages as read
 	err = messaging.MarkMessagesAsRead(conversationID, userID)
 	if err != nil {
-		log.Printf("Failed to mark messages as read: %v", err)
+		logger.Debug("Failed to mark messages as read",
+			"error", err, "conversationID", conversationID,
+			"userID", userID)
 	}
 
 	messages, err := messaging.GetMessages(conversationID)
@@ -179,12 +183,14 @@ func HandleSendMessage(c *fiber.Ctx) error {
 	notificationService, err := notification.NewNotificationService()
 	if err != nil {
 		// Log error but don't fail the request
-		log.Printf("Failed to create notification service: %v", err)
+		logger.Error("Failed to create notification service",
+			"error", err)
 	} else {
 		go func() {
 			err := notificationService.NotifyNewMessage(conversationID, userID, recipientID, content)
 			if err != nil {
-				log.Printf("Failed to send notification: %v", err)
+				logger.Error("Failed to send notification",
+					"error", err)
 			}
 		}()
 	}

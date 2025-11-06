@@ -4,13 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/local"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/spec"
@@ -73,7 +73,8 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 	category := cookie.GetAdCategory(c)
 
 	// Browse mode: No ad IDs filtering needed
-	log.Printf("[tree-view] Browse mode: no ad ID filtering")
+	logger.Debug("Browse mode: no ad ID filtering",
+		"component", "tree-view")
 
 	// Get children for the current level using browse mode SQL functions
 	var children []string
@@ -99,12 +100,16 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 		children, err = part.GetAdSubCategories(category, makeName, year, model, engine, partCategory)
 	case 6: // Subcategory level - get ads
 		makeName, year, model, engine, partCategory, subcategory := parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]
-		log.Printf("[tree-view] Getting ads for make=%s, year=%s, model=%s, engine=%s, category=%s, subcategory=%s", makeName, year, model, engine, partCategory, subcategory)
+		logger.Debug("Getting ads",
+			"component", "tree-view", "make", makeName,
+			"year", year, "model", model, "engine", engine,
+			"category", partCategory, "subcategory", subcategory)
 		ads, err = ad.GetAdsForAll()
 		if err != nil {
 			return err
 		}
-		log.Printf("[tree-view] Found %d ads", len(ads))
+		logger.Debug("Found ads",
+			"component", "tree-view", "count", len(ads))
 	}
 
 	if err != nil {
@@ -143,7 +148,8 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse adIDs: %w", err)
 	}
-	log.Printf("[tree-search] Using %d ad IDs from DOM storage", len(adIDs))
+	logger.Debug("Using ad IDs from DOM storage",
+		"component", "tree-search", "count", len(adIDs))
 
 	// Get children for the current level using search mode SQL functions
 	var children []string

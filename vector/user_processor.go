@@ -1,9 +1,10 @@
 package vector
 
 import (
-	"log"
 	"sync"
 	"time"
+
+	"github.com/parts-pile/site/logger"
 )
 
 // Track which users are queued for processing
@@ -17,19 +18,22 @@ func QueueUserForUpdate(userID int) {
 
 	// Check if user is already queued
 	if queuedUsers[userID] {
-		log.Printf("[queue] User %d already queued, skipping duplicate", userID)
+		logger.Debug("User already queued, skipping duplicate",
+			"component", "queue", "userID", userID)
 		return
 	}
 
 	// Mark user as queued
 	queuedUsers[userID] = true
-	log.Printf("[queue] Queued user %d for embedding update", userID)
+	logger.Debug("Queued user for embedding update",
+		"component", "queue", "userID", userID)
 }
 
 // StartUserBackgroundProcessor starts the background processor that runs every 5 minutes
 func StartUserBackgroundProcessor() {
 	go func() {
-		log.Printf("[queue] Background user embedding processor started (runs every 5 minutes)")
+		logger.Info("Background user embedding processor started",
+			"component", "queue", "interval", "5 minutes")
 
 		ticker := time.NewTicker(5 * time.Minute)
 		defer ticker.Stop()
@@ -48,13 +52,16 @@ func processAllQueuedUsers() {
 			return
 		}
 
-		log.Printf("[queue] Processing user %d", userID)
+		logger.Debug("Processing user",
+			"component", "queue", "userID", userID)
 
 		_, err := GetUserPersonalizedEmbedding(userID, true)
 		if err != nil {
-			log.Printf("[queue] Error updating embedding for user %d: %v", userID, err)
+			logger.Error("Error updating embedding for user",
+				"error", err, "component", "queue", "userID", userID)
 		} else {
-			log.Printf("[queue] Successfully updated embedding for user %d", userID)
+			logger.Debug("Successfully updated embedding for user",
+				"component", "queue", "userID", userID)
 		}
 	}
 }

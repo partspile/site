@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/grok"
 	"github.com/parts-pile/site/local"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/sms"
 	"github.com/parts-pile/site/ui"
@@ -110,14 +110,16 @@ Only reject names that are truly offensive to a general audience.`
 	// Generate verification code
 	code, err := verification.GenerateCode()
 	if err != nil {
-		log.Printf("[REGISTRATION] Failed to generate verification code: %v", err)
+		logger.Error("Failed to generate verification code",
+			"error", err)
 		return ValidationErrorResponse(c, "Unable to generate verification code. Please try again.")
 	}
 
 	// Store verification code with registration name
 	err = verification.CreateRegistrationVerificationCode(phone, code, name)
 	if err != nil {
-		log.Printf("[REGISTRATION] Failed to store verification code: %v", err)
+		logger.Error("Failed to store verification code",
+			"error", err, "phone", phone)
 		return ValidationErrorResponse(c, "Unable to create verification code. Please try again.")
 	}
 
@@ -126,7 +128,8 @@ Only reject names that are truly offensive to a general audience.`
 		"This code expires in 10 minutes. Reply STOP to unsubscribe.", code)
 	err = sms.SendMessage(phone, message)
 	if err != nil {
-		log.Printf("[REGISTRATION] Failed to send SMS: %v", err)
+		logger.Error("Failed to send SMS",
+			"error", err, "phone", phone)
 		// Check if this is a blocked number error
 		if errors.Is(err, sms.ErrBlockedNumber) {
 			unstopMessage := fmt.Sprintf(
@@ -161,7 +164,8 @@ func HandleRegistrationStep2(c *fiber.Ctx) error {
 	// Get the registration name from the verification record
 	vc, err := verification.GetVerificationCode(phone)
 	if err != nil {
-		log.Printf("[REGISTRATION] Failed to get verification code: %v", err)
+		logger.Error("Failed to get verification code",
+			"error", err, "phone", phone)
 		return c.Redirect("/register")
 	}
 
@@ -170,7 +174,8 @@ func HandleRegistrationStep2(c *fiber.Ctx) error {
 	// Validate the code
 	valid, err := verification.ValidateCode(phone, code)
 	if err != nil {
-		log.Printf("[REGISTRATION] Code validation error: %v", err)
+		logger.Error("Code validation error",
+			"error", err, "phone", phone)
 		return ValidationErrorResponse(c, "Verification code validation failed. Please try again.")
 	}
 
@@ -201,20 +206,23 @@ func HandleRegistrationStep2(c *fiber.Ctx) error {
 	// This handles cases where step 1 might have passed but user exists
 	// Check username (includes archived users via GetUserByName which checks deleted_at)
 	if _, err := user.GetUserByName(name); err == nil {
-		log.Printf("[REGISTRATION] Username already exists: %s", name)
+		logger.Warn("Username already exists during registration",
+			"name", name)
 		return ValidationErrorResponse(c, "Username already taken. Please choose a different username.")
 	}
 
 	// Create the user
 	hash, salt, err := password.HashPassword(userPassword)
 	if err != nil {
-		log.Printf("[REGISTRATION] Failed to hash password: %v", err)
+		logger.Error("Failed to hash password",
+			"error", err)
 		return ValidationErrorResponse(c, "Server error, unable to create your account.")
 	}
 
 	userID, err := user.CreateUser(name, phone, hash, salt, "argon2id")
 	if err != nil {
-		log.Printf("[REGISTRATION] Failed to create user: %v", err)
+		logger.Error("Failed to create user",
+			"error", err, "name", name)
 		errStr := strings.ToLower(err.Error())
 		// Check if it's a unique constraint violation
 		if strings.Contains(errStr, "unique constraint") || strings.Contains(errStr, "constraint") {
@@ -231,18 +239,21 @@ func HandleRegistrationStep2(c *fiber.Ctx) error {
 	// Mark phone as verified
 	err = user.MarkPhoneVerified(userID)
 	if err != nil {
-		log.Printf("[REGISTRATION] Failed to mark phone verified: %v", err)
+		logger.Error("Failed to mark phone verified",
+			"error", err, "userID", userID)
 		// Don't fail registration for this, but log it
 	}
 
 	// Clean up registration verification record
 	err = verification.InvalidateVerificationCodes(phone)
 	if err != nil {
-		log.Printf("[REGISTRATION] Failed to cleanup verification codes: %v", err)
+		logger.Error("Failed to cleanup verification codes",
+			"error", err, "phone", phone)
 		// Don't fail registration for cleanup errors
 	}
 
-	log.Printf("[REGISTRATION] Registration successful: userID=%d, name=%s", userID, name)
+	logger.Info("Registration successful",
+		"userID", userID, "name", name)
 
 	// Return success response with delay before redirecting to rocks page
 	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()

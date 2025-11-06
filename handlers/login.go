@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/jwt"
 	"github.com/parts-pile/site/local"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
@@ -23,7 +23,8 @@ func logoutUser(c *fiber.Ctx) error {
 func loginUser(c *fiber.Ctx, u *user.User) error {
 	token, err := jwt.GenerateToken(u)
 	if err != nil {
-		log.Printf("[AUTH] JWT generation error: %v", err)
+		logger.Error("JWT generation error",
+			"error", err, "userID", u.ID)
 		return fmt.Errorf("failed to generate JWT: %w", err)
 	}
 
@@ -59,7 +60,7 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 	name := c.FormValue("name")
 	userPassword := c.FormValue("password")
 
-	log.Printf("[AUTH] Login attempt: name=%s", name)
+	logger.Info("Login attempt", "name", name)
 
 	u, err := user.GetUserByName(name)
 	userExists := err == nil
@@ -83,17 +84,19 @@ func HandleLoginSubmission(c *fiber.Ctx) error {
 	}
 
 	if !userExists || !passwordValid {
-		log.Printf("[AUTH] Login failed: user=%s, exists=%v, password_valid=%v", name, userExists, passwordValid)
+		logger.Warn("Login failed",
+			"name", name, "userExists", userExists,
+			"passwordValid", passwordValid)
 		return ValidationErrorResponse(c, "Invalid username or password")
 	}
 
 	// Generate JWT token and log the user in
 	if err := loginUser(c, &u); err != nil {
-		log.Printf("[AUTH] Login failed: %v", err)
+		logger.Error("Login failed", "error", err, "name", name)
 		return c.Status(fiber.StatusInternalServerError).SendString("Server error, unable to log you in.")
 	}
 
-	log.Printf("[AUTH] Login successful: userID=%d, name=%s", u.ID, name)
+	logger.Info("Login successful", "userID", u.ID, "name", name)
 	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()
 	return render(c, ui.SuccessMessage("Login successful", "/", redirectDelayMs))
 }

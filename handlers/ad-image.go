@@ -7,7 +7,6 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
@@ -20,6 +19,7 @@ import (
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/local"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/ui"
 	"golang.org/x/image/draw"
 	"gopkg.in/kothar/go-backblaze.v0"
@@ -27,37 +27,21 @@ import (
 
 // uploadAdImagesToB2 uploads user-uploaded images to B2 with multiple sizes
 func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
-	log.Printf("[B2] Starting upload for ad %d with %d images", adID, len(files))
+	logger.Info("Starting upload",
+		"component", "B2", "adID", adID, "imageCount", len(files))
 
 	accountID := config.B2MasterKeyID
 	keyID := config.B2KeyID
 	appKey := config.B2AppKey
 
-	log.Printf("[B2] B2 config check for ad %d: accountID=%s, keyID=%s, appKey=%s", adID,
-		func() string {
-			if accountID == "" {
-				return "EMPTY"
-			} else {
-				return "SET"
-			}
-		}(),
-		func() string {
-			if keyID == "" {
-				return "EMPTY"
-			} else {
-				return "SET"
-			}
-		}(),
-		func() string {
-			if appKey == "" {
-				return "EMPTY"
-			} else {
-				return "SET"
-			}
-		}())
+	logger.Debug("B2 config check",
+		"component", "B2", "adID", adID,
+		"accountIDSet", accountID != "", "keyIDSet",
+		keyID != "", "appKeySet", appKey != "")
 
 	if accountID == "" || appKey == "" || keyID == "" {
-		log.Printf("[B2] ERROR: B2 credentials not set in env vars for ad %d", adID)
+		logger.Error("B2 credentials not set in env vars",
+			"component", "B2", "adID", adID)
 		return
 	}
 
@@ -67,17 +51,22 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 		KeyID:          keyID,
 	})
 	if err != nil {
-		log.Printf("[B2] ERROR: B2 auth error for ad %d: %v", adID, err)
+		logger.Error("B2 auth error",
+			"error", err, "component", "B2", "adID", adID)
 		return
 	}
 
-	log.Printf("[B2] Using bucket name: %s for ad %d", config.B2BucketName, adID)
+	logger.Debug("Using bucket name",
+		"component", "B2", "bucketName", config.B2BucketName,
+		"adID", adID)
 	bucket, err := b2.Bucket(config.B2BucketName)
 	if err != nil {
-		log.Printf("[B2] ERROR: B2 bucket error for ad %d: %v", adID, err)
+		logger.Error("B2 bucket error",
+			"error", err, "component", "B2", "adID", adID)
 		return
 	}
-	log.Printf("[B2] Successfully connected to bucket for ad %d", adID)
+	logger.Debug("Successfully connected to bucket",
+		"component", "B2", "adID", adID)
 
 	sizes := []struct {
 		Width   int
@@ -93,17 +82,23 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 	totalExpected := len(files) * len(sizes)
 
 	for i, fileHeader := range files {
-		log.Printf("[B2] Processing image %d/%d for ad %d", i+1, len(files), adID)
+		logger.Debug("Processing image",
+			"component", "B2", "imageIndex", i+1,
+			"totalImages", len(files), "adID", adID)
 
 		file, err := fileHeader.Open()
 		if err != nil {
-			log.Printf("[B2] ERROR: Failed to open file %d for ad %d: %v", i+1, adID, err)
+			logger.Error("Failed to open file",
+				"error", err, "component", "B2", "imageIndex",
+				i+1, "adID", adID)
 			continue
 		}
 
 		var buf bytes.Buffer
 		if _, err := buf.ReadFrom(file); err != nil {
-			log.Printf("[B2] ERROR: Failed to read file %d for ad %d: %v", i+1, adID, err)
+			logger.Error("Failed to read file",
+				"error", err, "component", "B2", "imageIndex",
+				i+1, "adID", adID)
 			file.Close()
 			continue
 		}
@@ -111,12 +106,16 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 
 		img, _, err := image.Decode(bytes.NewReader(buf.Bytes()))
 		if err != nil {
-			log.Printf("[B2] ERROR: Failed to decode image %d for ad %d: %v", i+1, adID, err)
+			logger.Error("Failed to decode image",
+				"error", err, "component", "B2", "imageIndex",
+				i+1, "adID", adID)
 			continue
 		}
 
 		bounds := img.Bounds()
-		log.Printf("[B2] Image %d for ad %d: %dx%d pixels", i+1, adID, bounds.Dx(), bounds.Dy())
+		logger.Debug("Image dimensions",
+			"component", "B2", "imageIndex", i+1, "adID", adID,
+			"width", bounds.Dx(), "height", bounds.Dy())
 
 		for _, sz := range sizes {
 			w := sz.Width
@@ -127,7 +126,10 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 			var webpBuf bytes.Buffer
 			opt := &webp.Options{Lossless: false, Quality: sz.Quality}
 			if err := webp.Encode(&webpBuf, dst, opt); err != nil {
-				log.Printf("[B2] ERROR: WebP encode error for image %d size %s ad %d: %v", i+1, sz.Suffix, adID, err)
+				logger.Error("WebP encode error",
+					"error", err, "component", "B2",
+					"imageIndex", i+1, "size", sz.Suffix, "adID",
+					adID)
 				continue
 			}
 
@@ -136,18 +138,27 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 				fmt.Sprintf("%d-%s.webp", i+1, sz.Suffix),
 			)
 
-			log.Printf("[B2] Uploading %s to %s for ad %d", sz.Suffix, b2Path, adID)
+			logger.Debug("Uploading to B2",
+				"component", "B2", "suffix", sz.Suffix,
+				"b2Path", b2Path, "adID", adID)
 			_, err = bucket.UploadTypedFile(b2Path, "image/webp", nil, bytes.NewReader(webpBuf.Bytes()))
 			if err != nil {
-				log.Printf("[B2] ERROR: Upload failed for %s to %s ad %d: %v", sz.Suffix, b2Path, adID, err)
+				logger.Error("Upload failed",
+					"error", err, "component", "B2",
+					"suffix", sz.Suffix, "b2Path", b2Path, "adID",
+					adID)
 			} else {
-				log.Printf("[B2] SUCCESS: Uploaded %s to %s for ad %d", sz.Suffix, b2Path, adID)
+				logger.Debug("Uploaded successfully",
+					"component", "B2", "suffix", sz.Suffix,
+					"b2Path", b2Path, "adID", adID)
 				successCount++
 			}
 		}
 	}
 
-	log.Printf("[B2] Upload complete for ad %d: %d/%d files uploaded successfully", adID, successCount, totalExpected)
+	logger.Info("Upload complete",
+		"component", "B2", "adID", adID, "successCount",
+		successCount, "totalExpected", totalExpected)
 }
 
 // HandleAdImageSignedURL generates a signed URL for an ad image

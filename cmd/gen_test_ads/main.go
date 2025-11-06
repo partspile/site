@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/grok"
+	"github.com/parts-pile/site/logger"
 )
 
 // Data structures for loading JSON files
@@ -43,6 +44,12 @@ type Ad struct {
 }
 
 func main() {
+	// Initialize logging
+	config.InitLoggingConfig()
+	if err := logger.Init(config.LogLevel, config.LogFormat, config.LogFile); err != nil {
+		logger.Fatal("Failed to initialize logger", "error", err)
+	}
+
 	var (
 		count     = flag.Int("count", 30, "Number of ads to generate")
 		output    = flag.String("output", "", "Output file (default: stdout)")
@@ -68,18 +75,18 @@ func main() {
 	// Load data files
 	makeYearModelData, err := loadMakeYearModelData()
 	if err != nil {
-		log.Fatalf("Failed to load make-year-model.json: %v", err)
+		logger.Fatal("Failed to load make-year-model.json", "error", err)
 	}
 
 	partData, err := loadPartData()
 	if err != nil {
-		log.Fatalf("Failed to load part.json: %v", err)
+		logger.Fatal("Failed to load part.json", "error", err)
 	}
 
 	// Parse start date
 	startTime, err := time.Parse("2006-01-02", *startDate)
 	if err != nil {
-		log.Fatalf("Invalid start date: %v", err)
+		logger.Fatal("Invalid start date", "error", err, "startDate", *startDate)
 	}
 
 	// Generate ads in parallel
@@ -91,19 +98,20 @@ func main() {
 		// Stream output as JSON array
 		outputData, err = json.MarshalIndent(ads, "", "  ")
 		if err != nil {
-			log.Fatalf("Failed to marshal ads: %v", err)
+			logger.Fatal("Failed to marshal ads", "error", err)
 		}
 		fmt.Println(string(outputData))
 	} else {
 		// Write to file
 		outputData, err = json.MarshalIndent(ads, "", "  ")
 		if err != nil {
-			log.Fatalf("Failed to marshal ads: %v", err)
+			logger.Fatal("Failed to marshal ads", "error", err)
 		}
 		err = os.WriteFile(*output, outputData, 0644)
 		if err != nil {
-			log.Fatalf("Failed to write output file: %v", err)
+			logger.Fatal("Failed to write output file", "error", err, "output", *output)
 		}
+		logger.Info("Generated ads and saved to file", "count", len(ads), "output", *output)
 		fmt.Printf("Generated %d ads and saved to %s\n", len(ads), *output)
 	}
 }
@@ -275,7 +283,8 @@ func generateAdsParallel(makeData MakeYearModelData, partData PartData, userID i
 				<-ticker.C // Wait for rate limit
 				ad, err := generateAd(makeData, partData, userID, startTime, jobID, debug)
 				if err != nil {
-					log.Printf("Worker %d failed to generate ad %d: %v", workerID, jobID+1, err)
+					logger.Error("Worker failed to generate ad",
+						"workerID", workerID, "jobID", jobID+1, "error", err)
 					continue
 				}
 				results <- ad

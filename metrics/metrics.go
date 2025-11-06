@@ -1,11 +1,11 @@
 package metrics
 
 import (
-	"log"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/parts-pile/site/logger"
 	"github.com/shirou/gopsutil/v4/process"
 )
 
@@ -28,13 +28,16 @@ var (
 // every 5 seconds and stores data in memory (max 24 hours)
 func StartCollector() {
 	go func() {
-		log.Printf("[metrics] Starting metrics collector (samples every 5s, max %d samples)", maxMetrics)
+		logger.Info("Starting metrics collector",
+			"component", "metrics", "interval", "5s",
+			"maxSamples", maxMetrics)
 
 		// Initialize process handle
 		var err error
 		proc, err = process.NewProcess(int32(os.Getpid()))
 		if err != nil {
-			log.Printf("[metrics] Warning: Failed to create process handle: %v", err)
+			logger.Warn("Failed to create process handle",
+				"error", err, "component", "metrics")
 			proc = nil
 		}
 

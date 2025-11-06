@@ -2,11 +2,11 @@ package vector
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
 	"github.com/parts-pile/site/cache"
+	"github.com/parts-pile/site/logger"
 )
 
 var (
@@ -106,7 +106,9 @@ func GetQueryEmbedding(text string) ([]float32, error) {
 
 	// Check cache first
 	if cached, found := queryEmbeddingCache.Get(text); found {
-		log.Printf("[embedding][query-cache] Cache hit for query: %.80q", text)
+		logger.Debug("Cache hit for query",
+			"component", "embedding", "subcomponent",
+			"query-cache", "query", text)
 		return cached, nil
 	}
 
@@ -118,7 +120,9 @@ func GetQueryEmbedding(text string) ([]float32, error) {
 
 	// Cache the result with 1 hour TTL
 	queryEmbeddingCache.SetWithTTL(text, embedding, int64(len(embedding)*4), time.Hour)
-	log.Printf("[embedding][query-cache] Cached embedding for query: %.80q", text)
+	logger.Debug("Cached embedding for query",
+		"component", "embedding", "subcomponent",
+		"query-cache", "query", text)
 
 	return embedding, nil
 }
@@ -151,7 +155,9 @@ func GetQueryEmbeddings(texts []string) ([][]float32, error) {
 
 	for i, text := range validTexts {
 		if cached, found := queryEmbeddingCache.Get(text); found {
-			log.Printf("[embedding][query-cache] Cache hit for query: %.80q", text)
+			logger.Debug("Cache hit for query",
+				"component", "embedding", "subcomponent",
+				"query-cache", "query", text)
 			cachedEmbeddings = append(cachedEmbeddings, cached)
 		} else {
 			uncachedTexts = append(uncachedTexts, text)
@@ -162,7 +168,9 @@ func GetQueryEmbeddings(texts []string) ([][]float32, error) {
 	// Generate embeddings for uncached texts in batch
 	var newEmbeddings [][]float32
 	if len(uncachedTexts) > 0 {
-		log.Printf("[embedding][query-cache] Cache miss for %d queries, generating batch embeddings", len(uncachedTexts))
+		logger.Debug("Cache miss, generating batch embeddings",
+			"component", "embedding", "subcomponent",
+			"query-cache", "count", len(uncachedTexts))
 		embeddings, err := EmbedTexts(uncachedTexts)
 		if err != nil {
 			return nil, err
@@ -172,7 +180,9 @@ func GetQueryEmbeddings(texts []string) ([][]float32, error) {
 		for i, embedding := range embeddings {
 			text := uncachedTexts[i]
 			queryEmbeddingCache.SetWithTTL(text, embedding, int64(len(embedding)*4), time.Hour)
-			log.Printf("[embedding][query-cache] Cached embedding for query: %.80q", text)
+			logger.Debug("Cached embedding for query",
+				"component", "embedding", "subcomponent",
+				"query-cache", "query", text)
 		}
 		newEmbeddings = embeddings
 	}
@@ -194,8 +204,11 @@ func GetQueryEmbeddings(texts []string) ([][]float32, error) {
 		}
 	}
 
-	log.Printf("[embedding][query-cache] Batch processed %d queries (%d cached, %d generated)",
-		len(validTexts), len(cachedEmbeddings), len(newEmbeddings))
+	logger.Debug("Batch processed queries",
+		"component", "embedding", "subcomponent",
+		"query-cache", "total", len(validTexts),
+		"cached", len(cachedEmbeddings), "generated",
+		len(newEmbeddings))
 	return result, nil
 }
 
@@ -207,11 +220,15 @@ func GetUserEmbedding(userID int) ([]float32, error) {
 
 	key := fmt.Sprintf("user_%d", userID)
 	if cached, found := userEmbeddingCache.Get(key); found {
-		log.Printf("[embedding][user-cache] Cache hit for user %d", userID)
+		logger.Debug("Cache hit for user",
+			"component", "embedding", "subcomponent",
+			"user-cache", "userID", userID)
 		return cached, nil
 	}
 
-	log.Printf("[embedding][user-cache] Cache miss for user %d", userID)
+	logger.Debug("Cache miss for user",
+		"component", "embedding", "subcomponent",
+		"user-cache", "userID", userID)
 	return nil, fmt.Errorf("user embedding not found in cache")
 }
 
@@ -224,7 +241,9 @@ func SetUserEmbedding(userID int, embedding []float32) error {
 	key := fmt.Sprintf("user_%d", userID)
 	// Cache with 24 hour TTL
 	userEmbeddingCache.SetWithTTL(key, embedding, int64(len(embedding)*4), 24*time.Hour)
-	log.Printf("[embedding][user-cache] Cached embedding for user %d", userID)
+	logger.Debug("Cached embedding for user",
+		"component", "embedding", "subcomponent",
+		"user-cache", "userID", userID)
 	return nil
 }
 
@@ -236,11 +255,15 @@ func GetSiteEmbedding(campaignKey string) ([]float32, error) {
 
 	key := fmt.Sprintf("site_%s", campaignKey)
 	if cached, found := siteEmbeddingCache.Get(key); found {
-		log.Printf("[embedding][site-cache] Cache hit for campaign %s", campaignKey)
+		logger.Debug("Cache hit for campaign",
+			"component", "embedding", "subcomponent",
+			"site-cache", "campaignKey", campaignKey)
 		return cached, nil
 	}
 
-	log.Printf("[embedding][site-cache] Cache miss for campaign %s, generating embedding", campaignKey)
+	logger.Debug("Cache miss for campaign, generating embedding",
+		"component", "embedding", "subcomponent",
+		"site-cache", "campaignKey", campaignKey)
 	embedding, err := calculateSiteLevelVector()
 	if err != nil {
 		return nil, err
@@ -248,7 +271,9 @@ func GetSiteEmbedding(campaignKey string) ([]float32, error) {
 
 	// Cache the result with 6 hour TTL
 	siteEmbeddingCache.SetWithTTL(key, embedding, int64(len(embedding)*4), 6*time.Hour)
-	log.Printf("[embedding][site-cache] Cached embedding for campaign %s", campaignKey)
+	logger.Debug("Cached embedding for campaign",
+		"component", "embedding", "subcomponent",
+		"site-cache", "campaignKey", campaignKey)
 
 	return embedding, nil
 }

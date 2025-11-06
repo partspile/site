@@ -2,11 +2,11 @@ package notification
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/email"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/messaging"
 	"github.com/parts-pile/site/sms"
 	"github.com/parts-pile/site/user"
@@ -25,7 +25,8 @@ func NewNotificationService() (*NotificationService, error) {
 	emailService, err := email.NewEmailService()
 	if err != nil {
 		// Log error but don't fail - SMS notifications can still work
-		log.Printf("Warning: Email service not available: %v", err)
+		logger.Warn("Email service not available",
+			"error", err)
 	}
 
 	// At least one service should be available
@@ -74,7 +75,9 @@ func (n *NotificationService) NotifyNewMessage(conversationID int, senderID, rec
 		}
 		return n.sendEmailNotification(*recipient.EmailAddress, sender.Name, ad.Title, messageContent, conversationID)
 	default:
-		log.Printf("Unknown notification method: %s for user %d", recipient.NotificationMethod, recipientID)
+		logger.Warn("Unknown notification method",
+			"notificationMethod", recipient.NotificationMethod,
+			"userID", recipientID)
 		return nil
 	}
 }
@@ -103,11 +106,13 @@ func (n *NotificationService) sendSMSNotification(phoneNumber, senderName, adTit
 	// Send SMS using Twilio
 	err := sms.SendMessage(phoneNumber, message)
 	if err != nil {
-		log.Printf("SMS notification failed for %s: %v", phoneNumber, err)
+		logger.Error("SMS notification failed",
+			"error", err, "phoneNumber", phoneNumber)
 		return err
 	}
 
-	log.Printf("SMS notification sent successfully to %s", phoneNumber)
+	logger.Info("SMS notification sent successfully",
+		"phoneNumber", phoneNumber)
 	return nil
 }
 

@@ -1,9 +1,8 @@
 package local
 
 import (
-	"log"
-
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/logger"
 )
 
 func GetUserID(c *fiber.Ctx) int {
@@ -30,7 +29,8 @@ func GetUserName(c *fiber.Ctx) string {
 func GetCSRFToken(c *fiber.Ctx) string {
 	token, _ := c.Locals("csrf_token").(string)
 	if token == "" {
-		log.Printf("[CSRF] WARNING: CSRF token is empty in context for path %s, method %s. Middleware may not be running.", c.Path(), c.Method())
+		logger.Warn("CSRF token is empty in context, middleware may not be running",
+			"component", "csrf", "path", c.Path(), "method", c.Method())
 	}
 	return token
 }

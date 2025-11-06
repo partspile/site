@@ -6,6 +6,9 @@ import (
 	"io/ioutil"
 	"os"
 	"sort"
+
+	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/logger"
 )
 
 type MakeParent struct {
@@ -19,22 +22,29 @@ type Parent struct {
 }
 
 func main() {
+	// Initialize logging
+	config.InitLoggingConfig()
+	if err := logger.Init(config.LogLevel, config.LogFormat, config.LogFile); err != nil {
+		logger.Fatal("Failed to initialize logger", "error", err)
+	}
+
 	if len(os.Args) < 2 {
-		fmt.Fprintf(os.Stderr, "Usage: %s <make-year-model.json> [make-parent.json] [parent.json]\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "If make-parent.json and parent.json are provided, will analyze missing makes and parent companies\n")
+		logger.Error("Usage", "command", os.Args[0],
+			"usage", "<make-year-model.json> [make-parent.json] [parent.json]",
+			"description", "If make-parent.json and parent.json are provided, will analyze missing makes and parent companies")
 		os.Exit(1)
 	}
 
 	filename := os.Args[1]
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
+		logger.Error("Error reading file", "error", err, "filename", filename)
 		os.Exit(1)
 	}
 
 	var makes map[string]interface{}
 	if err := json.Unmarshal(data, &makes); err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing JSON: %v\n", err)
+		logger.Error("Error parsing JSON", "error", err, "filename", filename)
 		os.Exit(1)
 	}
 
@@ -44,7 +54,7 @@ func main() {
 	}
 	sort.Strings(makeList)
 
-	fmt.Printf("Total makes in %s: %d\n\n", filename, len(makeList))
+	logger.Info("Total makes found", "filename", filename, "count", len(makeList))
 
 	// If additional files are provided, analyze them
 	if len(os.Args) >= 4 {
@@ -61,26 +71,26 @@ func analyzeMissingMakes(allMakes []string, makeParentFile, parentFile string) {
 	// Read make-parent.json
 	makeParentData, err := ioutil.ReadFile(makeParentFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading make-parent.json: %v\n", err)
+		logger.Error("Error reading make-parent.json", "error", err, "filename", makeParentFile)
 		return
 	}
 
 	var makeParents []MakeParent
 	if err := json.Unmarshal(makeParentData, &makeParents); err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing make-parent.json: %v\n", err)
+		logger.Error("Error parsing make-parent.json", "error", err, "filename", makeParentFile)
 		return
 	}
 
 	// Read parent.json
 	parentData, err := ioutil.ReadFile(parentFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading parent.json: %v\n", err)
+		logger.Error("Error reading parent.json", "error", err, "filename", parentFile)
 		return
 	}
 
 	var parents []Parent
 	if err := json.Unmarshal(parentData, &parents); err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing parent.json: %v\n", err)
+		logger.Error("Error parsing parent.json", "error", err, "filename", parentFile)
 		return
 	}
 
@@ -104,9 +114,10 @@ func analyzeMissingMakes(allMakes []string, makeParentFile, parentFile string) {
 		}
 	}
 
-	fmt.Printf("Makes in make-parent.json: %d\n", len(makeParents))
-	fmt.Printf("Parent companies in parent.json: %d\n", len(parents))
-	fmt.Printf("Missing makes: %d\n\n", len(missingMakes))
+	logger.Info("Analysis results",
+		"makesInFile", len(makeParents),
+		"parentCompanies", len(parents),
+		"missingMakes", len(missingMakes))
 
 	if len(missingMakes) > 0 {
 		fmt.Println("Missing makes:")

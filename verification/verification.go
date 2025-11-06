@@ -4,11 +4,11 @@ import (
 	"crypto/rand"
 	"crypto/subtle"
 	"fmt"
-	"log"
 	"math/big"
 	"time"
 
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/logger"
 )
 
 const (
@@ -61,8 +61,8 @@ func CreateVerificationCode(phone, code string) error {
 		return fmt.Errorf("failed to create verification code: %w", err)
 	}
 
-	log.Printf("[VERIFICATION] Created verification code for %s, expires at %s",
-		phone, expiresAt.Format(time.RFC3339))
+	logger.Info("Created verification code",
+		"component", "verification", "phone", phone, "expiresAt", expiresAt.Format(time.RFC3339))
 	return nil
 }
 
@@ -79,8 +79,8 @@ func CreateRegistrationVerificationCode(phone, code, name string) error {
 		return fmt.Errorf("failed to create registration verification code: %w", err)
 	}
 
-	log.Printf("[VERIFICATION] Created registration verification code for %s, expires at %s",
-		phone, expiresAt.Format(time.RFC3339))
+	logger.Info("Created registration verification code",
+		"component", "verification", "phone", phone, "name", name, "expiresAt", expiresAt.Format(time.RFC3339))
 	return nil
 }
 
@@ -118,13 +118,15 @@ func ValidateCode(phone, code string) (bool, error) {
 
 	// Check if code has expired
 	if time.Now().After(vc.ExpiresAt) {
-		log.Printf("[VERIFICATION] Code expired for %s", phone)
+		logger.Warn("Code expired",
+			"component", "verification", "phone", phone)
 		return false, nil
 	}
 
 	// Check if max attempts exceeded
 	if vc.Attempts >= MaxAttempts {
-		log.Printf("[VERIFICATION] Max attempts exceeded for %s", phone)
+		logger.Warn("Max attempts exceeded",
+			"component", "verification", "phone", phone)
 		// Track this failed verification for potential account cleanup
 		TrackFailedVerification(phone)
 		return false, nil
@@ -137,7 +139,8 @@ func ValidateCode(phone, code string) (bool, error) {
 		WHERE id = ?
 	`, vc.ID)
 	if err != nil {
-		log.Printf("[VERIFICATION] Failed to update attempts: %v", err)
+		logger.Error("Failed to update attempts",
+			"error", err, "component", "verification")
 	}
 
 	// Check if code matches using constant-time comparison to prevent timing attacks
@@ -147,17 +150,20 @@ func ValidateCode(phone, code string) (bool, error) {
 
 	// Ensure both slices are the same length for constant-time comparison
 	if len(codeBytes) != len(inputBytes) {
-		log.Printf("[VERIFICATION] Invalid code for %s (length mismatch)", phone)
+		logger.Warn("Invalid code (length mismatch)",
+			"component", "verification", "phone", phone)
 		return false, nil
 	}
 
 	// Use constant-time comparison to prevent timing attacks
 	if subtle.ConstantTimeCompare(codeBytes, inputBytes) == 1 {
-		log.Printf("[VERIFICATION] Code validated successfully for %s", phone)
+		logger.Info("Code validated successfully",
+			"component", "verification", "phone", phone)
 		return true, nil
 	}
 
-	log.Printf("[VERIFICATION] Invalid code for %s", phone)
+	logger.Warn("Invalid code",
+		"component", "verification", "phone", phone)
 	return false, nil
 }
 
@@ -172,7 +178,8 @@ func CleanupExpiredCodes() error {
 		return fmt.Errorf("failed to cleanup expired codes: %w", err)
 	}
 
-	log.Printf("[VERIFICATION] Cleaned up expired verification codes")
+	logger.Info("Cleaned up expired verification codes",
+		"component", "verification")
 	return nil
 }
 
@@ -188,7 +195,8 @@ func MarkPhoneVerified(userID int) error {
 		return fmt.Errorf("failed to mark phone verified: %w", err)
 	}
 
-	log.Printf("[VERIFICATION] Marked phone verified for user %d", userID)
+	logger.Info("Marked phone verified for user",
+		"component", "verification", "userID", userID)
 	return nil
 }
 
@@ -204,7 +212,8 @@ func InvalidateVerificationCodes(phone string) error {
 		return fmt.Errorf("failed to invalidate verification codes for %s: %w", phone, err)
 	}
 
-	log.Printf("[VERIFICATION] Invalidated all verification codes for %s", phone)
+	logger.Info("Invalidated all verification codes for phone",
+		"component", "verification", "phone", phone)
 	return nil
 }
 
@@ -223,7 +232,8 @@ func TrackFailedVerification(phone string) error {
 
 	// If we've exceeded the threshold, clean up the account
 	if count >= MaxFailedVerifications {
-		log.Printf("[VERIFICATION] Max failed verifications exceeded for %s, cleaning up account", phone)
+		logger.Warn("Max failed verifications exceeded, cleaning up account",
+			"component", "verification", "phone", phone)
 		return CleanupFailedAccount(phone)
 	}
 
@@ -256,6 +266,7 @@ func CleanupFailedAccount(phone string) error {
 		return fmt.Errorf("failed to commit cleanup transaction: %w", err)
 	}
 
-	log.Printf("[VERIFICATION] Successfully cleaned up failed account for %s", phone)
+	logger.Info("Successfully cleaned up failed account",
+		"component", "verification", "phone", phone)
 	return nil
 }

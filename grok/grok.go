@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/logger"
 )
 
 type GrokRequest struct {
@@ -64,8 +64,8 @@ func CallGrokWithDebug(systemPrompt, userPrompt string, debug bool) (string, err
 	}
 
 	if debug {
-		log.Printf("[grok] System prompt: %s", systemPrompt)
-		log.Printf("[grok] User prompt: %s", userPrompt)
+		logger.Debug("Grok API request",
+			"systemPrompt", systemPrompt, "userPrompt", userPrompt)
 		fmt.Println("REQUEST")
 		fmt.Println(string(data))
 	}

@@ -3,9 +3,9 @@ package vector
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/logger"
 	"github.com/qdrant/go-client/qdrant"
 )
 
@@ -57,7 +57,8 @@ func InitQdrantCollection() error {
 	}
 
 	if !collectionExists {
-		log.Printf("[qdrant] Creating collection: %s", collectionName)
+		logger.Info("Creating collection",
+			"component", "qdrant", "collectionName", collectionName)
 		err = qdrantClient.CreateCollection(ctx, &qdrant.CreateCollection{
 			CollectionName: collectionName,
 			VectorsConfig: &qdrant.VectorsConfig{
@@ -72,7 +73,8 @@ func InitQdrantCollection() error {
 		if err != nil {
 			return fmt.Errorf("failed to create collection: %w", err)
 		}
-		log.Printf("[qdrant] Successfully created collection: %s", collectionName)
+		logger.Info("Successfully created collection",
+			"component", "qdrant", "collectionName", collectionName)
 	}
 
 	return nil
@@ -90,12 +92,14 @@ func InitQdrantIndexes() error {
 	// Get the fields that need indexes for filtering
 	indexFields := GetIndexedFields()
 
-	log.Printf("[qdrant] Setting up payload indexes for collection: %s", collectionName)
+	logger.Info("Setting up payload indexes for collection",
+		"component", "qdrant", "collectionName", collectionName)
 
 	// Get existing collection info to check what indexes already exist
 	collectionInfo, err := qdrantClient.GetCollectionInfo(ctx, collectionName)
 	if err != nil {
-		log.Printf("[qdrant] Failed to get collection info: %v, will try to create indexes anyway", err)
+		logger.Warn("Failed to get collection info, will try to create indexes anyway",
+			"error", err, "component", "qdrant")
 		collectionInfo = nil
 	}
 
@@ -112,11 +116,13 @@ func InitQdrantIndexes() error {
 	for _, field := range indexFields {
 		// Check if index already exists
 		if existingIndexedFields[field.Name] {
-			log.Printf("[qdrant] Index for field %s already exists, skipping", field.Name)
+			logger.Debug("Index for field already exists, skipping",
+				"component", "qdrant", "field", field.Name)
 			continue
 		}
 
-		log.Printf("[qdrant] Creating index for field: %s", field.Name)
+		logger.Info("Creating index for field",
+			"component", "qdrant", "field", field.Name)
 
 		// Create the appropriate index parameters based on field type
 		var fieldIndexParams *qdrant.PayloadIndexParams
@@ -146,13 +152,16 @@ func InitQdrantIndexes() error {
 		})
 
 		if err != nil {
-			log.Printf("[qdrant] Failed to create index for %s: %v", field.Name, err)
+			logger.Error("Failed to create index for field",
+				"error", err, "component", "qdrant", "field", field.Name)
 			return fmt.Errorf("failed to create index for field %s: %w", field.Name, err)
 		}
 
-		log.Printf("[qdrant] Successfully created index for field: %s", field.Name)
+		logger.Info("Successfully created index for field",
+			"component", "qdrant", "field", field.Name)
 	}
 
-	log.Printf("[qdrant] Payload indexes setup completed")
+	logger.Info("Payload indexes setup completed",
+		"component", "qdrant", "collectionName", collectionName)
 	return nil
 }

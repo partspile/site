@@ -4,13 +4,13 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	"fmt"
-	"log"
 	"net/url"
 	"strconv"
 	"strings"
 
 	"github.com/parts-pile/site/cache"
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/logger"
 )
 
 type ParentCompanyInfo struct {
@@ -30,7 +30,8 @@ func InitSpecCache() error {
 		return err
 	}
 
-	log.Printf("[spec-cache] Cache initialized successfully")
+	logger.Info("Cache initialized successfully",
+		"component", "spec-cache")
 
 	return nil
 }
@@ -357,11 +358,13 @@ func GetAdMakesForAdIDs(adIDs []int) ([]string, error) {
 	// Check cache first
 	makes, found := specCache.Get(cacheKey)
 	if found {
-		log.Printf("[search-cache] Cache hit for makes: %s", cacheKey)
+		logger.Debug("Cache hit for makes",
+			"component", "search-cache", "cacheKey", cacheKey)
 		return makes, nil
 	}
 
-	log.Printf("[search-cache] Cache miss for makes: %s", cacheKey)
+	logger.Debug("Cache miss for makes",
+		"component", "search-cache", "cacheKey", cacheKey)
 
 	// Create placeholders for the IN clause
 	placeholders := make([]string, len(adIDs))
@@ -390,7 +393,9 @@ func GetAdMakesForAdIDs(adIDs []int) ([]string, error) {
 
 	// Cache the result
 	specCache.Set(cacheKey, makes, int64(len(makes)*40))
-	log.Printf("[search-cache] Cached %d makes for key: %s", len(makes), cacheKey)
+	logger.Debug("Cached makes",
+		"component", "search-cache", "count", len(makes),
+		"cacheKey", cacheKey)
 
 	return makes, nil
 }
@@ -408,11 +413,13 @@ func GetAdYearsForAdIDs(adIDs []int, makeName string) ([]string, error) {
 
 	// Check cache first
 	if cached, found := specCache.Get(cacheKey); found {
-		log.Printf("[search-cache] Cache hit for years: %s", cacheKey)
+		logger.Debug("Cache hit for years",
+			"component", "search-cache", "cacheKey", cacheKey)
 		return cached, nil
 	}
 
-	log.Printf("[search-cache] Cache miss for years: %s", cacheKey)
+	logger.Debug("Cache miss for years",
+		"component", "search-cache", "cacheKey", cacheKey)
 
 	// Create placeholders for the IN clause
 	placeholders := make([]string, len(adIDs))
@@ -449,7 +456,10 @@ func GetAdYearsForAdIDs(adIDs []int, makeName string) ([]string, error) {
 
 	// Cache the result
 	specCache.Set(cacheKey, years, int64(len(years)*15))
-	log.Printf("[search-cache] Cached %d years for key: %s", len(years), cacheKey)
+	specCache.Set(cacheKey, years, int64(len(years)*20))
+	logger.Debug("Cached years",
+		"component", "search-cache", "count", len(years),
+		"cacheKey", cacheKey)
 
 	return years, nil
 }
@@ -468,11 +478,13 @@ func GetAdModelsForAdIDs(adIDs []int, makeName, year string) ([]string, error) {
 
 	// Check cache first
 	if cached, found := specCache.Get(cacheKey); found {
-		log.Printf("[search-cache] Cache hit for models: %s", cacheKey)
+		logger.Debug("Cache hit for models",
+			"component", "search-cache", "cacheKey", cacheKey)
 		return cached, nil
 	}
 
-	log.Printf("[search-cache] Cache miss for models: %s", cacheKey)
+	logger.Debug("Cache miss for models",
+		"component", "search-cache", "cacheKey", cacheKey)
 
 	// Create placeholders for the IN clause
 	placeholders := make([]string, len(adIDs))
@@ -505,7 +517,9 @@ func GetAdModelsForAdIDs(adIDs []int, makeName, year string) ([]string, error) {
 
 	// Cache the result
 	specCache.Set(cacheKey, models, int64(len(models)*25))
-	log.Printf("[search-cache] Cached %d models for key: %s", len(models), cacheKey)
+	logger.Debug("Cached models",
+		"component", "search-cache", "count", len(models),
+		"cacheKey", cacheKey)
 
 	return models, nil
 }
@@ -525,11 +539,13 @@ func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, 
 
 	// Check cache first
 	if cached, found := specCache.Get(cacheKey); found {
-		log.Printf("[search-cache] Cache hit for engines: %s", cacheKey)
+		logger.Debug("Cache hit for engines",
+			"component", "search-cache", "cacheKey", cacheKey)
 		return cached, nil
 	}
 
-	log.Printf("[search-cache] Cache miss for engines: %s", cacheKey)
+	logger.Debug("Cache miss for engines",
+		"component", "search-cache", "cacheKey", cacheKey)
 
 	// Create placeholders for the IN clause
 	placeholders := make([]string, len(adIDs))
@@ -563,7 +579,9 @@ func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, 
 
 	// Cache the result
 	specCache.Set(cacheKey, engines, int64(len(engines)*30))
-	log.Printf("[search-cache] Cached %d engines for key: %s", len(engines), cacheKey)
+	logger.Debug("Cached engines",
+		"component", "search-cache", "count", len(engines),
+		"cacheKey", cacheKey)
 
 	return engines, nil
 }
@@ -599,7 +617,8 @@ func GetCacheStats() map[string]any {
 // ClearCache clears all items from the spec cache and returns updated stats
 func ClearCache() map[string]any {
 	specCache.Clear()
-	log.Printf("[spec-cache] Cache cleared")
+	logger.Info("Cache cleared",
+		"component", "spec-cache")
 	return specCache.Stats()
 }
 

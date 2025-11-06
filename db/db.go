@@ -2,11 +2,11 @@ package db
 
 import (
 	"database/sql"
-	"log"
 	"sync"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/parts-pile/site/logger"
 )
 
 var (
@@ -20,17 +20,20 @@ func Init(databaseURL string) error {
 	once.Do(func() {
 		db, err = sqlx.Open("sqlite3", databaseURL)
 		if err != nil {
-			log.Printf("Failed to open database: %v", err)
+			logger.Error("Failed to open database",
+				"error", err, "databaseURL", databaseURL)
 			return
 		}
 
 		// Test the connection
 		if err = db.Ping(); err != nil {
-			log.Printf("Failed to ping database: %v", err)
+			logger.Error("Failed to ping database",
+				"error", err, "databaseURL", databaseURL)
 			return
 		}
 
-		log.Printf("Database initialized successfully: %s", databaseURL)
+		logger.Info("Database initialized successfully",
+			"databaseURL", databaseURL)
 	})
 	return err
 }

@@ -2,14 +2,13 @@ package jwt
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/user"
 )
-
-var jwtSecret = []byte(config.JWTSecret)
 
 type claims struct {
 	UserID   int    `json:"user_id"`
@@ -31,7 +30,7 @@ func GenerateToken(u *user.User) (string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
+	return token.SignedString(config.JWTSecret)
 }
 
 // ValidateToken validates a JWT token and returns the claims
@@ -40,7 +39,7 @@ func ValidateToken(tokenString string) (*claims, error) {
 		if token.Method != jwt.SigningMethodHS256 {
 			return nil, errors.New("unexpected signing method")
 		}
-		return jwtSecret, nil
+		return config.JWTSecret, nil
 	})
 
 	if err != nil {
@@ -62,4 +61,20 @@ func GetUserID(claims *claims) int {
 // GetUserName extracts the username from validated claims
 func GetUserName(claims *claims) string {
 	return claims.UserName
+}
+
+// ValidateSecret validates that JWT secret is set and sufficiently strong
+// Minimum requirements: at least 32 bytes (256 bits) of entropy
+func ValidateSecret(secret []byte) error {
+	if len(secret) == 0 {
+		return fmt.Errorf("JWT_SECRET environment variable is required but not set")
+	}
+
+	// Require at least 32 bytes (256 bits) for HS256
+	minLength := 32
+	if len(secret) < minLength {
+		return fmt.Errorf("JWT_SECRET must be at least %d characters long for security", minLength)
+	}
+
+	return nil
 }

@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"fmt"
-	"log"
 	"net/url"
 
 	"github.com/gofiber/fiber/v2"
@@ -10,6 +8,7 @@ import (
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/local"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -78,23 +77,29 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create ad")
 	}
-	fmt.Printf("[DEBUG] Created ad ID=%d with ImageCount=%d\n", adID, newAd.ImageCount)
-	fmt.Printf("[DEBUG] Image files count: %d\n", len(imageFiles))
+	logger.Debug("Created ad",
+		"component", "ad-new", "adID", adID, "imageCount", newAd.ImageCount)
+	logger.Debug("Image files count",
+		"component", "ad-new", "count", len(imageFiles))
 	if len(imageFiles) > 0 {
 		for i, file := range imageFiles {
-			fmt.Printf("[DEBUG] Image file %d: %s (size: %d bytes)\n", i+1, file.Filename, file.Size)
+			logger.Debug("Image file details",
+				"component", "ad-new", "index", i+1, "filename", file.Filename, "size", file.Size)
 		}
 	}
 	uploadAdImagesToB2(adID, imageFiles)
 
 	// Attempt inline vector processing, fallback to queue if it fails
-	log.Printf("[embedding] Attempting inline vector processing for ad %d", adID)
+	logger.Debug("Attempting inline vector processing",
+		"component", "embedding", "adID", adID)
 	err = vector.BuildAdEmbedding(newAd)
 	if err != nil {
-		log.Printf("[embedding] Inline processing failed for ad %d: %v, queuing for background processing", adID, err)
+		logger.Debug("Inline processing failed, queuing for background processing",
+			"error", err, "component", "embedding", "adID", adID)
 		vector.QueueAd(newAd.Ad)
 	} else {
-		log.Printf("[embedding] Successfully processed ad %d inline", adID)
+		logger.Debug("Successfully processed ad inline",
+			"component", "embedding", "adID", adID)
 	}
 
 	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()

@@ -2,7 +2,6 @@ package sms
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"net/url"
 	"strings"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/user"
 	"github.com/parts-pile/site/verification"
 	"github.com/twilio/twilio-go"
@@ -70,9 +70,13 @@ func SetMessageStatus(messageSid string, status SMSStatus) {
 			// Log delivery status changes
 			switch status {
 			case SMSStatusDelivered:
-				log.Printf("[SMS] Message delivered: %s for %s", messageSid, track.PhoneNumber)
+				logger.Info("Message delivered",
+					"component", "SMS", "messageSid", messageSid,
+					"phoneNumber", track.PhoneNumber)
 			case SMSStatusFailed, SMSStatusUndelivered:
-				log.Printf("[SMS] Message failed: %s for %s", messageSid, track.PhoneNumber)
+				logger.Warn("Message failed",
+					"component", "SMS", "messageSid", messageSid,
+					"phoneNumber", track.PhoneNumber, "status", status)
 			}
 		}
 	}
@@ -115,7 +119,9 @@ func checkOutstandingMessages() {
 
 		// Check for timeout
 		if now.Sub(track.SentTime) > timeout {
-			log.Printf("[SMS] Message %s timed out for %s", messageSid, track.PhoneNumber)
+			logger.Warn("Message timed out",
+				"component", "SMS", "messageSid", messageSid,
+				"phoneNumber", track.PhoneNumber)
 			tracker.Delete(messageSid)
 		}
 
@@ -157,7 +163,8 @@ func SendMessage(phoneNumber, message string) error {
 
 	// Respect user opt-out - fail silently
 	if IsOptedOut(phoneNumber) {
-		log.Printf("[SMS] Message blocked: user %s has opted out", phoneNumber)
+		logger.Debug("Message blocked: user opted out",
+			"component", "SMS", "phoneNumber", phoneNumber)
 		return nil
 	}
 	params := &Api.CreateMessageParams{}
@@ -180,28 +187,33 @@ func SendMessage(phoneNumber, message string) error {
 	// Register message for delivery tracking
 	trackMessage(messageSid, phoneNumber)
 
-	log.Printf("[SMS] Message sent: %s to %s", messageSid, phoneNumber)
+	logger.Info("Message sent",
+		"component", "SMS", "messageSid", messageSid,
+		"phoneNumber", phoneNumber)
 
 	return nil
 }
 
 // HandleStopResponse processes when a user replies STOP to an SMS
 func HandleStopResponse(phoneNumber string) error {
-	log.Printf("[SMS] STOP response received from %s", phoneNumber)
+	logger.Info("STOP response received",
+		"component", "SMS", "phoneNumber", phoneNumber)
 
 	// Find user by phone and set opt-out flag
 	u, err := user.GetUserByPhone(phoneNumber)
 	if err == nil {
 		// User exists, set opt-out flag
 		if err := user.SetSMSOptOut(u.ID, true); err != nil {
-			log.Printf("[SMS] Failed to set opt-out for user %d: %v", u.ID, err)
+			logger.Error("Failed to set opt-out for user",
+				"error", err, "component", "SMS", "userID", u.ID)
 		}
 	}
 
 	// Invalidate any pending verification codes for this phone
 	err = verification.InvalidateVerificationCodes(phoneNumber)
 	if err != nil {
-		log.Printf("[SMS] Failed to invalidate verification codes for %s: %v", phoneNumber, err)
+		logger.Error("Failed to invalidate verification codes",
+			"error", err, "component", "SMS", "phoneNumber", phoneNumber)
 		return err
 	}
 
@@ -210,14 +222,16 @@ func HandleStopResponse(phoneNumber string) error {
 
 // HandleUnstopResponse processes when a user replies UNSTOP to opt back in
 func HandleUnstopResponse(phoneNumber string) error {
-	log.Printf("[SMS] UNSTOP response received from %s", phoneNumber)
+	logger.Info("UNSTOP response received",
+		"component", "SMS", "phoneNumber", phoneNumber)
 
 	// Find user by phone and clear opt-out flag
 	u, err := user.GetUserByPhone(phoneNumber)
 	if err == nil {
 		// User exists, clear opt-out flag
 		if err := user.SetSMSOptOut(u.ID, false); err != nil {
-			log.Printf("[SMS] Failed to clear opt-out for user %d: %v", u.ID, err)
+			logger.Error("Failed to clear opt-out for user",
+				"error", err, "component", "SMS", "userID", u.ID)
 		}
 	}
 
@@ -235,12 +249,16 @@ func IsOptedOut(phoneNumber string) bool {
 
 // HandleDeliveryFailure processes when an SMS fails to deliver
 func HandleDeliveryFailure(phoneNumber, errorMessage string) error {
-	log.Printf("[SMS] Delivery failure for %s: %s", phoneNumber, errorMessage)
+	logger.Warn("Delivery failure",
+		"component", "SMS", "phoneNumber", phoneNumber,
+		"errorMessage", errorMessage)
 
 	// Invalidate verification codes for failed deliveries
 	err := verification.InvalidateVerificationCodes(phoneNumber)
 	if err != nil {
-		log.Printf("[SMS] Failed to invalidate verification codes for %s: %v", phoneNumber, err)
+		logger.Error("Failed to invalidate verification codes",
+			"error", err, "component", "SMS", "phoneNumber",
+			phoneNumber)
 		return err
 	}
 
@@ -292,7 +310,8 @@ func VerifyTwilioSignature(c *fiber.Ctx) bool {
 func ParseWebhook(c *fiber.Ctx) (*SMSWebhookData, error) {
 	var webhookData SMSWebhookData
 	if err := c.BodyParser(&webhookData); err != nil {
-		log.Printf("[SMS] Failed to parse webhook data: %v", err)
+		logger.Error("Failed to parse webhook data",
+			"error", err, "component", "SMS")
 		return nil, fmt.Errorf("failed to parse webhook data: %w", err)
 	}
 	return &webhookData, nil
@@ -323,36 +342,43 @@ func InitSMS() error {
 
 	// Check if Twilio credentials are configured
 	if config.TwilioAccountSID == "" || config.TwilioAuthToken == "" || config.TwilioFromNumber == "" {
-		log.Printf("[SMS] SMS disabled - Twilio credentials not configured")
+		logger.Info("SMS disabled - Twilio credentials not configured",
+			"component", "SMS")
 		return nil // Not an error, just disabled
 	}
 
 	// Check if BASE_URL is localhost (webhooks won't work)
 	if config.BaseURL == "" {
-		log.Printf("[SMS] SMS disabled - BASE_URL is empty (webhooks required)")
+		logger.Info("SMS disabled - BASE_URL is empty (webhooks required)",
+			"component", "SMS")
 		return nil // Not an error, just disabled
 	}
 
 	parsedURL, err := url.Parse(config.BaseURL)
 	if err != nil {
-		log.Printf("[SMS] SMS disabled - Failed to parse BASE_URL: %v", err)
+		logger.Warn("SMS disabled - Failed to parse BASE_URL",
+			"error", err, "component", "SMS")
 		return fmt.Errorf("invalid BASE_URL: %w", err) // This is an actual error
 	}
 
 	hostname := parsedURL.Hostname()
 	if isLocalhost(hostname) {
-		log.Printf("[SMS] SMS disabled - BASE_URL is localhost (webhooks won't work). Use ngrok or set BASE_URL to a public URL.")
+		logger.Info("SMS disabled - BASE_URL is localhost (webhooks won't work). Use ngrok or set BASE_URL to a public URL.",
+			"component", "SMS")
 		return nil // Not an error, just disabled
 	}
 
 	// SMS is available
 	smsAvailable = true
-	log.Printf("[SMS] SMS enabled - BASE_URL: %s", config.BaseURL)
+	logger.Info("SMS enabled",
+		"component", "SMS", "baseURL", config.BaseURL)
 
 	// Update Twilio phone number webhook URL on startup
 	if err := UpdatePhoneNumberWebhook(); err != nil {
-		log.Printf("[SMS] Warning: Failed to update phone number webhook: %v", err)
-		log.Printf("[SMS] You may need to manually configure the webhook in Twilio Console")
+		logger.Warn("Failed to update phone number webhook",
+			"error", err, "component", "SMS")
+		logger.Info("You may need to manually configure the webhook in Twilio Console",
+			"component", "SMS")
 	}
 
 	return nil
@@ -404,6 +430,8 @@ func UpdatePhoneNumberWebhook() error {
 		return fmt.Errorf("failed to update phone number webhook: %w", err)
 	}
 
-	log.Printf("[SMS] Successfully updated phone number %s webhook to %s", config.TwilioFromNumber, webhookURL)
+	logger.Info("Successfully updated phone number webhook",
+		"component", "SMS", "phoneNumber", config.TwilioFromNumber,
+		"webhookURL", webhookURL)
 	return nil
 }

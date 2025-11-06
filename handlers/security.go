@@ -58,14 +58,12 @@ var CSRFMiddleware = csrf.New(csrf.Config{
 	KeyLookup: "header:X-Csrf-Token",
 	// Store token in context so handlers can access it
 	ContextKey: "csrf_token",
-	// Configure CSRF cookie with secure settings
-	Cookie: &fiber.Cookie{
-		Name:     "_csrf",
-		HTTPOnly: true,                // Prevent XSS attacks from reading token
-		Secure:   config.CookieSecure, // HTTPS only when enabled
-		SameSite: "Strict",            // Prevent cross-site cookie sending
-		Path:     "/",
-	},
+	// Configure CSRF cookie with secure settings using new API
+	CookieName:     "_csrf",
+	CookieHTTPOnly: true,                // Prevent XSS attacks from reading token
+	CookieSecure:   config.CookieSecure, // HTTPS only when enabled
+	CookieSameSite: "Strict",            // Prevent cross-site cookie sending
+	CookiePath:     "/",
 	ErrorHandler: func(c *fiber.Ctx, err error) error {
 		// For HTMX requests, return HTML error page; for API requests, return JSON
 		if c.Get("HX-Request") != "" {

@@ -1,9 +1,8 @@
 package ad
 
 import (
-	"log"
-
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/logger"
 )
 
 // Ad categories
@@ -27,7 +26,8 @@ func SetAdCategoryNames() {
 
 	rows, err := db.Query("SELECT id, name FROM AdCategory ORDER BY id")
 	if err != nil {
-		log.Printf("Failed to query AdCategory: %v", err)
+		logger.Error("Failed to query AdCategory",
+			"error", err, "component", "ad-category")
 		return
 	}
 	defer rows.Close()
@@ -36,7 +36,8 @@ func SetAdCategoryNames() {
 		var id int
 		var name string
 		if err := rows.Scan(&id, &name); err != nil {
-			log.Printf("Failed to scan AdCategory row: %v", err)
+			logger.Error("Failed to scan AdCategory row",
+				"error", err, "component", "ad-category")
 			continue
 		}
 		adCategoryNames[id] = name

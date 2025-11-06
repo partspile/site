@@ -1,10 +1,10 @@
 package search
 
 import (
-	"log"
 	"time"
 
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/logger"
 )
 
 // UserSearch represents a user's search query
@@ -25,7 +25,8 @@ type TopSearch struct {
 func SaveUserSearch(userID int, queryString string) error {
 	_, err := db.Exec("INSERT INTO UserSearch (user_id, query_string) VALUES (?, ?)", userID, queryString)
 	if err != nil {
-		log.Printf("Error saving user search: %v", err)
+		logger.Error("Error saving user search",
+			"error", err, "component", "search", "userID", userID)
 		return err
 	}
 	return nil
@@ -43,7 +44,8 @@ func GetRecentUserSearches(userID int, limit int) ([]UserSearch, error) {
 func DeleteUserSearch(searchID int, userID int) error {
 	_, err := db.Exec("DELETE FROM UserSearch WHERE id = ? AND user_id = ?", searchID, userID)
 	if err != nil {
-		log.Printf("Error deleting user search: %v", err)
+		logger.Error("Error deleting user search",
+			"error", err, "component", "search", "searchID", searchID, "userID", userID)
 		return err
 	}
 	return nil
@@ -53,7 +55,8 @@ func DeleteUserSearch(searchID int, userID int) error {
 func DeleteAllUserSearches(userID int) error {
 	_, err := db.Exec("DELETE FROM UserSearch WHERE user_id = ?", userID)
 	if err != nil {
-		log.Printf("Error deleting all user searches: %v", err)
+		logger.Error("Error deleting all user searches",
+			"error", err, "component", "search", "userID", userID)
 		return err
 	}
 	return nil

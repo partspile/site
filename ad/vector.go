@@ -1,15 +1,16 @@
 package ad
 
 import (
-	"log"
 	"strings"
 
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/logger"
 )
 
 // GetAdsWithoutVectors returns ads that don't have vector embeddings
 func GetAdsWithoutVectors() ([]Ad, error) {
-	log.Printf("[GetAdsWithoutVectors] Querying for ads without vectors")
+	logger.Debug("Querying for ads without vectors",
+		"component", "ad")
 	query := `
 		SELECT 
 			a.id, a.ad_category_id, a.title, a.price, a.created_at, a.deleted_at, a.user_id, a.image_count,
@@ -23,11 +24,13 @@ func GetAdsWithoutVectors() ([]Ad, error) {
 	var ads []Ad
 	err := db.Select(&ads, query)
 	if err != nil {
-		log.Printf("[GetAdsWithoutVectors] SQL error: %v", err)
+		logger.Error("SQL error querying ads without vectors",
+			"error", err, "component", "ad")
 		return nil, err
 	}
 
-	log.Printf("[GetAdsWithoutVectors] Found %d ads without vectors from SQL query", len(ads))
+	logger.Debug("Found ads without vectors from SQL query",
+		"component", "ad", "count", len(ads))
 	return ads, nil
 }
 
@@ -54,9 +57,11 @@ func MarkAdsAsHavingVector(adIDs []int) error {
 
 	_, err := db.Exec(query, args...)
 	if err != nil {
-		log.Printf("[MarkAdsAsHavingVector] Failed to mark %d ads as having vector: %v", len(adIDs), err)
+		logger.Error("Failed to mark ads as having vector",
+			"error", err, "component", "ad", "count", len(adIDs))
 		return err
 	}
-	log.Printf("[MarkAdsAsHavingVector] Successfully marked %d ads as having vector", len(adIDs))
+	logger.Debug("Successfully marked ads as having vector",
+		"component", "ad", "count", len(adIDs))
 	return nil
 }

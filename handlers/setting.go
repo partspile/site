@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"log"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/local"
+	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/user"
@@ -21,7 +20,10 @@ func HandleSettings(c *fiber.Ctx) error {
 	if err != nil || currentUser.IsArchived() {
 		return c.Status(fiber.StatusUnauthorized).SendString("User not found")
 	}
-	log.Printf("[SETTINGS] Loading settings for user %d: SMSOptedOut=%v, NotificationMethod=%s", userID, currentUser.SMSOptedOut, currentUser.NotificationMethod)
+	logger.Debug("Loading settings",
+		"userID", userID,
+		"SMSOptedOut", currentUser.SMSOptedOut,
+		"notificationMethod", currentUser.NotificationMethod)
 	fromNumber := config.TwilioFromNumber
 	csrfToken := local.GetCSRFToken(c)
 	return render(c, ui.SettingsPage(
@@ -90,7 +92,8 @@ func HandleUpdateNotificationMethod(c *fiber.Ctx) error {
 
 	// Update both notification method and email address
 	if err := user.UpdateNotificationPreferences(userID, request.NotificationMethod, request.EmailAddress); err != nil {
-		log.Printf("[API] Failed to update notification preferences for user %d: %v", userID, err)
+		logger.Error("Failed to update notification preferences",
+			"error", err, "userID", userID)
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to update notification preferences")
 	}
 
@@ -202,7 +205,8 @@ func HandleDeleteAccount(c *fiber.Ctx) error {
 	// Archive all ads by this user
 	err2 := ad.ArchiveAdsByUserID(u.ID)
 	if err2 != nil {
-		log.Printf("Warning: Failed to archive user's ads: %v", err2)
+		logger.Warn("Failed to archive user's ads",
+			"error", err2, "userID", u.ID)
 		// Continue with user deletion even if ad archiving fails
 	}
 

@@ -8,7 +8,6 @@ import (
 	"image/color"
 	"image/draw"
 	"image/png"
-	"log"
 	"math/rand"
 	"path/filepath"
 	"strings"
@@ -19,6 +18,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/logger"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/image/font/opentype"
@@ -41,6 +41,12 @@ type ImageToUpload struct {
 }
 
 func main() {
+	// Initialize logging
+	config.InitLoggingConfig()
+	if err := logger.Init(config.LogLevel, config.LogFormat, config.LogFile); err != nil {
+		logger.Fatal("Failed to initialize logger", "error", err)
+	}
+
 	// Seed random number generator
 	rand.Seed(time.Now().UnixNano())
 
@@ -48,22 +54,23 @@ func main() {
 
 	// Initialize database
 	if err := db.Init(dbFile); err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		logger.Fatal("Failed to initialize database", "error", err, "databaseURL", dbFile)
 	}
 
 	// Open DB for direct access
 	database, err := sql.Open("sqlite3", dbFile)
 	if err != nil {
-		log.Fatalf("Failed to open DB: %v", err)
+		logger.Fatal("Failed to open DB", "error", err, "databaseURL", dbFile)
 	}
 	defer database.Close()
 
 	// Query test ads (userId=1)
 	testAds, err := getTestAds(database)
 	if err != nil {
-		log.Fatalf("Failed to get test ads: %v", err)
+		logger.Fatal("Failed to get test ads", "error", err)
 	}
 
+	logger.Info("Found test ads to process", "count", len(testAds))
 	fmt.Printf("Found %d test ads to process\n", len(testAds))
 
 	// Generate images for all test ads
@@ -74,9 +81,10 @@ func main() {
 
 	// Batch upload to B2
 	if err := batchUploadToB2(imagesToUpload); err != nil {
-		log.Fatalf("Failed to upload images to B2: %v", err)
+		logger.Fatal("Failed to upload images to B2", "error", err)
 	}
 
+	logger.Info("Test image generation and upload complete")
 	fmt.Println("Test image generation and upload complete!")
 }
 
@@ -140,14 +148,16 @@ func generateImagesForAds(testAds []TestAd) []ImageToUpload {
 				// Generate image with correct dimensions
 				pngBuf, err := generateTestAdImage(ad.ID, i+1, w, h)
 				if err != nil {
-					log.Printf("Failed to generate image for ad %d: %v", ad.ID, err)
+					logger.Error("Failed to generate image for ad",
+						"adID", ad.ID, "error", err)
 					continue
 				}
 
 				// Decode the PNG
 				img, _, err := image.Decode(bytes.NewReader(pngBuf.Bytes()))
 				if err != nil {
-					log.Printf("Failed to decode image for ad %d: %v", ad.ID, err)
+					logger.Error("Failed to decode image for ad",
+						"adID", ad.ID, "error", err)
 					continue
 				}
 
@@ -155,7 +165,8 @@ func generateImagesForAds(testAds []TestAd) []ImageToUpload {
 				var webpBuf bytes.Buffer
 				opt := &webp.Options{Lossless: false, Quality: sz.Quality}
 				if err := webp.Encode(&webpBuf, img, opt); err != nil {
-					log.Printf("WebP encode error for ad %d: %v", ad.ID, err)
+					logger.Error("WebP encode error for ad",
+						"adID", ad.ID, "error", err)
 					continue
 				}
 
@@ -250,7 +261,7 @@ func addText(img *image.RGBA, text string, textColor color.Color, imgWidth, imgH
 	// Load and configure gomono font
 	fontData, err := opentype.Parse(gomono.TTF)
 	if err != nil {
-		log.Printf("Failed to parse gomono font: %v", err)
+		logger.Error("Failed to parse gomono font", "error", err)
 		return
 	}
 
@@ -263,7 +274,7 @@ func addText(img *image.RGBA, text string, textColor color.Color, imgWidth, imgH
 		Hinting: font.HintingFull,
 	})
 	if err != nil {
-		log.Printf("Failed to create font face: %v", err)
+		logger.Error("Failed to create font face", "error", err)
 		return
 	}
 	defer fontFace.Close()
@@ -357,7 +368,9 @@ func batchUploadToB2(imagesToUpload []ImageToUpload) error {
 
 				// Log retry attempt
 				if attempt < maxRetries-1 {
-					log.Printf("B2 upload attempt %d failed for %s: %v, retrying...", attempt+1, imageToUpload.Path, err)
+					logger.Warn("B2 upload attempt failed, retrying",
+						"attempt", attempt+1, "path", imageToUpload.Path,
+						"error", err)
 					// Wait a bit before retry (exponential backoff)
 					time.Sleep(time.Duration(attempt+1) * time.Second)
 				}
@@ -365,7 +378,8 @@ func batchUploadToB2(imagesToUpload []ImageToUpload) error {
 
 			// All retries failed
 			mu.Lock()
-			log.Printf("B2 upload failed after %d attempts for %s: %v", maxRetries, imageToUpload.Path, err)
+			logger.Error("B2 upload failed after all retries",
+				"attempts", maxRetries, "path", imageToUpload.Path, "error", err)
 			errorCount++
 			mu.Unlock()
 		}(i, img)
