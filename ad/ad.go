@@ -41,7 +41,7 @@ type AdDetail struct {
 	HasVector   bool   `json:"has_vector" db:"has_vector"`
 	RawLocation string `json:"raw_location" db:"raw_location"`
 
-	// Vehicle compatibility fields from vehicle joins
+	// Spec compatibility fields from spec joins
 	Make            string   `json:"make" db:"make"`
 	Years           []string `json:"years" db:"years"`
 	Models          []string `json:"models" db:"models"`
@@ -58,8 +58,8 @@ func (a Ad) IsArchived() bool {
 	return a.DeletedAt != nil
 }
 
-// populateVehicleData fills in the Make, Years, Models, Engines, and Part category/subcategory fields
-func populateVehicleData(adDetail *AdDetail) error {
+// populateSpecData fills in the Make, Years, Models, Engines, and Part category/subcategory fields
+func populateSpecData(adDetail *AdDetail) error {
 	query := `
 		SELECT 
 			COALESCE(MIN(m.name), '') as make,
@@ -68,18 +68,18 @@ func populateVehicleData(adDetail *AdDetail) error {
 			COALESCE(GROUP_CONCAT(DISTINCT e.name), '') as engines,
 			COALESCE(MIN(pc.name), '') as part_category,
 			COALESCE(MIN(psc.name), '') as part_subcategory
-		FROM AdVehicle av
-		JOIN Vehicle v ON av.vehicle_id = v.id
-		LEFT JOIN Make m ON v.make_id = m.id
-		LEFT JOIN Model mo ON v.model_id = mo.id
-		LEFT JOIN Year y ON v.year_id = y.id
-		LEFT JOIN Engine e ON v.engine_id = e.id
-		LEFT JOIN PartSubCategory psc ON v.part_subcategory_id = psc.id
+		FROM AdSpecification ad_spec
+		JOIN Specification spec ON ad_spec.specification_id = spec.id
+		LEFT JOIN Make m ON spec.make_id = m.id
+		LEFT JOIN Model mo ON spec.model_id = mo.id
+		LEFT JOIN Year y ON spec.year_id = y.id
+		LEFT JOIN Engine e ON spec.engine_id = e.id
+		LEFT JOIN PartSubCategory psc ON spec.part_subcategory_id = psc.id
 		LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
-		WHERE av.ad_id = ?
+		WHERE ad_spec.ad_id = ?
 	`
 
-	type vehicleData struct {
+	type specData struct {
 		Make            string `db:"make"`
 		Years           string `db:"years"`
 		Models          string `db:"models"`
@@ -88,13 +88,13 @@ func populateVehicleData(adDetail *AdDetail) error {
 		PartSubcategory string `db:"part_subcategory"`
 	}
 
-	var data vehicleData
+	var data specData
 	err := db.Get(&data, query, adDetail.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return fmt.Errorf("no vehicle data found for ad")
+			return fmt.Errorf("no spec data found for ad")
 		}
-		return fmt.Errorf("failed to query vehicle data: %w", err)
+		return fmt.Errorf("failed to query spec data: %w", err)
 	}
 
 	adDetail.Make = data.Make
@@ -255,10 +255,10 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 
 	adDetail := &adDetails[0]
 
-	// Populate vehicle data
-	err = populateVehicleData(adDetail)
+	// Populate spec data
+	err = populateSpecData(adDetail)
 	if err != nil {
-		return nil, fmt.Errorf("failed to populate vehicle data: %w", err)
+		return nil, fmt.Errorf("failed to populate spec data: %w", err)
 	}
 
 	return adDetail, nil

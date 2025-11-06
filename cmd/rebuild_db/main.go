@@ -77,10 +77,10 @@ func main() {
 		log.Fatalf("Failed to read ad-category.json: %v", err)
 	}
 	type AdCategory struct {
-		Name        string `json:"name"`
-		VehicleFile string `json:"vehicle_file,omitempty"`
-		PartFile    string `json:"part_file,omitempty"`
-		AdFile      string `json:"ad_file,omitempty"`
+		Name     string `json:"name"`
+		SpecFile string `json:"spec_file,omitempty"`
+		PartFile string `json:"part_file,omitempty"`
+		AdFile   string `json:"ad_file,omitempty"`
 	}
 	var adCategories []AdCategory
 	if err := json.Unmarshal(typeData, &adCategories); err != nil {
@@ -213,22 +213,22 @@ func main() {
 
 	// Create category to seed file mapping
 	categorySeedMap := make(map[string]struct {
-		vehicleFile string
-		partFile    string
-		adFile      string
+		specFile string
+		partFile string
+		adFile   string
 	})
 
 	// Process each category from ad-category.json and add to seed map if it has files
 	for _, cat := range adCategories {
-		if cat.VehicleFile != "" || cat.AdFile != "" {
+		if cat.SpecFile != "" || cat.AdFile != "" {
 			seedFiles := struct {
-				vehicleFile string
-				partFile    string
-				adFile      string
+				specFile string
+				partFile string
+				adFile   string
 			}{
-				vehicleFile: "cmd/rebuild_db/" + cat.VehicleFile,
-				partFile:    "",
-				adFile:      "cmd/rebuild_db/" + cat.AdFile,
+				specFile: "cmd/rebuild_db/" + cat.SpecFile,
+				partFile: "",
+				adFile:   "cmd/rebuild_db/" + cat.AdFile,
 			}
 			if cat.PartFile != "" {
 				seedFiles.partFile = "cmd/rebuild_db/" + cat.PartFile
@@ -247,9 +247,9 @@ func main() {
 
 		log.Printf("Processing category: %s", categoryName)
 
-		// Import vehicles for this category
-		if err := importVehicles(database, seedFiles.vehicleFile, categoryID, makeParentsData, parentCompanyMap); err != nil {
-			log.Printf("Failed to import vehicles for %s: %v", categoryName, err)
+		// Import specs for this category
+		if err := importSpecs(database, seedFiles.specFile, categoryID, makeParentsData, parentCompanyMap); err != nil {
+			log.Printf("Failed to import specs for %s: %v", categoryName, err)
 		}
 
 		// Import parts for this category
@@ -269,8 +269,8 @@ func main() {
 	fmt.Println("Vector embeddings will be processed by the main application background processor.")
 }
 
-// executeVehicleBatch executes a batch of Vehicle insertions using a single INSERT statement
-func executeVehicleBatch(tx *sql.Tx, batch []struct {
+// executeSpecBatch executes a batch of Specification insertions using a single INSERT statement
+func executeSpecBatch(tx *sql.Tx, batch []struct {
 	adCategoryID, makeID, yearID, modelID, engineID int
 }) {
 	// Use a single INSERT statement with multiple VALUES for better performance
@@ -282,19 +282,19 @@ func executeVehicleBatch(tx *sql.Tx, batch []struct {
 	values := make([]string, len(batch))
 	args := make([]interface{}, len(batch)*5)
 
-	for i, vehicle := range batch {
+	for i, spec := range batch {
 		values[i] = "(?, ?, ?, ?, ?)"
-		args[i*5] = vehicle.adCategoryID
-		args[i*5+1] = vehicle.makeID
-		args[i*5+2] = vehicle.yearID
-		args[i*5+3] = vehicle.modelID
-		args[i*5+4] = vehicle.engineID
+		args[i*5] = spec.adCategoryID
+		args[i*5+1] = spec.makeID
+		args[i*5+2] = spec.yearID
+		args[i*5+3] = spec.modelID
+		args[i*5+4] = spec.engineID
 	}
 
-	query := fmt.Sprintf("INSERT OR IGNORE INTO Vehicle (ad_category_id, make_id, year_id, model_id, engine_id) VALUES %s", strings.Join(values, ","))
+	query := fmt.Sprintf("INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id) VALUES %s", strings.Join(values, ","))
 	_, err := tx.Exec(query, args...)
 	if err != nil {
-		log.Printf("Failed to insert Vehicle batch: %v", err)
+		log.Printf("Failed to insert Specification batch: %v", err)
 	}
 }
 
@@ -346,8 +346,8 @@ func joinStrings(ss []string) string {
 	return fmt.Sprintf("%s", ss)
 }
 
-// importVehicles loads vehicle data from a JSON file and imports it into the database
-func importVehicles(db *sql.DB, jsonFile string, categoryID int, makeParents []struct {
+// importSpecs loads spec data from a JSON file and imports it into the database
+func importSpecs(db *sql.DB, jsonFile string, categoryID int, makeParents []struct {
 	Make          string
 	ParentCompany string
 }, parentCompanyMap map[string]int) error {
@@ -370,7 +370,7 @@ func importVehicles(db *sql.DB, jsonFile string, categoryID int, makeParents []s
 		return err
 	}
 
-	// Import vehicles with the category
+	// Import specs with the category
 	for make, years := range mym {
 		// Find parent company ID for this make
 		var parentCompanyID *int
@@ -391,15 +391,15 @@ func importVehicles(db *sql.DB, jsonFile string, categoryID int, makeParents []s
 					modelID := getOrInsertWithCategory(db, "Model", "name", model, categoryID)
 					engineID := getOrInsertWithCategory(db, "Engine", "name", engine, categoryID)
 
-					// Insert vehicle
-					db.Exec(`INSERT OR IGNORE INTO Vehicle (ad_category_id, make_id, year_id, model_id, engine_id) VALUES (?, ?, ?, ?, ?)`,
+					// Insert spec
+					db.Exec(`INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id) VALUES (?, ?, ?, ?, ?)`,
 						categoryID, makeID, yearID, modelID, engineID)
 				}
 			}
 		}
 	}
 
-	fmt.Printf("Imported vehicles from %s\n", jsonFile)
+	fmt.Printf("Imported specs from %s\n", jsonFile)
 	return nil
 }
 
@@ -520,7 +520,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 			continue
 		}
 
-		// Get subcategory ID (NULL for whole vehicle ads, ID for parts ads)
+		// Get subcategory ID (NULL for whole spec ads, ID for parts ads)
 		var subcategoryID *int
 		if ad.Category != "" {
 			// This is a parts ad
@@ -549,7 +549,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 			}
 			subcategoryID = &subcatID
 		}
-		// For whole vehicle ads (ad.Category == ""), subcategoryID stays nil
+		// For whole spec ads (ad.Category == ""), subcategoryID stays nil
 
 		// Generate between 0 and 5 images per ad
 		numImages := rand.Intn(6)
@@ -563,35 +563,35 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 		}
 		adID, _ := res.LastInsertId()
 
-		// Link to vehicles (only if ad has years/engines fields)
+		// Link to specs (only if ad has years/engines fields)
 		if len(ad.Years) > 0 && len(ad.Engines) > 0 {
 			for _, year := range ad.Years {
 				for _, model := range ad.Models {
 					for _, engine := range ad.Engines {
-						// Query for vehicle with part_subcategory_id (may be NULL)
-						var vehicleID int
+						// Query for spec with part_subcategory_id (may be NULL)
+						var specID int
 						var query string
 						var args []interface{}
 						if subcategoryID != nil {
-							query = `SELECT v.id FROM Vehicle v 
-								LEFT JOIN Make m ON v.make_id=m.id
-								LEFT JOIN Year y ON v.year_id=y.id
-								LEFT JOIN Model mdl ON v.model_id=mdl.id
-								LEFT JOIN Engine e ON v.engine_id=e.id
-								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND v.ad_category_id=? AND v.part_subcategory_id=?`
+							query = `SELECT spec.id FROM Specification spec 
+								LEFT JOIN Make m ON spec.make_id=m.id
+								LEFT JOIN Year y ON spec.year_id=y.id
+								LEFT JOIN Model mdl ON spec.model_id=mdl.id
+								LEFT JOIN Engine e ON spec.engine_id=e.id
+								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND spec.ad_category_id=? AND spec.part_subcategory_id=?`
 							args = []interface{}{ad.Make, year, model, engine, categoryID, *subcategoryID}
 						} else {
-							query = `SELECT v.id FROM Vehicle v 
-								LEFT JOIN Make m ON v.make_id=m.id
-								LEFT JOIN Year y ON v.year_id=y.id
-								LEFT JOIN Model mdl ON v.model_id=mdl.id
-								LEFT JOIN Engine e ON v.engine_id=e.id
-								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND v.ad_category_id=? AND v.part_subcategory_id IS NULL`
+							query = `SELECT spec.id FROM Specification spec 
+								LEFT JOIN Make m ON spec.make_id=m.id
+								LEFT JOIN Year y ON spec.year_id=y.id
+								LEFT JOIN Model mdl ON spec.model_id=mdl.id
+								LEFT JOIN Engine e ON spec.engine_id=e.id
+								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND spec.ad_category_id=? AND spec.part_subcategory_id IS NULL`
 							args = []interface{}{ad.Make, year, model, engine, categoryID}
 						}
-						err := db.QueryRow(query, args...).Scan(&vehicleID)
+						err := db.QueryRow(query, args...).Scan(&specID)
 						if err != nil {
-							// Vehicle not found - need to create it
+							// Spec not found - need to create it
 							// First get the IDs for make, year, model, engine
 							var makeID, yearID, modelID, engineID int
 							err = db.QueryRow(`SELECT id FROM Make WHERE name=? AND ad_category_id=?`, ad.Make, categoryID).Scan(&makeID)
@@ -609,49 +609,46 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 								log.Printf("Failed to find model: %v", err)
 								continue
 							}
-							err = db.QueryRow(`SELECT id FROM Engine WHERE name=? AND ad_category_id=?`, engine, categoryID).Scan(&engineID)
-							if err != nil {
-								log.Printf("Failed to find engine: %v", err)
-								continue
-							}
+							// Use getOrInsertWithCategory to create engine if it doesn't exist
+							engineID = getOrInsertWithCategory(db, "Engine", "name", engine, categoryID)
 
-							// Insert vehicle with part_subcategory_id (may be NULL)
-							var vehicleRes sql.Result
+							// Insert spec with part_subcategory_id (may be NULL)
+							var specRes sql.Result
 							if subcategoryID != nil {
-								vehicleRes, err = db.Exec(`INSERT OR IGNORE INTO Vehicle (ad_category_id, make_id, year_id, model_id, engine_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, ?)`,
+								specRes, err = db.Exec(`INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, ?)`,
 									categoryID, makeID, yearID, modelID, engineID, *subcategoryID)
 							} else {
-								vehicleRes, err = db.Exec(`INSERT OR IGNORE INTO Vehicle (ad_category_id, make_id, year_id, model_id, engine_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, NULL)`,
+								specRes, err = db.Exec(`INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, NULL)`,
 									categoryID, makeID, yearID, modelID, engineID)
 							}
 							if err != nil {
-								log.Printf("Failed to insert vehicle: %v", err)
+								log.Printf("Failed to insert spec: %v", err)
 								continue
 							}
-							vehicleID64, _ := vehicleRes.LastInsertId()
-							if vehicleID64 == 0 {
-								// Vehicle already exists, fetch it
+							specID64, _ := specRes.LastInsertId()
+							if specID64 == 0 {
+								// Spec already exists, fetch it
 								var lookupQuery string
 								var lookupArgs []interface{}
 								if subcategoryID != nil {
-									lookupQuery = `SELECT id FROM Vehicle WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_subcategory_id=?`
+									lookupQuery = `SELECT id FROM Specification WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_subcategory_id=?`
 									lookupArgs = []interface{}{categoryID, makeID, yearID, modelID, engineID, *subcategoryID}
 								} else {
-									lookupQuery = `SELECT id FROM Vehicle WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_subcategory_id IS NULL`
+									lookupQuery = `SELECT id FROM Specification WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_subcategory_id IS NULL`
 									lookupArgs = []interface{}{categoryID, makeID, yearID, modelID, engineID}
 								}
-								err = db.QueryRow(lookupQuery, lookupArgs...).Scan(&vehicleID)
+								err = db.QueryRow(lookupQuery, lookupArgs...).Scan(&specID)
 								if err != nil {
-									log.Printf("Failed to find created vehicle: %v", err)
+									log.Printf("Failed to find created spec: %v", err)
 									continue
 								}
 							} else {
-								vehicleID = int(vehicleID64)
+								specID = int(specID64)
 							}
 						}
 
-						// Insert AdVehicle relationship
-						db.Exec(`INSERT OR IGNORE INTO AdVehicle (ad_id, vehicle_id) VALUES (?, ?)`, adID, vehicleID)
+						// Insert AdSpecification relationship
+						db.Exec(`INSERT OR IGNORE INTO AdSpecification (ad_id, specification_id) VALUES (?, ?)`, adID, specID)
 					}
 				}
 			}

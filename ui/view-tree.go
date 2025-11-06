@@ -8,7 +8,7 @@ import (
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 
-	"github.com/parts-pile/site/vehicle"
+	"github.com/parts-pile/site/spec"
 )
 
 // encodeAdIDs encodes a slice of integers to a base64 string
@@ -49,7 +49,7 @@ func TreeViewResults(adIDs []int, adCat int, userPrompt string, userID int, csrf
 
 // treeBrowseMakes returns the initial tree view for browsing
 func treeBrowseMakes(adCat int) g.Node {
-	makes, err := vehicle.GetAdMakes(adCat)
+	makes, err := spec.GetAdMakes(adCat)
 	if err != nil {
 		log.Printf("[tree-view] Error getting makes: %v", err)
 		return Div(Class("text-red-500"), g.Text("Error loading makes"))
@@ -60,7 +60,7 @@ func treeBrowseMakes(adCat int) g.Node {
 
 // treeSearchMakes returns the initial tree view for search results
 func treeSearchMakes(adIDs []int) g.Node {
-	makes, err := vehicle.GetAdMakesForAdIDs(adIDs)
+	makes, err := spec.GetAdMakesForAdIDs(adIDs)
 	if err != nil {
 		log.Printf("[tree-search] Error getting makes for ad IDs: %v", err)
 		return Div(Class("text-red-500"), g.Text("Error loading makes"))

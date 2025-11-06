@@ -13,7 +13,7 @@ import (
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
-	"github.com/parts-pile/site/vehicle"
+	"github.com/parts-pile/site/spec"
 )
 
 // HandleNewAd shows the new ad form
@@ -21,7 +21,7 @@ func HandleNewAd(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
 	adCat := cookie.GetAdCategory(c)
-	makes := vehicle.GetMakes(adCat)
+	makes := spec.GetMakes(adCat)
 	partCategories := part.GetCategories(adCat)
 	maxImagesPerAd := config.MaxImagesPerAd
 	csrfToken := local.GetCSRFToken(c)
@@ -46,11 +46,11 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 	}
 
 	// Pre-fetch all the dropdown/checkbox data needed for the form
-	makes := vehicle.GetMakes(adCat)
+	makes := spec.GetMakes(adCat)
 	categoryNames := part.GetCategories(adCat)
-	years := vehicle.GetYears(adCat, adDetail.Make)
-	models := vehicle.GetModels(adCat, adDetail.Make, adDetail.Years)
-	engines := vehicle.GetEngines(adCat, adDetail.Make, adDetail.Years, adDetail.Models)
+	years := spec.GetYears(adCat, adDetail.Make)
+	models := spec.GetModels(adCat, adDetail.Make, adDetail.Years)
+	engines := spec.GetEngines(adCat, adDetail.Make, adDetail.Years, adDetail.Models)
 	subcategoryNames := part.GetSubCategories(adCat, adDetail.PartCategory)
 	csrfToken := local.GetCSRFToken(c)
 
@@ -110,7 +110,7 @@ func HandleYears(c *fiber.Ctx) error {
 		return render(c, ui.YearsSelector([]string{}))
 	}
 
-	years := vehicle.GetYears(adCat, makeName)
+	years := spec.GetYears(adCat, makeName)
 	return render(c, ui.YearsSelector(years))
 }
 
@@ -133,7 +133,7 @@ func HandleModels(c *fiber.Ctx) error {
 		return render(c, ui.ModelsSelector([]string{}))
 	}
 
-	models := vehicle.GetModels(adCat, makeName, years)
+	models := spec.GetModels(adCat, makeName, years)
 	if len(models) == 0 {
 		// Return empty message when no models are available for all selected years
 		return render(c, ui.ModelsDivEmpty())
@@ -166,7 +166,7 @@ func HandleEngines(c *fiber.Ctx) error {
 		return render(c, ui.EnginesSelector([]string{}))
 	}
 
-	engines := vehicle.GetEngines(adCat, makeName, years, models)
+	engines := spec.GetEngines(adCat, makeName, years, models)
 	if len(engines) == 0 {
 		// Return empty message when no engines are available for all selected year-model combinations
 		return render(c, ui.EnginesDivEmpty())

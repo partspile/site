@@ -1,4 +1,4 @@
-package vehicle
+package spec
 
 import (
 	"crypto/sha256"
@@ -18,31 +18,31 @@ type ParentCompanyInfo struct {
 	Country string
 }
 
-var vehicleCache *cache.Cache[[]string]
+var specCache *cache.Cache[[]string]
 
-func InitVehicleCache() error {
+func InitSpecCache() error {
 	var err error
 
-	vehicleCache, err = cache.New(func(value []string) int64 {
+	specCache, err = cache.New(func(value []string) int64 {
 		return int64(len(value) * 30)
-	}, "Vehicle Data Cache")
+	}, "Spec Data Cache")
 	if err != nil {
 		return err
 	}
 
-	log.Printf("[vehicle-cache] Cache initialized successfully")
+	log.Printf("[spec-cache] Cache initialized successfully")
 
 	return nil
 }
 
 // ============================================================================
-// CACHED FUNCTIONS FOR STATIC VEHICLE DATA
+// CACHED FUNCTIONS FOR STATIC SPEC DATA
 // ============================================================================
 
 func GetMakes(adCat int) []string {
 	cacheKey := fmt.Sprintf("makes:%d", adCat)
 
-	if cached, found := vehicleCache.Get(cacheKey); found {
+	if cached, found := specCache.Get(cacheKey); found {
 		return cached
 	}
 
@@ -53,14 +53,14 @@ func GetMakes(adCat int) []string {
 		return nil
 	}
 
-	vehicleCache.Set(cacheKey, makes, int64(len(makes)*30))
+	specCache.Set(cacheKey, makes, int64(len(makes)*30))
 	return makes
 }
 
 func GetYears(adCat int, makeName string) []string {
 	cacheKey := fmt.Sprintf("years:%d:%s", adCat, makeName)
 
-	if cached, found := vehicleCache.Get(cacheKey); found {
+	if cached, found := specCache.Get(cacheKey); found {
 		return cached
 	}
 
@@ -75,7 +75,7 @@ func GetYears(adCat int, makeName string) []string {
 		years = append(years, strconv.Itoa(year))
 	}
 
-	vehicleCache.Set(cacheKey, years, int64(len(years)*5))
+	specCache.Set(cacheKey, years, int64(len(years)*5))
 	return years
 }
 
@@ -87,7 +87,7 @@ func GetModels(adCat int, makeName string, years []string) []string {
 	// Create cache key with years as provided
 	cacheKey := fmt.Sprintf("models:%d:%s:%s", adCat, makeName, strings.Join(years, ","))
 
-	if cached, found := vehicleCache.Get(cacheKey); found {
+	if cached, found := specCache.Get(cacheKey); found {
 		return cached
 	}
 
@@ -98,7 +98,7 @@ func GetModels(adCat int, makeName string, years []string) []string {
 		return nil
 	}
 
-	vehicleCache.Set(cacheKey, models, int64(len(models)*20))
+	specCache.Set(cacheKey, models, int64(len(models)*20))
 	return models
 }
 
@@ -110,7 +110,7 @@ func GetEngines(adCat int, makeName string, years []string, models []string) []s
 	// Create cache key: engines:BMW:2020,2021:M3,X5
 	cacheKey := fmt.Sprintf("engines:%d:%s:%s:%s", adCat, makeName, strings.Join(years, ","), strings.Join(models, ","))
 
-	if cached, found := vehicleCache.Get(cacheKey); found {
+	if cached, found := specCache.Get(cacheKey); found {
 		return cached
 	}
 
@@ -121,7 +121,7 @@ func GetEngines(adCat int, makeName string, years []string, models []string) []s
 		return nil
 	}
 
-	vehicleCache.Set(cacheKey, engines, int64(len(engines)*25))
+	specCache.Set(cacheKey, engines, int64(len(engines)*25))
 	return engines
 }
 
@@ -138,9 +138,9 @@ func buildMakesQuery(adCat int) (string, []interface{}) {
 
 // buildYearsQuery builds the SQL query for getting years for a specific make and category
 func buildYearsQuery(adCat int, makeName string) (string, []interface{}) {
-	query := `SELECT DISTINCT Year.year FROM Vehicle
-	JOIN Make ON Vehicle.make_id = Make.id
-	JOIN Year ON Vehicle.year_id = Year.id
+	query := `SELECT DISTINCT Year.year FROM Specification spec
+	JOIN Make ON spec.make_id = Make.id
+	JOIN Year ON spec.year_id = Year.id
 	WHERE Make.name = ? AND Make.ad_category_id = ? AND Year.ad_category_id = ?
 	ORDER BY Year.year`
 	args := []interface{}{makeName, adCat, adCat}
@@ -153,18 +153,18 @@ func buildModelsQuery(adCat int, makeName string, years []string) (string, []int
 	// Build a query that finds models present in every selected year
 	query := `SELECT DISTINCT Model.name FROM Model
 	WHERE Model.id IN (
-		SELECT Vehicle.model_id FROM Vehicle
-		JOIN Make ON Vehicle.make_id = Make.id
-		JOIN Year ON Vehicle.year_id = Year.id
+		SELECT spec.model_id FROM Specification spec
+		JOIN Make ON spec.make_id = Make.id
+		JOIN Year ON spec.year_id = Year.id
 		WHERE Make.name = ? AND Year.year = ? AND Make.ad_category_id = ? AND Year.ad_category_id = ? AND Model.ad_category_id = ?
 	)`
 
 	// Add additional year conditions for intersection
 	for i := 1; i < len(years); i++ {
 		query += ` AND Model.id IN (
-			SELECT Vehicle.model_id FROM Vehicle
-			JOIN Make ON Vehicle.make_id = Make.id
-			JOIN Year ON Vehicle.year_id = Year.id
+			SELECT spec.model_id FROM Specification spec
+			JOIN Make ON spec.make_id = Make.id
+			JOIN Year ON spec.year_id = Year.id
 			WHERE Make.name = ? AND Year.year = ? AND Make.ad_category_id = ? AND Year.ad_category_id = ? AND Model.ad_category_id = ?
 		)`
 	}
@@ -194,10 +194,10 @@ func buildEnginesQuery(adCat int, makeName string, years []string, models []stri
 
 	query := `SELECT DISTINCT Engine.name FROM Engine
 	WHERE Engine.id IN (
-		SELECT Vehicle.engine_id FROM Vehicle
-		JOIN Make ON Vehicle.make_id = Make.id
-		JOIN Model ON Vehicle.model_id = Model.id
-		JOIN Year ON Vehicle.year_id = Year.id
+		SELECT spec.engine_id FROM Specification spec
+		JOIN Make ON spec.make_id = Make.id
+		JOIN Model ON spec.model_id = Model.id
+		JOIN Year ON spec.year_id = Year.id
 		WHERE Make.name = ? AND Year.year = ? AND Model.name = ? AND Make.ad_category_id = ? AND Year.ad_category_id = ? AND Model.ad_category_id = ? AND Engine.ad_category_id = ?
 	)`
 
@@ -208,10 +208,10 @@ func buildEnginesQuery(adCat int, makeName string, years []string, models []stri
 		for j := 0; j < len(models); j++ {
 			if combinationCount > 0 {
 				query += ` AND Engine.id IN (
-					SELECT Vehicle.engine_id FROM Vehicle
-					JOIN Make ON Vehicle.make_id = Make.id
-					JOIN Model ON Vehicle.model_id = Model.id
-					JOIN Year ON Vehicle.year_id = Year.id
+					SELECT spec.engine_id FROM Specification spec
+					JOIN Make ON spec.make_id = Make.id
+					JOIN Model ON spec.model_id = Model.id
+					JOIN Year ON spec.year_id = Year.id
 					WHERE Make.name = ? AND Year.year = ? AND Model.name = ? AND Make.ad_category_id = ? AND Year.ad_category_id = ? AND Model.ad_category_id = ? AND Engine.ad_category_id = ?
 				)`
 			}
@@ -248,7 +248,7 @@ func buildEnginesQuery(adCat int, makeName string, years []string, models []stri
 func GetAdMakes(adCat int) ([]string, error) {
 	cacheKey := fmt.Sprintf("ad:makes:%d", adCat)
 
-	if cached, found := vehicleCache.Get(cacheKey); found {
+	if cached, found := specCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
@@ -258,7 +258,7 @@ func GetAdMakes(adCat int) ([]string, error) {
 		return nil, err
 	}
 
-	vehicleCache.Set(cacheKey, makes, int64(len(makes)*50))
+	specCache.Set(cacheKey, makes, int64(len(makes)*50))
 	return makes, nil
 }
 
@@ -266,7 +266,7 @@ func GetAdMakes(adCat int) ([]string, error) {
 func GetAdYears(adCat int, makeName string) ([]string, error) {
 	cacheKey := fmt.Sprintf("ad:years:%d:%s", adCat, makeName)
 
-	if cached, found := vehicleCache.Get(cacheKey); found {
+	if cached, found := specCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
@@ -276,7 +276,7 @@ func GetAdYears(adCat int, makeName string) ([]string, error) {
 		return nil, err
 	}
 
-	vehicleCache.Set(cacheKey, years, int64(len(years)*10))
+	specCache.Set(cacheKey, years, int64(len(years)*10))
 	return years, nil
 }
 
@@ -284,7 +284,7 @@ func GetAdYears(adCat int, makeName string) ([]string, error) {
 func GetAdModels(adCat int, makeName, year string) ([]string, error) {
 	cacheKey := fmt.Sprintf("ad:models:%d:%s:%s", adCat, makeName, year)
 
-	if cached, found := vehicleCache.Get(cacheKey); found {
+	if cached, found := specCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
@@ -294,7 +294,7 @@ func GetAdModels(adCat int, makeName, year string) ([]string, error) {
 		return nil, err
 	}
 
-	vehicleCache.Set(cacheKey, models, int64(len(models)*30))
+	specCache.Set(cacheKey, models, int64(len(models)*30))
 	return models, nil
 }
 
@@ -302,7 +302,7 @@ func GetAdModels(adCat int, makeName, year string) ([]string, error) {
 func GetAdEngines(adCat int, makeName, year, model string) ([]string, error) {
 	cacheKey := fmt.Sprintf("ad:engines:%d:%s:%s:%s", adCat, makeName, year, model)
 
-	if cached, found := vehicleCache.Get(cacheKey); found {
+	if cached, found := specCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
@@ -312,7 +312,7 @@ func GetAdEngines(adCat int, makeName, year, model string) ([]string, error) {
 		return nil, err
 	}
 
-	vehicleCache.Set(cacheKey, engines, int64(len(engines)*25))
+	specCache.Set(cacheKey, engines, int64(len(engines)*25))
 	return engines, nil
 }
 
@@ -355,7 +355,7 @@ func GetAdMakesForAdIDs(adIDs []int) ([]string, error) {
 	cacheKey := genIDsKey(adIDs, "search:makes")
 
 	// Check cache first
-	makes, found := vehicleCache.Get(cacheKey)
+	makes, found := specCache.Get(cacheKey)
 	if found {
 		log.Printf("[search-cache] Cache hit for makes: %s", cacheKey)
 		return makes, nil
@@ -372,9 +372,9 @@ func GetAdMakesForAdIDs(adIDs []int) ([]string, error) {
 	query := fmt.Sprintf(`
 		SELECT DISTINCT m.name
 		FROM Make m
-		JOIN Vehicle c ON m.id = c.make_id
-		JOIN AdVehicle ac ON c.id = ac.vehicle_id
-		WHERE ac.ad_id IN (%s)
+		JOIN Specification spec ON m.id = spec.make_id
+		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
+		WHERE ad_spec.ad_id IN (%s)
 		ORDER BY m.name
 	`, strings.Join(placeholders, ","))
 
@@ -389,7 +389,7 @@ func GetAdMakesForAdIDs(adIDs []int) ([]string, error) {
 	}
 
 	// Cache the result
-	vehicleCache.Set(cacheKey, makes, int64(len(makes)*40))
+	specCache.Set(cacheKey, makes, int64(len(makes)*40))
 	log.Printf("[search-cache] Cached %d makes for key: %s", len(makes), cacheKey)
 
 	return makes, nil
@@ -407,7 +407,7 @@ func GetAdYearsForAdIDs(adIDs []int, makeName string) ([]string, error) {
 	cacheKey := genIDsKey(adIDs, fmt.Sprintf("search:years:%s", makeName))
 
 	// Check cache first
-	if cached, found := vehicleCache.Get(cacheKey); found {
+	if cached, found := specCache.Get(cacheKey); found {
 		log.Printf("[search-cache] Cache hit for years: %s", cacheKey)
 		return cached, nil
 	}
@@ -423,10 +423,10 @@ func GetAdYearsForAdIDs(adIDs []int, makeName string) ([]string, error) {
 	query := fmt.Sprintf(`
 		SELECT DISTINCT y.year
 		FROM Year y
-		JOIN Vehicle c ON y.id = c.year_id
-		JOIN Make m ON c.make_id = m.id
-		JOIN AdVehicle ac ON c.id = ac.vehicle_id
-		WHERE m.name = ? AND ac.ad_id IN (%s)
+		JOIN Specification spec ON y.id = spec.year_id
+		JOIN Make m ON spec.make_id = m.id
+		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
+		WHERE m.name = ? AND ad_spec.ad_id IN (%s)
 		ORDER BY y.year DESC
 	`, strings.Join(placeholders, ","))
 
@@ -448,7 +448,7 @@ func GetAdYearsForAdIDs(adIDs []int, makeName string) ([]string, error) {
 	}
 
 	// Cache the result
-	vehicleCache.Set(cacheKey, years, int64(len(years)*15))
+	specCache.Set(cacheKey, years, int64(len(years)*15))
 	log.Printf("[search-cache] Cached %d years for key: %s", len(years), cacheKey)
 
 	return years, nil
@@ -467,7 +467,7 @@ func GetAdModelsForAdIDs(adIDs []int, makeName, year string) ([]string, error) {
 	cacheKey := genIDsKey(adIDs, fmt.Sprintf("search:models:%s:%s", makeName, year))
 
 	// Check cache first
-	if cached, found := vehicleCache.Get(cacheKey); found {
+	if cached, found := specCache.Get(cacheKey); found {
 		log.Printf("[search-cache] Cache hit for models: %s", cacheKey)
 		return cached, nil
 	}
@@ -483,11 +483,11 @@ func GetAdModelsForAdIDs(adIDs []int, makeName, year string) ([]string, error) {
 	query := fmt.Sprintf(`
 		SELECT DISTINCT mo.name
 		FROM Model mo
-		JOIN Vehicle c ON mo.id = c.model_id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Year y ON c.year_id = y.id
-		JOIN AdVehicle ac ON c.id = ac.vehicle_id
-		WHERE m.name = ? AND y.year = ? AND ac.ad_id IN (%s)
+		JOIN Specification spec ON mo.id = spec.model_id
+		JOIN Make m ON spec.make_id = m.id
+		JOIN Year y ON spec.year_id = y.id
+		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
+		WHERE m.name = ? AND y.year = ? AND ad_spec.ad_id IN (%s)
 		ORDER BY mo.name
 	`, strings.Join(placeholders, ","))
 
@@ -504,7 +504,7 @@ func GetAdModelsForAdIDs(adIDs []int, makeName, year string) ([]string, error) {
 	}
 
 	// Cache the result
-	vehicleCache.Set(cacheKey, models, int64(len(models)*25))
+	specCache.Set(cacheKey, models, int64(len(models)*25))
 	log.Printf("[search-cache] Cached %d models for key: %s", len(models), cacheKey)
 
 	return models, nil
@@ -524,7 +524,7 @@ func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, 
 	cacheKey := genIDsKey(adIDs, fmt.Sprintf("search:engines:%s:%s:%s", makeName, year, model))
 
 	// Check cache first
-	if cached, found := vehicleCache.Get(cacheKey); found {
+	if cached, found := specCache.Get(cacheKey); found {
 		log.Printf("[search-cache] Cache hit for engines: %s", cacheKey)
 		return cached, nil
 	}
@@ -540,12 +540,12 @@ func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, 
 	query := fmt.Sprintf(`
 		SELECT DISTINCT e.name
 		FROM Engine e
-		JOIN Vehicle c ON e.id = c.engine_id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Year y ON c.year_id = y.id
-		JOIN Model mo ON c.model_id = mo.id
-		JOIN AdVehicle ac ON c.id = ac.vehicle_id
-		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND ac.ad_id IN (%s)
+		JOIN Specification spec ON e.id = spec.engine_id
+		JOIN Make m ON spec.make_id = m.id
+		JOIN Year y ON spec.year_id = y.id
+		JOIN Model mo ON spec.model_id = mo.id
+		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
+		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND ad_spec.ad_id IN (%s)
 		ORDER BY e.name
 	`, strings.Join(placeholders, ","))
 
@@ -562,7 +562,7 @@ func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, 
 	}
 
 	// Cache the result
-	vehicleCache.Set(cacheKey, engines, int64(len(engines)*30))
+	specCache.Set(cacheKey, engines, int64(len(engines)*30))
 	log.Printf("[search-cache] Cached %d engines for key: %s", len(engines), cacheKey)
 
 	return engines, nil
@@ -593,14 +593,14 @@ func GetParentCompanyInfoForMake(makeName string) (*ParentCompanyInfo, error) {
 
 // GetCacheStats returns cache statistics for admin monitoring
 func GetCacheStats() map[string]any {
-	return vehicleCache.Stats()
+	return specCache.Stats()
 }
 
-// ClearCache clears all items from the vehicle cache and returns updated stats
+// ClearCache clears all items from the spec cache and returns updated stats
 func ClearCache() map[string]any {
-	vehicleCache.Clear()
-	log.Printf("[vehicle-cache] Cache cleared")
-	return vehicleCache.Stats()
+	specCache.Clear()
+	log.Printf("[spec-cache] Cache cleared")
+	return specCache.Stats()
 }
 
 // ============================================================================
@@ -612,9 +612,9 @@ func getMakesForAll(adCat int) ([]string, error) {
 	query := `
 		SELECT DISTINCT m.name
 		FROM Make m
-		JOIN Vehicle c ON m.id = c.make_id
-		JOIN AdVehicle ac ON c.id = ac.vehicle_id
-		JOIN Ad a ON ac.ad_id = a.id
+		JOIN Specification spec ON m.id = spec.make_id
+		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
+		JOIN Ad a ON ad_spec.ad_id = a.id
 		WHERE a.ad_category_id = ?
 		ORDER BY m.name
 	`
@@ -629,10 +629,10 @@ func getYearsForAll(adCat int, makeName string) ([]string, error) {
 	query := `
 		SELECT DISTINCT y.year
 		FROM Year y
-		JOIN Vehicle c ON y.id = c.year_id
-		JOIN Make m ON c.make_id = m.id
-		JOIN AdVehicle ac ON c.id = ac.vehicle_id
-		JOIN Ad a ON ac.ad_id = a.id
+		JOIN Specification spec ON y.id = spec.year_id
+		JOIN Make m ON spec.make_id = m.id
+		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
+		JOIN Ad a ON ad_spec.ad_id = a.id
 		WHERE m.name = ? AND a.ad_category_id = ?
 		ORDER BY y.year DESC
 	`
@@ -656,11 +656,11 @@ func getModelsForAll(adCat int, makeName, year string) ([]string, error) {
 	query := `
 		SELECT DISTINCT mo.name
 		FROM Model mo
-		JOIN Vehicle c ON mo.id = c.model_id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Year y ON c.year_id = y.id
-		JOIN AdVehicle ac ON c.id = ac.vehicle_id
-		JOIN Ad a ON ac.ad_id = a.id
+		JOIN Specification spec ON mo.id = spec.model_id
+		JOIN Make m ON spec.make_id = m.id
+		JOIN Year y ON spec.year_id = y.id
+		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
+		JOIN Ad a ON ad_spec.ad_id = a.id
 		WHERE m.name = ? AND y.year = ? AND a.ad_category_id = ?
 		ORDER BY mo.name
 	`
@@ -677,12 +677,12 @@ func getEnginesForAll(adCat int, makeName, year, model string) ([]string, error)
 	query := `
 		SELECT DISTINCT e.name
 		FROM Engine e
-		JOIN Vehicle c ON e.id = c.engine_id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Year y ON c.year_id = y.id
-		JOIN Model mo ON c.model_id = mo.id
-		JOIN AdVehicle ac ON c.id = ac.vehicle_id
-		JOIN Ad a ON ac.ad_id = a.id
+		JOIN Specification spec ON e.id = spec.engine_id
+		JOIN Make m ON spec.make_id = m.id
+		JOIN Year y ON spec.year_id = y.id
+		JOIN Model mo ON spec.model_id = mo.id
+		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
+		JOIN Ad a ON ad_spec.ad_id = a.id
 		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND a.ad_category_id = ?
 		ORDER BY e.name
 	`

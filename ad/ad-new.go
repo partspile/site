@@ -55,8 +55,8 @@ func AddAd(ad AdDetail) (int, error) {
 
 	ad.ID = int(adID)
 
-	if err := addAdVehicleAssociations(tx, ad); err != nil {
-		return 0, fmt.Errorf("failed to add vehicle associations: %w", err)
+	if err := addAdSpecAssociations(tx, ad); err != nil {
+		return 0, fmt.Errorf("failed to add spec associations: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -66,9 +66,9 @@ func AddAd(ad AdDetail) (int, error) {
 	return int(adID), nil
 }
 
-// addAdVehicleAssociations creates the normalized vehicle associations for an ad
-func addAdVehicleAssociations(tx *sql.Tx, ad AdDetail) error {
-	// Handle different vehicle schemas based on ad category
+// addAdSpecAssociations creates the normalized spec associations for an ad
+func addAdSpecAssociations(tx *sql.Tx, ad AdDetail) error {
+	// Handle different spec schemas based on ad category
 	switch ad.AdCategoryID {
 	case AdCategoryCar, AdCategoryCarPart:
 		return addCarAssociations(tx, ad)
@@ -83,37 +83,37 @@ func addAdVehicleAssociations(tx *sql.Tx, ad AdDetail) error {
 	}
 }
 
-// findVehicle finds a vehicle ID from the unified Vehicle table
-func findVehicle(tx *sql.Tx, makeName, yearStr, modelName, engineName string, adCategoryID int, partSubcategoryID *int) (int, error) {
-	// Use the unified Vehicle table
+// findSpec finds a spec ID from the unified Specification table
+func findSpec(tx *sql.Tx, makeName, yearStr, modelName, engineName string, adCategoryID int, partSubcategoryID *int) (int, error) {
+	// Use the unified Specification table
 	var query string
-	var vehicleID int
+	var specID int
 	var err error
 
 	// Build query with appropriate part_subcategory_id check
 	if partSubcategoryID != nil {
 		query = `
-			SELECT v.id FROM Vehicle v
-			LEFT JOIN Make m ON v.make_id = m.id
-			LEFT JOIN Year y ON v.year_id = y.id
-			LEFT JOIN Model mo ON v.model_id = mo.id
-			LEFT JOIN Engine e ON v.engine_id = e.id
-			WHERE v.ad_category_id = ?
+			SELECT spec.id FROM Specification spec
+			LEFT JOIN Make m ON spec.make_id = m.id
+			LEFT JOIN Year y ON spec.year_id = y.id
+			LEFT JOIN Model mo ON spec.model_id = mo.id
+			LEFT JOIN Engine e ON spec.engine_id = e.id
+			WHERE spec.ad_category_id = ?
 			AND (? IS NULL OR m.name = ?) AND (? IS NULL OR mo.name = ?)
 			AND (? IS NULL OR y.year = ?) AND (? IS NULL OR e.name = ?)
-			AND v.part_subcategory_id = ?
+			AND spec.part_subcategory_id = ?
 		`
 	} else {
 		query = `
-			SELECT v.id FROM Vehicle v
-			LEFT JOIN Make m ON v.make_id = m.id
-			LEFT JOIN Year y ON v.year_id = y.id
-			LEFT JOIN Model mo ON v.model_id = mo.id
-			LEFT JOIN Engine e ON v.engine_id = e.id
-			WHERE v.ad_category_id = ?
+			SELECT spec.id FROM Specification spec
+			LEFT JOIN Make m ON spec.make_id = m.id
+			LEFT JOIN Year y ON spec.year_id = y.id
+			LEFT JOIN Model mo ON spec.model_id = mo.id
+			LEFT JOIN Engine e ON spec.engine_id = e.id
+			WHERE spec.ad_category_id = ?
 			AND (? IS NULL OR m.name = ?) AND (? IS NULL OR mo.name = ?)
 			AND (? IS NULL OR y.year = ?) AND (? IS NULL OR e.name = ?)
-			AND v.part_subcategory_id IS NULL
+			AND spec.part_subcategory_id IS NULL
 		`
 	}
 
@@ -136,9 +136,9 @@ func findVehicle(tx *sql.Tx, makeName, yearStr, modelName, engineName string, ad
 	}
 
 	if partSubcategoryID != nil {
-		err = tx.QueryRow(query, adCategoryID, makeArg, makeArg, modelArg, modelArg, yearArg, yearArg, engineArg, engineArg, *partSubcategoryID).Scan(&vehicleID)
+		err = tx.QueryRow(query, adCategoryID, makeArg, makeArg, modelArg, modelArg, yearArg, yearArg, engineArg, engineArg, *partSubcategoryID).Scan(&specID)
 	} else {
-		err = tx.QueryRow(query, adCategoryID, makeArg, makeArg, modelArg, modelArg, yearArg, yearArg, engineArg, engineArg).Scan(&vehicleID)
+		err = tx.QueryRow(query, adCategoryID, makeArg, makeArg, modelArg, modelArg, yearArg, yearArg, engineArg, engineArg).Scan(&specID)
 	}
 
 	if err != nil {
@@ -147,12 +147,12 @@ func findVehicle(tx *sql.Tx, makeName, yearStr, modelName, engineName string, ad
 			if partSubcategoryID != nil {
 				partSubcatStr = fmt.Sprintf("%d", *partSubcategoryID)
 			}
-			return 0, fmt.Errorf("vehicle not found for make=%s, year=%s, model=%s, engine=%s, part_subcategory_id=%s",
+			return 0, fmt.Errorf("spec not found for make=%s, year=%s, model=%s, engine=%s, part_subcategory_id=%s",
 				makeName, yearStr, modelName, engineName, partSubcatStr)
 		}
-		return 0, fmt.Errorf("error looking up vehicle: %w", err)
+		return 0, fmt.Errorf("error looking up spec: %w", err)
 	}
-	return vehicleID, nil
+	return specID, nil
 }
 
 // addCarAssociations handles Cars: make, year, model, engine
@@ -168,11 +168,11 @@ func addCarAssociations(tx *sql.Tx, ad AdDetail) error {
 	for _, yearStr := range ad.Years {
 		for _, modelName := range ad.Models {
 			for _, engineName := range ad.Engines {
-				vehicleID, err := findVehicle(tx, ad.Make, yearStr, modelName, engineName, ad.AdCategoryID, partSubcatID)
+				specID, err := findSpec(tx, ad.Make, yearStr, modelName, engineName, ad.AdCategoryID, partSubcatID)
 				if err != nil {
 					return err
 				}
-				if err := insertVehicleAssociation(tx, ad.ID, vehicleID); err != nil {
+				if err := insertSpecAssociation(tx, ad.ID, specID); err != nil {
 					return err
 				}
 			}
@@ -194,11 +194,11 @@ func addMotorcycleAssociations(tx *sql.Tx, ad AdDetail) error {
 	for _, yearStr := range ad.Years {
 		for _, modelName := range ad.Models {
 			for _, engineName := range ad.Engines {
-				vehicleID, err := findVehicle(tx, ad.Make, yearStr, modelName, engineName, ad.AdCategoryID, partSubcatID)
+				specID, err := findSpec(tx, ad.Make, yearStr, modelName, engineName, ad.AdCategoryID, partSubcatID)
 				if err != nil {
 					return err
 				}
-				if err := insertVehicleAssociation(tx, ad.ID, vehicleID); err != nil {
+				if err := insertSpecAssociation(tx, ad.ID, specID); err != nil {
 					return err
 				}
 			}
@@ -219,11 +219,11 @@ func addAgAssociations(tx *sql.Tx, ad AdDetail) error {
 	}
 	for _, yearStr := range ad.Years {
 		for _, modelName := range ad.Models {
-			vehicleID, err := findVehicle(tx, ad.Make, yearStr, modelName, "", ad.AdCategoryID, partSubcatID)
+			specID, err := findSpec(tx, ad.Make, yearStr, modelName, "", ad.AdCategoryID, partSubcatID)
 			if err != nil {
 				return err
 			}
-			if err := insertVehicleAssociation(tx, ad.ID, vehicleID); err != nil {
+			if err := insertSpecAssociation(tx, ad.ID, specID); err != nil {
 				return err
 			}
 		}
@@ -242,23 +242,23 @@ func addBicycleAssociations(tx *sql.Tx, ad AdDetail) error {
 		}
 	}
 	for _, modelName := range ad.Models {
-		vehicleID, err := findVehicle(tx, ad.Make, "", modelName, "", ad.AdCategoryID, partSubcatID)
+		specID, err := findSpec(tx, ad.Make, "", modelName, "", ad.AdCategoryID, partSubcatID)
 		if err != nil {
 			return err
 		}
-		if err := insertVehicleAssociation(tx, ad.ID, vehicleID); err != nil {
+		if err := insertSpecAssociation(tx, ad.ID, specID); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-// insertVehicleAssociation inserts the ad-vehicle association record
-func insertVehicleAssociation(tx *sql.Tx, adID int, vehicleID int) error {
-	_, err := tx.Exec("INSERT OR IGNORE INTO AdVehicle (ad_id, vehicle_id) VALUES (?, ?)",
-		adID, vehicleID)
+// insertSpecAssociation inserts the ad-spec association record
+func insertSpecAssociation(tx *sql.Tx, adID int, specID int) error {
+	_, err := tx.Exec("INSERT OR IGNORE INTO AdSpecification (ad_id, specification_id) VALUES (?, ?)",
+		adID, specID)
 	if err != nil {
-		return fmt.Errorf("failed to insert AdVehicle association: %w", err)
+		return fmt.Errorf("failed to insert AdSpecification association: %w", err)
 	}
 	return nil
 }

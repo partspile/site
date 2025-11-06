@@ -132,11 +132,11 @@ func buildAdCategoriesQuery(adCat int, makeName, year, model, engine string) (st
 		SELECT DISTINCT pc.name
 		FROM PartCategory pc
 		JOIN PartSubCategory psc ON pc.id = psc.part_category_id
-		JOIN Vehicle c ON c.part_subcategory_id = psc.id
-		JOIN AdVehicle ac ON c.id = ac.vehicle_id
-		JOIN Ad a ON ac.ad_id = a.id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Model mo ON c.model_id = mo.id
+		JOIN Specification spec ON spec.part_subcategory_id = psc.id
+		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
+		JOIN Ad a ON ad_spec.ad_id = a.id
+		JOIN Make m ON spec.make_id = m.id
+		JOIN Model mo ON spec.model_id = mo.id
 	`
 
 	// Add conditional JOINs and WHERE clauses based on ad category
@@ -144,8 +144,8 @@ func buildAdCategoriesQuery(adCat int, makeName, year, model, engine string) (st
 	case ad.AdCategoryCar, ad.AdCategoryCarPart, ad.AdCategoryMotorcycle, ad.AdCategoryMotorcyclePart:
 		// Cars and Motorcycles: make, year, model, engine
 		query = baseQuery + `
-			JOIN Year y ON c.year_id = y.id
-			JOIN Engine e ON c.engine_id = e.id
+			JOIN Year y ON spec.year_id = y.id
+			JOIN Engine e ON spec.engine_id = e.id
 			WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ?
 			ORDER BY pc.name
 		`
@@ -154,7 +154,7 @@ func buildAdCategoriesQuery(adCat int, makeName, year, model, engine string) (st
 	case ad.AdCategoryAg, ad.AdCategoryAgPart:
 		// Ag Equipment: make, year, model (no engine)
 		query = baseQuery + `
-			JOIN Year y ON c.year_id = y.id
+			JOIN Year y ON spec.year_id = y.id
 			WHERE m.name = ? AND y.year = ? AND mo.name = ?
 			ORDER BY pc.name
 		`
@@ -186,11 +186,11 @@ func buildAdSubCategoriesQuery(adCat int, makeName, year, model, engine, categor
 		SELECT DISTINCT psc.name
 		FROM PartSubCategory psc
 		JOIN PartCategory pc ON psc.part_category_id = pc.id
-		JOIN Vehicle c ON c.part_subcategory_id = psc.id
-		JOIN AdVehicle ac ON c.id = ac.vehicle_id
-		JOIN Ad a ON ac.ad_id = a.id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Model mo ON c.model_id = mo.id
+		JOIN Specification spec ON spec.part_subcategory_id = psc.id
+		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
+		JOIN Ad a ON ad_spec.ad_id = a.id
+		JOIN Make m ON spec.make_id = m.id
+		JOIN Model mo ON spec.model_id = mo.id
 	`
 
 	// Add conditional JOINs and WHERE clauses based on ad category
@@ -198,8 +198,8 @@ func buildAdSubCategoriesQuery(adCat int, makeName, year, model, engine, categor
 	case ad.AdCategoryCar, ad.AdCategoryCarPart, ad.AdCategoryMotorcycle, ad.AdCategoryMotorcyclePart:
 		// Cars and Motorcycles: make, year, model, engine
 		query = baseQuery + `
-			JOIN Year y ON c.year_id = y.id
-			JOIN Engine e ON c.engine_id = e.id
+			JOIN Year y ON spec.year_id = y.id
+			JOIN Engine e ON spec.engine_id = e.id
 			WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND pc.name = ?
 			ORDER BY psc.name
 		`
@@ -208,7 +208,7 @@ func buildAdSubCategoriesQuery(adCat int, makeName, year, model, engine, categor
 	case ad.AdCategoryAg, ad.AdCategoryAgPart:
 		// Ag Equipment: make, year, model (no engine)
 		query = baseQuery + `
-			JOIN Year y ON c.year_id = y.id
+			JOIN Year y ON spec.year_id = y.id
 			WHERE m.name = ? AND y.year = ? AND mo.name = ? AND pc.name = ?
 			ORDER BY psc.name
 		`
@@ -315,13 +315,13 @@ func GetCategoriesForAds(adIDs []int, makeName, year, model, engine string) ([]s
 		SELECT DISTINCT pc.name
 		FROM PartCategory pc
 		JOIN PartSubCategory psc ON pc.id = psc.part_category_id
-		JOIN Vehicle c ON c.part_subcategory_id = psc.id
-		JOIN AdVehicle ac ON c.id = ac.vehicle_id
-		JOIN Ad a ON ac.ad_id = a.id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Year y ON c.year_id = y.id
-		JOIN Model mo ON c.model_id = mo.id
-		JOIN Engine e ON c.engine_id = e.id
+		JOIN Specification spec ON spec.part_subcategory_id = psc.id
+		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
+		JOIN Ad a ON ad_spec.ad_id = a.id
+		JOIN Make m ON spec.make_id = m.id
+		JOIN Year y ON spec.year_id = y.id
+		JOIN Model mo ON spec.model_id = mo.id
+		JOIN Engine e ON spec.engine_id = e.id
 		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND a.id IN (%s)
 		ORDER BY pc.name
 	`, strings.Join(placeholders, ","))
@@ -364,13 +364,13 @@ func GetSubCategoriesForAds(adIDs []int, makeName, year, model, engine, category
 		SELECT DISTINCT psc.name
 		FROM PartSubCategory psc
 		JOIN PartCategory pc ON psc.part_category_id = pc.id
-		JOIN Vehicle c ON c.part_subcategory_id = psc.id
-		JOIN AdVehicle ac ON c.id = ac.vehicle_id
-		JOIN Ad a ON ac.ad_id = a.id
-		JOIN Make m ON c.make_id = m.id
-		JOIN Year y ON c.year_id = y.id
-		JOIN Model mo ON c.model_id = mo.id
-		JOIN Engine e ON c.engine_id = e.id
+		JOIN Specification spec ON spec.part_subcategory_id = psc.id
+		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
+		JOIN Ad a ON ad_spec.ad_id = a.id
+		JOIN Make m ON spec.make_id = m.id
+		JOIN Year y ON spec.year_id = y.id
+		JOIN Model mo ON spec.model_id = mo.id
+		JOIN Engine e ON spec.engine_id = e.id
 		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND pc.name = ? AND a.id IN (%s)
 		ORDER BY psc.name
 	`, strings.Join(placeholders, ","))

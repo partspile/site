@@ -13,7 +13,7 @@ import (
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
-	"github.com/parts-pile/site/vehicle"
+	"github.com/parts-pile/site/spec"
 )
 
 // decodeAdIDs decodes a base64 string back to a slice of integers
@@ -81,16 +81,16 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 	var err error
 	switch level {
 	case 0: // Root level - get makes
-		children, err = vehicle.GetAdMakes(category)
+		children, err = spec.GetAdMakes(category)
 	case 1: // Make level - get years
 		makeName := parts[0]
-		children, err = vehicle.GetAdYears(category, makeName)
+		children, err = spec.GetAdYears(category, makeName)
 	case 2: // Year level - get models
 		makeName, year := parts[0], parts[1]
-		children, err = vehicle.GetAdModels(category, makeName, year)
+		children, err = spec.GetAdModels(category, makeName, year)
 	case 3: // Model level - get engines
 		makeName, year, model := parts[0], parts[1], parts[2]
-		children, err = vehicle.GetAdEngines(category, makeName, year, model)
+		children, err = spec.GetAdEngines(category, makeName, year, model)
 	case 4: // Engine level - get categories
 		makeName, year, model, engine := parts[0], parts[1], parts[2], parts[3]
 		children, err = part.GetAdCategories(category, makeName, year, model, engine)
@@ -150,16 +150,16 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 	var ads []ad.Ad
 	switch level {
 	case 0: // Root level - get makes
-		children, err = vehicle.GetAdMakesForAdIDs(adIDs)
+		children, err = spec.GetAdMakesForAdIDs(adIDs)
 	case 1: // Make level - get years
 		makeName := parts[0]
-		children, err = vehicle.GetAdYearsForAdIDs(adIDs, makeName)
+		children, err = spec.GetAdYearsForAdIDs(adIDs, makeName)
 	case 2: // Year level - get models
 		makeName, year := parts[0], parts[1]
-		children, err = vehicle.GetAdModelsForAdIDs(adIDs, makeName, year)
+		children, err = spec.GetAdModelsForAdIDs(adIDs, makeName, year)
 	case 3: // Model level - get engines
 		makeName, year, model := parts[0], parts[1], parts[2]
-		children, err = vehicle.GetAdEnginesForAdIDs(adIDs, makeName, year, model)
+		children, err = spec.GetAdEnginesForAdIDs(adIDs, makeName, year, model)
 	case 4: // Engine level - get categories
 		makeName, year, model, engine := parts[0], parts[1], parts[2], parts[3]
 		children, err = part.GetCategoriesForAds(adIDs, makeName, year, model, engine)

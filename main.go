@@ -15,8 +15,8 @@ import (
 	"github.com/parts-pile/site/metrics"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/sms"
+	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/vector"
-	"github.com/parts-pile/site/vehicle"
 )
 
 func main() {
@@ -34,9 +34,9 @@ func main() {
 	// Initialize ad category names cache
 	ad.SetAdCategoryNames()
 
-	// Initialize vehicle cache
-	if err := vehicle.InitVehicleCache(); err != nil {
-		log.Fatalf("Failed to initialize vehicle cache: %v", err)
+	// Initialize spec cache
+	if err := spec.InitSpecCache(); err != nil {
+		log.Fatalf("Failed to initialize spec cache: %v", err)
 	}
 
 	// Initialize part cache
@@ -168,7 +168,7 @@ func main() {
 	admin.Get("/", h.HandleAdminDashboard)
 	admin.Get("/b2-cache", h.HandleAdminB2Cache)
 	admin.Get("/embedding-cache", h.HandleAdminEmbeddingCache)
-	admin.Get("/vehicle-cache", h.HandleAdminVehicleCache)
+	admin.Get("/spec-cache", h.HandleAdminSpecCache)
 	admin.Get("/part-cache", h.HandleAdminPartCache)
 	admin.Get("/metrics", h.HandleMonitor)
 
@@ -180,8 +180,8 @@ func main() {
 	adminAPI.Post("/embedding-cache/query/clear", h.HandleClearQueryEmbeddingCache)
 	adminAPI.Post("/embedding-cache/user/clear", h.HandleClearUserEmbeddingCache)
 	adminAPI.Post("/embedding-cache/site/clear", h.HandleClearSiteEmbeddingCache)
-	adminAPI.Post("/vehicle-cache/clear", h.HandleClearVehicleCache)
-	adminAPI.Get("/vehicle-cache/refresh", h.HandleRefreshVehicleCache)
+	adminAPI.Post("/spec-cache/clear", h.HandleClearSpecCache)
+	adminAPI.Get("/spec-cache/refresh", h.HandleRefreshSpecCache)
 	adminAPI.Post("/part-cache/clear", h.HandleClearPartCache)
 	adminAPI.Get("/part-cache/refresh", h.HandleRefreshPartCache)
 	adminAPI.Get("/metrics/refresh", h.HandleMonitorRefresh)

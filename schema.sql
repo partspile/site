@@ -6,7 +6,7 @@ CREATE TABLE AdCategory (
     name TEXT NOT NULL UNIQUE CHECK (length(name) > 0)
 );
 
--- Vehicle tables
+-- Specification tables
 CREATE TABLE Make (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
@@ -38,7 +38,7 @@ CREATE TABLE Engine (
     name TEXT NOT NULL CHECK (length(name) > 0)
 );
 
-CREATE TABLE Vehicle (
+CREATE TABLE Specification (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
     make_id INTEGER REFERENCES Make(id),
@@ -48,8 +48,8 @@ CREATE TABLE Vehicle (
     part_subcategory_id INTEGER REFERENCES PartSubCategory(id),
     UNIQUE (ad_category_id, make_id, year_id, model_id, engine_id, part_subcategory_id)
 );
-CREATE INDEX idx_vehicle_ad_category ON Vehicle(ad_category_id);
-CREATE INDEX idx_vehicle_make_year_model_engine ON Vehicle(make_id, year_id, model_id, engine_id);
+CREATE INDEX idx_specification_ad_category ON Specification(ad_category_id);
+CREATE INDEX idx_specification_make_year_model_engine ON Specification(make_id, year_id, model_id, engine_id);
 
 -- Part tables
 CREATE TABLE PartCategory (
@@ -131,13 +131,13 @@ CREATE INDEX idx_ad_created_at_id ON Ad(created_at, id);
 CREATE INDEX idx_ad_deleted_at ON Ad(deleted_at);
 CREATE INDEX idx_ad_ad_category_id ON Ad(ad_category_id);
 
-CREATE TABLE AdVehicle (
+CREATE TABLE AdSpecification (
     ad_id INTEGER NOT NULL REFERENCES Ad(id),
-    vehicle_id INTEGER NOT NULL REFERENCES Vehicle(id),
-    PRIMARY KEY (ad_id, vehicle_id)
+    specification_id INTEGER NOT NULL REFERENCES Specification(id),
+    PRIMARY KEY (ad_id, specification_id)
 );
-CREATE INDEX idx_advehicle_vehicle_id ON AdVehicle(vehicle_id);
-CREATE INDEX idx_advehicle_ad_id ON AdVehicle(ad_id);
+CREATE INDEX idx_adspecification_specification_id ON AdSpecification(specification_id);
+CREATE INDEX idx_adspecification_ad_id ON AdSpecification(ad_id);
 
 CREATE TABLE BookmarkedAd (
     user_id INTEGER NOT NULL REFERENCES User(id),

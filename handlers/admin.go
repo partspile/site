@@ -6,9 +6,9 @@ import (
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/metrics"
 	"github.com/parts-pile/site/part"
+	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
-	"github.com/parts-pile/site/vehicle"
 	g "maragu.dev/gomponents"
 )
 
@@ -83,21 +83,21 @@ func HandleClearSiteEmbeddingCache(c *fiber.Ctx) error {
 	return render(c, ui.AdminEmbeddingCacheSection(stats))
 }
 
-// Vehicle Cache
+// Spec Cache
 
-func HandleAdminVehicleCache(c *fiber.Ctx) error {
-	stats := vehicle.GetCacheStats()
-	return renderAdminSection(c, "vehicle-cache", ui.AdminVehicleCacheSection(stats))
+func HandleAdminSpecCache(c *fiber.Ctx) error {
+	stats := spec.GetCacheStats()
+	return renderAdminSection(c, "spec-cache", ui.AdminSpecCacheSection(stats))
 }
 
-func HandleClearVehicleCache(c *fiber.Ctx) error {
-	stats := vehicle.ClearCache()
-	return render(c, ui.AdminVehicleCacheSection(stats))
+func HandleClearSpecCache(c *fiber.Ctx) error {
+	stats := spec.ClearCache()
+	return render(c, ui.AdminSpecCacheSection(stats))
 }
 
-func HandleRefreshVehicleCache(c *fiber.Ctx) error {
-	stats := vehicle.GetCacheStats()
-	return render(c, ui.AdminVehicleCacheSection(stats))
+func HandleRefreshSpecCache(c *fiber.Ctx) error {
+	stats := spec.GetCacheStats()
+	return render(c, ui.AdminSpecCacheSection(stats))
 }
 
 // Part Cache

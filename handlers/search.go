@@ -12,7 +12,7 @@ import (
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
-	"github.com/parts-pile/site/vehicle"
+	"github.com/parts-pile/site/spec"
 	"github.com/qdrant/go-client/qdrant"
 )
 
@@ -372,7 +372,7 @@ func HandleSwitchAdCategory(c *fiber.Ctx) error {
 // HandleFilterMakes handles the make filter dropdown for search filters
 func HandleFilterMakes(c *fiber.Ctx) error {
 	adCategory := cookie.GetAdCategory(c)
-	makes := vehicle.GetMakes(adCategory)
+	makes := spec.GetMakes(adCategory)
 
 	return render(c, ui.MakeFilterOptions(makes))
 }

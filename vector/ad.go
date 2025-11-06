@@ -8,7 +8,7 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/rock"
-	"github.com/parts-pile/site/vehicle"
+	"github.com/parts-pile/site/spec"
 )
 
 // Static queue for ad processing
@@ -76,7 +76,7 @@ func buildAdEmbeddingPrompt(adObj ad.AdDetail) string {
 	// Get parent company information for the make
 	var parentCompanyStr, parentCompanyCountry string
 	if adObj.Make != "" {
-		if pcInfo, err := vehicle.GetParentCompanyInfoForMake(adObj.Make); err == nil && pcInfo != nil {
+		if pcInfo, err := spec.GetParentCompanyInfoForMake(adObj.Make); err == nil && pcInfo != nil {
 			parentCompanyStr = pcInfo.Name
 			parentCompanyCountry = pcInfo.Country
 		}
