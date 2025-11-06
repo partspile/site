@@ -1,6 +1,10 @@
 package ui
 
 import (
+	"fmt"
+	"time"
+
+	"github.com/parts-pile/site/metrics"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
@@ -32,6 +36,7 @@ func adminNavigation(activeSection string) g.Node {
 		{"embedding-cache", "Embedding Cache", "/admin/embedding-cache"},
 		{"vehicle-cache", "Vehicle Cache", "/admin/vehicle-cache"},
 		{"part-cache", "Part Cache", "/admin/part-cache"},
+		{"monitor", "Monitor", "/admin/metrics"},
 	}
 
 	var tabNodes []g.Node
@@ -162,5 +167,186 @@ func AdminPartCacheSection(stats map[string]interface{}) g.Node {
 		Div(Class("text-lg font-medium text-gray-900"), g.Text("Part Cache Management")),
 		Div(Class("text-gray-600 text-sm"), g.Text("Manage part data cache performance and statistics.")),
 		CacheStatsPanel("Cache Statistics", stats, "/api/admin/part-cache/clear", "/api/admin/part-cache/refresh"),
+	)
+}
+
+// Monitor
+
+func AdminMonitorSection(metricsData []metrics.Metric) g.Node {
+	return Div(
+		Class("space-y-6"),
+		Div(
+			Class("flex justify-between items-center"),
+			Div(
+				Div(Class("text-lg font-medium text-gray-900"), g.Text("Server Metrics")),
+				Div(Class("text-gray-600 text-sm"), g.Text("Real-time server performance metrics (updates every 5 seconds).")),
+			),
+		),
+		Div(
+			ID("monitor-charts"),
+			hx.Get("/api/admin/metrics/refresh"),
+			hx.Trigger("every 5s"),
+			hx.Swap("innerHTML"),
+			AdminMonitorCharts(metricsData),
+		),
+	)
+}
+
+func AdminMonitorCharts(metricsData []metrics.Metric) g.Node {
+	if len(metricsData) == 0 {
+		return Div(
+			Class("text-gray-500 text-center py-8"),
+			g.Text("No metrics data available yet. Metrics are collected every 5 seconds."),
+		)
+	}
+
+	return Div(
+		Class("space-y-6"),
+		renderMetricChart("CPU Usage (%)", metricsData, func(m metrics.Metric) float64 { return m.PIDCPU }, "blue"),
+		renderMetricChart("Memory Usage (MB)", metricsData, func(m metrics.Metric) float64 { return float64(m.PIDRAM) / 1024 / 1024 }, "green"),
+		renderMetricChart("Connections", metricsData, func(m metrics.Metric) float64 { return float64(m.PIDConns) }, "purple"),
+	)
+}
+
+func renderMetricChart(title string, metricsData []metrics.Metric, valueFn func(metrics.Metric) float64, color string) g.Node {
+	if len(metricsData) == 0 {
+		return Div()
+	}
+
+	// Calculate chart dimensions
+	const width = 800
+	const height = 200
+	const padding = 40
+	const chartWidth = width - padding*2
+	const chartHeight = height - padding*2
+
+	// Find min/max values for scaling
+	minVal := valueFn(metricsData[0])
+	maxVal := minVal
+	for _, m := range metricsData {
+		val := valueFn(m)
+		if val < minVal {
+			minVal = val
+		}
+		if val > maxVal {
+			maxVal = val
+		}
+	}
+
+	// Add 10% padding to range
+	rangeVal := maxVal - minVal
+	if rangeVal == 0 {
+		rangeVal = 1
+	}
+	minVal -= rangeVal * 0.1
+	maxVal += rangeVal * 0.1
+	rangeVal = maxVal - minVal
+
+	// Generate path for line chart
+	var pathData string
+	divisor := len(metricsData) - 1
+	if divisor == 0 {
+		divisor = 1 // Handle single data point
+	}
+	for i, m := range metricsData {
+		x := float64(i) * chartWidth / float64(divisor)
+		val := valueFn(m)
+		y := chartHeight - ((val-minVal)/rangeVal)*chartHeight
+		if i == 0 {
+			pathData += fmt.Sprintf("M %d %d", padding+int(x), padding+int(y))
+		} else {
+			pathData += fmt.Sprintf(" L %d %d", padding+int(x), padding+int(y))
+		}
+	}
+
+	// Generate grid lines and labels as SVG strings
+	var gridLinesHTML string
+	var labelsHTML string
+
+	// Y-axis labels (5 ticks)
+	for i := 0; i <= 4; i++ {
+		yVal := minVal + (rangeVal * float64(i) / 4)
+		yPos := padding + chartHeight - (chartHeight * i / 4)
+		gridLinesHTML += fmt.Sprintf(`<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#e5e7eb" stroke-width="1" />`,
+			padding, yPos, width-padding, yPos)
+		labelsHTML += fmt.Sprintf(`<text x="%d" y="%d" text-anchor="end" font-size="12" fill="#6b7280">%.1f</text>`,
+			padding-10, yPos+4, yVal)
+	}
+
+	// X-axis time labels (show first, middle, last)
+	if len(metricsData) > 0 {
+		divisor := len(metricsData) - 1
+		if divisor == 0 {
+			divisor = 1 // Handle single data point
+		}
+
+		var timeLabels []struct {
+			idx int
+			t   time.Time
+		}
+
+		// Always show first and last
+		timeLabels = append(timeLabels, struct {
+			idx int
+			t   time.Time
+		}{0, metricsData[0].RecordedAt})
+
+		// Show middle only if we have more than 2 points
+		if len(metricsData) > 2 {
+			midIdx := len(metricsData) / 2
+			timeLabels = append(timeLabels, struct {
+				idx int
+				t   time.Time
+			}{midIdx, metricsData[midIdx].RecordedAt})
+		}
+
+		// Show last only if we have more than 1 point
+		if len(metricsData) > 1 {
+			timeLabels = append(timeLabels, struct {
+				idx int
+				t   time.Time
+			}{len(metricsData) - 1, metricsData[len(metricsData)-1].RecordedAt})
+		}
+
+		for _, tl := range timeLabels {
+			xPos := padding + (chartWidth * tl.idx / divisor)
+			labelsHTML += fmt.Sprintf(`<text x="%d" y="%d" text-anchor="middle" font-size="12" fill="#6b7280">%s</text>`,
+				xPos, height-padding+20, tl.t.Format("15:04"))
+		}
+	}
+
+	// Get color hex
+	colorMap := map[string]string{
+		"blue":   "#3b82f6",
+		"green":  "#10b981",
+		"purple": "#8b5cf6",
+		"orange": "#f59e0b",
+		"red":    "#ef4444",
+		"teal":   "#14b8a6",
+	}
+	strokeColor := colorMap[color]
+	if strokeColor == "" {
+		strokeColor = "#3b82f6"
+	}
+
+	// Get current value
+	currentValue := valueFn(metricsData[len(metricsData)-1])
+
+	return Div(
+		Class("bg-white p-4 rounded-lg border"),
+		H3(Class("text-md font-semibold mb-2"), g.Text(title)),
+		Div(
+			Class("text-2xl font-bold mb-2"),
+			Style(fmt.Sprintf("color: %s", strokeColor)),
+			g.Textf("%.2f", currentValue),
+		),
+		Div(
+			Class("w-full overflow-x-auto"),
+			g.Raw(fmt.Sprintf(`<svg width="%d" height="%d" viewBox="0 0 %d %d">
+				%s
+				<path d="%s" fill="none" stroke="%s" stroke-width="2" />
+				%s
+			</svg>`, width, height, width, height, gridLinesHTML, pathData, strokeColor, labelsHTML)),
+		),
 	)
 }

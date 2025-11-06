@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/local"
+	"github.com/parts-pile/site/metrics"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -114,4 +115,30 @@ func HandleClearPartCache(c *fiber.Ctx) error {
 func HandleRefreshPartCache(c *fiber.Ctx) error {
 	stats := part.GetPartCacheStats()
 	return render(c, ui.AdminPartCacheSection(stats))
+}
+
+// Monitor
+
+// HandleMonitor displays the server metrics dashboard
+func HandleMonitor(c *fiber.Ctx) error {
+	// Get metrics from last 24 hours for initial display
+	metricsData, err := metrics.GetRecentMetrics(24)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).
+			SendString("Error fetching metrics: " + err.Error())
+	}
+
+	return renderAdminSection(c, "monitor", ui.AdminMonitorSection(metricsData))
+}
+
+// HandleMonitorRefresh returns updated metrics data for HTMX polling
+func HandleMonitorRefresh(c *fiber.Ctx) error {
+	// Get metrics from last 24 hours
+	metricsData, err := metrics.GetRecentMetrics(24)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).
+			SendString("Error fetching metrics: " + err.Error())
+	}
+
+	return render(c, ui.AdminMonitorCharts(metricsData))
 }

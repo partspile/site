@@ -12,6 +12,7 @@ import (
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
 	h "github.com/parts-pile/site/handlers"
+	"github.com/parts-pile/site/metrics"
 	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/sms"
 	"github.com/parts-pile/site/vector"
@@ -21,6 +22,9 @@ import (
 func main() {
 	// Validate security configuration first
 	config.InitSecurityConfig()
+
+	// Start metrics collector early to track startup stats
+	metrics.StartCollector()
 
 	// Initialize database
 	if err := db.Init(config.DatabaseURL); err != nil {
@@ -166,6 +170,7 @@ func main() {
 	admin.Get("/embedding-cache", h.HandleAdminEmbeddingCache)
 	admin.Get("/vehicle-cache", h.HandleAdminVehicleCache)
 	admin.Get("/part-cache", h.HandleAdminPartCache)
+	admin.Get("/metrics", h.HandleMonitor)
 
 	// Admin API group
 	adminAPI := api.Group("/admin", h.AdminRequired)
@@ -179,6 +184,7 @@ func main() {
 	adminAPI.Get("/vehicle-cache/refresh", h.HandleRefreshVehicleCache)
 	adminAPI.Post("/part-cache/clear", h.HandleClearPartCache)
 	adminAPI.Get("/part-cache/refresh", h.HandleRefreshPartCache)
+	adminAPI.Get("/metrics/refresh", h.HandleMonitorRefresh)
 
 	// User registration/authentication
 	app.Get("/register", h.HandleRegistration)
