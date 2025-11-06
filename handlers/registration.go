@@ -246,5 +246,5 @@ func HandleRegistrationStep2(c *fiber.Ctx) error {
 
 	// Return success response with delay before redirecting to rocks page
 	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()
-	return render(c, ui.SuccessMessage("Registration successful! Redirecting to rocks page...", "/rocks", redirectDelayMs))
+	return render(c, ui.SuccessMessage("Registration successful!", "/rocks", redirectDelayMs))
 }
