@@ -14,7 +14,7 @@ func HandleHealth(c *fiber.Ctx) error {
 	}
 
 	// Check database connectivity
-	if err := db.Get().Ping(); err != nil {
+	if err := db.Ping(); err != nil {
 		health["status"] = "unhealthy"
 		health["database"] = "down"
 		c.Status(fiber.StatusServiceUnavailable)

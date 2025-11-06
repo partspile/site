@@ -35,14 +35,6 @@ func Init(databaseURL string) error {
 	return err
 }
 
-// Get returns the database connection
-func Get() *sqlx.DB {
-	if db == nil {
-		panic("Database not initialized. Call db.Init() first.")
-	}
-	return db
-}
-
 // SetForTesting sets the database connection for testing
 func SetForTesting(database *sqlx.DB) {
 	db = database
@@ -50,25 +42,35 @@ func SetForTesting(database *sqlx.DB) {
 
 // Query executes a query that returns rows
 func Query(query string, args ...interface{}) (*sql.Rows, error) {
-	return Get().Query(query, args...)
+	return db.Query(query, args...)
 }
 
 // QueryRow executes a query that returns a single row
 func QueryRow(query string, args ...interface{}) *sql.Row {
-	return Get().QueryRow(query, args...)
+	return db.QueryRow(query, args...)
 }
 
 // Exec executes a query that doesn't return rows
 func Exec(query string, args ...interface{}) (sql.Result, error) {
-	return Get().Exec(query, args...)
+	return db.Exec(query, args...)
 }
 
 // Begin starts a new transaction
 func Begin() (*sql.Tx, error) {
-	return Get().Begin()
+	return db.Begin()
 }
 
 // Select executes a query and scans the results into dest (slice)
 func Select(dest interface{}, query string, args ...interface{}) error {
-	return Get().Select(dest, query, args...)
+	return db.Select(dest, query, args...)
+}
+
+// Get executes a query and scans a single row into dest
+func Get(dest interface{}, query string, args ...interface{}) error {
+	return db.Get(dest, query, args...)
+}
+
+// Ping verifies the database connection is alive
+func Ping() error {
+	return db.Ping()
 }

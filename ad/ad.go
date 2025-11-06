@@ -89,7 +89,7 @@ func populateVehicleData(adDetail *AdDetail) error {
 	}
 
 	var data vehicleData
-	err := db.Get().Get(&data, query, adDetail.ID)
+	err := db.Get(&data, query, adDetail.ID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return fmt.Errorf("no vehicle data found for ad")
