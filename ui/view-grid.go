@@ -29,8 +29,8 @@ func GridViewResults(ads []ad.Ad, userID int, loc *time.Location, loaderURL stri
 	)
 }
 
-func GridViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string) g.Node {
-	nodes := gridNodes(ads, userID, loc, "")
+func GridViewPage(ads []ad.Ad, userID int, loc *time.Location, loaderURL string, csrfToken string) g.Node {
+	nodes := gridNodes(ads, userID, loc, csrfToken)
 	return g.Group(append(nodes, createInfiniteScrollTrigger(loaderURL)))
 }
 

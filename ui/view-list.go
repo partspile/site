@@ -28,8 +28,8 @@ func ListViewResults(ads []ad.Ad, userID int, userName string, loc *time.Locatio
 	)
 }
 
-func ListViewPage(ads []ad.Ad, userID int, userName string, loc *time.Location, loaderURL string) g.Node {
-	nodes := listNodes(ads, userID, loc, "")
+func ListViewPage(ads []ad.Ad, userID int, userName string, loc *time.Location, loaderURL string, csrfToken string) g.Node {
+	nodes := listNodes(ads, userID, loc, csrfToken)
 	return g.Group(append(nodes, createInfiniteScrollTrigger(loaderURL)))
 }
 
