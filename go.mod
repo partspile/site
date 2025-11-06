@@ -14,6 +14,7 @@ require (
 	github.com/twilio/twilio-go v1.28.3
 	golang.org/x/crypto v0.42.0
 	golang.org/x/image v0.31.0
+	golang.org/x/term v0.36.0
 	google.golang.org/genai v1.27.0
 	gopkg.in/kothar/go-backblaze.v0 v0.0.0-20210124194846-35409b867216
 	maragu.dev/gomponents v1.2.0

@@ -5,13 +5,17 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"regexp"
 	"strings"
 	"time"
+
+	"golang.org/x/term"
 )
 
 var (
 	defaultLogger *slog.Logger
 	logLevel      slog.Level = slog.LevelInfo
+	useColors     bool       = false
 )
 
 // Init initializes the logger with the specified configuration
@@ -45,15 +49,25 @@ func Init(level string, format string, output string) error {
 	var handler slog.Handler
 	switch strings.ToLower(format) {
 	case "text":
+		// Determine if colors should be used (only for text format to terminal)
+		useColors = isTerminal(writer)
 		opts := &slog.HandlerOptions{
 			Level:       logLevel,
 			AddSource:   false,
 			ReplaceAttr: replaceAttr,
 		}
-		handler = slog.NewTextHandler(writer, opts)
+		if useColors {
+			// Use a color writer that post-processes output
+			colorW := &colorWriter{Writer: writer}
+			handler = slog.NewTextHandler(colorW, opts)
+		} else {
+			handler = slog.NewTextHandler(writer, opts)
+		}
 	case "json":
 		fallthrough
 	default:
+		// Never use colors for JSON format
+		useColors = false
 		opts := &slog.HandlerOptions{
 			Level:       logLevel,
 			AddSource:   false,
@@ -202,4 +216,57 @@ func (w *loggerWriter) Write(p []byte) (n int, err error) {
 	}
 
 	return len(p), nil
+}
+
+// ANSI color codes
+const (
+	colorReset  = "\033[0m"
+	colorRed    = "\033[31m"
+	colorYellow = "\033[33m"
+	colorBlue   = "\033[34m"
+	colorGray   = "\033[90m"
+)
+
+// isTerminal checks if the writer is a terminal (TTY)
+func isTerminal(w io.Writer) bool {
+	file, ok := w.(*os.File)
+	if !ok {
+		return false
+	}
+	return term.IsTerminal(int(file.Fd()))
+}
+
+// colorWriter wraps an io.Writer and adds colors to log level indicators
+type colorWriter struct {
+	io.Writer
+}
+
+var (
+	// Regex patterns to match log level indicators
+	levelPatterns = map[string]*regexp.Regexp{
+		"ERRO": regexp.MustCompile(`\bl="\[ERRO\]"`),
+		"WARN": regexp.MustCompile(`\bl="\[WARN\]"`),
+		"INFO": regexp.MustCompile(`\bl="\[INFO\]"`),
+		"DEBU": regexp.MustCompile(`\bl="\[DEBU\]"`),
+	}
+)
+
+func (w *colorWriter) Write(p []byte) (n int, err error) {
+	output := string(p)
+	
+	// Colorize each level pattern - replace quoted versions with colored unquoted versions
+	// This works because we're post-processing after the handler has formatted everything
+	output = levelPatterns["ERRO"].ReplaceAllString(output, `l=`+colorRed+`[ERRO]`+colorReset)
+	output = levelPatterns["WARN"].ReplaceAllString(output, `l=`+colorYellow+`[WARN]`+colorReset)
+	output = levelPatterns["INFO"].ReplaceAllString(output, `l=`+colorBlue+`[INFO]`+colorReset)
+	output = levelPatterns["DEBU"].ReplaceAllString(output, `l=`+colorGray+`[DEBU]`+colorReset)
+	
+	// Also handle unquoted versions (in case handler doesn't quote)
+	output = strings.ReplaceAll(output, ` l=[ERRO] `, ` l=`+colorRed+`[ERRO]`+colorReset+` `)
+	output = strings.ReplaceAll(output, ` l=[WARN] `, ` l=`+colorYellow+`[WARN]`+colorReset+` `)
+	output = strings.ReplaceAll(output, ` l=[INFO] `, ` l=`+colorBlue+`[INFO]`+colorReset+` `)
+	output = strings.ReplaceAll(output, ` l=[DEBU] `, ` l=`+colorGray+`[DEBU]`+colorReset+` `)
+	
+	_, err = w.Writer.Write([]byte(output))
+	return len(p), err
 }
