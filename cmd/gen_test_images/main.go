@@ -42,7 +42,6 @@ type ImageToUpload struct {
 
 func main() {
 	// Initialize logging
-	config.InitLoggingConfig()
 	if err := logger.Init(config.LogLevel, config.LogFormat, config.LogFile); err != nil {
 		logger.Fatal("Failed to initialize logger", "error", err)
 	}
