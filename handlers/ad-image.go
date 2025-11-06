@@ -167,25 +167,25 @@ func HandleAdImageSignedURL(c *fiber.Ctx) error {
 	})
 }
 
-// HandleAdImage serves ad images with proper caching headers
+// HandleAdImage serves ad detail carousel images with navigation
 func HandleAdImage(c *fiber.Ctx) error {
+	userID := local.GetUserID(c)
 	adID, err := strconv.Atoi(c.Params("adID"))
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
 	}
 
-	// Get signed URL and redirect to it
-	token, err := b2util.GetB2DownloadTokenForPrefixCached(fmt.Sprintf("%d/", adID))
+	idx, err := strconv.Atoi(c.Params("idx"))
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to generate signed URL")
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid image index")
 	}
 
-	// Set cache headers
-	c.Set("Cache-Control", "public, max-age=31536000") // 1 year
-	c.Set("Expires", time.Now().Add(365*24*time.Hour).Format(http.TimeFormat))
+	adDetail, err := ad.GetAdDetailByID(adID, userID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	}
 
-	// For now, just return the token - the actual image serving logic needs to be implemented
-	return c.JSON(fiber.Map{"token": token})
+	return render(c, ui.CarouselImageContainer(*adDetail, idx))
 }
 
 // HandleAdGridImage serves grid view images with navigation

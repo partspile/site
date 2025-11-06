@@ -35,11 +35,6 @@ func Init(databaseURL string) error {
 	return err
 }
 
-// SetForTesting sets the database connection for testing
-func SetForTesting(database *sqlx.DB) {
-	db = database
-}
-
 // Query executes a query that returns rows
 func Query(query string, args ...interface{}) (*sql.Rows, error) {
 	return db.Query(query, args...)
