@@ -81,8 +81,8 @@ func main() {
 		WriteTimeout: 30 * time.Second, // Prevent long-running responses
 	})
 
-	// Add security headers (must be early in middleware chain)
-	app.Use(h.SecurityHeaders)
+	// Add security headers using Helmet (must be early in middleware chain)
+	app.Use(h.ConfigureHelmet())
 
 	// Add global rate limiter
 	app.Use(h.GlobalRateLimiter)

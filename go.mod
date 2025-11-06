@@ -6,7 +6,6 @@ require (
 	github.com/chai2010/webp v1.4.0
 	github.com/dgraph-io/ristretto/v2 v2.3.0
 	github.com/gofiber/fiber/v2 v2.52.9
-	github.com/gofiber/storage/memory v1.3.4
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/mattn/go-sqlite3 v1.14.32

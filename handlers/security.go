@@ -3,13 +3,15 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
+	"github.com/gofiber/fiber/v2/middleware/helmet"
 	"github.com/parts-pile/site/config"
 )
 
-// SecurityHeaders sets HTTP security headers on all responses
-func SecurityHeaders(c *fiber.Ctx) error {
-
-	// Content-Security-Policy
+// ConfigureHelmet returns a configured Helmet middleware with custom CSP,
+// DENY for X-Frame-Options, and strict-origin-when-cross-origin for
+// Referrer-Policy.
+func ConfigureHelmet() fiber.Handler {
+	// Custom Content-Security-Policy
 	// This policy restricts which resources can be loaded
 	csp := "default-src 'self'; " +
 		"script-src 'self' https://unpkg.com 'unsafe-inline'; " + // unpkg.com for HTMX library, 'unsafe-inline' for inline scripts (redirect scripts, category modal removal, MAX_IMAGES_PER_AD constant)
@@ -21,29 +23,28 @@ func SecurityHeaders(c *fiber.Ctx) error {
 		"base-uri 'self';" +
 		"form-action 'self';"
 
-	c.Set("Content-Security-Policy", csp)
-
-	// Prevent clickjacking attacks
-	c.Set("X-Frame-Options", "DENY")
-
-	// Prevent MIME type sniffing
-	c.Set("X-Content-Type-Options", "nosniff")
-
-	// HTTP Strict Transport Security (only if using HTTPS)
-	if config.CookieSecure {
-		c.Set("Strict-Transport-Security",
-			"max-age=31536000; includeSubDomains")
+	cfg := helmet.Config{
+		ContentSecurityPolicy:     csp,
+		XFrameOptions:             "DENY",
+		ReferrerPolicy:            "strict-origin-when-cross-origin",
+		ContentTypeNosniff:        "nosniff",
+		PermissionPolicy:          "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
+		CrossOriginEmbedderPolicy: "require-corp",
+		CrossOriginOpenerPolicy:   "same-origin",
+		CrossOriginResourcePolicy: "same-origin",
+		OriginAgentCluster:        "?1",
+		XDNSPrefetchControl:       "off",
+		XDownloadOptions:          "noopen",
+		XPermittedCrossDomain:     "none",
 	}
 
-	// Control referrer information leakage
-	c.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+	// Set HSTS only if using HTTPS
+	if config.CookieSecure {
+		cfg.HSTSMaxAge = 31536000
+		cfg.HSTSExcludeSubdomains = false // includeSubDomains
+	}
 
-	// Disable browser features not needed by the application
-	c.Set("Permissions-Policy",
-		"geolocation=(), microphone=(), camera=(), payment=(), usb=(), "+
-			"magnetometer=(), gyroscope=(), accelerometer=()")
-
-	return c.Next()
+	return helmet.New(cfg)
 }
 
 // CSRFMiddleware is the CSRF protection middleware configured for
