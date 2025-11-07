@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/url"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
@@ -108,75 +109,136 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 
 // HandleYears handles the years dropdown for new ad form
 func HandleYears(c *fiber.Ctx) error {
-	makeName := c.Query("make")
-	adCat := cookie.GetAdCategory(c)
-	if makeName == "" {
-		// Return empty div when make is not selected
-		return render(c, ui.YearsSelector([]string{}))
-	}
-
-	years := spec.GetYears(adCat, makeName)
-	return render(c, ui.YearsSelector(years))
+	return HandleFieldValues(c, "year")
 }
 
 // HandleModels handles the models dropdown for new ad form
 func HandleModels(c *fiber.Ctx) error {
-	makeName := c.Query("make")
-	adCat := cookie.GetAdCategory(c)
-	if makeName == "" {
-		// Return empty div when make is not selected
-		return render(c, ui.ModelsSelector([]string{}))
-	}
-
-	q, err := url.ParseQuery(string(c.Request().URI().QueryString()))
-	if err != nil {
-		return err
-	}
-	years := q["years"]
-	if len(years) == 0 {
-		// Return empty div instead of error when no years are selected
-		return render(c, ui.ModelsSelector([]string{}))
-	}
-
-	models := spec.GetModels(adCat, makeName, years)
-	if len(models) == 0 {
-		// Return empty message when no models are available for all selected years
-		return render(c, ui.ModelsDivEmpty())
-	}
-	return render(c, ui.ModelsSelector(models))
+	return HandleFieldValues(c, "model")
 }
 
 // HandleEngines handles the engines dropdown for new ad form
 func HandleEngines(c *fiber.Ctx) error {
-	makeName := c.Query("make")
-	adCat := cookie.GetAdCategory(c)
-	if makeName == "" {
-		// Return empty div when make is not selected
-		return render(c, ui.EnginesSelector([]string{}))
-	}
+	return HandleFieldValues(c, "engine")
+}
 
+// HandleFieldValues handles field value requests generically for any field
+func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
+	adCat := cookie.GetAdCategory(c)
+
+	// Get parent field values from query parameters
 	q, err := url.ParseQuery(string(c.Request().URI().QueryString()))
 	if err != nil {
 		return err
 	}
-	years := q["years"]
-	if len(years) == 0 {
-		// Return empty div instead of error when no years are selected
-		return render(c, ui.EnginesSelector([]string{}))
+
+	// Build parent values map
+	parentValues := make(map[string]string)
+	fieldConfigs, err := spec.GetCategoryFields(adCat)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get category fields")
 	}
 
-	models := q["models"]
-	if len(models) == 0 {
-		// Return empty div instead of error when no models are selected
-		return render(c, ui.EnginesSelector([]string{}))
+	// Find current field index
+	currentFieldIndex := -1
+	for i, f := range fieldConfigs {
+		if f.Name == fieldName {
+			currentFieldIndex = i
+			break
+		}
+	}
+	if currentFieldIndex == -1 {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid field name")
 	}
 
-	engines := spec.GetEngines(adCat, makeName, years, models)
-	if len(engines) == 0 {
-		// Return empty message when no engines are available for all selected year-model combinations
-		return render(c, ui.EnginesDivEmpty())
+	// Get parent field values (fields that come before current field)
+	for i := 0; i < currentFieldIndex; i++ {
+		parentField := fieldConfigs[i]
+		// Check for single value or multiple values
+		if values, exists := q[parentField.Name]; exists && len(values) > 0 {
+			// For multi-value fields (years, models, engines), join with comma
+			// For single-value fields (make), use first value
+			if parentField.QdrantType == "keyword_array" {
+				parentValues[parentField.Name] = strings.Join(values, ",")
+			} else {
+				parentValues[parentField.Name] = values[0]
+			}
+		}
 	}
-	return render(c, ui.EnginesSelector(engines))
+
+	// Check if required parent fields are present
+	for i := 0; i < currentFieldIndex; i++ {
+		parentField := fieldConfigs[i]
+		if parentField.IsRequired {
+			if _, exists := parentValues[parentField.Name]; !exists {
+				// Return empty selector
+				return renderEmptyFieldSelector(c, fieldName)
+			}
+		}
+	}
+
+	// Get field values
+	values, err := spec.GetFieldValues(adCat, fieldName, parentValues)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get field values")
+	}
+
+	// Render appropriate selector based on field type
+	fieldDef, exists := spec.GetFieldDefinition(fieldName)
+	if !exists {
+		return fiber.NewError(fiber.StatusBadRequest, "Field definition not found")
+	}
+
+	if fieldDef.QdrantType == "keyword_array" {
+		// Multi-select (checkboxes) - years, models, engines
+		return renderMultiSelectField(c, fieldName, values)
+	} else {
+		// Single select (dropdown) - make, breed
+		return renderSingleSelectField(c, fieldName, values)
+	}
+}
+
+// renderEmptyFieldSelector returns empty selector for a field
+func renderEmptyFieldSelector(c *fiber.Ctx, fieldName string) error {
+	fieldDef, exists := spec.GetFieldDefinition(fieldName)
+	if !exists {
+		return fiber.NewError(fiber.StatusBadRequest, "Field definition not found")
+	}
+
+	if fieldDef.QdrantType == "keyword_array" {
+		return renderMultiSelectField(c, fieldName, []string{})
+	} else {
+		return renderSingleSelectField(c, fieldName, []string{})
+	}
+}
+
+// renderMultiSelectField renders a multi-select field (checkboxes)
+func renderMultiSelectField(c *fiber.Ctx, fieldName string, values []string) error {
+	// For now, use existing UI functions for backward compatibility
+	switch fieldName {
+	case "year":
+		return render(c, ui.YearsSelector(values))
+	case "model":
+		if len(values) == 0 {
+			return render(c, ui.ModelsDivEmpty())
+		}
+		return render(c, ui.ModelsSelector(values))
+	case "engine":
+		if len(values) == 0 {
+			return render(c, ui.EnginesDivEmpty())
+		}
+		return render(c, ui.EnginesSelector(values))
+	default:
+		// Generic multi-select - TODO: create generic UI component
+		return render(c, ui.YearsSelector(values))
+	}
+}
+
+// renderSingleSelectField renders a single-select field (dropdown)
+func renderSingleSelectField(c *fiber.Ctx, fieldName string, values []string) error {
+	// For now, return empty - single select fields are rendered statically
+	// TODO: create generic single-select component
+	return c.SendString("")
 }
 
 // HandleSubCategories handles the subcategories dropdown for new ad form

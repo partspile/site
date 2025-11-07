@@ -45,6 +45,11 @@ func main() {
 		logger.Fatal("Failed to initialize spec cache", "error", err)
 	}
 
+	// Initialize field cache (must be after spec cache)
+	if err := spec.InitFieldCache(); err != nil {
+		logger.Fatal("Failed to initialize field cache", "error", err)
+	}
+
 	// Initialize part cache
 	if err := part.InitPartCache(); err != nil {
 		logger.Fatal("Failed to initialize part cache", "error", err)

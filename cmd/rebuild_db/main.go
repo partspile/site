@@ -82,10 +82,11 @@ func main() {
 		logger.Fatal("Failed to read ad-category.json", "error", err, "file", typeFile)
 	}
 	type AdCategory struct {
-		Name     string `json:"name"`
-		SpecFile string `json:"spec_file,omitempty"`
-		PartFile string `json:"part_file,omitempty"`
-		AdFile   string `json:"ad_file,omitempty"`
+		Name       string   `json:"name"`
+		SpecFile   string   `json:"spec_file,omitempty"`
+		PartFile   string   `json:"part_file,omitempty"`
+		AdFile     string   `json:"ad_file,omitempty"`
+		FieldNames []string `json:"field_names,omitempty"`
 	}
 	var adCategories []AdCategory
 	if err := json.Unmarshal(typeData, &adCategories); err != nil {
@@ -100,7 +101,7 @@ func main() {
 			logger.Warn("Failed to insert AdCategory", "name", cat.Name, "error", err)
 		}
 	}
-	fmt.Printf("Inserted %d AdCategories\n", len(adCategories))
+	logger.Info("Inserted AdCategories", "count", len(adCategories))
 
 	// Populate category map
 	categoryRows, err := database.Query(`SELECT id, name FROM AdCategory`)
@@ -116,6 +117,68 @@ func main() {
 		}
 		categoryMap[name] = id
 	}
+
+	// Populate SpecificationField table with all field definitions
+	fieldFile := "cmd/rebuild_db/specification-fields.json"
+	fieldData, err := os.ReadFile(fieldFile)
+	if err != nil {
+		logger.Fatal("Failed to read specification-fields.json", "error", err, "file", fieldFile)
+	}
+	type SpecificationFieldDef struct {
+		Name           string `json:"name"`
+		DisplayName    string `json:"display_name"`
+		FieldType      string `json:"field_type"`
+		TableName      string `json:"table_name"`
+		TableFieldName string `json:"table_field_name"`
+		QdrantType     string `json:"qdrant_type"`
+	}
+	var fieldDefinitions []SpecificationFieldDef
+	if err := json.Unmarshal(fieldData, &fieldDefinitions); err != nil {
+		logger.Fatal("Failed to parse specification-fields.json", "error", err, "file", fieldFile)
+	}
+
+	fieldIDMap := make(map[string]int)
+	for _, fieldDef := range fieldDefinitions {
+		res, err := database.Exec(`INSERT INTO SpecificationField (name, display_name, field_type, table_name, table_field_name, qdrant_type) VALUES (?, ?, ?, ?, ?, ?)`,
+			fieldDef.Name, fieldDef.DisplayName, fieldDef.FieldType, fieldDef.TableName, fieldDef.TableFieldName, fieldDef.QdrantType)
+		if err != nil {
+			logger.Warn("Failed to insert SpecificationField", "name", fieldDef.Name, "error", err)
+			continue
+		}
+		fieldID, _ := res.LastInsertId()
+		fieldIDMap[fieldDef.Name] = int(fieldID)
+	}
+	logger.Info("Inserted SpecificationFields", "count", len(fieldIDMap))
+
+	// Populate AdCategoryField table mapping categories to their fields
+	// Field mappings are now in ad-category.json
+	for _, cat := range adCategories {
+		if len(cat.FieldNames) == 0 {
+			logger.Debug("Category has no field mappings, skipping", "category", cat.Name)
+			continue
+		}
+
+		categoryID, exists := categoryMap[cat.Name]
+		if !exists {
+			logger.Warn("Category not found for field mapping", "category", cat.Name)
+			continue
+		}
+
+		for order, fieldName := range cat.FieldNames {
+			fieldID, exists := fieldIDMap[fieldName]
+			if !exists {
+				logger.Warn("Field not found for category mapping", "field", fieldName, "category", cat.Name)
+				continue
+			}
+
+			_, err := database.Exec(`INSERT INTO AdCategoryField (ad_category_id, specification_field_id, display_order, is_required) VALUES (?, ?, ?, ?)`,
+				categoryID, fieldID, order+1, 1)
+			if err != nil {
+				logger.Warn("Failed to insert AdCategoryField", "category", cat.Name, "field", fieldName, "error", err)
+			}
+		}
+	}
+	logger.Info("Populated AdCategoryField mappings")
 
 	// Import parent.json
 	parentData, err := os.ReadFile(parentFile)
@@ -136,7 +199,7 @@ func main() {
 			logger.Warn("Failed to insert ParentCompany", "name", pc.Name, "error", err)
 		}
 	}
-	fmt.Printf("Inserted %d ParentCompanies\n", len(parentCompanies))
+	logger.Info("Inserted ParentCompanies", "count", len(parentCompanies))
 
 	// Import user.json
 	userFile := "cmd/rebuild_db/user.json"
@@ -172,7 +235,7 @@ func main() {
 			userCount++
 		}
 	}
-	fmt.Printf("Inserted %d Users\n", userCount)
+	logger.Info("Inserted Users", "count", userCount)
 
 	// Import make-parent.json
 	makeParentData, err := os.ReadFile(makeParentFile)
@@ -271,8 +334,7 @@ func main() {
 	}
 
 	logger.Info("Database rebuild and import complete")
-	fmt.Println("Database rebuild and import complete.")
-	fmt.Println("Vector embeddings will be processed by the main application background processor.")
+	logger.Info("Vector embeddings will be processed by the main application background processor")
 }
 
 // executeSpecBatch executes a batch of Specification insertions using a single INSERT statement
@@ -405,7 +467,7 @@ func importSpecs(db *sql.DB, jsonFile string, categoryID int, makeParents []stru
 		}
 	}
 
-	fmt.Printf("Imported specs from %s\n", jsonFile)
+	logger.Info("Imported specs", "file", jsonFile)
 	return nil
 }
 
@@ -439,7 +501,7 @@ func importParts(db *sql.DB, jsonFile string, categoryID int) error {
 		}
 	}
 
-	fmt.Printf("Imported parts from %s\n", jsonFile)
+	logger.Info("Imported parts", "file", jsonFile)
 	return nil
 }
 
@@ -663,7 +725,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 		adCount++
 	}
 
-	fmt.Printf("Imported %d ads from %s\n", adCount, jsonFile)
+	logger.Info("Imported ads", "count", adCount, "file", jsonFile)
 	return nil
 }
 

@@ -6,6 +6,28 @@ CREATE TABLE AdCategory (
     name TEXT NOT NULL UNIQUE CHECK (length(name) > 0)
 );
 
+-- Specification field metadata tables
+CREATE TABLE SpecificationField (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE CHECK (length(name) > 0),
+    display_name TEXT NOT NULL,
+    field_type TEXT NOT NULL CHECK (field_type IN ('string', 'int', 'float64')),
+    table_name TEXT NOT NULL,
+    table_field_name TEXT NOT NULL,
+    qdrant_type TEXT NOT NULL CHECK (qdrant_type IN ('keyword', 'keyword_array', 'integer', 'float', 'geo'))
+);
+
+CREATE TABLE AdCategoryField (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
+    specification_field_id INTEGER NOT NULL REFERENCES SpecificationField(id),
+    display_order INTEGER NOT NULL,
+    is_required INTEGER NOT NULL DEFAULT 1,
+    UNIQUE (ad_category_id, specification_field_id)
+);
+CREATE INDEX idx_adcategoryfield_category ON AdCategoryField(ad_category_id);
+CREATE INDEX idx_adcategoryfield_order ON AdCategoryField(ad_category_id, display_order);
+
 -- Specification tables
 CREATE TABLE Make (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -38,6 +60,12 @@ CREATE TABLE Engine (
     name TEXT NOT NULL CHECK (length(name) > 0)
 );
 
+CREATE TABLE Breed (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
+    name TEXT NOT NULL CHECK (length(name) > 0)
+);
+
 CREATE TABLE Specification (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
@@ -46,10 +74,10 @@ CREATE TABLE Specification (
     model_id INTEGER REFERENCES Model(id),
     engine_id INTEGER REFERENCES Engine(id),
     part_subcategory_id INTEGER REFERENCES PartSubCategory(id),
-    UNIQUE (ad_category_id, make_id, year_id, model_id, engine_id, part_subcategory_id)
+    breed_id INTEGER REFERENCES Breed(id),
+    UNIQUE (ad_category_id, make_id, year_id, model_id, engine_id, part_subcategory_id, breed_id)
 );
 CREATE INDEX idx_specification_ad_category ON Specification(ad_category_id);
-CREATE INDEX idx_specification_make_year_model_engine ON Specification(make_id, year_id, model_id, engine_id);
 
 -- Part tables
 CREATE TABLE PartCategory (

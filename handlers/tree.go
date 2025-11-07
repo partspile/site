@@ -72,57 +72,102 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 
 	category := cookie.GetAdCategory(c)
 
+	// Get category fields to determine tree structure
+	fieldConfigs, err := spec.GetCategoryFields(category)
+	if err != nil {
+		return fmt.Errorf("failed to get category fields: %w", err)
+	}
+
 	// Browse mode: No ad IDs filtering needed
 	logger.Debug("Browse mode: no ad ID filtering",
 		"component", "tree-view")
 
-	// Get children for the current level using browse mode SQL functions
+	// Get children for the current level using dynamic field configuration
 	var children []string
 	var ads []ad.Ad
-	var err error
-	switch level {
-	case 0: // Root level - get makes
-		children, err = spec.GetAdMakes(category)
-	case 1: // Make level - get years
-		makeName := parts[0]
-		children, err = spec.GetAdYears(category, makeName)
-	case 2: // Year level - get models
-		makeName, year := parts[0], parts[1]
-		children, err = spec.GetAdModels(category, makeName, year)
-	case 3: // Model level - get engines
-		makeName, year, model := parts[0], parts[1], parts[2]
-		children, err = spec.GetAdEngines(category, makeName, year, model)
-	case 4: // Engine level - get categories
-		makeName, year, model, engine := parts[0], parts[1], parts[2], parts[3]
+
+	// Map level to field index
+	// Level 0 = first field (usually make)
+	// Level 1 = second field (usually year)
+	// etc.
+	// After all spec fields, we have part category and subcategory
+	// Then finally ads
+
+	if level < len(fieldConfigs) {
+		// This is a spec field level
+		fieldConfig := fieldConfigs[level]
+		parentValues := buildParentValuesFromPath(parts, fieldConfigs, level)
+
+		// Get field values dynamically
+		values, err := spec.GetFieldValues(category, fieldConfig.Name, parentValues)
+		if err != nil {
+			return fmt.Errorf("failed to get field values: %w", err)
+		}
+		children = values
+	} else if level == len(fieldConfigs) {
+		// Part category level
+		parentValues := buildParentValuesFromPath(parts, fieldConfigs, level)
+		makeName := parentValues["make"]
+		var year, model, engine string
+		if y, ok := parentValues["year"]; ok {
+			year = y
+		}
+		if m, ok := parentValues["model"]; ok {
+			model = m
+		}
+		if e, ok := parentValues["engine"]; ok {
+			engine = e
+		}
 		children, err = part.GetAdCategories(category, makeName, year, model, engine)
-	case 5: // Category level - get subcategories
-		makeName, year, model, engine, partCategory := parts[0], parts[1], parts[2], parts[3], parts[4]
+	} else if level == len(fieldConfigs)+1 {
+		// Part subcategory level
+		parentValues := buildParentValuesFromPath(parts[:len(parts)-1], fieldConfigs, level-1)
+		makeName := parentValues["make"]
+		var year, model, engine string
+		if y, ok := parentValues["year"]; ok {
+			year = y
+		}
+		if m, ok := parentValues["model"]; ok {
+			model = m
+		}
+		if e, ok := parentValues["engine"]; ok {
+			engine = e
+		}
+		partCategory := parts[len(parts)-1]
 		children, err = part.GetAdSubCategories(category, makeName, year, model, engine, partCategory)
-	case 6: // Subcategory level - get ads
-		makeName, year, model, engine, partCategory, subcategory := parts[0], parts[1], parts[2], parts[3], parts[4], parts[5]
-		logger.Debug("Getting ads",
-			"component", "tree-view", "make", makeName,
-			"year", year, "model", model, "engine", engine,
-			"category", partCategory, "subcategory", subcategory)
+	} else if level == len(fieldConfigs)+2 {
+		// Ads level
 		ads, err = ad.GetAdsForAll()
 		if err != nil {
 			return err
 		}
 		logger.Debug("Found ads",
 			"component", "tree-view", "count", len(ads))
+	} else {
+		return fmt.Errorf("invalid tree level: %d", level)
 	}
 
 	if err != nil {
 		return err
 	}
 
-	// At root level, show empty response if no makes available
+	// At root level, show empty response if no children available
 	if level == 0 && len(children) == 0 {
 		return render(c, ui.EmptyResponse())
 	}
 
 	csrfToken := local.GetCSRFToken(c)
 	return render(c, ui.ExpandedTreeNodeBrowse(name, path, level, loc, userID, userName, children, ads, csrfToken))
+}
+
+// buildParentValuesFromPath builds parent field values from path parts
+func buildParentValuesFromPath(parts []string, fieldConfigs []spec.FieldConfig, currentLevel int) map[string]string {
+	parentValues := make(map[string]string)
+	for i := 0; i < currentLevel && i < len(parts) && i < len(fieldConfigs); i++ {
+		fieldConfig := fieldConfigs[i]
+		parentValues[fieldConfig.Name] = parts[i]
+	}
+	return parentValues
 }
 
 func HandleTreeCollapseSearch(c *fiber.Ctx) error {
@@ -138,6 +183,8 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 	path := c.Params("*")
 	name, level, parts := parsePath(path)
 
+	category := cookie.GetAdCategory(c)
+
 	// Search mode: Get ad IDs from DOM storage (passed via HTMX)
 	adIDsStr := c.Query("adIDs")
 	if adIDsStr == "" {
@@ -151,32 +198,84 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 	logger.Debug("Using ad IDs from DOM storage",
 		"component", "tree-search", "count", len(adIDs))
 
-	// Get children for the current level using search mode SQL functions
+	// Get category fields to determine tree structure
+	fieldConfigs, err := spec.GetCategoryFields(category)
+	if err != nil {
+		return fmt.Errorf("failed to get category fields: %w", err)
+	}
+
+	// Get children for the current level using dynamic field configuration
 	var children []string
 	var ads []ad.Ad
-	switch level {
-	case 0: // Root level - get makes
-		children, err = spec.GetAdMakesForAdIDs(adIDs)
-	case 1: // Make level - get years
-		makeName := parts[0]
-		children, err = spec.GetAdYearsForAdIDs(adIDs, makeName)
-	case 2: // Year level - get models
-		makeName, year := parts[0], parts[1]
-		children, err = spec.GetAdModelsForAdIDs(adIDs, makeName, year)
-	case 3: // Model level - get engines
-		makeName, year, model := parts[0], parts[1], parts[2]
-		children, err = spec.GetAdEnginesForAdIDs(adIDs, makeName, year, model)
-	case 4: // Engine level - get categories
-		makeName, year, model, engine := parts[0], parts[1], parts[2], parts[3]
+
+	// Map level to field index (same as browse mode)
+	if level < len(fieldConfigs) {
+		// This is a spec field level - use search mode functions
+		fieldConfig := fieldConfigs[level]
+		parentValues := buildParentValuesFromPath(parts, fieldConfigs, level)
+
+		// For search mode, we need to use GetAd*ForAdIDs functions
+		// These are still hard-coded but work with ad IDs
+		switch fieldConfig.Name {
+		case "make":
+			children, err = spec.GetAdMakesForAdIDs(adIDs)
+		case "year":
+			makeName := parentValues["make"]
+			children, err = spec.GetAdYearsForAdIDs(adIDs, makeName)
+		case "model":
+			makeName := parentValues["make"]
+			year := parentValues["year"]
+			children, err = spec.GetAdModelsForAdIDs(adIDs, makeName, year)
+		case "engine":
+			makeName := parentValues["make"]
+			year := parentValues["year"]
+			model := parentValues["model"]
+			children, err = spec.GetAdEnginesForAdIDs(adIDs, makeName, year, model)
+		case "breed":
+			// TODO: Implement GetAdBreedsForAdIDs when needed
+			children = []string{}
+		default:
+			children = []string{}
+		}
+	} else if level == len(fieldConfigs) {
+		// Part category level
+		parentValues := buildParentValuesFromPath(parts, fieldConfigs, level)
+		makeName := parentValues["make"]
+		var year, model, engine string
+		if y, ok := parentValues["year"]; ok {
+			year = y
+		}
+		if m, ok := parentValues["model"]; ok {
+			model = m
+		}
+		if e, ok := parentValues["engine"]; ok {
+			engine = e
+		}
 		children, err = part.GetCategoriesForAds(adIDs, makeName, year, model, engine)
-	case 5: // Category level - get subcategories
-		makeName, year, model, engine, category := parts[0], parts[1], parts[2], parts[3], parts[4]
+	} else if level == len(fieldConfigs)+1 {
+		// Part subcategory level
+		parentValues := buildParentValuesFromPath(parts[:len(parts)-1], fieldConfigs, level-1)
+		makeName := parentValues["make"]
+		var year, model, engine string
+		if y, ok := parentValues["year"]; ok {
+			year = y
+		}
+		if m, ok := parentValues["model"]; ok {
+			model = m
+		}
+		if e, ok := parentValues["engine"]; ok {
+			engine = e
+		}
+		category := parts[len(parts)-1]
 		children, err = part.GetSubCategoriesForAds(adIDs, makeName, year, model, engine, category)
-	case 6: // Subcategory level - get ads
+	} else if level == len(fieldConfigs)+2 {
+		// Ads level
 		ads, err = ad.GetAdsForAdIDs(adIDs)
 		if err != nil {
 			return err
 		}
+	} else {
+		return fmt.Errorf("invalid tree level: %d", level)
 	}
 
 	if err != nil {

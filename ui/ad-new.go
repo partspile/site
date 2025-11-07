@@ -2,12 +2,14 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/spec"
 )
 
 // ---- New Ad Page ----
@@ -15,6 +17,40 @@ import (
 func NewAdPage(adCat int, userID int, userName, csrfToken string, path string, makes []string, categories []string, maxImagesPerAd int) g.Node {
 	categoryName := ad.GetCategoryName(adCat)
 	headerText := fmt.Sprintf("Create New %s Ad", categoryName)
+
+	// Get category fields to dynamically render form
+	fieldConfigs, err := spec.GetCategoryFields(adCat)
+	if err != nil {
+		// Fallback to empty fields if error
+		fieldConfigs = []spec.FieldConfig{}
+	}
+
+	// Build dynamic field nodes
+	fieldNodes := []g.Node{
+		titleInputField(""),
+	}
+
+	// Render spec fields dynamically
+	for i, fieldConfig := range fieldConfigs {
+		selected := []string{}
+		var defaultMake string
+		if fieldConfig.Name == "make" {
+			defaultMake = ""
+		}
+		fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, map[string][]string{}, makes, defaultMake))
+	}
+
+	// Add part category/subcategory (always shown)
+	fieldNodes = append(fieldNodes,
+		categoriesSelector(categories, ""),
+		SubCategoriesSelector([]string{}, ""),
+		imagesInputField(maxImagesPerAd),
+		descriptionTextareaField(),
+		priceInputField(),
+		locationInputField(),
+		button("Submit", withType("submit")),
+	)
+
 	return Page(
 		"New Ad - Parts Pile",
 		userID,
@@ -29,18 +65,7 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string, m
 				hx.Post("/api/new-ad"),
 				hx.Encoding("multipart/form-data"),
 				hx.Target("#result"),
-				titleInputField(""),
-				makeSelector(makes, ""),
-				YearsSelector([]string{}),
-				ModelsSelector([]string{}),
-				EnginesSelector([]string{}),
-				categoriesSelector(categories, ""),
-				SubCategoriesSelector([]string{}, ""),
-				imagesInputField(maxImagesPerAd),
-				descriptionTextareaField(),
-				priceInputField(),
-				locationInputField(),
-				button("Submit", withType("submit")),
+				g.Group(fieldNodes),
 			),
 			resultContainer(),
 		},
@@ -62,6 +87,51 @@ func DuplicateAdPage(
 	selectedSubcategory string,
 	maxImagesPerAd int,
 ) g.Node {
+	adCat := originalAd.AdCategoryID
+
+	// Get category fields to dynamically render form
+	fieldConfigs, err := spec.GetCategoryFields(adCat)
+	if err != nil {
+		// Fallback to empty fields if error
+		fieldConfigs = []spec.FieldConfig{}
+	}
+
+	// Build selected values map from AdDetail (temporary compatibility layer)
+	selectedValues := map[string][]string{
+		"year":   originalAd.Years,
+		"model":  originalAd.Models,
+		"engine": originalAd.Engines,
+	}
+
+	// Build dynamic field nodes
+	fieldNodes := []g.Node{
+		titleInputField(originalAd.Title),
+	}
+
+	// Render spec fields dynamically
+	for i, fieldConfig := range fieldConfigs {
+		selected := []string{}
+		if sv, ok := selectedValues[fieldConfig.Name]; ok {
+			selected = sv
+		}
+		var defaultMake string
+		if fieldConfig.Name == "make" && originalAd.Make != "" {
+			defaultMake = originalAd.Make
+		}
+		fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, selectedValues, makes, defaultMake))
+	}
+
+	// Add part category/subcategory
+	fieldNodes = append(fieldNodes,
+		categoriesSelector(categories, originalAd.PartCategory),
+		SubCategoriesSelector(subcategoryNames, selectedSubcategory),
+		imagesInputField(maxImagesPerAd),
+		descriptionTextareaField(),
+		priceInputField(),
+		locationInputField(),
+		button("Submit", withType("submit")),
+	)
+
 	return Page(
 		"Duplicate Ad - Parts Pile",
 		userID,
@@ -76,18 +146,7 @@ func DuplicateAdPage(
 				hx.Post("/api/new-ad"),
 				hx.Encoding("multipart/form-data"),
 				hx.Target("#result"),
-				titleInputField(originalAd.Title),
-				makeSelector(makes, originalAd.Make),
-				YearsSelector(years, originalAd.Years),
-				ModelsSelector(models, originalAd.Models),
-				EnginesSelector(engines, originalAd.Engines),
-				categoriesSelector(categories, originalAd.PartCategory),
-				SubCategoriesSelector(subcategoryNames, selectedSubcategory),
-				imagesInputField(maxImagesPerAd),
-				descriptionTextareaField(),
-				priceInputField(),
-				locationInputField(),
-				button("Submit", withType("submit")),
+				g.Group(fieldNodes),
 			),
 			resultContainer(),
 		},
@@ -111,7 +170,137 @@ func titleInputField(defaultValue string) g.Node {
 	)
 }
 
-func makeSelector(makes []string, defaultMake string) g.Node {
+// renderFieldSelector renders a field selector dynamically based on field configuration
+func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields []spec.FieldConfig, selectedValues []string, allSelectedValues map[string][]string, makes []string, defaultMake string) g.Node {
+	fieldID := fieldConfig.Name + "Div"
+	fieldName := fieldConfig.Name
+	fieldNamePlural := fieldConfig.Name + "s" // For multi-value fields
+
+	// Build HTMX include selector for parent fields
+	var includeSelectors []string
+	for i := 0; i < fieldIndex; i++ {
+		parentField := allFields[i]
+		if parentField.QdrantType == "keyword_array" {
+			includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%ss']:checked", parentField.Name))
+		} else {
+			includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']", parentField.Name))
+		}
+	}
+
+	// Determine next field to update
+	var nextFieldName string
+	var nextFieldTarget string
+	if fieldIndex+1 < len(allFields) {
+		nextField := allFields[fieldIndex+1]
+		nextFieldName = nextField.Name
+		nextFieldTarget = nextField.Name + "Div"
+	} else {
+		// After last spec field, update subcategories
+		nextFieldTarget = "subcategoriesDiv"
+	}
+
+	if fieldConfig.QdrantType == "keyword_array" {
+		// Multi-select (checkboxes) - years, models, engines
+		selected := make(map[string]bool)
+		for _, val := range selectedValues {
+			selected[val] = true
+		}
+
+		checkboxes := []g.Node{}
+		for _, value := range selectedValues {
+			attrs := []g.Node{
+				Checkbox(fieldNamePlural, value, value, selected[value], false),
+			}
+
+			// Add HTMX trigger if there's a next field
+			if nextFieldTarget != "" {
+				includeStr := strings.Join(append(includeSelectors, fmt.Sprintf("[name='%s']:checked", fieldNamePlural)), ",")
+				attrs = append(attrs,
+					hx.Trigger("change"),
+					hx.Get(fmt.Sprintf("/api/%s", nextFieldName)),
+					hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
+					hx.Include(includeStr),
+					hx.Swap("innerHTML"),
+				)
+				// Clear fields after this one
+				if fieldIndex+2 < len(allFields) {
+					clearTargets := []string{}
+					for j := fieldIndex + 2; j < len(allFields); j++ {
+						clearTargets = append(clearTargets, fmt.Sprintf("document.getElementById('%sDiv').innerHTML = ''", allFields[j].Name))
+					}
+					clearTargets = append(clearTargets, "document.getElementById('subcategoriesDiv').innerHTML = ''")
+					attrs = append(attrs, g.Attr("onclick", strings.Join(clearTargets, "; ")))
+				}
+			}
+
+			checkboxes = append(checkboxes, g.Group(attrs))
+		}
+
+		// For now, return empty div - values will be populated via HTMX
+		return Div(
+			ID(fieldID),
+			Class("space-y-2"),
+			formGroup(fieldConfig.DisplayName, fieldNamePlural, GridContainer4(checkboxes...)),
+		)
+	} else {
+		// Single-select (dropdown) - make, breed
+		if fieldConfig.Name == "make" {
+			// Build clear targets script
+			clearTargets := []string{}
+			if fieldIndex+1 < len(allFields) {
+				for j := fieldIndex + 1; j < len(allFields); j++ {
+					clearTargets = append(clearTargets, fmt.Sprintf("document.getElementById('%sDiv').innerHTML = ''", allFields[j].Name))
+				}
+			}
+			clearTargets = append(clearTargets, "document.getElementById('subcategoriesDiv').innerHTML = ''")
+			clearTargetsScript := strings.Join(clearTargets, "; ")
+
+			// Use makes from parameter
+			return makeSelector(makes, defaultMake, nextFieldName, nextFieldTarget, clearTargetsScript)
+		}
+
+		// Generic single-select dropdown
+		options := []g.Node{
+			Option(Value(""), g.Text(fmt.Sprintf("Select a %s", fieldConfig.DisplayName))),
+		}
+
+		attrs := []g.Node{
+			ID(fieldName),
+			Name(fieldName),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
+		}
+
+		if fieldConfig.IsRequired {
+			attrs = append(attrs, Required())
+		}
+
+		// Add HTMX trigger if there's a next field
+		if nextFieldTarget != "" {
+			includeStr := strings.Join(append(includeSelectors, fmt.Sprintf("[name='%s']", fieldName)), ",")
+			attrs = append(attrs,
+				hx.Trigger("change"),
+				hx.Get(fmt.Sprintf("/api/%s", nextFieldName)),
+				hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
+				hx.Include(includeStr),
+			)
+			// Clear fields after this one
+			if fieldIndex+2 < len(allFields) {
+				clearTargets := []string{}
+				for j := fieldIndex + 2; j < len(allFields); j++ {
+					clearTargets = append(clearTargets, fmt.Sprintf("document.getElementById('%sDiv').innerHTML = ''", allFields[j].Name))
+				}
+				clearTargets = append(clearTargets, "document.getElementById('subcategoriesDiv').innerHTML = ''")
+				attrs = append(attrs, g.Attr("onchange", strings.Join(clearTargets, "; ")))
+			}
+		}
+
+		return formGroup(fieldConfig.DisplayName, fieldName,
+			Select(append(attrs, g.Group(options))...),
+		)
+	}
+}
+
+func makeSelector(makes []string, defaultMake string, nextFieldName string, nextFieldTarget string, clearTargetsScript string) g.Node {
 	makeOptions := []g.Node{}
 	for _, makeName := range makes {
 		attrs := []g.Node{Value(makeName), g.Text(makeName)}
@@ -121,20 +310,30 @@ func makeSelector(makes []string, defaultMake string) g.Node {
 		makeOptions = append(makeOptions, Option(attrs...))
 	}
 
-	return formGroup("Make", "make",
-		Select(
-			ID("make"),
-			Name("make"),
-			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
-			Required(),
+	attrs := []g.Node{
+		ID("make"),
+		Name("make"),
+		Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
+		Required(),
+	}
+
+	// Add HTMX trigger if there's a next field
+	if nextFieldTarget != "" {
+		attrs = append(attrs,
 			hx.Trigger("change"),
-			hx.Get("/api/years"),
-			hx.Target("#yearsDiv"),
+			hx.Get(fmt.Sprintf("/api/%s", nextFieldName)),
+			hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
 			hx.Include("this"),
-			g.Attr("onchange", "this.checkValidity(); document.getElementById('modelsDiv').innerHTML = ''; document.getElementById('enginesDiv').innerHTML = ''; document.getElementById('subcategoriesDiv').innerHTML = '';"),
-			Option(Value(""), g.Text("Select a make")),
-			g.Group(makeOptions),
-		),
+		)
+		if clearTargetsScript != "" {
+			attrs = append(attrs, g.Attr("onchange", fmt.Sprintf("this.checkValidity(); %s", clearTargetsScript)))
+		} else {
+			attrs = append(attrs, g.Attr("onchange", "this.checkValidity()"))
+		}
+	}
+
+	return formGroup("Make", "make",
+		Select(append(attrs, Option(Value(""), g.Text("Select a make")), g.Group(makeOptions))...),
 	)
 }
 

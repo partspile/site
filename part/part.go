@@ -3,13 +3,23 @@ package part
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/cache"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
+	"github.com/parts-pile/site/spec"
 )
+
+// getValueColumnName returns the column name for the value in a table
+// For Year table, it's "year", for other tables it's "name"
+func getValueColumnName(tableName string) string {
+	if tableName == "Year" {
+		return "year"
+	}
+	return "name"
+}
 
 type PartCategory struct {
 	ID   int    `db:"id"`
@@ -127,12 +137,17 @@ func ClearPartCache() map[string]any {
 // SQL QUERY BUILDERS (Internal helper functions)
 // ============================================================================
 
-// buildAdCategoriesQuery builds the SQL query for finding categories that have existing ads for make/year/model/engine
-func buildAdCategoriesQuery(adCat int, makeName, year, model, engine string) (string, []interface{}) {
-	var query string
-	var args []interface{}
+// buildAdCategoriesQuery builds the SQL query dynamically based on category field configuration
+func buildAdCategoriesQuery(adCat int, fieldValues map[string]string) (string, []interface{}) {
+	// Get category fields
+	fieldConfigs, err := spec.GetCategoryFields(adCat)
+	if err != nil {
+		logger.Warn("Failed to get category fields for part query",
+			"error", err, "component", "part", "adCat", adCat)
+		return "", nil
+	}
 
-	// Build common query parts
+	// Build base query
 	baseQuery := `
 		SELECT DISTINCT pc.name
 		FROM PartCategory pc
@@ -140,53 +155,66 @@ func buildAdCategoriesQuery(adCat int, makeName, year, model, engine string) (st
 		JOIN Specification spec ON spec.part_subcategory_id = psc.id
 		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
 		JOIN Ad a ON ad_spec.ad_id = a.id
-		JOIN Make m ON spec.make_id = m.id
-		JOIN Model mo ON spec.model_id = mo.id
 	`
 
-	// Add conditional JOINs and WHERE clauses based on ad category
-	switch adCat {
-	case ad.AdCategoryCar, ad.AdCategoryCarPart, ad.AdCategoryMotorcycle, ad.AdCategoryMotorcyclePart:
-		// Cars and Motorcycles: make, year, model, engine
-		query = baseQuery + `
-			JOIN Year y ON spec.year_id = y.id
-			JOIN Engine e ON spec.engine_id = e.id
-			WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ?
-			ORDER BY pc.name
-		`
-		args = []interface{}{makeName, year, model, engine}
+	var joins []string
+	var whereClauses []string
+	var args []interface{}
 
-	case ad.AdCategoryAg, ad.AdCategoryAgPart:
-		// Ag Equipment: make, year, model (no engine)
-		query = baseQuery + `
-			JOIN Year y ON spec.year_id = y.id
-			WHERE m.name = ? AND y.year = ? AND mo.name = ?
-			ORDER BY pc.name
-		`
-		args = []interface{}{makeName, year, model}
+	whereClauses = append(whereClauses, "a.ad_category_id = ?")
+	args = append(args, adCat)
 
-	case ad.AdCategoryBicycle, ad.AdCategoryBicyclePart:
-		// Bicycles: make, model (no year, no engine)
-		query = baseQuery + `
-			WHERE m.name = ? AND mo.name = ?
-			ORDER BY pc.name
-		`
-		args = []interface{}{makeName, model}
+	// Add JOINs and WHERE clauses for each spec field
+	for _, fieldConfig := range fieldConfigs {
+		value, hasValue := fieldValues[fieldConfig.Name]
+		if !hasValue || value == "" {
+			continue
+		}
 
-	default:
-		// Unknown ad category - panic to catch programming errors
-		panic(fmt.Sprintf("unsupported ad category: %v", adCat))
+		tableName := fieldConfig.TableName
+		tableFieldName := fieldConfig.TableFieldName
+		joins = append(joins, fmt.Sprintf("JOIN %s ON spec.%s = %s.id",
+			tableName, tableFieldName, tableName))
+
+		if fieldConfig.FieldType == "int" {
+			// For integer fields, convert string to int
+			intValue, err := strconv.Atoi(value)
+			if err == nil {
+				valueCol := getValueColumnName(tableName)
+				whereClauses = append(whereClauses,
+					fmt.Sprintf("%s.%s = ?", tableName, valueCol))
+				args = append(args, intValue)
+			}
+		} else {
+			// For string fields, compare with name column
+			whereClauses = append(whereClauses,
+				fmt.Sprintf("%s.name = ?", tableName))
+			args = append(args, value)
+		}
 	}
+
+	// Build final query
+	query := baseQuery
+	if len(joins) > 0 {
+		query += " " + strings.Join(joins, " ")
+	}
+	query += " WHERE " + strings.Join(whereClauses, " AND ")
+	query += " ORDER BY pc.name"
 
 	return query, args
 }
 
-// buildAdSubCategoriesQuery builds the SQL query for finding subcategories that have existing ads for make/year/model/engine/category
-func buildAdSubCategoriesQuery(adCat int, makeName, year, model, engine, category string) (string, []interface{}) {
-	var query string
-	var args []interface{}
+// buildAdSubCategoriesQuery builds the SQL query dynamically based on category field configuration
+func buildAdSubCategoriesQuery(adCat int, fieldValues map[string]string, category string) (string, []interface{}) {
+	// Get category fields
+	fieldConfigs, err := spec.GetCategoryFields(adCat)
+	if err != nil {
+		logger.Warn("Failed to get category fields for part query",
+			"error", err, "component", "part", "adCat", adCat)
+		return "", nil
+	}
 
-	// Build common query parts
+	// Build base query
 	baseQuery := `
 		SELECT DISTINCT psc.name
 		FROM PartSubCategory psc
@@ -194,43 +222,55 @@ func buildAdSubCategoriesQuery(adCat int, makeName, year, model, engine, categor
 		JOIN Specification spec ON spec.part_subcategory_id = psc.id
 		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
 		JOIN Ad a ON ad_spec.ad_id = a.id
-		JOIN Make m ON spec.make_id = m.id
-		JOIN Model mo ON spec.model_id = mo.id
 	`
 
-	// Add conditional JOINs and WHERE clauses based on ad category
-	switch adCat {
-	case ad.AdCategoryCar, ad.AdCategoryCarPart, ad.AdCategoryMotorcycle, ad.AdCategoryMotorcyclePart:
-		// Cars and Motorcycles: make, year, model, engine
-		query = baseQuery + `
-			JOIN Year y ON spec.year_id = y.id
-			JOIN Engine e ON spec.engine_id = e.id
-			WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND pc.name = ?
-			ORDER BY psc.name
-		`
-		args = []interface{}{makeName, year, model, engine, category}
+	var joins []string
+	var whereClauses []string
+	var args []interface{}
 
-	case ad.AdCategoryAg, ad.AdCategoryAgPart:
-		// Ag Equipment: make, year, model (no engine)
-		query = baseQuery + `
-			JOIN Year y ON spec.year_id = y.id
-			WHERE m.name = ? AND y.year = ? AND mo.name = ? AND pc.name = ?
-			ORDER BY psc.name
-		`
-		args = []interface{}{makeName, year, model, category}
+	whereClauses = append(whereClauses, "a.ad_category_id = ?")
+	args = append(args, adCat)
 
-	case ad.AdCategoryBicycle, ad.AdCategoryBicyclePart:
-		// Bicycles: make, model (no year, no engine)
-		query = baseQuery + `
-			WHERE m.name = ? AND mo.name = ? AND pc.name = ?
-			ORDER BY psc.name
-		`
-		args = []interface{}{makeName, model, category}
+	// Add JOINs and WHERE clauses for each spec field
+	for _, fieldConfig := range fieldConfigs {
+		value, hasValue := fieldValues[fieldConfig.Name]
+		if !hasValue || value == "" {
+			continue
+		}
 
-	default:
-		// Unknown ad category - panic to catch programming errors
-		panic(fmt.Sprintf("unsupported ad category: %v", adCat))
+		tableName := fieldConfig.TableName
+		tableFieldName := fieldConfig.TableFieldName
+		joins = append(joins, fmt.Sprintf("JOIN %s ON spec.%s = %s.id",
+			tableName, tableFieldName, tableName))
+
+		if fieldConfig.FieldType == "int" {
+			// For integer fields, convert string to int
+			intValue, err := strconv.Atoi(value)
+			if err == nil {
+				valueCol := getValueColumnName(tableName)
+				whereClauses = append(whereClauses,
+					fmt.Sprintf("%s.%s = ?", tableName, valueCol))
+				args = append(args, intValue)
+			}
+		} else {
+			// For string fields, compare with name column
+			whereClauses = append(whereClauses,
+				fmt.Sprintf("%s.name = ?", tableName))
+			args = append(args, value)
+		}
 	}
+
+	// Add part category filter
+	whereClauses = append(whereClauses, "pc.name = ?")
+	args = append(args, category)
+
+	// Build final query
+	query := baseQuery
+	if len(joins) > 0 {
+		query += " " + strings.Join(joins, " ")
+	}
+	query += " WHERE " + strings.Join(whereClauses, " AND ")
+	query += " ORDER BY psc.name"
 
 	return query, args
 }
@@ -246,6 +286,20 @@ func GetAdCategories(adCat int, makeName, year, model, engine string) ([]string,
 	model, _ = url.QueryUnescape(model)
 	engine, _ = url.QueryUnescape(engine)
 
+	// Build field values map (temporary compatibility layer)
+	fieldValues := map[string]string{
+		"make": makeName,
+	}
+	if year != "" {
+		fieldValues["year"] = year
+	}
+	if model != "" {
+		fieldValues["model"] = model
+	}
+	if engine != "" {
+		fieldValues["engine"] = engine
+	}
+
 	// Create cache key
 	cacheKey := fmt.Sprintf("ad:categories:%d:%s:%s:%s:%s", adCat, makeName, year, model, engine)
 
@@ -254,7 +308,7 @@ func GetAdCategories(adCat int, makeName, year, model, engine string) ([]string,
 		return cached, nil
 	}
 
-	query, args := buildAdCategoriesQuery(adCat, makeName, year, model, engine)
+	query, args := buildAdCategoriesQuery(adCat, fieldValues)
 	var categories []string
 	err := db.Select(&categories, query, args...)
 	if err != nil {
@@ -274,6 +328,20 @@ func GetAdSubCategories(adCat int, makeName, year, model, engine, category strin
 	engine, _ = url.QueryUnescape(engine)
 	category, _ = url.QueryUnescape(category)
 
+	// Build field values map (temporary compatibility layer)
+	fieldValues := map[string]string{
+		"make": makeName,
+	}
+	if year != "" {
+		fieldValues["year"] = year
+	}
+	if model != "" {
+		fieldValues["model"] = model
+	}
+	if engine != "" {
+		fieldValues["engine"] = engine
+	}
+
 	// Create cache key
 	cacheKey := fmt.Sprintf("ad:subcategories:%d:%s:%s:%s:%s:%s", adCat, makeName, year, model, engine, category)
 
@@ -282,7 +350,7 @@ func GetAdSubCategories(adCat int, makeName, year, model, engine, category strin
 		return cached, nil
 	}
 
-	query, args := buildAdSubCategoriesQuery(adCat, makeName, year, model, engine, category)
+	query, args := buildAdSubCategoriesQuery(adCat, fieldValues, category)
 	var subCategories []string
 	err := db.Select(&subCategories, query, args...)
 	if err != nil {
@@ -310,42 +378,52 @@ func GetCategoriesForAds(adIDs []int, makeName, year, model, engine string) ([]s
 	model, _ = url.QueryUnescape(model)
 	engine, _ = url.QueryUnescape(engine)
 
-	// Create placeholders for the IN clause
+	// Get ad category from first ad (all ads should have same category)
+	// For now, we'll need to pass adCat - but this function signature doesn't have it
+	// We'll need to query it or change the signature
+	// For now, use a workaround - query ad category from first ad
+	var adCat int
+	err := db.Get(&adCat, "SELECT ad_category_id FROM Ad WHERE id = ?", adIDs[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ad category: %w", err)
+	}
+
+	// Build field values map
+	fieldValues := map[string]string{
+		"make": makeName,
+	}
+	if year != "" {
+		fieldValues["year"] = year
+	}
+	if model != "" {
+		fieldValues["model"] = model
+	}
+	if engine != "" {
+		fieldValues["engine"] = engine
+	}
+
+	// Build dynamic query
+	baseQuery, baseArgs := buildAdCategoriesQuery(adCat, fieldValues)
+	if baseQuery == "" {
+		return nil, fmt.Errorf("failed to build query")
+	}
+
+	// Add ad ID filter
 	placeholders := make([]string, len(adIDs))
 	for i := range adIDs {
 		placeholders[i] = "?"
 	}
 
-	query := fmt.Sprintf(`
-		SELECT DISTINCT pc.name
-		FROM PartCategory pc
-		JOIN PartSubCategory psc ON pc.id = psc.part_category_id
-		JOIN Specification spec ON spec.part_subcategory_id = psc.id
-		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
-		JOIN Ad a ON ad_spec.ad_id = a.id
-		JOIN Make m ON spec.make_id = m.id
-		JOIN Year y ON spec.year_id = y.id
-		JOIN Model mo ON spec.model_id = mo.id
-		JOIN Engine e ON spec.engine_id = e.id
-		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND a.id IN (%s)
-		ORDER BY pc.name
-	`, strings.Join(placeholders, ","))
+	query := strings.Replace(baseQuery, "ORDER BY pc.name",
+		fmt.Sprintf("AND a.id IN (%s) ORDER BY pc.name", strings.Join(placeholders, ",")), 1)
 
-	var args []interface{}
-	args = append(args, makeName, year, model, engine)
-	for _, id := range adIDs {
-		args = append(args, id)
+	args := append(baseArgs, make([]interface{}, len(adIDs))...)
+	for i, id := range adIDs {
+		args[len(baseArgs)+i] = id
 	}
 
-	logger.Debug("GetCategoriesForAdIDs query",
-		"component", "GetCategoriesForAdIDs", "query", query,
-		"args", args)
-
 	var categories []string
-	err := db.Select(&categories, query, args...)
-	logger.Debug("GetCategoriesForAdIDs result",
-		"component", "GetCategoriesForAdIDs", "count",
-		len(categories), "error", err)
+	err = db.Select(&categories, query, args...)
 	return categories, err
 }
 
@@ -362,34 +440,48 @@ func GetSubCategoriesForAds(adIDs []int, makeName, year, model, engine, category
 	engine, _ = url.QueryUnescape(engine)
 	category, _ = url.QueryUnescape(category)
 
-	// Create placeholders for the IN clause
+	// Get ad category from first ad
+	var adCat int
+	err := db.Get(&adCat, "SELECT ad_category_id FROM Ad WHERE id = ?", adIDs[0])
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ad category: %w", err)
+	}
+
+	// Build field values map
+	fieldValues := map[string]string{
+		"make": makeName,
+	}
+	if year != "" {
+		fieldValues["year"] = year
+	}
+	if model != "" {
+		fieldValues["model"] = model
+	}
+	if engine != "" {
+		fieldValues["engine"] = engine
+	}
+
+	// Build dynamic query
+	baseQuery, baseArgs := buildAdSubCategoriesQuery(adCat, fieldValues, category)
+	if baseQuery == "" {
+		return nil, fmt.Errorf("failed to build query")
+	}
+
+	// Add ad ID filter
 	placeholders := make([]string, len(adIDs))
 	for i := range adIDs {
 		placeholders[i] = "?"
 	}
 
-	query := fmt.Sprintf(`
-		SELECT DISTINCT psc.name
-		FROM PartSubCategory psc
-		JOIN PartCategory pc ON psc.part_category_id = pc.id
-		JOIN Specification spec ON spec.part_subcategory_id = psc.id
-		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
-		JOIN Ad a ON ad_spec.ad_id = a.id
-		JOIN Make m ON spec.make_id = m.id
-		JOIN Year y ON spec.year_id = y.id
-		JOIN Model mo ON spec.model_id = mo.id
-		JOIN Engine e ON spec.engine_id = e.id
-		WHERE m.name = ? AND y.year = ? AND mo.name = ? AND e.name = ? AND pc.name = ? AND a.id IN (%s)
-		ORDER BY psc.name
-	`, strings.Join(placeholders, ","))
+	query := strings.Replace(baseQuery, "ORDER BY psc.name",
+		fmt.Sprintf("AND a.id IN (%s) ORDER BY psc.name", strings.Join(placeholders, ",")), 1)
 
-	var args []interface{}
-	args = append(args, makeName, year, model, engine, category)
-	for _, id := range adIDs {
-		args = append(args, id)
+	args := append(baseArgs, make([]interface{}, len(adIDs))...)
+	for i, id := range adIDs {
+		args[len(baseArgs)+i] = id
 	}
 
 	var subCategories []string
-	err := db.Select(&subCategories, query, args...)
+	err = db.Select(&subCategories, query, args...)
 	return subCategories, err
 }

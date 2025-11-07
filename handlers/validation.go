@@ -13,6 +13,7 @@ import (
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/ui"
+	"github.com/parts-pile/site/spec"
 )
 
 // ValidateRequired validates that a required form field is not empty
@@ -164,35 +165,54 @@ func ValidationErrorResponseWithStatus(c *fiber.Ctx, message string, statusCode 
 	return render(c, ui.ValidationError(message))
 }
 
-// ValidateAdForm validates the common ad form fields (years, models, engines)
-func ValidateAdForm(form *multipart.Form) error {
-	if _, err := ValidateRequiredMultipart(form, "years", "year"); err != nil {
-		return err
+// ValidateAdForm validates the common ad form fields dynamically based on category configuration
+func ValidateAdForm(form *multipart.Form, adCat int) error {
+	// Get category fields to determine which fields to validate
+	fieldConfigs, err := spec.GetCategoryFields(adCat)
+	if err != nil {
+		return fmt.Errorf("failed to get category fields: %w", err)
 	}
-	if _, err := ValidateRequiredMultipart(form, "models", "model"); err != nil {
-		return err
+
+	// Validate multi-value fields (keyword_array type)
+	for _, fieldConfig := range fieldConfigs {
+		if fieldConfig.QdrantType == "keyword_array" && fieldConfig.IsRequired {
+			fieldName := fieldConfig.Name + "s" // Form uses plural
+			values := form.Value[fieldName]
+			if len(values) == 0 {
+				return fmt.Errorf("please select at least one %s", fieldConfig.DisplayName)
+			}
+		}
 	}
-	if _, err := ValidateRequiredMultipart(form, "engines", "engine size"); err != nil {
-		return err
-	}
+
 	return nil
 }
 
-// validateAdFormMultipart validates ad form and returns the values
-func validateAdFormMultipart(form *multipart.Form) (years, models, engines []string, err error) {
-	years, err = ValidateRequiredMultipart(form, "years", "year")
+// validateAdFormMultipart validates ad form and returns the values dynamically
+func validateAdFormMultipart(form *multipart.Form, adCat int) (years, models, engines []string, err error) {
+	// Get category fields to determine which fields to validate
+	fieldConfigs, err := spec.GetCategoryFields(adCat)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, fmt.Errorf("failed to get category fields: %w", err)
 	}
 
-	models, err = ValidateRequiredMultipart(form, "models", "model")
-	if err != nil {
-		return nil, nil, nil, err
-	}
+	// Validate multi-value fields (keyword_array type)
+	for _, fieldConfig := range fieldConfigs {
+		if fieldConfig.QdrantType == "keyword_array" && fieldConfig.IsRequired {
+			values := form.Value[fieldConfig.Name+"s"] // Form fields use plural (years, models, engines)
+			if len(values) == 0 {
+				return nil, nil, nil, fmt.Errorf("please select at least one %s", fieldConfig.DisplayName)
+			}
 
-	engines, err = ValidateRequiredMultipart(form, "engines", "engine size")
-	if err != nil {
-		return nil, nil, nil, err
+			// Store values in appropriate variables (temporary compatibility layer)
+			switch fieldConfig.Name {
+			case "year":
+				years = values
+			case "model":
+				models = values
+			case "engine":
+				engines = values
+			}
+		}
 	}
 
 	return years, models, engines, nil
@@ -294,7 +314,7 @@ func ValidateImageFiles(files []*multipart.FileHeader) error {
 	return nil
 }
 
-// BuildAdFromForm builds an Ad struct from form data
+// BuildAdFromForm builds an Ad struct from form data dynamically based on category field configuration
 func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.AdDetail, []*multipart.FileHeader, []int, error) {
 	adCat := cookie.GetAdCategory(c)
 
@@ -302,26 +322,66 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	if err != nil {
 		return ad.AdDetail{}, nil, nil, err
 	}
-	make, err := ValidateRequired(c, "make", "Make")
+
+	// Get category fields to determine which fields to validate
+	fieldConfigs, err := spec.GetCategoryFields(adCat)
 	if err != nil {
-		return ad.AdDetail{}, nil, nil, err
+		return ad.AdDetail{}, nil, nil, fmt.Errorf("failed to get category fields: %w", err)
 	}
+
 	form, err := c.MultipartForm()
 	if err != nil {
 		return ad.AdDetail{}, nil, nil, err
 	}
-	years, models, engines, err := validateAdFormMultipart(form)
-	if err != nil {
-		return ad.AdDetail{}, nil, nil, err
+
+	// Validate and extract spec fields dynamically
+	var make string
+	var years, models, engines []string
+
+	for _, fieldConfig := range fieldConfigs {
+		if fieldConfig.IsRequired {
+			if fieldConfig.QdrantType == "keyword_array" {
+				// Multi-value fields (years, models, engines)
+				fieldName := fieldConfig.Name + "s" // Form uses plural
+				values := form.Value[fieldName]
+				if len(values) == 0 {
+					return ad.AdDetail{}, nil, nil, fmt.Errorf("please select at least one %s", fieldConfig.DisplayName)
+				}
+
+				// Store in appropriate variable (temporary compatibility layer)
+				switch fieldConfig.Name {
+				case "year":
+					years = values
+				case "model":
+					models = values
+				case "engine":
+					engines = values
+				}
+			} else {
+				// Single-value fields (make, breed)
+				value, err := ValidateRequired(c, fieldConfig.Name, fieldConfig.DisplayName)
+				if err != nil {
+					return ad.AdDetail{}, nil, nil, err
+				}
+
+				// Store in appropriate variable (temporary compatibility layer)
+				switch fieldConfig.Name {
+				case "make":
+					make = value
+				case "breed":
+					// TODO: Add breed field to AdDetail when needed
+				}
+			}
+		}
 	}
 
-	// Validate category as single field
+	// Validate category as single field (always required for part categories)
 	category, err := ValidateRequired(c, "category", "Category")
 	if err != nil {
 		return ad.AdDetail{}, nil, nil, err
 	}
 
-	// Validate subcategory as single field
+	// Validate subcategory as single field (always required for part categories)
 	subcategoryName, err := ValidateRequired(c, "subcategory", "Subcategory")
 	if err != nil {
 		return ad.AdDetail{}, nil, nil, err
@@ -369,6 +429,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	}
 
 	// Create a simple AdDetail struct with the specified category
+	// This is a temporary compatibility layer - AdDetail has hard-coded fields
 	newAd := ad.AdDetail{
 		Ad: ad.Ad{
 			ID:           id,

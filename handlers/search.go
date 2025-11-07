@@ -135,6 +135,90 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 	logger.Debug("Added ad_category_id filter",
 		"component", "buildSearchFilters", "adCategoryID", ac)
 
+	// Get category fields to determine which filters to apply
+	fieldConfigs, err := spec.GetCategoryFields(ac)
+	if err != nil {
+		logger.Warn("Failed to get category fields for search filter",
+			"error", err, "component", "buildSearchFilters", "adCategoryID", ac)
+		// Continue with basic filters only
+	} else {
+		// Add filters for spec fields that exist in this category
+		for _, fieldConfig := range fieldConfigs {
+			switch fieldConfig.Name {
+			case "make":
+				make := params["make"]
+				if make != "" {
+					makeCondition := qdrant.NewMatch("make", make)
+					conditions = append(conditions, makeCondition)
+					logger.Debug("Added make filter",
+						"component", "buildSearchFilters", "make", make)
+				}
+			case "year":
+				// Year condition (range - min/max years converted to keywords)
+				minYearStr := params["min_year"]
+				maxYearStr := params["max_year"]
+				if minYearStr != "" || maxYearStr != "" {
+					var minYear, maxYear int
+					var hasMin, hasMax bool
+
+					if minYearStr != "" {
+						if year, err := strconv.Atoi(minYearStr); err == nil {
+							minYear = year
+							hasMin = true
+						}
+					}
+					if maxYearStr != "" {
+						if year, err := strconv.Atoi(maxYearStr); err == nil {
+							maxYear = year
+							hasMax = true
+						}
+					}
+
+					// Convert year range to list of year strings
+					var yearList []string
+					if hasMin && hasMax {
+						// Both min and max specified
+						for year := minYear; year <= maxYear; year++ {
+							yearList = append(yearList, strconv.Itoa(year))
+						}
+					} else if hasMin {
+						// Only min specified - assume reasonable max (current year + 5)
+						currentYear := 2024
+						for year := minYear; year <= currentYear+5; year++ {
+							yearList = append(yearList, strconv.Itoa(year))
+						}
+					} else if hasMax {
+						// Only max specified - assume reasonable min (1900)
+						for year := 1900; year <= maxYear; year++ {
+							yearList = append(yearList, strconv.Itoa(year))
+						}
+					}
+
+					if len(yearList) > 0 {
+						yearCondition := qdrant.NewMatchKeywords("years", yearList...)
+						conditions = append(conditions, yearCondition)
+						logger.Debug("Added year keywords filter",
+							"component", "buildSearchFilters", "yearList", yearList)
+					}
+				}
+			case "model":
+				// TODO: Add model filter support when needed
+				// For now, models are not filterable in search
+			case "engine":
+				// TODO: Add engine filter support when needed
+				// For now, engines are not filterable in search
+			case "breed":
+				breed := params["breed"]
+				if breed != "" {
+					breedCondition := qdrant.NewMatch("breed", breed)
+					conditions = append(conditions, breedCondition)
+					logger.Debug("Added breed filter",
+						"component", "buildSearchFilters", "breed", breed)
+				}
+			}
+		}
+	}
+
 	// Location condition (geo radius) - only apply if location is provided
 	l := params["location"]
 	if l != "" {
@@ -159,63 +243,6 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 			logger.Debug("Added location filter",
 				"component", "buildSearchFilters", "location", l,
 				"lat", lat, "lon", lon, "radiusMiles", r)
-		}
-	}
-
-	// Make condition (exact string match)
-	make := params["make"]
-	if make != "" {
-		makeCondition := qdrant.NewMatch("make", make)
-		conditions = append(conditions, makeCondition)
-		logger.Debug("Added make filter",
-			"component", "buildSearchFilters", "make", make)
-	}
-
-	// Year condition (range - min/max years converted to keywords)
-	minYearStr := params["min_year"]
-	maxYearStr := params["max_year"]
-	if minYearStr != "" || maxYearStr != "" {
-		var minYear, maxYear int
-		var hasMin, hasMax bool
-
-		if minYearStr != "" {
-			if year, err := strconv.Atoi(minYearStr); err == nil {
-				minYear = year
-				hasMin = true
-			}
-		}
-		if maxYearStr != "" {
-			if year, err := strconv.Atoi(maxYearStr); err == nil {
-				maxYear = year
-				hasMax = true
-			}
-		}
-
-		// Convert year range to list of year strings
-		var yearList []string
-		if hasMin && hasMax {
-			// Both min and max specified
-			for year := minYear; year <= maxYear; year++ {
-				yearList = append(yearList, strconv.Itoa(year))
-			}
-		} else if hasMin {
-			// Only min specified - assume reasonable max (current year + 5)
-			currentYear := 2024
-			for year := minYear; year <= currentYear+5; year++ {
-				yearList = append(yearList, strconv.Itoa(year))
-			}
-		} else if hasMax {
-			// Only max specified - assume reasonable min (1900)
-			for year := 1900; year <= maxYear; year++ {
-				yearList = append(yearList, strconv.Itoa(year))
-			}
-		}
-
-		if len(yearList) > 0 {
-			yearCondition := qdrant.NewMatchKeywords("years", yearList...)
-			conditions = append(conditions, yearCondition)
-			logger.Debug("Added year keywords filter",
-				"component", "buildSearchFilters", "yearList", yearList)
 		}
 	}
 

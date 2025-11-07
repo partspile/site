@@ -54,7 +54,7 @@ func InitQdrantClient() error {
 }
 
 // convertMetadataToQdrant converts metadata from Go types to Qdrant values
-// based on the known field types
+// Handles dynamic fields based on field configuration
 func convertMetadataToQdrant(metadata map[string]interface{}) map[string]*qdrant.Value {
 	if metadata == nil {
 		return nil
@@ -75,29 +75,55 @@ func convertMetadataToQdrant(metadata map[string]interface{}) map[string]*qdrant
 				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StructValue{StructValue: geoStruct}}
 			}
 		case "years", "models", "engines":
-			// Handle array fields
-			strArray := v.([]string)
-			qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_ListValue{ListValue: &qdrant.ListValue{
-				Values: func() []*qdrant.Value {
-					result := make([]*qdrant.Value, len(strArray))
-					for j, s := range strArray {
-						result[j] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: s}}
-					}
-					return result
-				}(),
-			}}}
+			// Handle array fields (keyword_array type)
+			if strArray, ok := v.([]string); ok {
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_ListValue{ListValue: &qdrant.ListValue{
+					Values: func() []*qdrant.Value {
+						result := make([]*qdrant.Value, len(strArray))
+						for j, s := range strArray {
+							result[j] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: s}}
+						}
+						return result
+					}(),
+				}}}
+			}
 		case "ad_category_id", "rock_count":
 			// Handle integer fields
-			intVal := v.(int)
-			qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(intVal)}}
+			if intVal, ok := v.(int); ok {
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(intVal)}}
+			}
 		case "price":
 			// Handle float fields
-			floatVal := v.(float64)
-			qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_DoubleValue{DoubleValue: floatVal}}
-		case "make", "category", "subcategory":
-			// Handle keyword/string fields
-			strVal := v.(string)
-			qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: strVal}}
+			if floatVal, ok := v.(float64); ok {
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_DoubleValue{DoubleValue: floatVal}}
+			}
+		case "make", "category", "subcategory", "breed":
+			// Handle keyword/string fields (single value)
+			if strVal, ok := v.(string); ok {
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: strVal}}
+			}
+		default:
+			// For unknown fields, try to infer type
+			// This allows new fields to work without code changes
+			switch val := v.(type) {
+			case string:
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: val}}
+			case []string:
+				// Array of strings
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_ListValue{ListValue: &qdrant.ListValue{
+					Values: func() []*qdrant.Value {
+						result := make([]*qdrant.Value, len(val))
+						for j, s := range val {
+							result[j] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: s}}
+						}
+						return result
+					}(),
+				}}}
+			case int:
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(val)}}
+			case float64:
+				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_DoubleValue{DoubleValue: val}}
+			}
 		}
 	}
 	return qdrantMetadata

@@ -140,22 +140,62 @@ Quality Indicator: %s`
 	)
 }
 
-// buildAdEmbeddingMetadata creates metadata for embeddings
+// buildAdEmbeddingMetadata creates metadata for embeddings dynamically based on category field configuration
 func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
-
 	lat, lon, _ := ad.GetLatLon(adObj.LocationID)
 	rockCount, _ := rock.GetAdRockCount(adObj.ID)
 
+	// Get category fields to determine which fields to include
+	fieldConfigs, err := spec.GetCategoryFields(adObj.AdCategoryID)
+	if err != nil {
+		logger.Warn("Failed to get category fields for metadata",
+			"error", err, "component", "vector", "adID", adObj.ID)
+		// Fallback to empty metadata
+		return map[string]interface{}{
+			"ad_category_id": adObj.AdCategoryID,
+			"price":          adObj.Price,
+			"rock_count":     rockCount,
+		}
+	}
+
 	metadata := map[string]interface{}{
 		"ad_category_id": adObj.AdCategoryID,
-		"make":           adObj.Make,
-		"years":          adObj.Years,
-		"models":         adObj.Models,
-		"engines":        adObj.Engines,
-		"category":       adObj.PartCategory,
-		"subcategory":    adObj.PartSubcategory,
 		"price":          adObj.Price,
 		"rock_count":     rockCount,
+	}
+
+	// Add part category/subcategory (these are not spec fields but are used)
+	if adObj.PartCategory != "" {
+		metadata["category"] = adObj.PartCategory
+	}
+	if adObj.PartSubcategory != "" {
+		metadata["subcategory"] = adObj.PartSubcategory
+	}
+
+	// Add spec fields dynamically based on category configuration
+	// This is a temporary compatibility layer - AdDetail has hard-coded fields
+	for _, fieldConfig := range fieldConfigs {
+		switch fieldConfig.Name {
+		case "make":
+			if adObj.Make != "" {
+				metadata["make"] = adObj.Make
+			}
+		case "year":
+			if len(adObj.Years) > 0 {
+				metadata["years"] = adObj.Years
+			}
+		case "model":
+			if len(adObj.Models) > 0 {
+				metadata["models"] = adObj.Models
+			}
+		case "engine":
+			if len(adObj.Engines) > 0 {
+				metadata["engines"] = adObj.Engines
+			}
+		case "breed":
+			// TODO: Add breed field to AdDetail when needed
+			// For now, skip
+		}
 	}
 
 	// Add geo payload if we have coordinates
@@ -205,8 +245,8 @@ func StartBackgroundProcessor() {
 			}
 
 		processChunk:
-			logger.Debug("Processing chunk of ads from queue",
-				"count", len(ads))
+			logger.Info("Processing chunk of ads from queue",
+				"component", "vector", "count", len(ads))
 
 			// Convert minimal ads to full ad details for processing
 			var adDetails []ad.AdDetail
@@ -214,24 +254,25 @@ func StartBackgroundProcessor() {
 				adDetail, err := ad.GetAdDetailByID(adObj.ID, 0)
 				if err != nil {
 					logger.Error("Failed to get ad detail",
-						"error", err, "adID", adObj.ID)
+						"error", err, "adID", adObj.ID, "component", "vector")
 					continue
 				}
 				adDetails = append(adDetails, *adDetail)
 			}
 
 			if len(adDetails) == 0 {
-				logger.Debug("No valid ad details found for chunk")
+				logger.Debug("No valid ad details found for chunk",
+					"component", "vector")
 				continue
 			}
 
 			err := BuildAdEmbeddings(adDetails)
 			if err != nil {
 				logger.Error("Error building embeddings for chunk",
-					"error", err, "count", len(ads))
+					"error", err, "count", len(ads), "component", "vector")
 			} else {
-				logger.Debug("Successfully processed chunk of ads",
-					"count", len(ads))
+				logger.Info("Successfully processed chunk of ads",
+					"component", "vector", "count", len(ads))
 			}
 
 			// Sleep to avoid rate limits

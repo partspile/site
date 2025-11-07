@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/parts-pile/site/cache"
@@ -47,15 +46,16 @@ func GetMakes(adCat int) []string {
 		return cached
 	}
 
-	query, args := buildMakesQuery(adCat)
-	var makes []string
-	err := db.Select(&makes, query, args...)
+	// Use dynamic GetFieldValues
+	values, err := GetFieldValues(adCat, "make", map[string]string{})
 	if err != nil {
-		return nil
+		logger.Warn("Failed to get makes dynamically",
+			"error", err, "component", "spec", "adCat", adCat)
+		return []string{}
 	}
 
-	specCache.Set(cacheKey, makes, int64(len(makes)*30))
-	return makes
+	specCache.Set(cacheKey, values, int64(len(values)*30))
+	return values
 }
 
 func GetYears(adCat int, makeName string) []string {
@@ -65,19 +65,17 @@ func GetYears(adCat int, makeName string) []string {
 		return cached
 	}
 
-	query, args := buildYearsQuery(adCat, makeName)
-	var yearInts []int
-	err := db.Select(&yearInts, query, args...)
+	// Use dynamic GetFieldValues
+	parentValues := map[string]string{"make": makeName}
+	values, err := GetFieldValues(adCat, "year", parentValues)
 	if err != nil {
-		return nil
-	}
-	var years []string
-	for _, year := range yearInts {
-		years = append(years, strconv.Itoa(year))
+		logger.Warn("Failed to get years dynamically",
+			"error", err, "component", "spec", "adCat", adCat, "make", makeName)
+		return []string{}
 	}
 
-	specCache.Set(cacheKey, years, int64(len(years)*5))
-	return years
+	specCache.Set(cacheKey, values, int64(len(values)*5))
+	return values
 }
 
 func GetModels(adCat int, makeName string, years []string) []string {
@@ -92,15 +90,25 @@ func GetModels(adCat int, makeName string, years []string) []string {
 		return cached
 	}
 
-	query, args := buildModelsQuery(adCat, makeName, years)
-	var models []string
-	err := db.Select(&models, query, args...)
+	// Use dynamic GetFieldValues with intersection logic for multiple years
+	parentValuesArray := map[string][]string{"make": {makeName}, "year": years}
+	query, args, err := BuildFieldQueryWithIntersection(adCat, "model", parentValuesArray)
 	if err != nil {
-		return nil
+		logger.Warn("Failed to build models query",
+			"error", err, "component", "spec", "adCat", adCat, "make", makeName)
+		return []string{}
 	}
 
-	specCache.Set(cacheKey, models, int64(len(models)*20))
-	return models
+	var values []string
+	err = db.Select(&values, query, args...)
+	if err != nil {
+		logger.Warn("Failed to query models",
+			"error", err, "component", "spec", "adCat", adCat)
+		return []string{}
+	}
+
+	specCache.Set(cacheKey, values, int64(len(values)*20))
+	return values
 }
 
 func GetEngines(adCat int, makeName string, years []string, models []string) []string {
@@ -115,11 +123,25 @@ func GetEngines(adCat int, makeName string, years []string, models []string) []s
 		return cached
 	}
 
-	query, args := buildEnginesQuery(adCat, makeName, years, models)
-	var engines []string
-	err := db.Select(&engines, query, args...)
+	// Use dynamic GetFieldValues with intersection logic
+	parentValuesArray := map[string][]string{
+		"make":  {makeName},
+		"year":  years,
+		"model": models,
+	}
+	query, args, err := BuildFieldQueryWithIntersection(adCat, "engine", parentValuesArray)
 	if err != nil {
-		return nil
+		logger.Warn("Failed to build engines query",
+			"error", err, "component", "spec", "adCat", adCat)
+		return []string{}
+	}
+
+	var engines []string
+	err = db.Select(&engines, query, args...)
+	if err != nil {
+		logger.Warn("Failed to query engines",
+			"error", err, "component", "spec", "adCat", adCat)
+		return []string{}
 	}
 
 	specCache.Set(cacheKey, engines, int64(len(engines)*25))

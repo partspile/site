@@ -3,6 +3,7 @@ package ad
 import (
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
+	"github.com/parts-pile/site/spec"
 )
 
 // Ad categories
@@ -79,27 +80,24 @@ func IsValidCategory(categoryID int) bool {
 	return exists
 }
 
-// HasYears returns true if the vehicle type for this category has years
-func HasYears(adCategory int) bool {
-	switch adCategory {
-	case AdCategoryCar, AdCategoryCarPart,
-		AdCategoryMotorcycle, AdCategoryMotorcyclePart,
-		AdCategoryAg, AdCategoryAgPart:
-		return true
-	default:
-		return false
-	}
+// GetCategoryFields returns the ordered list of fields for a category
+func GetCategoryFields(adCategoryID int) ([]spec.FieldConfig, error) {
+	return spec.GetCategoryFields(adCategoryID)
 }
 
-// HasEngines returns true if the vehicle type for this category has engines
-func HasEngines(adCategory int) bool {
-	switch adCategory {
-	case AdCategoryCar, AdCategoryCarPart,
-		AdCategoryMotorcycle, AdCategoryMotorcyclePart:
-		return true
-	default:
-		return false
-	}
+// HasField returns true if the category has the specified field
+func HasField(adCategoryID int, fieldName string) bool {
+	return spec.HasField(adCategoryID, fieldName)
+}
+
+// HasYears returns true if the category has a year field
+func HasYears(adCategoryID int) bool {
+	return HasField(adCategoryID, "year")
+}
+
+// HasEngines returns true if the category has an engine field
+func HasEngines(adCategoryID int) bool {
+	return HasField(adCategoryID, "engine")
 }
 
 // IsPartCategory returns true if the category is for parts (not whole vehicles)

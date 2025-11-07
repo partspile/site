@@ -3,9 +3,21 @@ package ad
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/spec"
 )
+
+// getValueColumnName returns the column name for the value in a table
+// For Year table, it's "year", for other tables it's "name"
+func getValueColumnName(tableName string) string {
+	if tableName == "Year" {
+		return "year"
+	}
+	return "name"
+}
 
 // getPartSubcategoryID looks up the PartSubCategory ID from category and subcategory names
 func getPartSubcategoryID(tx *sql.Tx, adCategoryID int, categoryName, subcategoryName string) (*int, error) {
@@ -68,189 +80,224 @@ func AddAd(ad AdDetail) (int, error) {
 
 // addAdSpecAssociations creates the normalized spec associations for an ad
 func addAdSpecAssociations(tx *sql.Tx, ad AdDetail) error {
-	// Handle different spec schemas based on ad category
-	switch ad.AdCategoryID {
-	case AdCategoryCar, AdCategoryCarPart:
-		return addCarAssociations(tx, ad)
-	case AdCategoryMotorcycle, AdCategoryMotorcyclePart:
-		return addMotorcycleAssociations(tx, ad)
-	case AdCategoryAg, AdCategoryAgPart:
-		return addAgAssociations(tx, ad)
-	case AdCategoryBicycle, AdCategoryBicyclePart:
-		return addBicycleAssociations(tx, ad)
-	default:
-		return nil
-	}
+	return addDynamicAssociations(tx, ad)
 }
 
-// findSpec finds a spec ID from the unified Specification table
-func findSpec(tx *sql.Tx, makeName, yearStr, modelName, engineName string, adCategoryID int, partSubcategoryID *int) (int, error) {
-	// Use the unified Specification table
-	var query string
+// findSpec finds a spec ID from the unified Specification table using dynamic field configuration
+func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string, partSubcategoryID *int) (int, error) {
+	// Get category fields
+	fieldConfigs, err := spec.GetCategoryFields(adCategoryID)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get category fields: %w", err)
+	}
+
+	// Build dynamic query
+	query := "SELECT spec.id FROM Specification spec"
+	var joins []string
+	var whereClauses []string
+	var args []interface{}
+
+	whereClauses = append(whereClauses, "spec.ad_category_id = ?")
+	args = append(args, adCategoryID)
+
+	// Add JOINs and WHERE clauses for each field
+	for _, fieldConfig := range fieldConfigs {
+		value, hasValue := fieldValues[fieldConfig.Name]
+		if !hasValue || value == "" {
+			continue
+		}
+
+		tableName := fieldConfig.TableName
+		tableFieldName := fieldConfig.TableFieldName
+		joins = append(joins, fmt.Sprintf("LEFT JOIN %s ON spec.%s = %s.id",
+			tableName, tableFieldName, tableName))
+
+		if fieldConfig.FieldType == "int" {
+			// For integer fields, convert string to int
+			intValue, err := strconv.Atoi(value)
+			if err != nil {
+				continue
+			}
+			valueCol := getValueColumnName(tableName)
+			whereClauses = append(whereClauses,
+				fmt.Sprintf("%s.%s = ?", tableName, valueCol))
+			args = append(args, intValue)
+		} else {
+			// For string fields, compare with name column
+			whereClauses = append(whereClauses,
+				fmt.Sprintf("%s.name = ?", tableName))
+			args = append(args, value)
+		}
+	}
+
+	// Add part_subcategory filter
+	if partSubcategoryID != nil {
+		whereClauses = append(whereClauses, "spec.part_subcategory_id = ?")
+		args = append(args, *partSubcategoryID)
+	} else {
+		whereClauses = append(whereClauses, "spec.part_subcategory_id IS NULL")
+	}
+
+	// Build final query
+	if len(joins) > 0 {
+		query += " " + strings.Join(joins, " ")
+	}
+	query += " WHERE " + strings.Join(whereClauses, " AND ")
+
 	var specID int
-	var err error
-
-	// Build query with appropriate part_subcategory_id check
-	if partSubcategoryID != nil {
-		query = `
-			SELECT spec.id FROM Specification spec
-			LEFT JOIN Make m ON spec.make_id = m.id
-			LEFT JOIN Year y ON spec.year_id = y.id
-			LEFT JOIN Model mo ON spec.model_id = mo.id
-			LEFT JOIN Engine e ON spec.engine_id = e.id
-			WHERE spec.ad_category_id = ?
-			AND (? IS NULL OR m.name = ?) AND (? IS NULL OR mo.name = ?)
-			AND (? IS NULL OR y.year = ?) AND (? IS NULL OR e.name = ?)
-			AND spec.part_subcategory_id = ?
-		`
-	} else {
-		query = `
-			SELECT spec.id FROM Specification spec
-			LEFT JOIN Make m ON spec.make_id = m.id
-			LEFT JOIN Year y ON spec.year_id = y.id
-			LEFT JOIN Model mo ON spec.model_id = mo.id
-			LEFT JOIN Engine e ON spec.engine_id = e.id
-			WHERE spec.ad_category_id = ?
-			AND (? IS NULL OR m.name = ?) AND (? IS NULL OR mo.name = ?)
-			AND (? IS NULL OR y.year = ?) AND (? IS NULL OR e.name = ?)
-			AND spec.part_subcategory_id IS NULL
-		`
-	}
-
-	// Build args: category, make (nullable), make name, model (nullable), model name, year (nullable), year value, engine (nullable), engine name, part_subcategory_id
-	var makeArg interface{} = makeName
-	if makeName == "" {
-		makeArg = nil
-	}
-	var modelArg interface{} = modelName
-	if modelName == "" {
-		modelArg = nil
-	}
-	var yearArg interface{} = yearStr
-	if yearStr == "" {
-		yearArg = nil
-	}
-	var engineArg interface{} = engineName
-	if engineName == "" {
-		engineArg = nil
-	}
-
-	if partSubcategoryID != nil {
-		err = tx.QueryRow(query, adCategoryID, makeArg, makeArg, modelArg, modelArg, yearArg, yearArg, engineArg, engineArg, *partSubcategoryID).Scan(&specID)
-	} else {
-		err = tx.QueryRow(query, adCategoryID, makeArg, makeArg, modelArg, modelArg, yearArg, yearArg, engineArg, engineArg).Scan(&specID)
-	}
-
+	err = tx.QueryRow(query, args...).Scan(&specID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			partSubcatStr := "NULL"
-			if partSubcategoryID != nil {
-				partSubcatStr = fmt.Sprintf("%d", *partSubcategoryID)
-			}
-			return 0, fmt.Errorf("spec not found for make=%s, year=%s, model=%s, engine=%s, part_subcategory_id=%s",
-				makeName, yearStr, modelName, engineName, partSubcatStr)
+			return 0, fmt.Errorf("spec not found for field values: %v", fieldValues)
 		}
 		return 0, fmt.Errorf("error looking up spec: %w", err)
 	}
 	return specID, nil
 }
 
-// addCarAssociations handles Cars: make, year, model, engine
-func addCarAssociations(tx *sql.Tx, ad AdDetail) error {
-	var partSubcatID *int
-	var err error
-	if IsPartCategory(ad.AdCategoryID) && ad.PartCategory != "" && ad.PartSubcategory != "" {
-		partSubcatID, err = getPartSubcategoryID(tx, ad.AdCategoryID, ad.PartCategory, ad.PartSubcategory)
-		if err != nil {
-			return err
-		}
+// addDynamicAssociations handles spec associations dynamically based on category field configuration
+func addDynamicAssociations(tx *sql.Tx, ad AdDetail) error {
+	// Get category fields
+	fieldConfigs, err := spec.GetCategoryFields(ad.AdCategoryID)
+	if err != nil {
+		return fmt.Errorf("failed to get category fields: %w", err)
 	}
-	for _, yearStr := range ad.Years {
-		for _, modelName := range ad.Models {
-			for _, engineName := range ad.Engines {
-				specID, err := findSpec(tx, ad.Make, yearStr, modelName, engineName, ad.AdCategoryID, partSubcatID)
-				if err != nil {
-					return err
-				}
-				if err := insertSpecAssociation(tx, ad.ID, specID); err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
-}
 
-// addMotorcycleAssociations handles Motorcycles: make, year, model, engine
-func addMotorcycleAssociations(tx *sql.Tx, ad AdDetail) error {
+	// Get part subcategory ID if this is a part category
 	var partSubcatID *int
-	var err error
 	if IsPartCategory(ad.AdCategoryID) && ad.PartCategory != "" && ad.PartSubcategory != "" {
+		var err error
 		partSubcatID, err = getPartSubcategoryID(tx, ad.AdCategoryID, ad.PartCategory, ad.PartSubcategory)
 		if err != nil {
 			return err
 		}
 	}
-	for _, yearStr := range ad.Years {
-		for _, modelName := range ad.Models {
-			for _, engineName := range ad.Engines {
-				specID, err := findSpec(tx, ad.Make, yearStr, modelName, engineName, ad.AdCategoryID, partSubcatID)
-				if err != nil {
-					return err
-				}
-				if err := insertSpecAssociation(tx, ad.ID, specID); err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
-}
 
-// addAgAssociations handles Agricultural Equipment: make, year, model (no engine)
-func addAgAssociations(tx *sql.Tx, ad AdDetail) error {
-	var partSubcatID *int
-	var err error
-	if IsPartCategory(ad.AdCategoryID) && ad.PartCategory != "" && ad.PartSubcategory != "" {
-		partSubcatID, err = getPartSubcategoryID(tx, ad.AdCategoryID, ad.PartCategory, ad.PartSubcategory)
-		if err != nil {
-			return err
-		}
-	}
-	for _, yearStr := range ad.Years {
-		for _, modelName := range ad.Models {
-			specID, err := findSpec(tx, ad.Make, yearStr, modelName, "", ad.AdCategoryID, partSubcatID)
-			if err != nil {
-				return err
-			}
-			if err := insertSpecAssociation(tx, ad.ID, specID); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
+	// Build field value map from AdDetail (temporary compatibility layer)
+	// TODO: Make AdDetail more flexible to support arbitrary fields
+	fieldValueMap := buildFieldValueMap(ad, fieldConfigs)
 
-// addBicycleAssociations handles Bicycles: make, model (no year, no engine)
-func addBicycleAssociations(tx *sql.Tx, ad AdDetail) error {
-	var partSubcatID *int
-	var err error
-	if IsPartCategory(ad.AdCategoryID) && ad.PartCategory != "" && ad.PartSubcategory != "" {
-		partSubcatID, err = getPartSubcategoryID(tx, ad.AdCategoryID, ad.PartCategory, ad.PartSubcategory)
-		if err != nil {
-			return err
-		}
+	// Get multi-value fields (fields that can have multiple selections)
+	multiValueFields := getMultiValueFields(ad, fieldConfigs)
+
+	// Generate all combinations of multi-value fields
+	combinations := generateFieldCombinations(multiValueFields)
+
+	// If no multi-value fields, process single combination
+	if len(combinations) == 0 {
+		combinations = []map[string]string{{}}
 	}
-	for _, modelName := range ad.Models {
-		specID, err := findSpec(tx, ad.Make, "", modelName, "", ad.AdCategoryID, partSubcatID)
+
+	// Process each combination
+	for _, combination := range combinations {
+		// Merge combination with base field values
+		combinedValues := make(map[string]string)
+		for k, v := range fieldValueMap {
+			combinedValues[k] = v
+		}
+		for k, v := range combination {
+			combinedValues[k] = v
+		}
+
+		// Find spec for this combination
+		specID, err := findSpec(tx, ad.AdCategoryID, combinedValues, partSubcatID)
 		if err != nil {
 			return err
 		}
+
+		// Insert association
 		if err := insertSpecAssociation(tx, ad.ID, specID); err != nil {
 			return err
 		}
 	}
+
 	return nil
+}
+
+// buildFieldValueMap builds a map of field values from AdDetail
+// This is a temporary compatibility layer - AdDetail has hard-coded fields
+func buildFieldValueMap(ad AdDetail, fieldConfigs []spec.FieldConfig) map[string]string {
+	values := make(map[string]string)
+
+	for _, fieldConfig := range fieldConfigs {
+		switch fieldConfig.Name {
+		case "make":
+			if ad.Make != "" {
+				values["make"] = ad.Make
+			}
+		case "year":
+			// Years are handled as multi-value, skip here
+		case "model":
+			// Models are handled as multi-value, skip here
+		case "engine":
+			// Engines are handled as multi-value, skip here
+		case "breed":
+			// TODO: Add breed field to AdDetail when needed
+		}
+	}
+
+	return values
+}
+
+// getMultiValueFields returns fields that have multiple values
+func getMultiValueFields(ad AdDetail, fieldConfigs []spec.FieldConfig) map[string][]string {
+	multiValueFields := make(map[string][]string)
+
+	for _, fieldConfig := range fieldConfigs {
+		switch fieldConfig.Name {
+		case "year":
+			if len(ad.Years) > 0 {
+				multiValueFields["year"] = ad.Years
+			}
+		case "model":
+			if len(ad.Models) > 0 {
+				multiValueFields["model"] = ad.Models
+			}
+		case "engine":
+			if len(ad.Engines) > 0 {
+				multiValueFields["engine"] = ad.Engines
+			}
+		}
+	}
+
+	return multiValueFields
+}
+
+// generateFieldCombinations generates all combinations of multi-value fields
+func generateFieldCombinations(multiValueFields map[string][]string) []map[string]string {
+	if len(multiValueFields) == 0 {
+		return []map[string]string{}
+	}
+
+	// Get field names and their values
+	fieldNames := make([]string, 0, len(multiValueFields))
+	fieldValues := make([][]string, 0, len(multiValueFields))
+	for name, values := range multiValueFields {
+		fieldNames = append(fieldNames, name)
+		fieldValues = append(fieldValues, values)
+	}
+
+	var combinations []map[string]string
+	generateCombinationsRecursive(fieldNames, fieldValues, 0, make(map[string]string), &combinations)
+	return combinations
+}
+
+// generateCombinationsRecursive recursively generates all combinations
+func generateCombinationsRecursive(fieldNames []string, fieldValues [][]string, depth int, current map[string]string, result *[]map[string]string) {
+	if depth == len(fieldNames) {
+		combination := make(map[string]string)
+		for k, v := range current {
+			combination[k] = v
+		}
+		*result = append(*result, combination)
+		return
+	}
+
+	fieldName := fieldNames[depth]
+	for _, value := range fieldValues[depth] {
+		current[fieldName] = value
+		generateCombinationsRecursive(fieldNames, fieldValues, depth+1, current, result)
+	}
 }
 
 // insertSpecAssociation inserts the ad-spec association record
@@ -262,3 +309,4 @@ func insertSpecAssociation(tx *sql.Tx, adID int, specID int) error {
 	}
 	return nil
 }
+
