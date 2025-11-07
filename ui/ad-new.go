@@ -14,7 +14,7 @@ import (
 
 // ---- New Ad Page ----
 
-func NewAdPage(adCat int, userID int, userName, csrfToken string, path string, makes []string, categories []string, maxImagesPerAd int) g.Node {
+func NewAdPage(adCat int, userID int, userName, csrfToken string, path string, firstFieldValues map[string][]string, maxImagesPerAd int) g.Node {
 	categoryName := ad.GetCategoryName(adCat)
 	headerText := fmt.Sprintf("Create New %s Ad", categoryName)
 
@@ -31,24 +31,10 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string, m
 	}
 
 	// Render spec fields dynamically
-	// Render the first field of each chain group independently
+	// Render the first field of each chain independently
 	// Subsequent fields in the same chain will be populated via HTMX
-	seenChainGroups := make(map[int]bool)
 	for i, fieldConfig := range fieldConfigs {
-		isFirstInChain := false
-
-		// Check if this is the first field in its chain group
-		if fieldConfig.ChainGroup == 0 {
-			// Field not in a chain - render it
-			isFirstInChain = true
-		} else {
-			// Field is in a chain - check if we've seen this chain group before
-			if !seenChainGroups[fieldConfig.ChainGroup] {
-				// First field in this chain group - render it
-				isFirstInChain = true
-				seenChainGroups[fieldConfig.ChainGroup] = true
-			}
-		}
+		isFirstInChain := spec.IsFirstInChain(fieldConfig, fieldConfigs)
 
 		if isFirstInChain {
 			// Render the first field of this chain
@@ -57,7 +43,9 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string, m
 			if fieldConfig.Name == "make" {
 				defaultMake = ""
 			}
-			fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, map[string][]string{}, makes, categories, defaultMake))
+			// Get pre-populated values for this field from the map
+			fieldValues := firstFieldValues[fieldConfig.Name]
+			fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, map[string][]string{}, fieldValues, defaultMake))
 		} else {
 			// Chained field - render empty div for HTMX to populate
 			fieldID := fieldConfig.Name + "Div"
@@ -142,6 +130,22 @@ func DuplicateAdPage(
 	}
 
 	// Render spec fields dynamically
+	// Build map of field values for first fields of each chain
+	firstFieldValues := make(map[string][]string)
+	for _, fieldConfig := range fieldConfigs {
+		if spec.IsFirstInChain(fieldConfig, fieldConfigs) {
+			// Use pre-loaded values if available, otherwise get dynamically
+			if fieldConfig.Name == "make" && len(makes) > 0 {
+				firstFieldValues[fieldConfig.Name] = makes
+			} else if fieldConfig.Name == "part_category" && len(categories) > 0 {
+				firstFieldValues[fieldConfig.Name] = categories
+			} else {
+				// Get values dynamically (this will be empty for duplicate page, but keeps signature consistent)
+				firstFieldValues[fieldConfig.Name] = []string{}
+			}
+		}
+	}
+
 	for i, fieldConfig := range fieldConfigs {
 		selected := []string{}
 		if sv, ok := selectedValues[fieldConfig.Name]; ok {
@@ -151,7 +155,13 @@ func DuplicateAdPage(
 		if fieldConfig.Name == "make" && originalAd.Make != "" {
 			defaultMake = originalAd.Make
 		}
-		fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, selectedValues, makes, categories, defaultMake))
+		// Get field values - use pre-loaded for first fields, empty for chained fields
+		fieldValues := firstFieldValues[fieldConfig.Name]
+		if len(fieldValues) == 0 && fieldConfig.NextInChain == 0 {
+			// For standalone fields without pre-loaded values, use empty
+			fieldValues = []string{}
+		}
+		fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, selectedValues, fieldValues, defaultMake))
 	}
 
 	// Add part category/subcategory
@@ -202,7 +212,7 @@ func titleInputField(defaultValue string) g.Node {
 }
 
 // renderFieldSelector renders a field selector dynamically based on field configuration
-func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields []spec.FieldConfig, selectedValues []string, allSelectedValues map[string][]string, makes []string, partCategories []string, defaultMake string) g.Node {
+func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields []spec.FieldConfig, selectedValues []string, allSelectedValues map[string][]string, fieldValues []string, defaultMake string) g.Node {
 	// Use plural form for multi-value fields to match handler return values
 	fieldID := fieldConfig.Name + "Div"
 	if fieldConfig.QdrantType == "keyword_array" {
@@ -225,9 +235,9 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 	// Determine next field to update using chain information
 	var nextFieldName string
 	var nextFieldTarget string
-	if fieldConfig.NextInChain != "" {
+	if fieldConfig.NextInChain != 0 {
 		// This field is chained to another field
-		nextFieldName = fieldConfig.NextInChain
+		nextFieldName = spec.GetNextFieldName(fieldConfig, allFields)
 		// Use plural form for multi-value fields
 		nextFieldDef, exists := spec.GetFieldDefinition(nextFieldName)
 		if exists && nextFieldDef.QdrantType == "keyword_array" {
@@ -236,10 +246,10 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 			nextFieldTarget = nextFieldName + "Div"
 		}
 	} else if fieldIndex+1 < len(allFields) {
-		// No chain, but there's a next field - check if it's in a chain
+		// No chain, but there's a next field - check if it's in a different chain
 		nextField := allFields[fieldIndex+1]
-		if nextField.ChainGroup == 0 || nextField.ChainGroup != fieldConfig.ChainGroup {
-			// Next field is not in a chain or is in a different chain
+		if !spec.FieldsInSameChain(fieldConfig, nextField, allFields) {
+			// Next field is in a different chain
 			// After last spec field, update subcategories
 			nextFieldTarget = "subcategoriesDiv"
 		} else {
@@ -264,7 +274,7 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 		}
 
 		checkboxes := []g.Node{}
-		for _, value := range selectedValues {
+		for _, value := range fieldValues {
 			attrs := []g.Node{
 				Checkbox(fieldNamePlural, value, value, selected[value], false),
 			}
@@ -289,17 +299,25 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 			checkboxes = append(checkboxes, g.Group(attrs))
 		}
 
-		// For now, return empty div - values will be populated via HTMX
 		return Div(
 			ID(fieldID),
 			Class("space-y-2"),
 			formGroup(fieldConfig.DisplayName, fieldNamePlural, GridContainer4(checkboxes...)),
 		)
 	} else {
-		// Single-select (dropdown) - make, breed, etc.
+		// Single-select (dropdown) - make, breed, part_category, etc.
 		// Use generic selector for all single-select fields
 		options := []g.Node{
 			Option(Value(""), g.Text(fmt.Sprintf("Select a %s", fieldConfig.DisplayName))),
+		}
+
+		// Add options from fieldValues
+		for _, value := range fieldValues {
+			optionAttrs := []g.Node{Value(value), g.Text(value)}
+			if value == defaultMake {
+				optionAttrs = append(optionAttrs, Selected())
+			}
+			options = append(options, Option(optionAttrs...))
 		}
 
 		attrs := []g.Node{
@@ -327,44 +345,6 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 				hx.Swap("innerHTML"),
 			)
 			// HTMX will automatically replace content, no need to manually clear
-		}
-
-		// Special handling for make field - use pre-loaded makes
-		if fieldConfig.Name == "make" {
-			makeOptions := []g.Node{}
-			for _, makeName := range makes {
-				makeAttrs := []g.Node{Value(makeName), g.Text(makeName)}
-				if makeName == defaultMake {
-					makeAttrs = append(makeAttrs, Selected())
-				}
-				makeOptions = append(makeOptions, Option(makeAttrs...))
-			}
-			return formGroup(fieldConfig.DisplayName, fieldName,
-				Select(append(attrs, Option(Value(""), g.Text("Select a make")), g.Group(makeOptions))...),
-			)
-		}
-
-		// Special handling for part_category field - use pre-loaded categories
-		if fieldConfig.Name == "part_category" {
-			categoryOptions := []g.Node{}
-			for _, categoryName := range partCategories {
-				categoryOptions = append(categoryOptions, Option(Value(categoryName), g.Text(categoryName)))
-			}
-			// Add HTMX trigger if there's a next field in chain (part_subcategory)
-			if nextFieldTarget != "" && nextFieldName != "" {
-				includeStr := strings.Join(append(includeSelectors, fmt.Sprintf("[name='%s']", fieldName)), ",")
-				endpoint := fmt.Sprintf("/api/%s", nextFieldName)
-				attrs = append(attrs,
-					hx.Trigger("change"),
-					hx.Get(endpoint),
-					hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
-					hx.Include(includeStr),
-					hx.Swap("innerHTML"),
-				)
-			}
-			return formGroup(fieldConfig.DisplayName, fieldName,
-				Select(append(attrs, Option(Value(""), g.Text("Select a category")), g.Group(categoryOptions))...),
-			)
 		}
 
 		return formGroup(fieldConfig.DisplayName, fieldName,

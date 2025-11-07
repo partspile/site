@@ -10,7 +10,7 @@ import (
 	"github.com/parts-pile/site/logger"
 )
 
-// Ad represents the minimal advertisement data needed for list/grid views
+// Ad represents the minimal advertisement data needed for list/grid/tree views
 type Ad struct {
 	// Core database fields
 	ID           int        `json:"id" db:"id"`
@@ -41,7 +41,7 @@ type AdDetail struct {
 	HasVector   bool   `json:"has_vector" db:"has_vector"`
 	RawLocation string `json:"raw_location" db:"raw_location"`
 
-	// Spec compatibility fields from spec joins
+	// Spec data from spec joins
 	Make            string   `json:"make" db:"make"`
 	Years           []string `json:"years" db:"years"`
 	Models          []string `json:"models" db:"models"`
@@ -49,7 +49,7 @@ type AdDetail struct {
 	PartCategory    string   `json:"part_category" db:"part_category"`
 	PartSubcategory string   `json:"part_subcategory" db:"part_subcategory"`
 
-	// Owner reachability (computed in query)
+	// Computed fields
 	OwnerUnreachable int `json:"owner_unreachable" db:"owner_unreachable"`
 }
 
@@ -58,7 +58,7 @@ func (a Ad) IsArchived() bool {
 	return a.DeletedAt != nil
 }
 
-// populateSpecData fills in the Make, Years, Models, Engines, and Part category/subcategory fields
+// populateSpecData fills in the spec data for the ad
 func populateSpecData(adDetail *AdDetail) error {
 	query := `
 		SELECT 

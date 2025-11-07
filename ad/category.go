@@ -3,27 +3,18 @@ package ad
 import (
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
-	"github.com/parts-pile/site/spec"
 )
 
-// Ad categories
-const (
-	AdCategoryCar int = iota + 1
-	AdCategoryCarPart
-	AdCategoryMotorcycle
-	AdCategoryMotorcyclePart
-	AdCategoryBicycle
-	AdCategoryBicyclePart
-	AdCategoryAg
-	AdCategoryAgPart
-)
-
-// Cached ad category names map
+// Cached ad category names map (id -> name)
 var adCategoryNames map[int]string
 
-// SetAdCategoryNames populates the cached adCategoryNames map from the database
-func SetAdCategoryNames() {
+// Cached ad category IDs map (name -> id)
+var adCategoryIDs map[string]int
+
+// INitCategoryNames populates the cached adCategoryNames and adCategoryIDs maps from the database
+func InitCategoryNames() {
 	adCategoryNames = make(map[int]string)
+	adCategoryIDs = make(map[string]int)
 
 	rows, err := db.Query("SELECT id, name FROM AdCategory ORDER BY id")
 	if err != nil {
@@ -42,6 +33,7 @@ func SetAdCategoryNames() {
 			continue
 		}
 		adCategoryNames[id] = name
+		adCategoryIDs[name] = id
 	}
 }
 
@@ -57,56 +49,24 @@ func GetCategoryIDs() []int {
 	return ids
 }
 
-// GetCategoryNames returns all category names in order
-func GetCategoryNames() []string {
-	var names []string
-	for _, id := range GetCategoryIDs() {
-		names = append(names, GetCategoryName(id))
-	}
-	return names
-}
-
 // GetCategoryName returns the name for a category ID
-func GetCategoryName(categoryID int) string {
-	if name, exists := adCategoryNames[categoryID]; exists {
+func GetCategoryName(adCat int) string {
+	if name, exists := adCategoryNames[adCat]; exists {
 		return name
 	}
 	return "Unknown Category"
 }
 
 // IsValidCategory returns true if the category ID is valid
-func IsValidCategory(categoryID int) bool {
-	_, exists := adCategoryNames[categoryID]
+func IsValidCategory(adCat int) bool {
+	_, exists := adCategoryNames[adCat]
 	return exists
 }
 
-// GetCategoryFields returns the ordered list of fields for a category
-func GetCategoryFields(adCategoryID int) ([]spec.FieldConfig, error) {
-	return spec.GetCategoryFields(adCategoryID)
-}
-
-// HasField returns true if the category has the specified field
-func HasField(adCategoryID int, fieldName string) bool {
-	return spec.HasField(adCategoryID, fieldName)
-}
-
-// HasYears returns true if the category has a year field
-func HasYears(adCategoryID int) bool {
-	return HasField(adCategoryID, "year")
-}
-
-// HasEngines returns true if the category has an engine field
-func HasEngines(adCategoryID int) bool {
-	return HasField(adCategoryID, "engine")
-}
-
-// IsPartCategory returns true if the category is for parts (not whole vehicles)
-func IsPartCategory(adCategory int) bool {
-	switch adCategory {
-	case AdCategoryCarPart, AdCategoryMotorcyclePart,
-		AdCategoryBicyclePart, AdCategoryAgPart:
-		return true
-	default:
-		return false
+// GetCategoryIDByName returns the category ID for a given category name, or 0 if not found
+func GetCategoryIDByName(name string) int {
+	if id, exists := adCategoryIDs[name]; exists {
+		return id
 	}
+	return 0
 }

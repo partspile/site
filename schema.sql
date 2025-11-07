@@ -21,12 +21,13 @@ CREATE TABLE AdCategoryField (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
     specification_field_id INTEGER NOT NULL REFERENCES SpecificationField(id),
-    display_order INTEGER NOT NULL,
+    priority_order INTEGER NOT NULL,
+    next_in_chain INTEGER NOT NULL DEFAULT 0,
     is_required INTEGER NOT NULL DEFAULT 1,
     UNIQUE (ad_category_id, specification_field_id)
 );
 CREATE INDEX idx_adcategoryfield_category ON AdCategoryField(ad_category_id);
-CREATE INDEX idx_adcategoryfield_order ON AdCategoryField(ad_category_id, display_order);
+CREATE INDEX idx_adcategoryfield_order ON AdCategoryField(ad_category_id, priority_order);
 
 -- Specification tables
 CREATE TABLE Make (

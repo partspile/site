@@ -6,18 +6,18 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	g "maragu.dev/gomponents"
-	hx "maragu.dev/gomponents-htmx"
-	. "maragu.dev/gomponents/html"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/part"
+	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
-	"github.com/parts-pile/site/spec"
+	g "maragu.dev/gomponents"
+	hx "maragu.dev/gomponents-htmx"
+	. "maragu.dev/gomponents/html"
 )
 
 // HandleNewAd shows the new ad form
@@ -25,11 +25,35 @@ func HandleNewAd(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
 	adCat := cookie.GetAdCategory(c)
-	makes := spec.GetMakes(adCat)
-	partCategories := part.GetCategories(adCat)
 	maxImagesPerAd := config.MaxImagesPerAd
 	csrfToken := local.GetCSRFToken(c)
-	return render(c, ui.NewAdPage(adCat, userID, userName, csrfToken, c.Path(), makes, partCategories, maxImagesPerAd))
+
+	// Get category fields to determine which fields need pre-population
+	fieldConfigs, err := spec.GetCategoryFields(adCat)
+	if err != nil {
+		logger.Warn("Failed to get category fields",
+			"error", err, "component", "ad-new", "adCat", adCat)
+		fieldConfigs = []spec.FieldConfig{}
+	}
+
+	// Build map of first field of each chain -> values
+	// First fields are those where no other field's NextInChain points to their Order
+	firstFieldValues := make(map[string][]string)
+
+	for _, fieldConfig := range fieldConfigs {
+		if spec.IsFirstInChain(fieldConfig, fieldConfigs) {
+			// Get values for this first field (no parent filters)
+			values, err := spec.GetFieldValues(adCat, fieldConfig.Name, map[string]string{})
+			if err != nil {
+				logger.Warn("Failed to get field values",
+					"error", err, "component", "ad-new", "fieldName", fieldConfig.Name, "adCat", adCat)
+				values = []string{}
+			}
+			firstFieldValues[fieldConfig.Name] = values
+		}
+	}
+
+	return render(c, ui.NewAdPage(adCat, userID, userName, csrfToken, c.Path(), firstFieldValues, maxImagesPerAd))
 }
 
 // HandleDuplicateAd shows the duplicate ad form with pre-filled data
@@ -101,7 +125,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	if err != nil {
 		logger.Debug("Inline processing failed, queuing for background processing",
 			"error", err, "component", "embedding", "adID", adID)
-		vector.QueueAd(newAd.Ad)
+		vector.QueueAd(newAd.ID)
 	} else {
 		logger.Debug("Successfully processed ad inline",
 			"component", "embedding", "adID", adID)
@@ -166,26 +190,26 @@ func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
 	}
 
 	// Get parent field values (fields that come before current field)
-	// For chained fields, only include parents from the same chain group
+	// For chained fields, only include parents from the same chain
 	currentField := fieldConfigs[currentFieldIndex]
 	for i := 0; i < currentFieldIndex; i++ {
 		parentField := fieldConfigs[i]
-		
+
 		// If current field is in a chain, only include parents from the same chain
-		if currentField.ChainGroup > 0 {
-			if parentField.ChainGroup != currentField.ChainGroup {
-				// Skip fields from different chain groups
+		if currentField.NextInChain != 0 || spec.IsFirstInChain(currentField, fieldConfigs) {
+			if !spec.FieldsInSameChain(parentField, currentField, fieldConfigs) {
+				// Skip fields from different chains
 				continue
 			}
 		}
-		
+
 		// Form uses plural name for multi-value fields (years, models, engines)
 		// but field config uses singular name (year, model, engine)
 		queryKey := parentField.Name
 		if parentField.QdrantType == "keyword_array" {
 			queryKey = parentField.Name + "s" // years, models, engines
 		}
-		
+
 		// Check for single value or multiple values
 		if values, exists := q[queryKey]; exists && len(values) > 0 {
 			// For multi-value fields (years, models, engines), join with comma
@@ -222,19 +246,7 @@ func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
 	}
 
 	// Find downstream fields in the same chain that need to be cleared
-	var downstreamFields []string
-	if currentField.ChainGroup > 0 {
-		// Find all fields after this one in the same chain
-		for i := currentFieldIndex + 1; i < len(fieldConfigs); i++ {
-			nextField := fieldConfigs[i]
-			if nextField.ChainGroup == currentField.ChainGroup {
-				downstreamFields = append(downstreamFields, nextField.Name)
-			} else {
-				// Different chain or not in a chain - stop here
-				break
-			}
-		}
-	}
+	downstreamFields := spec.GetDownstreamFields(currentField, fieldConfigs)
 
 	if fieldDef.QdrantType == "keyword_array" {
 		// Multi-select (checkboxes) - years, models, engines
@@ -280,10 +292,10 @@ func buildSingleSelectFieldNode(fieldName string, values []string, currentField 
 		for _, value := range values {
 			options = append(options, Option(Value(value), g.Text(value)))
 		}
-		
+
 		fieldNameAttr := fieldName
 		displayName := getFieldDisplayName(fieldName)
-		
+
 		// Build HTMX attributes if there's a next field in chain
 		var selectAttrs []g.Node
 		selectAttrs = append(selectAttrs,
@@ -291,10 +303,10 @@ func buildSingleSelectFieldNode(fieldName string, values []string, currentField 
 			Name(fieldNameAttr),
 			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 		)
-		
+
 		// Add HTMX trigger if there's a next field in chain
-		if currentField.NextInChain != "" {
-			nextFieldName := currentField.NextInChain
+		if currentField.NextInChain != 0 {
+			nextFieldName := spec.GetNextFieldName(currentField, allFields)
 			nextFieldDef, exists := spec.GetFieldDefinition(nextFieldName)
 			var nextFieldTarget string
 			if exists && nextFieldDef.QdrantType == "keyword_array" {
@@ -302,7 +314,7 @@ func buildSingleSelectFieldNode(fieldName string, values []string, currentField 
 			} else {
 				nextFieldTarget = nextFieldName + "Div"
 			}
-			
+
 			// Build include selector for parent fields
 			var includeSelectors []string
 			for i := 0; i < currentFieldIndex; i++ {
@@ -315,7 +327,7 @@ func buildSingleSelectFieldNode(fieldName string, values []string, currentField 
 			}
 			includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']", fieldNameAttr))
 			includeStr := strings.Join(includeSelectors, ",")
-			
+
 			endpoint := fmt.Sprintf("/api/%s", nextFieldName)
 			selectAttrs = append(selectAttrs,
 				hx.Trigger("change"),
@@ -325,7 +337,7 @@ func buildSingleSelectFieldNode(fieldName string, values []string, currentField 
 				hx.Swap("innerHTML"),
 			)
 		}
-		
+
 		// Build form group structure similar to ui.formGroup
 		// Note: Don't wrap in outer div with ID - HTMX swaps innerHTML into existing div
 		return Div(
@@ -445,7 +457,7 @@ func HandleSubCategories(c *fiber.Ctx) error {
 		// Also check for legacy "category" parameter for backward compatibility
 		partCategory = c.Query("category")
 	}
-	
+
 	if partCategory == "" {
 		// Return empty div when part_category is not selected
 		return render(c, ui.SubCategoriesSelector([]string{}, ""))
@@ -456,7 +468,7 @@ func HandleSubCategories(c *fiber.Ctx) error {
 	parentValues := map[string]string{
 		"part_category": partCategory,
 	}
-	
+
 	values, err := spec.GetFieldValues(adCat, "part_subcategory", parentValues)
 	if err != nil {
 		logger.Warn("Failed to get part subcategories",

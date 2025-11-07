@@ -37,7 +37,7 @@ func GetAdCategory(c *fiber.Ctx) int {
 
 	categoryID, err := strconv.Atoi(cookieValue)
 	if err != nil {
-		return ad.AdCategoryCarPart
+		return ad.GetCategoryIDByName(config.DefaultAdCategoryName)
 	}
 
 	// Check if the category ID exists
@@ -45,7 +45,7 @@ func GetAdCategory(c *fiber.Ctx) int {
 		return categoryID
 	}
 
-	return ad.AdCategoryCarPart
+	return ad.GetCategoryIDByName(config.DefaultAdCategoryName)
 }
 
 func SetAdCategory(c *fiber.Ctx, adCategory int) {

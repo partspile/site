@@ -46,8 +46,9 @@ const (
 	GeminiEmbeddingDimensions = 3072
 
 	// Ad configuration
-	MaxImagesPerAd = 20
-	MaxRockCount   = 2 // Maximum rock count to allow in search results
+	MaxImagesPerAd        = 20
+	MaxRockCount          = 2 // Maximum rock count to allow in search results
+	DefaultAdCategoryName = "Car & Truck Parts"
 
 	// Password/Argon2 configuration
 	Argon2Memory = 64 * 1024

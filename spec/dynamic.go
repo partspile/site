@@ -2,6 +2,7 @@ package spec
 
 import (
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 
@@ -329,9 +330,7 @@ func generateCombinations(parentFields []FieldConfig, fieldValues [][]string, de
 	if depth == len(parentFields) {
 		// Make a copy of current map
 		combination := make(map[string]string)
-		for k, v := range current {
-			combination[k] = v
-		}
+		maps.Copy(combination, current)
 		*result = append(*result, combination)
 		return
 	}

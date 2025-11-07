@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"maps"
 	"time"
 
 	"github.com/dgraph-io/ristretto/v2"
@@ -128,9 +129,7 @@ func (c *Cache[T]) Stats() map[string]interface{} {
 	}
 
 	// Add TTL stats
-	for k, v := range ttlStats {
-		stats[k] = v
-	}
+	maps.Copy(stats, ttlStats)
 
 	return stats
 }

@@ -166,6 +166,8 @@ func main() {
 		}
 
 		// Parse field names and extract chain information
+		// Build order -> fieldID map for calculating next_in_chain
+		orderToFieldID := make(map[int]int)
 		for order, fieldNameWithChain := range cat.FieldNames {
 			// Remove chain syntax for database lookup (e.g., "make->" -> "make")
 			fieldName := strings.TrimSuffix(fieldNameWithChain, "->")
@@ -174,9 +176,28 @@ func main() {
 				logger.Warn("Field not found for category mapping", "field", fieldName, "category", cat.Name)
 				continue
 			}
+			orderToFieldID[order+1] = fieldID
+		}
 
-			_, err := database.Exec(`INSERT INTO AdCategoryField (ad_category_id, specification_field_id, display_order, is_required) VALUES (?, ?, ?, ?)`,
-				categoryID, fieldID, order+1, 1)
+		// Insert fields and calculate next_in_chain
+		for order, fieldNameWithChain := range cat.FieldNames {
+			fieldName := strings.TrimSuffix(fieldNameWithChain, "->")
+			fieldID, exists := fieldIDMap[fieldName]
+			if !exists {
+				continue
+			}
+
+			// Calculate next_in_chain: if field has "->" suffix, next field's order, else 0
+			nextInChain := 0
+			isChained := strings.HasSuffix(fieldNameWithChain, "->")
+			if isChained && order+1 < len(cat.FieldNames) {
+				// This field chains to the next field
+				nextOrder := order + 2 // order is 0-based, DB order is 1-based
+				nextInChain = nextOrder
+			}
+
+			_, err := database.Exec(`INSERT INTO AdCategoryField (ad_category_id, specification_field_id, priority_order, next_in_chain, is_required) VALUES (?, ?, ?, ?, ?)`,
+				categoryID, fieldID, order+1, nextInChain, 1)
 			if err != nil {
 				logger.Warn("Failed to insert AdCategoryField", "category", cat.Name, "field", fieldName, "error", err)
 			}

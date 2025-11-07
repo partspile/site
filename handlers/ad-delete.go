@@ -72,7 +72,7 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 	}
 
 	// Queue ad for background re-addition to vector database (Qdrant)
-	vector.QueueAd(a.Ad)
+	vector.QueueAd(a.ID)
 
 	// Return empty response to remove the ad from the deleted ads list
 	logger.Debug("Restore ad, removing from DOM",

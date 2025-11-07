@@ -12,7 +12,7 @@ import (
 )
 
 // Static queue for ad processing
-var adQueue = make(chan ad.Ad, config.QdrantProcessingQueueSize)
+var adQueue = make(chan int, config.QdrantProcessingQueueSize)
 
 // BuildAdEmbedding builds and stores an embedding for a single ad
 func BuildAdEmbedding(adObj ad.AdDetail) error {
@@ -238,18 +238,18 @@ func StartBackgroundProcessor() {
 		const chunkSize = 50
 
 		for {
-			// Collect ads up to chunk size
-			var ads []ad.Ad
+			// Collect ad IDs up to chunk size
+			var adIDs []int
 
-			// Get the first ad (blocking)
-			adObj := <-adQueue
-			ads = append(ads, adObj)
+			// Get the first ad ID (blocking)
+			adID := <-adQueue
+			adIDs = append(adIDs, adID)
 
-			// Collect additional ads up to chunk size
+			// Collect additional ad IDs up to chunk size
 			for i := 1; i < chunkSize; i++ {
 				select {
-				case adObj := <-adQueue:
-					ads = append(ads, adObj)
+				case adID := <-adQueue:
+					adIDs = append(adIDs, adID)
 				default:
 					// No more ads available, break out of the inner loop
 					goto processChunk
@@ -258,15 +258,15 @@ func StartBackgroundProcessor() {
 
 		processChunk:
 			logger.Info("Processing chunk of ads from queue",
-				"component", "vector", "count", len(ads))
+				"component", "vector", "count", len(adIDs))
 
-			// Convert minimal ads to full ad details for processing
+			// Convert ad IDs to full ad details for processing
 			var adDetails []ad.AdDetail
-			for _, adObj := range ads {
-				adDetail, err := ad.GetAdDetailByID(adObj.ID, 0)
+			for _, adID := range adIDs {
+				adDetail, err := ad.GetAdDetailByID(adID, 0)
 				if err != nil {
 					logger.Error("Failed to get ad detail",
-						"error", err, "adID", adObj.ID, "component", "vector")
+						"error", err, "adID", adID, "component", "vector")
 					continue
 				}
 				adDetails = append(adDetails, *adDetail)
@@ -281,10 +281,10 @@ func StartBackgroundProcessor() {
 			err := BuildAdEmbeddings(adDetails)
 			if err != nil {
 				logger.Error("Error building embeddings for chunk",
-					"error", err, "count", len(ads), "component", "vector")
+					"error", err, "count", len(adIDs), "component", "vector")
 			} else {
 				logger.Info("Successfully processed chunk of ads",
-					"component", "vector", "count", len(ads))
+					"component", "vector", "count", len(adIDs))
 			}
 
 			// Sleep to avoid rate limits
@@ -293,33 +293,33 @@ func StartBackgroundProcessor() {
 	}()
 }
 
-// QueueAd adds an ad to the processing queue
-func QueueAd(adObj ad.Ad) {
-	adQueue <- adObj
+// QueueAd adds an ad ID to the processing queue
+func QueueAd(adID int) {
+	adQueue <- adID
 }
 
 // ProcessAdsWithoutVectors loads ads without vectors and queues them for processing
 func ProcessAdsWithoutVectors() {
 	go func() {
-		ads, err := ad.GetAdsWithoutVectors()
+		adIDs, err := ad.GetAdsWithoutVectors()
 		if err != nil {
 			logger.Error("Error getting ads without vectors",
 				"error", err, "component", "vector")
 			return
 		}
 
-		if len(ads) == 0 {
+		if len(adIDs) == 0 {
 			logger.Debug("No ads without vectors found",
 				"component", "vector")
 			return
 		}
 
 		logger.Info("Queueing ads without vectors for processing",
-			"component", "vector", "count", len(ads))
+			"component", "vector", "count", len(adIDs))
 
-		// Queue all ads for background processing
-		for _, adObj := range ads {
-			QueueAd(adObj)
+		// Queue all ad IDs for background processing
+		for _, adID := range adIDs {
+			QueueAd(adID)
 		}
 	}()
 }

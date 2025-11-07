@@ -50,7 +50,7 @@ func HandleUpdateAdPrice(c *fiber.Ctx) error {
 	}
 
 	// Queue for vector update since price affects search
-	vector.QueueAd(updatedAd.Ad)
+	vector.QueueAd(updatedAd.ID)
 
 	return render(c, ui.AdDetail(*updatedAd, userID, getLocation(c), local.GetCSRFToken(c)))
 }
@@ -114,7 +114,7 @@ func HandleUpdateAdDescription(c *fiber.Ctx) error {
 	}
 
 	// Queue for vector update since description affects search
-	vector.QueueAd(updatedAd.Ad)
+	vector.QueueAd(updatedAd.ID)
 
 	return render(c, ui.AdDetail(*updatedAd, userID, getLocation(c), local.GetCSRFToken(c)))
 }
@@ -158,7 +158,7 @@ func HandleUpdateAdLocation(c *fiber.Ctx) error {
 	}
 
 	// Queue for vector update since location affects search
-	vector.QueueAd(updatedAd.Ad)
+	vector.QueueAd(updatedAd.ID)
 
 	return render(c, ui.AdDetail(*updatedAd, userID, getLocation(c), local.GetCSRFToken(c)))
 }

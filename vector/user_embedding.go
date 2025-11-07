@@ -28,7 +28,7 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 		logger.Debug("Cache miss for user embedding, will generate new",
 			"userID", userID)
 	}
-	logger.Info("Calculating personalized user embedding",
+	logger.Debug("Calculating personalized user embedding",
 		"userID", userID)
 	const (
 		bookmarkWeight = 3
@@ -166,7 +166,7 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 		"userID", userID, "vectors", len(vectors), "weights",
 		len(weights))
 	if len(vectors) == 0 {
-		logger.Warn("No vectors could be aggregated from user activity",
+		logger.Debug("No vectors could be aggregated from user activity",
 			"userID", userID)
 		return nil, fmt.Errorf("no user activity to aggregate")
 	}

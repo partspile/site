@@ -5,6 +5,8 @@ import (
 
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
+
+	"github.com/parts-pile/site/ad"
 )
 
 // ---- Icon Components ----
@@ -73,16 +75,21 @@ func largeIcon(iconSrc, alt string, size string) g.Node {
 
 // adCategoryIcon returns the appropriate icon path for an ad category ID
 func adCategoryIcon(adCategory int) string {
-	switch adCategory {
-	case 1, 2: // AdCategoryCar, AdCategoryCarPart
+	categoryName := ad.GetCategoryName(adCategory)
+
+	// Determine icon based on category name
+	if categoryName == "Cars & Trucks" || categoryName == "Car & Truck Parts" {
 		return "/images/car.svg"
-	case 3, 4: // AdCategoryMotorcycle, AdCategoryMotorcyclePart
-		return "/images/motorcycle.svg"
-	case 5, 6: // AdCategoryBicycle, AdCategoryBicyclePart
-		return "/images/bicycle.svg"
-	case 7, 8: // AdCategoryAg, AdCategoryAgPart
-		return "/images/ag.svg"
-	default:
-		return "/images/car.svg" // Default fallback
 	}
+	if categoryName == "Motorcycles" || categoryName == "Motorcycle Parts" {
+		return "/images/motorcycle.svg"
+	}
+	if categoryName == "Bicycles" || categoryName == "Bicycle Parts" {
+		return "/images/bicycle.svg"
+	}
+	if categoryName == "Agricultural Equipment" || categoryName == "Agricultural Equipment Parts" {
+		return "/images/ag.svg"
+	}
+
+	return "/images/car.svg" // Default fallback
 }

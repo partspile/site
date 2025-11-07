@@ -7,22 +7,18 @@ import (
 	"github.com/parts-pile/site/logger"
 )
 
-// GetAdsWithoutVectors returns ads that don't have vector embeddings
-func GetAdsWithoutVectors() ([]Ad, error) {
+// GetAdsWithoutVectors returns ad IDs for ads that don't have vector embeddings
+func GetAdsWithoutVectors() ([]int, error) {
 	logger.Debug("Querying for ads without vectors",
 		"component", "ad")
 	query := `
-		SELECT 
-			a.id, a.ad_category_id, a.title, a.price, a.created_at, a.deleted_at, a.user_id, a.image_count,
-			l.city, l.admin_area, l.country,
-			0 as is_bookmarked
+		SELECT a.id
 		FROM Ad a
-		LEFT JOIN Location l ON a.location_id = l.id
 		WHERE a.has_vector = 0 AND a.deleted_at IS NULL
 	`
 
-	var ads []Ad
-	err := db.Select(&ads, query)
+	var adIDs []int
+	err := db.Select(&adIDs, query)
 	if err != nil {
 		logger.Error("SQL error querying ads without vectors",
 			"error", err, "component", "ad")
@@ -30,8 +26,8 @@ func GetAdsWithoutVectors() ([]Ad, error) {
 	}
 
 	logger.Debug("Found ads without vectors from SQL query",
-		"component", "ad", "count", len(ads))
-	return ads, nil
+		"component", "ad", "count", len(adIDs))
+	return adIDs, nil
 }
 
 // MarkAdAsHavingVector marks an ad as having a vector embedding

@@ -53,7 +53,7 @@ func filterControls(adCategory int, params map[string]string) g.Node {
 		} else {
 			// Dropdown filter for string fields
 			// Check if field is in a chain - if so, make it dynamic based on parent selections
-			if fieldConfig.ChainGroup > 0 {
+			if fieldConfig.NextInChain != 0 {
 				// Chained field - use dynamic filter that updates based on parent selections
 				filterNodes = append(filterNodes, chainedDropdownFilter(adCategory, fieldConfig, params))
 			} else {

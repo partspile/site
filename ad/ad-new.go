@@ -3,6 +3,7 @@ package ad
 import (
 	"database/sql"
 	"fmt"
+	"maps"
 	"strconv"
 	"strings"
 
@@ -17,30 +18,6 @@ func getValueColumnName(tableName string) string {
 		return "year"
 	}
 	return "name"
-}
-
-// getPartSubcategoryID looks up the PartSubCategory ID from category and subcategory names
-func getPartSubcategoryID(tx *sql.Tx, adCategoryID int, categoryName, subcategoryName string) (*int, error) {
-	if categoryName == "" || subcategoryName == "" {
-		return nil, nil
-	}
-
-	query := `
-		SELECT psc.id
-		FROM PartSubCategory psc
-		JOIN Specification spec ON spec.part_subcategory_id = psc.id
-		JOIN PartCategory pc ON spec.part_category_id = pc.id
-		WHERE pc.name = ? AND psc.name = ? AND psc.ad_category_id = ?
-	`
-	var id int
-	err := tx.QueryRow(query, categoryName, subcategoryName, adCategoryID).Scan(&id)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("part subcategory not found: category=%s, subcategory=%s", categoryName, subcategoryName)
-		}
-		return nil, fmt.Errorf("failed to lookup part subcategory: %w", err)
-	}
-	return &id, nil
 }
 
 // AddAd creates a new ad in the database and returns the ad ID
@@ -85,7 +62,7 @@ func addAdSpecAssociations(tx *sql.Tx, ad AdDetail) error {
 }
 
 // findSpec finds a spec ID from the unified Specification table using dynamic field configuration
-func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string, partSubcategoryID *int) (int, error) {
+func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int, error) {
 	// Get category fields
 	fieldConfigs, err := spec.GetCategoryFields(adCategoryID)
 	if err != nil {
@@ -131,14 +108,6 @@ func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string, partS
 		}
 	}
 
-	// Add part_subcategory filter
-	if partSubcategoryID != nil {
-		whereClauses = append(whereClauses, "spec.part_subcategory_id = ?")
-		args = append(args, *partSubcategoryID)
-	} else {
-		whereClauses = append(whereClauses, "spec.part_subcategory_id IS NULL")
-	}
-
 	// Build final query
 	if len(joins) > 0 {
 		query += " " + strings.Join(joins, " ")
@@ -164,16 +133,6 @@ func addDynamicAssociations(tx *sql.Tx, ad AdDetail) error {
 		return fmt.Errorf("failed to get category fields: %w", err)
 	}
 
-	// Get part subcategory ID if this is a part category
-	var partSubcatID *int
-	if IsPartCategory(ad.AdCategoryID) && ad.PartCategory != "" && ad.PartSubcategory != "" {
-		var err error
-		partSubcatID, err = getPartSubcategoryID(tx, ad.AdCategoryID, ad.PartCategory, ad.PartSubcategory)
-		if err != nil {
-			return err
-		}
-	}
-
 	// Build field value map from AdDetail (temporary compatibility layer)
 	// TODO: Make AdDetail more flexible to support arbitrary fields
 	fieldValueMap := buildFieldValueMap(ad, fieldConfigs)
@@ -193,15 +152,11 @@ func addDynamicAssociations(tx *sql.Tx, ad AdDetail) error {
 	for _, combination := range combinations {
 		// Merge combination with base field values
 		combinedValues := make(map[string]string)
-		for k, v := range fieldValueMap {
-			combinedValues[k] = v
-		}
-		for k, v := range combination {
-			combinedValues[k] = v
-		}
+		maps.Copy(combinedValues, fieldValueMap)
+		maps.Copy(combinedValues, combination)
 
 		// Find spec for this combination
-		specID, err := findSpec(tx, ad.AdCategoryID, combinedValues, partSubcatID)
+		specID, err := findSpec(tx, ad.AdCategoryID, combinedValues)
 		if err != nil {
 			return err
 		}
@@ -232,6 +187,14 @@ func buildFieldValueMap(ad AdDetail, fieldConfigs []spec.FieldConfig) map[string
 		case "make":
 			if ad.Make != "" {
 				values["make"] = ad.Make
+			}
+		case "part_category":
+			if ad.PartCategory != "" {
+				values["part_category"] = ad.PartCategory
+			}
+		case "part_subcategory":
+			if ad.PartSubcategory != "" {
+				values["part_subcategory"] = ad.PartSubcategory
 			}
 		case "breed":
 			// TODO: Add breed field to AdDetail when needed
@@ -301,9 +264,7 @@ func generateFieldCombinations(multiValueFields map[string][]string) []map[strin
 func generateCombinationsRecursive(fieldNames []string, fieldValues [][]string, depth int, current map[string]string, result *[]map[string]string) {
 	if depth == len(fieldNames) {
 		combination := make(map[string]string)
-		for k, v := range current {
-			combination[k] = v
-		}
+		maps.Copy(combination, current)
 		*result = append(*result, combination)
 		return
 	}

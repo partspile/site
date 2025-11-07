@@ -26,6 +26,7 @@ func HandleAdDetail(c *fiber.Ctx) error {
 	if !a.IsArchived() {
 		_ = ad.IncrementAdClick(adID)
 		if userID != 0 {
+			// Record the click for the user
 			_ = ad.IncrementAdClickForUser(adID, userID)
 			// Queue user for background embedding update
 			vector.QueueUserForUpdate(userID)

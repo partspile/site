@@ -38,7 +38,7 @@ func main() {
 	}
 
 	// Initialize ad category names cache
-	ad.SetAdCategoryNames()
+	ad.InitCategoryNames()
 
 	// Initialize spec cache
 	if err := spec.InitSpecCache(); err != nil {
