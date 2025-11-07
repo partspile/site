@@ -1,10 +1,14 @@
 package handlers
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	g "maragu.dev/gomponents"
+	hx "maragu.dev/gomponents-htmx"
+	. "maragu.dev/gomponents/html"
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
@@ -122,6 +126,16 @@ func HandleEngines(c *fiber.Ctx) error {
 	return HandleFieldValues(c, "engine")
 }
 
+// HandlePartCategory handles the part category dropdown for new ad form
+func HandlePartCategory(c *fiber.Ctx) error {
+	return HandleFieldValues(c, "part_category")
+}
+
+// HandlePartSubcategory handles the part subcategory dropdown for new ad form
+func HandlePartSubcategory(c *fiber.Ctx) error {
+	return HandleFieldValues(c, "part_subcategory")
+}
+
 // HandleFieldValues handles field value requests generically for any field
 func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
 	adCat := cookie.GetAdCategory(c)
@@ -152,10 +166,28 @@ func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
 	}
 
 	// Get parent field values (fields that come before current field)
+	// For chained fields, only include parents from the same chain group
+	currentField := fieldConfigs[currentFieldIndex]
 	for i := 0; i < currentFieldIndex; i++ {
 		parentField := fieldConfigs[i]
+		
+		// If current field is in a chain, only include parents from the same chain
+		if currentField.ChainGroup > 0 {
+			if parentField.ChainGroup != currentField.ChainGroup {
+				// Skip fields from different chain groups
+				continue
+			}
+		}
+		
+		// Form uses plural name for multi-value fields (years, models, engines)
+		// but field config uses singular name (year, model, engine)
+		queryKey := parentField.Name
+		if parentField.QdrantType == "keyword_array" {
+			queryKey = parentField.Name + "s" // years, models, engines
+		}
+		
 		// Check for single value or multiple values
-		if values, exists := q[parentField.Name]; exists && len(values) > 0 {
+		if values, exists := q[queryKey]; exists && len(values) > 0 {
 			// For multi-value fields (years, models, engines), join with comma
 			// For single-value fields (make), use first value
 			if parentField.QdrantType == "keyword_array" {
@@ -189,13 +221,176 @@ func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Field definition not found")
 	}
 
+	// Find downstream fields in the same chain that need to be cleared
+	var downstreamFields []string
+	if currentField.ChainGroup > 0 {
+		// Find all fields after this one in the same chain
+		for i := currentFieldIndex + 1; i < len(fieldConfigs); i++ {
+			nextField := fieldConfigs[i]
+			if nextField.ChainGroup == currentField.ChainGroup {
+				downstreamFields = append(downstreamFields, nextField.Name)
+			} else {
+				// Different chain or not in a chain - stop here
+				break
+			}
+		}
+	}
+
 	if fieldDef.QdrantType == "keyword_array" {
 		// Multi-select (checkboxes) - years, models, engines
-		return renderMultiSelectField(c, fieldName, values)
+		mainNode := buildMultiSelectFieldNode(fieldName, values)
+		return renderWithDownstreamClears(c, mainNode, downstreamFields, fieldConfigs)
 	} else {
-		// Single select (dropdown) - make, breed
-		return renderSingleSelectField(c, fieldName, values)
+		// Single select (dropdown) - make, part_category, part_subcategory, breed
+		// For part_category and part_subcategory, we need to render with HTMX triggers
+		mainNode := buildSingleSelectFieldNode(fieldName, values, currentField, fieldConfigs, currentFieldIndex)
+		return renderWithDownstreamClears(c, mainNode, downstreamFields, fieldConfigs)
 	}
+}
+
+// buildMultiSelectFieldNode builds the node for a multi-select field
+func buildMultiSelectFieldNode(fieldName string, values []string) g.Node {
+	switch fieldName {
+	case "year":
+		return ui.YearsSelector(values)
+	case "model":
+		if len(values) == 0 {
+			return ui.ModelsDivEmpty()
+		}
+		return ui.ModelsSelector(values)
+	case "engine":
+		if len(values) == 0 {
+			return ui.EnginesDivEmpty()
+		}
+		return ui.EnginesSelector(values)
+	default:
+		// Generic multi-select - fallback to years selector
+		return ui.YearsSelector(values)
+	}
+}
+
+// buildSingleSelectFieldNode builds the node for a single-select field
+func buildSingleSelectFieldNode(fieldName string, values []string, currentField spec.FieldConfig, allFields []spec.FieldConfig, currentFieldIndex int) g.Node {
+	// For part_category and part_subcategory, render as dropdowns with HTMX triggers
+	if fieldName == "part_category" || fieldName == "part_subcategory" {
+		// Create dropdown options
+		options := []g.Node{
+			Option(Value(""), g.Text(fmt.Sprintf("Select a %s", getFieldDisplayName(fieldName)))),
+		}
+		for _, value := range values {
+			options = append(options, Option(Value(value), g.Text(value)))
+		}
+		
+		fieldNameAttr := fieldName
+		displayName := getFieldDisplayName(fieldName)
+		
+		// Build HTMX attributes if there's a next field in chain
+		var selectAttrs []g.Node
+		selectAttrs = append(selectAttrs,
+			ID(fieldNameAttr),
+			Name(fieldNameAttr),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
+		)
+		
+		// Add HTMX trigger if there's a next field in chain
+		if currentField.NextInChain != "" {
+			nextFieldName := currentField.NextInChain
+			nextFieldDef, exists := spec.GetFieldDefinition(nextFieldName)
+			var nextFieldTarget string
+			if exists && nextFieldDef.QdrantType == "keyword_array" {
+				nextFieldTarget = nextFieldName + "sDiv"
+			} else {
+				nextFieldTarget = nextFieldName + "Div"
+			}
+			
+			// Build include selector for parent fields
+			var includeSelectors []string
+			for i := 0; i < currentFieldIndex; i++ {
+				parentField := allFields[i]
+				if parentField.QdrantType == "keyword_array" {
+					includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%ss']:checked", parentField.Name))
+				} else {
+					includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']", parentField.Name))
+				}
+			}
+			includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']", fieldNameAttr))
+			includeStr := strings.Join(includeSelectors, ",")
+			
+			endpoint := fmt.Sprintf("/api/%s", nextFieldName)
+			selectAttrs = append(selectAttrs,
+				hx.Trigger("change"),
+				hx.Get(endpoint),
+				hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
+				hx.Include(includeStr),
+				hx.Swap("innerHTML"),
+			)
+		}
+		
+		// Build form group structure similar to ui.formGroup
+		// Note: Don't wrap in outer div with ID - HTMX swaps innerHTML into existing div
+		return Div(
+			Div(
+				Class("mb-2"),
+				Label(
+					Class("block text-sm font-medium text-gray-700"),
+					g.Text(displayName),
+				),
+			),
+			Select(append(selectAttrs, g.Group(options)...)...),
+		)
+	}
+	// For other single-select fields (like make), return empty div (they're rendered statically in ui)
+	return Div()
+}
+
+// getFieldDisplayName returns the display name for a field
+func getFieldDisplayName(fieldName string) string {
+	fieldDef, exists := spec.GetFieldDefinition(fieldName)
+	if exists {
+		return fieldDef.DisplayName
+	}
+	// Fallback to capitalized field name
+	return strings.Title(strings.ReplaceAll(fieldName, "_", " "))
+}
+
+// renderWithDownstreamClears returns the main content plus empty divs for downstream fields
+// Uses HTMX's hx-swap-oob to swap into multiple targets
+func renderWithDownstreamClears(c *fiber.Ctx, mainNode g.Node, downstreamFields []string, fieldConfigs []spec.FieldConfig) error {
+	if len(downstreamFields) == 0 {
+		// No downstream fields to clear, just render main content
+		return render(c, mainNode)
+	}
+
+	// Create a map of field names to their div IDs
+	fieldIDMap := make(map[string]string)
+	for _, fieldConfig := range fieldConfigs {
+		divID := fieldConfig.Name + "Div"
+		if fieldConfig.QdrantType == "keyword_array" {
+			divID = fieldConfig.Name + "sDiv"
+		}
+		fieldIDMap[fieldConfig.Name] = divID
+	}
+
+	// Build empty divs for downstream fields with hx-swap-oob
+	var emptyDivs []g.Node
+	for _, fieldName := range downstreamFields {
+		divID, exists := fieldIDMap[fieldName]
+		if !exists {
+			continue
+		}
+		// Create empty div with hx-swap-oob attribute
+		emptyDivs = append(emptyDivs, Div(
+			g.Attr("id", divID),
+			g.Attr("hx-swap-oob", "true"),
+		))
+	}
+
+	// Combine main content with empty divs
+	// HTMX will swap the main content into the target and the oob divs into their targets
+	var allNodes []g.Node
+	allNodes = append(allNodes, mainNode)
+	allNodes = append(allNodes, emptyDivs...)
+	return render(c, g.Group(allNodes))
 }
 
 // renderEmptyFieldSelector returns empty selector for a field
@@ -242,14 +437,32 @@ func renderSingleSelectField(c *fiber.Ctx, fieldName string, values []string) er
 }
 
 // HandleSubCategories handles the subcategories dropdown for new ad form
+// Now uses dynamic field system - part_subcategory is chained from part_category
 func HandleSubCategories(c *fiber.Ctx) error {
-	categoryName := c.Query("category")
-	adCat := cookie.GetAdCategory(c)
-	if categoryName == "" {
-		// Return empty div when category is not selected
+	// Get part_category from query parameter
+	partCategory := c.Query("part_category")
+	if partCategory == "" {
+		// Also check for legacy "category" parameter for backward compatibility
+		partCategory = c.Query("category")
+	}
+	
+	if partCategory == "" {
+		// Return empty div when part_category is not selected
 		return render(c, ui.SubCategoriesSelector([]string{}, ""))
 	}
 
-	subCategoryNames := part.GetSubCategories(adCat, categoryName)
-	return render(c, ui.SubCategoriesSelector(subCategoryNames, ""))
+	// Use dynamic field system to get part_subcategory values
+	adCat := cookie.GetAdCategory(c)
+	parentValues := map[string]string{
+		"part_category": partCategory,
+	}
+	
+	values, err := spec.GetFieldValues(adCat, "part_subcategory", parentValues)
+	if err != nil {
+		logger.Warn("Failed to get part subcategories",
+			"error", err, "component", "subcategories", "adCat", adCat, "partCategory", partCategory)
+		return render(c, ui.SubCategoriesSelector([]string{}, ""))
+	}
+
+	return render(c, ui.SubCategoriesSelector(values, ""))
 }

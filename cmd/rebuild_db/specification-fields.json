@@ -32,6 +32,14 @@
     "qdrant_type": "keyword_array"
   },
   {
+    "name": "part_category",
+    "display_name": "Part Category",
+    "field_type": "string",
+    "table_name": "PartCategory",
+    "table_field_name": "part_category_id",
+    "qdrant_type": "keyword"
+  },
+  {
     "name": "part_subcategory",
     "display_name": "Part Subcategory",
     "field_type": "string",

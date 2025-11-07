@@ -137,12 +137,12 @@ func searchBox(q string) g.Node {
 	)
 }
 
-func searchWidgetWithFilters(params map[string]string) g.Node {
+func searchWidgetWithFilters(adCategory int, params map[string]string) g.Node {
 	return Div(
 		Class("border rounded-lg p-4"),
 		searchBox(params["q"]),
-		filterControls(params),
-		filterActions(),
+		filterControls(adCategory, params),
+		filterActions(adCategory),
 	)
 }
 
@@ -163,7 +163,7 @@ func SearchWidget(userID, view, adCategory int, params map[string]string, showFi
 		hx.Swap("outerHTML"),
 		hx.Include("form"),
 		adCatButton(adCategory),
-		g.If(showFilters, searchWidgetWithFilters(params)),
+		g.If(showFilters, searchWidgetWithFilters(adCategory, params)),
 		g.If(!showFilters, searchWidgetSimple(params["q"])),
 	)
 }
@@ -206,6 +206,51 @@ func MakeFilterOptions(makes []string) g.Node {
 	// Add make options
 	for _, make := range makes {
 		options = append(options, Option(Value(make), g.Text(make)))
+	}
+
+	return g.Group(options)
+}
+
+// ModelFilterOptions returns HTML options for the model filter dropdown
+func ModelFilterOptions(models []string) g.Node {
+	var options []g.Node
+
+	// Add "All Models" option first
+	options = append(options, Option(Value(""), g.Text("All Models")))
+
+	// Add model options
+	for _, model := range models {
+		options = append(options, Option(Value(model), g.Text(model)))
+	}
+
+	return g.Group(options)
+}
+
+// EngineFilterOptions returns HTML options for the engine filter dropdown
+func EngineFilterOptions(engines []string) g.Node {
+	var options []g.Node
+
+	// Add "All Engines" option first
+	options = append(options, Option(Value(""), g.Text("All Engines")))
+
+	// Add engine options
+	for _, engine := range engines {
+		options = append(options, Option(Value(engine), g.Text(engine)))
+	}
+
+	return g.Group(options)
+}
+
+// BreedFilterOptions returns HTML options for the breed filter dropdown
+func BreedFilterOptions(breeds []string) g.Node {
+	var options []g.Node
+
+	// Add "All Breeds" option first
+	options = append(options, Option(Value(""), g.Text("All Breeds")))
+
+	// Add breed options
+	for _, breed := range breeds {
+		options = append(options, Option(Value(breed), g.Text(breed)))
 	}
 
 	return g.Group(options)

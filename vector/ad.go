@@ -175,26 +175,38 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 	// Add spec fields dynamically based on category configuration
 	// This is a temporary compatibility layer - AdDetail has hard-coded fields
 	for _, fieldConfig := range fieldConfigs {
+		// Determine Qdrant metadata key (plural for arrays)
+		qdrantKey := fieldConfig.Name
+		if fieldConfig.QdrantType == "keyword_array" {
+			qdrantKey = fieldConfig.Name + "s" // years, models, engines
+		}
+
+		// Extract value from AdDetail based on field name
+		// TODO: Make AdDetail more flexible to support arbitrary fields
 		switch fieldConfig.Name {
 		case "make":
 			if adObj.Make != "" {
-				metadata["make"] = adObj.Make
+				metadata[qdrantKey] = adObj.Make
 			}
 		case "year":
 			if len(adObj.Years) > 0 {
-				metadata["years"] = adObj.Years
+				metadata[qdrantKey] = adObj.Years
 			}
 		case "model":
 			if len(adObj.Models) > 0 {
-				metadata["models"] = adObj.Models
+				metadata[qdrantKey] = adObj.Models
 			}
 		case "engine":
 			if len(adObj.Engines) > 0 {
-				metadata["engines"] = adObj.Engines
+				metadata[qdrantKey] = adObj.Engines
 			}
 		case "breed":
 			// TODO: Add breed field to AdDetail when needed
 			// For now, skip
+		default:
+			// For future fields, log a warning but don't fail
+			logger.Debug("Field not yet supported in AdDetail",
+				"component", "vector", "field", fieldConfig.Name, "adID", adObj.ID)
 		}
 	}
 

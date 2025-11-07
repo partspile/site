@@ -106,37 +106,21 @@ func replaceAttr(groups []string, a slog.Attr) slog.Attr {
 
 // Debug logs a debug-level message
 func Debug(msg string, fields ...any) {
-	if defaultLogger == nil {
-		slog.Debug(msg, fields...)
-		return
-	}
 	defaultLogger.Debug(msg, fields...)
 }
 
 // Info logs an info-level message
 func Info(msg string, fields ...any) {
-	if defaultLogger == nil {
-		slog.Info(msg, fields...)
-		return
-	}
 	defaultLogger.Info(msg, fields...)
 }
 
 // Warn logs a warning-level message
 func Warn(msg string, fields ...any) {
-	if defaultLogger == nil {
-		slog.Warn(msg, fields...)
-		return
-	}
 	defaultLogger.Warn(msg, fields...)
 }
 
 // Error logs an error-level message
 func Error(msg string, fields ...any) {
-	if defaultLogger == nil {
-		slog.Error(msg, fields...)
-		return
-	}
 	defaultLogger.Error(msg, fields...)
 }
 
@@ -153,17 +137,11 @@ func Fatal(msg string, fields ...any) {
 
 // WithFields returns a logger with the specified fields attached
 func WithFields(fields ...any) *slog.Logger {
-	if defaultLogger == nil {
-		return slog.Default()
-	}
 	return defaultLogger.With(fields...)
 }
 
 // WithContext returns a logger with context attached
 func WithContext(ctx context.Context) *slog.Logger {
-	if defaultLogger == nil {
-		return slog.Default()
-	}
 	return defaultLogger.With(toFields(ctx)...)
 }
 
@@ -187,9 +165,6 @@ func toFields(ctx context.Context) []any {
 
 // GetLogger returns the default logger instance
 func GetLogger() *slog.Logger {
-	if defaultLogger == nil {
-		return slog.Default()
-	}
 	return defaultLogger
 }
 
@@ -209,11 +184,7 @@ func (w *loggerWriter) Write(p []byte) (n int, err error) {
 		msg = msg[:len(msg)-1]
 	}
 
-	if defaultLogger == nil {
-		slog.Info(msg)
-	} else {
-		defaultLogger.Info(msg)
-	}
+	defaultLogger.Info(msg)
 
 	return len(p), nil
 }
@@ -253,20 +224,20 @@ var (
 
 func (w *colorWriter) Write(p []byte) (n int, err error) {
 	output := string(p)
-	
+
 	// Colorize each level pattern - replace quoted versions with colored unquoted versions
 	// This works because we're post-processing after the handler has formatted everything
 	output = levelPatterns["ERRO"].ReplaceAllString(output, `l=`+colorRed+`[ERRO]`+colorReset)
 	output = levelPatterns["WARN"].ReplaceAllString(output, `l=`+colorYellow+`[WARN]`+colorReset)
 	output = levelPatterns["INFO"].ReplaceAllString(output, `l=`+colorBlue+`[INFO]`+colorReset)
 	output = levelPatterns["DEBU"].ReplaceAllString(output, `l=`+colorGray+`[DEBU]`+colorReset)
-	
+
 	// Also handle unquoted versions (in case handler doesn't quote)
 	output = strings.ReplaceAll(output, ` l=[ERRO] `, ` l=`+colorRed+`[ERRO]`+colorReset+` `)
 	output = strings.ReplaceAll(output, ` l=[WARN] `, ` l=`+colorYellow+`[WARN]`+colorReset+` `)
 	output = strings.ReplaceAll(output, ` l=[INFO] `, ` l=`+colorBlue+`[INFO]`+colorReset+` `)
 	output = strings.ReplaceAll(output, ` l=[DEBU] `, ` l=`+colorGray+`[DEBU]`+colorReset+` `)
-	
+
 	_, err = w.Writer.Write([]byte(output))
 	return len(p), err
 }

@@ -198,20 +198,13 @@ func validateAdFormMultipart(form *multipart.Form, adCat int) (years, models, en
 	// Validate multi-value fields (keyword_array type)
 	for _, fieldConfig := range fieldConfigs {
 		if fieldConfig.QdrantType == "keyword_array" && fieldConfig.IsRequired {
-			values := form.Value[fieldConfig.Name+"s"] // Form fields use plural (years, models, engines)
+			fieldName := fieldConfig.Name + "s" // Form fields use plural (years, models, engines)
+			values := form.Value[fieldName]
 			if len(values) == 0 {
 				return nil, nil, nil, fmt.Errorf("please select at least one %s", fieldConfig.DisplayName)
 			}
-
-			// Store values in appropriate variables (temporary compatibility layer)
-			switch fieldConfig.Name {
-			case "year":
-				years = values
-			case "model":
-				models = values
-			case "engine":
-				engines = values
-			}
+			// Store values generically - no need for hard-coded switch
+			// The caller will extract what it needs
 		}
 	}
 
@@ -335,44 +328,44 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	}
 
 	// Validate and extract spec fields dynamically
-	var make string
-	var years, models, engines []string
+	// Build a map to store field values generically
+	fieldValues := make(map[string]interface{})
 
 	for _, fieldConfig := range fieldConfigs {
 		if fieldConfig.IsRequired {
 			if fieldConfig.QdrantType == "keyword_array" {
-				// Multi-value fields (years, models, engines)
+				// Multi-value fields (years, models, engines, etc.)
 				fieldName := fieldConfig.Name + "s" // Form uses plural
 				values := form.Value[fieldName]
 				if len(values) == 0 {
 					return ad.AdDetail{}, nil, nil, fmt.Errorf("please select at least one %s", fieldConfig.DisplayName)
 				}
-
-				// Store in appropriate variable (temporary compatibility layer)
-				switch fieldConfig.Name {
-				case "year":
-					years = values
-				case "model":
-					models = values
-				case "engine":
-					engines = values
-				}
+				fieldValues[fieldConfig.Name] = values
 			} else {
-				// Single-value fields (make, breed)
+				// Single-value fields (make, breed, part_subcategory, etc.)
 				value, err := ValidateRequired(c, fieldConfig.Name, fieldConfig.DisplayName)
 				if err != nil {
 					return ad.AdDetail{}, nil, nil, err
 				}
-
-				// Store in appropriate variable (temporary compatibility layer)
-				switch fieldConfig.Name {
-				case "make":
-					make = value
-				case "breed":
-					// TODO: Add breed field to AdDetail when needed
-				}
+				fieldValues[fieldConfig.Name] = value
 			}
 		}
+	}
+
+	// Extract values for AdDetail (temporary compatibility layer)
+	var make string
+	var years, models, engines []string
+	if val, ok := fieldValues["make"]; ok {
+		make = val.(string)
+	}
+	if val, ok := fieldValues["year"]; ok {
+		years = val.([]string)
+	}
+	if val, ok := fieldValues["model"]; ok {
+		models = val.([]string)
+	}
+	if val, ok := fieldValues["engine"]; ok {
+		engines = val.([]string)
 	}
 
 	// Validate category as single field (always required for part categories)

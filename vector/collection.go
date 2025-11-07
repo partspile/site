@@ -88,13 +88,13 @@ func getAllSpecFields() []spec.FieldConfig {
 	`
 
 	type dbField struct {
-		ID            int    `db:"id"`
-		Name          string `db:"name"`
-		DisplayName   string `db:"display_name"`
-		FieldType     string `db:"field_type"`
-		TableName     string `db:"table_name"`
+		ID             int    `db:"id"`
+		Name           string `db:"name"`
+		DisplayName    string `db:"display_name"`
+		FieldType      string `db:"field_type"`
+		TableName      string `db:"table_name"`
 		TableFieldName string `db:"table_field_name"`
-		QdrantType    string `db:"qdrant_type"`
+		QdrantType     string `db:"qdrant_type"`
 	}
 
 	var dbFields []dbField
@@ -108,13 +108,13 @@ func getAllSpecFields() []spec.FieldConfig {
 	var fieldConfigs []spec.FieldConfig
 	for _, f := range dbFields {
 		fieldConfigs = append(fieldConfigs, spec.FieldConfig{
-			ID:            f.ID,
-			Name:          f.Name,
-			DisplayName:   f.DisplayName,
-			FieldType:     f.FieldType,
-			TableName:     f.TableName,
+			ID:             f.ID,
+			Name:           f.Name,
+			DisplayName:    f.DisplayName,
+			FieldType:      f.FieldType,
+			TableName:      f.TableName,
 			TableFieldName: f.TableFieldName,
-			QdrantType:    f.QdrantType,
+			QdrantType:     f.QdrantType,
 		})
 	}
 
@@ -201,16 +201,55 @@ func InitQdrantIndexes() error {
 		}
 	}
 
+	// Track all indexes (existing and newly created) for summary logging
+	type indexInfo struct {
+		Name     string
+		Type     string
+		IsArray  bool
+		IsStruct bool
+		Status   string // "existing" or "created"
+		Params   string
+	}
+	var allIndexes []indexInfo
+
 	for _, field := range indexFields {
+		// Determine index type string and params
+		var typeStr, paramsStr string
+		switch field.QdrantType {
+		case qdrant.FieldType_FieldTypeKeyword:
+			typeStr = "keyword"
+			paramsStr = "{}"
+		case qdrant.FieldType_FieldTypeInteger:
+			typeStr = "integer"
+			paramsStr = "{}"
+		case qdrant.FieldType_FieldTypeFloat:
+			typeStr = "float"
+			paramsStr = "{}"
+		case qdrant.FieldType_FieldTypeGeo:
+			typeStr = "geo"
+			paramsStr = "{}"
+		default:
+			typeStr = "keyword"
+			paramsStr = "{}"
+		}
+
 		// Check if index already exists
 		if existingIndexedFields[field.Name] {
 			logger.Debug("Index for field already exists, skipping",
 				"component", "qdrant", "field", field.Name)
+			allIndexes = append(allIndexes, indexInfo{
+				Name:     field.Name,
+				Type:     typeStr,
+				IsArray:  field.IsArray,
+				IsStruct: field.IsStruct,
+				Status:   "existing",
+				Params:   paramsStr,
+			})
 			continue
 		}
 
 		logger.Info("Creating index for field",
-			"component", "qdrant", "field", field.Name)
+			"component", "qdrant", "field", field.Name, "type", typeStr)
 
 		// Create the appropriate index parameters based on field type
 		var fieldIndexParams *qdrant.PayloadIndexParams
@@ -247,6 +286,38 @@ func InitQdrantIndexes() error {
 
 		logger.Info("Successfully created index for field",
 			"component", "qdrant", "field", field.Name)
+
+		allIndexes = append(allIndexes, indexInfo{
+			Name:     field.Name,
+			Type:     typeStr,
+			IsArray:  field.IsArray,
+			IsStruct: field.IsStruct,
+			Status:   "created",
+			Params:   paramsStr,
+		})
+	}
+
+	// Log summary of all indexes
+	logger.Info("Qdrant collection indexes summary",
+		"component", "qdrant",
+		"collectionName", collectionName,
+		"totalIndexes", len(allIndexes))
+
+	// Log each index separately for better readability
+	for _, idx := range allIndexes {
+		attrs := []any{
+			"component", "qdrant",
+			"field", idx.Name,
+			"type", idx.Type,
+			"status", idx.Status,
+		}
+		if idx.IsArray {
+			attrs = append(attrs, "isArray", true)
+		}
+		if idx.IsStruct {
+			attrs = append(attrs, "isStruct", true)
+		}
+		logger.Info("Qdrant index", attrs...)
 	}
 
 	logger.Info("Payload indexes setup completed",

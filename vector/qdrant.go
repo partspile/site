@@ -64,7 +64,7 @@ func convertMetadataToQdrant(metadata map[string]interface{}) map[string]*qdrant
 	for k, v := range metadata {
 		switch k {
 		case "location":
-			// Handle geo location struct
+			// Handle geo location struct (special case - not a spec field)
 			if geoMap, ok := v.(map[string]interface{}); ok {
 				geoStruct := &qdrant.Struct{Fields: make(map[string]*qdrant.Value)}
 				for geoKey, geoVal := range geoMap {
@@ -74,42 +74,30 @@ func convertMetadataToQdrant(metadata map[string]interface{}) map[string]*qdrant
 				}
 				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StructValue{StructValue: geoStruct}}
 			}
-		case "years", "models", "engines":
-			// Handle array fields (keyword_array type)
-			if strArray, ok := v.([]string); ok {
-				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_ListValue{ListValue: &qdrant.ListValue{
-					Values: func() []*qdrant.Value {
-						result := make([]*qdrant.Value, len(strArray))
-						for j, s := range strArray {
-							result[j] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: s}}
-						}
-						return result
-					}(),
-				}}}
-			}
 		case "ad_category_id", "rock_count":
-			// Handle integer fields
+			// Handle integer fields (non-spec fields)
 			if intVal, ok := v.(int); ok {
 				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(intVal)}}
 			}
 		case "price":
-			// Handle float fields
+			// Handle float fields (non-spec fields)
 			if floatVal, ok := v.(float64); ok {
 				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_DoubleValue{DoubleValue: floatVal}}
 			}
-		case "make", "category", "subcategory", "breed":
-			// Handle keyword/string fields (single value)
+		case "category", "subcategory":
+			// Handle part category/subcategory (non-spec fields)
 			if strVal, ok := v.(string); ok {
 				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: strVal}}
 			}
 		default:
-			// For unknown fields, try to infer type
+			// For all spec fields and unknown fields, infer type from Go value
 			// This allows new fields to work without code changes
 			switch val := v.(type) {
 			case string:
+				// Single-value keyword fields (make, breed, part_subcategory, etc.)
 				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_StringValue{StringValue: val}}
 			case []string:
-				// Array of strings
+				// Array fields (years, models, engines, or any future keyword_array fields)
 				qdrantMetadata[k] = &qdrant.Value{Kind: &qdrant.Value_ListValue{ListValue: &qdrant.ListValue{
 					Values: func() []*qdrant.Value {
 						result := make([]*qdrant.Value, len(val))

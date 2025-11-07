@@ -31,19 +31,45 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string, m
 	}
 
 	// Render spec fields dynamically
+	// Render the first field of each chain group independently
+	// Subsequent fields in the same chain will be populated via HTMX
+	seenChainGroups := make(map[int]bool)
 	for i, fieldConfig := range fieldConfigs {
-		selected := []string{}
-		var defaultMake string
-		if fieldConfig.Name == "make" {
-			defaultMake = ""
+		isFirstInChain := false
+
+		// Check if this is the first field in its chain group
+		if fieldConfig.ChainGroup == 0 {
+			// Field not in a chain - render it
+			isFirstInChain = true
+		} else {
+			// Field is in a chain - check if we've seen this chain group before
+			if !seenChainGroups[fieldConfig.ChainGroup] {
+				// First field in this chain group - render it
+				isFirstInChain = true
+				seenChainGroups[fieldConfig.ChainGroup] = true
+			}
 		}
-		fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, map[string][]string{}, makes, defaultMake))
+
+		if isFirstInChain {
+			// Render the first field of this chain
+			selected := []string{}
+			var defaultMake string
+			if fieldConfig.Name == "make" {
+				defaultMake = ""
+			}
+			fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, map[string][]string{}, makes, categories, defaultMake))
+		} else {
+			// Chained field - render empty div for HTMX to populate
+			fieldID := fieldConfig.Name + "Div"
+			if fieldConfig.QdrantType == "keyword_array" {
+				fieldID = fieldConfig.Name + "sDiv"
+			}
+			fieldNodes = append(fieldNodes, Div(ID(fieldID)))
+		}
 	}
 
 	// Add part category/subcategory (always shown)
 	fieldNodes = append(fieldNodes,
-		categoriesSelector(categories, ""),
-		SubCategoriesSelector([]string{}, ""),
 		imagesInputField(maxImagesPerAd),
 		descriptionTextareaField(),
 		priceInputField(),
@@ -102,6 +128,13 @@ func DuplicateAdPage(
 		"model":  originalAd.Models,
 		"engine": originalAd.Engines,
 	}
+	// Add part_category and part_subcategory if present
+	if originalAd.PartCategory != "" {
+		selectedValues["part_category"] = []string{originalAd.PartCategory}
+	}
+	if originalAd.PartSubcategory != "" {
+		selectedValues["part_subcategory"] = []string{originalAd.PartSubcategory}
+	}
 
 	// Build dynamic field nodes
 	fieldNodes := []g.Node{
@@ -118,13 +151,11 @@ func DuplicateAdPage(
 		if fieldConfig.Name == "make" && originalAd.Make != "" {
 			defaultMake = originalAd.Make
 		}
-		fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, selectedValues, makes, defaultMake))
+		fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, selectedValues, makes, categories, defaultMake))
 	}
 
 	// Add part category/subcategory
 	fieldNodes = append(fieldNodes,
-		categoriesSelector(categories, originalAd.PartCategory),
-		SubCategoriesSelector(subcategoryNames, selectedSubcategory),
 		imagesInputField(maxImagesPerAd),
 		descriptionTextareaField(),
 		priceInputField(),
@@ -171,8 +202,12 @@ func titleInputField(defaultValue string) g.Node {
 }
 
 // renderFieldSelector renders a field selector dynamically based on field configuration
-func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields []spec.FieldConfig, selectedValues []string, allSelectedValues map[string][]string, makes []string, defaultMake string) g.Node {
+func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields []spec.FieldConfig, selectedValues []string, allSelectedValues map[string][]string, makes []string, partCategories []string, defaultMake string) g.Node {
+	// Use plural form for multi-value fields to match handler return values
 	fieldID := fieldConfig.Name + "Div"
+	if fieldConfig.QdrantType == "keyword_array" {
+		fieldID = fieldConfig.Name + "sDiv" // yearsDiv, modelsDiv, enginesDiv
+	}
 	fieldName := fieldConfig.Name
 	fieldNamePlural := fieldConfig.Name + "s" // For multi-value fields
 
@@ -187,13 +222,35 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 		}
 	}
 
-	// Determine next field to update
+	// Determine next field to update using chain information
 	var nextFieldName string
 	var nextFieldTarget string
-	if fieldIndex+1 < len(allFields) {
+	if fieldConfig.NextInChain != "" {
+		// This field is chained to another field
+		nextFieldName = fieldConfig.NextInChain
+		// Use plural form for multi-value fields
+		nextFieldDef, exists := spec.GetFieldDefinition(nextFieldName)
+		if exists && nextFieldDef.QdrantType == "keyword_array" {
+			nextFieldTarget = nextFieldName + "sDiv"
+		} else {
+			nextFieldTarget = nextFieldName + "Div"
+		}
+	} else if fieldIndex+1 < len(allFields) {
+		// No chain, but there's a next field - check if it's in a chain
 		nextField := allFields[fieldIndex+1]
-		nextFieldName = nextField.Name
-		nextFieldTarget = nextField.Name + "Div"
+		if nextField.ChainGroup == 0 || nextField.ChainGroup != fieldConfig.ChainGroup {
+			// Next field is not in a chain or is in a different chain
+			// After last spec field, update subcategories
+			nextFieldTarget = "subcategoriesDiv"
+		} else {
+			// Next field is in the same chain (shouldn't happen if chain logic is correct)
+			if nextField.QdrantType == "keyword_array" {
+				nextFieldTarget = nextField.Name + "sDiv"
+			} else {
+				nextFieldTarget = nextField.Name + "Div"
+			}
+			nextFieldName = nextField.Name
+		}
 	} else {
 		// After last spec field, update subcategories
 		nextFieldTarget = "subcategoriesDiv"
@@ -213,24 +270,20 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 			}
 
 			// Add HTMX trigger if there's a next field
-			if nextFieldTarget != "" {
+			if nextFieldTarget != "" && nextFieldName != "" {
 				includeStr := strings.Join(append(includeSelectors, fmt.Sprintf("[name='%s']:checked", fieldNamePlural)), ",")
+
+				// Use singular field name for endpoint (consistent with field config)
+				endpoint := fmt.Sprintf("/api/%s", nextFieldName)
+
 				attrs = append(attrs,
 					hx.Trigger("change"),
-					hx.Get(fmt.Sprintf("/api/%s", nextFieldName)),
+					hx.Get(endpoint),
 					hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
 					hx.Include(includeStr),
 					hx.Swap("innerHTML"),
 				)
-				// Clear fields after this one
-				if fieldIndex+2 < len(allFields) {
-					clearTargets := []string{}
-					for j := fieldIndex + 2; j < len(allFields); j++ {
-						clearTargets = append(clearTargets, fmt.Sprintf("document.getElementById('%sDiv').innerHTML = ''", allFields[j].Name))
-					}
-					clearTargets = append(clearTargets, "document.getElementById('subcategoriesDiv').innerHTML = ''")
-					attrs = append(attrs, g.Attr("onclick", strings.Join(clearTargets, "; ")))
-				}
+				// HTMX will automatically replace content, no need to manually clear
 			}
 
 			checkboxes = append(checkboxes, g.Group(attrs))
@@ -243,23 +296,8 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 			formGroup(fieldConfig.DisplayName, fieldNamePlural, GridContainer4(checkboxes...)),
 		)
 	} else {
-		// Single-select (dropdown) - make, breed
-		if fieldConfig.Name == "make" {
-			// Build clear targets script
-			clearTargets := []string{}
-			if fieldIndex+1 < len(allFields) {
-				for j := fieldIndex + 1; j < len(allFields); j++ {
-					clearTargets = append(clearTargets, fmt.Sprintf("document.getElementById('%sDiv').innerHTML = ''", allFields[j].Name))
-				}
-			}
-			clearTargets = append(clearTargets, "document.getElementById('subcategoriesDiv').innerHTML = ''")
-			clearTargetsScript := strings.Join(clearTargets, "; ")
-
-			// Use makes from parameter
-			return makeSelector(makes, defaultMake, nextFieldName, nextFieldTarget, clearTargetsScript)
-		}
-
-		// Generic single-select dropdown
+		// Single-select (dropdown) - make, breed, etc.
+		// Use generic selector for all single-select fields
 		options := []g.Node{
 			Option(Value(""), g.Text(fmt.Sprintf("Select a %s", fieldConfig.DisplayName))),
 		}
@@ -274,24 +312,59 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 			attrs = append(attrs, Required())
 		}
 
-		// Add HTMX trigger if there's a next field
-		if nextFieldTarget != "" {
+		// Add HTMX trigger if there's a next field in chain
+		if nextFieldTarget != "" && nextFieldName != "" {
 			includeStr := strings.Join(append(includeSelectors, fmt.Sprintf("[name='%s']", fieldName)), ",")
+
+			// Use singular field name for endpoint (consistent with field config)
+			endpoint := fmt.Sprintf("/api/%s", nextFieldName)
+
 			attrs = append(attrs,
 				hx.Trigger("change"),
-				hx.Get(fmt.Sprintf("/api/%s", nextFieldName)),
+				hx.Get(endpoint),
 				hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
 				hx.Include(includeStr),
+				hx.Swap("innerHTML"),
 			)
-			// Clear fields after this one
-			if fieldIndex+2 < len(allFields) {
-				clearTargets := []string{}
-				for j := fieldIndex + 2; j < len(allFields); j++ {
-					clearTargets = append(clearTargets, fmt.Sprintf("document.getElementById('%sDiv').innerHTML = ''", allFields[j].Name))
+			// HTMX will automatically replace content, no need to manually clear
+		}
+
+		// Special handling for make field - use pre-loaded makes
+		if fieldConfig.Name == "make" {
+			makeOptions := []g.Node{}
+			for _, makeName := range makes {
+				makeAttrs := []g.Node{Value(makeName), g.Text(makeName)}
+				if makeName == defaultMake {
+					makeAttrs = append(makeAttrs, Selected())
 				}
-				clearTargets = append(clearTargets, "document.getElementById('subcategoriesDiv').innerHTML = ''")
-				attrs = append(attrs, g.Attr("onchange", strings.Join(clearTargets, "; ")))
+				makeOptions = append(makeOptions, Option(makeAttrs...))
 			}
+			return formGroup(fieldConfig.DisplayName, fieldName,
+				Select(append(attrs, Option(Value(""), g.Text("Select a make")), g.Group(makeOptions))...),
+			)
+		}
+
+		// Special handling for part_category field - use pre-loaded categories
+		if fieldConfig.Name == "part_category" {
+			categoryOptions := []g.Node{}
+			for _, categoryName := range partCategories {
+				categoryOptions = append(categoryOptions, Option(Value(categoryName), g.Text(categoryName)))
+			}
+			// Add HTMX trigger if there's a next field in chain (part_subcategory)
+			if nextFieldTarget != "" && nextFieldName != "" {
+				includeStr := strings.Join(append(includeSelectors, fmt.Sprintf("[name='%s']", fieldName)), ",")
+				endpoint := fmt.Sprintf("/api/%s", nextFieldName)
+				attrs = append(attrs,
+					hx.Trigger("change"),
+					hx.Get(endpoint),
+					hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
+					hx.Include(includeStr),
+					hx.Swap("innerHTML"),
+				)
+			}
+			return formGroup(fieldConfig.DisplayName, fieldName,
+				Select(append(attrs, Option(Value(""), g.Text("Select a category")), g.Group(categoryOptions))...),
+			)
 		}
 
 		return formGroup(fieldConfig.DisplayName, fieldName,
@@ -445,11 +518,10 @@ func YearsSelector(years []string, selectedYears ...[]string) g.Node {
 		checkboxes = append(checkboxes,
 			Checkbox("years", year, year, selected[year], false,
 				hx.Trigger("change"),
-				hx.Get("/api/models"),
+				hx.Get("/api/model"),
 				hx.Target("#modelsDiv"),
 				hx.Include("[name='make'],[name='years']:checked"),
 				hx.Swap("innerHTML"),
-				g.Attr("onclick", "document.getElementById('enginesDiv').innerHTML = ''"),
 			),
 		)
 	}
@@ -473,7 +545,7 @@ func ModelsSelector(models []string, selectedModels ...[]string) g.Node {
 		checkboxes = append(checkboxes,
 			Checkbox("models", model, model, selected[model], false,
 				hx.Trigger("change"),
-				hx.Get("/api/engines"),
+				hx.Get("/api/engine"),
 				hx.Target("#enginesDiv"),
 				hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
 				hx.Swap("innerHTML"),

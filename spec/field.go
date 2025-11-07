@@ -1,8 +1,11 @@
 package spec
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/parts-pile/site/db"
@@ -19,6 +22,10 @@ type FieldConfig struct {
 	TableFieldName string // Column name in Specification table (e.g., 'make_id', 'year_id')
 	QdrantType    string // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
 	IsRequired    bool
+	// Chain information for cascading dropdowns
+	ChainGroup    int  // Fields with same chain_group are in the same chain (0 = not in a chain)
+	ChainPosition int  // Position within the chain (0 = first, 1 = second, etc.)
+	NextInChain   string // Name of next field in chain (empty if last or not in chain)
 }
 
 var (
@@ -105,6 +112,8 @@ func loadFieldDefinitions() (map[string]FieldConfig, error) {
 }
 
 // loadCategoryFields loads all AdCategoryField records and builds category -> fields mapping
+// Chain information is computed based on field order - consecutive fields with same chain_group
+// are considered chained. For now, we'll compute chains based on display_order.
 func loadCategoryFields(fieldDefs map[string]FieldConfig) (map[int][]FieldConfig, error) {
 	query := `
 		SELECT acf.ad_category_id, acf.specification_field_id, acf.display_order, acf.is_required
@@ -151,7 +160,7 @@ func loadCategoryFields(fieldDefs map[string]FieldConfig) (map[int][]FieldConfig
 		)
 	}
 
-	// Sort fields by display_order within each category
+	// Sort fields by display_order within each category and compute chain information
 	for catID := range categoryFieldsMap {
 		fields := categoryFieldsMap[catID]
 		sort.Slice(fields, func(i, j int) bool {
@@ -169,10 +178,121 @@ func loadCategoryFields(fieldDefs map[string]FieldConfig) (map[int][]FieldConfig
 			}
 			return orderI < orderJ
 		})
+		
+		// Compute chain information
+		// For now, we'll need to load chain info from JSON file
+		// This is a temporary solution - ideally we'd store chain info in DB
+		fields = computeChainInfo(fields, catID)
 		categoryFieldsMap[catID] = fields
 	}
 
 	return categoryFieldsMap, nil
+}
+
+// computeChainInfo computes chain information for fields by loading from ad-category.json
+// This is a temporary solution until we store chain info in the database
+func computeChainInfo(fields []FieldConfig, categoryID int) []FieldConfig {
+	// Load ad-category.json to get chain syntax
+	// This is a workaround - ideally chain info would be in the database
+	categoryFile := "cmd/rebuild_db/ad-category.json"
+	data, err := os.ReadFile(categoryFile)
+	if err != nil {
+		logger.Debug("Failed to read ad-category.json for chain info", "error", err)
+		return fields
+	}
+
+	type AdCategoryJSON struct {
+		Name       string   `json:"name"`
+		FieldNames []string `json:"field_names"`
+	}
+	var categories []AdCategoryJSON
+	if err := json.Unmarshal(data, &categories); err != nil {
+		logger.Debug("Failed to parse ad-category.json", "error", err)
+		return fields
+	}
+
+	// Find category name by ID
+	categoryName := ""
+	rows, err := db.Query("SELECT name FROM AdCategory WHERE id = ?", categoryID)
+	if err == nil {
+		defer rows.Close()
+		if rows.Next() {
+			rows.Scan(&categoryName)
+		}
+	}
+
+	if categoryName == "" {
+		return fields
+	}
+
+	// Find matching category in JSON
+	var fieldNamesWithChain []string
+	for _, cat := range categories {
+		if cat.Name == categoryName {
+			fieldNamesWithChain = cat.FieldNames
+			break
+		}
+	}
+
+	if len(fieldNamesWithChain) == 0 {
+		return fields
+	}
+
+	// Build map of field name -> field config
+	fieldMap := make(map[string]*FieldConfig)
+	for i := range fields {
+		fieldMap[fields[i].Name] = &fields[i]
+	}
+
+	// Parse chain information
+	chainGroup := 1
+	currentChainPosition := 0
+	inChain := false
+	
+	for i, fieldNameWithChain := range fieldNamesWithChain {
+		fieldName := strings.TrimSuffix(fieldNameWithChain, "->")
+		isChained := strings.HasSuffix(fieldNameWithChain, "->")
+		
+		if fieldConfig, exists := fieldMap[fieldName]; exists {
+			if isChained {
+				// This field is chained to the next field
+				if !inChain {
+					// Start of a new chain
+					inChain = true
+					currentChainPosition = 0
+				}
+				fieldConfig.ChainGroup = chainGroup
+				fieldConfig.ChainPosition = currentChainPosition
+				// Find next field in chain
+				if i+1 < len(fieldNamesWithChain) {
+					nextFieldName := strings.TrimSuffix(fieldNamesWithChain[i+1], "->")
+					if nextConfig, exists := fieldMap[nextFieldName]; exists {
+						fieldConfig.NextInChain = nextConfig.Name
+					}
+				}
+				currentChainPosition++
+			} else {
+				// No arrow - check if we're continuing a chain
+				if inChain {
+					// This is the last field in the current chain
+					fieldConfig.ChainGroup = chainGroup
+					fieldConfig.ChainPosition = currentChainPosition
+					fieldConfig.NextInChain = "" // Last in chain
+					// End of chain
+					chainGroup++
+					inChain = false
+					currentChainPosition = 0
+				} else {
+					// Not part of any chain
+					fieldConfig.ChainGroup = 0
+					fieldConfig.ChainPosition = 0
+					fieldConfig.NextInChain = ""
+				}
+			}
+		}
+	}
+
+	return fields
 }
 
 // GetCategoryFields returns the ordered list of fields for a category (uses cache)

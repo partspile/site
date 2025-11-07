@@ -74,8 +74,8 @@ func populateSpecData(adDetail *AdDetail) error {
 		LEFT JOIN Model mo ON spec.model_id = mo.id
 		LEFT JOIN Year y ON spec.year_id = y.id
 		LEFT JOIN Engine e ON spec.engine_id = e.id
+		LEFT JOIN PartCategory pc ON spec.part_category_id = pc.id
 		LEFT JOIN PartSubCategory psc ON spec.part_subcategory_id = psc.id
-		LEFT JOIN PartCategory pc ON psc.part_category_id = pc.id
 		WHERE ad_spec.ad_id = ?
 	`
 

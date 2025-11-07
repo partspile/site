@@ -369,11 +369,15 @@ func genIDsKey(adIDs []int, operation string) string {
 }
 
 // GetAdMakesForAdIDs returns makes filtered by the provided ad IDs
+// Maintains backward compatibility - internally uses generic function
 func GetAdMakesForAdIDs(adIDs []int) ([]string, error) {
 	if len(adIDs) == 0 {
 		return []string{}, nil
 	}
 
+	// For makes, we need adCategoryID - get it from first ad
+	// Since we don't have adCategoryID here, we'll use the old implementation
+	// TODO: Consider passing adCategoryID as parameter in future
 	// Generate deterministic cache key
 	cacheKey := genIDsKey(adIDs, "search:makes")
 

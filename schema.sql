@@ -66,6 +66,18 @@ CREATE TABLE Breed (
     name TEXT NOT NULL CHECK (length(name) > 0)
 );
 
+CREATE TABLE PartCategory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
+    name TEXT NOT NULL CHECK (length(name) > 0)
+);
+
+CREATE TABLE PartSubCategory (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
+    name TEXT NOT NULL CHECK (length(name) > 0)
+);
+
 CREATE TABLE Specification (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
@@ -73,27 +85,11 @@ CREATE TABLE Specification (
     year_id INTEGER REFERENCES Year(id),
     model_id INTEGER REFERENCES Model(id),
     engine_id INTEGER REFERENCES Engine(id),
-    part_subcategory_id INTEGER REFERENCES PartSubCategory(id),
     breed_id INTEGER REFERENCES Breed(id),
-    UNIQUE (ad_category_id, make_id, year_id, model_id, engine_id, part_subcategory_id, breed_id)
+    part_category_id INTEGER REFERENCES PartCategory(id),
+    part_subcategory_id INTEGER REFERENCES PartSubCategory(id),
+    UNIQUE (ad_category_id, make_id, year_id, model_id, engine_id, part_category_id, part_subcategory_id, breed_id)
 );
-CREATE INDEX idx_specification_ad_category ON Specification(ad_category_id);
-
--- Part tables
-CREATE TABLE PartCategory (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ad_category_id INTEGER NOT NULL REFERENCES AdCategory(id),
-    name TEXT NOT NULL CHECK (length(name) > 0)
-);
-CREATE INDEX idx_partcategory_name ON PartCategory(name);
-
-CREATE TABLE PartSubCategory (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    part_category_id INTEGER NOT NULL REFERENCES PartCategory(id),
-    name TEXT NOT NULL CHECK (length(name) > 0),
-    UNIQUE (part_category_id, name)
-);
-CREATE INDEX idx_partsubcategory_part_category_id ON PartSubCategory(part_category_id, name);
 
 -- Location table
 CREATE TABLE Location (

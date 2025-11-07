@@ -210,31 +210,15 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 
 	// Map level to field index (same as browse mode)
 	if level < len(fieldConfigs) {
-		// This is a spec field level - use search mode functions
+		// This is a spec field level - use generic search mode function
 		fieldConfig := fieldConfigs[level]
 		parentValues := buildParentValuesFromPath(parts, fieldConfigs, level)
 
-		// For search mode, we need to use GetAd*ForAdIDs functions
-		// These are still hard-coded but work with ad IDs
-		switch fieldConfig.Name {
-		case "make":
-			children, err = spec.GetAdMakesForAdIDs(adIDs)
-		case "year":
-			makeName := parentValues["make"]
-			children, err = spec.GetAdYearsForAdIDs(adIDs, makeName)
-		case "model":
-			makeName := parentValues["make"]
-			year := parentValues["year"]
-			children, err = spec.GetAdModelsForAdIDs(adIDs, makeName, year)
-		case "engine":
-			makeName := parentValues["make"]
-			year := parentValues["year"]
-			model := parentValues["model"]
-			children, err = spec.GetAdEnginesForAdIDs(adIDs, makeName, year, model)
-		case "breed":
-			// TODO: Implement GetAdBreedsForAdIDs when needed
-			children = []string{}
-		default:
+		// Use generic function that works with any field
+		children, err = spec.GetAdFieldValuesForAdIDs(category, fieldConfig.Name, adIDs, parentValues)
+		if err != nil {
+			logger.Warn("Failed to get field values for ad IDs",
+				"error", err, "component", "tree-search", "field", fieldConfig.Name, "adCategoryID", category)
 			children = []string{}
 		}
 	} else if level == len(fieldConfigs) {

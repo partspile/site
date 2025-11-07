@@ -67,16 +67,18 @@ func GetCategories(adCat int) []string {
 }
 
 // getSubCategories returns the subcategories for the given ad category and category
+// Now uses the new schema where PartSubCategory has ad_category_id directly
 func getSubCategories(adCat int, category string) ([]string, error) {
 	query := `
 		SELECT psc.name 
 		FROM PartSubCategory psc
-		JOIN PartCategory pc ON psc.part_category_id = pc.id
-		WHERE pc.name = ? AND pc.ad_category_id = ?
+		JOIN Specification spec ON spec.part_subcategory_id = psc.id
+		JOIN PartCategory pc ON spec.part_category_id = pc.id
+		WHERE pc.name = ? AND psc.ad_category_id = ? AND spec.ad_category_id = ?
 		ORDER BY psc.name
 	`
 	var names []string
-	err := db.Select(&names, query, category, adCat)
+	err := db.Select(&names, query, category, adCat, adCat)
 	return names, err
 }
 
@@ -147,12 +149,12 @@ func buildAdCategoriesQuery(adCat int, fieldValues map[string]string) (string, [
 		return "", nil
 	}
 
-	// Build base query
+	// Build base query - now PartCategory is joined via Specification
 	baseQuery := `
 		SELECT DISTINCT pc.name
 		FROM PartCategory pc
-		JOIN PartSubCategory psc ON pc.id = psc.part_category_id
-		JOIN Specification spec ON spec.part_subcategory_id = psc.id
+		JOIN Specification spec ON spec.part_category_id = pc.id
+		JOIN PartSubCategory psc ON spec.part_subcategory_id = psc.id
 		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
 		JOIN Ad a ON ad_spec.ad_id = a.id
 	`
@@ -164,8 +166,13 @@ func buildAdCategoriesQuery(adCat int, fieldValues map[string]string) (string, [
 	whereClauses = append(whereClauses, "a.ad_category_id = ?")
 	args = append(args, adCat)
 
-	// Add JOINs and WHERE clauses for each spec field
+	// Add JOINs and WHERE clauses for each spec field (excluding part_category and part_subcategory)
 	for _, fieldConfig := range fieldConfigs {
+		// Skip part_category and part_subcategory - they're handled separately
+		if fieldConfig.Name == "part_category" || fieldConfig.Name == "part_subcategory" {
+			continue
+		}
+
 		value, hasValue := fieldValues[fieldConfig.Name]
 		if !hasValue || value == "" {
 			continue
@@ -214,12 +221,12 @@ func buildAdSubCategoriesQuery(adCat int, fieldValues map[string]string, categor
 		return "", nil
 	}
 
-	// Build base query
+	// Build base query - now PartSubCategory has ad_category_id directly
 	baseQuery := `
 		SELECT DISTINCT psc.name
 		FROM PartSubCategory psc
-		JOIN PartCategory pc ON psc.part_category_id = pc.id
 		JOIN Specification spec ON spec.part_subcategory_id = psc.id
+		JOIN PartCategory pc ON spec.part_category_id = pc.id
 		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
 		JOIN Ad a ON ad_spec.ad_id = a.id
 	`
@@ -231,8 +238,13 @@ func buildAdSubCategoriesQuery(adCat int, fieldValues map[string]string, categor
 	whereClauses = append(whereClauses, "a.ad_category_id = ?")
 	args = append(args, adCat)
 
-	// Add JOINs and WHERE clauses for each spec field
+	// Add JOINs and WHERE clauses for each spec field (excluding part_category and part_subcategory)
 	for _, fieldConfig := range fieldConfigs {
+		// Skip part_category and part_subcategory - they're handled separately
+		if fieldConfig.Name == "part_category" || fieldConfig.Name == "part_subcategory" {
+			continue
+		}
+
 		value, hasValue := fieldValues[fieldConfig.Name]
 		if !hasValue || value == "" {
 			continue

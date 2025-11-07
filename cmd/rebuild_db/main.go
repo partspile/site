@@ -152,6 +152,7 @@ func main() {
 
 	// Populate AdCategoryField table mapping categories to their fields
 	// Field mappings are now in ad-category.json
+	// Chain syntax: "field->" indicates field is chained to next field
 	for _, cat := range adCategories {
 		if len(cat.FieldNames) == 0 {
 			logger.Debug("Category has no field mappings, skipping", "category", cat.Name)
@@ -164,7 +165,10 @@ func main() {
 			continue
 		}
 
-		for order, fieldName := range cat.FieldNames {
+		// Parse field names and extract chain information
+		for order, fieldNameWithChain := range cat.FieldNames {
+			// Remove chain syntax for database lookup (e.g., "make->" -> "make")
+			fieldName := strings.TrimSuffix(fieldNameWithChain, "->")
 			fieldID, exists := fieldIDMap[fieldName]
 			if !exists {
 				logger.Warn("Field not found for category mapping", "field", fieldName, "category", cat.Name)
@@ -486,12 +490,14 @@ func importParts(db *sql.DB, jsonFile string, categoryID int) error {
 	}
 
 	for cat, subcats := range partMap {
-		catID := getOrInsertWithCategory(db, "PartCategory", "name", cat, categoryID)
+		// Insert PartCategory (needed for Specification table)
+		getOrInsertWithCategory(db, "PartCategory", "name", cat, categoryID)
 		for _, subcat := range subcats {
 			var subcatID int
-			err := db.QueryRow(`SELECT id FROM PartSubCategory WHERE part_category_id=? AND name=?`, catID, subcat).Scan(&subcatID)
+			// PartSubCategory now uses ad_category_id directly, not part_category_id
+			err := db.QueryRow(`SELECT id FROM PartSubCategory WHERE ad_category_id=? AND name=?`, categoryID, subcat).Scan(&subcatID)
 			if err == sql.ErrNoRows {
-				_, err := db.Exec(`INSERT INTO PartSubCategory (part_category_id, name) VALUES (?, ?)`, catID, subcat)
+				_, err := db.Exec(`INSERT INTO PartSubCategory (ad_category_id, name) VALUES (?, ?)`, categoryID, subcat)
 				if err != nil {
 					logger.Warn("Failed to insert PartSubCategory", "error", err)
 				}
@@ -556,7 +562,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 		}
 	}
 
-	rows2, err := db.Query(`SELECT id, name FROM PartSubCategory ps JOIN PartCategory pc ON ps.part_category_id=pc.id WHERE pc.ad_category_id=?`, categoryID)
+	rows2, err := db.Query(`SELECT id, name FROM PartSubCategory WHERE ad_category_id=?`, categoryID)
 	if err == nil {
 		defer rows2.Close()
 		for rows2.Next() {
@@ -593,8 +599,9 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 		if ad.Category != "" {
 			// This is a parts ad
 			subcatID := 0
-			if ad.Subcategory != "" && partCategoryMap[ad.Category] > 0 {
-				subcatRows, err := db.Query(`SELECT id FROM PartSubCategory WHERE part_category_id=? AND name=?`, partCategoryMap[ad.Category], ad.Subcategory)
+			if ad.Subcategory != "" {
+				// PartSubCategory now uses ad_category_id directly, not part_category_id
+				subcatRows, err := db.Query(`SELECT id FROM PartSubCategory WHERE ad_category_id=? AND name=?`, categoryID, ad.Subcategory)
 				if err == nil {
 					if subcatRows.Next() {
 						subcatRows.Scan(&subcatID)

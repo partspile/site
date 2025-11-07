@@ -28,8 +28,9 @@ func getPartSubcategoryID(tx *sql.Tx, adCategoryID int, categoryName, subcategor
 	query := `
 		SELECT psc.id
 		FROM PartSubCategory psc
-		JOIN PartCategory pc ON psc.part_category_id = pc.id
-		WHERE pc.name = ? AND psc.name = ? AND pc.ad_category_id = ?
+		JOIN Specification spec ON spec.part_subcategory_id = psc.id
+		JOIN PartCategory pc ON spec.part_category_id = pc.id
+		WHERE pc.name = ? AND psc.name = ? AND psc.ad_category_id = ?
 	`
 	var id int
 	err := tx.QueryRow(query, categoryName, subcategoryName, adCategoryID).Scan(&id)
@@ -220,19 +221,23 @@ func buildFieldValueMap(ad AdDetail, fieldConfigs []spec.FieldConfig) map[string
 	values := make(map[string]string)
 
 	for _, fieldConfig := range fieldConfigs {
+		// Only handle single-value fields here (multi-value handled separately)
+		if fieldConfig.QdrantType == "keyword_array" {
+			continue
+		}
+
+		// Extract value from AdDetail based on field name
+		// TODO: Make AdDetail more flexible to support arbitrary fields
 		switch fieldConfig.Name {
 		case "make":
 			if ad.Make != "" {
 				values["make"] = ad.Make
 			}
-		case "year":
-			// Years are handled as multi-value, skip here
-		case "model":
-			// Models are handled as multi-value, skip here
-		case "engine":
-			// Engines are handled as multi-value, skip here
 		case "breed":
 			// TODO: Add breed field to AdDetail when needed
+		default:
+			// For future single-value fields, log a debug message
+			// They will be skipped until AdDetail is updated
 		}
 	}
 
@@ -244,6 +249,13 @@ func getMultiValueFields(ad AdDetail, fieldConfigs []spec.FieldConfig) map[strin
 	multiValueFields := make(map[string][]string)
 
 	for _, fieldConfig := range fieldConfigs {
+		// Only handle multi-value fields (keyword_array type)
+		if fieldConfig.QdrantType != "keyword_array" {
+			continue
+		}
+
+		// Extract value from AdDetail based on field name
+		// TODO: Make AdDetail more flexible to support arbitrary fields
 		switch fieldConfig.Name {
 		case "year":
 			if len(ad.Years) > 0 {
@@ -257,6 +269,9 @@ func getMultiValueFields(ad AdDetail, fieldConfigs []spec.FieldConfig) map[strin
 			if len(ad.Engines) > 0 {
 				multiValueFields["engine"] = ad.Engines
 			}
+		default:
+			// For future multi-value fields, log a debug message
+			// They will be skipped until AdDetail is updated
 		}
 	}
 
@@ -309,4 +324,3 @@ func insertSpecAssociation(tx *sql.Tx, adID int, specID int) error {
 	}
 	return nil
 }
-
