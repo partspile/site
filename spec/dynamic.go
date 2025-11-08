@@ -2,7 +2,6 @@ package spec
 
 import (
 	"fmt"
-	"maps"
 	"strconv"
 	"strings"
 
@@ -46,10 +45,10 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 	var selectClause string
 	if fieldDef.FieldType == "int" {
 		// For integer fields, select the integer value directly
-		selectClause = fmt.Sprintf("SELECT DISTINCT %s.%s FROM %s", tableName, getValueColumnName(tableName), tableName)
+		selectClause = fmt.Sprintf("SELECT DISTINCT %s.%s FROM %s", tableName, fieldDef.ValueColumnName, tableName)
 	} else {
-		// For string fields, select the name column
-		selectClause = fmt.Sprintf("SELECT DISTINCT %s.name FROM %s", tableName, tableName)
+		// For string fields, select the value column
+		selectClause = fmt.Sprintf("SELECT DISTINCT %s.%s FROM %s", tableName, fieldDef.ValueColumnName, tableName)
 	}
 
 	// Build JOINs for Specification table and all parent fields
@@ -97,14 +96,13 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 			if err != nil {
 				continue
 			}
-			valueCol := getValueColumnName(parentTableName)
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.%s = ?", parentTableName, valueCol))
+				fmt.Sprintf("%s.%s = ?", parentTableName, parentDef.ValueColumnName))
 			args = append(args, intValue)
 		} else {
-			// For string fields, compare with name column
+			// For string fields, compare with value column
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.name = ?", parentTableName))
+				fmt.Sprintf("%s.%s = ?", parentTableName, parentDef.ValueColumnName))
 			args = append(args, parentValue)
 		}
 	}
@@ -113,34 +111,18 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 
 	// Order by clause
 	if fieldDef.FieldType == "int" {
-		valueCol := getValueColumnName(tableName)
-		query += fmt.Sprintf(" ORDER BY %s.%s DESC", tableName, valueCol)
+		query += fmt.Sprintf(" ORDER BY %s.%s DESC", tableName, fieldDef.ValueColumnName)
 	} else {
-		query += fmt.Sprintf(" ORDER BY %s.name", tableName)
+		query += fmt.Sprintf(" ORDER BY %s.%s", tableName, fieldDef.ValueColumnName)
 	}
 
 	return query, args, nil
 }
 
-// getValueColumnName returns the column name for the value in a table
-// For Year table, it's "year", for other tables it's "name"
-func getValueColumnName(tableName string) string {
-	if tableName == "Year" {
-		return "year"
-	}
-	return "name"
-}
-
-// BuildFieldQueryWithIntersection builds query for fields that need intersection logic
-// (e.g., models that exist in ALL selected years, engines that exist in ALL year-model combinations)
-func BuildFieldQueryWithIntersection(adCategoryID int, fieldName string, parentFilters map[string][]string) (string, []interface{}, error) {
-	fieldDef, exists := GetFieldDefinition(fieldName)
-	if !exists {
-		return "", nil, fmt.Errorf("field definition not found: %s", fieldName)
-	}
-
-	// Intersection queries work for all field types
-
+// BuildFieldQueryWithIntersection builds SQL query for getting field values
+// Supports both single and multiple parent filter values using intersection logic
+// parentFilters can contain comma-separated values (e.g., "2020,2021") or single values
+func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, parentFilters map[string]string) (string, []interface{}, error) {
 	// Get category fields to determine field order
 	categoryFields, err := GetCategoryFields(adCategoryID)
 	if err != nil {
@@ -150,40 +132,58 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldName string, parentF
 	// Find the current field's position
 	currentFieldIndex := -1
 	for i, f := range categoryFields {
-		if f.Name == fieldName {
+		if f.Name == fieldDef.Name {
 			currentFieldIndex = i
 			break
 		}
 	}
 	if currentFieldIndex == -1 {
-		return "", nil, fmt.Errorf("field %s not found in category %d", fieldName, adCategoryID)
+		return "", nil, fmt.Errorf("field %s not found in category %d", fieldDef.Name, adCategoryID)
 	}
 
 	parentFields := categoryFields[:currentFieldIndex]
 
-	// Build combinations from parent filters
-	// For example, if years=["2020","2021"] and models=["M3","X5"], we need:
-	// (year=2020 AND model=M3) AND (year=2020 AND model=X5) AND (year=2021 AND model=M3) AND (year=2021 AND model=X5)
-	combinations := buildCombinations(parentFields, parentFilters)
-
-	if len(combinations) == 0 {
-		return "", nil, fmt.Errorf("no valid combinations found")
-	}
-
 	tableName := fieldDef.TableName
 	tableFieldName := fieldDef.TableFieldName
 
-	// Determine SELECT clause based on field type
+	// Convert parent filters to array format (handle comma-separated values)
+	parentFiltersArray := make(map[string][]string)
+	for _, parentField := range parentFields {
+		parentValue, exists := parentFilters[parentField.Name]
+		if !exists || parentValue == "" {
+			return "", nil, fmt.Errorf("no values for parent field %s", parentField.Name)
+		}
+		// Split comma-separated values or use single value
+		if strings.Contains(parentValue, ",") {
+			parentFiltersArray[parentField.Name] = strings.Split(parentValue, ",")
+		} else {
+			parentFiltersArray[parentField.Name] = []string{parentValue}
+		}
+	}
+
+	// Build a single query using IN clauses for each parent field
+	// We'll use GROUP BY/HAVING to ensure intersection (all combinations)
+	// Calculate total expected combinations
+	totalCombinations := 1
+	for _, parentField := range parentFields {
+		values := parentFiltersArray[parentField.Name]
+		totalCombinations *= len(values)
+	}
+
+	if totalCombinations == 0 {
+		return "", nil, fmt.Errorf("no valid combinations found")
+	}
+
+	// Determine SELECT clause - always return as text for consistency
 	var selectClause string
 	if fieldDef.FieldType == "int" {
-		valueCol := getValueColumnName(tableName)
+		selectClause = fmt.Sprintf(`SELECT DISTINCT CAST(%s.%s AS TEXT) FROM %s
+	WHERE %s.id IN (
+		SELECT spec.%s FROM Specification spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableFieldName)
+	} else {
 		selectClause = fmt.Sprintf(`SELECT DISTINCT %s.%s FROM %s
 	WHERE %s.id IN (
-		SELECT spec.%s FROM Specification spec`, tableName, valueCol, tableName, tableName, tableFieldName)
-	} else {
-		selectClause = fmt.Sprintf(`SELECT DISTINCT %s.name FROM %s
-	WHERE %s.id IN (
-		SELECT spec.%s FROM Specification spec`, tableName, tableName, tableName, tableFieldName)
+		SELECT spec.%s FROM Specification spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableFieldName)
 	}
 	query := selectClause
 
@@ -200,14 +200,13 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldName string, parentF
 			parentTableName, parentTableFieldName, parentTableName)
 	}
 
-	// Build WHERE clause for first combination
+	// Build WHERE clause with IN clauses for each parent field
 	whereClauses := []string{"spec.ad_category_id = ?"}
 	args := []interface{}{adCategoryID}
 
-	firstCombination := combinations[0]
 	for _, parentField := range parentFields {
-		value, exists := firstCombination[parentField.Name]
-		if !exists {
+		values := parentFiltersArray[parentField.Name]
+		if len(values) == 0 {
 			continue
 		}
 
@@ -218,238 +217,86 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldName string, parentF
 
 		parentTableName := parentDef.TableName
 		if parentDef.FieldType == "int" {
-			// For integer fields, convert string to int
-			intValue, err := strconv.Atoi(value)
-			if err == nil {
-				valueCol := getValueColumnName(parentTableName)
+			// Convert string values to ints for IN clause
+			var intValues []int
+			var placeholders []string
+			for _, val := range values {
+				intValue, err := strconv.Atoi(val)
+				if err == nil {
+					intValues = append(intValues, intValue)
+					placeholders = append(placeholders, "?")
+					args = append(args, intValue)
+				}
+			}
+			if len(intValues) > 0 {
 				whereClauses = append(whereClauses,
-					fmt.Sprintf("%s.%s = ?", parentTableName, valueCol))
-				args = append(args, intValue)
+					fmt.Sprintf("%s.%s IN (%s)", parentTableName, parentDef.ValueColumnName, strings.Join(placeholders, ",")))
 			}
 		} else {
-			// For string fields, compare with name column
+			// String fields - use IN clause
+			placeholders := make([]string, len(values))
+			for i := range values {
+				placeholders[i] = "?"
+				args = append(args, values[i])
+			}
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.name = ?", parentTableName))
-			args = append(args, value)
+				fmt.Sprintf("%s.%s IN (%s)", parentTableName, parentDef.ValueColumnName, strings.Join(placeholders, ",")))
 		}
 	}
 
 	query += " WHERE " + strings.Join(whereClauses, " AND ")
 
-	// Add intersection conditions for remaining combinations
-	for i := 1; i < len(combinations); i++ {
-		query += fmt.Sprintf(`) AND %s.id IN (
-			SELECT spec.%s FROM Specification spec`, tableName, tableFieldName)
+	// Use GROUP BY and HAVING to ensure intersection (all combinations)
+	// Group by the field we're selecting, and ensure it appears in all combinations
+	query += fmt.Sprintf(` GROUP BY spec.%s
+	HAVING COUNT(DISTINCT `, tableFieldName)
 
-		// Add JOINs again
-		for _, parentField := range parentFields {
-			parentDef, exists := GetFieldDefinition(parentField.Name)
-			if !exists {
-				continue
-			}
-
-			parentTableName := parentDef.TableName
-			parentTableFieldName := parentDef.TableFieldName
-			query += fmt.Sprintf(" JOIN %s ON spec.%s = %s.id",
-				parentTableName, parentTableFieldName, parentTableName)
+	// Build DISTINCT clause for all parent field combinations
+	distinctParts := []string{}
+	for _, parentField := range parentFields {
+		parentDef, exists := GetFieldDefinition(parentField.Name)
+		if !exists {
+			continue
 		}
+		parentTableFieldName := parentDef.TableFieldName
+		distinctParts = append(distinctParts, fmt.Sprintf("spec.%s", parentTableFieldName))
+	}
 
-		whereClauses = []string{"spec.ad_category_id = ?"}
-		args = append(args, adCategoryID)
-
-		combination := combinations[i]
-		for _, parentField := range parentFields {
-			value, exists := combination[parentField.Name]
-			if !exists {
-				continue
-			}
-
-			parentDef, exists := GetFieldDefinition(parentField.Name)
-			if !exists {
-				continue
-			}
-
-			parentTableName := parentDef.TableName
-			if parentDef.FieldType == "int" {
-				// For integer fields, convert string to int
-				intValue, err := strconv.Atoi(value)
-				if err == nil {
-					valueCol := getValueColumnName(parentTableName)
-					whereClauses = append(whereClauses,
-						fmt.Sprintf("%s.%s = ?", parentTableName, valueCol))
-					args = append(args, intValue)
-				}
-			} else {
-				// For string fields, compare with name column
-				whereClauses = append(whereClauses,
-					fmt.Sprintf("%s.name = ?", parentTableName))
-				args = append(args, value)
-			}
-		}
-
-		query += " WHERE " + strings.Join(whereClauses, " AND ")
+	if len(distinctParts) > 0 {
+		query += strings.Join(distinctParts, ", ") + ") = ?"
+		args = append(args, totalCombinations)
+	} else {
+		// No parent fields, just close the query
+		query += "1) = 1"
 	}
 
 	query += `)`
+	// Order by the original value (before casting) for proper sorting
 	if fieldDef.FieldType == "int" {
-		valueCol := getValueColumnName(tableName)
-		query += fmt.Sprintf(" ORDER BY %s.%s DESC", tableName, valueCol)
+		query += fmt.Sprintf(" ORDER BY %s.%s DESC", tableName, fieldDef.ValueColumnName)
 	} else {
-		query += fmt.Sprintf(" ORDER BY %s.name", tableName)
+		query += fmt.Sprintf(" ORDER BY %s.%s", tableName, fieldDef.ValueColumnName)
 	}
 
 	return query, args, nil
 }
 
-// buildCombinations builds all combinations from parent filters
-// For example: years=["2020","2021"], models=["M3","X5"] -> 4 combinations
-func buildCombinations(parentFields []FieldConfig, parentFilters map[string][]string) []map[string]string {
-	if len(parentFields) == 0 {
-		return []map[string]string{{}}
-	}
-
-	// Get values for each parent field
-	fieldValues := make([][]string, len(parentFields))
-	for i, field := range parentFields {
-		values, exists := parentFilters[field.Name]
-		if !exists || len(values) == 0 {
-			return []map[string]string{} // No values means no combinations
-		}
-		fieldValues[i] = values
-	}
-
-	// Generate all combinations using cartesian product
-	var combinations []map[string]string
-	generateCombinations(parentFields, fieldValues, 0, map[string]string{}, &combinations)
-
-	return combinations
-}
-
-// generateCombinations recursively generates all combinations
-func generateCombinations(parentFields []FieldConfig, fieldValues [][]string, depth int, current map[string]string, result *[]map[string]string) {
-	if depth == len(parentFields) {
-		// Make a copy of current map
-		combination := make(map[string]string)
-		maps.Copy(combination, current)
-		*result = append(*result, combination)
-		return
-	}
-
-	field := parentFields[depth]
-	for _, value := range fieldValues[depth] {
-		current[field.Name] = value
-		generateCombinations(parentFields, fieldValues, depth+1, current, result)
-	}
-}
-
 // GetFieldValues returns values for a field given parent filters
 func GetFieldValues(adCategoryID int, fieldName string, parentValues map[string]string) ([]string, error) {
-	// Special handling for part_category - get all categories for the ad category directly
-	if fieldName == "part_category" {
-		query := "SELECT name FROM PartCategory WHERE ad_category_id = ? ORDER BY name"
-		var values []string
-		err := db.Select(&values, query, adCategoryID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get part categories: %w", err)
-		}
-		return values, nil
-	}
-
-	// Special handling for part_subcategory - filter by part_category through Specification table
-	if fieldName == "part_subcategory" {
-		partCategory, hasCategory := parentValues["part_category"]
-		if !hasCategory || partCategory == "" {
-			// No category selected, return empty list
-			return []string{}, nil
-		}
-
-		query := `
-			SELECT DISTINCT psc.name
-			FROM PartSubCategory psc
-			JOIN Specification spec ON spec.part_subcategory_id = psc.id
-			JOIN PartCategory pc ON spec.part_category_id = pc.id
-			WHERE psc.ad_category_id = ? AND spec.ad_category_id = ? AND pc.name = ?
-			ORDER BY psc.name
-		`
-		var values []string
-		err := db.Select(&values, query, adCategoryID, adCategoryID, partCategory)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get part subcategories: %w", err)
-		}
-		return values, nil
-	}
-
 	fieldDef, exists := GetFieldDefinition(fieldName)
 	if !exists {
 		return nil, fmt.Errorf("field definition not found: %s", fieldName)
 	}
 
-	// Check if we need intersection logic (for fields like model, engine)
-	categoryFields, err := GetCategoryFields(adCategoryID)
+	query, args, err := BuildFieldQueryWithIntersection(adCategoryID, fieldDef, parentValues)
+
 	if err != nil {
 		return nil, err
 	}
 
-	// Find current field index
-	currentFieldIndex := -1
-	for i, f := range categoryFields {
-		if f.Name == fieldName {
-			currentFieldIndex = i
-			break
-		}
-	}
-	if currentFieldIndex == -1 {
-		return nil, fmt.Errorf("field %s not found in category", fieldName)
-	}
-
-	// Check if any parent field has multiple values (needs intersection)
-	needsIntersection := false
-	parentFiltersArray := make(map[string][]string)
-	for parentName, parentValue := range parentValues {
-		// Check if this is a multi-value field (like years, models, engines)
-		// For now, assume if parentValue contains comma, it's multiple values
-		if strings.Contains(parentValue, ",") {
-			needsIntersection = true
-			parentFiltersArray[parentName] = strings.Split(parentValue, ",")
-		} else {
-			parentFiltersArray[parentName] = []string{parentValue}
-		}
-	}
-
-	var query string
-	var args []interface{}
-	var err2 error
-
-	if needsIntersection {
-		query, args, err2 = BuildFieldQueryWithIntersection(adCategoryID, fieldName, parentFiltersArray)
-	} else {
-		query, args, err2 = BuildFieldQuery(adCategoryID, fieldName, parentValues)
-	}
-
-	if err2 != nil {
-		return nil, err2
-	}
-
-	// Execute query - convert based on field type
-	if fieldDef.FieldType == "int" {
-		var intValues []int
-		err := db.Select(&intValues, query, args...)
-		if err != nil {
-			return nil, err
-		}
-		var stringValues []string
-		for _, val := range intValues {
-			stringValues = append(stringValues, strconv.Itoa(val))
-		}
-		return stringValues, nil
-	} else {
-		var values []string
-		err := db.Select(&values, query, args...)
-		if err != nil {
-			return nil, err
-		}
-		return values, nil
-	}
+	var values []string
+	err = db.Select(&values, query, args...)
+	return values, err
 }
 
 // GetAdFieldValuesForAdIDs returns field values filtered by ad IDs and parent values
@@ -493,10 +340,10 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 	var selectClause string
 	if fieldDef.FieldType == "int" {
 		// For integer fields, select the integer value directly
-		selectClause = fmt.Sprintf("SELECT DISTINCT %s.%s FROM %s", tableName, getValueColumnName(tableName), tableName)
+		selectClause = fmt.Sprintf("SELECT DISTINCT %s.%s FROM %s", tableName, fieldDef.ValueColumnName, tableName)
 	} else {
-		// For string fields, select the name column
-		selectClause = fmt.Sprintf("SELECT DISTINCT %s.name FROM %s", tableName, tableName)
+		// For string fields, select the value column
+		selectClause = fmt.Sprintf("SELECT DISTINCT %s.%s FROM %s", tableName, fieldDef.ValueColumnName, tableName)
 	}
 
 	// Build JOINs for Specification table and all parent fields
@@ -534,11 +381,11 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 			if err != nil {
 				continue
 			}
-			whereConditions = append(whereConditions, fmt.Sprintf("%s.%s = ?", parentTableName, getValueColumnName(parentTableName)))
+			whereConditions = append(whereConditions, fmt.Sprintf("%s.%s = ?", parentTableName, parentDef.ValueColumnName))
 			args = append(args, intValue)
 		} else {
-			// For string fields, compare the name
-			whereConditions = append(whereConditions, fmt.Sprintf("%s.name = ?", parentTableName))
+			// For string fields, compare the value column
+			whereConditions = append(whereConditions, fmt.Sprintf("%s.%s = ?", parentTableName, parentDef.ValueColumnName))
 			args = append(args, parentValue)
 		}
 	}
@@ -556,9 +403,9 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 	// Build ORDER BY clause
 	var orderBy string
 	if fieldDef.FieldType == "int" {
-		orderBy = fmt.Sprintf("ORDER BY %s.%s DESC", tableName, getValueColumnName(tableName))
+		orderBy = fmt.Sprintf("ORDER BY %s.%s DESC", tableName, fieldDef.ValueColumnName)
 	} else {
-		orderBy = fmt.Sprintf("ORDER BY %s.name", tableName)
+		orderBy = fmt.Sprintf("ORDER BY %s.%s", tableName, fieldDef.ValueColumnName)
 	}
 
 	// Build final query

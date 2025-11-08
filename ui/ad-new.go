@@ -110,18 +110,17 @@ func DuplicateAdPage(
 		fieldConfigs = []spec.FieldConfig{}
 	}
 
-	// Build selected values map from AdDetail (temporary compatibility layer)
-	selectedValues := map[string][]string{
-		"year":   originalAd.Years,
-		"model":  originalAd.Models,
-		"engine": originalAd.Engines,
+	// Initialize SpecData if nil
+	if originalAd.SpecData == nil {
+		originalAd.SpecData = make(map[string][]string)
 	}
-	// Add part_category and part_subcategory if present
-	if originalAd.PartCategory != "" {
-		selectedValues["part_category"] = []string{originalAd.PartCategory}
-	}
-	if originalAd.PartSubcategory != "" {
-		selectedValues["part_subcategory"] = []string{originalAd.PartSubcategory}
+
+	// Build selected values map from AdDetail SpecData
+	selectedValues := make(map[string][]string)
+	for fieldName, fieldValues := range originalAd.SpecData {
+		if len(fieldValues) > 0 {
+			selectedValues[fieldName] = fieldValues
+		}
 	}
 
 	// Build dynamic field nodes
@@ -152,8 +151,10 @@ func DuplicateAdPage(
 			selected = sv
 		}
 		var defaultMake string
-		if fieldConfig.Name == "make" && originalAd.Make != "" {
-			defaultMake = originalAd.Make
+		if fieldConfig.Name == "make" {
+			if makeValues, exists := originalAd.SpecData["make"]; exists && len(makeValues) > 0 {
+				defaultMake = makeValues[0]
+			}
 		}
 		// Get field values - use pre-loaded for first fields, empty for chained fields
 		fieldValues := firstFieldValues[fieldConfig.Name]
@@ -213,20 +214,15 @@ func titleInputField(defaultValue string) g.Node {
 
 // renderFieldSelector renders a field selector dynamically based on field configuration
 func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields []spec.FieldConfig, selectedValues []string, allSelectedValues map[string][]string, fieldValues []string, defaultMake string) g.Node {
-	// Use plural form for multi-value fields to match handler return values
 	fieldID := fieldConfig.Name + "Div"
-	if fieldConfig.QdrantType == "keyword_array" {
-		fieldID = fieldConfig.Name + "sDiv" // yearsDiv, modelsDiv, enginesDiv
-	}
 	fieldName := fieldConfig.Name
-	fieldNamePlural := fieldConfig.Name + "s" // For multi-value fields
 
 	// Build HTMX include selector for parent fields
 	var includeSelectors []string
 	for i := 0; i < fieldIndex; i++ {
 		parentField := allFields[i]
 		if parentField.QdrantType == "keyword_array" {
-			includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%ss']:checked", parentField.Name))
+			includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']:checked", parentField.Name))
 		} else {
 			includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']", parentField.Name))
 		}
@@ -250,8 +246,12 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 		nextField := allFields[fieldIndex+1]
 		if !spec.FieldsInSameChain(fieldConfig, nextField, allFields) {
 			// Next field is in a different chain
-			// After last spec field, update subcategories
-			nextFieldTarget = "subcategoriesDiv"
+			if nextField.QdrantType == "keyword_array" {
+				nextFieldTarget = nextField.Name + "sDiv"
+			} else {
+				nextFieldTarget = nextField.Name + "Div"
+			}
+			nextFieldName = nextField.Name
 		} else {
 			// Next field is in the same chain (shouldn't happen if chain logic is correct)
 			if nextField.QdrantType == "keyword_array" {
@@ -261,13 +261,10 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 			}
 			nextFieldName = nextField.Name
 		}
-	} else {
-		// After last spec field, update subcategories
-		nextFieldTarget = "subcategoriesDiv"
 	}
 
 	if fieldConfig.QdrantType == "keyword_array" {
-		// Multi-select (checkboxes) - years, models, engines
+		// Multi-select (checkboxes) - year, model, engine
 		selected := make(map[string]bool)
 		for _, val := range selectedValues {
 			selected[val] = true
@@ -276,12 +273,12 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 		checkboxes := []g.Node{}
 		for _, value := range fieldValues {
 			attrs := []g.Node{
-				Checkbox(fieldNamePlural, value, value, selected[value], false),
+				Checkbox(fieldName, value, value, selected[value], false),
 			}
 
 			// Add HTMX trigger if there's a next field
 			if nextFieldTarget != "" && nextFieldName != "" {
-				includeStr := strings.Join(append(includeSelectors, fmt.Sprintf("[name='%s']:checked", fieldNamePlural)), ",")
+				includeStr := strings.Join(append(includeSelectors, fmt.Sprintf("[name='%s']:checked", fieldName)), ",")
 
 				// Use singular field name for endpoint (consistent with field config)
 				endpoint := fmt.Sprintf("/api/%s", nextFieldName)
@@ -302,7 +299,7 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 		return Div(
 			ID(fieldID),
 			Class("space-y-2"),
-			formGroup(fieldConfig.DisplayName, fieldNamePlural, GridContainer4(checkboxes...)),
+			formGroup(fieldConfig.DisplayName, fieldName, GridContainer4(checkboxes...)),
 		)
 	} else {
 		// Single-select (dropdown) - make, breed, part_category, etc.
@@ -496,19 +493,19 @@ func YearsSelector(years []string, selectedYears ...[]string) g.Node {
 	checkboxes := []g.Node{}
 	for _, year := range years {
 		checkboxes = append(checkboxes,
-			Checkbox("years", year, year, selected[year], false,
+			Checkbox("year", year, year, selected[year], false,
 				hx.Trigger("change"),
 				hx.Get("/api/model"),
-				hx.Target("#modelsDiv"),
-				hx.Include("[name='make'],[name='years']:checked"),
+				hx.Target("#modelDiv"),
+				hx.Include("[name='make'],[name='year']:checked"),
 				hx.Swap("innerHTML"),
 			),
 		)
 	}
 	return Div(
-		ID("yearsDiv"),
+		ID("yearDiv"),
 		Class("space-y-2"),
-		formGroup("Years", "years", GridContainer4(checkboxes...)),
+		formGroup("Years", "year", GridContainer4(checkboxes...)),
 	)
 }
 
@@ -523,19 +520,19 @@ func ModelsSelector(models []string, selectedModels ...[]string) g.Node {
 	checkboxes := []g.Node{}
 	for _, model := range models {
 		checkboxes = append(checkboxes,
-			Checkbox("models", model, model, selected[model], false,
+			Checkbox("model", model, model, selected[model], false,
 				hx.Trigger("change"),
 				hx.Get("/api/engine"),
-				hx.Target("#enginesDiv"),
-				hx.Include("[name='make'],[name='years']:checked,[name='models']:checked"),
+				hx.Target("#engineDiv"),
+				hx.Include("[name='make'],[name='year']:checked,[name='model']:checked"),
 				hx.Swap("innerHTML"),
 			),
 		)
 	}
 	return Div(
-		ID("modelsDiv"),
+		ID("modelDiv"),
 		Class("space-y-2"),
-		formGroup("Models", "models", GridContainer4(checkboxes...)),
+		formGroup("Models", "model", GridContainer4(checkboxes...)),
 	)
 }
 
@@ -550,13 +547,13 @@ func EnginesSelector(engines []string, selectedEngines ...[]string) g.Node {
 	checkboxes := []g.Node{}
 	for _, engine := range engines {
 		checkboxes = append(checkboxes,
-			Checkbox("engines", engine, engine, selected[engine], false),
+			Checkbox("engine", engine, engine, selected[engine], false),
 		)
 	}
 	return Div(
-		ID("enginesDiv"),
+		ID("engineDiv"),
 		Class("space-y-2"),
-		formGroup("Engines", "engines", GridContainer4(checkboxes...)),
+		formGroup("Engines", "engine", GridContainer4(checkboxes...)),
 	)
 }
 
@@ -602,12 +599,12 @@ func SubCategoriesSelector(subCategoryNames []string, selectedSubCategory string
 	}
 
 	return Div(
-		ID("subcategoriesDiv"),
+		ID("part_subcategoryDiv"),
 		Class("space-y-2"),
-		formGroup("Subcategory", "subcategory",
+		formGroup("Subcategory", "part_subcategory",
 			Select(
-				ID("subcategory"),
-				Name("subcategory"),
+				ID("part_subcategory"),
+				Name("part_subcategory"),
 				Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 				Required(),
 				g.Group(options),

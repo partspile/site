@@ -12,8 +12,8 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
-	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/spec"
+	"github.com/parts-pile/site/ui"
 )
 
 // ValidateRequired validates that a required form field is not empty
@@ -176,8 +176,7 @@ func ValidateAdForm(form *multipart.Form, adCat int) error {
 	// Validate multi-value fields (keyword_array type)
 	for _, fieldConfig := range fieldConfigs {
 		if fieldConfig.QdrantType == "keyword_array" && fieldConfig.IsRequired {
-			fieldName := fieldConfig.Name + "s" // Form uses plural
-			values := form.Value[fieldName]
+			values := form.Value[fieldConfig.Name]
 			if len(values) == 0 {
 				return fmt.Errorf("please select at least one %s", fieldConfig.DisplayName)
 			}
@@ -198,8 +197,7 @@ func validateAdFormMultipart(form *multipart.Form, adCat int) (years, models, en
 	// Validate multi-value fields (keyword_array type)
 	for _, fieldConfig := range fieldConfigs {
 		if fieldConfig.QdrantType == "keyword_array" && fieldConfig.IsRequired {
-			fieldName := fieldConfig.Name + "s" // Form fields use plural (years, models, engines)
-			values := form.Value[fieldName]
+			values := form.Value[fieldConfig.Name]
 			if len(values) == 0 {
 				return nil, nil, nil, fmt.Errorf("please select at least one %s", fieldConfig.DisplayName)
 			}
@@ -328,56 +326,30 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	}
 
 	// Validate and extract spec fields dynamically
-	// Build a map to store field values generically
-	fieldValues := make(map[string]interface{})
+	specData := make(map[string][]string)
 
 	for _, fieldConfig := range fieldConfigs {
 		if fieldConfig.IsRequired {
 			if fieldConfig.QdrantType == "keyword_array" {
-				// Multi-value fields (years, models, engines, etc.)
-				fieldName := fieldConfig.Name + "s" // Form uses plural
-				values := form.Value[fieldName]
+				// Multi-value fields (year, model, engine, etc.)
+				values := form.Value[fieldConfig.Name]
 				if len(values) == 0 {
-					return ad.AdDetail{}, nil, nil, fmt.Errorf("please select at least one %s", fieldConfig.DisplayName)
+					return ad.AdDetail{}, nil, nil,
+						fmt.Errorf("please select at least one %s",
+							fieldConfig.DisplayName)
 				}
-				fieldValues[fieldConfig.Name] = values
+				specData[fieldConfig.Name] = values
 			} else {
-				// Single-value fields (make, breed, part_subcategory, etc.)
+				// Single-value fields (make, breed, etc.)
 				value, err := ValidateRequired(c, fieldConfig.Name, fieldConfig.DisplayName)
 				if err != nil {
 					return ad.AdDetail{}, nil, nil, err
 				}
-				fieldValues[fieldConfig.Name] = value
+				if value != "" {
+					specData[fieldConfig.Name] = []string{value}
+				}
 			}
 		}
-	}
-
-	// Extract values for AdDetail (temporary compatibility layer)
-	var make string
-	var years, models, engines []string
-	if val, ok := fieldValues["make"]; ok {
-		make = val.(string)
-	}
-	if val, ok := fieldValues["year"]; ok {
-		years = val.([]string)
-	}
-	if val, ok := fieldValues["model"]; ok {
-		models = val.([]string)
-	}
-	if val, ok := fieldValues["engine"]; ok {
-		engines = val.([]string)
-	}
-
-	// Validate category as single field (always required for part categories)
-	category, err := ValidateRequired(c, "category", "Category")
-	if err != nil {
-		return ad.AdDetail{}, nil, nil, err
-	}
-
-	// Validate subcategory as single field (always required for part categories)
-	subcategoryName, err := ValidateRequired(c, "subcategory", "Subcategory")
-	if err != nil {
-		return ad.AdDetail{}, nil, nil, err
 	}
 
 	// Extract image files
@@ -421,8 +393,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 		imageCount = 0
 	}
 
-	// Create a simple AdDetail struct with the specified category
-	// This is a temporary compatibility layer - AdDetail has hard-coded fields
+	// Create a simple AdDetail struct with SpecData map
 	newAd := ad.AdDetail{
 		Ad: ad.Ad{
 			ID:           id,
@@ -432,15 +403,10 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 			UserID:       userID,
 			ImageCount:   imageCount,
 		},
-		Description:     description,
-		LocationID:      locationID,
-		HasVector:       false, // New ads start without vectors
-		PartCategory:    category,
-		PartSubcategory: subcategoryName,
-		Make:            make,
-		Years:           years,
-		Models:          models,
-		Engines:         engines,
+		Description: description,
+		LocationID:  locationID,
+		HasVector:   false, // New ads start without vectors
+		SpecData:    specData,
 	}
 
 	return newAd, imageFiles, deletedImages, nil

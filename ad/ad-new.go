@@ -11,15 +11,6 @@ import (
 	"github.com/parts-pile/site/spec"
 )
 
-// getValueColumnName returns the column name for the value in a table
-// For Year table, it's "year", for other tables it's "name"
-func getValueColumnName(tableName string) string {
-	if tableName == "Year" {
-		return "year"
-	}
-	return "name"
-}
-
 // AddAd creates a new ad in the database and returns the ad ID
 func AddAd(ad AdDetail) (int, error) {
 	tx, err := db.Begin()
@@ -45,8 +36,8 @@ func AddAd(ad AdDetail) (int, error) {
 
 	ad.ID = int(adID)
 
-	if err := addAdSpecAssociations(tx, ad); err != nil {
-		return 0, fmt.Errorf("failed to add spec associations: %w", err)
+	if err := addFieldAssociations(tx, ad); err != nil {
+		return 0, fmt.Errorf("failed to add field associations: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -54,11 +45,6 @@ func AddAd(ad AdDetail) (int, error) {
 	}
 
 	return int(adID), nil
-}
-
-// addAdSpecAssociations creates the normalized spec associations for an ad
-func addAdSpecAssociations(tx *sql.Tx, ad AdDetail) error {
-	return addDynamicAssociations(tx, ad)
 }
 
 // findSpec finds a spec ID from the unified Specification table using dynamic field configuration
@@ -90,20 +76,16 @@ func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int,
 		joins = append(joins, fmt.Sprintf("LEFT JOIN %s ON spec.%s = %s.id",
 			tableName, tableFieldName, tableName))
 
+		whereClauses = append(whereClauses,
+			fmt.Sprintf("%s.%s = ?", tableName, fieldConfig.ValueColumnName))
+
 		if fieldConfig.FieldType == "int" {
-			// For integer fields, convert string to int
 			intValue, err := strconv.Atoi(value)
 			if err != nil {
 				continue
 			}
-			valueCol := getValueColumnName(tableName)
-			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.%s = ?", tableName, valueCol))
 			args = append(args, intValue)
 		} else {
-			// For string fields, compare with name column
-			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.name = ?", tableName))
 			args = append(args, value)
 		}
 	}
@@ -125,16 +107,12 @@ func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int,
 	return specID, nil
 }
 
-// addDynamicAssociations handles spec associations dynamically based on category field configuration
-func addDynamicAssociations(tx *sql.Tx, ad AdDetail) error {
+// addFieldAssociations handles spec associations dynamically based on category field configuration
+func addFieldAssociations(tx *sql.Tx, ad AdDetail) error {
 	// Get category fields
-	fieldConfigs, err := spec.GetCategoryFields(ad.AdCategoryID)
-	if err != nil {
-		return fmt.Errorf("failed to get category fields: %w", err)
-	}
+	fieldConfigs, _ := spec.GetCategoryFields(ad.AdCategoryID)
 
-	// Build field value map from AdDetail (temporary compatibility layer)
-	// TODO: Make AdDetail more flexible to support arbitrary fields
+	// Extract single-value fields from AdDetail.SpecData for spec lookup
 	fieldValueMap := buildFieldValueMap(ad, fieldConfigs)
 
 	// Get multi-value fields (fields that can have multiple selections)
@@ -170,8 +148,7 @@ func addDynamicAssociations(tx *sql.Tx, ad AdDetail) error {
 	return nil
 }
 
-// buildFieldValueMap builds a map of field values from AdDetail
-// This is a temporary compatibility layer - AdDetail has hard-coded fields
+// buildFieldValueMap builds a map of field values from AdDetail SpecData
 func buildFieldValueMap(ad AdDetail, fieldConfigs []spec.FieldConfig) map[string]string {
 	values := make(map[string]string)
 
@@ -181,35 +158,24 @@ func buildFieldValueMap(ad AdDetail, fieldConfigs []spec.FieldConfig) map[string
 			continue
 		}
 
-		// Extract value from AdDetail based on field name
-		// TODO: Make AdDetail more flexible to support arbitrary fields
-		switch fieldConfig.Name {
-		case "make":
-			if ad.Make != "" {
-				values["make"] = ad.Make
-			}
-		case "part_category":
-			if ad.PartCategory != "" {
-				values["part_category"] = ad.PartCategory
-			}
-		case "part_subcategory":
-			if ad.PartSubcategory != "" {
-				values["part_subcategory"] = ad.PartSubcategory
-			}
-		case "breed":
-			// TODO: Add breed field to AdDetail when needed
-		default:
-			// For future single-value fields, log a debug message
-			// They will be skipped until AdDetail is updated
+		// Extract value from SpecData
+		fieldValues, exists := ad.SpecData[fieldConfig.Name]
+		if exists && len(fieldValues) > 0 && fieldValues[0] != "" {
+			values[fieldConfig.Name] = fieldValues[0]
 		}
 	}
 
 	return values
 }
 
-// getMultiValueFields returns fields that have multiple values
+// getMultiValueFields returns fields that have multiple values from AdDetail SpecData
 func getMultiValueFields(ad AdDetail, fieldConfigs []spec.FieldConfig) map[string][]string {
 	multiValueFields := make(map[string][]string)
+
+	// Initialize SpecData if nil
+	if ad.SpecData == nil {
+		ad.SpecData = make(map[string][]string)
+	}
 
 	for _, fieldConfig := range fieldConfigs {
 		// Only handle multi-value fields (keyword_array type)
@@ -217,24 +183,10 @@ func getMultiValueFields(ad AdDetail, fieldConfigs []spec.FieldConfig) map[strin
 			continue
 		}
 
-		// Extract value from AdDetail based on field name
-		// TODO: Make AdDetail more flexible to support arbitrary fields
-		switch fieldConfig.Name {
-		case "year":
-			if len(ad.Years) > 0 {
-				multiValueFields["year"] = ad.Years
-			}
-		case "model":
-			if len(ad.Models) > 0 {
-				multiValueFields["model"] = ad.Models
-			}
-		case "engine":
-			if len(ad.Engines) > 0 {
-				multiValueFields["engine"] = ad.Engines
-			}
-		default:
-			// For future multi-value fields, log a debug message
-			// They will be skipped until AdDetail is updated
+		// Extract values from SpecData
+		fieldValues, exists := ad.SpecData[fieldConfig.Name]
+		if exists && len(fieldValues) > 0 {
+			multiValueFields[fieldConfig.Name] = fieldValues
 		}
 	}
 

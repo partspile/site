@@ -1,13 +1,13 @@
 package ad
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
+	"github.com/parts-pile/site/spec"
 )
 
 // Ad represents the minimal advertisement data needed for list/grid/tree views
@@ -41,13 +41,10 @@ type AdDetail struct {
 	HasVector   bool   `json:"has_vector" db:"has_vector"`
 	RawLocation string `json:"raw_location" db:"raw_location"`
 
-	// Spec data from spec joins
-	Make            string   `json:"make" db:"make"`
-	Years           []string `json:"years" db:"years"`
-	Models          []string `json:"models" db:"models"`
-	Engines         []string `json:"engines" db:"engines"`
-	PartCategory    string   `json:"part_category" db:"part_category"`
-	PartSubcategory string   `json:"part_subcategory" db:"part_subcategory"`
+	// Spec data from spec joins - map of field name to array of values
+	// Single-value fields have arrays with one element, multi-value fields
+	// have multiple elements
+	SpecData map[string][]string `json:"spec_data"`
 
 	// Computed fields
 	OwnerUnreachable int `json:"owner_unreachable" db:"owner_unreachable"`
@@ -58,57 +55,86 @@ func (a Ad) IsArchived() bool {
 	return a.DeletedAt != nil
 }
 
-// populateSpecData fills in the spec data for the ad
+// populateSpecData fills in the spec data for the ad dynamically based on category fields
 func populateSpecData(adDetail *AdDetail) error {
-	query := `
-		SELECT 
-			COALESCE(MIN(m.name), '') as make,
-			COALESCE(GROUP_CONCAT(DISTINCT CAST(y.year AS TEXT)), '') as years,
-			COALESCE(GROUP_CONCAT(DISTINCT mo.name), '') as models,
-			COALESCE(GROUP_CONCAT(DISTINCT e.name), '') as engines,
-			COALESCE(MIN(pc.name), '') as part_category,
-			COALESCE(MIN(psc.name), '') as part_subcategory
+	// Initialize SpecData map
+	adDetail.SpecData = make(map[string][]string)
+
+	// Get category fields to determine which fields to query
+	fieldConfigs, _ := spec.GetCategoryFields(adDetail.AdCategoryID)
+
+	// Build dynamic SELECT clause for all fields
+	var selectParts []string
+	var joins []string
+	var fieldNames []string // Column names (same as field names)
+
+	for _, fieldConfig := range fieldConfigs {
+		tableName := fieldConfig.TableName
+		tableFieldName := fieldConfig.TableFieldName
+		fieldName := fieldConfig.Name
+
+		// Add JOIN for this field's table
+		joins = append(joins, fmt.Sprintf("LEFT JOIN %s ON spec.%s = %s.id",
+			tableName, tableFieldName, tableName))
+
+		// Build SELECT clause based on field type
+		if fieldConfig.FieldType == "int" {
+			// For integer fields (like year), use GROUP_CONCAT with CAST
+			valueCol := fieldConfig.ValueColumnName
+			selectParts = append(selectParts,
+				fmt.Sprintf("COALESCE(GROUP_CONCAT(DISTINCT CAST(%s.%s AS TEXT)), '') as %s",
+					tableName, valueCol, fieldName))
+		} else {
+			// For string fields, use GROUP_CONCAT for both single and multi-value
+			selectParts = append(selectParts,
+				fmt.Sprintf("COALESCE(GROUP_CONCAT(DISTINCT %s.name), '') as %s",
+					tableName, fieldName))
+		}
+		fieldNames = append(fieldNames, fieldName)
+	}
+
+	// Build final query
+	query := fmt.Sprintf(`
+		SELECT %s
 		FROM AdSpecification ad_spec
 		JOIN Specification spec ON ad_spec.specification_id = spec.id
-		LEFT JOIN Make m ON spec.make_id = m.id
-		LEFT JOIN Model mo ON spec.model_id = mo.id
-		LEFT JOIN Year y ON spec.year_id = y.id
-		LEFT JOIN Engine e ON spec.engine_id = e.id
-		LEFT JOIN PartCategory pc ON spec.part_category_id = pc.id
-		LEFT JOIN PartSubCategory psc ON spec.part_subcategory_id = psc.id
+		%s
 		WHERE ad_spec.ad_id = ?
-	`
+	`, strings.Join(selectParts, ", "), strings.Join(joins, " "))
 
-	type specData struct {
-		Make            string `db:"make"`
-		Years           string `db:"years"`
-		Models          string `db:"models"`
-		Engines         string `db:"engines"`
-		PartCategory    string `db:"part_category"`
-		PartSubcategory string `db:"part_subcategory"`
-	}
-
-	var data specData
-	err := db.Get(&data, query, adDetail.ID)
+	// Execute query - use a map to store results dynamically
+	rows, err := db.Query(query, adDetail.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("no spec data found for ad")
-		}
 		return fmt.Errorf("failed to query spec data: %w", err)
 	}
+	defer rows.Close()
 
-	adDetail.Make = data.Make
-	adDetail.PartCategory = data.PartCategory
-	adDetail.PartSubcategory = data.PartSubcategory
+	if !rows.Next() {
+		return nil // No spec data is okay
+	}
 
-	if data.Years != "" {
-		adDetail.Years = strings.Split(data.Years, ",")
+	// Scan row into values
+	values := make([]interface{}, len(fieldNames))
+	valuePtrs := make([]interface{}, len(fieldNames))
+	for i := range values {
+		valuePtrs[i] = &values[i]
 	}
-	if data.Models != "" {
-		adDetail.Models = strings.Split(data.Models, ",")
+	if err := rows.Scan(valuePtrs...); err != nil {
+		return fmt.Errorf("failed to scan row: %w", err)
 	}
-	if data.Engines != "" {
-		adDetail.Engines = strings.Split(data.Engines, ",")
+
+	// Map column values to field names
+	for i, fieldName := range fieldNames {
+		if values[i] == nil {
+			continue
+		}
+
+		valueStr := fmt.Sprintf("%v", values[i])
+		if valueStr == "" {
+			continue
+		}
+
+		adDetail.SpecData[fieldName] = strings.Split(valueStr, ",")
 	}
 
 	return nil

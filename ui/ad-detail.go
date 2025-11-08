@@ -13,6 +13,7 @@ import (
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
+	"github.com/parts-pile/site/spec"
 )
 
 func AdDetail(a ad.AdDetail, userID int, loc *time.Location, csrfToken string) g.Node {
@@ -726,43 +727,56 @@ func partTypePath(a ad.AdDetail) g.Node {
 	var segments []string  // Keep strings for building cumulative queries
 	var linkNodes []g.Node // Build link nodes
 
-	// Add make
-	if a.Make != "" {
-		segments = append(segments, a.Make)
-		linkNodes = append(linkNodes, pathSegmentLink(a.Make, segments))
+	// Get category fields to determine display order
+	fieldConfigs, err := spec.GetCategoryFields(a.AdCategoryID)
+	if err != nil {
+		// If we can't get field configs, return empty
+		return g.Node(nil)
 	}
 
-	// Add years (format as ranges when possible, comma-separated for individual years)
-	if len(a.Years) > 0 {
-		yearRanges := formatYearRanges(a.Years)
-		segments = append(segments, yearRanges)
-		linkNodes = append(linkNodes, commaSeparatedLinks(yearRanges, segments))
+	// Initialize SpecData if nil
+	if a.SpecData == nil {
+		a.SpecData = make(map[string][]string)
 	}
 
-	// Add models (join multiple with comma)
-	if len(a.Models) > 0 {
-		models := strings.Join(a.Models, ", ")
-		segments = append(segments, models)
-		linkNodes = append(linkNodes, commaSeparatedLinks(models, segments))
-	}
+	// Iterate through fields in order
+	for _, fieldConfig := range fieldConfigs {
+		fieldName := fieldConfig.Name
+		values, exists := a.SpecData[fieldName]
+		if !exists || len(values) == 0 {
+			continue
+		}
 
-	// Add engines (join multiple with comma)
-	if len(a.Engines) > 0 {
-		engines := strings.Join(a.Engines, ", ")
-		segments = append(segments, engines)
-		linkNodes = append(linkNodes, commaSeparatedLinks(engines, segments))
-	}
+		// Filter out empty values
+		nonEmptyValues := []string{}
+		for _, val := range values {
+			if strings.TrimSpace(val) != "" {
+				nonEmptyValues = append(nonEmptyValues, val)
+			}
+		}
+		if len(nonEmptyValues) == 0 {
+			continue
+		}
 
-	// Add category
-	if a.PartCategory != "" {
-		segments = append(segments, a.PartCategory)
-		linkNodes = append(linkNodes, pathSegmentLink(a.PartCategory, segments))
-	}
-
-	// Add subcategory
-	if a.PartSubcategory != "" {
-		segments = append(segments, a.PartSubcategory)
-		linkNodes = append(linkNodes, pathSegmentLink(a.PartSubcategory, segments))
+		// Format based on field type
+		if fieldConfig.QdrantType == "keyword_array" {
+			// Multi-value field - join with comma
+			// Special handling for year field - format as ranges
+			if fieldName == "year" {
+				yearRanges := formatYearRanges(nonEmptyValues)
+				segments = append(segments, yearRanges)
+				linkNodes = append(linkNodes, commaSeparatedLinks(yearRanges, segments))
+			} else {
+				joined := strings.Join(nonEmptyValues, ", ")
+				segments = append(segments, joined)
+				linkNodes = append(linkNodes, commaSeparatedLinks(joined, segments))
+			}
+		} else {
+			// Single-value field - use first value
+			value := nonEmptyValues[0]
+			segments = append(segments, value)
+			linkNodes = append(linkNodes, pathSegmentLink(value, segments))
+		}
 	}
 
 	// If no path parts, return empty node

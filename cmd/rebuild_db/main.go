@@ -119,28 +119,29 @@ func main() {
 	}
 
 	// Populate SpecificationField table with all field definitions
-	fieldFile := "cmd/rebuild_db/specification-fields.json"
+	fieldFile := "cmd/rebuild_db/spec-fields.json"
 	fieldData, err := os.ReadFile(fieldFile)
 	if err != nil {
-		logger.Fatal("Failed to read specification-fields.json", "error", err, "file", fieldFile)
+		logger.Fatal("Failed to read spec-fields.json", "error", err, "file", fieldFile)
 	}
 	type SpecificationFieldDef struct {
-		Name           string `json:"name"`
-		DisplayName    string `json:"display_name"`
-		FieldType      string `json:"field_type"`
-		TableName      string `json:"table_name"`
-		TableFieldName string `json:"table_field_name"`
-		QdrantType     string `json:"qdrant_type"`
+		Name            string `json:"name"`
+		DisplayName     string `json:"display_name"`
+		FieldType       string `json:"field_type"`
+		TableName       string `json:"table_name"`
+		TableFieldName  string `json:"table_field_name"`
+		ValueColumnName string `json:"value_column_name"`
+		QdrantType      string `json:"qdrant_type"`
 	}
 	var fieldDefinitions []SpecificationFieldDef
 	if err := json.Unmarshal(fieldData, &fieldDefinitions); err != nil {
-		logger.Fatal("Failed to parse specification-fields.json", "error", err, "file", fieldFile)
+		logger.Fatal("Failed to parse spec-fields.json", "error", err, "file", fieldFile)
 	}
 
 	fieldIDMap := make(map[string]int)
 	for _, fieldDef := range fieldDefinitions {
-		res, err := database.Exec(`INSERT INTO SpecificationField (name, display_name, field_type, table_name, table_field_name, qdrant_type) VALUES (?, ?, ?, ?, ?, ?)`,
-			fieldDef.Name, fieldDef.DisplayName, fieldDef.FieldType, fieldDef.TableName, fieldDef.TableFieldName, fieldDef.QdrantType)
+		res, err := database.Exec(`INSERT INTO SpecificationField (name, display_name, field_type, table_name, table_field_name, value_column_name, qdrant_type) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+			fieldDef.Name, fieldDef.DisplayName, fieldDef.FieldType, fieldDef.TableName, fieldDef.TableFieldName, fieldDef.ValueColumnName, fieldDef.QdrantType)
 		if err != nil {
 			logger.Warn("Failed to insert SpecificationField", "name", fieldDef.Name, "error", err)
 			continue

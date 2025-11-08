@@ -2,6 +2,7 @@ package vector
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/parts-pile/site/ad"
@@ -80,14 +81,8 @@ func BuildAdEmbeddings(ads []ad.AdDetail) error {
 
 // buildAdEmbeddingPrompt creates a prompt for generating embeddings
 func buildAdEmbeddingPrompt(adObj ad.AdDetail) string {
-	// Get parent company information for the make
-	var parentCompanyStr, parentCompanyCountry string
-	if adObj.Make != "" {
-		if pcInfo, err := spec.GetParentCompanyInfoForMake(adObj.Make); err == nil && pcInfo != nil {
-			parentCompanyStr = pcInfo.Name
-			parentCompanyCountry = pcInfo.Country
-		}
-	}
+	// Get category fields to determine which fields to include
+	fieldConfigs, _ := spec.GetCategoryFields(adObj.AdCategoryID)
 
 	// Get rock count for this ad
 	rockCount := 0
@@ -106,38 +101,42 @@ func buildAdEmbeddingPrompt(adObj ad.AdDetail) string {
 			rockCount, rockCount)
 	}
 
-	promptTemplate := `Encode the following ad for semantic search. Focus on
-	title and description, what the part is, what vehicles it fits, where
-	the part is located, the price, how many rocks have been thown, and any
-	relevant details for a buyer.  Return only the embedding vector.
+	// Build prompt header
+	var promptParts []string
+	promptParts = append(promptParts, `Encode the following ad for semantic search. Focus on
+title and description, what the part is, what vehicles it fits, where
+the part is located, the price, how many rocks have been thown, and any
+relevant details for a buyer. Return only the embedding vector.
 
-Title: %s
-Description: %s
-Make: %s
-Parent Company: %s
-Parent Company Country: %s
-Years: %s
-Models: %s
-Engines: %s
-Category: %s
-Location: %s, %s, %s
-Quality Indicator: %s`
+Title: `+adObj.Title+`
+Description: `+adObj.Description)
 
-	return fmt.Sprintf(promptTemplate,
-		adObj.Title,
-		adObj.Description,
-		adObj.Make,
-		parentCompanyStr,
-		parentCompanyCountry,
-		joinStrings(adObj.Years),
-		joinStrings(adObj.Models),
-		joinStrings(adObj.Engines),
-		adObj.PartCategory,
-		adObj.City,
-		adObj.AdminArea,
-		adObj.Country,
-		rockContext,
-	)
+	// Add spec fields dynamically - each field generates its own snippet
+	for _, fieldConfig := range fieldConfigs {
+		fieldValues, exists := adObj.SpecData[fieldConfig.Name]
+		if !exists {
+			continue
+		}
+
+		snippet := spec.BuildFieldPromptSnippet(fieldConfig, fieldValues)
+		if snippet != "" {
+			promptParts = append(promptParts, snippet)
+		}
+	}
+
+	// Add part category/subcategory if available (not in fieldConfigs but always present for parts)
+	if catValues, exists := adObj.SpecData["part_category"]; exists && len(catValues) > 0 {
+		promptParts = append(promptParts, fmt.Sprintf("Category: %s\n", catValues[0]))
+	}
+	if subcatValues, exists := adObj.SpecData["part_subcategory"]; exists && len(subcatValues) > 0 {
+		promptParts = append(promptParts, fmt.Sprintf("Subcategory: %s\n", subcatValues[0]))
+	}
+
+	// Add location and quality indicator
+	promptParts = append(promptParts, fmt.Sprintf("Location: %s, %s, %s\n", adObj.City, adObj.AdminArea, adObj.Country))
+	promptParts = append(promptParts, fmt.Sprintf("Quality Indicator: %s", rockContext))
+
+	return strings.Join(promptParts, "\n")
 }
 
 // buildAdEmbeddingMetadata creates metadata for embeddings dynamically based on category field configuration
@@ -164,16 +163,15 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 		"rock_count":     rockCount,
 	}
 
-	// Add part category/subcategory (these are not spec fields but are used)
-	if adObj.PartCategory != "" {
-		metadata["category"] = adObj.PartCategory
+	// Add part category/subcategory from SpecData
+	if catValues, exists := adObj.SpecData["part_category"]; exists && len(catValues) > 0 {
+		metadata["category"] = catValues[0]
 	}
-	if adObj.PartSubcategory != "" {
-		metadata["subcategory"] = adObj.PartSubcategory
+	if subcatValues, exists := adObj.SpecData["part_subcategory"]; exists && len(subcatValues) > 0 {
+		metadata["subcategory"] = subcatValues[0]
 	}
 
 	// Add spec fields dynamically based on category configuration
-	// This is a temporary compatibility layer - AdDetail has hard-coded fields
 	for _, fieldConfig := range fieldConfigs {
 		// Determine Qdrant metadata key (plural for arrays)
 		qdrantKey := fieldConfig.Name
@@ -181,32 +179,30 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 			qdrantKey = fieldConfig.Name + "s" // years, models, engines
 		}
 
-		// Extract value from AdDetail based on field name
-		// TODO: Make AdDetail more flexible to support arbitrary fields
-		switch fieldConfig.Name {
-		case "make":
-			if adObj.Make != "" {
-				metadata[qdrantKey] = adObj.Make
+		// Extract value from SpecData
+		fieldValues, exists := adObj.SpecData[fieldConfig.Name]
+		if !exists || len(fieldValues) == 0 {
+			continue
+		}
+
+		// Filter out empty values
+		nonEmptyValues := []string{}
+		for _, val := range fieldValues {
+			if val != "" {
+				nonEmptyValues = append(nonEmptyValues, val)
 			}
-		case "year":
-			if len(adObj.Years) > 0 {
-				metadata[qdrantKey] = adObj.Years
-			}
-		case "model":
-			if len(adObj.Models) > 0 {
-				metadata[qdrantKey] = adObj.Models
-			}
-		case "engine":
-			if len(adObj.Engines) > 0 {
-				metadata[qdrantKey] = adObj.Engines
-			}
-		case "breed":
-			// TODO: Add breed field to AdDetail when needed
-			// For now, skip
-		default:
-			// For future fields, log a warning but don't fail
-			logger.Debug("Field not yet supported in AdDetail",
-				"component", "vector", "field", fieldConfig.Name, "adID", adObj.ID)
+		}
+		if len(nonEmptyValues) == 0 {
+			continue
+		}
+
+		// Add to metadata based on field type
+		if fieldConfig.QdrantType == "keyword_array" {
+			// Multi-value field - store as array
+			metadata[qdrantKey] = nonEmptyValues
+		} else {
+			// Single-value field - store as string
+			metadata[qdrantKey] = nonEmptyValues[0]
 		}
 	}
 

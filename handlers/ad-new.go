@@ -37,7 +37,6 @@ func HandleNewAd(c *fiber.Ctx) error {
 	}
 
 	// Build map of first field of each chain -> values
-	// First fields are those where no other field's NextInChain points to their Order
 	firstFieldValues := make(map[string][]string)
 
 	for _, fieldConfig := range fieldConfigs {
@@ -73,18 +72,45 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
+	// Initialize SpecData if nil
+	if adDetail.SpecData == nil {
+		adDetail.SpecData = make(map[string][]string)
+	}
+
 	// Pre-fetch all the dropdown/checkbox data needed for the form
 	makes := spec.GetMakes(adCat)
 	categoryNames := part.GetCategories(adCat)
-	years := spec.GetYears(adCat, adDetail.Make)
-	models := spec.GetModels(adCat, adDetail.Make, adDetail.Years)
-	engines := spec.GetEngines(adCat, adDetail.Make, adDetail.Years, adDetail.Models)
-	subcategoryNames := part.GetSubCategories(adCat, adDetail.PartCategory)
+
+	// Get years, models, engines from SpecData
+	var years, models, engines []string
+	if yearValues, exists := adDetail.SpecData["year"]; exists {
+		years = yearValues
+	}
+	if modelValues, exists := adDetail.SpecData["model"]; exists {
+		models = modelValues
+	}
+	if engineValues, exists := adDetail.SpecData["engine"]; exists {
+		engines = engineValues
+	}
+
+	// Get part_category from SpecData
+	partCategory := ""
+	if catValues, exists := adDetail.SpecData["part_category"]; exists && len(catValues) > 0 {
+		partCategory = catValues[0]
+	}
+	subcategoryNames := part.GetSubCategories(adCat, partCategory)
+
+	// Get part_subcategory from SpecData
+	partSubcategory := ""
+	if subcatValues, exists := adDetail.SpecData["part_subcategory"]; exists && len(subcatValues) > 0 {
+		partSubcategory = subcatValues[0]
+	}
+
 	csrfToken := local.GetCSRFToken(c)
 
 	return render(c, ui.DuplicateAdPage(
 		userID, userName, csrfToken, c.Path(), makes, categoryNames,
-		*adDetail, years, models, engines, subcategoryNames, adDetail.PartSubcategory, config.MaxImagesPerAd))
+		*adDetail, years, models, engines, subcategoryNames, partSubcategory, config.MaxImagesPerAd))
 }
 
 // HandleNewAdSubmission processes the new ad form submission
@@ -203,12 +229,8 @@ func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
 			}
 		}
 
-		// Form uses plural name for multi-value fields (years, models, engines)
-		// but field config uses singular name (year, model, engine)
+		// Use field name directly (no plural form)
 		queryKey := parentField.Name
-		if parentField.QdrantType == "keyword_array" {
-			queryKey = parentField.Name + "s" // years, models, engines
-		}
 
 		// Check for single value or multiple values
 		if values, exists := q[queryKey]; exists && len(values) > 0 {

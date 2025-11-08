@@ -12,15 +12,6 @@ import (
 	"github.com/parts-pile/site/spec"
 )
 
-// getValueColumnName returns the column name for the value in a table
-// For Year table, it's "year", for other tables it's "name"
-func getValueColumnName(tableName string) string {
-	if tableName == "Year" {
-		return "year"
-	}
-	return "name"
-}
-
 type PartCategory struct {
 	ID   int    `db:"id"`
 	Name string `db:"name"`
@@ -187,15 +178,14 @@ func buildAdCategoriesQuery(adCat int, fieldValues map[string]string) (string, [
 			// For integer fields, convert string to int
 			intValue, err := strconv.Atoi(value)
 			if err == nil {
-				valueCol := getValueColumnName(tableName)
 				whereClauses = append(whereClauses,
-					fmt.Sprintf("%s.%s = ?", tableName, valueCol))
+					fmt.Sprintf("%s.%s = ?", tableName, fieldConfig.ValueColumnName))
 				args = append(args, intValue)
 			}
 		} else {
-			// For string fields, compare with name column
+			// For string fields, compare with value column
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.name = ?", tableName))
+				fmt.Sprintf("%s.%s = ?", tableName, fieldConfig.ValueColumnName))
 			args = append(args, value)
 		}
 	}
@@ -259,15 +249,14 @@ func buildAdSubCategoriesQuery(adCat int, fieldValues map[string]string, categor
 			// For integer fields, convert string to int
 			intValue, err := strconv.Atoi(value)
 			if err == nil {
-				valueCol := getValueColumnName(tableName)
 				whereClauses = append(whereClauses,
-					fmt.Sprintf("%s.%s = ?", tableName, valueCol))
+					fmt.Sprintf("%s.%s = ?", tableName, fieldConfig.ValueColumnName))
 				args = append(args, intValue)
 			}
 		} else {
-			// For string fields, compare with name column
+			// For string fields, compare with value column
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.name = ?", tableName))
+				fmt.Sprintf("%s.%s = ?", tableName, fieldConfig.ValueColumnName))
 			args = append(args, value)
 		}
 	}

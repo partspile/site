@@ -14,6 +14,7 @@ CREATE TABLE SpecificationField (
     field_type TEXT NOT NULL CHECK (field_type IN ('string', 'int', 'float64')),
     table_name TEXT NOT NULL,
     table_field_name TEXT NOT NULL,
+    value_column_name TEXT NOT NULL,
     qdrant_type TEXT NOT NULL CHECK (qdrant_type IN ('keyword', 'keyword_array', 'integer', 'float', 'geo'))
 );
 

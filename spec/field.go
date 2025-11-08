@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"sort"
-	"sync"
+	"strings"
 
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
@@ -12,30 +12,27 @@ import (
 
 // FieldConfig represents a specification field configuration
 type FieldConfig struct {
-	ID             int
-	Name           string
-	DisplayName    string
-	FieldType      string // 'string', 'int', 'float64'
-	TableName      string // Always required - table name (e.g., 'Make', 'Year', 'Model')
-	TableFieldName string // Column name in Specification table (e.g., 'make_id', 'year_id')
-	QdrantType     string // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
-	IsRequired     bool
-	Order          int // Priority order (from priority_order column) - used for display and determining chains
-	NextInChain    int // Priority order of next field in chain (0 = last field in chain or standalone)
+	ID              int
+	Name            string
+	DisplayName     string
+	FieldType       string // 'string', 'int', 'float64'
+	TableName       string // Always required - table name (e.g., 'Make', 'Year', 'Model')
+	TableFieldName  string // Column name in Specification table (e.g., 'make_id', 'year_id')
+	ValueColumnName string // Column name in the foreign table for the value (e.g., 'name', 'year')
+	QdrantType      string // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
+	IsRequired      bool
+	Order           int // Priority order (from priority_order column) - used for display and determining chains
+	NextInChain     int // Priority order of next field in chain (0 = last field in chain or standalone)
 }
 
 var (
 	// In-memory caches for field configurations
 	categoryFieldsCache   map[int][]FieldConfig
 	fieldDefinitionsCache map[string]FieldConfig
-	fieldCacheMutex       sync.RWMutex
 )
 
 // InitFieldCache loads SpecificationField and AdCategoryField into memory maps at startup
 func InitFieldCache() error {
-	fieldCacheMutex.Lock()
-	defer fieldCacheMutex.Unlock()
-
 	// Initialize maps
 	categoryFieldsCache = make(map[int][]FieldConfig)
 	fieldDefinitionsCache = make(map[string]FieldConfig)
@@ -66,19 +63,20 @@ func InitFieldCache() error {
 // loadFieldDefinitions loads all SpecificationField records from database
 func loadFieldDefinitions() (map[string]FieldConfig, error) {
 	query := `
-		SELECT id, name, display_name, field_type, table_name, table_field_name, qdrant_type
+		SELECT id, name, display_name, field_type, table_name, table_field_name, value_column_name, qdrant_type
 		FROM SpecificationField
 		ORDER BY id
 	`
 
 	type dbField struct {
-		ID             int    `db:"id"`
-		Name           string `db:"name"`
-		DisplayName    string `db:"display_name"`
-		FieldType      string `db:"field_type"`
-		TableName      string `db:"table_name"`
-		TableFieldName string `db:"table_field_name"`
-		QdrantType     string `db:"qdrant_type"`
+		ID              int    `db:"id"`
+		Name            string `db:"name"`
+		DisplayName     string `db:"display_name"`
+		FieldType       string `db:"field_type"`
+		TableName       string `db:"table_name"`
+		TableFieldName  string `db:"table_field_name"`
+		ValueColumnName string `db:"value_column_name"`
+		QdrantType      string `db:"qdrant_type"`
 	}
 
 	var dbFields []dbField
@@ -90,13 +88,14 @@ func loadFieldDefinitions() (map[string]FieldConfig, error) {
 	fieldDefs := make(map[string]FieldConfig)
 	for _, f := range dbFields {
 		fieldDefs[f.Name] = FieldConfig{
-			ID:             f.ID,
-			Name:           f.Name,
-			DisplayName:    f.DisplayName,
-			FieldType:      f.FieldType,
-			TableName:      f.TableName,
-			TableFieldName: f.TableFieldName,
-			QdrantType:     f.QdrantType,
+			ID:              f.ID,
+			Name:            f.Name,
+			DisplayName:     f.DisplayName,
+			FieldType:       f.FieldType,
+			TableName:       f.TableName,
+			TableFieldName:  f.TableFieldName,
+			ValueColumnName: f.ValueColumnName,
+			QdrantType:      f.QdrantType,
 		}
 	}
 
@@ -168,9 +167,6 @@ func loadCategoryFields(fieldDefs map[string]FieldConfig) (map[int][]FieldConfig
 
 // GetCategoryFields returns the ordered list of fields for a category (uses cache)
 func GetCategoryFields(adCategoryID int) ([]FieldConfig, error) {
-	fieldCacheMutex.RLock()
-	defer fieldCacheMutex.RUnlock()
-
 	fields, exists := categoryFieldsCache[adCategoryID]
 	if !exists {
 		return []FieldConfig{}, nil
@@ -271,9 +267,41 @@ func GetDownstreamFields(field FieldConfig, allFields []FieldConfig) []string {
 
 // GetFieldDefinition returns the field definition for a field name
 func GetFieldDefinition(fieldName string) (FieldConfig, bool) {
-	fieldCacheMutex.RLock()
-	defer fieldCacheMutex.RUnlock()
-
 	field, exists := fieldDefinitionsCache[fieldName]
 	return field, exists
+}
+
+// BuildFieldPromptSnippet generates a prompt snippet for a field given its values
+// Returns empty string if field has no values
+func BuildFieldPromptSnippet(fieldConfig FieldConfig, fieldValues []string) string {
+	if len(fieldValues) == 0 {
+		return ""
+	}
+
+	// Format field values
+	valueStr := strings.Join(fieldValues, ", ")
+	if valueStr == "" {
+		return ""
+	}
+
+	// Special handling for "make" field - include parent company info
+	if fieldConfig.Name == "make" {
+		make := fieldValues[0]
+		snippet := fmt.Sprintf("%s: %s\n", fieldConfig.DisplayName, make)
+
+		// Get parent company information
+		if pcInfo, err := GetParentCompanyInfoForMake(make); err == nil && pcInfo != nil {
+			if pcInfo.Name != "" {
+				snippet += fmt.Sprintf("Parent Company: %s\n", pcInfo.Name)
+			}
+			if pcInfo.Country != "" {
+				snippet += fmt.Sprintf("Parent Company Country: %s\n", pcInfo.Country)
+			}
+		}
+
+		return snippet
+	}
+
+	// Default: simple field name and value
+	return fmt.Sprintf("%s: %s\n", fieldConfig.DisplayName, valueStr)
 }
