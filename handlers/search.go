@@ -17,17 +17,24 @@ import (
 )
 
 func extractSearchParams(c *fiber.Ctx) map[string]string {
-	return map[string]string{
+	params := map[string]string{
 		"q":         c.Query("q"),
 		"location":  c.Query("location"),
-		"make":      c.Query("make"),
-		"min_year":  c.Query("min_year"),
-		"max_year":  c.Query("max_year"),
-		"model":     c.Query("model"),
-		"engine":    c.Query("engine"),
 		"min_price": c.Query("min_price"),
 		"max_price": c.Query("max_price"),
 	}
+
+	// Get all query parameters and add them to params
+	// This includes all spec field filters (make, year, model, engine, etc.)
+	// and range filters (min_year, max_year, etc.)
+	for key := range c.Queries() {
+		value := c.Query(key)
+		if value != "" {
+			params[key] = value
+		}
+	}
+
+	return params
 }
 
 // runEmbeddingSearch runs vector search with optional filters
@@ -148,26 +155,15 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 		for _, fieldConfig := range fieldConfigs {
 			fieldName := fieldConfig.Name
 			fieldValue := params[fieldName]
-
-			// Skip if no value provided
-			if fieldValue == "" {
-				// Special handling for year range (min_year/max_year)
-				if fieldConfig.Name == "year" {
-					minYearStr := params["min_year"]
-					maxYearStr := params["max_year"]
-					if minYearStr == "" && maxYearStr == "" {
-						continue
-					}
-					// Handle year range below
-				} else {
-					continue
-				}
-			}
+			minKey := "min_" + fieldName
+			maxKey := "max_" + fieldName
+			minValue := params[minKey]
+			maxValue := params[maxKey]
 
 			// Handle fields based on their Qdrant type
 			switch fieldConfig.QdrantType {
 			case "keyword":
-				// Single-value keyword fields (make, breed, part_subcategory)
+				// Single-value keyword fields
 				if fieldValue != "" {
 					condition := qdrant.NewMatch(fieldName, fieldValue)
 					conditions = append(conditions, condition)
@@ -175,63 +171,69 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 						"component", "buildSearchFilters", "field", fieldName, "value", fieldValue)
 				}
 			case "keyword_array":
-				// Multi-value keyword fields (years, models, engines)
-				if fieldConfig.Name == "year" {
-					// Special handling for year range
-					minYearStr := params["min_year"]
-					maxYearStr := params["max_year"]
-					if minYearStr != "" || maxYearStr != "" {
-						var minYear, maxYear int
+				// Multi-value keyword fields - check for range or single value
+				if minValue != "" || maxValue != "" {
+					// Range filter for integer keyword_array fields (like year)
+					if fieldConfig.FieldType == "int" {
+						var minVal, maxVal int
 						var hasMin, hasMax bool
 
-						if minYearStr != "" {
-							if year, err := strconv.Atoi(minYearStr); err == nil {
-								minYear = year
+						if minValue != "" {
+							if val, err := strconv.Atoi(minValue); err == nil {
+								minVal = val
 								hasMin = true
 							}
 						}
-						if maxYearStr != "" {
-							if year, err := strconv.Atoi(maxYearStr); err == nil {
-								maxYear = year
+						if maxValue != "" {
+							if val, err := strconv.Atoi(maxValue); err == nil {
+								maxVal = val
 								hasMax = true
 							}
 						}
 
-						// Convert year range to list of year strings
-						var yearList []string
+						// Convert range to list of values
+						var valueList []string
 						if hasMin && hasMax {
-							for year := minYear; year <= maxYear; year++ {
-								yearList = append(yearList, strconv.Itoa(year))
+							for val := minVal; val <= maxVal; val++ {
+								valueList = append(valueList, strconv.Itoa(val))
 							}
 						} else if hasMin {
-							currentYear := 2024
-							for year := minYear; year <= currentYear+5; year++ {
-								yearList = append(yearList, strconv.Itoa(year))
+							// Default max to current year + 5 for year fields, or reasonable max
+							maxVal = 2030
+							if fieldName == "year" {
+								maxVal = 2029
+							}
+							for val := minVal; val <= maxVal; val++ {
+								valueList = append(valueList, strconv.Itoa(val))
 							}
 						} else if hasMax {
-							for year := 1900; year <= maxYear; year++ {
-								yearList = append(yearList, strconv.Itoa(year))
+							// Default min to 1900 for year fields, or reasonable min
+							minVal = 1900
+							if fieldName == "year" {
+								minVal = 1900
+							}
+							for val := minVal; val <= maxVal; val++ {
+								valueList = append(valueList, strconv.Itoa(val))
 							}
 						}
 
-						if len(yearList) > 0 {
+						if len(valueList) > 0 {
 							// Use plural form for Qdrant metadata key
-							yearCondition := qdrant.NewMatchKeywords("years", yearList...)
-							conditions = append(conditions, yearCondition)
-							logger.Debug("Added year keywords filter",
-								"component", "buildSearchFilters", "yearList", yearList)
+							pluralName := fieldName + "s"
+							condition := qdrant.NewMatchKeywords(pluralName, valueList...)
+							conditions = append(conditions, condition)
+							logger.Debug("Added range keywords filter",
+								"component", "buildSearchFilters", "field", fieldName, "valueList", valueList)
 						}
 					}
-				} else {
-					// Other keyword_array fields (models, engines)
-					if fieldValue != "" {
-						// Use plural form for Qdrant metadata key
-						pluralName := fieldName + "s"
-						condition := qdrant.NewMatchKeywords(pluralName, fieldValue)
-						conditions = append(conditions, condition)
-						logger.Debug("Added keyword_array filter",
-							"component", "buildSearchFilters", "field", fieldName, "value", fieldValue)
-					}
+				} else if fieldValue != "" {
+					// Single value for keyword_array fields
+					// Use plural form for Qdrant metadata key
+					pluralName := fieldName + "s"
+					condition := qdrant.NewMatchKeywords(pluralName, fieldValue)
+					conditions = append(conditions, condition)
+					logger.Debug("Added keyword_array filter",
+						"component", "buildSearchFilters", "field", fieldName, "value", fieldValue)
 				}
 			case "integer":
 				// Integer fields - could add range support here if needed
@@ -456,76 +458,52 @@ func HandleSwitchAdCategory(c *fiber.Ctx) error {
 	return render(c, ui.SearchContainer(userID, view, adCategory, params))
 }
 
-// HandleFilterMakes handles the make filter dropdown for search filters
-func HandleFilterMakes(c *fiber.Ctx) error {
+// HandleFilterField handles filter dropdown for any spec field
+func HandleFilterField(c *fiber.Ctx) error {
 	adCategory := cookie.GetAdCategory(c)
-	makes := spec.GetMakes(adCategory)
+	fieldName := c.Params("fieldName")
 
-	return render(c, ui.MakeFilterOptions(makes))
-}
-
-// HandleFilterModels handles the model filter dropdown for search filters
-func HandleFilterModels(c *fiber.Ctx) error {
-	adCategory := cookie.GetAdCategory(c)
-
-	// Get parent field values from query parameters
-	makeValue := c.Query("make")
-	minYear := c.Query("min_year")
-	maxYear := c.Query("max_year")
-
-	// Build parent values map
-	parentValues := make(map[string]string)
-	if makeValue != "" {
-		parentValues["make"] = makeValue
-	}
-	if minYear != "" || maxYear != "" {
-		// For year range, we need to convert to a list
-		// For now, use empty string - GetFieldValues will handle it
-		// TODO: Handle year range properly for model filtering
+	if fieldName == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Field name required")
 	}
 
-	// Get models
-	models, err := spec.GetFieldValues(adCategory, "model", parentValues)
+	// Get category fields to determine parent fields
+	fieldConfigs, err := spec.GetCategoryFields(adCategory)
 	if err != nil {
-		logger.Warn("Failed to get models for filter",
-			"error", err, "component", "filter-models", "adCategory", adCategory)
-		models = []string{}
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get category fields")
 	}
 
-	return render(c, ui.ModelFilterOptions(models))
-}
+	// Find current field index
+	currentFieldIndex := -1
+	for i, f := range fieldConfigs {
+		if f.Name == fieldName {
+			currentFieldIndex = i
+			break
+		}
+	}
+	if currentFieldIndex == -1 {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid field name")
+	}
 
-// HandleFilterEngines handles the engine filter dropdown for search filters
-func HandleFilterEngines(c *fiber.Ctx) error {
-	adCategory := cookie.GetAdCategory(c)
-
-	// Get parent field values from query parameters
-	makeValue := c.Query("make")
-	minYear := c.Query("min_year")
-	maxYear := c.Query("max_year")
-	modelValue := c.Query("model")
-
-	// Build parent values map
+	// Build parent values map from query parameters
 	parentValues := make(map[string]string)
-	if makeValue != "" {
-		parentValues["make"] = makeValue
-	}
-	if modelValue != "" {
-		parentValues["model"] = modelValue
-	}
-	if minYear != "" || maxYear != "" {
-		// For year range, we need to convert to a list
-		// For now, use empty string - GetFieldValues will handle it
-		// TODO: Handle year range properly for engine filtering
+	for i := 0; i < currentFieldIndex; i++ {
+		parentField := fieldConfigs[i]
+		parentValue := c.Query(parentField.Name)
+		if parentValue != "" {
+			parentValues[parentField.Name] = parentValue
+		}
+		// Note: Range parameters (min_/max_) are not passed to GetFieldValues
+		// Range filtering works at search time, not at filter dropdown time
 	}
 
-	// Get engines
-	engines, err := spec.GetFieldValues(adCategory, "engine", parentValues)
+	// Get field values
+	values, err := spec.GetFieldValues(adCategory, fieldName, parentValues)
 	if err != nil {
-		logger.Warn("Failed to get engines for filter",
-			"error", err, "component", "filter-engines", "adCategory", adCategory)
-		engines = []string{}
+		logger.Warn("Failed to get field values for filter",
+			"error", err, "component", "filter-field", "adCategory", adCategory, "fieldName", fieldName)
+		values = []string{}
 	}
 
-	return render(c, ui.EngineFilterOptions(engines))
+	return render(c, ui.GenericFilterOptions(fieldName, values))
 }

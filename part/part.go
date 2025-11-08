@@ -280,36 +280,27 @@ func buildAdSubCategoriesQuery(adCat int, fieldValues map[string]string, categor
 // TREE VIEW FUNCTIONS BROWSE MODE (q == "")
 // ============================================================================
 
-// GetAdCategories returns categories that have existing ads for make/year/model/engine (for tree view)
-func GetAdCategories(adCat int, makeName, year, model, engine string) ([]string, error) {
-	makeName, _ = url.QueryUnescape(makeName)
-	year, _ = url.QueryUnescape(year)
-	model, _ = url.QueryUnescape(model)
-	engine, _ = url.QueryUnescape(engine)
-
-	// Build field values map (temporary compatibility layer)
-	fieldValues := map[string]string{
-		"make": makeName,
-	}
-	if year != "" {
-		fieldValues["year"] = year
-	}
-	if model != "" {
-		fieldValues["model"] = model
-	}
-	if engine != "" {
-		fieldValues["engine"] = engine
+// GetAdCategories returns categories that have existing ads for given field values (for tree view)
+func GetAdCategories(adCat int, fieldValues map[string]string) ([]string, error) {
+	// URL decode field values
+	decodedValues := make(map[string]string)
+	for k, v := range fieldValues {
+		decoded, _ := url.QueryUnescape(v)
+		decodedValues[k] = decoded
 	}
 
-	// Create cache key
-	cacheKey := fmt.Sprintf("ad:categories:%d:%s:%s:%s:%s", adCat, makeName, year, model, engine)
+	// Create cache key from sorted field values
+	cacheKey := fmt.Sprintf("ad:categories:%d", adCat)
+	for k, v := range decodedValues {
+		cacheKey += fmt.Sprintf(":%s=%s", k, v)
+	}
 
 	// Check cache first
 	if cached, found := partCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
-	query, args := buildAdCategoriesQuery(adCat, fieldValues)
+	query, args := buildAdCategoriesQuery(adCat, decodedValues)
 	var categories []string
 	err := db.Select(&categories, query, args...)
 	if err != nil {
@@ -321,37 +312,29 @@ func GetAdCategories(adCat int, makeName, year, model, engine string) ([]string,
 	return categories, nil
 }
 
-// GetAdSubCategories returns subcategories that have existing ads for make/year/model/engine/category (for tree view)
-func GetAdSubCategories(adCat int, makeName, year, model, engine, category string) ([]string, error) {
-	makeName, _ = url.QueryUnescape(makeName)
-	year, _ = url.QueryUnescape(year)
-	model, _ = url.QueryUnescape(model)
-	engine, _ = url.QueryUnescape(engine)
+// GetAdSubCategories returns subcategories that have existing ads for given field values and category (for tree view)
+func GetAdSubCategories(adCat int, fieldValues map[string]string, category string) ([]string, error) {
+	// URL decode field values
+	decodedValues := make(map[string]string)
+	for k, v := range fieldValues {
+		decoded, _ := url.QueryUnescape(v)
+		decodedValues[k] = decoded
+	}
 	category, _ = url.QueryUnescape(category)
 
-	// Build field values map (temporary compatibility layer)
-	fieldValues := map[string]string{
-		"make": makeName,
+	// Create cache key from sorted field values
+	cacheKey := fmt.Sprintf("ad:subcategories:%d", adCat)
+	for k, v := range decodedValues {
+		cacheKey += fmt.Sprintf(":%s=%s", k, v)
 	}
-	if year != "" {
-		fieldValues["year"] = year
-	}
-	if model != "" {
-		fieldValues["model"] = model
-	}
-	if engine != "" {
-		fieldValues["engine"] = engine
-	}
-
-	// Create cache key
-	cacheKey := fmt.Sprintf("ad:subcategories:%d:%s:%s:%s:%s:%s", adCat, makeName, year, model, engine, category)
+	cacheKey += fmt.Sprintf(":%s", category)
 
 	// Check cache first
 	if cached, found := partCache.Get(cacheKey); found {
 		return cached, nil
 	}
 
-	query, args := buildAdSubCategoriesQuery(adCat, fieldValues, category)
+	query, args := buildAdSubCategoriesQuery(adCat, decodedValues, category)
 	var subCategories []string
 	err := db.Select(&subCategories, query, args...)
 	if err != nil {
@@ -367,44 +350,28 @@ func GetAdSubCategories(adCat int, makeName, year, model, engine, category strin
 // TREE VIEW FUNCTIONS SEARCH MODE (q != "")
 // ============================================================================
 
-// GetCategoriesForAds returns categories for a specific make/year/model/engine, filtered by ad IDs
-func GetCategoriesForAds(adIDs []int, makeName, year, model, engine string) ([]string, error) {
+// GetCategoriesForAds returns categories for specific field values, filtered by ad IDs
+func GetCategoriesForAds(adIDs []int, fieldValues map[string]string) ([]string, error) {
 	if len(adIDs) == 0 {
 		return []string{}, nil
 	}
 
-	// URL decode the parameters
-	makeName, _ = url.QueryUnescape(makeName)
-	year, _ = url.QueryUnescape(year)
-	model, _ = url.QueryUnescape(model)
-	engine, _ = url.QueryUnescape(engine)
+	// URL decode field values
+	decodedValues := make(map[string]string)
+	for k, v := range fieldValues {
+		decoded, _ := url.QueryUnescape(v)
+		decodedValues[k] = decoded
+	}
 
 	// Get ad category from first ad (all ads should have same category)
-	// For now, we'll need to pass adCat - but this function signature doesn't have it
-	// We'll need to query it or change the signature
-	// For now, use a workaround - query ad category from first ad
 	var adCat int
 	err := db.Get(&adCat, "SELECT ad_category_id FROM Ad WHERE id = ?", adIDs[0])
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ad category: %w", err)
 	}
 
-	// Build field values map
-	fieldValues := map[string]string{
-		"make": makeName,
-	}
-	if year != "" {
-		fieldValues["year"] = year
-	}
-	if model != "" {
-		fieldValues["model"] = model
-	}
-	if engine != "" {
-		fieldValues["engine"] = engine
-	}
-
 	// Build dynamic query
-	baseQuery, baseArgs := buildAdCategoriesQuery(adCat, fieldValues)
+	baseQuery, baseArgs := buildAdCategoriesQuery(adCat, decodedValues)
 	if baseQuery == "" {
 		return nil, fmt.Errorf("failed to build query")
 	}
@@ -428,17 +395,18 @@ func GetCategoriesForAds(adIDs []int, makeName, year, model, engine string) ([]s
 	return categories, err
 }
 
-// GetSubCategoriesForAds returns subcategories for a specific make/year/model/engine/category, filtered by ad IDs
-func GetSubCategoriesForAds(adIDs []int, makeName, year, model, engine, category string) ([]string, error) {
+// GetSubCategoriesForAds returns subcategories for specific field values and category, filtered by ad IDs
+func GetSubCategoriesForAds(adIDs []int, fieldValues map[string]string, category string) ([]string, error) {
 	if len(adIDs) == 0 {
 		return []string{}, nil
 	}
 
-	// URL decode the parameters
-	makeName, _ = url.QueryUnescape(makeName)
-	year, _ = url.QueryUnescape(year)
-	model, _ = url.QueryUnescape(model)
-	engine, _ = url.QueryUnescape(engine)
+	// URL decode field values
+	decodedValues := make(map[string]string)
+	for k, v := range fieldValues {
+		decoded, _ := url.QueryUnescape(v)
+		decodedValues[k] = decoded
+	}
 	category, _ = url.QueryUnescape(category)
 
 	// Get ad category from first ad
@@ -448,22 +416,8 @@ func GetSubCategoriesForAds(adIDs []int, makeName, year, model, engine, category
 		return nil, fmt.Errorf("failed to get ad category: %w", err)
 	}
 
-	// Build field values map
-	fieldValues := map[string]string{
-		"make": makeName,
-	}
-	if year != "" {
-		fieldValues["year"] = year
-	}
-	if model != "" {
-		fieldValues["model"] = model
-	}
-	if engine != "" {
-		fieldValues["engine"] = engine
-	}
-
 	// Build dynamic query
-	baseQuery, baseArgs := buildAdSubCategoriesQuery(adCat, fieldValues, category)
+	baseQuery, baseArgs := buildAdSubCategoriesQuery(adCat, decodedValues, category)
 	if baseQuery == "" {
 		return nil, fmt.Errorf("failed to build query")
 	}

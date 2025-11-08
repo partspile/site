@@ -11,7 +11,6 @@ import (
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/logger"
-	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -59,7 +58,6 @@ func HandleNewAd(c *fiber.Ctx) error {
 func HandleDuplicateAd(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
-	adCat := cookie.GetAdCategory(c)
 
 	adID, err := AdID(c)
 	if err != nil {
@@ -77,40 +75,10 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 		adDetail.SpecData = make(map[string][]string)
 	}
 
-	// Pre-fetch all the dropdown/checkbox data needed for the form
-	makes := spec.GetMakes(adCat)
-	categoryNames := part.GetCategories(adCat)
-
-	// Get years, models, engines from SpecData
-	var years, models, engines []string
-	if yearValues, exists := adDetail.SpecData["year"]; exists {
-		years = yearValues
-	}
-	if modelValues, exists := adDetail.SpecData["model"]; exists {
-		models = modelValues
-	}
-	if engineValues, exists := adDetail.SpecData["engine"]; exists {
-		engines = engineValues
-	}
-
-	// Get part_category from SpecData
-	partCategory := ""
-	if catValues, exists := adDetail.SpecData["part_category"]; exists && len(catValues) > 0 {
-		partCategory = catValues[0]
-	}
-	subcategoryNames := part.GetSubCategories(adCat, partCategory)
-
-	// Get part_subcategory from SpecData
-	partSubcategory := ""
-	if subcatValues, exists := adDetail.SpecData["part_subcategory"]; exists && len(subcatValues) > 0 {
-		partSubcategory = subcatValues[0]
-	}
-
 	csrfToken := local.GetCSRFToken(c)
 
 	return render(c, ui.DuplicateAdPage(
-		userID, userName, csrfToken, c.Path(), makes, categoryNames,
-		*adDetail, years, models, engines, subcategoryNames, partSubcategory, config.MaxImagesPerAd))
+		userID, userName, csrfToken, c.Path(), *adDetail, config.MaxImagesPerAd))
 }
 
 // HandleNewAdSubmission processes the new ad form submission
@@ -284,29 +252,19 @@ func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
 
 // buildMultiSelectFieldNode builds the node for a multi-select field
 func buildMultiSelectFieldNode(fieldName string, values []string) g.Node {
-	switch fieldName {
-	case "year":
-		return ui.YearsSelector(values)
-	case "model":
-		if len(values) == 0 {
-			return ui.ModelsDivEmpty()
-		}
-		return ui.ModelsSelector(values)
-	case "engine":
-		if len(values) == 0 {
-			return ui.EnginesDivEmpty()
-		}
-		return ui.EnginesSelector(values)
-	default:
-		// Generic multi-select - fallback to years selector
-		return ui.YearsSelector(values)
+	// Use generic multi-select component
+	fieldDef, exists := spec.GetFieldDefinition(fieldName)
+	displayName := fieldName
+	if exists {
+		displayName = fieldDef.DisplayName
 	}
+	return ui.GenericMultiSelectField(fieldName, displayName, values)
 }
 
 // buildSingleSelectFieldNode builds the node for a single-select field
 func buildSingleSelectFieldNode(fieldName string, values []string, currentField spec.FieldConfig, allFields []spec.FieldConfig, currentFieldIndex int) g.Node {
-	// For part_category and part_subcategory, render as dropdowns with HTMX triggers
-	if fieldName == "part_category" || fieldName == "part_subcategory" {
+	// For chained single-select fields, render as dropdowns with HTMX triggers
+	if currentField.NextInChain != 0 {
 		// Create dropdown options
 		options := []g.Node{
 			Option(Value(""), g.Text(fmt.Sprintf("Select a %s", getFieldDisplayName(fieldName)))),
@@ -443,24 +401,12 @@ func renderEmptyFieldSelector(c *fiber.Ctx, fieldName string) error {
 
 // renderMultiSelectField renders a multi-select field (checkboxes)
 func renderMultiSelectField(c *fiber.Ctx, fieldName string, values []string) error {
-	// For now, use existing UI functions for backward compatibility
-	switch fieldName {
-	case "year":
-		return render(c, ui.YearsSelector(values))
-	case "model":
-		if len(values) == 0 {
-			return render(c, ui.ModelsDivEmpty())
-		}
-		return render(c, ui.ModelsSelector(values))
-	case "engine":
-		if len(values) == 0 {
-			return render(c, ui.EnginesDivEmpty())
-		}
-		return render(c, ui.EnginesSelector(values))
-	default:
-		// Generic multi-select - TODO: create generic UI component
-		return render(c, ui.YearsSelector(values))
+	fieldDef, exists := spec.GetFieldDefinition(fieldName)
+	displayName := fieldName
+	if exists {
+		displayName = fieldDef.DisplayName
 	}
+	return render(c, ui.GenericMultiSelectField(fieldName, displayName, values))
 }
 
 // renderSingleSelectField renders a single-select field (dropdown)

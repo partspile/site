@@ -12,8 +12,8 @@ import (
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/part"
-	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/spec"
+	"github.com/parts-pile/site/ui"
 )
 
 // decodeAdIDs decodes a base64 string back to a slice of integers
@@ -107,34 +107,12 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 	} else if level == len(fieldConfigs) {
 		// Part category level
 		parentValues := buildParentValuesFromPath(parts, fieldConfigs, level)
-		makeName := parentValues["make"]
-		var year, model, engine string
-		if y, ok := parentValues["year"]; ok {
-			year = y
-		}
-		if m, ok := parentValues["model"]; ok {
-			model = m
-		}
-		if e, ok := parentValues["engine"]; ok {
-			engine = e
-		}
-		children, err = part.GetAdCategories(category, makeName, year, model, engine)
+		children, err = part.GetAdCategories(category, parentValues)
 	} else if level == len(fieldConfigs)+1 {
 		// Part subcategory level
 		parentValues := buildParentValuesFromPath(parts[:len(parts)-1], fieldConfigs, level-1)
-		makeName := parentValues["make"]
-		var year, model, engine string
-		if y, ok := parentValues["year"]; ok {
-			year = y
-		}
-		if m, ok := parentValues["model"]; ok {
-			model = m
-		}
-		if e, ok := parentValues["engine"]; ok {
-			engine = e
-		}
 		partCategory := parts[len(parts)-1]
-		children, err = part.GetAdSubCategories(category, makeName, year, model, engine, partCategory)
+		children, err = part.GetAdSubCategories(category, parentValues, partCategory)
 	} else if level == len(fieldConfigs)+2 {
 		// Ads level
 		ads, err = ad.GetAdsForAll()
@@ -224,34 +202,12 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 	} else if level == len(fieldConfigs) {
 		// Part category level
 		parentValues := buildParentValuesFromPath(parts, fieldConfigs, level)
-		makeName := parentValues["make"]
-		var year, model, engine string
-		if y, ok := parentValues["year"]; ok {
-			year = y
-		}
-		if m, ok := parentValues["model"]; ok {
-			model = m
-		}
-		if e, ok := parentValues["engine"]; ok {
-			engine = e
-		}
-		children, err = part.GetCategoriesForAds(adIDs, makeName, year, model, engine)
+		children, err = part.GetCategoriesForAds(adIDs, parentValues)
 	} else if level == len(fieldConfigs)+1 {
 		// Part subcategory level
 		parentValues := buildParentValuesFromPath(parts[:len(parts)-1], fieldConfigs, level-1)
-		makeName := parentValues["make"]
-		var year, model, engine string
-		if y, ok := parentValues["year"]; ok {
-			year = y
-		}
-		if m, ok := parentValues["model"]; ok {
-			model = m
-		}
-		if e, ok := parentValues["engine"]; ok {
-			engine = e
-		}
 		category := parts[len(parts)-1]
-		children, err = part.GetSubCategoriesForAds(adIDs, makeName, year, model, engine, category)
+		children, err = part.GetSubCategoriesForAds(adIDs, parentValues, category)
 	} else if level == len(fieldConfigs)+2 {
 		// Ads level
 		ads, err = ad.GetAdsForAdIDs(adIDs)

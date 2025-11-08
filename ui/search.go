@@ -3,12 +3,14 @@ package ui
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/spec"
 )
 
 func createAdCategoryItems(activeCat int) []g.Node {
@@ -251,6 +253,31 @@ func BreedFilterOptions(breeds []string) g.Node {
 	// Add breed options
 	for _, breed := range breeds {
 		options = append(options, Option(Value(breed), g.Text(breed)))
+	}
+
+	return g.Group(options)
+}
+
+// GenericFilterOptions returns HTML options for any field filter dropdown
+func GenericFilterOptions(fieldName string, values []string) g.Node {
+	var options []g.Node
+
+	// Get display name for "All" option
+	displayName := fieldName
+	fieldDef, exists := spec.GetFieldDefinition(fieldName)
+	if exists {
+		displayName = fieldDef.DisplayName
+	} else if len(fieldName) > 0 {
+		// Fallback: capitalize first letter
+		displayName = strings.ToUpper(string(fieldName[0])) + fieldName[1:]
+	}
+
+	// Add "All" option first
+	options = append(options, Option(Value(""), g.Text(fmt.Sprintf("All %s", displayName))))
+
+	// Add field value options
+	for _, value := range values {
+		options = append(options, Option(Value(value), g.Text(value)))
 	}
 
 	return g.Group(options)

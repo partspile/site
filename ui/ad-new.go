@@ -39,13 +39,10 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string, f
 		if isFirstInChain {
 			// Render the first field of this chain
 			selected := []string{}
-			var defaultMake string
-			if fieldConfig.Name == "make" {
-				defaultMake = ""
-			}
+			var defaultValue string
 			// Get pre-populated values for this field from the map
 			fieldValues := firstFieldValues[fieldConfig.Name]
-			fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, map[string][]string{}, fieldValues, defaultMake))
+			fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, map[string][]string{}, fieldValues, defaultValue))
 		} else {
 			// Chained field - render empty div for HTMX to populate
 			fieldID := fieldConfig.Name + "Div"
@@ -91,14 +88,7 @@ func DuplicateAdPage(
 	userID int,
 	userName, csrfToken string,
 	path string,
-	makes []string,
-	categories []string,
 	originalAd ad.AdDetail,
-	years []string,
-	models []string,
-	engines []string,
-	subcategoryNames []string,
-	selectedSubcategory string,
 	maxImagesPerAd int,
 ) g.Node {
 	adCat := originalAd.AdCategoryID
@@ -133,14 +123,12 @@ func DuplicateAdPage(
 	firstFieldValues := make(map[string][]string)
 	for _, fieldConfig := range fieldConfigs {
 		if spec.IsFirstInChain(fieldConfig, fieldConfigs) {
-			// Use pre-loaded values if available, otherwise get dynamically
-			if fieldConfig.Name == "make" && len(makes) > 0 {
-				firstFieldValues[fieldConfig.Name] = makes
-			} else if fieldConfig.Name == "part_category" && len(categories) > 0 {
-				firstFieldValues[fieldConfig.Name] = categories
-			} else {
-				// Get values dynamically (this will be empty for duplicate page, but keeps signature consistent)
+			// Get values for this first field (no parent filters)
+			values, err := spec.GetFieldValues(adCat, fieldConfig.Name, map[string]string{})
+			if err != nil {
 				firstFieldValues[fieldConfig.Name] = []string{}
+			} else {
+				firstFieldValues[fieldConfig.Name] = values
 			}
 		}
 	}
@@ -150,10 +138,11 @@ func DuplicateAdPage(
 		if sv, ok := selectedValues[fieldConfig.Name]; ok {
 			selected = sv
 		}
-		var defaultMake string
-		if fieldConfig.Name == "make" {
-			if makeValues, exists := originalAd.SpecData["make"]; exists && len(makeValues) > 0 {
-				defaultMake = makeValues[0]
+		var defaultValue string
+		// Get default value for single-select fields
+		if fieldConfig.QdrantType != "keyword_array" {
+			if fieldValues, exists := originalAd.SpecData[fieldConfig.Name]; exists && len(fieldValues) > 0 {
+				defaultValue = fieldValues[0]
 			}
 		}
 		// Get field values - use pre-loaded for first fields, empty for chained fields
@@ -162,7 +151,7 @@ func DuplicateAdPage(
 			// For standalone fields without pre-loaded values, use empty
 			fieldValues = []string{}
 		}
-		fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, selectedValues, fieldValues, defaultMake))
+		fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, selectedValues, fieldValues, defaultValue))
 	}
 
 	// Add part category/subcategory
@@ -264,7 +253,7 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 	}
 
 	if fieldConfig.QdrantType == "keyword_array" {
-		// Multi-select (checkboxes) - year, model, engine
+		// Multi-select (checkboxes)
 		selected := make(map[string]bool)
 		for _, val := range selectedValues {
 			selected[val] = true
@@ -302,7 +291,7 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 			formGroup(fieldConfig.DisplayName, fieldName, GridContainer4(checkboxes...)),
 		)
 	} else {
-		// Single-select (dropdown) - make, breed, part_category, etc.
+		// Single-select (dropdown)
 		// Use generic selector for all single-select fields
 		options := []g.Node{
 			Option(Value(""), g.Text(fmt.Sprintf("Select a %s", fieldConfig.DisplayName))),
@@ -348,43 +337,6 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 			Select(append(attrs, g.Group(options))...),
 		)
 	}
-}
-
-func makeSelector(makes []string, defaultMake string, nextFieldName string, nextFieldTarget string, clearTargetsScript string) g.Node {
-	makeOptions := []g.Node{}
-	for _, makeName := range makes {
-		attrs := []g.Node{Value(makeName), g.Text(makeName)}
-		if makeName == defaultMake {
-			attrs = append(attrs, Selected())
-		}
-		makeOptions = append(makeOptions, Option(attrs...))
-	}
-
-	attrs := []g.Node{
-		ID("make"),
-		Name("make"),
-		Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
-		Required(),
-	}
-
-	// Add HTMX trigger if there's a next field
-	if nextFieldTarget != "" {
-		attrs = append(attrs,
-			hx.Trigger("change"),
-			hx.Get(fmt.Sprintf("/api/%s", nextFieldName)),
-			hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
-			hx.Include("this"),
-		)
-		if clearTargetsScript != "" {
-			attrs = append(attrs, g.Attr("onchange", fmt.Sprintf("this.checkValidity(); %s", clearTargetsScript)))
-		} else {
-			attrs = append(attrs, g.Attr("onchange", "this.checkValidity()"))
-		}
-	}
-
-	return formGroup("Make", "make",
-		Select(append(attrs, Option(Value(""), g.Text("Select a make")), g.Group(makeOptions))...),
-	)
 }
 
 func imagesInputField(maxImagesPerAd int) g.Node {
@@ -482,78 +434,19 @@ func locationInputField() g.Node {
 	)
 }
 
-func YearsSelector(years []string, selectedYears ...[]string) g.Node {
-	selected := make(map[string]bool)
-	if len(selectedYears) > 0 {
-		for _, year := range selectedYears[0] {
-			selected[year] = true
-		}
-	}
-
+// GenericMultiSelectField creates a generic multi-select field (checkboxes) for any field
+func GenericMultiSelectField(fieldName, displayName string, values []string) g.Node {
+	fieldID := fieldName + "sDiv"
 	checkboxes := []g.Node{}
-	for _, year := range years {
+	for _, value := range values {
 		checkboxes = append(checkboxes,
-			Checkbox("year", year, year, selected[year], false,
-				hx.Trigger("change"),
-				hx.Get("/api/model"),
-				hx.Target("#modelDiv"),
-				hx.Include("[name='make'],[name='year']:checked"),
-				hx.Swap("innerHTML"),
-			),
+			Checkbox(fieldName, value, value, false, false),
 		)
 	}
 	return Div(
-		ID("yearDiv"),
+		ID(fieldID),
 		Class("space-y-2"),
-		formGroup("Years", "year", GridContainer4(checkboxes...)),
-	)
-}
-
-func ModelsSelector(models []string, selectedModels ...[]string) g.Node {
-	selected := make(map[string]bool)
-	if len(selectedModels) > 0 {
-		for _, model := range selectedModels[0] {
-			selected[model] = true
-		}
-	}
-
-	checkboxes := []g.Node{}
-	for _, model := range models {
-		checkboxes = append(checkboxes,
-			Checkbox("model", model, model, selected[model], false,
-				hx.Trigger("change"),
-				hx.Get("/api/engine"),
-				hx.Target("#engineDiv"),
-				hx.Include("[name='make'],[name='year']:checked,[name='model']:checked"),
-				hx.Swap("innerHTML"),
-			),
-		)
-	}
-	return Div(
-		ID("modelDiv"),
-		Class("space-y-2"),
-		formGroup("Models", "model", GridContainer4(checkboxes...)),
-	)
-}
-
-func EnginesSelector(engines []string, selectedEngines ...[]string) g.Node {
-	selected := make(map[string]bool)
-	if len(selectedEngines) > 0 {
-		for _, engine := range selectedEngines[0] {
-			selected[engine] = true
-		}
-	}
-
-	checkboxes := []g.Node{}
-	for _, engine := range engines {
-		checkboxes = append(checkboxes,
-			Checkbox("engine", engine, engine, selected[engine], false),
-		)
-	}
-	return Div(
-		ID("engineDiv"),
-		Class("space-y-2"),
-		formGroup("Engines", "engine", GridContainer4(checkboxes...)),
+		formGroup(displayName, fieldName, GridContainer4(checkboxes...)),
 	)
 }
 
@@ -608,34 +501,6 @@ func SubCategoriesSelector(subCategoryNames []string, selectedSubCategory string
 				Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 				Required(),
 				g.Group(options),
-			),
-		),
-	)
-}
-
-func ModelsDivEmpty() g.Node {
-	return Div(
-		ID("modelsDiv"),
-		Class("space-y-2"),
-		Div(
-			Class("p-4 bg-gray-50 border border-gray-200 rounded-lg"),
-			Div(
-				Class("text-gray-600 text-sm italic"),
-				g.Text("No models available for all selected years"),
-			),
-		),
-	)
-}
-
-func EnginesDivEmpty() g.Node {
-	return Div(
-		ID("enginesDiv"),
-		Class("space-y-2"),
-		Div(
-			Class("p-4 bg-gray-50 border border-gray-200 rounded-lg"),
-			Div(
-				Class("text-gray-600 text-sm italic"),
-				g.Text("No engines available for all selected year-model combinations"),
 			),
 		),
 	)

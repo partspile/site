@@ -23,8 +23,6 @@ func filterControls(adCategory int, params map[string]string) g.Node {
 			Class("grid grid-cols-2 gap-4 mt-4"),
 			locationFilter(params["location"]),
 			radiusFilter(params["radius"]),
-			makeFilter(params["make"]),
-			yearFilter(params["min_year"], params["max_year"]),
 			priceFilter(params["min_price"], params["max_price"]),
 		)
 	}
@@ -58,15 +56,7 @@ func filterControls(adCategory int, params map[string]string) g.Node {
 				filterNodes = append(filterNodes, chainedDropdownFilter(adCategory, fieldConfig, params))
 			} else {
 				// Non-chained field - use static dropdown
-				switch fieldConfig.Name {
-				case "make":
-					filterNodes = append(filterNodes, makeFilter(params["make"]))
-				case "breed":
-					filterNodes = append(filterNodes, breedFilter(params["breed"]))
-				default:
-					// Generic dropdown filter
-					filterNodes = append(filterNodes, genericDropdownFilter(fieldConfig, params[fieldConfig.Name]))
-				}
+				filterNodes = append(filterNodes, genericDropdownFilter(fieldConfig, params[fieldConfig.Name]))
 			}
 		}
 	}
@@ -135,23 +125,6 @@ func radiusFilter(value string) g.Node {
 	)
 }
 
-func makeFilter(value string) g.Node {
-	return Div(
-		Label(Class("block text-sm font-medium mb-1"), g.Text("Make")),
-		Select(
-			Name("make"),
-			ID("makeFilter"),
-			Class("w-full p-2 border rounded-md"),
-			hx.Get("/api/filter-makes"),
-			hx.Trigger("load"),
-			hx.Target("this"),
-			hx.Swap("innerHTML"),
-			Option(Value(""), g.Text("All Makes"), g.If(value == "", Selected())),
-			g.If(value != "", Option(Value(value), g.Text(value), Selected())),
-		),
-	)
-}
-
 func yearFilter(minYear, maxYear string) g.Node {
 	return Div(
 		Label(Class("block text-sm font-medium mb-1"), g.Text("Year Range")),
@@ -177,79 +150,6 @@ func yearFilter(minYear, maxYear string) g.Node {
 				Max("2030"),
 				Value(maxYear),
 			),
-		),
-	)
-}
-
-func modelFilter(adCategory int, params map[string]string) g.Node {
-	value := params["model"]
-	// Build query string for HTMX request with parent field values
-	queryParts := []string{}
-	if make := params["make"]; make != "" {
-		queryParts = append(queryParts, fmt.Sprintf("make=%s", make))
-	}
-	if minYear := params["min_year"]; minYear != "" {
-		queryParts = append(queryParts, fmt.Sprintf("min_year=%s", minYear))
-	}
-	if maxYear := params["max_year"]; maxYear != "" {
-		queryParts = append(queryParts, fmt.Sprintf("max_year=%s", maxYear))
-	}
-	queryStr := ""
-	if len(queryParts) > 0 {
-		queryStr = "?" + strings.Join(queryParts, "&")
-	}
-
-	return Div(
-		Label(Class("block text-sm font-medium mb-1"), g.Text("Model")),
-		Select(
-			Name("model"),
-			ID("modelFilter"),
-			Class("w-full p-2 border rounded-md"),
-			hx.Get(fmt.Sprintf("/api/filter-models%s", queryStr)),
-			hx.Trigger("load"),
-			hx.Target("this"),
-			hx.Swap("innerHTML"),
-			hx.Include("#searchWidget"),
-			Option(Value(""), g.Text("All Models"), g.If(value == "", Selected())),
-			g.If(value != "", Option(Value(value), g.Text(value), Selected())),
-		),
-	)
-}
-
-func engineFilter(adCategory int, params map[string]string) g.Node {
-	value := params["engine"]
-	// Build query string for HTMX request with parent field values
-	queryParts := []string{}
-	if make := params["make"]; make != "" {
-		queryParts = append(queryParts, fmt.Sprintf("make=%s", make))
-	}
-	if minYear := params["min_year"]; minYear != "" {
-		queryParts = append(queryParts, fmt.Sprintf("min_year=%s", minYear))
-	}
-	if maxYear := params["max_year"]; maxYear != "" {
-		queryParts = append(queryParts, fmt.Sprintf("max_year=%s", maxYear))
-	}
-	if model := params["model"]; model != "" {
-		queryParts = append(queryParts, fmt.Sprintf("model=%s", model))
-	}
-	queryStr := ""
-	if len(queryParts) > 0 {
-		queryStr = "?" + strings.Join(queryParts, "&")
-	}
-
-	return Div(
-		Label(Class("block text-sm font-medium mb-1"), g.Text("Engine")),
-		Select(
-			Name("engine"),
-			ID("engineFilter"),
-			Class("w-full p-2 border rounded-md"),
-			hx.Get(fmt.Sprintf("/api/filter-engines%s", queryStr)),
-			hx.Trigger("load"),
-			hx.Target("this"),
-			hx.Swap("innerHTML"),
-			hx.Include("#searchWidget"),
-			Option(Value(""), g.Text("All Engines"), g.If(value == "", Selected())),
-			g.If(value != "", Option(Value(value), g.Text(value), Selected())),
 		),
 	)
 }
@@ -346,7 +246,7 @@ func applyFilters() g.Node {
 // chainedDropdownFilter creates a dynamic dropdown filter that updates based on parent field selections
 func chainedDropdownFilter(adCategory int, fieldConfig spec.FieldConfig, params map[string]string) g.Node {
 	value := params[fieldConfig.Name]
-	
+
 	// Build query string with parent field values (only fields that come before this one in the chain)
 	queryParts := []string{}
 	fieldConfigs, err := spec.GetCategoryFields(adCategory)
@@ -359,7 +259,7 @@ func chainedDropdownFilter(adCategory int, fieldConfig spec.FieldConfig, params 
 				break
 			}
 		}
-		
+
 		if currentIndex >= 0 {
 			// Add parent field values to query
 			for i := 0; i < currentIndex; i++ {
@@ -383,30 +283,22 @@ func chainedDropdownFilter(adCategory int, fieldConfig spec.FieldConfig, params 
 			}
 		}
 	}
-	
+
 	queryStr := ""
 	if len(queryParts) > 0 {
 		queryStr = "?" + strings.Join(queryParts, "&")
 	}
-	
-	// Use existing handlers for model/engine, or generic handler
-	endpoint := fmt.Sprintf("/api/filter-%s", fieldConfig.Name)
-	if fieldConfig.Name == "model" {
-		endpoint = "/api/filter-models"
-	} else if fieldConfig.Name == "engine" {
-		endpoint = "/api/filter-engines"
-	} else {
-		// Generic handler - would need to be created
-		endpoint = fmt.Sprintf("/api/%s", fieldConfig.Name)
-	}
-	
+
+	// Use generic handler
+	endpoint := fmt.Sprintf("/api/filter-field/%s", fieldConfig.Name)
+
 	return Div(
 		Label(Class("block text-sm font-medium mb-1"), g.Text(fieldConfig.DisplayName)),
 		Select(
 			Name(fieldConfig.Name),
-			ID(fieldConfig.Name + "Filter"),
+			ID(fieldConfig.Name+"Filter"),
 			Class("w-full p-2 border rounded-md"),
-			hx.Get(endpoint + queryStr),
+			hx.Get(endpoint+queryStr),
 			hx.Trigger("load, change from:#searchWidget"),
 			hx.Target("this"),
 			hx.Swap("innerHTML"),
@@ -421,15 +313,15 @@ func chainedDropdownFilter(adCategory int, fieldConfig spec.FieldConfig, params 
 func genericRangeFilter(fieldConfig spec.FieldConfig, minValue, maxValue string) g.Node {
 	minKey := "min_" + fieldConfig.Name
 	maxKey := "max_" + fieldConfig.Name
-	
+
 	return Div(
-		Label(Class("block text-sm font-medium mb-1"), g.Text(fieldConfig.DisplayName + " Range")),
+		Label(Class("block text-sm font-medium mb-1"), g.Text(fieldConfig.DisplayName+" Range")),
 		Div(
 			Class("flex gap-2 flex-nowrap"),
 			Input(
 				Type("number"),
 				Name(minKey),
-				ID(minKey + "Filter"),
+				ID(minKey+"Filter"),
 				Class("w-24 flex-shrink-0 p-2 border rounded-md"),
 				Placeholder("Min"),
 				Value(minValue),
@@ -437,7 +329,7 @@ func genericRangeFilter(fieldConfig spec.FieldConfig, minValue, maxValue string)
 			Input(
 				Type("number"),
 				Name(maxKey),
-				ID(maxKey + "Filter"),
+				ID(maxKey+"Filter"),
 				Class("w-24 flex-shrink-0 p-2 border rounded-md"),
 				Placeholder("Max"),
 				Value(maxValue),
@@ -452,7 +344,7 @@ func genericDropdownFilter(fieldConfig spec.FieldConfig, value string) g.Node {
 		Label(Class("block text-sm font-medium mb-1"), g.Text(fieldConfig.DisplayName)),
 		Select(
 			Name(fieldConfig.Name),
-			ID(fieldConfig.Name + "Filter"),
+			ID(fieldConfig.Name+"Filter"),
 			Class("w-full p-2 border rounded-md"),
 			hx.Get(fmt.Sprintf("/api/filter-%s", fieldConfig.Name)),
 			hx.Trigger("load"),
