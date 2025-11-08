@@ -247,6 +247,7 @@ func main() {
 	app.Get("/messages/sse", h.AuthRequired, h.HandleSSE)
 	app.Get("/messages/:id/sse-update", h.AuthRequired, h.HandleSSEConversationUpdate)
 	app.Post("/messages/:id/send", h.AuthRequired, h.HandleSendMessage)
+	app.Post("/messages/:id/ping", h.AuthRequired, h.HandlePing)
 	app.Get("/messages/start/:adID", h.AuthRequired, h.HandleStartConversation)
 	api.Get("/messages/:action", h.AuthRequired, h.HandleMessagesAPI)
 

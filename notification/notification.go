@@ -133,3 +133,69 @@ func getAdDetails(adID int) (struct{ Title string }, error) {
 	}
 	return struct{ Title string }{Title: ads[0].Title}, nil
 }
+
+// NotifyPing sends a ping notification
+func (n *NotificationService) NotifyPing(conversationID int, senderID, recipientID int) error {
+	conversation, err := messaging.GetConversationByID(conversationID)
+	if err != nil {
+		return fmt.Errorf("failed to get conversation: %w", err)
+	}
+
+	sender, _, found := user.GetUserByID(senderID)
+	if !found {
+		return fmt.Errorf("sender not found")
+	}
+
+	recipient, _, found := user.GetUserByID(recipientID)
+	if !found {
+		return fmt.Errorf("recipient not found")
+	}
+
+	adDetails, err := getAdDetails(conversation.AdID)
+	if err != nil {
+		return fmt.Errorf("failed to get ad details: %w", err)
+	}
+
+	// Ping notification message
+	message := fmt.Sprintf("%s pinged you about '%s'. View at: %s/messages/%d",
+		sender.Name, adDetails.Title, config.BaseURL, conversationID)
+
+	switch recipient.NotificationMethod {
+	case user.NotificationMethodSMS:
+		return sms.SendMessage(recipient.Phone, message)
+	case user.NotificationMethodEmail:
+		if recipient.EmailAddress == nil {
+			return fmt.Errorf("recipient has email notifications enabled but no email address")
+		}
+		return n.emailService.SendPingEmail(*recipient.EmailAddress, sender.Name, adDetails.Title, conversationID)
+	default:
+		return nil
+	}
+}
+
+// NotifySummary sends a summary notification of unread conversations
+func (n *NotificationService) NotifySummary(userID int, conversations []messaging.Conversation) error {
+	recipient, _, found := user.GetUserByID(userID)
+	if !found {
+		return fmt.Errorf("recipient not found")
+	}
+
+	if len(conversations) == 0 {
+		return nil // No conversations to summarize
+	}
+
+	message := fmt.Sprintf("You have new messages in %d conversation(s). View at: %s/messages",
+		len(conversations), config.BaseURL)
+
+	switch recipient.NotificationMethod {
+	case user.NotificationMethodSMS:
+		return sms.SendMessage(recipient.Phone, message)
+	case user.NotificationMethodEmail:
+		if recipient.EmailAddress == nil {
+			return fmt.Errorf("recipient has email notifications enabled but no email address")
+		}
+		return n.emailService.SendSummaryEmail(*recipient.EmailAddress, len(conversations))
+	default:
+		return nil
+	}
+}

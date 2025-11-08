@@ -174,3 +174,81 @@ func (m *MockEmailService) GetSentEmails() []struct {
 } {
 	return m.sentEmails
 }
+
+// SendPingEmail sends a ping notification email
+func (s *EmailService) SendPingEmail(to, senderName, adTitle string, conversationID int) error {
+	subject := fmt.Sprintf("%s pinged you about '%s'", senderName, adTitle)
+
+	htmlBody := fmt.Sprintf(`
+<html>
+<head>
+    <title>Ping Notification</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .button { display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; font-size: 12px; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2 style="margin: 0; color: #495057;">You've been pinged on Parts Pile</h2>
+        </div>
+        
+        <p><strong>%s</strong> pinged you about <strong>%s</strong>.</p>
+        
+        <p>They're waiting for your response. Check your messages to continue the conversation.</p>
+        
+        <a href="%s/messages/%d" class="button">View Conversation</a>
+        
+        <div class="footer">
+            <p>This is an automated notification from Parts Pile.</p>
+            <p>You can manage your notification preferences in your account settings.</p>
+        </div>
+    </div>
+</body>
+</html>`, senderName, adTitle, config.BaseURL, conversationID)
+
+	return s.SendEmail(to, subject, htmlBody)
+}
+
+// SendSummaryEmail sends a summary notification email
+func (s *EmailService) SendSummaryEmail(to string, conversationCount int) error {
+	subject := fmt.Sprintf("You have new messages in %d conversation(s)", conversationCount)
+
+	htmlBody := fmt.Sprintf(`
+<html>
+<head>
+    <title>Message Summary</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .button { display: inline-block; background-color: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; font-size: 12px; color: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2 style="margin: 0; color: #495057;">Message Summary</h2>
+        </div>
+        
+        <p>You have new messages in <strong>%d conversation(s)</strong>.</p>
+        
+        <p>Check your messages to see what you've missed.</p>
+        
+        <a href="%s/messages" class="button">View Messages</a>
+        
+        <div class="footer">
+            <p>This is an automated notification from Parts Pile.</p>
+            <p>You can manage your notification preferences in your account settings.</p>
+        </div>
+    </div>
+</body>
+</html>`, conversationCount, config.BaseURL)
+
+	return s.SendEmail(to, subject, htmlBody)
+}

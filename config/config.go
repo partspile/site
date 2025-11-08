@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/base64"
 	"os"
 	"time"
 
@@ -91,6 +92,12 @@ var (
 	// JWT configuration
 	JWTSecret = []byte(getEnvWithDefault("JWT_SECRET", ""))
 
+	// Message encryption configuration
+	MessageEncryptionKey []byte
+
+	// User data encryption configuration
+	UserEncryptionKey []byte
+
 	// Server configuration
 	ServerPort = getEnvWithDefault("PORT", "8000")
 	BaseURL    = getEnvWithDefault("BASE_URL", "http://localhost:8000")
@@ -134,6 +141,42 @@ func SecurityCheck() {
 
 	// Log security status
 	logger.Info("JWT secret configured", "length", len(JWTSecret))
+
+	// Load message encryption key from environment variable
+	keyStr := os.Getenv("MESSAGE_ENCRYPTION_KEY")
+	if keyStr == "" {
+		logger.Fatal("Security configuration error",
+			"error", "MESSAGE_ENCRYPTION_KEY environment variable is required but not set")
+	}
+
+	// Decode base64 key from environment
+	key, err := base64.StdEncoding.DecodeString(keyStr)
+	if err != nil {
+		logger.Fatal("Invalid MESSAGE_ENCRYPTION_KEY format", "error", err)
+	}
+	if len(key) != 32 {
+		logger.Fatal("MESSAGE_ENCRYPTION_KEY must be 32 bytes (256 bits)")
+	}
+	MessageEncryptionKey = key
+	logger.Info("Message encryption key configured", "length", len(MessageEncryptionKey))
+
+	// Load user data encryption key from environment variable
+	userKeyStr := os.Getenv("USER_ENCRYPTION_KEY")
+	if userKeyStr == "" {
+		logger.Fatal("Security configuration error",
+			"error", "USER_ENCRYPTION_KEY environment variable is required but not set")
+	}
+
+	// Decode base64 key from environment
+	userKey, err := base64.StdEncoding.DecodeString(userKeyStr)
+	if err != nil {
+		logger.Fatal("Invalid USER_ENCRYPTION_KEY format", "error", err)
+	}
+	if len(userKey) != 32 {
+		logger.Fatal("USER_ENCRYPTION_KEY must be 32 bytes (256 bits)")
+	}
+	UserEncryptionKey = userKey
+	logger.Info("User encryption key configured", "length", len(UserEncryptionKey))
 
 	// Warn about insecure defaults in production
 	if len(BaseURL) >= 5 && BaseURL[:5] != "https" &&

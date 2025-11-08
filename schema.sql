@@ -121,21 +121,30 @@ CREATE INDEX idx_phoneverification_expires ON PhoneVerification(expires_at);
 -- User tables
 CREATE TABLE User (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE CHECK (length(name) > 0),
-    phone TEXT NOT NULL UNIQUE,
+    encrypted_name BLOB NOT NULL,
+    name_nonce BLOB NOT NULL,
+    name_hash TEXT NOT NULL UNIQUE,
+    encrypted_phone BLOB NOT NULL,
+    phone_nonce BLOB NOT NULL,
+    phone_hash TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     password_salt TEXT NOT NULL,
     password_algo TEXT NOT NULL DEFAULT 'argon2id',
     phone_verified INTEGER NOT NULL DEFAULT 0,
     verification_code TEXT NOT NULL DEFAULT '',
     notification_method TEXT NOT NULL DEFAULT 'sms',
-    email_address TEXT NOT NULL DEFAULT '',
+    encrypted_email_address BLOB,
+    email_address_nonce BLOB,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     is_admin INTEGER NOT NULL DEFAULT 0,
     sms_opted_out INTEGER NOT NULL DEFAULT 0,
+    summary_notifications_enabled INTEGER DEFAULT 0,
+    summary_notifications_frequency TEXT DEFAULT 'daily',
     deleted_at DATETIME
 );
 CREATE INDEX idx_user_deleted_at ON User(deleted_at);
+CREATE INDEX idx_user_name_hash ON User(name_hash);
+CREATE INDEX idx_user_phone_hash ON User(phone_hash);
 
 -- Ad tables
 CREATE TABLE Ad (
@@ -201,6 +210,10 @@ CREATE TABLE Conversation (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     user1_read BOOLEAN DEFAULT FALSE,
     user2_read BOOLEAN DEFAULT FALSE,
+    user1_first_msg_notified INTEGER DEFAULT 0,
+    user2_first_msg_notified INTEGER DEFAULT 0,
+    pinged_by_user_id INTEGER REFERENCES User(id),
+    pinged_at DATETIME,
     UNIQUE (user1_id, user2_id, ad_id)
 );
 CREATE INDEX idx_conversation_user1_id ON Conversation(user1_id);
@@ -212,7 +225,8 @@ CREATE TABLE Message (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     conversation_id INTEGER NOT NULL REFERENCES Conversation(id),
     sender_id INTEGER NOT NULL REFERENCES User(id),
-    content TEXT NOT NULL,
+    encrypted_content BLOB NOT NULL,
+    nonce BLOB NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     read_at DATETIME
 );

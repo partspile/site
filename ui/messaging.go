@@ -75,7 +75,7 @@ func MessagesPageWithExpanded(userID int, userName, csrfToken string, conversati
 					),
 				),
 				g.If(len(conversations) > 0,
-					ConversationsListWithExpanded(conversations, userID, userName, expandedConversation, expandedMessages),
+					ConversationsListWithExpanded(conversations, userID, userName, expandedConversation, expandedMessages, csrfToken),
 				),
 			),
 		},
@@ -96,12 +96,12 @@ func ConversationsList(conversations []messaging.Conversation, currentUserID int
 }
 
 // ConversationsListWithExpanded renders the list of conversations with one pre-expanded
-func ConversationsListWithExpanded(conversations []messaging.Conversation, userID int, userName string, expandedConversation *messaging.Conversation, expandedMessages []messaging.Message) g.Node {
+func ConversationsListWithExpanded(conversations []messaging.Conversation, userID int, userName string, expandedConversation *messaging.Conversation, expandedMessages []messaging.Message, csrfToken string) g.Node {
 	var conversationNodes []g.Node
 	for _, conv := range conversations {
 		if expandedConversation != nil && conv.ID == expandedConversation.ID {
 			// Render the expanded conversation
-			conversationNodes = append(conversationNodes, ExpandedConversation(userID, userName, conv, expandedMessages))
+			conversationNodes = append(conversationNodes, ExpandedConversation(userID, userName, conv, expandedMessages, csrfToken))
 		} else {
 			// Render the collapsed conversation
 			conversationNodes = append(conversationNodes, ConversationListItem(conv, userID))
@@ -176,11 +176,38 @@ func ConversationListItem(conv messaging.Conversation, currentUserID int) g.Node
 }
 
 // ExpandedConversation renders an expanded conversation view within the list
-func ExpandedConversation(userID int, userName string, conversation messaging.Conversation, messages []messaging.Message) g.Node {
+func ExpandedConversation(userID int, userName string, conversation messaging.Conversation, messages []messaging.Message, csrfToken string) g.Node {
 	// Determine the other participant's name
 	otherUserName := conversation.User1Name
 	if userID == conversation.User1ID {
 		otherUserName = conversation.User2Name
+	}
+
+	// Check if ping is already active (prevent showing button if user already pinged)
+	pingButton := g.Node(nil)
+	if conversation.PingedByUserID == nil || *conversation.PingedByUserID != userID {
+		// Show active ping button
+		pingButton = Form(
+			Method("POST"),
+			Action(fmt.Sprintf("/messages/%d/ping", conversation.ID)),
+			hx.Post(fmt.Sprintf("/messages/%d/ping", conversation.ID)),
+			hx.Target(fmt.Sprintf("#conversation-%d", conversation.ID)),
+			hx.Swap("outerHTML"),
+			hxHeadersCSRFToken(csrfToken),
+			Button(
+				Type("submit"),
+				Class("px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"),
+				g.Text("Ping"),
+			),
+		)
+	} else {
+		// Ping already sent - show disabled state
+		pingButton = Button(
+			Type("button"),
+			Class("px-3 py-1 text-sm bg-gray-300 text-gray-600 rounded"),
+			Disabled(),
+			g.Text("Ping Sent"),
+		)
 	}
 
 	return Div(
@@ -203,20 +230,24 @@ func ExpandedConversation(userID int, userName string, conversation messaging.Co
 						g.Text(fmt.Sprintf("Re: %s", conversation.AdTitle)),
 					),
 				),
-				Button(
-					Type("button"),
-					Class("bg-white border-2 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-gray-100 focus:outline-none cursor-pointer"),
-					hx.Get(fmt.Sprintf("/messages/%d/collapse", conversation.ID)),
-					hx.Target(fmt.Sprintf("#conversation-%d", conversation.ID)),
-					hx.Swap("outerHTML"),
-					Title("Close conversation"),
-					icon("/images/close.svg", "Close", "w-6 h-6"),
+				Div(
+					Class("flex items-center gap-2"),
+					pingButton,
+					Button(
+						Type("button"),
+						Class("bg-white border-2 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-gray-100 focus:outline-none cursor-pointer"),
+						hx.Get(fmt.Sprintf("/messages/%d/collapse", conversation.ID)),
+						hx.Target(fmt.Sprintf("#conversation-%d", conversation.ID)),
+						hx.Swap("outerHTML"),
+						Title("Close conversation"),
+						icon("/images/close.svg", "Close", "w-6 h-6"),
+					),
 				),
 			),
 			Div(
 				Class("bg-white rounded-lg border h-96 flex flex-col"),
 				MessagesList(messages, userID),
-				MessageForm(conversation.ID),
+				MessageForm(conversation.ID, csrfToken),
 			),
 		),
 	)
@@ -279,12 +310,13 @@ func MessageItem(msg messaging.Message, currentUserID int) g.Node {
 }
 
 // MessageForm renders the form for sending new messages
-func MessageForm(conversationID int) g.Node {
+func MessageForm(conversationID int, csrfToken string) g.Node {
 	return Form(
 		Class("flex gap-3 p-4 bg-white border-t"),
 		hx.Post(fmt.Sprintf("/messages/%d/send", conversationID)),
 		hx.Target(fmt.Sprintf("#conversation-%d", conversationID)),
 		hx.Swap("outerHTML"),
+		hxHeadersCSRFToken(csrfToken),
 		Input(
 			Type("text"),
 			Name("message"),
@@ -300,7 +332,7 @@ func MessageForm(conversationID int) g.Node {
 }
 
 // ModalMessagingInterface renders a messaging interface specifically for modal display
-func ModalMessagingInterface(userID int, userName string, ad ad.Ad, conversation messaging.Conversation, messages []messaging.Message) g.Node {
+func ModalMessagingInterface(userID int, userName string, ad ad.Ad, conversation messaging.Conversation, messages []messaging.Message, csrfToken string) g.Node {
 	// Determine the other participant's name
 	otherUserName := conversation.User1Name
 	if userID == conversation.User1ID {
@@ -346,7 +378,7 @@ func ModalMessagingInterface(userID int, userName string, ad ad.Ad, conversation
 					),
 				),
 			),
-			ModalMessageForm(conversation.ID, ad.ID),
+			ModalMessageForm(conversation.ID, ad.ID, csrfToken),
 		),
 	)
 }
@@ -389,12 +421,13 @@ func ModalMessageItem(msg messaging.Message, currentUserID int) g.Node {
 }
 
 // ModalMessageForm renders the form for sending new messages in the modal interface
-func ModalMessageForm(conversationID int, adID int) g.Node {
+func ModalMessageForm(conversationID int, adID int, csrfToken string) g.Node {
 	return Form(
 		Class("flex gap-2"),
 		hx.Post(fmt.Sprintf("/messages/%d/send?context=modal", conversationID)),
 		hx.Target(fmt.Sprintf("#modal-conversation-%d", conversationID)),
 		hx.Swap("outerHTML"),
+		hxHeadersCSRFToken(csrfToken),
 		Input(
 			Type("text"),
 			Name("message"),

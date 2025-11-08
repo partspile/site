@@ -15,6 +15,7 @@ import (
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/password"
+	"github.com/parts-pile/site/user"
 )
 
 type MakeYearModel map[string]map[string]map[string][]string
@@ -24,6 +25,9 @@ func main() {
 	if err := logger.Init(config.LogLevel, config.LogFormat, config.LogFile); err != nil {
 		logger.Fatal("Failed to initialize logger", "error", err)
 	}
+
+	// Validate security configuration (initializes encryption key)
+	config.SecurityCheck()
 
 	parentFile := "cmd/rebuild_db/parent.json"
 	makeParentFile := "cmd/rebuild_db/make-parent.json"
@@ -250,16 +254,66 @@ func main() {
 			logger.Warn("Failed to hash password for user", "name", u.Name, "error", err)
 			continue
 		}
-		_, err = database.Exec(`INSERT INTO User (name, phone,
+		
+		// Compute hashes for lookups
+		nameHash := user.HashForLookup(u.Name)
+		phoneHash := user.HashForLookup(u.Phone)
+		
+		// Encrypt with placeholder ID (0) - we'll re-encrypt with real ID after insert
+		encryptedName, nameNonce, err := user.EncryptName(0, u.Name)
+		if err != nil {
+			logger.Warn("Failed to encrypt name for user", "name", u.Name, "error", err)
+			continue
+		}
+		encryptedPhone, phoneNonce, err := user.EncryptPhone(0, u.Phone)
+		if err != nil {
+			logger.Warn("Failed to encrypt phone for user", "name", u.Name, "error", err)
+			continue
+		}
+		
+		// Insert user with encrypted data
+		res, err := database.Exec(`INSERT INTO User (encrypted_name, name_nonce, name_hash, encrypted_phone, phone_nonce, phone_hash,
 			password_hash, password_salt, password_algo, phone_verified,
-			verification_code, notification_method, email_address, is_admin)
-			VALUES (?, ?, ?, ?, ?, 0, '', 'sms', '', ?)`,
-			u.Name, u.Phone, hash, salt, "argon2id", u.IsAdmin)
+			verification_code, notification_method, is_admin)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '', 'sms', ?)`,
+			encryptedName, nameNonce, nameHash, encryptedPhone, phoneNonce, phoneHash, hash, salt, "argon2id", u.IsAdmin)
 		if err != nil {
 			logger.Warn("Failed to insert user", "name", u.Name, "error", err)
-		} else {
-			userCount++
+			continue
 		}
+		
+		// Get the user ID and re-encrypt with the real ID
+		userID64, _ := res.LastInsertId()
+		userID := int(userID64)
+		
+		// Re-encrypt with the real user ID
+		encryptedName, nameNonce, err = user.EncryptName(userID, u.Name)
+		if err != nil {
+			logger.Warn("Failed to re-encrypt name for user", "name", u.Name, "error", err)
+			continue
+		}
+		encryptedPhone, phoneNonce, err = user.EncryptPhone(userID, u.Phone)
+		if err != nil {
+			logger.Warn("Failed to re-encrypt phone for user", "name", u.Name, "error", err)
+			continue
+		}
+		
+		// Update with properly encrypted data
+		_, err = database.Exec(`UPDATE User SET encrypted_name = ?, name_nonce = ?, encrypted_phone = ?, phone_nonce = ? WHERE id = ?`,
+			encryptedName, nameNonce, encryptedPhone, phoneNonce, userID)
+		if err != nil {
+			logger.Warn("Failed to update encrypted data for user", "name", u.Name, "error", err)
+			continue
+		}
+		
+		// Initialize rock inventory
+		_, err = database.Exec(`INSERT INTO UserRock (user_id, rock_count) VALUES (?, 3)`, userID)
+		if err != nil {
+			logger.Warn("Failed to initialize rock inventory for user", "name", u.Name, "error", err)
+			continue
+		}
+		
+		userCount++
 	}
 	logger.Info("Inserted Users", "count", userCount)
 

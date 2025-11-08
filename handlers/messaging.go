@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/messaging"
@@ -80,7 +81,8 @@ func HandleExpandConversation(c *fiber.Ctx) error {
 		return c.Status(500).SendString("Failed to load messages")
 	}
 
-	component := ui.ExpandedConversation(userID, userName, conversation, messages)
+	csrfToken := local.GetCSRFToken(c)
+	component := ui.ExpandedConversation(userID, userName, conversation, messages, csrfToken)
 	return render(c, component)
 }
 
@@ -167,8 +169,8 @@ func HandleSendMessage(c *fiber.Ctx) error {
 		return render(c, ui.ErrorPage(400, "Message cannot be empty", userID, userName, csrfToken))
 	}
 
-	// Add message to conversation
-	_, err = messaging.AddMessage(conversationID, userID, content)
+	// Add message to conversation (with encryption)
+	messageID, shouldNotify, err := messaging.AddMessage(conversationID, userID, content)
 	if err != nil {
 		return render(c, ui.ErrorPage(500, "Failed to send message", userID, userName, csrfToken))
 	}
@@ -179,20 +181,37 @@ func HandleSendMessage(c *fiber.Ctx) error {
 		recipientID = conversation.User2ID
 	}
 
-	// Send notification to recipient
-	notificationService, err := notification.NewNotificationService()
-	if err != nil {
-		// Log error but don't fail the request
-		logger.Error("Failed to create notification service",
-			"error", err)
-	} else {
-		go func() {
-			err := notificationService.NotifyNewMessage(conversationID, userID, recipientID, content)
-			if err != nil {
-				logger.Error("Failed to send notification",
-					"error", err)
-			}
-		}()
+	// Send notification ONLY if this is the first message from sender
+	if shouldNotify {
+		notificationService, err := notification.NewNotificationService()
+		if err != nil {
+			logger.Error("Failed to create notification service", "error", err)
+		} else {
+			go func() {
+				// Server can decrypt for notification (server-side encryption)
+				// Get encrypted message from database to decrypt
+				var encryptedContent, nonce string
+				err := db.QueryRow(`
+					SELECT encrypted_content, nonce
+					FROM Message
+					WHERE id = ?
+				`, messageID).Scan(&encryptedContent, &nonce)
+				if err != nil {
+					logger.Error("Failed to get message for notification", "error", err)
+					return
+				}
+
+				plaintext, err := messaging.DecryptMessage(conversationID, encryptedContent, nonce)
+				if err != nil {
+					logger.Error("Failed to decrypt for notification", "error", err)
+					plaintext = "[New message]" // Fallback
+				}
+				err = notificationService.NotifyNewMessage(conversationID, userID, recipientID, plaintext)
+				if err != nil {
+					logger.Error("Failed to send notification", "error", err)
+				}
+			}()
+		}
 	}
 
 	// Get updated messages
@@ -215,7 +234,7 @@ func HandleSendMessage(c *fiber.Ctx) error {
 		if err != nil {
 			return render(c, ui.ErrorPage(500, "Failed to load updated conversation", userID, userName, csrfToken))
 		}
-		return render(c, ui.ExpandedConversation(userID, userName, updatedConversation, updatedMessages))
+		return render(c, ui.ExpandedConversation(userID, userName, updatedConversation, updatedMessages, csrfToken))
 	}
 }
 
@@ -260,7 +279,7 @@ func HandleModalMessaging(c *fiber.Ctx) error {
 	}
 
 	// Return the modal messaging interface
-	return render(c, ui.ModalMessagingInterface(userID, userName, *adObj, conversation, messages))
+	return render(c, ui.ModalMessagingInterface(userID, userName, *adObj, conversation, messages, csrfToken))
 }
 
 // HandleMessagesAPI handles AJAX requests for messages
@@ -414,7 +433,61 @@ func HandleMessageModal(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to load messages")
 	}
 
+	csrfToken := local.GetCSRFToken(c)
 	// Return the complete modal with conversation content
-	conversationContent := ui.ModalMessagingInterface(userID, userName, *a, conversation, messages)
+	conversationContent := ui.ModalMessagingInterface(userID, userName, *a, conversation, messages, csrfToken)
 	return render(c, ui.MessageModal(*a, conversationContent))
+}
+
+// HandlePing handles ping requests
+func HandlePing(c *fiber.Ctx) error {
+	userID := local.GetUserID(c)
+	conversationID, err := strconv.Atoi(c.Params("id"))
+	if err != nil {
+		return c.Status(400).SendString("Invalid conversation ID")
+	}
+
+	// Verify user is part of conversation
+	conv, err := messaging.GetConversationWithDetails(conversationID)
+	if err != nil {
+		return c.Status(404).SendString("Conversation not found")
+	}
+
+	if conv.User1ID != userID && conv.User2ID != userID {
+		return c.Status(403).SendString("Access denied")
+	}
+
+	// Check if ping is already active (prevent abuse)
+	if conv.PingedByUserID != nil && *conv.PingedByUserID == userID {
+		return c.Status(400).SendString("Ping already sent. Wait for recipient to read conversation.")
+	}
+
+	// Send ping
+	err = messaging.HandlePing(conversationID, userID)
+	if err != nil {
+		return c.Status(500).SendString("Failed to send ping")
+	}
+
+	// Determine recipient ID
+	recipientID := conv.User1ID
+	if userID == conv.User1ID {
+		recipientID = conv.User2ID
+	}
+
+	// Send ping notification (async)
+	go func() {
+		notificationService, err := notification.NewNotificationService()
+		if err != nil {
+			logger.Error("Failed to create notification service for ping", "error", err)
+			return
+		}
+
+		err = notificationService.NotifyPing(conversationID, userID, recipientID)
+		if err != nil {
+			logger.Error("Failed to send ping notification", "error", err)
+		}
+	}()
+
+	// Return success (HTMX can update UI to show ping sent)
+	return c.SendString("Ping sent")
 }
