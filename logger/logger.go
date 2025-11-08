@@ -95,8 +95,20 @@ func replaceAttr(groups []string, a slog.Attr) slog.Attr {
 		if level, ok := a.Value.Any().(slog.Level); ok {
 			// Format as [LEVEL] for compactness
 			levelStr := level.String()
-			if len(levelStr) > 4 {
-				levelStr = levelStr[:4] // Truncate to 4 chars if needed
+			// Map slog levels to our preferred format
+			switch level {
+			case slog.LevelDebug:
+				levelStr = "DEBUG"
+			case slog.LevelInfo:
+				levelStr = "INFO"
+			case slog.LevelWarn:
+				levelStr = "WARN"
+			case slog.LevelError:
+				levelStr = "ERRO"
+			default:
+				if len(levelStr) > 4 {
+					levelStr = levelStr[:4] // Truncate to 4 chars if needed
+				}
 			}
 			a.Value = slog.StringValue("[" + levelStr + "]")
 		}
@@ -195,6 +207,7 @@ const (
 	colorRed    = "\033[31m"
 	colorYellow = "\033[33m"
 	colorBlue   = "\033[34m"
+	colorGreen  = "\033[32m"
 	colorGray   = "\033[90m"
 )
 
@@ -215,10 +228,10 @@ type colorWriter struct {
 var (
 	// Regex patterns to match log level indicators
 	levelPatterns = map[string]*regexp.Regexp{
-		"ERRO": regexp.MustCompile(`\bl="\[ERRO\]"`),
-		"WARN": regexp.MustCompile(`\bl="\[WARN\]"`),
-		"INFO": regexp.MustCompile(`\bl="\[INFO\]"`),
-		"DEBU": regexp.MustCompile(`\bl="\[DEBU\]"`),
+		"ERRO":  regexp.MustCompile(`\bl="\[ERRO\]"`),
+		"WARN":  regexp.MustCompile(`\bl="\[WARN\]"`),
+		"INFO":  regexp.MustCompile(`\bl="\[INFO\]"`),
+		"DEBUG": regexp.MustCompile(`\bl="\[DEBUG\]"`),
 	}
 )
 
@@ -230,13 +243,13 @@ func (w *colorWriter) Write(p []byte) (n int, err error) {
 	output = levelPatterns["ERRO"].ReplaceAllString(output, `l=`+colorRed+`[ERRO]`+colorReset)
 	output = levelPatterns["WARN"].ReplaceAllString(output, `l=`+colorYellow+`[WARN]`+colorReset)
 	output = levelPatterns["INFO"].ReplaceAllString(output, `l=`+colorBlue+`[INFO]`+colorReset)
-	output = levelPatterns["DEBU"].ReplaceAllString(output, `l=`+colorGray+`[DEBU]`+colorReset)
+	output = levelPatterns["DEBUG"].ReplaceAllString(output, `l=`+colorGreen+`[DEBUG]`+colorReset)
 
 	// Also handle unquoted versions (in case handler doesn't quote)
 	output = strings.ReplaceAll(output, ` l=[ERRO] `, ` l=`+colorRed+`[ERRO]`+colorReset+` `)
 	output = strings.ReplaceAll(output, ` l=[WARN] `, ` l=`+colorYellow+`[WARN]`+colorReset+` `)
 	output = strings.ReplaceAll(output, ` l=[INFO] `, ` l=`+colorBlue+`[INFO]`+colorReset+` `)
-	output = strings.ReplaceAll(output, ` l=[DEBU] `, ` l=`+colorGray+`[DEBU]`+colorReset+` `)
+	output = strings.ReplaceAll(output, ` l=[DEBUG] `, ` l=`+colorGreen+`[DEBUG]`+colorReset+` `)
 
 	_, err = w.Writer.Write([]byte(output))
 	return len(p), err
