@@ -38,12 +38,6 @@ func GetIndexedFields() []QdrantFieldSchema {
 		QdrantFieldSchema{Name: "location", QdrantType: qdrant.FieldType_FieldTypeGeo, IsStruct: true},
 	)
 
-	// Add part category/subcategory (these are not in SpecificationField but are used)
-	indexedFields = append(indexedFields,
-		QdrantFieldSchema{Name: "category", QdrantType: qdrant.FieldType_FieldTypeKeyword},
-		QdrantFieldSchema{Name: "subcategory", QdrantType: qdrant.FieldType_FieldTypeKeyword},
-	)
-
 	// Add all spec fields from SpecificationField table
 	for _, fieldDef := range allFields {
 		var qdrantType qdrant.FieldType

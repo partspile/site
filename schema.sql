@@ -25,6 +25,7 @@ CREATE TABLE AdCategoryField (
     priority_order INTEGER NOT NULL,
     next_in_chain INTEGER NOT NULL DEFAULT 0,
     is_required INTEGER NOT NULL DEFAULT 1,
+    show_in_filters INTEGER NOT NULL DEFAULT 0,
     UNIQUE (ad_category_id, specification_field_id)
 );
 CREATE INDEX idx_adcategoryfield_category ON AdCategoryField(ad_category_id);

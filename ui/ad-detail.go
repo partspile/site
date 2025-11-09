@@ -672,11 +672,15 @@ func formatYearRanges(years []string) string {
 
 func pathSegmentLink(text string, accumulatedSegments []string) g.Node {
 	searchQuery := strings.Join(accumulatedSegments, " ")
-	searchURL := fmt.Sprintf("/?q=%s", url.QueryEscape(searchQuery))
 
 	return A(
-		Href(searchURL),
+		Href("#"),
 		Class("hover:underline hover:text-blue-600"),
+		hx.Get(fmt.Sprintf("/search?q=%s", url.QueryEscape(searchQuery))),
+		hx.Target("#searchResults"),
+		hx.Swap("outerHTML"),
+		hx.PushURL("false"),
+		hx.Trigger("click"),
 		g.Text(text),
 	)
 }

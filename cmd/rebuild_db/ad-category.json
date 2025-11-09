@@ -4,56 +4,56 @@
     "spec_file": "spec-car.json",
     "part_file": "",
     "ad_file": "ad-car.json",
-    "field_names": ["make->", "year->", "model->", "engine"]
+    "field_names": ["*make->", "*year->", "model->", "engine"]
   },
   {
     "name": "Car & Truck Parts",
     "spec_file": "spec-car.json",
     "part_file": "part-car.json",
     "ad_file": "ad-car-part.json",
-    "field_names": ["make->", "year->", "model->", "engine", "part_category->", "part_subcategory"]
+    "field_names": ["*make->", "*year->", "model->", "engine", "*part_category->", "part_subcategory"]
   },
   {
     "name": "Motorcycles",
     "spec_file": "spec-motorcycle.json",
     "part_file": "",
     "ad_file": "ad-motorcycle.json",
-    "field_names": ["make->", "year->", "model->", "engine"]
+    "field_names": ["*make->", "*year->", "model->", "engine"]
   },
   {
     "name": "Motorcycle Parts",
     "spec_file": "spec-motorcycle.json",
     "part_file": "part-motorcycle.json",
     "ad_file": "ad-motorcycle-part.json",
-    "field_names": ["make->", "year->", "model->", "engine", "part_category->", "part_subcategory"]
+    "field_names": ["*make->", "*year->", "model->", "engine", "*part_category->", "part_subcategory"]
   },
   {
     "name": "Bicycles",
     "spec_file": "spec-bicycle.json",
     "part_file": "",
     "ad_file": "ad-bicycle.json",
-    "field_names": ["make->", "model"]
+    "field_names": ["*make->", "model"]
   },
   {
     "name": "Bicycle Parts",
     "spec_file": "spec-bicycle.json",
     "part_file": "part-bicycle.json",
     "ad_file": "ad-bicycle-part.json",
-    "field_names": ["make->", "model", "part_category->", "part_subcategory"]
+    "field_names": ["*make->", "model", "*part_category->", "part_subcategory"]
   },
   {
     "name": "Agricultural Equipment",
     "spec_file": "spec-agricultural.json",
     "part_file": "",
     "ad_file": "ad-agricultural.json",
-    "field_names": ["make->", "year->", "model"]
+    "field_names": ["*make->", "*year->", "model"]
   },
   {
     "name": "Agricultural Equipment Parts",
     "spec_file": "spec-agricultural.json",
     "part_file": "part-agricultural.json",
     "ad_file": "ad-agricultural-part.json",
-    "field_names": ["make->", "year->", "model", "part_category->", "part_subcategory"]
+    "field_names": ["*make->", "*year->", "model", "*part_category->", "part_subcategory"]
   }
 ]
 

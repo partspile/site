@@ -174,8 +174,9 @@ func main() {
 		// Build order -> fieldID map for calculating next_in_chain
 		orderToFieldID := make(map[int]int)
 		for order, fieldNameWithChain := range cat.FieldNames {
-			// Remove chain syntax for database lookup (e.g., "make->" -> "make")
-			fieldName := strings.TrimSuffix(fieldNameWithChain, "->")
+			// Remove "*" prefix (indicates show in filters) and "->" suffix (indicates chained) for database lookup
+			fieldName := strings.TrimPrefix(fieldNameWithChain, "*") // Remove "*" prefix if present
+			fieldName = strings.TrimSuffix(fieldName, "->")          // Remove "->" suffix if present
 			fieldID, exists := fieldIDMap[fieldName]
 			if !exists {
 				logger.Warn("Field not found for category mapping", "field", fieldName, "category", cat.Name)
@@ -186,7 +187,15 @@ func main() {
 
 		// Insert fields and calculate next_in_chain
 		for order, fieldNameWithChain := range cat.FieldNames {
-			fieldName := strings.TrimSuffix(fieldNameWithChain, "->")
+			// Parse field name: remove "*" prefix (indicates show in filters) and "->" suffix (indicates chained)
+			fieldName := fieldNameWithChain
+			showInFilters := 0
+			if strings.HasPrefix(fieldName, "*") {
+				showInFilters = 1
+				fieldName = fieldName[1:] // Remove "*" prefix
+			}
+			fieldName = strings.TrimSuffix(fieldName, "->") // Remove "->" suffix if present
+
 			fieldID, exists := fieldIDMap[fieldName]
 			if !exists {
 				continue
@@ -201,8 +210,8 @@ func main() {
 				nextInChain = nextOrder
 			}
 
-			_, err := database.Exec(`INSERT INTO AdCategoryField (ad_category_id, specification_field_id, priority_order, next_in_chain, is_required) VALUES (?, ?, ?, ?, ?)`,
-				categoryID, fieldID, order+1, nextInChain, 1)
+			_, err := database.Exec(`INSERT INTO AdCategoryField (ad_category_id, specification_field_id, priority_order, next_in_chain, is_required, show_in_filters) VALUES (?, ?, ?, ?, ?, ?)`,
+				categoryID, fieldID, order+1, nextInChain, 1, showInFilters)
 			if err != nil {
 				logger.Warn("Failed to insert AdCategoryField", "category", cat.Name, "field", fieldName, "error", err)
 			}
@@ -254,11 +263,11 @@ func main() {
 			logger.Warn("Failed to hash password for user", "name", u.Name, "error", err)
 			continue
 		}
-		
+
 		// Compute hashes for lookups
 		nameHash := user.HashForLookup(u.Name)
 		phoneHash := user.HashForLookup(u.Phone)
-		
+
 		// Encrypt with placeholder ID (0) - we'll re-encrypt with real ID after insert
 		encryptedName, nameNonce, err := user.EncryptName(0, u.Name)
 		if err != nil {
@@ -270,7 +279,7 @@ func main() {
 			logger.Warn("Failed to encrypt phone for user", "name", u.Name, "error", err)
 			continue
 		}
-		
+
 		// Insert user with encrypted data
 		res, err := database.Exec(`INSERT INTO User (encrypted_name, name_nonce, name_hash, encrypted_phone, phone_nonce, phone_hash,
 			password_hash, password_salt, password_algo, phone_verified,
@@ -281,11 +290,11 @@ func main() {
 			logger.Warn("Failed to insert user", "name", u.Name, "error", err)
 			continue
 		}
-		
+
 		// Get the user ID and re-encrypt with the real ID
 		userID64, _ := res.LastInsertId()
 		userID := int(userID64)
-		
+
 		// Re-encrypt with the real user ID
 		encryptedName, nameNonce, err = user.EncryptName(userID, u.Name)
 		if err != nil {
@@ -297,7 +306,7 @@ func main() {
 			logger.Warn("Failed to re-encrypt phone for user", "name", u.Name, "error", err)
 			continue
 		}
-		
+
 		// Update with properly encrypted data
 		_, err = database.Exec(`UPDATE User SET encrypted_name = ?, name_nonce = ?, encrypted_phone = ?, phone_nonce = ? WHERE id = ?`,
 			encryptedName, nameNonce, encryptedPhone, phoneNonce, userID)
@@ -305,14 +314,14 @@ func main() {
 			logger.Warn("Failed to update encrypted data for user", "name", u.Name, "error", err)
 			continue
 		}
-		
+
 		// Initialize rock inventory
 		_, err = database.Exec(`INSERT INTO UserRock (user_id, rock_count) VALUES (?, 3)`, userID)
 		if err != nil {
 			logger.Warn("Failed to initialize rock inventory for user", "name", u.Name, "error", err)
 			continue
 		}
-		
+
 		userCount++
 	}
 	logger.Info("Inserted Users", "count", userCount)

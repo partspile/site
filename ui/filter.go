@@ -35,8 +35,12 @@ func filterControls(adCategory int, params map[string]string) g.Node {
 	filterNodes = append(filterNodes, radiusFilter(params["radius"]))
 
 	// Add spec field filters based on category configuration
-	// Use chain information to determine filter type and dependencies
+	// Only show fields marked with ShowInFilters=true
 	for _, fieldConfig := range fieldConfigs {
+		if !fieldConfig.ShowInFilters {
+			continue
+		}
+
 		// Determine filter type based on field type
 		if fieldConfig.FieldType == "int" || fieldConfig.FieldType == "float64" {
 			// Range filter for numeric fields (year, etc.)
@@ -49,15 +53,8 @@ func filterControls(adCategory int, params map[string]string) g.Node {
 				filterNodes = append(filterNodes, genericRangeFilter(fieldConfig, params[minKey], params[maxKey]))
 			}
 		} else {
-			// Dropdown filter for string fields
-			// Check if field is in a chain - if so, make it dynamic based on parent selections
-			if fieldConfig.NextInChain != 0 {
-				// Chained field - use dynamic filter that updates based on parent selections
-				filterNodes = append(filterNodes, chainedDropdownFilter(adCategory, fieldConfig, params))
-			} else {
-				// Non-chained field - use static dropdown
-				filterNodes = append(filterNodes, genericDropdownFilter(fieldConfig, params[fieldConfig.Name]))
-			}
+			// Dropdown filter for string fields - show all available values (not filtered by parents)
+			filterNodes = append(filterNodes, genericDropdownFilter(adCategory, fieldConfig, params[fieldConfig.Name], false))
 		}
 	}
 
@@ -161,7 +158,7 @@ func breedFilter(value string) g.Node {
 			Name("breed"),
 			ID("breedFilter"),
 			Class("w-full p-2 border rounded-md"),
-			hx.Get("/api/filter-breeds"),
+			hx.Get("/api/filter-field/breed"),
 			hx.Trigger("load"),
 			hx.Target("this"),
 			hx.Swap("innerHTML"),
@@ -249,6 +246,7 @@ func chainedDropdownFilter(adCategory int, fieldConfig spec.FieldConfig, params 
 
 	// Build query string with parent field values (only fields that come before this one in the chain)
 	queryParts := []string{}
+	var parentTriggers []string
 	fieldConfigs, err := spec.GetCategoryFields(adCategory)
 	if err == nil {
 		// Find current field index
@@ -261,7 +259,7 @@ func chainedDropdownFilter(adCategory int, fieldConfig spec.FieldConfig, params 
 		}
 
 		if currentIndex >= 0 {
-			// Add parent field values to query
+			// Add parent field values to query and build triggers
 			for i := 0; i < currentIndex; i++ {
 				parentField := fieldConfigs[i]
 				if parentField.FieldType == "int" || parentField.FieldType == "float64" {
@@ -274,23 +272,30 @@ func chainedDropdownFilter(adCategory int, fieldConfig spec.FieldConfig, params 
 					if maxVal := params[maxKey]; maxVal != "" {
 						queryParts = append(queryParts, fmt.Sprintf("%s=%s", maxKey, maxVal))
 					}
+					// Add triggers for range fields
+					parentTriggers = append(parentTriggers, fmt.Sprintf("change from:#%sFilter", minKey))
+					parentTriggers = append(parentTriggers, fmt.Sprintf("change from:#%sFilter", maxKey))
 				} else {
 					// String fields - add single value
 					if val := params[parentField.Name]; val != "" {
 						queryParts = append(queryParts, fmt.Sprintf("%s=%s", parentField.Name, val))
 					}
+					// Add trigger for this parent field
+					parentTriggers = append(parentTriggers, fmt.Sprintf("change from:#%sFilter", parentField.Name))
 				}
 			}
 		}
 	}
 
-	queryStr := ""
-	if len(queryParts) > 0 {
-		queryStr = "?" + strings.Join(queryParts, "&")
-	}
-
+	// Don't build query string from params - let hx.Include handle it
+	// This ensures we always get current form values, not initial params
 	// Use generic handler
 	endpoint := fmt.Sprintf("/api/filter-field/%s", fieldConfig.Name)
+
+	// Build trigger string - include load, form change, and individual parent field changes
+	triggers := []string{"load", "change from:#searchWidget"}
+	triggers = append(triggers, parentTriggers...)
+	triggerStr := strings.Join(triggers, ", ")
 
 	return Div(
 		Label(Class("block text-sm font-medium mb-1"), g.Text(fieldConfig.DisplayName)),
@@ -298,12 +303,12 @@ func chainedDropdownFilter(adCategory int, fieldConfig spec.FieldConfig, params 
 			Name(fieldConfig.Name),
 			ID(fieldConfig.Name+"Filter"),
 			Class("w-full p-2 border rounded-md"),
-			hx.Get(endpoint+queryStr),
-			hx.Trigger("load, change from:#searchWidget"),
+			hx.Get(endpoint),
+			hx.Trigger(triggerStr),
 			hx.Target("this"),
 			hx.Swap("innerHTML"),
 			hx.Include("#searchWidget"),
-			Option(Value(""), g.Text(fmt.Sprintf("All %s", fieldConfig.DisplayName)), g.If(value == "", Selected())),
+			Option(Value(""), g.Text("All"), g.If(value == "", Selected())),
 			g.If(value != "", Option(Value(value), g.Text(value), Selected())),
 		),
 	)
@@ -339,18 +344,21 @@ func genericRangeFilter(fieldConfig spec.FieldConfig, minValue, maxValue string)
 }
 
 // genericDropdownFilter creates a static dropdown filter for non-chained string fields
-func genericDropdownFilter(fieldConfig spec.FieldConfig, value string) g.Node {
+func genericDropdownFilter(adCategory int, fieldConfig spec.FieldConfig, value string, hasChildren bool) g.Node {
+	triggerStr := "load, change from:#searchWidget"
+
 	return Div(
 		Label(Class("block text-sm font-medium mb-1"), g.Text(fieldConfig.DisplayName)),
 		Select(
 			Name(fieldConfig.Name),
 			ID(fieldConfig.Name+"Filter"),
 			Class("w-full p-2 border rounded-md"),
-			hx.Get(fmt.Sprintf("/api/filter-%s", fieldConfig.Name)),
-			hx.Trigger("load"),
+			hx.Get(fmt.Sprintf("/api/filter-field/%s", fieldConfig.Name)),
+			hx.Trigger(triggerStr),
 			hx.Target("this"),
 			hx.Swap("innerHTML"),
-			Option(Value(""), g.Text(fmt.Sprintf("All %s", fieldConfig.DisplayName)), g.If(value == "", Selected())),
+			hx.Include("#searchWidget"),
+			Option(Value(""), g.Text("All"), g.If(value == "", Selected())),
 			g.If(value != "", Option(Value(value), g.Text(value), Selected())),
 		),
 	)

@@ -16,27 +16,6 @@ import (
 	"github.com/qdrant/go-client/qdrant"
 )
 
-func extractSearchParams(c *fiber.Ctx) map[string]string {
-	params := map[string]string{
-		"q":         c.Query("q"),
-		"location":  c.Query("location"),
-		"min_price": c.Query("min_price"),
-		"max_price": c.Query("max_price"),
-	}
-
-	// Get all query parameters and add them to params
-	// This includes all spec field filters (make, year, model, engine, etc.)
-	// and range filters (min_year, max_year, etc.)
-	for key := range c.Queries() {
-		value := c.Query(key)
-		if value != "" {
-			params[key] = value
-		}
-	}
-
-	return params
-}
-
 // runEmbeddingSearch runs vector search with optional filters
 func runEmbeddingSearch(embedding []float32, cursor uint64, threshold float64, k int, filter *qdrant.Filter) ([]int, uint64, error) {
 	var ids []int
@@ -137,7 +116,7 @@ func performSearch(userPrompt string, userID int, cursor uint64, threshold float
 func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 	var conditions []*qdrant.Condition
 
-	params := extractSearchParams(c)
+	params := c.Queries()
 
 	ac := cookie.GetAdCategory(c)
 	conditions = append(conditions, qdrant.NewMatchInt("ad_category_id", int64(ac)))
@@ -218,9 +197,7 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 						}
 
 						if len(valueList) > 0 {
-							// Use plural form for Qdrant metadata key
-							pluralName := fieldName + "s"
-							condition := qdrant.NewMatchKeywords(pluralName, valueList...)
+							condition := qdrant.NewMatchKeywords(fieldName, valueList...)
 							conditions = append(conditions, condition)
 							logger.Debug("Added range keywords filter",
 								"component", "buildSearchFilters", "field", fieldName, "valueList", valueList)
@@ -228,9 +205,7 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 					}
 				} else if fieldValue != "" {
 					// Single value for keyword_array fields
-					// Use plural form for Qdrant metadata key
-					pluralName := fieldName + "s"
-					condition := qdrant.NewMatchKeywords(pluralName, fieldValue)
+					condition := qdrant.NewMatchKeywords(fieldName, fieldValue)
 					conditions = append(conditions, condition)
 					logger.Debug("Added keyword_array filter",
 						"component", "buildSearchFilters", "field", fieldName, "value", fieldValue)
@@ -372,7 +347,7 @@ func handleSearch(c *fiber.Ctx, view int) error {
 	}
 
 	if userID != 0 {
-		params := extractSearchParams(c)
+		params := c.Queries()
 		saveUserSearchAndQueue(userID, params)
 	}
 
@@ -416,7 +391,7 @@ func HandleSearchWidget(c *fiber.Ctx) error {
 	showFilters := c.Query("show-filters") == "true"
 
 	// Extract search parameters
-	params := extractSearchParams(c)
+	params := c.Queries()
 
 	// Return the search widget
 	return render(c, ui.SearchWidget(userID, view, adCategory, params, showFilters))
@@ -452,7 +427,7 @@ func HandleSwitchAdCategory(c *fiber.Ctx) error {
 	view := cookie.GetView(c)
 
 	// Extract search parameters from form data
-	params := extractSearchParams(c)
+	params := c.Queries()
 
 	// Return the updated search container
 	return render(c, ui.SearchContainer(userID, view, adCategory, params))
@@ -463,47 +438,48 @@ func HandleFilterField(c *fiber.Ctx) error {
 	adCategory := cookie.GetAdCategory(c)
 	fieldName := c.Params("fieldName")
 
+	logger.Debug("HandleFilterField called",
+		"component", "filter-field", "adCategory", adCategory, "fieldName", fieldName)
+
 	if fieldName == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "Field name required")
 	}
 
-	// Get category fields to determine parent fields
-	fieldConfigs, err := spec.GetCategoryFields(adCategory)
+	// Get field config for this field in this category
+	currentFieldConfig, err := spec.GetCategoryField(adCategory, fieldName)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get category fields")
-	}
-
-	// Find current field index
-	currentFieldIndex := -1
-	for i, f := range fieldConfigs {
-		if f.Name == fieldName {
-			currentFieldIndex = i
-			break
-		}
-	}
-	if currentFieldIndex == -1 {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid field name")
 	}
 
-	// Build parent values map from query parameters
-	parentValues := make(map[string]string)
-	for i := 0; i < currentFieldIndex; i++ {
-		parentField := fieldConfigs[i]
-		parentValue := c.Query(parentField.Name)
-		if parentValue != "" {
-			parentValues[parentField.Name] = parentValue
-		}
-		// Note: Range parameters (min_/max_) are not passed to GetFieldValues
-		// Range filtering works at search time, not at filter dropdown time
+	// Log all query parameters
+	allQueries := c.Queries()
+	logger.Debug("Query parameters received",
+		"component", "filter-field", "fieldName", fieldName, "queries", allQueries)
+
+	// Check if this field should be shown in filters
+	if !currentFieldConfig.ShowInFilters {
+		// Field not marked for filters - return empty
+		return render(c, ui.GenericFilterOptions(fieldName, []string{}, ""))
 	}
 
-	// Get field values
-	values, err := spec.GetFieldValues(adCategory, fieldName, parentValues)
+	// For filter fields, return ALL available values (not filtered by parents)
+	// Filter fields are independent - they show all possible values for that field
+	values, err := spec.GetFieldValues(adCategory, fieldName, map[string]string{})
 	if err != nil {
 		logger.Warn("Failed to get field values for filter",
 			"error", err, "component", "filter-field", "adCategory", adCategory, "fieldName", fieldName)
 		values = []string{}
+	} else {
+		logger.Debug("Got field values",
+			"component", "filter-field", "fieldName", fieldName, "count", len(values))
 	}
 
-	return render(c, ui.GenericFilterOptions(fieldName, values))
+	// Get current selected value from query parameters
+	selectedValue := c.Query(fieldName)
+
+	logger.Debug("Returning filter options",
+		"component", "filter-field", "fieldName", fieldName,
+		"valueCount", len(values), "selectedValue", selectedValue)
+
+	return render(c, ui.GenericFilterOptions(fieldName, values, selectedValue))
 }

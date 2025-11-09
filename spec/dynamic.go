@@ -147,11 +147,13 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 	tableFieldName := fieldDef.TableFieldName
 
 	// Convert parent filters to array format (handle comma-separated values)
+	// Only include parent fields that have values - work with whatever data is available
 	parentFiltersArray := make(map[string][]string)
 	for _, parentField := range parentFields {
 		parentValue, exists := parentFilters[parentField.Name]
 		if !exists || parentValue == "" {
-			return "", nil, fmt.Errorf("no values for parent field %s", parentField.Name)
+			// Skip parent fields without values - they're optional
+			continue
 		}
 		// Split comma-separated values or use single value
 		if strings.Contains(parentValue, ",") {
@@ -163,33 +165,58 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 
 	// Build a single query using IN clauses for each parent field
 	// We'll use GROUP BY/HAVING to ensure intersection (all combinations)
-	// Calculate total expected combinations
+	// Calculate total expected combinations only for fields that have values
 	totalCombinations := 1
-	for _, parentField := range parentFields {
-		values := parentFiltersArray[parentField.Name]
-		totalCombinations *= len(values)
+	for _, values := range parentFiltersArray {
+		if len(values) > 0 {
+			totalCombinations *= len(values)
+		}
 	}
 
-	if totalCombinations == 0 {
-		return "", nil, fmt.Errorf("no valid combinations found")
+	// If no parent filters provided, return all values for this field
+	// This happens when loading filter dropdowns without parent selections
+	if len(parentFiltersArray) == 0 {
+		// No parent filters provided - return all values for this field
+		// This happens when loading the first field in a chain
+		// For filters, show all available values from the table, not just those in Specification
+		var selectClause string
+		if fieldDef.FieldType == "int" {
+			selectClause = fmt.Sprintf(`SELECT DISTINCT CAST(%s.%s AS TEXT) FROM %s
+	WHERE %s.ad_category_id = ?`, tableName, fieldDef.ValueColumnName, tableName, tableName)
+		} else {
+			selectClause = fmt.Sprintf(`SELECT DISTINCT %s.%s FROM %s
+	WHERE %s.ad_category_id = ?`, tableName, fieldDef.ValueColumnName, tableName, tableName)
+		}
+		query := selectClause
+		args := []interface{}{adCategoryID}
+
+		// Order by clause
+		if fieldDef.FieldType == "int" {
+			query += fmt.Sprintf(" ORDER BY %s.%s DESC", tableName, fieldDef.ValueColumnName)
+		} else {
+			query += fmt.Sprintf(" ORDER BY %s.%s", tableName, fieldDef.ValueColumnName)
+		}
+
+		return query, args, nil
 	}
 
 	// Determine SELECT clause - always return as text for consistency
 	var selectClause string
 	if fieldDef.FieldType == "int" {
 		selectClause = fmt.Sprintf(`SELECT DISTINCT CAST(%s.%s AS TEXT) FROM %s
-	WHERE %s.id IN (
-		SELECT spec.%s FROM Specification spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableFieldName)
+	WHERE %s.ad_category_id = ? AND %s.id IN (
+		SELECT spec.%s FROM Specification spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableName, tableFieldName)
 	} else {
 		selectClause = fmt.Sprintf(`SELECT DISTINCT %s.%s FROM %s
-	WHERE %s.id IN (
-		SELECT spec.%s FROM Specification spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableFieldName)
+	WHERE %s.ad_category_id = ? AND %s.id IN (
+		SELECT spec.%s FROM Specification spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableName, tableFieldName)
 	}
 	query := selectClause
+	args := []interface{}{adCategoryID}
 
-	// Add JOINs for parent fields
-	for _, parentField := range parentFields {
-		parentDef, exists := GetFieldDefinition(parentField.Name)
+	// Add JOINs only for parent fields that have values
+	for fieldName := range parentFiltersArray {
+		parentDef, exists := GetFieldDefinition(fieldName)
 		if !exists {
 			continue
 		}
@@ -200,17 +227,16 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 			parentTableName, parentTableFieldName, parentTableName)
 	}
 
-	// Build WHERE clause with IN clauses for each parent field
+	// Build WHERE clause with IN clauses for each parent field that has values
 	whereClauses := []string{"spec.ad_category_id = ?"}
-	args := []interface{}{adCategoryID}
+	args = append(args, adCategoryID)
 
-	for _, parentField := range parentFields {
-		values := parentFiltersArray[parentField.Name]
+	for fieldName, values := range parentFiltersArray {
 		if len(values) == 0 {
 			continue
 		}
 
-		parentDef, exists := GetFieldDefinition(parentField.Name)
+		parentDef, exists := GetFieldDefinition(fieldName)
 		if !exists {
 			continue
 		}
@@ -251,10 +277,10 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 	query += fmt.Sprintf(` GROUP BY spec.%s
 	HAVING COUNT(DISTINCT `, tableFieldName)
 
-	// Build DISTINCT clause for all parent field combinations
+	// Build DISTINCT clause for all parent field combinations (only fields with values)
 	distinctParts := []string{}
-	for _, parentField := range parentFields {
-		parentDef, exists := GetFieldDefinition(parentField.Name)
+	for fieldName := range parentFiltersArray {
+		parentDef, exists := GetFieldDefinition(fieldName)
 		if !exists {
 			continue
 		}

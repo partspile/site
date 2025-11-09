@@ -141,21 +141,9 @@ Description: `+adObj.Description)
 
 // buildAdEmbeddingMetadata creates metadata for embeddings dynamically based on category field configuration
 func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
+	// Initialize metadata with non-SpecData fields
 	lat, lon, _ := ad.GetLatLon(adObj.LocationID)
 	rockCount, _ := rock.GetAdRockCount(adObj.ID)
-
-	// Get category fields to determine which fields to include
-	fieldConfigs, err := spec.GetCategoryFields(adObj.AdCategoryID)
-	if err != nil {
-		logger.Warn("Failed to get category fields for metadata",
-			"error", err, "component", "vector", "adID", adObj.ID)
-		// Fallback to empty metadata
-		return map[string]interface{}{
-			"ad_category_id": adObj.AdCategoryID,
-			"price":          adObj.Price,
-			"rock_count":     rockCount,
-		}
-	}
 
 	metadata := map[string]interface{}{
 		"ad_category_id": adObj.AdCategoryID,
@@ -163,22 +151,25 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 		"rock_count":     rockCount,
 	}
 
-	// Add part category/subcategory from SpecData
-	if catValues, exists := adObj.SpecData["part_category"]; exists && len(catValues) > 0 {
-		metadata["category"] = catValues[0]
+	// Add geo payload if we have coordinates
+	if lat != 0 && lon != 0 {
+		metadata["location"] = map[string]interface{}{
+			"lat": lat,
+			"lon": lon,
+		}
 	}
-	if subcatValues, exists := adObj.SpecData["part_subcategory"]; exists && len(subcatValues) > 0 {
-		metadata["subcategory"] = subcatValues[0]
+
+	// Get category fields to determine which fields to include
+	fieldConfigs, err := spec.GetCategoryFields(adObj.AdCategoryID)
+	if err != nil {
+		logger.Warn("Failed to get category fields for metadata",
+			"error", err, "component", "vector", "adID", adObj.ID)
+		// Return metadata with only non-SpecData fields
+		return metadata
 	}
 
 	// Add spec fields dynamically based on category configuration
 	for _, fieldConfig := range fieldConfigs {
-		// Determine Qdrant metadata key (plural for arrays)
-		qdrantKey := fieldConfig.Name
-		if fieldConfig.QdrantType == "keyword_array" {
-			qdrantKey = fieldConfig.Name + "s" // years, models, engines
-		}
-
 		// Extract value from SpecData
 		fieldValues, exists := adObj.SpecData[fieldConfig.Name]
 		if !exists || len(fieldValues) == 0 {
@@ -196,21 +187,13 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 			continue
 		}
 
-		// Add to metadata based on field type
+		// Add to metadata based on field type - use fieldConfig.Name directly
 		if fieldConfig.QdrantType == "keyword_array" {
 			// Multi-value field - store as array
-			metadata[qdrantKey] = nonEmptyValues
+			metadata[fieldConfig.Name] = nonEmptyValues
 		} else {
 			// Single-value field - store as string
-			metadata[qdrantKey] = nonEmptyValues[0]
-		}
-	}
-
-	// Add geo payload if we have coordinates
-	if lat != 0 && lon != 0 {
-		metadata["location"] = map[string]interface{}{
-			"lat": lat,
-			"lon": lon,
+			metadata[fieldConfig.Name] = nonEmptyValues[0]
 		}
 	}
 

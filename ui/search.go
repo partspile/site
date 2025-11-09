@@ -3,14 +3,12 @@ package ui
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/spec"
 )
 
 func createAdCategoryItems(activeCat int) []g.Node {
@@ -176,6 +174,7 @@ func SearchResults() g.Node {
 		hx.Get("/search"),
 		hx.Trigger("load"),
 		hx.Target("this"),
+		hx.Include("#searchWidget"),
 		hx.Swap("outerHTML"),
 	)
 }
@@ -259,25 +258,23 @@ func BreedFilterOptions(breeds []string) g.Node {
 }
 
 // GenericFilterOptions returns HTML options for any field filter dropdown
-func GenericFilterOptions(fieldName string, values []string) g.Node {
+func GenericFilterOptions(fieldName string, values []string, selectedValue string) g.Node {
 	var options []g.Node
 
-	// Get display name for "All" option
-	displayName := fieldName
-	fieldDef, exists := spec.GetFieldDefinition(fieldName)
-	if exists {
-		displayName = fieldDef.DisplayName
-	} else if len(fieldName) > 0 {
-		// Fallback: capitalize first letter
-		displayName = strings.ToUpper(string(fieldName[0])) + fieldName[1:]
-	}
-
 	// Add "All" option first
-	options = append(options, Option(Value(""), g.Text(fmt.Sprintf("All %s", displayName))))
+	allOption := Option(Value(""), g.Text("All"))
+	if selectedValue == "" {
+		allOption = Option(Value(""), g.Text("All"), Selected())
+	}
+	options = append(options, allOption)
 
 	// Add field value options
 	for _, value := range values {
-		options = append(options, Option(Value(value), g.Text(value)))
+		optionAttrs := []g.Node{Value(value), g.Text(value)}
+		if value == selectedValue {
+			optionAttrs = append(optionAttrs, Selected())
+		}
+		options = append(options, Option(optionAttrs...))
 	}
 
 	return g.Group(options)

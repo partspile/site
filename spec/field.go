@@ -21,8 +21,9 @@ type FieldConfig struct {
 	ValueColumnName string // Column name in the foreign table for the value (e.g., 'name', 'year')
 	QdrantType      string // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
 	IsRequired      bool
-	Order           int // Priority order (from priority_order column) - used for display and determining chains
-	NextInChain     int // Priority order of next field in chain (0 = last field in chain or standalone)
+	Order           int  // Priority order (from priority_order column) - used for display and determining chains
+	NextInChain     int  // Priority order of next field in chain (0 = last field in chain or standalone)
+	ShowInFilters   bool // Whether this field should be shown in filter UI
 }
 
 var (
@@ -106,7 +107,7 @@ func loadFieldDefinitions() (map[string]FieldConfig, error) {
 // Chain information is determined by order and next_in_chain fields
 func loadCategoryFields(fieldDefs map[string]FieldConfig) (map[int][]FieldConfig, error) {
 	query := `
-		SELECT acf.ad_category_id, acf.specification_field_id, acf.priority_order, acf.next_in_chain, acf.is_required
+		SELECT acf.ad_category_id, acf.specification_field_id, acf.priority_order, acf.next_in_chain, acf.is_required, acf.show_in_filters
 		FROM AdCategoryField acf
 		JOIN SpecificationField sf ON acf.specification_field_id = sf.id
 		ORDER BY acf.ad_category_id, acf.priority_order
@@ -118,6 +119,7 @@ func loadCategoryFields(fieldDefs map[string]FieldConfig) (map[int][]FieldConfig
 		Order                int `db:"priority_order"`
 		NextInChain          int `db:"next_in_chain"`
 		IsRequired           int `db:"is_required"`
+		ShowInFilters        int `db:"show_in_filters"`
 	}
 
 	var dbCategoryFields []dbCategoryField
@@ -147,6 +149,7 @@ func loadCategoryFields(fieldDefs map[string]FieldConfig) (map[int][]FieldConfig
 		fieldConfig.IsRequired = cf.IsRequired != 0
 		fieldConfig.Order = cf.Order
 		fieldConfig.NextInChain = cf.NextInChain
+		fieldConfig.ShowInFilters = cf.ShowInFilters != 0
 		categoryFieldsMap[cf.AdCategoryID] = append(
 			categoryFieldsMap[cf.AdCategoryID],
 			fieldConfig,
@@ -269,6 +272,22 @@ func GetDownstreamFields(field FieldConfig, allFields []FieldConfig) []string {
 func GetFieldDefinition(fieldName string) (FieldConfig, bool) {
 	field, exists := fieldDefinitionsCache[fieldName]
 	return field, exists
+}
+
+// GetCategoryField returns the field configuration for a specific field in a category
+func GetCategoryField(adCategoryID int, fieldName string) (FieldConfig, error) {
+	fieldConfigs, err := GetCategoryFields(adCategoryID)
+	if err != nil {
+		return FieldConfig{}, fmt.Errorf("failed to get category fields: %w", err)
+	}
+
+	for _, fieldConfig := range fieldConfigs {
+		if fieldConfig.Name == fieldName {
+			return fieldConfig, nil
+		}
+	}
+
+	return FieldConfig{}, fmt.Errorf("field %s not found in category %d", fieldName, adCategoryID)
 }
 
 // BuildFieldPromptSnippet generates a prompt snippet for a field given its values
