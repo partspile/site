@@ -61,7 +61,7 @@ func populateSpecData(adDetail *AdDetail) error {
 	adDetail.SpecData = make(map[string][]string)
 
 	// Get category fields to determine which fields to query
-	fieldConfigs, _ := spec.GetCategoryFields(adDetail.AdCategoryID)
+	fieldConfigs := spec.GetCategoryFields(adDetail.AdCategoryID)
 
 	// Build dynamic SELECT clause for all fields
 	var selectParts []string

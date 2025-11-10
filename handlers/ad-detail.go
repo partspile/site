@@ -33,7 +33,7 @@ func HandleAdDetail(c *fiber.Ctx) error {
 		}
 	}
 
-	loc := getLocation(c)
+	loc := cookie.GetLocation(c)
 	csrfToken := local.GetCSRFToken(c)
 
 	return render(c, ui.AdDetail(*a, userID, loc, csrfToken))
@@ -50,7 +50,7 @@ func HandleAdCollapse(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	loc := getLocation(c)
+	loc := cookie.GetLocation(c)
 	csrfToken := local.GetCSRFToken(c)
 	view := cookie.GetView(c)
 	switch view {

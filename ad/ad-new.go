@@ -50,10 +50,7 @@ func AddAd(ad AdDetail) (int, error) {
 // findSpec finds a spec ID from the unified Specification table using dynamic field configuration
 func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int, error) {
 	// Get category fields
-	fieldConfigs, err := spec.GetCategoryFields(adCategoryID)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get category fields: %w", err)
-	}
+	fieldConfigs := spec.GetCategoryFields(adCategoryID)
 
 	// Build dynamic query
 	query := "SELECT spec.id FROM Specification spec"
@@ -97,7 +94,7 @@ func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int,
 	query += " WHERE " + strings.Join(whereClauses, " AND ")
 
 	var specID int
-	err = tx.QueryRow(query, args...).Scan(&specID)
+	err := tx.QueryRow(query, args...).Scan(&specID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return 0, fmt.Errorf("spec not found for field values: %v", fieldValues)
@@ -110,7 +107,7 @@ func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int,
 // addFieldAssociations handles spec associations dynamically based on category field configuration
 func addFieldAssociations(tx *sql.Tx, ad AdDetail) error {
 	// Get category fields
-	fieldConfigs, _ := spec.GetCategoryFields(ad.AdCategoryID)
+	fieldConfigs := spec.GetCategoryFields(ad.AdCategoryID)
 
 	// Extract single-value fields from AdDetail.SpecData for spec lookup
 	fieldValueMap := buildFieldValueMap(ad, fieldConfigs)

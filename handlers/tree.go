@@ -66,17 +66,14 @@ func HandleTreeCollapseBrowse(c *fiber.Ctx) error {
 func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
-	loc := getLocation(c)
+	loc := cookie.GetLocation(c)
 	path := c.Params("*")
 	name, level, parts := parsePath(path)
 
 	category := cookie.GetAdCategory(c)
 
 	// Get category fields to determine tree structure
-	fieldConfigs, err := spec.GetCategoryFields(category)
-	if err != nil {
-		return fmt.Errorf("failed to get category fields: %w", err)
-	}
+	fieldConfigs := spec.GetCategoryFields(category)
 
 	// Browse mode: No ad IDs filtering needed
 	logger.Debug("Browse mode: no ad ID filtering",
@@ -85,6 +82,7 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 	// Get children for the current level using dynamic field configuration
 	var children []string
 	var ads []ad.Ad
+	var err error
 
 	// Map level to field index
 	// Level 0 = first field (usually make)
@@ -157,7 +155,7 @@ func HandleTreeCollapseSearch(c *fiber.Ctx) error {
 func HandleTreeExpandSearch(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
-	loc := getLocation(c)
+	loc := cookie.GetLocation(c)
 	path := c.Params("*")
 	name, level, parts := parsePath(path)
 
@@ -177,10 +175,7 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 		"component", "tree-search", "count", len(adIDs))
 
 	// Get category fields to determine tree structure
-	fieldConfigs, err := spec.GetCategoryFields(category)
-	if err != nil {
-		return fmt.Errorf("failed to get category fields: %w", err)
-	}
+	fieldConfigs := spec.GetCategoryFields(category)
 
 	// Get children for the current level using dynamic field configuration
 	var children []string

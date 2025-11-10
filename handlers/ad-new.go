@@ -28,12 +28,7 @@ func HandleNewAd(c *fiber.Ctx) error {
 	csrfToken := local.GetCSRFToken(c)
 
 	// Get category fields to determine which fields need pre-population
-	fieldConfigs, err := spec.GetCategoryFields(adCat)
-	if err != nil {
-		logger.Warn("Failed to get category fields",
-			"error", err, "component", "ad-new", "adCat", adCat)
-		fieldConfigs = []spec.FieldConfig{}
-	}
+	fieldConfigs := spec.GetCategoryFields(adCat)
 
 	// Build map of first field of each chain -> values
 	firstFieldValues := make(map[string][]string)
@@ -166,10 +161,7 @@ func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
 
 	// Build parent values map
 	parentValues := make(map[string]string)
-	fieldConfigs, err := spec.GetCategoryFields(adCat)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get category fields")
-	}
+	fieldConfigs := spec.GetCategoryFields(adCat)
 
 	// Find current field index
 	currentFieldIndex := -1

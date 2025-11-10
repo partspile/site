@@ -17,10 +17,7 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 	}
 
 	// Get category fields to determine field order and dependencies
-	categoryFields, err := GetCategoryFields(adCategoryID)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to get category fields: %w", err)
-	}
+	categoryFields := GetCategoryFields(adCategoryID)
 
 	// Find the current field's position in the field list
 	currentFieldIndex := -1
@@ -124,10 +121,7 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 // parentFilters can contain comma-separated values (e.g., "2020,2021") or single values
 func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, parentFilters map[string]string) (string, []interface{}, error) {
 	// Get category fields to determine field order
-	categoryFields, err := GetCategoryFields(adCategoryID)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to get category fields: %w", err)
-	}
+	categoryFields := GetCategoryFields(adCategoryID)
 
 	// Find the current field's position
 	currentFieldIndex := -1
@@ -338,10 +332,7 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 	}
 
 	// Get category fields to determine field order and dependencies
-	categoryFields, err := GetCategoryFields(adCategoryID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get category fields: %w", err)
-	}
+	categoryFields := GetCategoryFields(adCategoryID)
 
 	// Find the current field's position in the field list
 	currentFieldIndex := -1

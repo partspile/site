@@ -732,11 +732,7 @@ func partTypePath(a ad.AdDetail) g.Node {
 	var linkNodes []g.Node // Build link nodes
 
 	// Get category fields to determine display order
-	fieldConfigs, err := spec.GetCategoryFields(a.AdCategoryID)
-	if err != nil {
-		// If we can't get field configs, return empty
-		return g.Node(nil)
-	}
+	fieldConfigs := spec.GetCategoryFields(a.AdCategoryID)
 
 	// Initialize SpecData if nil
 	if a.SpecData == nil {

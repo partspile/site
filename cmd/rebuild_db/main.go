@@ -679,10 +679,19 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 			continue
 		}
 
-		// Get subcategory ID (NULL for whole spec ads, ID for parts ads)
+		// Get part_category_id and part_subcategory_id (NULL for whole spec ads, IDs for parts ads)
+		var partCategoryID *int
 		var subcategoryID *int
 		if ad.Category != "" {
-			// This is a parts ad
+			// This is a parts ad - get part_category_id
+			partCatID, exists := partCategoryMap[ad.Category]
+			if !exists {
+				logger.Warn("No valid part category found for ad, skipping", "title", ad.Title, "category", ad.Category)
+				continue
+			}
+			partCategoryID = &partCatID
+
+			// Get part_subcategory_id
 			subcatID := 0
 			if ad.Subcategory != "" {
 				// PartSubCategory now uses ad_category_id directly, not part_category_id
@@ -709,7 +718,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 			}
 			subcategoryID = &subcatID
 		}
-		// For whole spec ads (ad.Category == ""), subcategoryID stays nil
+		// For whole spec ads (ad.Category == ""), partCategoryID and subcategoryID stay nil
 
 		// Generate between 0 and 5 images per ad
 		numImages := rand.Intn(6)
@@ -728,25 +737,33 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 			for _, year := range ad.Years {
 				for _, model := range ad.Models {
 					for _, engine := range ad.Engines {
-						// Query for spec with part_subcategory_id (may be NULL)
+						// Query for spec with part_category_id and part_subcategory_id (may be NULL)
 						var specID int
 						var query string
 						var args []interface{}
-						if subcategoryID != nil {
+						if partCategoryID != nil && subcategoryID != nil {
 							query = `SELECT spec.id FROM Specification spec 
 								LEFT JOIN Make m ON spec.make_id=m.id
 								LEFT JOIN Year y ON spec.year_id=y.id
 								LEFT JOIN Model mdl ON spec.model_id=mdl.id
 								LEFT JOIN Engine e ON spec.engine_id=e.id
-								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND spec.ad_category_id=? AND spec.part_subcategory_id=?`
-							args = []interface{}{ad.Make, year, model, engine, categoryID, *subcategoryID}
+								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND spec.ad_category_id=? AND spec.part_category_id=? AND spec.part_subcategory_id=?`
+							args = []interface{}{ad.Make, year, model, engine, categoryID, *partCategoryID, *subcategoryID}
+						} else if partCategoryID != nil {
+							query = `SELECT spec.id FROM Specification spec 
+								LEFT JOIN Make m ON spec.make_id=m.id
+								LEFT JOIN Year y ON spec.year_id=y.id
+								LEFT JOIN Model mdl ON spec.model_id=mdl.id
+								LEFT JOIN Engine e ON spec.engine_id=e.id
+								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND spec.ad_category_id=? AND spec.part_category_id=? AND spec.part_subcategory_id IS NULL`
+							args = []interface{}{ad.Make, year, model, engine, categoryID, *partCategoryID}
 						} else {
 							query = `SELECT spec.id FROM Specification spec 
 								LEFT JOIN Make m ON spec.make_id=m.id
 								LEFT JOIN Year y ON spec.year_id=y.id
 								LEFT JOIN Model mdl ON spec.model_id=mdl.id
 								LEFT JOIN Engine e ON spec.engine_id=e.id
-								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND spec.ad_category_id=? AND spec.part_subcategory_id IS NULL`
+								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND spec.ad_category_id=? AND spec.part_category_id IS NULL AND spec.part_subcategory_id IS NULL`
 							args = []interface{}{ad.Make, year, model, engine, categoryID}
 						}
 						err := db.QueryRow(query, args...).Scan(&specID)
@@ -772,13 +789,16 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 							// Use getOrInsertWithCategory to create engine if it doesn't exist
 							engineID = getOrInsertWithCategory(db, "Engine", "name", engine, categoryID)
 
-							// Insert spec with part_subcategory_id (may be NULL)
+							// Insert spec with part_category_id and part_subcategory_id (may be NULL)
 							var specRes sql.Result
-							if subcategoryID != nil {
-								specRes, err = db.Exec(`INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, ?)`,
-									categoryID, makeID, yearID, modelID, engineID, *subcategoryID)
+							if partCategoryID != nil && subcategoryID != nil {
+								specRes, err = db.Exec(`INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id, part_category_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+									categoryID, makeID, yearID, modelID, engineID, *partCategoryID, *subcategoryID)
+							} else if partCategoryID != nil {
+								specRes, err = db.Exec(`INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id, part_category_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, ?, NULL)`,
+									categoryID, makeID, yearID, modelID, engineID, *partCategoryID)
 							} else {
-								specRes, err = db.Exec(`INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, NULL)`,
+								specRes, err = db.Exec(`INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id, part_category_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, NULL, NULL)`,
 									categoryID, makeID, yearID, modelID, engineID)
 							}
 							if err != nil {
@@ -790,11 +810,14 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 								// Spec already exists, fetch it
 								var lookupQuery string
 								var lookupArgs []interface{}
-								if subcategoryID != nil {
-									lookupQuery = `SELECT id FROM Specification WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_subcategory_id=?`
-									lookupArgs = []interface{}{categoryID, makeID, yearID, modelID, engineID, *subcategoryID}
+								if partCategoryID != nil && subcategoryID != nil {
+									lookupQuery = `SELECT id FROM Specification WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_category_id=? AND part_subcategory_id=?`
+									lookupArgs = []interface{}{categoryID, makeID, yearID, modelID, engineID, *partCategoryID, *subcategoryID}
+								} else if partCategoryID != nil {
+									lookupQuery = `SELECT id FROM Specification WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_category_id=? AND part_subcategory_id IS NULL`
+									lookupArgs = []interface{}{categoryID, makeID, yearID, modelID, engineID, *partCategoryID}
 								} else {
-									lookupQuery = `SELECT id FROM Specification WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_subcategory_id IS NULL`
+									lookupQuery = `SELECT id FROM Specification WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_category_id IS NULL AND part_subcategory_id IS NULL`
 									lookupArgs = []interface{}{categoryID, makeID, yearID, modelID, engineID}
 								}
 								err = db.QueryRow(lookupQuery, lookupArgs...).Scan(&specID)

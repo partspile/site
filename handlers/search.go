@@ -116,120 +116,112 @@ func performSearch(userPrompt string, userID int, cursor uint64, threshold float
 func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 	var conditions []*qdrant.Condition
 
-	params := c.Queries()
-
 	ac := cookie.GetAdCategory(c)
 	conditions = append(conditions, qdrant.NewMatchInt("ad_category_id", int64(ac)))
 	logger.Debug("Added ad_category_id filter",
 		"component", "buildSearchFilters", "adCategoryID", ac)
 
 	// Get category fields to determine which filters to apply
-	fieldConfigs, err := spec.GetCategoryFields(ac)
-	if err != nil {
-		logger.Warn("Failed to get category fields for search filter",
-			"error", err, "component", "buildSearchFilters", "adCategoryID", ac)
-		// Continue with basic filters only
-	} else {
-		// Add filters for spec fields that exist in this category
-		for _, fieldConfig := range fieldConfigs {
-			fieldName := fieldConfig.Name
-			fieldValue := params[fieldName]
-			minKey := "min_" + fieldName
-			maxKey := "max_" + fieldName
-			minValue := params[minKey]
-			maxValue := params[maxKey]
+	fieldConfigs := spec.GetCategoryFields(ac)
+	// Add filters for spec fields that exist in this category
+	for _, fieldConfig := range fieldConfigs {
+		fieldName := fieldConfig.Name
+		fieldValue := c.FormValue(fieldName)
+		minKey := "min_" + fieldName
+		maxKey := "max_" + fieldName
+		minValue := c.FormValue(minKey)
+		maxValue := c.FormValue(maxKey)
 
-			// Handle fields based on their Qdrant type
-			switch fieldConfig.QdrantType {
-			case "keyword":
-				// Single-value keyword fields
-				if fieldValue != "" {
-					condition := qdrant.NewMatch(fieldName, fieldValue)
-					conditions = append(conditions, condition)
-					logger.Debug("Added keyword filter",
-						"component", "buildSearchFilters", "field", fieldName, "value", fieldValue)
-				}
-			case "keyword_array":
-				// Multi-value keyword fields - check for range or single value
-				if minValue != "" || maxValue != "" {
-					// Range filter for integer keyword_array fields (like year)
-					if fieldConfig.FieldType == "int" {
-						var minVal, maxVal int
-						var hasMin, hasMax bool
+		// Handle fields based on their Qdrant type
+		switch fieldConfig.QdrantType {
+		case "keyword":
+			// Single-value keyword fields
+			if fieldValue != "" {
+				condition := qdrant.NewMatch(fieldName, fieldValue)
+				conditions = append(conditions, condition)
+				logger.Debug("Added keyword filter",
+					"component", "buildSearchFilters", "field", fieldName, "value", fieldValue)
+			}
+		case "keyword_array":
+			// Multi-value keyword fields - check for range or single value
+			if minValue != "" || maxValue != "" {
+				// Range filter for integer keyword_array fields (like year)
+				if fieldConfig.FieldType == "int" {
+					var minVal, maxVal int
+					var hasMin, hasMax bool
 
-						if minValue != "" {
-							if val, err := strconv.Atoi(minValue); err == nil {
-								minVal = val
-								hasMin = true
-							}
-						}
-						if maxValue != "" {
-							if val, err := strconv.Atoi(maxValue); err == nil {
-								maxVal = val
-								hasMax = true
-							}
-						}
-
-						// Convert range to list of values
-						var valueList []string
-						if hasMin && hasMax {
-							for val := minVal; val <= maxVal; val++ {
-								valueList = append(valueList, strconv.Itoa(val))
-							}
-						} else if hasMin {
-							// Default max to current year + 5 for year fields, or reasonable max
-							maxVal = 2030
-							if fieldName == "year" {
-								maxVal = 2029
-							}
-							for val := minVal; val <= maxVal; val++ {
-								valueList = append(valueList, strconv.Itoa(val))
-							}
-						} else if hasMax {
-							// Default min to 1900 for year fields, or reasonable min
-							minVal = 1900
-							if fieldName == "year" {
-								minVal = 1900
-							}
-							for val := minVal; val <= maxVal; val++ {
-								valueList = append(valueList, strconv.Itoa(val))
-							}
-						}
-
-						if len(valueList) > 0 {
-							condition := qdrant.NewMatchKeywords(fieldName, valueList...)
-							conditions = append(conditions, condition)
-							logger.Debug("Added range keywords filter",
-								"component", "buildSearchFilters", "field", fieldName, "valueList", valueList)
+					if minValue != "" {
+						if val, err := strconv.Atoi(minValue); err == nil {
+							minVal = val
+							hasMin = true
 						}
 					}
-				} else if fieldValue != "" {
-					// Single value for keyword_array fields
-					condition := qdrant.NewMatchKeywords(fieldName, fieldValue)
-					conditions = append(conditions, condition)
-					logger.Debug("Added keyword_array filter",
-						"component", "buildSearchFilters", "field", fieldName, "value", fieldValue)
+					if maxValue != "" {
+						if val, err := strconv.Atoi(maxValue); err == nil {
+							maxVal = val
+							hasMax = true
+						}
+					}
+
+					// Convert range to list of values
+					var valueList []string
+					if hasMin && hasMax {
+						for val := minVal; val <= maxVal; val++ {
+							valueList = append(valueList, strconv.Itoa(val))
+						}
+					} else if hasMin {
+						// Default max to current year + 5 for year fields, or reasonable max
+						maxVal = 2030
+						if fieldName == "year" {
+							maxVal = 2029
+						}
+						for val := minVal; val <= maxVal; val++ {
+							valueList = append(valueList, strconv.Itoa(val))
+						}
+					} else if hasMax {
+						// Default min to 1900 for year fields, or reasonable min
+						minVal = 1900
+						if fieldName == "year" {
+							minVal = 1900
+						}
+						for val := minVal; val <= maxVal; val++ {
+							valueList = append(valueList, strconv.Itoa(val))
+						}
+					}
+
+					if len(valueList) > 0 {
+						condition := qdrant.NewMatchKeywords(fieldName, valueList...)
+						conditions = append(conditions, condition)
+						logger.Debug("Added range keywords filter",
+							"component", "buildSearchFilters", "field", fieldName, "valueList", valueList)
+					}
 				}
-			case "integer":
-				// Integer fields - could add range support here if needed
-				if fieldValue != "" {
-					logger.Debug("Integer field filter not yet implemented",
-						"component", "buildSearchFilters", "field", fieldName)
-				}
-			case "float":
-				// Float fields - could add range support here if needed
-				if fieldValue != "" {
-					logger.Debug("Float field filter not yet implemented",
-						"component", "buildSearchFilters", "field", fieldName)
-				}
+			} else if fieldValue != "" {
+				// Single value for keyword_array fields
+				condition := qdrant.NewMatchKeywords(fieldName, fieldValue)
+				conditions = append(conditions, condition)
+				logger.Debug("Added keyword_array filter",
+					"component", "buildSearchFilters", "field", fieldName, "value", fieldValue)
+			}
+		case "integer":
+			// Integer fields - could add range support here if needed
+			if fieldValue != "" {
+				logger.Debug("Integer field filter not yet implemented",
+					"component", "buildSearchFilters", "field", fieldName)
+			}
+		case "float":
+			// Float fields - could add range support here if needed
+			if fieldValue != "" {
+				logger.Debug("Float field filter not yet implemented",
+					"component", "buildSearchFilters", "field", fieldName)
 			}
 		}
 	}
 
 	// Location condition (geo radius) - only apply if location is provided
-	l := params["location"]
+	l := c.FormValue("location")
 	if l != "" {
-		rStr := params["radius"]
+		rStr := c.FormValue("radius")
 		var r float64 = 25 // default to 25 miles
 		if rStr != "" {
 			if _, err := fmt.Sscanf(rStr, "%f", &r); err != nil {
@@ -254,8 +246,8 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 	}
 
 	// Price condition (range - min/max price)
-	minPriceStr := params["min_price"]
-	maxPriceStr := params["max_price"]
+	minPriceStr := c.FormValue("min_price")
+	maxPriceStr := c.FormValue("max_price")
 	if minPriceStr != "" || maxPriceStr != "" {
 		var minPrice, maxPrice *float64
 
@@ -304,8 +296,8 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 }
 
 func getAdIDs(c *fiber.Ctx) ([]int, uint64, error) {
-	q := c.Query("q")
-	cursorStr := c.Query("cursor")
+	q := c.FormValue("q")
+	cursorStr := c.FormValue("cursor")
 	userID := local.GetUserID(c)
 	filter := buildSearchFilter(c)
 	threshold := config.QdrantSearchThreshold
@@ -426,60 +418,9 @@ func HandleSwitchAdCategory(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	view := cookie.GetView(c)
 
-	// Extract search parameters from form data
-	params := c.Queries()
+	// Clear form parameters when switching categories
+	params := make(map[string]string)
 
 	// Return the updated search container
 	return render(c, ui.SearchContainer(userID, view, adCategory, params))
-}
-
-// HandleFilterField handles filter dropdown for any spec field
-func HandleFilterField(c *fiber.Ctx) error {
-	adCategory := cookie.GetAdCategory(c)
-	fieldName := c.Params("fieldName")
-
-	logger.Debug("HandleFilterField called",
-		"component", "filter-field", "adCategory", adCategory, "fieldName", fieldName)
-
-	if fieldName == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "Field name required")
-	}
-
-	// Get field config for this field in this category
-	currentFieldConfig, err := spec.GetCategoryField(adCategory, fieldName)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid field name")
-	}
-
-	// Log all query parameters
-	allQueries := c.Queries()
-	logger.Debug("Query parameters received",
-		"component", "filter-field", "fieldName", fieldName, "queries", allQueries)
-
-	// Check if this field should be shown in filters
-	if !currentFieldConfig.ShowInFilters {
-		// Field not marked for filters - return empty
-		return render(c, ui.GenericFilterOptions(fieldName, []string{}, ""))
-	}
-
-	// For filter fields, return ALL available values (not filtered by parents)
-	// Filter fields are independent - they show all possible values for that field
-	values, err := spec.GetFieldValues(adCategory, fieldName, map[string]string{})
-	if err != nil {
-		logger.Warn("Failed to get field values for filter",
-			"error", err, "component", "filter-field", "adCategory", adCategory, "fieldName", fieldName)
-		values = []string{}
-	} else {
-		logger.Debug("Got field values",
-			"component", "filter-field", "fieldName", fieldName, "count", len(values))
-	}
-
-	// Get current selected value from query parameters
-	selectedValue := c.Query(fieldName)
-
-	logger.Debug("Returning filter options",
-		"component", "filter-field", "fieldName", fieldName,
-		"valueCount", len(values), "selectedValue", selectedValue)
-
-	return render(c, ui.GenericFilterOptions(fieldName, values, selectedValue))
 }

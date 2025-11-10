@@ -1,9 +1,6 @@
 package ui
 
 import (
-	"fmt"
-	"strings"
-
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
@@ -14,18 +11,7 @@ import (
 
 func filterControls(adCategory int, params map[string]string) g.Node {
 	// Get category fields to determine which filters to show
-	fieldConfigs, err := spec.GetCategoryFields(adCategory)
-	if err != nil {
-		logger.Warn("Failed to get category fields for filter UI",
-			"error", err, "component", "filter-ui", "adCategory", adCategory)
-		// Fallback to basic filters only
-		return Div(
-			Class("grid grid-cols-2 gap-4 mt-4"),
-			locationFilter(params["location"]),
-			radiusFilter(params["radius"]),
-			priceFilter(params["min_price"], params["max_price"]),
-		)
-	}
+	fieldConfigs := spec.GetCategoryFields(adCategory)
 
 	// Build filter nodes dynamically based on category fields
 	var filterNodes []g.Node
@@ -151,23 +137,6 @@ func yearFilter(minYear, maxYear string) g.Node {
 	)
 }
 
-func breedFilter(value string) g.Node {
-	return Div(
-		Label(Class("block text-sm font-medium mb-1"), g.Text("Breed")),
-		Select(
-			Name("breed"),
-			ID("breedFilter"),
-			Class("w-full p-2 border rounded-md"),
-			hx.Get("/api/filter-field/breed"),
-			hx.Trigger("load"),
-			hx.Target("this"),
-			hx.Swap("innerHTML"),
-			Option(Value(""), g.Text("All Breeds"), g.If(value == "", Selected())),
-			g.If(value != "", Option(Value(value), g.Text(value), Selected())),
-		),
-	)
-}
-
 func priceFilter(minPrice, maxPrice string) g.Node {
 	return Div(
 		Label(Class("block text-sm font-medium mb-1"), g.Text("Price Range")),
@@ -198,120 +167,16 @@ func priceFilter(minPrice, maxPrice string) g.Node {
 }
 
 func clearFilters(adCategory int) g.Node {
-	// Build clear script dynamically based on category fields
-	clearScript := []string{
-		"document.getElementById('searchBox').value = ''",
-		"document.getElementById('locationFilter').value = ''",
-		"document.getElementById('radiusFilter').value = '25'",
-		"document.getElementById('minPriceFilter').value = ''",
-		"document.getElementById('maxPriceFilter').value = ''",
-	}
-
-	// Get category fields to determine which filter fields to clear
-	fieldConfigs, err := spec.GetCategoryFields(adCategory)
-	if err == nil {
-		for _, fieldConfig := range fieldConfigs {
-			if fieldConfig.FieldType == "int" || fieldConfig.FieldType == "float64" {
-				// Range fields - clear min/max
-				minKey := "min_" + fieldConfig.Name + "Filter"
-				maxKey := "max_" + fieldConfig.Name + "Filter"
-				clearScript = append(clearScript,
-					fmt.Sprintf("document.getElementById('%s').value = ''", minKey),
-					fmt.Sprintf("document.getElementById('%s').value = ''", maxKey))
-			} else {
-				// String fields - clear single value
-				filterID := fieldConfig.Name + "Filter"
-				clearScript = append(clearScript, fmt.Sprintf("document.getElementById('%s').value = ''", filterID))
-			}
-		}
-	}
-
-	clearScript = append(clearScript, "htmx.trigger('#searchWidget', 'submit')")
-
-	return buttonSecondary("Clear Filters",
-		withClass("px-4 py-2"),
+	return buttonSecondary("Clear Filters", withType("button"), withClass("px-4 py-2"),
 		withAttributes(
-			hx.On("click", strings.Join(clearScript, "; ")),
+			hx.On("click", "document.getElementById('searchWidget').reset();"),
+			hx.Get("/search"),
 		),
 	)
 }
 
 func applyFilters() g.Node {
 	return button("Apply Filters", withType("submit"), withClass("px-4 py-2"))
-}
-
-// chainedDropdownFilter creates a dynamic dropdown filter that updates based on parent field selections
-func chainedDropdownFilter(adCategory int, fieldConfig spec.FieldConfig, params map[string]string) g.Node {
-	value := params[fieldConfig.Name]
-
-	// Build query string with parent field values (only fields that come before this one in the chain)
-	queryParts := []string{}
-	var parentTriggers []string
-	fieldConfigs, err := spec.GetCategoryFields(adCategory)
-	if err == nil {
-		// Find current field index
-		currentIndex := -1
-		for i, f := range fieldConfigs {
-			if f.Name == fieldConfig.Name {
-				currentIndex = i
-				break
-			}
-		}
-
-		if currentIndex >= 0 {
-			// Add parent field values to query and build triggers
-			for i := 0; i < currentIndex; i++ {
-				parentField := fieldConfigs[i]
-				if parentField.FieldType == "int" || parentField.FieldType == "float64" {
-					// Range fields - add min/max
-					minKey := "min_" + parentField.Name
-					maxKey := "max_" + parentField.Name
-					if minVal := params[minKey]; minVal != "" {
-						queryParts = append(queryParts, fmt.Sprintf("%s=%s", minKey, minVal))
-					}
-					if maxVal := params[maxKey]; maxVal != "" {
-						queryParts = append(queryParts, fmt.Sprintf("%s=%s", maxKey, maxVal))
-					}
-					// Add triggers for range fields
-					parentTriggers = append(parentTriggers, fmt.Sprintf("change from:#%sFilter", minKey))
-					parentTriggers = append(parentTriggers, fmt.Sprintf("change from:#%sFilter", maxKey))
-				} else {
-					// String fields - add single value
-					if val := params[parentField.Name]; val != "" {
-						queryParts = append(queryParts, fmt.Sprintf("%s=%s", parentField.Name, val))
-					}
-					// Add trigger for this parent field
-					parentTriggers = append(parentTriggers, fmt.Sprintf("change from:#%sFilter", parentField.Name))
-				}
-			}
-		}
-	}
-
-	// Don't build query string from params - let hx.Include handle it
-	// This ensures we always get current form values, not initial params
-	// Use generic handler
-	endpoint := fmt.Sprintf("/api/filter-field/%s", fieldConfig.Name)
-
-	// Build trigger string - include load, form change, and individual parent field changes
-	triggers := []string{"load", "change from:#searchWidget"}
-	triggers = append(triggers, parentTriggers...)
-	triggerStr := strings.Join(triggers, ", ")
-
-	return Div(
-		Label(Class("block text-sm font-medium mb-1"), g.Text(fieldConfig.DisplayName)),
-		Select(
-			Name(fieldConfig.Name),
-			ID(fieldConfig.Name+"Filter"),
-			Class("w-full p-2 border rounded-md"),
-			hx.Get(endpoint),
-			hx.Trigger(triggerStr),
-			hx.Target("this"),
-			hx.Swap("innerHTML"),
-			hx.Include("#searchWidget"),
-			Option(Value(""), g.Text("All"), g.If(value == "", Selected())),
-			g.If(value != "", Option(Value(value), g.Text(value), Selected())),
-		),
-	)
 }
 
 // genericRangeFilter creates a range filter for numeric fields
@@ -345,7 +210,24 @@ func genericRangeFilter(fieldConfig spec.FieldConfig, minValue, maxValue string)
 
 // genericDropdownFilter creates a static dropdown filter for non-chained string fields
 func genericDropdownFilter(adCategory int, fieldConfig spec.FieldConfig, value string, hasChildren bool) g.Node {
-	triggerStr := "load, change from:#searchWidget"
+	// Get all available values for this field (filter fields are independent)
+	values, err := spec.GetFieldValues(adCategory, fieldConfig.Name, map[string]string{})
+	if err != nil {
+		logger.Warn("Failed to get field values for filter",
+			"error", err, "component", "filter-ui", "adCategory", adCategory, "fieldName", fieldConfig.Name)
+		values = []string{}
+	}
+
+	// Build options list
+	var options []g.Node
+	options = append(options, Option(Value(""), g.Text("All"), g.If(value == "", Selected())))
+	for _, val := range values {
+		optionAttrs := []g.Node{Value(val), g.Text(val)}
+		if val == value {
+			optionAttrs = append(optionAttrs, Selected())
+		}
+		options = append(options, Option(optionAttrs...))
+	}
 
 	return Div(
 		Label(Class("block text-sm font-medium mb-1"), g.Text(fieldConfig.DisplayName)),
@@ -353,13 +235,7 @@ func genericDropdownFilter(adCategory int, fieldConfig spec.FieldConfig, value s
 			Name(fieldConfig.Name),
 			ID(fieldConfig.Name+"Filter"),
 			Class("w-full p-2 border rounded-md"),
-			hx.Get(fmt.Sprintf("/api/filter-field/%s", fieldConfig.Name)),
-			hx.Trigger(triggerStr),
-			hx.Target("this"),
-			hx.Swap("innerHTML"),
-			hx.Include("#searchWidget"),
-			Option(Value(""), g.Text("All"), g.If(value == "", Selected())),
-			g.If(value != "", Option(Value(value), g.Text(value), Selected())),
+			g.Group(options),
 		),
 	)
 }

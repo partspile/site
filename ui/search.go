@@ -25,7 +25,6 @@ func createAdCategoryItems(activeCat int) []g.Node {
 			hx.Get("/switch-ad-category/"+strconv.Itoa(adCat)),
 			hx.Target("#searchContainer"),
 			hx.Swap("outerHTML"),
-			hx.Include("form"),
 			Div(
 				Class("p-2 bg-gray-200 rounded-full flex items-center justify-center"),
 				Img(
@@ -190,11 +189,11 @@ func createInfiniteScrollTrigger(loaderURL string) g.Node {
 }
 
 // SearchCreateLoaderURL creates the loader URL for pagination
-func SearchCreateLoaderURL(q string, cursor uint64) string {
+func SearchCreateLoaderURL(cursor uint64) string {
 	if cursor == 0 {
 		return ""
 	}
-	return fmt.Sprintf("/search-page?q=%s&cursor=%d", q, cursor)
+	return fmt.Sprintf("/search-page?cursor=%d", cursor)
 }
 
 // MakeFilterOptions returns HTML options for the make filter dropdown

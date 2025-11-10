@@ -133,12 +133,7 @@ func ClearPartCache() map[string]any {
 // buildAdCategoriesQuery builds the SQL query dynamically based on category field configuration
 func buildAdCategoriesQuery(adCat int, fieldValues map[string]string) (string, []interface{}) {
 	// Get category fields
-	fieldConfigs, err := spec.GetCategoryFields(adCat)
-	if err != nil {
-		logger.Warn("Failed to get category fields for part query",
-			"error", err, "component", "part", "adCat", adCat)
-		return "", nil
-	}
+	fieldConfigs := spec.GetCategoryFields(adCat)
 
 	// Build base query - now PartCategory is joined via Specification
 	baseQuery := `
@@ -204,12 +199,7 @@ func buildAdCategoriesQuery(adCat int, fieldValues map[string]string) (string, [
 // buildAdSubCategoriesQuery builds the SQL query dynamically based on category field configuration
 func buildAdSubCategoriesQuery(adCat int, fieldValues map[string]string, category string) (string, []interface{}) {
 	// Get category fields
-	fieldConfigs, err := spec.GetCategoryFields(adCat)
-	if err != nil {
-		logger.Warn("Failed to get category fields for part query",
-			"error", err, "component", "part", "adCat", adCat)
-		return "", nil
-	}
+	fieldConfigs := spec.GetCategoryFields(adCat)
 
 	// Build base query - now PartSubCategory has ad_category_id directly
 	baseQuery := `

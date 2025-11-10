@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 )
@@ -30,5 +31,5 @@ func HandleAdPage(c *fiber.Ctx) error {
 
 	// Owner can see their deleted ads, or anyone can see active ads
 	csrfToken := local.GetCSRFToken(c)
-	return render(c, ui.AdPage(*a, userID, userName, csrfToken, c.Path(), getLocation(c)))
+	return render(c, ui.AdPage(*a, userID, userName, csrfToken, c.Path(), cookie.GetLocation(c)))
 }

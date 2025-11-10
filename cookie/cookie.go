@@ -2,6 +2,7 @@ package cookie
 
 import (
 	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
@@ -80,6 +81,17 @@ func GetJWT(c *fiber.Ctx) string {
 	return c.Cookies("auth_token")
 }
 
-func GetTimezone(c *fiber.Ctx) string {
-	return c.Cookies("timezone")
+// GetLocation gets the timezone location from cookie
+func GetLocation(c *fiber.Ctx) *time.Location {
+	timezone := c.Cookies("timezone")
+	if timezone == "" {
+		// Default to UTC if no timezone cookie is set
+		return time.UTC
+	}
+	loc, err := time.LoadLocation(timezone)
+	if err != nil {
+		// Invalid timezone, default to UTC
+		return time.UTC
+	}
+	return loc
 }

@@ -19,11 +19,7 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string, f
 	headerText := fmt.Sprintf("Create New %s Ad", categoryName)
 
 	// Get category fields to dynamically render form
-	fieldConfigs, err := spec.GetCategoryFields(adCat)
-	if err != nil {
-		// Fallback to empty fields if error
-		fieldConfigs = []spec.FieldConfig{}
-	}
+	fieldConfigs := spec.GetCategoryFields(adCat)
 
 	// Build dynamic field nodes
 	fieldNodes := []g.Node{
@@ -94,11 +90,7 @@ func DuplicateAdPage(
 	adCat := originalAd.AdCategoryID
 
 	// Get category fields to dynamically render form
-	fieldConfigs, err := spec.GetCategoryFields(adCat)
-	if err != nil {
-		// Fallback to empty fields if error
-		fieldConfigs = []spec.FieldConfig{}
-	}
+	fieldConfigs := spec.GetCategoryFields(adCat)
 
 	// Initialize SpecData if nil
 	if originalAd.SpecData == nil {

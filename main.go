@@ -166,7 +166,6 @@ func main() {
 	api.Post("/update-ad-description/:id", h.AuthRequired, h.HandleUpdateAdDescription)
 	api.Post("/bookmark-ad/:id", h.AuthRequired, h.HandleBookmarkAd)
 	api.Delete("/bookmark-ad/:id", h.AuthRequired, h.HandleUnbookmarkAd)
-	api.Get("/filter-field/:fieldName", h.HandleFilterField)
 	api.Get("/year", h.HandleYears)
 	api.Get("/model", h.HandleModels)
 	api.Get("/engine", h.HandleEngines)

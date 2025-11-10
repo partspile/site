@@ -168,10 +168,7 @@ func ValidationErrorResponseWithStatus(c *fiber.Ctx, message string, statusCode 
 // ValidateAdForm validates the common ad form fields dynamically based on category configuration
 func ValidateAdForm(form *multipart.Form, adCat int) error {
 	// Get category fields to determine which fields to validate
-	fieldConfigs, err := spec.GetCategoryFields(adCat)
-	if err != nil {
-		return fmt.Errorf("failed to get category fields: %w", err)
-	}
+	fieldConfigs := spec.GetCategoryFields(adCat)
 
 	// Validate multi-value fields (keyword_array type)
 	for _, fieldConfig := range fieldConfigs {
@@ -189,10 +186,7 @@ func ValidateAdForm(form *multipart.Form, adCat int) error {
 // validateAdFormMultipart validates ad form and returns the values dynamically
 func validateAdFormMultipart(form *multipart.Form, adCat int) (years, models, engines []string, err error) {
 	// Get category fields to determine which fields to validate
-	fieldConfigs, err := spec.GetCategoryFields(adCat)
-	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to get category fields: %w", err)
-	}
+	fieldConfigs := spec.GetCategoryFields(adCat)
 
 	// Validate multi-value fields (keyword_array type)
 	for _, fieldConfig := range fieldConfigs {
@@ -315,10 +309,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	}
 
 	// Get category fields to determine which fields to validate
-	fieldConfigs, err := spec.GetCategoryFields(adCat)
-	if err != nil {
-		return ad.AdDetail{}, nil, nil, fmt.Errorf("failed to get category fields: %w", err)
-	}
+	fieldConfigs := spec.GetCategoryFields(adCat)
 
 	form, err := c.MultipartForm()
 	if err != nil {

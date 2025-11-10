@@ -82,7 +82,7 @@ func BuildAdEmbeddings(ads []ad.AdDetail) error {
 // buildAdEmbeddingPrompt creates a prompt for generating embeddings
 func buildAdEmbeddingPrompt(adObj ad.AdDetail) string {
 	// Get category fields to determine which fields to include
-	fieldConfigs, _ := spec.GetCategoryFields(adObj.AdCategoryID)
+	fieldConfigs := spec.GetCategoryFields(adObj.AdCategoryID)
 
 	// Get rock count for this ad
 	rockCount := 0
@@ -160,13 +160,7 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 	}
 
 	// Get category fields to determine which fields to include
-	fieldConfigs, err := spec.GetCategoryFields(adObj.AdCategoryID)
-	if err != nil {
-		logger.Warn("Failed to get category fields for metadata",
-			"error", err, "component", "vector", "adID", adObj.ID)
-		// Return metadata with only non-SpecData fields
-		return metadata
-	}
+	fieldConfigs := spec.GetCategoryFields(adObj.AdCategoryID)
 
 	// Add spec fields dynamically based on category configuration
 	for _, fieldConfig := range fieldConfigs {

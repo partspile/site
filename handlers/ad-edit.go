@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
@@ -52,7 +53,7 @@ func HandleUpdateAdPrice(c *fiber.Ctx) error {
 	// Queue for vector update since price affects search
 	vector.QueueAd(updatedAd.ID)
 
-	return render(c, ui.AdDetail(*updatedAd, userID, getLocation(c), local.GetCSRFToken(c)))
+	return render(c, ui.AdDetail(*updatedAd, userID, cookie.GetLocation(c), local.GetCSRFToken(c)))
 }
 
 // HandleUpdateAdDescription appends to the description of an ad
@@ -116,7 +117,7 @@ func HandleUpdateAdDescription(c *fiber.Ctx) error {
 	// Queue for vector update since description affects search
 	vector.QueueAd(updatedAd.ID)
 
-	return render(c, ui.AdDetail(*updatedAd, userID, getLocation(c), local.GetCSRFToken(c)))
+	return render(c, ui.AdDetail(*updatedAd, userID, cookie.GetLocation(c), local.GetCSRFToken(c)))
 }
 
 // HandleUpdateAdLocation updates only the location of an ad
@@ -160,7 +161,7 @@ func HandleUpdateAdLocation(c *fiber.Ctx) error {
 	// Queue for vector update since location affects search
 	vector.QueueAd(updatedAd.ID)
 
-	return render(c, ui.AdDetail(*updatedAd, userID, getLocation(c), local.GetCSRFToken(c)))
+	return render(c, ui.AdDetail(*updatedAd, userID, cookie.GetLocation(c), local.GetCSRFToken(c)))
 }
 
 // HandlePriceModal shows the price edit modal for an ad

@@ -19,13 +19,13 @@ func NewTreeView(ctx *fiber.Ctx) *TreeView {
 
 func (v *TreeView) GetAdIDs() ([]int, uint64, error) {
 	// Check if any filters are applied (search query, location, make, year range, price range)
-	hasFilters := v.ctx.Query("q") != "" ||
-		v.ctx.Query("location") != "" ||
-		v.ctx.Query("make") != "" ||
-		v.ctx.Query("min_year") != "" ||
-		v.ctx.Query("max_year") != "" ||
-		v.ctx.Query("min_price") != "" ||
-		v.ctx.Query("max_price") != ""
+	hasFilters := v.ctx.FormValue("q") != "" ||
+		v.ctx.FormValue("location") != "" ||
+		v.ctx.FormValue("make") != "" ||
+		v.ctx.FormValue("min_year") != "" ||
+		v.ctx.FormValue("max_year") != "" ||
+		v.ctx.FormValue("min_price") != "" ||
+		v.ctx.FormValue("max_price") != ""
 
 	if !hasFilters {
 		// Browse mode - no search query and no filters, return empty slice for full tree
@@ -37,11 +37,11 @@ func (v *TreeView) GetAdIDs() ([]int, uint64, error) {
 }
 
 func (v *TreeView) RenderSearchResults(adIDs []int, cursor uint64) error {
-	userPrompt := v.ctx.Query("q")
+	q := v.ctx.FormValue("q")
 	adCat := cookie.GetAdCategory(v.ctx)
 	userID := local.GetUserID(v.ctx)
 	csrfToken := local.GetCSRFToken(v.ctx)
-	return render(v.ctx, ui.TreeViewResults(adIDs, adCat, userPrompt, userID, csrfToken))
+	return render(v.ctx, ui.TreeViewResults(adIDs, adCat, q, userID, csrfToken))
 }
 
 func (v *TreeView) RenderSearchPage(adIDs []int, cursor uint64) error {

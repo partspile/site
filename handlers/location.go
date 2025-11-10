@@ -3,11 +3,8 @@ package handlers
 import (
 	"database/sql"
 	"fmt"
-	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/db"
 )
 
@@ -35,52 +32,47 @@ func resolveAndStoreLocation(raw string) (int, error) {
 	}
 
 	// Insert new location into database
-	res, err := db.Exec("INSERT INTO Location (raw_text, city, admin_area, country, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)",
+	// Use INSERT OR IGNORE to handle race conditions where another request might have inserted it
+	res, err := db.Exec("INSERT OR IGNORE INTO Location (raw_text, city, admin_area, country, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)",
 		raw, loc.City, loc.AdminArea, loc.Country, loc.Latitude, loc.Longitude)
 	if err != nil {
 		return 0, err
 	}
-	lastID, _ := res.LastInsertId()
-	return int(lastID), nil
+
+	// Check if insert actually created a row
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected > 0 {
+		// We inserted it, get the new ID
+		lastID, _ := res.LastInsertId()
+		return int(lastID), nil
+	}
+
+	// Another request inserted it first (race condition), query for the ID
+	err = db.QueryRow("SELECT id FROM Location WHERE raw_text = ?", raw).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
 }
 
 // resolveLocationForFilter resolves a location text to lat/lon coordinates
-// Checks database first, then uses Grok if not found, but doesn't store the result
+// Uses the common resolveAndStoreLocation function, then retrieves coordinates
 func resolveLocationForFilter(locationText string) (latitude, longitude float64, err error) {
 	if locationText == "" {
 		return 0, 0, fmt.Errorf("empty location text")
 	}
 
-	// First try to find existing location in database
-	lat, lon, err := ad.GetLatLonByRawText(locationText)
-	if err != nil {
-		return 0, 0, fmt.Errorf("database error looking up location: %w", err)
-	}
-	found := lat != 0 || lon != 0
-	if found {
-		return lat, lon, nil
-	}
-
-	// If not found in database, use Grok to resolve it but don't store
-	loc, err := ad.ResolveLocation(locationText)
+	// Use common function to resolve and store location
+	locationID, err := resolveAndStoreLocation(locationText)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to resolve location: %w", err)
 	}
 
-	return *loc.Latitude, *loc.Longitude, nil
-}
-
-// getLocation gets the timezone location from cookie
-func getLocation(c *fiber.Ctx) *time.Location {
-	timezone := cookie.GetTimezone(c)
-	if timezone == "" {
-		// Default to UTC if no timezone cookie is set
-		return time.UTC
-	}
-	loc, err := time.LoadLocation(timezone)
+	// Get lat/lon from the location ID
+	lat, lon, err := ad.GetLatLon(locationID)
 	if err != nil {
-		// Invalid timezone, default to UTC
-		return time.UTC
+		return 0, 0, fmt.Errorf("failed to get coordinates for location: %w", err)
 	}
-	return loc
+
+	return lat, lon, nil
 }

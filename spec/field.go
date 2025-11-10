@@ -169,16 +169,19 @@ func loadCategoryFields(fieldDefs map[string]FieldConfig) (map[int][]FieldConfig
 }
 
 // GetCategoryFields returns the ordered list of fields for a category (uses cache)
-func GetCategoryFields(adCategoryID int) ([]FieldConfig, error) {
+func GetCategoryFields(adCategoryID int) []FieldConfig {
 	fields, exists := categoryFieldsCache[adCategoryID]
 	if !exists {
-		return []FieldConfig{}, nil
+		logger.Warn("No fields found for ad category",
+			"component", "spec-field",
+			"ad_category_id", adCategoryID)
+		return []FieldConfig{}
 	}
 
 	// Return a copy to prevent external modification
 	result := make([]FieldConfig, len(fields))
 	copy(result, fields)
-	return result, nil
+	return result
 }
 
 // IsFirstInChain returns true if the field is the first field in its chain
@@ -276,10 +279,7 @@ func GetFieldDefinition(fieldName string) (FieldConfig, bool) {
 
 // GetCategoryField returns the field configuration for a specific field in a category
 func GetCategoryField(adCategoryID int, fieldName string) (FieldConfig, error) {
-	fieldConfigs, err := GetCategoryFields(adCategoryID)
-	if err != nil {
-		return FieldConfig{}, fmt.Errorf("failed to get category fields: %w", err)
-	}
+	fieldConfigs := GetCategoryFields(adCategoryID)
 
 	for _, fieldConfig := range fieldConfigs {
 		if fieldConfig.Name == fieldName {

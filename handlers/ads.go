@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
 )
@@ -30,7 +31,7 @@ func HandleBookmarkedAdsPage(c *fiber.Ctx) error {
 
 	// Return navigation with content
 	csrfToken := local.GetCSRFToken(c)
-	content := ui.BookmarkedAdsPage(ads, userID, userName, c.Path(), getLocation(c), csrfToken)
+	content := ui.BookmarkedAdsPage(ads, userID, userName, c.Path(), cookie.GetLocation(c), csrfToken)
 	return render(c, ui.AdsPageWithContent(userID, userName, c.Path(), "bookmarked", content))
 }
 
@@ -49,7 +50,7 @@ func HandleActiveAdsPage(c *fiber.Ctx) error {
 
 	// Return navigation with content
 	csrfToken := local.GetCSRFToken(c)
-	content := ui.ActiveAdsPage(ads, userID, userName, c.Path(), getLocation(c), csrfToken)
+	content := ui.ActiveAdsPage(ads, userID, userName, c.Path(), cookie.GetLocation(c), csrfToken)
 	return render(c, ui.AdsPageWithContent(userID, userName, c.Path(), "active", content))
 }
 
@@ -68,6 +69,6 @@ func HandleDeletedAdsPage(c *fiber.Ctx) error {
 
 	// Return navigation with content
 	csrfToken := local.GetCSRFToken(c)
-	content := ui.DeletedAdsPage(ads, userID, userName, c.Path(), getLocation(c), csrfToken)
+	content := ui.DeletedAdsPage(ads, userID, userName, c.Path(), cookie.GetLocation(c), csrfToken)
 	return render(c, ui.AdsPageWithContent(userID, userName, c.Path(), "deleted", content))
 }
