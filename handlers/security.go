@@ -24,14 +24,21 @@ func ConfigureHelmet() fiber.Handler {
 		"form-action 'self';"
 
 	cfg := helmet.Config{
-		ContentSecurityPolicy:     csp,
-		XFrameOptions:             "DENY",
-		ReferrerPolicy:            "strict-origin-when-cross-origin",
-		ContentTypeNosniff:        "nosniff",
-		PermissionPolicy:          "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
-		CrossOriginEmbedderPolicy: "require-corp",
+		ContentSecurityPolicy: csp,
+		XFrameOptions:         "DENY",
+		ReferrerPolicy:        "strict-origin-when-cross-origin",
+		ContentTypeNosniff:    "nosniff",
+		PermissionPolicy:      "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
+		// NOTE: CrossOriginEmbedderPolicy and CrossOriginResourcePolicy are relaxed due to
+		// Backblaze B2 limitations. B2 does not support setting Cross-Origin-Resource-Policy
+		// headers on stored files, which causes COEP "require-corp" to block B2 images.
+		// If B2 is replaced with a storage service that supports CORP headers (e.g., AWS S3,
+		// Google Cloud Storage, Cloudflare R2), these can be tightened to:
+		//   CrossOriginEmbedderPolicy: "require-corp"
+		//   CrossOriginResourcePolicy: "same-origin"
+		CrossOriginEmbedderPolicy: "unsafe-none",
 		CrossOriginOpenerPolicy:   "same-origin",
-		CrossOriginResourcePolicy: "same-origin",
+		CrossOriginResourcePolicy: "cross-origin",
 		OriginAgentCluster:        "?1",
 		XDNSPrefetchControl:       "off",
 		XDownloadOptions:          "noopen",
