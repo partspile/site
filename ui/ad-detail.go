@@ -377,19 +377,18 @@ func copyIcon() g.Node {
 func modalCopyButton(copyButtonID, urlInputID, copyFeedbackID string) g.Node {
 	return button("Copy",
 		withClass("px-6 py-3 font-medium shadow-md transition flex items-center gap-2"),
+		withType("button"),
 		withAttributes(
 			ID(copyButtonID),
 			g.Attr("onclick", fmt.Sprintf(`
-				const urlInput = document.getElementById('%s');
-				const fullURL = urlInput.value;
-				navigator.clipboard.writeText(fullURL).then(() => {
-					const feedback = document.getElementById('%s');
-					feedback.classList.remove('hidden');
+				const urlInput = document.getElementById(%s);
+				navigator.clipboard.writeText(urlInput.value).then(() => {
+					document.getElementById(%s).classList.remove('hidden');
 					setTimeout(() => {
-						feedback.classList.add('hidden');
+						document.getElementById(%s).classList.add('hidden');
 					}, 2000);
 				});
-			`, fmt.Sprintf("%q", urlInputID), fmt.Sprintf("%q", copyFeedbackID))),
+			`, fmt.Sprintf("%q", urlInputID), fmt.Sprintf("%q", copyFeedbackID), fmt.Sprintf("%q", copyFeedbackID))),
 			copyIcon(),
 		),
 	)
@@ -551,8 +550,12 @@ func ShareModal(a ad.Ad, userID int) g.Node {
 			Style("max-width: 500px;"),
 			g.Attr("onclick", "event.stopPropagation()"),
 			Div(Class("p-8"),
-				H3(Class("text-2xl font-bold mb-6 text-gray-900"),
-					g.Text("Share Ad")),
+				Div(
+					Class("flex items-center justify-between mb-6"),
+					H3(Class("text-2xl font-bold text-gray-900"),
+						g.Text("Share Ad")),
+					modalCloseButton(),
+				),
 				Div(Class("mb-6"),
 					Label(Class("block text-sm font-semibold text-gray-800 mb-3"),
 						g.Text("Ad Link")),
@@ -571,7 +574,6 @@ func ShareModal(a ad.Ad, userID int) g.Node {
 				),
 				Div(
 					Class("flex gap-3 justify-end"),
-					modalCloseButton(),
 					modalCopyButton(copyButtonID, urlInputID, copyFeedbackID),
 				),
 			),
