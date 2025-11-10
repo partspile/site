@@ -151,7 +151,7 @@ func buildFieldValueMap(ad AdDetail, fieldConfigs []spec.FieldConfig) map[string
 
 	for _, fieldConfig := range fieldConfigs {
 		// Only handle single-value fields here (multi-value handled separately)
-		if fieldConfig.QdrantType == "keyword_array" {
+		if fieldConfig.FieldMultiValue {
 			continue
 		}
 
@@ -175,8 +175,8 @@ func getMultiValueFields(ad AdDetail, fieldConfigs []spec.FieldConfig) map[strin
 	}
 
 	for _, fieldConfig := range fieldConfigs {
-		// Only handle multi-value fields (keyword_array type)
-		if fieldConfig.QdrantType != "keyword_array" {
+		// Only handle multi-value fields
+		if !fieldConfig.FieldMultiValue {
 			continue
 		}
 

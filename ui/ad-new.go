@@ -42,7 +42,7 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string, f
 		} else {
 			// Chained field - render empty div for HTMX to populate
 			fieldID := fieldConfig.Name + "Div"
-			if fieldConfig.QdrantType == "keyword_array" {
+			if fieldConfig.FieldMultiValue {
 				fieldID = fieldConfig.Name + "sDiv"
 			}
 			fieldNodes = append(fieldNodes, Div(ID(fieldID)))
@@ -132,7 +132,7 @@ func DuplicateAdPage(
 		}
 		var defaultValue string
 		// Get default value for single-select fields
-		if fieldConfig.QdrantType != "keyword_array" {
+		if !fieldConfig.FieldMultiValue {
 			if fieldValues, exists := originalAd.SpecData[fieldConfig.Name]; exists && len(fieldValues) > 0 {
 				defaultValue = fieldValues[0]
 			}
@@ -202,7 +202,7 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 	var includeSelectors []string
 	for i := 0; i < fieldIndex; i++ {
 		parentField := allFields[i]
-		if parentField.QdrantType == "keyword_array" {
+		if parentField.FieldMultiValue {
 			includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']:checked", parentField.Name))
 		} else {
 			includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']", parentField.Name))
@@ -217,7 +217,7 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 		nextFieldName = spec.GetNextFieldName(fieldConfig, allFields)
 		// Use plural form for multi-value fields
 		nextFieldDef, exists := spec.GetFieldDefinition(nextFieldName)
-		if exists && nextFieldDef.QdrantType == "keyword_array" {
+		if exists && nextFieldDef.FieldMultiValue {
 			nextFieldTarget = nextFieldName + "sDiv"
 		} else {
 			nextFieldTarget = nextFieldName + "Div"
@@ -227,7 +227,7 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 		nextField := allFields[fieldIndex+1]
 		if !spec.FieldsInSameChain(fieldConfig, nextField, allFields) {
 			// Next field is in a different chain
-			if nextField.QdrantType == "keyword_array" {
+			if nextField.FieldMultiValue {
 				nextFieldTarget = nextField.Name + "sDiv"
 			} else {
 				nextFieldTarget = nextField.Name + "Div"
@@ -235,7 +235,7 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 			nextFieldName = nextField.Name
 		} else {
 			// Next field is in the same chain (shouldn't happen if chain logic is correct)
-			if nextField.QdrantType == "keyword_array" {
+			if nextField.FieldMultiValue {
 				nextFieldTarget = nextField.Name + "sDiv"
 			} else {
 				nextFieldTarget = nextField.Name + "Div"
@@ -244,7 +244,7 @@ func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields
 		}
 	}
 
-	if fieldConfig.QdrantType == "keyword_array" {
+	if fieldConfig.FieldMultiValue {
 		// Multi-select (checkboxes)
 		selected := make(map[string]bool)
 		for _, val := range selectedValues {

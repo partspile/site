@@ -196,7 +196,7 @@ func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
 		if values, exists := q[queryKey]; exists && len(values) > 0 {
 			// For multi-value fields (years, models, engines), join with comma
 			// For single-value fields (make), use first value
-			if parentField.QdrantType == "keyword_array" {
+			if parentField.FieldMultiValue {
 				parentValues[parentField.Name] = strings.Join(values, ",")
 			} else {
 				parentValues[parentField.Name] = values[0]
@@ -230,7 +230,7 @@ func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
 	// Find downstream fields in the same chain that need to be cleared
 	downstreamFields := spec.GetDownstreamFields(currentField, fieldConfigs)
 
-	if fieldDef.QdrantType == "keyword_array" {
+	if fieldDef.FieldMultiValue {
 		// Multi-select (checkboxes) - years, models, engines
 		mainNode := buildMultiSelectFieldNode(fieldName, values)
 		return renderWithDownstreamClears(c, mainNode, downstreamFields, fieldConfigs)
@@ -281,7 +281,7 @@ func buildSingleSelectFieldNode(fieldName string, values []string, currentField 
 			nextFieldName := spec.GetNextFieldName(currentField, allFields)
 			nextFieldDef, exists := spec.GetFieldDefinition(nextFieldName)
 			var nextFieldTarget string
-			if exists && nextFieldDef.QdrantType == "keyword_array" {
+			if exists && nextFieldDef.FieldMultiValue {
 				nextFieldTarget = nextFieldName + "sDiv"
 			} else {
 				nextFieldTarget = nextFieldName + "Div"
@@ -291,7 +291,7 @@ func buildSingleSelectFieldNode(fieldName string, values []string, currentField 
 			var includeSelectors []string
 			for i := 0; i < currentFieldIndex; i++ {
 				parentField := allFields[i]
-				if parentField.QdrantType == "keyword_array" {
+				if parentField.FieldMultiValue {
 					includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%ss']:checked", parentField.Name))
 				} else {
 					includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']", parentField.Name))
@@ -349,7 +349,7 @@ func renderWithDownstreamClears(c *fiber.Ctx, mainNode g.Node, downstreamFields 
 	fieldIDMap := make(map[string]string)
 	for _, fieldConfig := range fieldConfigs {
 		divID := fieldConfig.Name + "Div"
-		if fieldConfig.QdrantType == "keyword_array" {
+		if fieldConfig.FieldMultiValue {
 			divID = fieldConfig.Name + "sDiv"
 		}
 		fieldIDMap[fieldConfig.Name] = divID
@@ -384,7 +384,7 @@ func renderEmptyFieldSelector(c *fiber.Ctx, fieldName string) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Field definition not found")
 	}
 
-	if fieldDef.QdrantType == "keyword_array" {
+	if fieldDef.FieldMultiValue {
 		return renderMultiSelectField(c, fieldName, []string{})
 	} else {
 		return renderSingleSelectField(c, fieldName, []string{})

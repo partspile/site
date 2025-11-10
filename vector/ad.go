@@ -182,7 +182,7 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 		}
 
 		// Add to metadata based on field type - use fieldConfig.Name directly
-		if fieldConfig.QdrantType == "keyword_array" {
+		if fieldConfig.FieldMultiValue {
 			// Multi-value field - store as array
 			metadata[fieldConfig.Name] = nonEmptyValues
 		} else {
@@ -192,14 +192,6 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 	}
 
 	return metadata
-}
-
-// Helper function for embedding generation
-func joinStrings(ss []string) string {
-	if len(ss) == 0 {
-		return ""
-	}
-	return fmt.Sprintf("%s", ss)
 }
 
 // StartBackgroundProcessor starts the background processor

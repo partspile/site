@@ -20,6 +20,7 @@ type FieldConfig struct {
 	TableFieldName  string // Column name in Specification table (e.g., 'make_id', 'year_id')
 	ValueColumnName string // Column name in the foreign table for the value (e.g., 'name', 'year')
 	QdrantType      string // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
+	FieldMultiValue bool   // Whether this field can have multiple values
 	IsRequired      bool
 	Order           int  // Priority order (from priority_order column) - used for display and determining chains
 	NextInChain     int  // Priority order of next field in chain (0 = last field in chain or standalone)
@@ -97,6 +98,7 @@ func loadFieldDefinitions() (map[string]FieldConfig, error) {
 			TableFieldName:  f.TableFieldName,
 			ValueColumnName: f.ValueColumnName,
 			QdrantType:      f.QdrantType,
+			FieldMultiValue: f.QdrantType == "keyword_array",
 		}
 	}
 

@@ -2,12 +2,10 @@ package vector
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/logger"
-	"github.com/parts-pile/site/search"
 )
 
 // GetUserPersonalizedEmbedding loads from cache first, then generates new embedding if not found.
@@ -33,7 +31,6 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 	const (
 		bookmarkWeight = 3
 		clickWeight    = 2
-		searchWeight   = 1
 		limit          = config.QdrantUserEmbeddingLimit
 	)
 	logger.Debug("Using limit for user embedding",
@@ -113,54 +110,6 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 				"adID", adID, "userID", userID)
 		}
 	}
-	searches, err := search.GetRecentUserSearches(userID, limit)
-	if err != nil {
-		return nil, fmt.Errorf("fetch searches: %w", err)
-	}
-	logger.Debug("User recent searches",
-		"userID", userID, "searches", searches, "count", len(searches))
-
-	// Collect valid search queries for batch processing
-	var searchQueries []string
-	var validSearches []search.UserSearch
-	for _, s := range searches {
-		if strings.TrimSpace(s.QueryString) != "" {
-			searchQueries = append(searchQueries, s.QueryString)
-			validSearches = append(validSearches, s)
-		} else {
-			logger.Debug("Skipping empty search query",
-				"userID", userID)
-		}
-	}
-
-	// Generate embeddings for all search queries in batch
-	var searchEmbeddings [][]float32
-	if len(searchQueries) > 0 {
-		logger.Debug("Generating batch embeddings for user search queries",
-			"userID", userID, "count", len(searchQueries))
-		embeddings, err := GetQueryEmbeddings(searchQueries)
-		if err != nil {
-			logger.Debug("Batch embedding error for user searches",
-				"error", err, "userID", userID)
-		} else {
-			searchEmbeddings = embeddings
-		}
-	}
-
-	// Add search embeddings to vectors with appropriate weights
-	for i, emb := range searchEmbeddings {
-		if emb != nil {
-			for j := 0; j < searchWeight; j++ {
-				vectors = append(vectors, emb)
-				weights = append(weights, 1)
-			}
-			logger.Debug("Added embedding for search query",
-				"userID", userID, "query", validSearches[i].QueryString)
-		} else {
-			logger.Debug("Failed to generate embedding for search query",
-				"userID", userID, "query", validSearches[i].QueryString)
-		}
-	}
 
 	logger.Debug("Vectors aggregated",
 		"userID", userID, "vectors", len(vectors), "weights",
@@ -181,7 +130,6 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 
 	logger.Info("Successfully created user embedding",
 		"userID", userID, "vectors", len(vectors), "bookmarks",
-		len(bookmarkIDs), "clicks", len(clickedIDs), "searches",
-		len(searches))
+		len(bookmarkIDs), "clicks", len(clickedIDs))
 	return emb, nil
 }

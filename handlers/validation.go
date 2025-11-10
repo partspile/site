@@ -170,9 +170,9 @@ func ValidateAdForm(form *multipart.Form, adCat int) error {
 	// Get category fields to determine which fields to validate
 	fieldConfigs := spec.GetCategoryFields(adCat)
 
-	// Validate multi-value fields (keyword_array type)
+	// Validate multi-value fields
 	for _, fieldConfig := range fieldConfigs {
-		if fieldConfig.QdrantType == "keyword_array" && fieldConfig.IsRequired {
+		if fieldConfig.FieldMultiValue && fieldConfig.IsRequired {
 			values := form.Value[fieldConfig.Name]
 			if len(values) == 0 {
 				return fmt.Errorf("please select at least one %s", fieldConfig.DisplayName)
@@ -188,9 +188,9 @@ func validateAdFormMultipart(form *multipart.Form, adCat int) (years, models, en
 	// Get category fields to determine which fields to validate
 	fieldConfigs := spec.GetCategoryFields(adCat)
 
-	// Validate multi-value fields (keyword_array type)
+	// Validate multi-value fields
 	for _, fieldConfig := range fieldConfigs {
-		if fieldConfig.QdrantType == "keyword_array" && fieldConfig.IsRequired {
+		if fieldConfig.FieldMultiValue && fieldConfig.IsRequired {
 			values := form.Value[fieldConfig.Name]
 			if len(values) == 0 {
 				return nil, nil, nil, fmt.Errorf("please select at least one %s", fieldConfig.DisplayName)
@@ -321,7 +321,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 
 	for _, fieldConfig := range fieldConfigs {
 		if fieldConfig.IsRequired {
-			if fieldConfig.QdrantType == "keyword_array" {
+			if fieldConfig.FieldMultiValue {
 				// Multi-value fields (year, model, engine, etc.)
 				values := form.Value[fieldConfig.Name]
 				if len(values) == 0 {

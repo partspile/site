@@ -53,7 +53,13 @@ func HandleUpdateAdPrice(c *fiber.Ctx) error {
 	// Queue for vector update since price affects search
 	vector.QueueAd(updatedAd.ID)
 
-	return render(c, ui.AdDetail(*updatedAd, userID, cookie.GetLocation(c), local.GetCSRFToken(c)))
+	// Try to get view from form or query, fall back to empty string (will use cookie in collapse)
+	view := c.FormValue("view")
+	if view == "" {
+		view = c.Query("view", "")
+	}
+
+	return render(c, ui.AdDetail(*updatedAd, userID, cookie.GetLocation(c), local.GetCSRFToken(c), view))
 }
 
 // HandleUpdateAdDescription appends to the description of an ad
@@ -117,7 +123,13 @@ func HandleUpdateAdDescription(c *fiber.Ctx) error {
 	// Queue for vector update since description affects search
 	vector.QueueAd(updatedAd.ID)
 
-	return render(c, ui.AdDetail(*updatedAd, userID, cookie.GetLocation(c), local.GetCSRFToken(c)))
+	// Try to get view from form or query, fall back to empty string (will use cookie in collapse)
+	view := c.FormValue("view")
+	if view == "" {
+		view = c.Query("view", "")
+	}
+
+	return render(c, ui.AdDetail(*updatedAd, userID, cookie.GetLocation(c), local.GetCSRFToken(c), view))
 }
 
 // HandleUpdateAdLocation updates only the location of an ad
@@ -161,7 +173,13 @@ func HandleUpdateAdLocation(c *fiber.Ctx) error {
 	// Queue for vector update since location affects search
 	vector.QueueAd(updatedAd.ID)
 
-	return render(c, ui.AdDetail(*updatedAd, userID, cookie.GetLocation(c), local.GetCSRFToken(c)))
+	// Try to get view from form or query, fall back to empty string (will use cookie in collapse)
+	view := c.FormValue("view")
+	if view == "" {
+		view = c.Query("view", "")
+	}
+
+	return render(c, ui.AdDetail(*updatedAd, userID, cookie.GetLocation(c), local.GetCSRFToken(c), view))
 }
 
 // HandlePriceModal shows the price edit modal for an ad

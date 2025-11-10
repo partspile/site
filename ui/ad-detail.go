@@ -16,7 +16,7 @@ import (
 	"github.com/parts-pile/site/spec"
 )
 
-func AdDetail(a ad.AdDetail, userID int, loc *time.Location, csrfToken string) g.Node {
+func AdDetail(a ad.AdDetail, userID int, loc *time.Location, csrfToken, view string) g.Node {
 	// Determine full class strings based on deleted status
 	var containerClass, contentClass string
 	if a.IsArchived() {
@@ -33,7 +33,7 @@ func AdDetail(a ad.AdDetail, userID int, loc *time.Location, csrfToken string) g
 		ID(adID(a.Ad)),
 		Class(containerClass),
 		imageNode(a),
-		closeButton(a),
+		closeButton(a, view),
 		g.If(a.IsArchived(), deletedWatermark()),
 		Div(
 			Class(contentClass),
@@ -99,11 +99,11 @@ func deletedWatermark() g.Node {
 	)
 }
 
-func closeButton(a ad.AdDetail) g.Node {
+func closeButton(a ad.AdDetail, view string) g.Node {
 	return Button(
 		Type("button"),
 		Class("absolute top-2 right-2 bg-white border-2 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-100 focus:outline-none cursor-pointer"),
-		hx.Get(fmt.Sprintf("/ad/collapse/%d", a.ID)),
+		hx.Get(fmt.Sprintf("/ad/collapse/%d?view=%s", a.ID, view)),
 		hx.Target(adTarget(a.Ad)),
 		hx.Swap("outerHTML"),
 		icon("/images/close.svg", "Close", "w-6 h-6"),
@@ -759,7 +759,7 @@ func partTypePath(a ad.AdDetail) g.Node {
 		}
 
 		// Format based on field type
-		if fieldConfig.QdrantType == "keyword_array" {
+		if fieldConfig.FieldMultiValue {
 			// Multi-value field - join with comma
 			// Special handling for year field - format as ranges
 			if fieldName == "year" {

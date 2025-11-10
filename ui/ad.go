@@ -149,7 +149,7 @@ func AdPage(a ad.AdDetail, userID int, userName, csrfToken string, path string, 
 		path,
 		csrfToken,
 		[]g.Node{
-			AdDetail(a, userID, loc, csrfToken),
+			AdDetail(a, userID, loc, csrfToken, ""),
 		},
 	)
 }

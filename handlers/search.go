@@ -295,6 +295,19 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 	return filter
 }
 
+func parseCursor(cursorStr string) (uint64, error) {
+	if cursorStr == "" {
+		return 0, nil
+	}
+	cursor, err := strconv.ParseUint(cursorStr, 10, 64)
+	if err != nil {
+		logger.Debug("Failed to parse cursor offset",
+			"error", err, "component", "parseCursor")
+		return 0, err
+	}
+	return cursor, nil
+}
+
 func getAdIDs(c *fiber.Ctx) ([]int, uint64, error) {
 	q := c.FormValue("q")
 	cursorStr := c.FormValue("cursor")
@@ -303,15 +316,9 @@ func getAdIDs(c *fiber.Ctx) ([]int, uint64, error) {
 	threshold := config.QdrantSearchThreshold
 	k := config.QdrantSearchPageSize
 
-	cursor := uint64(0)
-	if cursorStr != "" {
-		var err error
-		cursor, err = strconv.ParseUint(cursorStr, 10, 64)
-		if err != nil {
-			logger.Debug("Failed to parse cursor offset",
-				"error", err, "component", "getAdIDs")
-			return nil, 0, err
-		}
+	cursor, err := parseCursor(cursorStr)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	adIDs, cursor, err := performSearch(q, userID, cursor, threshold, k, filter)
@@ -326,8 +333,6 @@ func getAdIDs(c *fiber.Ctx) ([]int, uint64, error) {
 }
 
 func handleSearch(c *fiber.Ctx, view int) error {
-	userID := local.GetUserID(c)
-
 	v, err := NewView(c, view)
 	if err != nil {
 		return err
@@ -336,11 +341,6 @@ func handleSearch(c *fiber.Ctx, view int) error {
 	adIDs, nextCursor, err := v.GetAdIDs()
 	if err != nil {
 		return err
-	}
-
-	if userID != 0 {
-		params := c.Queries()
-		saveUserSearchAndQueue(userID, params)
 	}
 
 	return v.RenderSearchResults(adIDs, nextCursor)

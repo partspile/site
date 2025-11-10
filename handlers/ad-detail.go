@@ -35,8 +35,9 @@ func HandleAdDetail(c *fiber.Ctx) error {
 
 	loc := cookie.GetLocation(c)
 	csrfToken := local.GetCSRFToken(c)
+	view := c.Query("view", "")
 
-	return render(c, ui.AdDetail(*a, userID, loc, csrfToken))
+	return render(c, ui.AdDetail(*a, userID, loc, csrfToken, view))
 }
 
 // HandleAdCollapse handles ad collapse
@@ -52,7 +53,10 @@ func HandleAdCollapse(c *fiber.Ctx) error {
 	}
 	loc := cookie.GetLocation(c)
 	csrfToken := local.GetCSRFToken(c)
-	view := cookie.GetView(c)
+
+	// Get view from query parameter, fall back to cookie if not provided
+	view := ui.StringToView(c.Query("view"))
+
 	switch view {
 	case ui.ViewList, ui.ViewTree:
 		return render(c, ui.AdListNode(*a, userID, loc, csrfToken))
