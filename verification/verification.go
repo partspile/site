@@ -29,7 +29,6 @@ type VerificationCode struct {
 	ID               int
 	Phone            string
 	Code             string
-	ExpiresAt        time.Time
 	Attempts         int
 	RegistrationName string
 	CreatedAt        time.Time
@@ -50,61 +49,56 @@ func GenerateCode() (string, error) {
 
 // CreateVerificationCode stores a new verification code in the database
 func CreateVerificationCode(phone, code string) error {
-	expiresAt := time.Now().Add(CodeExpiry)
-
 	_, err := db.Exec(`
-		INSERT INTO PhoneVerification (phone, verification_code, expires_at, attempts) 
-		VALUES (?, ?, ?, 0)
-	`, phone, code, expiresAt.Format(time.RFC3339))
+		INSERT INTO PhoneVerification (phone, verification_code, attempts) 
+		VALUES ($1, $2, 0)
+	`, phone, code)
 
 	if err != nil {
 		return fmt.Errorf("failed to create verification code: %w", err)
 	}
 
 	logger.Info("Created verification code",
-		"component", "verification", "phone", phone, "expiresAt", expiresAt.Format(time.RFC3339))
+		"component", "verification", "phone", phone)
 	return nil
 }
 
 // CreateRegistrationVerificationCode stores a new verification code with registration name
 func CreateRegistrationVerificationCode(phone, code, name string) error {
-	expiresAt := time.Now().Add(CodeExpiry)
-
 	_, err := db.Exec(`
-		INSERT INTO PhoneVerification (phone, verification_code, expires_at, attempts, registration_name) 
-		VALUES (?, ?, ?, 0, ?)
-	`, phone, code, expiresAt.Format(time.RFC3339), name)
+		INSERT INTO PhoneVerification (phone, verification_code, attempts, registration_name) 
+		VALUES ($1, $2, 0, $3)
+	`, phone, code, name)
 
 	if err != nil {
 		return fmt.Errorf("failed to create registration verification code: %w", err)
 	}
 
 	logger.Info("Created registration verification code",
-		"component", "verification", "phone", phone, "name", name, "expiresAt", expiresAt.Format(time.RFC3339))
+		"component", "verification", "phone", phone, "name", name)
 	return nil
 }
 
 // GetVerificationCode retrieves the most recent verification code for a phone
 func GetVerificationCode(phone string) (*VerificationCode, error) {
 	row := db.QueryRow(`
-		SELECT id, phone, verification_code, expires_at, attempts, registration_name, created_at
+		SELECT id, phone, verification_code, attempts, registration_name, created_at
 		FROM PhoneVerification 
-		WHERE phone = ? 
+		WHERE phone = $1 
 		ORDER BY created_at DESC 
 		LIMIT 1
 	`, phone)
 
 	var vc VerificationCode
-	var expiresAtStr, createdAtStr string
 
-	err := row.Scan(&vc.ID, &vc.Phone, &vc.Code, &expiresAtStr,
-		&vc.Attempts, &vc.RegistrationName, &createdAtStr)
+	err := row.Scan(&vc.ID, &vc.Phone, &vc.Code,
+		&vc.Attempts, &vc.RegistrationName, &vc.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("verification code not found: %w", err)
 	}
 
-	vc.ExpiresAt, _ = time.Parse(time.RFC3339, expiresAtStr)
-	vc.CreatedAt, _ = time.Parse(time.RFC3339, createdAtStr)
+	// Ensure timestamp is in UTC
+	vc.CreatedAt = vc.CreatedAt.UTC()
 
 	return &vc, nil
 }
@@ -116,10 +110,14 @@ func ValidateCode(phone, code string) (bool, error) {
 		return false, err
 	}
 
-	// Check if code has expired
-	if time.Now().After(vc.ExpiresAt) {
+	// Check if code has expired (calculate from created_at + CodeExpiry)
+	expiresAt := vc.CreatedAt.Add(CodeExpiry)
+	if time.Now().UTC().After(expiresAt) {
 		logger.Warn("Code expired",
-			"component", "verification", "phone", phone)
+			"component", "verification", "phone", phone,
+			"now", time.Now().UTC().Format(time.RFC3339),
+			"createdAt", vc.CreatedAt.Format(time.RFC3339),
+			"expiresAt", expiresAt.Format(time.RFC3339))
 		return false, nil
 	}
 
@@ -136,7 +134,7 @@ func ValidateCode(phone, code string) (bool, error) {
 	_, err = db.Exec(`
 		UPDATE PhoneVerification 
 		SET attempts = attempts + 1 
-		WHERE id = ?
+		WHERE id = $1
 	`, vc.ID)
 	if err != nil {
 		logger.Error("Failed to update attempts",
@@ -169,10 +167,12 @@ func ValidateCode(phone, code string) (bool, error) {
 
 // CleanupExpiredCodes removes expired verification codes
 func CleanupExpiredCodes() error {
+	// Delete codes where created_at + CodeExpiry < now
+	expiryThreshold := time.Now().UTC().Add(-CodeExpiry)
 	_, err := db.Exec(`
 		DELETE FROM PhoneVerification 
-		WHERE expires_at < ?
-	`, time.Now().Format(time.RFC3339))
+		WHERE created_at < $1
+	`, expiryThreshold)
 
 	if err != nil {
 		return fmt.Errorf("failed to cleanup expired codes: %w", err)
@@ -186,9 +186,9 @@ func CleanupExpiredCodes() error {
 // MarkPhoneVerified updates a user's phone verification status
 func MarkPhoneVerified(userID int) error {
 	_, err := db.Exec(`
-		UPDATE User 
+		UPDATE Users 
 		SET phone_verified = 1, verification_code = '' 
-		WHERE id = ?
+		WHERE id = $1
 	`, userID)
 
 	if err != nil {
@@ -205,7 +205,7 @@ func MarkPhoneVerified(userID int) error {
 func InvalidateVerificationCodes(phone string) error {
 	_, err := db.Exec(`
 		DELETE FROM PhoneVerification 
-		WHERE phone = ?
+		WHERE phone = $1
 	`, phone)
 
 	if err != nil {
@@ -223,8 +223,8 @@ func TrackFailedVerification(phone string) error {
 	var count int
 	err := db.QueryRow(`
 		SELECT COUNT(*) FROM PhoneVerification 
-		WHERE phone = ? AND created_at > ?
-	`, phone, time.Now().Add(-VerificationWindow).Format(time.RFC3339)).Scan(&count)
+		WHERE phone = $1 AND created_at > $2
+	`, phone, time.Now().UTC().Add(-VerificationWindow)).Scan(&count)
 
 	if err != nil {
 		return fmt.Errorf("failed to count failed verifications for %s: %w", phone, err)
@@ -250,13 +250,13 @@ func CleanupFailedAccount(phone string) error {
 	defer tx.Rollback()
 
 	// Delete verification codes
-	_, err = tx.Exec(`DELETE FROM PhoneVerification WHERE phone = ?`, phone)
+	_, err = tx.Exec(`DELETE FROM PhoneVerification WHERE phone = $1`, phone)
 	if err != nil {
 		return fmt.Errorf("failed to delete verification codes: %w", err)
 	}
 
 	// Delete any partial user records (users created but not verified)
-	_, err = tx.Exec(`DELETE FROM User WHERE phone = ? AND phone_verified = 0`, phone)
+	_, err = tx.Exec(`DELETE FROM Users WHERE phone = $1 AND phone_verified = 0`, phone)
 	if err != nil {
 		return fmt.Errorf("failed to delete unverified user: %w", err)
 	}

@@ -78,14 +78,21 @@ func siteEmbedding(cursor uint64, threshold float64, k int, filter *qdrant.Filte
 		"threshold", threshold)
 	embedding, err := vector.GetSiteEmbedding("default")
 	if err != nil {
+		// If embeddings aren't ready yet (e.g., after database rebuild),
+		// return empty results instead of an error
+		if err.Error() == "no embeddings found for popular ads" {
+			logger.Info("Site embeddings not ready yet, returning empty results",
+				"component", "siteEmbedding", "error", err)
+			return []int{}, 0, nil
+		}
 		logger.Error("GetSiteEmbedding error",
 			"error", err, "component", "siteEmbedding")
 		return nil, 0, err
 	}
 	if embedding == nil {
-		logger.Warn("GetSiteEmbedding returned nil embedding",
+		logger.Warn("GetSiteEmbedding returned nil embedding, returning empty results",
 			"component", "siteEmbedding")
-		return nil, 0, fmt.Errorf("site-level vector unavailable")
+		return []int{}, 0, nil
 	}
 	return runEmbeddingSearch(embedding, cursor, threshold, k, filter)
 }

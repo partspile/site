@@ -16,7 +16,7 @@ func resolveAndStoreLocation(raw string) (int, error) {
 
 	// Check if location already exists first to avoid expensive Grok API call
 	var id int
-	err := db.QueryRow("SELECT id FROM Location WHERE raw_text = ?", raw).Scan(&id)
+	err := db.QueryRow("SELECT id FROM Location WHERE raw_text = $1", raw).Scan(&id)
 	if err == nil {
 		// Location already exists, return the ID
 		return id, nil
@@ -32,27 +32,25 @@ func resolveAndStoreLocation(raw string) (int, error) {
 	}
 
 	// Insert new location into database
-	// Use INSERT OR IGNORE to handle race conditions where another request might have inserted it
-	res, err := db.Exec("INSERT OR IGNORE INTO Location (raw_text, city, admin_area, country, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)",
-		raw, loc.City, loc.AdminArea, loc.Country, loc.Latitude, loc.Longitude)
-	if err != nil {
-		return 0, err
+	// Use ON CONFLICT DO NOTHING to handle race conditions where another request might have inserted it
+	var locationID int
+	err = db.QueryRow(`INSERT INTO Location (raw_text, city, admin_area, country, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (raw_text) DO NOTHING RETURNING id`,
+		raw, loc.City, loc.AdminArea, loc.Country, loc.Latitude, loc.Longitude).Scan(&locationID)
+	if err == nil {
+		return locationID, nil
 	}
 
-	// Check if insert actually created a row
-	rowsAffected, _ := res.RowsAffected()
-	if rowsAffected > 0 {
-		// We inserted it, get the new ID
-		lastID, _ := res.LastInsertId()
-		return int(lastID), nil
+	// If insert returned no rows (conflict), query for the existing ID
+	if err == sql.ErrNoRows {
+		err = db.QueryRow("SELECT id FROM Location WHERE raw_text = $1", raw).Scan(&id)
+		if err != nil {
+			return 0, err
+		}
+		return id, nil
 	}
 
-	// Another request inserted it first (race condition), query for the ID
-	err = db.QueryRow("SELECT id FROM Location WHERE raw_text = ?", raw).Scan(&id)
-	if err != nil {
-		return 0, err
-	}
-	return id, nil
+	// Some other error occurred
+	return 0, err
 }
 
 // resolveLocationForFilter resolves a location text to lat/lon coordinates

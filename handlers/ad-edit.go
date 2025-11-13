@@ -38,7 +38,7 @@ func HandleUpdateAdPrice(c *fiber.Ctx) error {
 	}
 
 	// Update only the price
-	_, err = db.Exec("UPDATE Ad SET price = ? WHERE id = ?", price, adID)
+	_, err = db.Exec("UPDATE Ad SET price = $1 WHERE id = $2", price, adID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to update price")
@@ -106,7 +106,7 @@ func HandleUpdateAdDescription(c *fiber.Ctx) error {
 	}
 
 	// Update only the description
-	_, err = db.Exec("UPDATE Ad SET description = ? WHERE id = ?",
+	_, err = db.Exec("UPDATE Ad SET description = $1 WHERE id = $2",
 		updatedDescription, adID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError,
@@ -157,7 +157,7 @@ func HandleUpdateAdLocation(c *fiber.Ctx) error {
 	}
 
 	// Update only the location
-	_, err = db.Exec("UPDATE Ad SET location_id = ? WHERE id = ?", locID, adID)
+	_, err = db.Exec("UPDATE Ad SET location_id = $1 WHERE id = $2", locID, adID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to update location")

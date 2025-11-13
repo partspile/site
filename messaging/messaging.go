@@ -61,12 +61,12 @@ func CreateConversation(user1ID, user2ID, adID int) (int, error) {
 		user1ID, user2ID = user2ID, user1ID
 	}
 
-	res, err := db.Exec(`INSERT INTO Conversation (user1_id, user2_id, ad_id) VALUES (?, ?, ?)`, user1ID, user2ID, adID)
+	var id int
+	err := db.QueryRow(`INSERT INTO Conversation (user1_id, user2_id, ad_id) VALUES ($1, $2, $3) RETURNING id`, user1ID, user2ID, adID).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
-	id, _ := res.LastInsertId()
-	return int(id), nil
+	return id, nil
 }
 
 // GetOrCreateConversation gets an existing conversation or creates a new one
@@ -78,7 +78,7 @@ func GetOrCreateConversation(user1ID, user2ID, adID int) (int, error) {
 
 	// Try to find existing conversation
 	var id int
-	err := db.QueryRow(`SELECT id FROM Conversation WHERE user1_id = ? AND user2_id = ? AND ad_id = ?`, user1ID, user2ID, adID).Scan(&id)
+	err := db.QueryRow(`SELECT id FROM Conversation WHERE user1_id = $1 AND user2_id = $2 AND ad_id = $3`, user1ID, user2ID, adID).Scan(&id)
 	if err == nil {
 		return id, nil
 	}
@@ -98,19 +98,19 @@ func CreateConversationWithTx(tx *sql.Tx, user1ID, user2ID, adID int) (int, erro
 		user1ID, user2ID = user2ID, user1ID
 	}
 
-	res, err := tx.Exec(`INSERT INTO Conversation (user1_id, user2_id, ad_id) VALUES (?, ?, ?)`, user1ID, user2ID, adID)
+	var id int
+	err := tx.QueryRow(`INSERT INTO Conversation (user1_id, user2_id, ad_id) VALUES ($1, $2, $3) RETURNING id`, user1ID, user2ID, adID).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
-	id, _ := res.LastInsertId()
-	return int(id), nil
+	return id, nil
 }
 
 // GetConversationByID retrieves a conversation by ID
 func GetConversationByID(id int) (Conversation, error) {
 	row := db.QueryRow(`SELECT id, user1_id, user2_id, ad_id, created_at, updated_at, user1_read, user2_read, 
 		user1_first_msg_notified, user2_first_msg_notified, pinged_by_user_id, pinged_at 
-		FROM Conversation WHERE id = ?`, id)
+		FROM Conversation WHERE id = $1`, id)
 	var conv Conversation
 	var createdAt, updatedAt string
 	var user1FirstMsgNotified, user2FirstMsgNotified int
@@ -156,7 +156,7 @@ func GetConversationWithDetails(id int) (Conversation, error) {
 	conv.User2Name = user2Name
 
 	// Get ad title
-	row := db.QueryRow(`SELECT title FROM Ad WHERE id = ?`, conv.AdID)
+	row := db.QueryRow(`SELECT title FROM Ad WHERE id = $1`, conv.AdID)
 	var adTitle string
 	err = row.Scan(&adTitle)
 	if err != nil {
@@ -168,7 +168,7 @@ func GetConversationWithDetails(id int) (Conversation, error) {
 	row = db.QueryRow(`
 		SELECT encrypted_content, nonce, created_at 
 		FROM Message 
-		WHERE conversation_id = ? 
+		WHERE conversation_id = $1 
 		ORDER BY created_at DESC 
 		LIMIT 1
 	`, id)
@@ -198,13 +198,13 @@ func GetConversationsForUser(userID int) ([]Conversation, error) {
 		       u1.id, u1.encrypted_name, u1.name_nonce,
 		       u2.id, u2.encrypted_name, u2.name_nonce,
 		       a.title as ad_title,
-		       COUNT(CASE WHEN m2.read_at IS NULL AND m2.sender_id != ? THEN 1 END) as unread_count
+		       COUNT(CASE WHEN m2.read_at IS NULL AND m2.sender_id != $1 THEN 1 END) as unread_count
 		FROM Conversation c
-		JOIN User u1 ON c.user1_id = u1.id
-		JOIN User u2 ON c.user2_id = u2.id
+		JOIN Users u1 ON c.user1_id = u1.id
+		JOIN Users u2 ON c.user2_id = u2.id
 		JOIN Ad a ON c.ad_id = a.id
 		LEFT JOIN Message m2 ON m2.conversation_id = c.id
-		WHERE c.user1_id = ? OR c.user2_id = ?
+		WHERE c.user1_id = $2 OR c.user2_id = $3
 		GROUP BY c.id
 		ORDER BY c.updated_at DESC
 	`, userID, userID, userID)
@@ -263,7 +263,7 @@ func GetConversationsForUser(userID int) ([]Conversation, error) {
 		row := db.QueryRow(`
 			SELECT encrypted_content, nonce, created_at 
 			FROM Message 
-			WHERE conversation_id = ? 
+			WHERE conversation_id = $1 
 			ORDER BY created_at DESC 
 			LIMIT 1
 		`, conv.ID)
@@ -296,7 +296,7 @@ func MarkConversationAsRead(conversationID, userID int) error {
 	err := db.QueryRow(`
 		SELECT pinged_by_user_id
 		FROM Conversation
-		WHERE id = ?
+		WHERE id = $1
 	`, conversationID).Scan(&pingedByUserID)
 	if err != nil {
 		return err
@@ -307,7 +307,7 @@ func MarkConversationAsRead(conversationID, userID int) error {
 		_, err = db.Exec(`
 			UPDATE Conversation
 			SET pinged_by_user_id = NULL, pinged_at = NULL
-			WHERE id = ?
+			WHERE id = $1
 		`, conversationID)
 		if err != nil {
 			return err
@@ -322,9 +322,9 @@ func MarkConversationAsRead(conversationID, userID int) error {
 
 	// Mark as read
 	if conv.User1ID == userID {
-		_, err = db.Exec(`UPDATE Conversation SET user1_read = TRUE WHERE id = ?`, conversationID)
+		_, err = db.Exec(`UPDATE Conversation SET user1_read = TRUE WHERE id = $1`, conversationID)
 	} else if conv.User2ID == userID {
-		_, err = db.Exec(`UPDATE Conversation SET user2_read = TRUE WHERE id = ?`, conversationID)
+		_, err = db.Exec(`UPDATE Conversation SET user2_read = TRUE WHERE id = $1`, conversationID)
 	} else {
 		return fmt.Errorf("user %d is not part of conversation %d", userID, conversationID)
 	}
@@ -344,10 +344,10 @@ func GetConversationWithUser(user1ID, user2ID, adID int) (Conversation, error) {
 		       u2.id, u2.encrypted_name, u2.name_nonce,
 		       a.title as ad_title
 		FROM Conversation c
-		JOIN User u1 ON c.user1_id = u1.id
-		JOIN User u2 ON c.user2_id = u2.id
+		JOIN Users u1 ON c.user1_id = u1.id
+		JOIN Users u2 ON c.user2_id = u2.id
 		JOIN Ad a ON c.ad_id = a.id
-		WHERE c.user1_id = ? AND c.user2_id = ? AND c.ad_id = ?
+		WHERE c.user1_id = $1 AND c.user2_id = $2 AND c.ad_id = $3
 	`, user1ID, user2ID, adID)
 
 	var conv Conversation
@@ -396,7 +396,7 @@ func AddMessage(conversationID, senderID int, content string) (messageID int, sh
 	var msgID int64
 	err = tx.QueryRow(`
 		INSERT INTO Message (conversation_id, sender_id, encrypted_content, nonce, created_at)
-		VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+		VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
 		RETURNING id
 	`, conversationID, senderID, encryptedContent, nonce).Scan(&msgID)
 	if err != nil {
@@ -411,7 +411,7 @@ func AddMessage(conversationID, senderID int, content string) (messageID int, sh
 	err = tx.QueryRow(`
 		SELECT user1_id, user2_id, user1_first_msg_notified, user2_first_msg_notified
 		FROM Conversation
-		WHERE id = ?
+		WHERE id = $1
 	`, conversationID).Scan(&user1ID, &user2ID, &user1FirstMsgNotified, &user2FirstMsgNotified)
 	if err != nil {
 		return 0, false, err
@@ -430,7 +430,7 @@ func AddMessage(conversationID, senderID int, content string) (messageID int, sh
 
 	// Mark first message as notified if this is the first
 	if isFirstMessage {
-		_, err = tx.Exec(fmt.Sprintf(`UPDATE Conversation SET %s = 1 WHERE id = ?`, notifyField), conversationID)
+		_, err = tx.Exec(fmt.Sprintf(`UPDATE Conversation SET %s = 1 WHERE id = $1`, notifyField), conversationID)
 		if err != nil {
 			return 0, false, err
 		}
@@ -438,16 +438,16 @@ func AddMessage(conversationID, senderID int, content string) (messageID int, sh
 
 	// Mark conversation as unread for recipient
 	if user1ID == senderID {
-		_, err = tx.Exec(`UPDATE Conversation SET user2_read = FALSE WHERE id = ?`, conversationID)
+		_, err = tx.Exec(`UPDATE Conversation SET user2_read = FALSE WHERE id = $1`, conversationID)
 	} else {
-		_, err = tx.Exec(`UPDATE Conversation SET user1_read = FALSE WHERE id = ?`, conversationID)
+		_, err = tx.Exec(`UPDATE Conversation SET user1_read = FALSE WHERE id = $1`, conversationID)
 	}
 	if err != nil {
 		return 0, false, err
 	}
 
 	// Update conversation timestamp
-	_, err = tx.Exec(`UPDATE Conversation SET updated_at = CURRENT_TIMESTAMP WHERE id = ?`, conversationID)
+	_, err = tx.Exec(`UPDATE Conversation SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`, conversationID)
 	if err != nil {
 		return 0, false, err
 	}
@@ -480,13 +480,13 @@ func AddMessageWithTx(tx *sql.Tx, conversationID, senderID int, content string) 
 		return 0, fmt.Errorf("failed to encrypt message: %w", err)
 	}
 
-	res, err := tx.Exec(`INSERT INTO Message (conversation_id, sender_id, encrypted_content, nonce) VALUES (?, ?, ?, ?)`,
-		conversationID, senderID, encryptedContent, nonce)
+	var id int
+	err = tx.QueryRow(`INSERT INTO Message (conversation_id, sender_id, encrypted_content, nonce) VALUES ($1, $2, $3, $4) RETURNING id`,
+		conversationID, senderID, encryptedContent, nonce).Scan(&id)
 	if err != nil {
 		return 0, err
 	}
-	id, _ := res.LastInsertId()
-	return int(id), nil
+	return id, nil
 }
 
 // GetMessages retrieves all messages for a conversation (with decryption)
@@ -495,8 +495,8 @@ func GetMessages(conversationID int) ([]Message, error) {
 		SELECT m.id, m.conversation_id, m.sender_id, m.encrypted_content, m.nonce, 
 		       m.created_at, m.read_at, u.encrypted_name, u.name_nonce
 		FROM Message m
-		JOIN User u ON m.sender_id = u.id
-		WHERE m.conversation_id = ?
+		JOIN Users u ON m.sender_id = u.id
+		WHERE m.conversation_id = $1
 		ORDER BY m.created_at ASC
 	`, conversationID)
 	if err != nil {
@@ -568,7 +568,7 @@ func MarkMessagesAsRead(conversationID, userID int) error {
 	_, err := db.Exec(`
 		UPDATE Message 
 		SET read_at = CURRENT_TIMESTAMP 
-		WHERE conversation_id = ? AND sender_id != ? AND read_at IS NULL
+		WHERE conversation_id = $1 AND sender_id != $2 AND read_at IS NULL
 	`, conversationID, userID)
 	return err
 }
@@ -579,8 +579,8 @@ func GetUnreadCount(userID int) (int, error) {
 	err := db.QueryRow(`
 		SELECT COUNT(*) FROM Message m
 		JOIN Conversation c ON m.conversation_id = c.id
-		WHERE (c.user1_id = ? OR c.user2_id = ?) 
-		AND m.sender_id != ? 
+		WHERE (c.user1_id = $1 OR c.user2_id = $2) 
+		AND m.sender_id != $3 
 		AND m.read_at IS NULL
 	`, userID, userID, userID).Scan(&count)
 	return count, err
@@ -591,9 +591,9 @@ func GetConversationParticipantNames(conversationID int) (string, string, error)
 	row := db.QueryRow(`
 		SELECT u1.id, u1.encrypted_name, u1.name_nonce, u2.id, u2.encrypted_name, u2.name_nonce
 		FROM Conversation c
-		JOIN User u1 ON c.user1_id = u1.id
-		JOIN User u2 ON c.user2_id = u2.id
-		WHERE c.id = ?
+		JOIN Users u1 ON c.user1_id = u1.id
+		JOIN Users u2 ON c.user2_id = u2.id
+		WHERE c.id = $1
 	`, conversationID)
 
 	var user1ID, user2ID int
@@ -692,8 +692,8 @@ func HandlePing(conversationID, userID int) error {
 	// Update ping state
 	_, err := db.Exec(`
 		UPDATE Conversation
-		SET pinged_by_user_id = ?, pinged_at = CURRENT_TIMESTAMP
-		WHERE id = ?
+		SET pinged_by_user_id = $1, pinged_at = CURRENT_TIMESTAMP
+		WHERE id = $2
 	`, userID, conversationID)
 	if err != nil {
 		return err

@@ -34,7 +34,7 @@ var (
 
 // getCategories returns the part categories for the given ad category
 func getCategories(adCat int) ([]string, error) {
-	query := "SELECT name FROM PartCategory WHERE ad_category_id = ? ORDER BY name"
+	query := "SELECT name FROM PartCategory WHERE ad_category_id = $1 ORDER BY name"
 	var names []string
 	err := db.Select(&names, query, adCat)
 	return names, err
@@ -65,7 +65,7 @@ func getSubCategories(adCat int, category string) ([]string, error) {
 		FROM PartSubCategory psc
 		JOIN Specification spec ON spec.part_subcategory_id = psc.id
 		JOIN PartCategory pc ON spec.part_category_id = pc.id
-		WHERE pc.name = ? AND psc.ad_category_id = ? AND spec.ad_category_id = ?
+		WHERE pc.name = $1 AND psc.ad_category_id = $2 AND spec.ad_category_id = $3
 		ORDER BY psc.name
 	`
 	var names []string
@@ -149,7 +149,7 @@ func buildAdCategoriesQuery(adCat int, fieldValues map[string]string) (string, [
 	var whereClauses []string
 	var args []interface{}
 
-	whereClauses = append(whereClauses, "a.ad_category_id = ?")
+	whereClauses = append(whereClauses, fmt.Sprintf("a.ad_category_id = $%d", len(args)+1))
 	args = append(args, adCat)
 
 	// Add JOINs and WHERE clauses for each spec field (excluding part_category and part_subcategory)
@@ -174,13 +174,13 @@ func buildAdCategoriesQuery(adCat int, fieldValues map[string]string) (string, [
 			intValue, err := strconv.Atoi(value)
 			if err == nil {
 				whereClauses = append(whereClauses,
-					fmt.Sprintf("%s.%s = ?", tableName, fieldConfig.ValueColumnName))
+					fmt.Sprintf("%s.%s = $%d", tableName, fieldConfig.ValueColumnName, len(args)+1))
 				args = append(args, intValue)
 			}
 		} else {
 			// For string fields, compare with value column
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.%s = ?", tableName, fieldConfig.ValueColumnName))
+				fmt.Sprintf("%s.%s = $%d", tableName, fieldConfig.ValueColumnName, len(args)+1))
 			args = append(args, value)
 		}
 	}
@@ -215,7 +215,7 @@ func buildAdSubCategoriesQuery(adCat int, fieldValues map[string]string, categor
 	var whereClauses []string
 	var args []interface{}
 
-	whereClauses = append(whereClauses, "a.ad_category_id = ?")
+	whereClauses = append(whereClauses, fmt.Sprintf("a.ad_category_id = $%d", len(args)+1))
 	args = append(args, adCat)
 
 	// Add JOINs and WHERE clauses for each spec field (excluding part_category and part_subcategory)
@@ -240,19 +240,19 @@ func buildAdSubCategoriesQuery(adCat int, fieldValues map[string]string, categor
 			intValue, err := strconv.Atoi(value)
 			if err == nil {
 				whereClauses = append(whereClauses,
-					fmt.Sprintf("%s.%s = ?", tableName, fieldConfig.ValueColumnName))
+					fmt.Sprintf("%s.%s = $%d", tableName, fieldConfig.ValueColumnName, len(args)+1))
 				args = append(args, intValue)
 			}
 		} else {
 			// For string fields, compare with value column
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.%s = ?", tableName, fieldConfig.ValueColumnName))
+				fmt.Sprintf("%s.%s = $%d", tableName, fieldConfig.ValueColumnName, len(args)+1))
 			args = append(args, value)
 		}
 	}
 
 	// Add part category filter
-	whereClauses = append(whereClauses, "pc.name = ?")
+	whereClauses = append(whereClauses, fmt.Sprintf("pc.name = $%d", len(args)+1))
 	args = append(args, category)
 
 	// Build final query
@@ -355,7 +355,7 @@ func GetCategoriesForAds(adIDs []int, fieldValues map[string]string) ([]string, 
 
 	// Get ad category from first ad (all ads should have same category)
 	var adCat int
-	err := db.Get(&adCat, "SELECT ad_category_id FROM Ad WHERE id = ?", adIDs[0])
+	err := db.Get(&adCat, "SELECT ad_category_id FROM Ad WHERE id = $1", adIDs[0])
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ad category: %w", err)
 	}
@@ -369,7 +369,7 @@ func GetCategoriesForAds(adIDs []int, fieldValues map[string]string) ([]string, 
 	// Add ad ID filter
 	placeholders := make([]string, len(adIDs))
 	for i := range adIDs {
-		placeholders[i] = "?"
+		placeholders[i] = fmt.Sprintf("$%d", len(baseArgs)+i+1)
 	}
 
 	query := strings.Replace(baseQuery, "ORDER BY pc.name",
@@ -401,7 +401,7 @@ func GetSubCategoriesForAds(adIDs []int, fieldValues map[string]string, category
 
 	// Get ad category from first ad
 	var adCat int
-	err := db.Get(&adCat, "SELECT ad_category_id FROM Ad WHERE id = ?", adIDs[0])
+	err := db.Get(&adCat, "SELECT ad_category_id FROM Ad WHERE id = $1", adIDs[0])
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ad category: %w", err)
 	}
@@ -415,7 +415,7 @@ func GetSubCategoriesForAds(adIDs []int, fieldValues map[string]string, category
 	// Add ad ID filter
 	placeholders := make([]string, len(adIDs))
 	for i := range adIDs {
-		placeholders[i] = "?"
+		placeholders[i] = fmt.Sprintf("$%d", len(baseArgs)+i+1)
 	}
 
 	query := strings.Replace(baseQuery, "ORDER BY psc.name",

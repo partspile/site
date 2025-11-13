@@ -34,13 +34,13 @@ type AdRock struct {
 
 // InitializeUserRocks creates a new rock inventory for a user with 3 rocks
 func InitializeUserRocks(userID int) error {
-	_, err := db.Exec(`INSERT INTO UserRock (user_id, rock_count) VALUES (?, 3)`, userID)
+	_, err := db.Exec(`INSERT INTO UserRock (user_id, rock_count) VALUES ($1, 3)`, userID)
 	return err
 }
 
 // GetUserRocks retrieves a user's rock inventory
 func GetUserRocks(userID int) (UserRock, error) {
-	row := db.QueryRow(`SELECT id, user_id, rock_count, created_at, updated_at FROM UserRock WHERE user_id = ?`, userID)
+	row := db.QueryRow(`SELECT id, user_id, rock_count, created_at, updated_at FROM UserRock WHERE user_id = $1`, userID)
 	var ur UserRock
 	var createdAt, updatedAt string
 	err := row.Scan(&ur.ID, &ur.UserID, &ur.RockCount, &createdAt, &updatedAt)
@@ -75,7 +75,7 @@ func ThrowRock(userID, adID int, initialMessage string) error {
 
 	// Get ad owner
 	var adOwnerID int
-	err = db.QueryRow(`SELECT user_id FROM Ad WHERE id = ?`, adID).Scan(&adOwnerID)
+	err = db.QueryRow(`SELECT user_id FROM Ad WHERE id = $1`, adID).Scan(&adOwnerID)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func ThrowRock(userID, adID int, initialMessage string) error {
 
 	// Check if rock already exists for this user and ad
 	var existingRock int
-	err = db.QueryRow(`SELECT id FROM AdRock WHERE thrower_id = ? AND ad_id = ? AND resolved_at IS NULL`, userID, adID).Scan(&existingRock)
+	err = db.QueryRow(`SELECT id FROM AdRock WHERE thrower_id = $1 AND ad_id = $2 AND resolved_at IS NULL`, userID, adID).Scan(&existingRock)
 	if err == nil {
 		return fmt.Errorf("rock already thrown at this ad")
 	}
@@ -112,13 +112,13 @@ func ThrowRock(userID, adID int, initialMessage string) error {
 	}
 
 	// Create rock record
-	_, err = tx.Exec(`INSERT INTO AdRock (ad_id, thrower_id, conversation_id) VALUES (?, ?, ?)`, adID, userID, convID)
+	_, err = tx.Exec(`INSERT INTO AdRock (ad_id, thrower_id, conversation_id) VALUES ($1, $2, $3)`, adID, userID, convID)
 	if err != nil {
 		return err
 	}
 
 	// Reduce rock count
-	_, err = tx.Exec(`UPDATE UserRock SET rock_count = rock_count - 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?`, userID)
+	_, err = tx.Exec(`UPDATE UserRock SET rock_count = rock_count - 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1`, userID)
 	if err != nil {
 		return err
 	}
@@ -133,9 +133,9 @@ func GetAdRocks(adID int) ([]AdRock, error) {
 		SELECT ar.id, ar.ad_id, ar.thrower_id, ar.conversation_id, ar.created_at, ar.resolved_at, ar.resolved_by,
 		       u.name as thrower_name, a.title as ad_title
 		FROM AdRock ar
-		JOIN User u ON ar.thrower_id = u.id
+		JOIN Users u ON ar.thrower_id = u.id
 		JOIN Ad a ON ar.ad_id = a.id
-		WHERE ar.ad_id = ?
+		WHERE ar.ad_id = $1
 		ORDER BY ar.created_at DESC
 	`, adID)
 	return rocks, err
@@ -148,9 +148,9 @@ func GetUserThrownRocks(userID int) ([]AdRock, error) {
 		SELECT ar.id, ar.ad_id, ar.thrower_id, ar.conversation_id, ar.created_at, ar.resolved_at, ar.resolved_by,
 		       u.name as thrower_name, a.title as ad_title
 		FROM AdRock ar
-		JOIN User u ON ar.thrower_id = u.id
+		JOIN Users u ON ar.thrower_id = u.id
 		JOIN Ad a ON ar.ad_id = a.id
-		WHERE ar.thrower_id = ?
+		WHERE ar.thrower_id = $1
 		ORDER BY ar.created_at DESC
 	`, userID)
 	return rocks, err
@@ -167,19 +167,19 @@ func ResolveRock(rockID, resolvedByUserID int) error {
 
 	// Get rock details
 	var throwerID int
-	err = tx.QueryRow(`SELECT thrower_id FROM AdRock WHERE id = ? AND resolved_at IS NULL`, rockID).Scan(&throwerID)
+	err = tx.QueryRow(`SELECT thrower_id FROM AdRock WHERE id = $1 AND resolved_at IS NULL`, rockID).Scan(&throwerID)
 	if err != nil {
 		return err
 	}
 
 	// Mark rock as resolved
-	_, err = tx.Exec(`UPDATE AdRock SET resolved_at = CURRENT_TIMESTAMP, resolved_by = ? WHERE id = ?`, resolvedByUserID, rockID)
+	_, err = tx.Exec(`UPDATE AdRock SET resolved_at = CURRENT_TIMESTAMP, resolved_by = $1 WHERE id = $2`, resolvedByUserID, rockID)
 	if err != nil {
 		return err
 	}
 
 	// Return rock to thrower
-	_, err = tx.Exec(`UPDATE UserRock SET rock_count = rock_count + 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?`, throwerID)
+	_, err = tx.Exec(`UPDATE UserRock SET rock_count = rock_count + 1, updated_at = CURRENT_TIMESTAMP WHERE user_id = $1`, throwerID)
 	if err != nil {
 		return err
 	}
@@ -190,6 +190,6 @@ func ResolveRock(rockID, resolvedByUserID int) error {
 // GetAdRockCount returns the number of unresolved rocks for an ad
 func GetAdRockCount(adID int) (int, error) {
 	var count int
-	err := db.QueryRow(`SELECT COUNT(*) FROM AdRock WHERE ad_id = ? AND resolved_at IS NULL`, adID).Scan(&count)
+	err := db.QueryRow(`SELECT COUNT(*) FROM AdRock WHERE ad_id = $1 AND resolved_at IS NULL`, adID).Scan(&count)
 	return count, err
 }

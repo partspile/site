@@ -1,6 +1,7 @@
 package ad
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/parts-pile/site/db"
@@ -41,11 +42,11 @@ func MarkAdsAsHavingVector(adIDs []int) error {
 		return nil
 	}
 
-	// Build the SQL query with placeholders for all ad IDs
+	// Build the SQL query with PostgreSQL placeholders for all ad IDs
 	placeholders := make([]string, len(adIDs))
 	args := make([]interface{}, len(adIDs))
 	for i, adID := range adIDs {
-		placeholders[i] = "?"
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
 		args[i] = adID
 	}
 

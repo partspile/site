@@ -10,7 +10,7 @@ import (
 
 // IncrementAdClick increments the global click count for an ad
 func IncrementAdClick(adID int) error {
-	_, err := db.Exec("UPDATE Ad SET click_count = click_count + 1, last_clicked_at = ? WHERE id = ?",
+	_, err := db.Exec("UPDATE Ad SET click_count = click_count + 1, last_clicked_at = $1 WHERE id = $2",
 		time.Now().UTC(), adID)
 	if err != nil {
 		fmt.Println("DEBUG IncrementAdClick error:", err)
@@ -22,8 +22,8 @@ func IncrementAdClick(adID int) error {
 // IncrementAdClickForUser increments the click count for an ad for a specific user
 func IncrementAdClickForUser(adID int, userID int) error {
 	now := time.Now().UTC()
-	_, err := db.Exec(`INSERT INTO UserAdClick (ad_id, user_id, click_count, last_clicked_at) VALUES (?, ?, 1, ?)
-		ON CONFLICT(ad_id, user_id) DO UPDATE SET click_count = click_count + 1, last_clicked_at = ?`,
+	_, err := db.Exec(`INSERT INTO UserAdClick (ad_id, user_id, click_count, last_clicked_at) VALUES ($1, $2, 1, $3)
+		ON CONFLICT(ad_id, user_id) DO UPDATE SET click_count = click_count + 1, last_clicked_at = $4`,
 		adID, userID, now, now)
 	return err
 }
@@ -33,7 +33,7 @@ func GetRecentlyClickedAdIDsByUser(userID, limit int) ([]int, error) {
 	logger.Debug("GetRecentlyClickedAdIDsByUser called",
 		"component", "ad", "userID", userID, "limit", limit)
 
-	query := `SELECT ad_id FROM UserAdClick WHERE user_id = ? ORDER BY last_clicked_at DESC LIMIT ?`
+	query := `SELECT ad_id FROM UserAdClick WHERE user_id = $1 ORDER BY last_clicked_at DESC LIMIT $2`
 	var adIDs []int
 	err := db.Select(&adIDs, query, userID, limit)
 

@@ -79,15 +79,15 @@ func populateSpecData(adDetail *AdDetail) error {
 
 		// Build SELECT clause based on field type
 		if fieldConfig.FieldType == "int" {
-			// For integer fields (like year), use GROUP_CONCAT with CAST
+			// For integer fields (like year), use STRING_AGG with CAST (PostgreSQL)
 			valueCol := fieldConfig.ValueColumnName
 			selectParts = append(selectParts,
-				fmt.Sprintf("COALESCE(GROUP_CONCAT(DISTINCT CAST(%s.%s AS TEXT)), '') as %s",
+				fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT CAST(%s.%s AS TEXT), ','), '') as %s",
 					tableName, valueCol, fieldName))
 		} else {
-			// For string fields, use GROUP_CONCAT for both single and multi-value
+			// For string fields, use STRING_AGG for both single and multi-value (PostgreSQL)
 			selectParts = append(selectParts,
-				fmt.Sprintf("COALESCE(GROUP_CONCAT(DISTINCT %s.name), '') as %s",
+				fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT %s.name, ','), '') as %s",
 					tableName, fieldName))
 		}
 		fieldNames = append(fieldNames, fieldName)
@@ -99,10 +99,12 @@ func populateSpecData(adDetail *AdDetail) error {
 		FROM AdSpecification ad_spec
 		JOIN Specification spec ON ad_spec.specification_id = spec.id
 		%s
-		WHERE ad_spec.ad_id = ?
+		WHERE ad_spec.ad_id = $1
+		GROUP BY ad_spec.ad_id
 	`, strings.Join(selectParts, ", "), strings.Join(joins, " "))
 
 	// Execute query - use a map to store results dynamically
+	// Note: query already uses PostgreSQL format ($1), so no rebinding needed
 	rows, err := db.Query(query, adDetail.ID)
 	if err != nil {
 		return fmt.Errorf("failed to query spec data: %w", err)
@@ -177,7 +179,7 @@ func buildAdQueryWithDeleted(ids []int, userID int, includeDeleted bool) (string
 			       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
 			FROM Ad a
 			LEFT JOIN Location l ON a.location_id = l.id
-			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
+			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = $1
 		`
 		args = append(args, userID)
 	} else {
@@ -195,9 +197,12 @@ func buildAdQueryWithDeleted(ids []int, userID int, includeDeleted bool) (string
 		query += " WHERE a.deleted_at IS NULL"
 	}
 
+	// Build PostgreSQL placeholders ($1, $2, etc.) based on current arg count
 	placeholders := make([]string, len(ids))
+	argNum := len(args) + 1
 	for i := range ids {
-		placeholders[i] = "?"
+		placeholders[i] = fmt.Sprintf("$%d", argNum)
+		argNum++
 	}
 	if includeDeleted {
 		query += " WHERE a.id IN (" + strings.Join(placeholders, ",") + ")"
@@ -248,9 +253,9 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 				CASE WHEN u.sms_opted_out = 1 AND u.notification_method = 'sms' THEN 1 ELSE 0 END as owner_unreachable
 			FROM Ad a
 			LEFT JOIN Location l ON a.location_id = l.id
-			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = ?
-			LEFT JOIN User u ON a.user_id = u.id
-			WHERE a.id = ?
+			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = $1
+			LEFT JOIN Users u ON a.user_id = u.id
+			WHERE a.id = $2
 		`
 		args = append(args, userID, adID)
 	} else {
@@ -264,8 +269,8 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 				CASE WHEN u.sms_opted_out = 1 AND u.notification_method = 'sms' THEN 1 ELSE 0 END as owner_unreachable
 			FROM Ad a
 			LEFT JOIN Location l ON a.location_id = l.id
-			LEFT JOIN User u ON a.user_id = u.id
-			WHERE a.id = ?
+			LEFT JOIN Users u ON a.user_id = u.id
+			WHERE a.id = $1
 		`
 		args = append(args, adID)
 	}
@@ -304,11 +309,11 @@ func GetMostPopularAds(n int) []Ad {
 		LEFT JOIN Location l ON a.location_id = l.id
 		WHERE a.deleted_at IS NULL
 		ORDER BY (
-			a.click_count * 2 + 
-			COALESCE((SELECT COUNT(*) FROM BookmarkedAd ba WHERE ba.ad_id = a.id), 0) * 3 + 
-			100.0 / (julianday('now') - julianday(a.created_at))
+			CAST(a.click_count AS DOUBLE PRECISION) * 2.0 + 
+			CAST(COALESCE((SELECT COUNT(*) FROM BookmarkedAd ba WHERE ba.ad_id = a.id), 0) AS DOUBLE PRECISION) * 3.0 + 
+			100.0 / GREATEST(EXTRACT(EPOCH FROM (NOW() - a.created_at)) / 86400.0, 0.1)
 		) DESC
-		LIMIT ?
+		LIMIT $1
 	`
 
 	var ads []Ad
@@ -326,33 +331,33 @@ func GetMostPopularAds(n int) []Ad {
 
 // ArchiveAd archives an ad by setting its deleted_at timestamp
 func ArchiveAd(adID int) error {
-	_, err := db.Exec("UPDATE Ad SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?", adID)
+	_, err := db.Exec("UPDATE Ad SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1", adID)
 	return err
 }
 
 // RestoreAd restores an archived ad by clearing its deleted_at timestamp
 func RestoreAd(adID int) error {
-	_, err := db.Exec("UPDATE Ad SET deleted_at = NULL WHERE id = ?", adID)
+	_, err := db.Exec("UPDATE Ad SET deleted_at = NULL WHERE id = $1", adID)
 	return err
 }
 
 // GetUserActiveAdIDs returns the IDs of active ads for a user
 func GetUserActiveAdIDs(userID int) ([]int, error) {
 	var adIDs []int
-	err := db.Select(&adIDs, "SELECT id FROM Ad WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC", userID)
+	err := db.Select(&adIDs, "SELECT id FROM Ad WHERE user_id = $1 AND deleted_at IS NULL ORDER BY created_at DESC", userID)
 	return adIDs, err
 }
 
 // GetUserDeletedAdIDs returns the IDs of deleted ads for a user
 func GetUserDeletedAdIDs(userID int) ([]int, error) {
 	var adIDs []int
-	err := db.Select(&adIDs, "SELECT id FROM Ad WHERE user_id = ? AND deleted_at IS NOT NULL ORDER BY deleted_at DESC", userID)
+	err := db.Select(&adIDs, "SELECT id FROM Ad WHERE user_id = $1 AND deleted_at IS NOT NULL ORDER BY deleted_at DESC", userID)
 	return adIDs, err
 }
 
 // ArchiveAdsByUserID archives all ads for a user
 func ArchiveAdsByUserID(userID int) error {
-	_, err := db.Exec("UPDATE Ad SET deleted_at = CURRENT_TIMESTAMP WHERE user_id = ? AND deleted_at IS NULL", userID)
+	_, err := db.Exec("UPDATE Ad SET deleted_at = CURRENT_TIMESTAMP WHERE user_id = $1 AND deleted_at IS NULL", userID)
 	return err
 }
 

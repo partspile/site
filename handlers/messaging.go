@@ -194,7 +194,7 @@ func HandleSendMessage(c *fiber.Ctx) error {
 				err := db.QueryRow(`
 					SELECT encrypted_content, nonce
 					FROM Message
-					WHERE id = ?
+					WHERE id = $1
 				`, messageID).Scan(&encryptedContent, &nonce)
 				if err != nil {
 					logger.Error("Failed to get message for notification", "error", err)

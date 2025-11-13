@@ -10,15 +10,15 @@ import (
 	"image/png"
 	"math/rand"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/chai2010/webp"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
+	"github.com/parts-pile/site/user"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/image/font/opentype"
@@ -46,25 +46,32 @@ func main() {
 		logger.Fatal("Failed to initialize logger", "error", err)
 	}
 
+	// Initialize encryption keys (required for user decryption)
+	config.SecurityCheck()
+
 	// Seed random number generator
 	rand.Seed(time.Now().UnixNano())
 
-	dbFile := strings.TrimPrefix(config.DatabaseURL, "file:")
-
 	// Initialize database
-	if err := db.Init(dbFile); err != nil {
-		logger.Fatal("Failed to initialize database", "error", err, "databaseURL", dbFile)
+	if err := db.Init(config.DatabaseURL); err != nil {
+		logger.Fatal("Failed to initialize database", "error", err, "databaseURL", config.DatabaseURL)
 	}
 
 	// Open DB for direct access
-	database, err := sql.Open("sqlite3", dbFile)
+	database, err := sql.Open("pgx", config.DatabaseURL)
 	if err != nil {
-		logger.Fatal("Failed to open DB", "error", err, "databaseURL", dbFile)
+		logger.Fatal("Failed to open DB", "error", err, "databaseURL", config.DatabaseURL)
 	}
 	defer database.Close()
 
-	// Query test ads (userId=1)
-	testAds, err := getTestAds(database)
+	// Look up test user by name
+	testUser, err := user.GetUserByName("test")
+	if err != nil {
+		logger.Fatal("Failed to find test user", "error", err, "name", "test")
+	}
+
+	// Query test ads for the test user
+	testAds, err := getTestAds(database, testUser.ID)
 	if err != nil {
 		logger.Fatal("Failed to get test ads", "error", err)
 	}
@@ -87,16 +94,16 @@ func main() {
 	fmt.Println("Test image generation and upload complete!")
 }
 
-// getTestAds queries the database for test ads (userId=1)
-func getTestAds(database *sql.DB) ([]TestAd, error) {
+// getTestAds queries the database for test ads for a specific user
+func getTestAds(database *sql.DB, userID int) ([]TestAd, error) {
 	query := `
 		SELECT id, title, image_count 
 		FROM Ad 
-		WHERE user_id = 1 AND deleted_at IS NULL
+		WHERE user_id = $1 AND deleted_at IS NULL
 		ORDER BY id
 	`
 
-	rows, err := database.Query(query)
+	rows, err := database.Query(query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query test ads: %v", err)
 	}

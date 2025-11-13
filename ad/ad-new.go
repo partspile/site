@@ -19,22 +19,19 @@ func AddAd(ad AdDetail) (int, error) {
 	}
 	defer tx.Rollback()
 
-	res, err := tx.Exec(`
+	var adID int
+	err = tx.QueryRow(`
 		INSERT INTO Ad (
 			ad_category_id, title, description, price, 
 			user_id, location_id, image_count, has_vector
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
 		ad.AdCategoryID, ad.Title, ad.Description, ad.Price,
-		ad.UserID, ad.LocationID, ad.ImageCount, ad.HasVector)
+		ad.UserID, ad.LocationID, ad.ImageCount, ad.HasVector).Scan(&adID)
 	if err != nil {
 		return 0, fmt.Errorf("failed to insert ad: %w", err)
 	}
-	adID, err := res.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get last insert id: %w", err)
-	}
 
-	ad.ID = int(adID)
+	ad.ID = adID
 
 	if err := addFieldAssociations(tx, ad); err != nil {
 		return 0, fmt.Errorf("failed to add field associations: %w", err)
@@ -58,7 +55,7 @@ func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int,
 	var whereClauses []string
 	var args []interface{}
 
-	whereClauses = append(whereClauses, "spec.ad_category_id = ?")
+	whereClauses = append(whereClauses, fmt.Sprintf("spec.ad_category_id = $%d", len(args)+1))
 	args = append(args, adCategoryID)
 
 	// Add JOINs and WHERE clauses for each field
@@ -74,7 +71,7 @@ func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int,
 			tableName, tableFieldName, tableName))
 
 		whereClauses = append(whereClauses,
-			fmt.Sprintf("%s.%s = ?", tableName, fieldConfig.ValueColumnName))
+			fmt.Sprintf("%s.%s = $%d", tableName, fieldConfig.ValueColumnName, len(args)+1))
 
 		if fieldConfig.FieldType == "int" {
 			intValue, err := strconv.Atoi(value)
@@ -227,7 +224,7 @@ func generateCombinationsRecursive(fieldNames []string, fieldValues [][]string, 
 
 // insertSpecAssociation inserts the ad-spec association record
 func insertSpecAssociation(tx *sql.Tx, adID int, specID int) error {
-	_, err := tx.Exec("INSERT OR IGNORE INTO AdSpecification (ad_id, specification_id) VALUES (?, ?)",
+	_, err := tx.Exec("INSERT INTO AdSpecification (ad_id, specification_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
 		adID, specID)
 	if err != nil {
 		return fmt.Errorf("failed to insert AdSpecification association: %w", err)

@@ -69,8 +69,8 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 
 	// Build WHERE clause
 	whereClauses := []string{
-		"spec.ad_category_id = ?",
-		fmt.Sprintf("%s.ad_category_id = ?", tableName),
+		fmt.Sprintf("spec.ad_category_id = $%d", len(args)+1),
+		fmt.Sprintf("%s.ad_category_id = $%d", tableName, len(args)+2),
 	}
 	args = append(args, adCategoryID, adCategoryID)
 
@@ -94,12 +94,12 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 				continue
 			}
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.%s = ?", parentTableName, parentDef.ValueColumnName))
+				fmt.Sprintf("%s.%s = $%d", parentTableName, parentDef.ValueColumnName, len(args)+1))
 			args = append(args, intValue)
 		} else {
 			// For string fields, compare with value column
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.%s = ?", parentTableName, parentDef.ValueColumnName))
+				fmt.Sprintf("%s.%s = $%d", parentTableName, parentDef.ValueColumnName, len(args)+1))
 			args = append(args, parentValue)
 		}
 	}
@@ -176,10 +176,10 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 		var selectClause string
 		if fieldDef.FieldType == "int" {
 			selectClause = fmt.Sprintf(`SELECT DISTINCT CAST(%s.%s AS TEXT) FROM %s
-	WHERE %s.ad_category_id = ?`, tableName, fieldDef.ValueColumnName, tableName, tableName)
+	WHERE %s.ad_category_id = $1`, tableName, fieldDef.ValueColumnName, tableName, tableName)
 		} else {
 			selectClause = fmt.Sprintf(`SELECT DISTINCT %s.%s FROM %s
-	WHERE %s.ad_category_id = ?`, tableName, fieldDef.ValueColumnName, tableName, tableName)
+	WHERE %s.ad_category_id = $1`, tableName, fieldDef.ValueColumnName, tableName, tableName)
 		}
 		query := selectClause
 		args := []interface{}{adCategoryID}
@@ -198,11 +198,11 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 	var selectClause string
 	if fieldDef.FieldType == "int" {
 		selectClause = fmt.Sprintf(`SELECT DISTINCT CAST(%s.%s AS TEXT) FROM %s
-	WHERE %s.ad_category_id = ? AND %s.id IN (
+	WHERE %s.ad_category_id = $1 AND %s.id IN (
 		SELECT spec.%s FROM Specification spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableName, tableFieldName)
 	} else {
 		selectClause = fmt.Sprintf(`SELECT DISTINCT %s.%s FROM %s
-	WHERE %s.ad_category_id = ? AND %s.id IN (
+	WHERE %s.ad_category_id = $1 AND %s.id IN (
 		SELECT spec.%s FROM Specification spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableName, tableFieldName)
 	}
 	query := selectClause
@@ -222,7 +222,7 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 	}
 
 	// Build WHERE clause with IN clauses for each parent field that has values
-	whereClauses := []string{"spec.ad_category_id = ?"}
+	whereClauses := []string{fmt.Sprintf("spec.ad_category_id = $%d", len(args)+1)}
 	args = append(args, adCategoryID)
 
 	for fieldName, values := range parentFiltersArray {
@@ -244,7 +244,7 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 				intValue, err := strconv.Atoi(val)
 				if err == nil {
 					intValues = append(intValues, intValue)
-					placeholders = append(placeholders, "?")
+					placeholders = append(placeholders, fmt.Sprintf("$%d", len(args)+1))
 					args = append(args, intValue)
 				}
 			}
@@ -256,7 +256,7 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 			// String fields - use IN clause
 			placeholders := make([]string, len(values))
 			for i := range values {
-				placeholders[i] = "?"
+				placeholders[i] = fmt.Sprintf("$%d", len(args)+1)
 				args = append(args, values[i])
 			}
 			whereClauses = append(whereClauses,
@@ -283,7 +283,7 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 	}
 
 	if len(distinctParts) > 0 {
-		query += strings.Join(distinctParts, ", ") + ") = ?"
+		query += strings.Join(distinctParts, ", ") + fmt.Sprintf(") = $%d", len(args)+1)
 		args = append(args, totalCombinations)
 	} else {
 		// No parent fields, just close the query
@@ -381,6 +381,7 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 
 	// Build WHERE clause with parent filters
 	whereConditions := []string{}
+	paramNum := 1
 	for _, parentField := range parentFields {
 		parentDef, exists := GetFieldDefinition(parentField.Name)
 		if !exists {
@@ -398,19 +399,21 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 			if err != nil {
 				continue
 			}
-			whereConditions = append(whereConditions, fmt.Sprintf("%s.%s = ?", parentTableName, parentDef.ValueColumnName))
+			whereConditions = append(whereConditions, fmt.Sprintf("%s.%s = $%d", parentTableName, parentDef.ValueColumnName, paramNum))
 			args = append(args, intValue)
+			paramNum++
 		} else {
 			// For string fields, compare the value column
-			whereConditions = append(whereConditions, fmt.Sprintf("%s.%s = ?", parentTableName, parentDef.ValueColumnName))
+			whereConditions = append(whereConditions, fmt.Sprintf("%s.%s = $%d", parentTableName, parentDef.ValueColumnName, paramNum))
 			args = append(args, parentValue)
+			paramNum++
 		}
 	}
 
 	// Add ad ID filter
 	placeholders := make([]string, len(adIDs))
 	for i := range adIDs {
-		placeholders[i] = "?"
+		placeholders[i] = fmt.Sprintf("$%d", paramNum+i)
 	}
 	whereConditions = append(whereConditions, fmt.Sprintf("ad_spec.ad_id IN (%s)", strings.Join(placeholders, ",")))
 	for _, id := range adIDs {

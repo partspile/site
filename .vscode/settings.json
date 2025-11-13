@@ -2,10 +2,12 @@
         "sqltools.useNodeRuntime": true,
         "sqltools.connections": [
                 {
+                        "ssh": "Disabled",
                         "previewLimit": 50,
-                        "driver": "SQLite",
-                        "name": "parts-pile",
-                        "database": "project.db"
+                        "server": "127.0.0.1",
+                        "driver": "CockroachDB",
+                        "name": "partspile",
+                        "connectString": "postgresql://root@127.0.0.1:26257/partspile?sslmode=disable"
                 }
         ]
 }

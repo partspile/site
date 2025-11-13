@@ -8,19 +8,19 @@ import (
 
 // BookmarkAd bookmarks an ad for a user
 func BookmarkAd(userID, adID int) error {
-	_, err := db.Exec(`INSERT OR IGNORE INTO BookmarkedAd (user_id, ad_id) VALUES (?, ?)`, userID, adID)
+	_, err := db.Exec(`INSERT INTO BookmarkedAd (user_id, ad_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, userID, adID)
 	return err
 }
 
 // UnbookmarkAd removes a bookmark for an ad by a user
 func UnbookmarkAd(userID, adID int) error {
-	_, err := db.Exec(`DELETE FROM BookmarkedAd WHERE user_id = ? AND ad_id = ?`, userID, adID)
+	_, err := db.Exec(`DELETE FROM BookmarkedAd WHERE user_id = $1 AND ad_id = $2`, userID, adID)
 	return err
 }
 
 // IsAdBookmarkedByUser checks if a user has bookmarked an ad
 func IsAdBookmarkedByUser(userID, adID int) (bool, error) {
-	row := db.QueryRow(`SELECT 1 FROM BookmarkedAd WHERE user_id = ? AND ad_id = ?`, userID, adID)
+	row := db.QueryRow(`SELECT 1 FROM BookmarkedAd WHERE user_id = $1 AND ad_id = $2`, userID, adID)
 	var exists int
 	err := row.Scan(&exists)
 	if err == sql.ErrNoRows {
@@ -33,7 +33,7 @@ func IsAdBookmarkedByUser(userID, adID int) (bool, error) {
 func GetBookmarkedAdIDs(userID int) ([]int, error) {
 	query := `SELECT ba.ad_id FROM BookmarkedAd ba 
 		JOIN Ad a ON ba.ad_id = a.id 
-		WHERE ba.user_id = ? AND a.deleted_at IS NULL 
+		WHERE ba.user_id = $1 AND a.deleted_at IS NULL 
 		ORDER BY ba.bookmarked_at DESC`
 
 	var adIDs []int

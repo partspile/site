@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"sync"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/parts-pile/site/logger"
 )
 
@@ -18,7 +18,7 @@ var (
 func Init(databaseURL string) error {
 	var err error
 	once.Do(func() {
-		db, err = sqlx.Open("sqlite3", databaseURL)
+		db, err = sqlx.Open("pgx", databaseURL)
 		if err != nil {
 			logger.Error("Failed to open database",
 				"error", err, "databaseURL", databaseURL)
@@ -71,4 +71,10 @@ func Get(dest interface{}, query string, args ...interface{}) error {
 // Ping verifies the database connection is alive
 func Ping() error {
 	return db.Ping()
+}
+
+// Rebind converts a query with ? placeholders to the database's native format
+// For PostgreSQL, this converts ? to $1, $2, $3, etc.
+func Rebind(query string) string {
+	return db.Rebind(query)
 }

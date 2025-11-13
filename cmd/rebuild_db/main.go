@@ -7,12 +7,10 @@ import (
 	"io"
 	"math/rand"
 	"os"
-	"os/exec"
 	"strings"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/parts-pile/site/config"
-	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/password"
 	"github.com/parts-pile/site/user"
@@ -32,53 +30,114 @@ func main() {
 	parentFile := "cmd/rebuild_db/parent.json"
 	makeParentFile := "cmd/rebuild_db/make-parent.json"
 	typeFile := "cmd/rebuild_db/ad-category.json"
-	dbFile := config.DatabaseURL
 	schemaFile := "schema.sql"
 
-	dbFileOnDisk := strings.TrimPrefix(dbFile, "file:")
-	// Remove old DB if exists
-	if _, err := os.Stat(dbFileOnDisk); err == nil {
-		logger.Info("Removing existing database file", "file", dbFileOnDisk)
-		if err := os.Remove(dbFileOnDisk); err != nil {
-			logger.Fatal("Failed to remove old DB", "error", err, "file", dbFileOnDisk)
-		}
-	} else {
-		logger.Info("No existing database file to remove", "file", dbFileOnDisk)
-	}
-
-	// Create new DB from schema.sql
-	cmd := exec.Command("sqlite3", dbFile, fmt.Sprintf(".read %s", schemaFile))
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		logger.Fatal("Failed to create DB from schema.sql", "error", err, "schemaFile", schemaFile)
-	}
-
-	// Initialize database
-	if err := db.Init(dbFile); err != nil {
-		logger.Fatal("Failed to initialize database", "error", err, "databaseURL", dbFile)
+	// Get PostgreSQL connection string from environment variable
+	// Example: postgres://user:password@localhost:5432/dbname?sslmode=disable
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		logger.Fatal("DATABASE_URL must be set")
 	}
 
 	// Open DB for direct access
-	database, err := sql.Open("sqlite3", dbFile)
+	database, err := sql.Open("pgx", databaseURL)
 	if err != nil {
-		logger.Fatal("Failed to open DB", "error", err, "databaseURL", dbFile)
+		logger.Fatal("Failed to open DB", "error", err, "databaseURL", databaseURL)
 	}
 	defer database.Close()
 
-	// Enable WAL mode and other optimizations for bulk operations
-	if _, err := database.Exec("PRAGMA journal_mode=WAL"); err != nil {
-		logger.Warn("Failed to enable WAL mode", "error", err)
+	// Test connection
+	if err := database.Ping(); err != nil {
+		logger.Fatal("Failed to ping database", "error", err)
 	}
-	if _, err := database.Exec("PRAGMA synchronous=NORMAL"); err != nil {
-		logger.Warn("Failed to set synchronous mode", "error", err)
+
+	// Drop all tables to clean the database (equivalent to deleting SQLite file)
+	logger.Info("Dropping all existing tables")
+	rows, err := database.Query(`
+		SELECT tablename 
+		FROM pg_tables 
+		WHERE schemaname = 'public'
+	`)
+	if err != nil {
+		logger.Fatal("Failed to query existing tables", "error", err)
 	}
-	if _, err := database.Exec("PRAGMA cache_size=10000"); err != nil {
-		logger.Warn("Failed to set cache size", "error", err)
+	defer rows.Close()
+
+	var tables []string
+	for rows.Next() {
+		var tablename string
+		if err := rows.Scan(&tablename); err != nil {
+			logger.Fatal("Failed to scan table name", "error", err)
+		}
+		tables = append(tables, tablename)
 	}
-	if _, err := database.Exec("PRAGMA temp_store=MEMORY"); err != nil {
-		logger.Warn("Failed to set temp store", "error", err)
+	if err := rows.Err(); err != nil {
+		logger.Fatal("Error iterating tables", "error", err)
 	}
+
+	// Drop each table (quote table names to handle reserved keywords)
+	for _, table := range tables {
+		// Quote the table name to handle reserved keywords
+		quotedTable := fmt.Sprintf(`"%s"`, table)
+		_, err := database.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS %s CASCADE`, quotedTable))
+		if err != nil {
+			logger.Warn("Failed to drop table", "table", table, "error", err)
+		}
+	}
+	logger.Info("All existing tables dropped", "count", len(tables))
+
+	// Read and execute schema.sql
+	schemaSQL, err := os.ReadFile(schemaFile)
+	if err != nil {
+		logger.Fatal("Failed to read schema.sql", "error", err, "schemaFile", schemaFile)
+	}
+
+	// Split schema into individual statements and execute them
+	// PostgreSQL Exec() can only execute one statement at a time
+	statements := splitSQLStatements(string(schemaSQL))
+	logger.Info("Executing schema", "statementCount", len(statements))
+
+	executedCount := 0
+	for i, stmt := range statements {
+		stmt = strings.TrimSpace(stmt)
+		if stmt == "" {
+			continue // Skip empty statements
+		}
+
+		// Remove leading comments from statement
+		lines := strings.Split(stmt, "\n")
+		var cleanLines []string
+		for _, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if trimmed != "" && !strings.HasPrefix(trimmed, "--") {
+				cleanLines = append(cleanLines, line)
+			}
+		}
+		stmt = strings.Join(cleanLines, "\n")
+		stmt = strings.TrimSpace(stmt)
+
+		if stmt == "" {
+			continue // Skip statements that are only comments
+		}
+
+		// Log first few statements for debugging
+		if i < 3 {
+			logger.Info("Executing schema statement", "number", i+1, "preview", truncateString(stmt, 150))
+		}
+
+		if _, err := database.Exec(stmt); err != nil {
+			logger.Fatal("Failed to execute schema statement",
+				"error", err,
+				"statementNumber", i+1,
+				"statement", truncateString(stmt, 500))
+		}
+
+		executedCount++
+		if executedCount%5 == 0 || executedCount == 1 {
+			logger.Info("Schema execution progress", "completed", executedCount, "total", len(statements))
+		}
+	}
+	logger.Info("Schema executed successfully", "statements", executedCount)
 
 	// Import ad-category.json (AdCategory)
 	typeData, err := os.ReadFile(typeFile)
@@ -100,7 +159,7 @@ func main() {
 	// Create map for category lookups
 	categoryMap := make(map[string]int)
 	for _, cat := range adCategories {
-		_, err := database.Exec(`INSERT INTO AdCategory (name) VALUES (?)`, cat.Name)
+		_, err := database.Exec(`INSERT INTO AdCategory (name) VALUES ($1)`, cat.Name)
 		if err != nil {
 			logger.Warn("Failed to insert AdCategory", "name", cat.Name, "error", err)
 		}
@@ -108,11 +167,14 @@ func main() {
 	logger.Info("Inserted AdCategories", "count", len(adCategories))
 
 	// Populate category map
+	logger.Info("Querying AdCategory table to populate category map")
 	categoryRows, err := database.Query(`SELECT id, name FROM AdCategory`)
 	if err != nil {
 		logger.Fatal("Failed to query AdCategory", "error", err)
 	}
 	defer categoryRows.Close()
+
+	categoryCount := 0
 	for categoryRows.Next() {
 		var id int
 		var name string
@@ -120,7 +182,12 @@ func main() {
 			logger.Fatal("Failed to scan ad_category_id row", "error", err)
 		}
 		categoryMap[name] = id
+		categoryCount++
 	}
+	if err := categoryRows.Err(); err != nil {
+		logger.Fatal("Error iterating category rows", "error", err)
+	}
+	logger.Info("Populated category map", "count", categoryCount)
 
 	// Populate SpecificationField table with all field definitions
 	fieldFile := "cmd/rebuild_db/spec-fields.json"
@@ -144,14 +211,14 @@ func main() {
 
 	fieldIDMap := make(map[string]int)
 	for _, fieldDef := range fieldDefinitions {
-		res, err := database.Exec(`INSERT INTO SpecificationField (name, display_name, field_type, table_name, table_field_name, value_column_name, qdrant_type) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			fieldDef.Name, fieldDef.DisplayName, fieldDef.FieldType, fieldDef.TableName, fieldDef.TableFieldName, fieldDef.ValueColumnName, fieldDef.QdrantType)
+		var fieldID int
+		err := database.QueryRow(`INSERT INTO SpecificationField (name, display_name, field_type, table_name, table_field_name, value_column_name, qdrant_type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+			fieldDef.Name, fieldDef.DisplayName, fieldDef.FieldType, fieldDef.TableName, fieldDef.TableFieldName, fieldDef.ValueColumnName, fieldDef.QdrantType).Scan(&fieldID)
 		if err != nil {
 			logger.Warn("Failed to insert SpecificationField", "name", fieldDef.Name, "error", err)
 			continue
 		}
-		fieldID, _ := res.LastInsertId()
-		fieldIDMap[fieldDef.Name] = int(fieldID)
+		fieldIDMap[fieldDef.Name] = fieldID
 	}
 	logger.Info("Inserted SpecificationFields", "count", len(fieldIDMap))
 
@@ -210,7 +277,7 @@ func main() {
 				nextInChain = nextOrder
 			}
 
-			_, err := database.Exec(`INSERT INTO AdCategoryField (ad_category_id, specification_field_id, priority_order, next_in_chain, is_required, show_in_filters) VALUES (?, ?, ?, ?, ?, ?)`,
+			_, err := database.Exec(`INSERT INTO AdCategoryField (ad_category_id, specification_field_id, priority_order, next_in_chain, is_required, show_in_filters) VALUES ($1, $2, $3, $4, $5, $6)`,
 				categoryID, fieldID, order+1, nextInChain, 1, showInFilters)
 			if err != nil {
 				logger.Warn("Failed to insert AdCategoryField", "category", cat.Name, "field", fieldName, "error", err)
@@ -233,7 +300,7 @@ func main() {
 		logger.Fatal("Failed to parse parent.json", "error", err, "file", parentFile)
 	}
 	for _, pc := range parentCompanies {
-		_, err := database.Exec(`INSERT INTO ParentCompany (name, country) VALUES (?, ?)`, pc.Name, pc.Country)
+		_, err := database.Exec(`INSERT INTO ParentCompany (name, country) VALUES ($1, $2)`, pc.Name, pc.Country)
 		if err != nil {
 			logger.Warn("Failed to insert ParentCompany", "name", pc.Name, "error", err)
 		}
@@ -256,8 +323,10 @@ func main() {
 	if err := json.Unmarshal(userData, &users); err != nil {
 		logger.Fatal("Failed to parse user.json", "error", err, "file", userFile)
 	}
+	// Map from user index (1-based, as used in ad JSON files) to actual user ID
+	userIDMap := make(map[int]int)
 	userCount := 0
-	for _, u := range users {
+	for i, u := range users {
 		hash, salt, err := password.HashPassword(u.Password)
 		if err != nil {
 			logger.Warn("Failed to hash password for user", "name", u.Name, "error", err)
@@ -281,19 +350,20 @@ func main() {
 		}
 
 		// Insert user with encrypted data
-		res, err := database.Exec(`INSERT INTO User (encrypted_name, name_nonce, name_hash, encrypted_phone, phone_nonce, phone_hash,
+		var userID int
+		isAdminInt := 0
+		if u.IsAdmin {
+			isAdminInt = 1
+		}
+		err = database.QueryRow(`INSERT INTO Users (encrypted_name, name_nonce, name_hash, encrypted_phone, phone_nonce, phone_hash,
 			password_hash, password_salt, password_algo, phone_verified,
 			verification_code, notification_method, is_admin)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '', 'sms', ?)`,
-			encryptedName, nameNonce, nameHash, encryptedPhone, phoneNonce, phoneHash, hash, salt, "argon2id", u.IsAdmin)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0, '', 'sms', $10) RETURNING id`,
+			encryptedName, nameNonce, nameHash, encryptedPhone, phoneNonce, phoneHash, hash, salt, "argon2id", isAdminInt).Scan(&userID)
 		if err != nil {
 			logger.Warn("Failed to insert user", "name", u.Name, "error", err)
 			continue
 		}
-
-		// Get the user ID and re-encrypt with the real ID
-		userID64, _ := res.LastInsertId()
-		userID := int(userID64)
 
 		// Re-encrypt with the real user ID
 		encryptedName, nameNonce, err = user.EncryptName(userID, u.Name)
@@ -308,7 +378,7 @@ func main() {
 		}
 
 		// Update with properly encrypted data
-		_, err = database.Exec(`UPDATE User SET encrypted_name = ?, name_nonce = ?, encrypted_phone = ?, phone_nonce = ? WHERE id = ?`,
+		_, err = database.Exec(`UPDATE Users SET encrypted_name = $1, name_nonce = $2, encrypted_phone = $3, phone_nonce = $4 WHERE id = $5`,
 			encryptedName, nameNonce, encryptedPhone, phoneNonce, userID)
 		if err != nil {
 			logger.Warn("Failed to update encrypted data for user", "name", u.Name, "error", err)
@@ -316,12 +386,14 @@ func main() {
 		}
 
 		// Initialize rock inventory
-		_, err = database.Exec(`INSERT INTO UserRock (user_id, rock_count) VALUES (?, 3)`, userID)
+		_, err = database.Exec(`INSERT INTO UserRock (user_id, rock_count) VALUES ($1, 3)`, userID)
 		if err != nil {
 			logger.Warn("Failed to initialize rock inventory for user", "name", u.Name, "error", err)
 			continue
 		}
 
+		// Map user index (1-based) to actual user ID for ad imports
+		userIDMap[i+1] = userID
 		userCount++
 	}
 	logger.Info("Inserted Users", "count", userCount)
@@ -354,7 +426,7 @@ func main() {
 
 	// Create a map of parent company names to IDs for efficient lookup
 	parentCompanyMap := make(map[string]int)
-	rows, err := database.Query(`SELECT id, name FROM ParentCompany`)
+	rows, err = database.Query(`SELECT id, name FROM ParentCompany`)
 	if err != nil {
 		logger.Fatal("Failed to query ParentCompany", "error", err)
 	}
@@ -417,13 +489,95 @@ func main() {
 		}
 
 		// Import ads for this category
-		if err := importAds(database, seedFiles.adFile, categoryID, categoryMap); err != nil {
+		if err := importAds(database, seedFiles.adFile, categoryID, categoryMap, userIDMap); err != nil {
 			logger.Warn("Failed to import ads for category", "category", categoryName, "error", err)
 		}
 	}
 
 	logger.Info("Database rebuild and import complete")
 	logger.Info("Vector embeddings will be processed by the main application background processor")
+}
+
+// splitSQLStatements splits a SQL script into individual statements
+// Handles semicolons inside string literals and comments
+func splitSQLStatements(sql string) []string {
+	var statements []string
+	var current strings.Builder
+	inString := false
+	stringChar := byte(0)
+	escapeNext := false
+
+	for i := 0; i < len(sql); i++ {
+		char := sql[i]
+
+		if escapeNext {
+			current.WriteByte(char)
+			escapeNext = false
+			continue
+		}
+
+		if char == '\\' && inString {
+			escapeNext = true
+			current.WriteByte(char)
+			continue
+		}
+
+		if !inString {
+			// Check for string start
+			if char == '\'' || char == '"' {
+				inString = true
+				stringChar = char
+				current.WriteByte(char)
+				continue
+			}
+
+			// Check for comment start
+			if i < len(sql)-1 && sql[i] == '-' && sql[i+1] == '-' {
+				// Skip to end of line, but add newline to preserve structure
+				for i < len(sql) && sql[i] != '\n' {
+					i++
+				}
+				if i < len(sql) && sql[i] == '\n' {
+					current.WriteByte('\n')
+				}
+				continue
+			}
+
+			// Check for statement delimiter
+			if char == ';' {
+				stmt := strings.TrimSpace(current.String())
+				if stmt != "" {
+					statements = append(statements, stmt)
+				}
+				current.Reset()
+				continue
+			}
+		} else {
+			// Inside string
+			if char == stringChar {
+				inString = false
+				stringChar = 0
+			}
+		}
+
+		current.WriteByte(char)
+	}
+
+	// Add final statement if any
+	stmt := strings.TrimSpace(current.String())
+	if stmt != "" {
+		statements = append(statements, stmt)
+	}
+
+	return statements
+}
+
+// truncateString truncates a string to maxLen characters for logging
+func truncateString(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+	return s[:maxLen] + "..."
 }
 
 // executeSpecBatch executes a batch of Specification insertions using a single INSERT statement
@@ -435,12 +589,13 @@ func executeSpecBatch(tx *sql.Tx, batch []struct {
 		return
 	}
 
-	// Build the VALUES clause
+	// Build the VALUES clause with PostgreSQL placeholders
 	values := make([]string, len(batch))
 	args := make([]interface{}, len(batch)*5)
 
 	for i, spec := range batch {
-		values[i] = "(?, ?, ?, ?, ?)"
+		argStart := i*5 + 1
+		values[i] = fmt.Sprintf("($%d, $%d, $%d, $%d, $%d)", argStart, argStart+1, argStart+2, argStart+3, argStart+4)
 		args[i*5] = spec.adCategoryID
 		args[i*5+1] = spec.makeID
 		args[i*5+2] = spec.yearID
@@ -448,7 +603,7 @@ func executeSpecBatch(tx *sql.Tx, batch []struct {
 		args[i*5+4] = spec.engineID
 	}
 
-	query := fmt.Sprintf("INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id) VALUES %s", strings.Join(values, ","))
+	query := fmt.Sprintf("INSERT INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id) VALUES %s ON CONFLICT DO NOTHING", strings.Join(values, ","))
 	_, err := tx.Exec(query, args...)
 	if err != nil {
 		logger.Warn("Failed to insert Specification batch", "error", err)
@@ -457,14 +612,13 @@ func executeSpecBatch(tx *sql.Tx, batch []struct {
 
 func getOrInsert(db *sql.DB, table, col, val string) int {
 	var id int
-	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=?", table, col), val).Scan(&id)
+	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=$1", table, col), val).Scan(&id)
 	if err == sql.ErrNoRows {
-		res, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s) VALUES (?)", table, col), val)
+		err = db.QueryRow(fmt.Sprintf("INSERT INTO %s (%s) VALUES ($1) RETURNING id", table, col), val).Scan(&id)
 		if err != nil {
 			logger.Fatal("Failed to insert into table", "table", table, "error", err)
 		}
-		id64, _ := res.LastInsertId()
-		return int(id64)
+		return id
 	} else if err != nil {
 		logger.Fatal("Failed to lookup table", "table", table, "error", err)
 	}
@@ -473,14 +627,13 @@ func getOrInsert(db *sql.DB, table, col, val string) int {
 
 func getOrInsertWithCategory(db *sql.DB, table, col, val string, categoryID int) int {
 	var id int
-	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=? AND ad_category_id=?", table, col), val, categoryID).Scan(&id)
+	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=$1 AND ad_category_id=$2", table, col), val, categoryID).Scan(&id)
 	if err == sql.ErrNoRows {
-		res, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s, ad_category_id) VALUES (?, ?)", table, col), val, categoryID)
+		err = db.QueryRow(fmt.Sprintf("INSERT INTO %s (%s, ad_category_id) VALUES ($1, $2) RETURNING id", table, col), val, categoryID).Scan(&id)
 		if err != nil {
 			logger.Fatal("Failed to insert into table", "table", table, "error", err)
 		}
-		id64, _ := res.LastInsertId()
-		return int(id64)
+		return id
 	} else if err != nil {
 		logger.Fatal("Failed to lookup table", "table", table, "error", err)
 	}
@@ -527,36 +680,339 @@ func importSpecs(db *sql.DB, jsonFile string, categoryID int, makeParents []stru
 		return err
 	}
 
-	// Import specs with the category
-	for make, years := range mym {
-		// Find parent company ID for this make
-		var parentCompanyID *int
-		for _, mp := range makeParents {
-			if mp.Make == make {
-				if id, exists := parentCompanyMap[mp.ParentCompany]; exists {
-					parentCompanyID = &id
-				}
-				break
-			}
+	// Collect all specs first, then batch insert
+	type specEntry struct {
+		adCategoryID, makeID, yearID, modelID, engineID int
+	}
+	var allSpecs []specEntry
+
+	// Build map of make -> parentCompanyID for faster lookup
+	makeToParentMap := make(map[string]*int)
+	for _, mp := range makeParents {
+		if id, exists := parentCompanyMap[mp.ParentCompany]; exists {
+			makeToParentMap[mp.Make] = &id
 		}
+	}
+
+	// First pass: collect all unique values
+	type makeKey struct {
+		name     string
+		parentID *int
+	}
+
+	makeSet := make(map[makeKey]bool)
+	yearSet := make(map[string]bool)
+	modelSet := make(map[string]bool)
+	engineSet := make(map[string]bool)
+
+	for make, years := range mym {
+		parentCompanyID := makeToParentMap[make]
+		makeSet[makeKey{name: make, parentID: parentCompanyID}] = true
 
 		for year, models := range years {
+			yearSet[year] = true
 			for model, engines := range models {
+				modelSet[model] = true
 				for _, engine := range engines {
-					makeID := getOrInsertWithParentAndCategoryHelper(db, "Make", "name", make, categoryID, parentCompanyID)
-					yearID := getOrInsertWithCategory(db, "Year", "year", year, categoryID)
-					modelID := getOrInsertWithCategory(db, "Model", "name", model, categoryID)
-					engineID := getOrInsertWithCategory(db, "Engine", "name", engine, categoryID)
-
-					// Insert spec
-					db.Exec(`INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id) VALUES (?, ?, ?, ?, ?)`,
-						categoryID, makeID, yearID, modelID, engineID)
+					engineSet[engine] = true
 				}
 			}
 		}
 	}
 
-	logger.Info("Imported specs", "file", jsonFile)
+	// Bulk load existing Makes, Years, Models, Engines and build lookup maps
+	makeIDMap := make(map[makeKey]int)
+	yearIDMap := make(map[string]int)
+	modelIDMap := make(map[string]int)
+	engineIDMap := make(map[string]int)
+
+	// Load existing Makes
+	for mk := range makeSet {
+		var query string
+		var args []interface{}
+		if mk.parentID != nil {
+			query = `SELECT id FROM Make WHERE name=$1 AND parent_company_id=$2 AND ad_category_id=$3`
+			args = []interface{}{mk.name, *mk.parentID, categoryID}
+		} else {
+			query = `SELECT id FROM Make WHERE name=$1 AND parent_company_id IS NULL AND ad_category_id=$2`
+			args = []interface{}{mk.name, categoryID}
+		}
+		var id int
+		err := db.QueryRow(query, args...).Scan(&id)
+		if err == nil {
+			makeIDMap[mk] = id
+		}
+	}
+
+	// Load existing Years
+	if len(yearSet) > 0 {
+		yearList := make([]interface{}, 0, len(yearSet))
+		for year := range yearSet {
+			yearList = append(yearList, year)
+		}
+		placeholders := make([]string, len(yearList))
+		for i := range placeholders {
+			placeholders[i] = fmt.Sprintf("$%d", i+2)
+		}
+		query := fmt.Sprintf(`SELECT id, year FROM Year WHERE year IN (%s) AND ad_category_id=$1`, strings.Join(placeholders, ","))
+		args := append([]interface{}{categoryID}, yearList...)
+		rows, err := db.Query(query, args...)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var id int
+				var year string
+				if rows.Scan(&id, &year) == nil {
+					yearIDMap[year] = id
+				}
+			}
+		}
+	}
+
+	// Load existing Models
+	if len(modelSet) > 0 {
+		modelList := make([]interface{}, 0, len(modelSet))
+		for model := range modelSet {
+			modelList = append(modelList, model)
+		}
+		placeholders := make([]string, len(modelList))
+		for i := range placeholders {
+			placeholders[i] = fmt.Sprintf("$%d", i+2)
+		}
+		query := fmt.Sprintf(`SELECT id, name FROM Model WHERE name IN (%s) AND ad_category_id=$1`, strings.Join(placeholders, ","))
+		args := append([]interface{}{categoryID}, modelList...)
+		rows, err := db.Query(query, args...)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var id int
+				var model string
+				if rows.Scan(&id, &model) == nil {
+					modelIDMap[model] = id
+				}
+			}
+		}
+	}
+
+	// Load existing Engines
+	if len(engineSet) > 0 {
+		engineList := make([]interface{}, 0, len(engineSet))
+		for engine := range engineSet {
+			engineList = append(engineList, engine)
+		}
+		placeholders := make([]string, len(engineList))
+		for i := range placeholders {
+			placeholders[i] = fmt.Sprintf("$%d", i+2)
+		}
+		query := fmt.Sprintf(`SELECT id, name FROM Engine WHERE name IN (%s) AND ad_category_id=$1`, strings.Join(placeholders, ","))
+		args := append([]interface{}{categoryID}, engineList...)
+		rows, err := db.Query(query, args...)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var id int
+				var engine string
+				if rows.Scan(&id, &engine) == nil {
+					engineIDMap[engine] = id
+				}
+			}
+		}
+	}
+
+	// Batch insert missing Makes
+	tx, err := db.Begin()
+	if err == nil {
+		for mk := range makeSet {
+			if _, exists := makeIDMap[mk]; !exists {
+				var id int
+				var query string
+				var args []interface{}
+				if mk.parentID != nil {
+					query = `INSERT INTO Make (name, parent_company_id, ad_category_id) VALUES ($1, $2, $3) RETURNING id`
+					args = []interface{}{mk.name, *mk.parentID, categoryID}
+				} else {
+					query = `INSERT INTO Make (name, ad_category_id) VALUES ($1, $2) RETURNING id`
+					args = []interface{}{mk.name, categoryID}
+				}
+				err := tx.QueryRow(query, args...).Scan(&id)
+				if err == nil {
+					makeIDMap[mk] = id
+				}
+			}
+		}
+		tx.Commit()
+	}
+
+	// Batch insert missing Years using VALUES clause
+	missingYears := make([]string, 0)
+	for year := range yearSet {
+		if _, exists := yearIDMap[year]; !exists {
+			missingYears = append(missingYears, year)
+		}
+	}
+	if len(missingYears) > 0 {
+		tx, err := db.Begin()
+		if err == nil {
+			values := make([]string, len(missingYears))
+			args := make([]interface{}, len(missingYears)*2)
+			for i, year := range missingYears {
+				argStart := i*2 + 1
+				values[i] = fmt.Sprintf("($%d, $%d)", argStart, argStart+1)
+				args[i*2] = year
+				args[i*2+1] = categoryID
+			}
+			query := fmt.Sprintf(`INSERT INTO Year (year, ad_category_id) VALUES %s RETURNING id, year`, strings.Join(values, ","))
+			rows, err := tx.Query(query, args...)
+			if err == nil {
+				for rows.Next() {
+					var id int
+					var year string
+					if rows.Scan(&id, &year) == nil {
+						yearIDMap[year] = id
+					}
+				}
+				rows.Close()
+			}
+			tx.Commit()
+		}
+	}
+
+	// Batch insert missing Models using VALUES clause
+	missingModels := make([]string, 0)
+	for model := range modelSet {
+		if _, exists := modelIDMap[model]; !exists {
+			missingModels = append(missingModels, model)
+		}
+	}
+	if len(missingModels) > 0 {
+		tx, err := db.Begin()
+		if err == nil {
+			values := make([]string, len(missingModels))
+			args := make([]interface{}, len(missingModels)*2)
+			for i, model := range missingModels {
+				argStart := i*2 + 1
+				values[i] = fmt.Sprintf("($%d, $%d)", argStart, argStart+1)
+				args[i*2] = model
+				args[i*2+1] = categoryID
+			}
+			query := fmt.Sprintf(`INSERT INTO Model (name, ad_category_id) VALUES %s RETURNING id, name`, strings.Join(values, ","))
+			rows, err := tx.Query(query, args...)
+			if err == nil {
+				for rows.Next() {
+					var id int
+					var model string
+					if rows.Scan(&id, &model) == nil {
+						modelIDMap[model] = id
+					}
+				}
+				rows.Close()
+			}
+			tx.Commit()
+		}
+	}
+
+	// Batch insert missing Engines using VALUES clause
+	missingEngines := make([]string, 0)
+	for engine := range engineSet {
+		if _, exists := engineIDMap[engine]; !exists {
+			missingEngines = append(missingEngines, engine)
+		}
+	}
+	if len(missingEngines) > 0 {
+		tx, err := db.Begin()
+		if err == nil {
+			values := make([]string, len(missingEngines))
+			args := make([]interface{}, len(missingEngines)*2)
+			for i, engine := range missingEngines {
+				argStart := i*2 + 1
+				values[i] = fmt.Sprintf("($%d, $%d)", argStart, argStart+1)
+				args[i*2] = engine
+				args[i*2+1] = categoryID
+			}
+			query := fmt.Sprintf(`INSERT INTO Engine (name, ad_category_id) VALUES %s RETURNING id, name`, strings.Join(values, ","))
+			rows, err := tx.Query(query, args...)
+			if err == nil {
+				for rows.Next() {
+					var id int
+					var engine string
+					if rows.Scan(&id, &engine) == nil {
+						engineIDMap[engine] = id
+					}
+				}
+				rows.Close()
+			}
+			tx.Commit()
+		}
+	}
+
+	// Second pass: build specs using lookup maps (no DB queries)
+	for make, years := range mym {
+		parentCompanyID := makeToParentMap[make]
+		makeKey := makeKey{name: make, parentID: parentCompanyID}
+		makeID := makeIDMap[makeKey]
+
+		for year, models := range years {
+			yearID := yearIDMap[year]
+
+			for model, engines := range models {
+				modelID := modelIDMap[model]
+
+				for _, engine := range engines {
+					engineID := engineIDMap[engine]
+
+					allSpecs = append(allSpecs, specEntry{
+						adCategoryID: categoryID,
+						makeID:       makeID,
+						yearID:       yearID,
+						modelID:      modelID,
+						engineID:     engineID,
+					})
+				}
+			}
+		}
+	}
+
+	// Batch insert specs using transaction
+	const batchSize = 1000
+	tx, err = db.Begin()
+	if err != nil {
+		logger.Warn("Failed to begin transaction for spec batch", "error", err)
+		return err
+	}
+	defer tx.Rollback()
+
+	for i := 0; i < len(allSpecs); i += batchSize {
+		end := i + batchSize
+		if end > len(allSpecs) {
+			end = len(allSpecs)
+		}
+		batch := allSpecs[i:end]
+
+		// Build batch for executeSpecBatch
+		specBatch := make([]struct {
+			adCategoryID, makeID, yearID, modelID, engineID int
+		}, len(batch))
+		for j, spec := range batch {
+			specBatch[j] = struct {
+				adCategoryID, makeID, yearID, modelID, engineID int
+			}{
+				adCategoryID: spec.adCategoryID,
+				makeID:       spec.makeID,
+				yearID:       spec.yearID,
+				modelID:      spec.modelID,
+				engineID:     spec.engineID,
+			}
+		}
+
+		executeSpecBatch(tx, specBatch)
+	}
+
+	if err := tx.Commit(); err != nil {
+		logger.Warn("Failed to commit spec batch transaction", "error", err)
+		return err
+	}
+
+	logger.Info("Imported specs", "file", jsonFile, "count", len(allSpecs))
 	return nil
 }
 
@@ -580,9 +1036,9 @@ func importParts(db *sql.DB, jsonFile string, categoryID int) error {
 		for _, subcat := range subcats {
 			var subcatID int
 			// PartSubCategory now uses ad_category_id directly, not part_category_id
-			err := db.QueryRow(`SELECT id FROM PartSubCategory WHERE ad_category_id=? AND name=?`, categoryID, subcat).Scan(&subcatID)
+			err := db.QueryRow(`SELECT id FROM PartSubCategory WHERE ad_category_id=$1 AND name=$2`, categoryID, subcat).Scan(&subcatID)
 			if err == sql.ErrNoRows {
-				_, err := db.Exec(`INSERT INTO PartSubCategory (ad_category_id, name) VALUES (?, ?)`, categoryID, subcat)
+				_, err := db.Exec(`INSERT INTO PartSubCategory (ad_category_id, name) VALUES ($1, $2)`, categoryID, subcat)
 				if err != nil {
 					logger.Warn("Failed to insert PartSubCategory", "error", err)
 				}
@@ -597,7 +1053,7 @@ func importParts(db *sql.DB, jsonFile string, categoryID int) error {
 }
 
 // importAds loads ad data from a JSON file and imports it into the database
-func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[string]int) error {
+func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[string]int, userIDMap map[int]int) error {
 	adData, err := os.ReadFile(jsonFile)
 	if err != nil {
 		logger.Debug("Failed to read ad file, skipping", "error", err, "file", jsonFile)
@@ -635,7 +1091,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 	partCategoryMap := make(map[string]int)
 	subcategoryMap := make(map[string]int)
 
-	rows, err := db.Query(`SELECT id, name FROM PartCategory WHERE ad_category_id=?`, categoryID)
+	rows, err := db.Query(`SELECT id, name FROM PartCategory WHERE ad_category_id=$1`, categoryID)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
@@ -647,7 +1103,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 		}
 	}
 
-	rows2, err := db.Query(`SELECT id, name FROM PartSubCategory WHERE ad_category_id=?`, categoryID)
+	rows2, err := db.Query(`SELECT id, name FROM PartSubCategory WHERE ad_category_id=$1`, categoryID)
 	if err == nil {
 		defer rows2.Close()
 		for rows2.Next() {
@@ -664,16 +1120,14 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 		// Insert or get location
 		locationKey := fmt.Sprintf("%s, %s, %s", ad.Location.City, ad.Location.AdminArea, ad.Location.Country)
 		var locationID int
-		err := db.QueryRow(`SELECT id FROM Location WHERE raw_text=?`, locationKey).Scan(&locationID)
+		err := db.QueryRow(`SELECT id FROM Location WHERE raw_text=$1`, locationKey).Scan(&locationID)
 		if err == sql.ErrNoRows {
-			res, err := db.Exec(`INSERT INTO Location (raw_text, city, admin_area, country, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)`,
-				locationKey, ad.Location.City, ad.Location.AdminArea, ad.Location.Country, ad.Location.Latitude, ad.Location.Longitude)
+			err = db.QueryRow(`INSERT INTO Location (raw_text, city, admin_area, country, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+				locationKey, ad.Location.City, ad.Location.AdminArea, ad.Location.Country, ad.Location.Latitude, ad.Location.Longitude).Scan(&locationID)
 			if err != nil {
 				logger.Warn("Failed to insert Location", "error", err)
 				continue
 			}
-			id64, _ := res.LastInsertId()
-			locationID = int(id64)
 		} else if err != nil {
 			logger.Warn("Location lookup error", "error", err)
 			continue
@@ -695,7 +1149,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 			subcatID := 0
 			if ad.Subcategory != "" {
 				// PartSubCategory now uses ad_category_id directly, not part_category_id
-				subcatRows, err := db.Query(`SELECT id FROM PartSubCategory WHERE ad_category_id=? AND name=?`, categoryID, ad.Subcategory)
+				subcatRows, err := db.Query(`SELECT id FROM PartSubCategory WHERE ad_category_id=$1 AND name=$2`, categoryID, ad.Subcategory)
 				if err == nil {
 					if subcatRows.Next() {
 						subcatRows.Scan(&subcatID)
@@ -720,17 +1174,24 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 		}
 		// For whole spec ads (ad.Category == ""), partCategoryID and subcategoryID stay nil
 
+		// Map user ID from JSON to actual user ID
+		actualUserID, exists := userIDMap[ad.UserID]
+		if !exists {
+			logger.Warn("User ID not found in userIDMap, skipping ad", "userID", ad.UserID, "title", ad.Title)
+			continue
+		}
+
 		// Generate between 0 and 5 images per ad
 		numImages := rand.Intn(6)
 
 		// Insert ad
-		res, err := db.Exec(`INSERT INTO Ad (title, description, price, created_at, user_id, location_id, image_count, has_vector, ad_category_id) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)`,
-			ad.Title, ad.Description, ad.Price, ad.CreatedAt, ad.UserID, locationID, numImages, categoryID)
+		var adID int
+		err = db.QueryRow(`INSERT INTO Ad (title, description, price, created_at, user_id, location_id, image_count, has_vector, ad_category_id) VALUES ($1, $2, $3, $4, $5, $6, $7, 0, $8) RETURNING id`,
+			ad.Title, ad.Description, ad.Price, ad.CreatedAt, actualUserID, locationID, numImages, categoryID).Scan(&adID)
 		if err != nil {
 			logger.Warn("Failed to insert Ad", "error", err, "title", ad.Title)
 			continue
 		}
-		adID, _ := res.LastInsertId()
 
 		// Link to specs (only if ad has years/engines fields)
 		if len(ad.Years) > 0 && len(ad.Engines) > 0 {
@@ -747,7 +1208,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 								LEFT JOIN Year y ON spec.year_id=y.id
 								LEFT JOIN Model mdl ON spec.model_id=mdl.id
 								LEFT JOIN Engine e ON spec.engine_id=e.id
-								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND spec.ad_category_id=? AND spec.part_category_id=? AND spec.part_subcategory_id=?`
+								WHERE m.name=$1 AND y.year=$2 AND mdl.name=$3 AND e.name=$4 AND spec.ad_category_id=$5 AND spec.part_category_id=$6 AND spec.part_subcategory_id=$7`
 							args = []interface{}{ad.Make, year, model, engine, categoryID, *partCategoryID, *subcategoryID}
 						} else if partCategoryID != nil {
 							query = `SELECT spec.id FROM Specification spec 
@@ -755,7 +1216,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 								LEFT JOIN Year y ON spec.year_id=y.id
 								LEFT JOIN Model mdl ON spec.model_id=mdl.id
 								LEFT JOIN Engine e ON spec.engine_id=e.id
-								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND spec.ad_category_id=? AND spec.part_category_id=? AND spec.part_subcategory_id IS NULL`
+								WHERE m.name=$1 AND y.year=$2 AND mdl.name=$3 AND e.name=$4 AND spec.ad_category_id=$5 AND spec.part_category_id=$6 AND spec.part_subcategory_id IS NULL`
 							args = []interface{}{ad.Make, year, model, engine, categoryID, *partCategoryID}
 						} else {
 							query = `SELECT spec.id FROM Specification spec 
@@ -763,7 +1224,7 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 								LEFT JOIN Year y ON spec.year_id=y.id
 								LEFT JOIN Model mdl ON spec.model_id=mdl.id
 								LEFT JOIN Engine e ON spec.engine_id=e.id
-								WHERE m.name=? AND y.year=? AND mdl.name=? AND e.name=? AND spec.ad_category_id=? AND spec.part_category_id IS NULL AND spec.part_subcategory_id IS NULL`
+								WHERE m.name=$1 AND y.year=$2 AND mdl.name=$3 AND e.name=$4 AND spec.ad_category_id=$5 AND spec.part_category_id IS NULL AND spec.part_subcategory_id IS NULL`
 							args = []interface{}{ad.Make, year, model, engine, categoryID}
 						}
 						err := db.QueryRow(query, args...).Scan(&specID)
@@ -771,17 +1232,17 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 							// Spec not found - need to create it
 							// First get the IDs for make, year, model, engine
 							var makeID, yearID, modelID, engineID int
-							err = db.QueryRow(`SELECT id FROM Make WHERE name=? AND ad_category_id=?`, ad.Make, categoryID).Scan(&makeID)
+							err = db.QueryRow(`SELECT id FROM Make WHERE name=$1 AND ad_category_id=$2`, ad.Make, categoryID).Scan(&makeID)
 							if err != nil {
 								logger.Warn("Failed to find make", "make", ad.Make, "error", err)
 								continue
 							}
-							err = db.QueryRow(`SELECT id FROM Year WHERE year=? AND ad_category_id=?`, year, categoryID).Scan(&yearID)
+							err = db.QueryRow(`SELECT id FROM Year WHERE year=$1 AND ad_category_id=$2`, year, categoryID).Scan(&yearID)
 							if err != nil {
 								logger.Warn("Failed to find year", "year", year, "error", err)
 								continue
 							}
-							err = db.QueryRow(`SELECT id FROM Model WHERE name=? AND ad_category_id=?`, model, categoryID).Scan(&modelID)
+							err = db.QueryRow(`SELECT id FROM Model WHERE name=$1 AND ad_category_id=$2`, model, categoryID).Scan(&modelID)
 							if err != nil {
 								logger.Warn("Failed to find model", "model", model, "error", err)
 								continue
@@ -790,34 +1251,28 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 							engineID = getOrInsertWithCategory(db, "Engine", "name", engine, categoryID)
 
 							// Insert spec with part_category_id and part_subcategory_id (may be NULL)
-							var specRes sql.Result
 							if partCategoryID != nil && subcategoryID != nil {
-								specRes, err = db.Exec(`INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id, part_category_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-									categoryID, makeID, yearID, modelID, engineID, *partCategoryID, *subcategoryID)
+								err = db.QueryRow(`INSERT INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id, part_category_id, part_subcategory_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING RETURNING id`,
+									categoryID, makeID, yearID, modelID, engineID, *partCategoryID, *subcategoryID).Scan(&specID)
 							} else if partCategoryID != nil {
-								specRes, err = db.Exec(`INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id, part_category_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, ?, NULL)`,
-									categoryID, makeID, yearID, modelID, engineID, *partCategoryID)
+								err = db.QueryRow(`INSERT INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id, part_category_id, part_subcategory_id) VALUES ($1, $2, $3, $4, $5, $6, NULL) ON CONFLICT DO NOTHING RETURNING id`,
+									categoryID, makeID, yearID, modelID, engineID, *partCategoryID).Scan(&specID)
 							} else {
-								specRes, err = db.Exec(`INSERT OR IGNORE INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id, part_category_id, part_subcategory_id) VALUES (?, ?, ?, ?, ?, NULL, NULL)`,
-									categoryID, makeID, yearID, modelID, engineID)
+								err = db.QueryRow(`INSERT INTO Specification (ad_category_id, make_id, year_id, model_id, engine_id, part_category_id, part_subcategory_id) VALUES ($1, $2, $3, $4, $5, NULL, NULL) ON CONFLICT DO NOTHING RETURNING id`,
+									categoryID, makeID, yearID, modelID, engineID).Scan(&specID)
 							}
-							if err != nil {
-								logger.Warn("Failed to insert spec", "error", err)
-								continue
-							}
-							specID64, _ := specRes.LastInsertId()
-							if specID64 == 0 {
+							if err == sql.ErrNoRows {
 								// Spec already exists, fetch it
 								var lookupQuery string
 								var lookupArgs []interface{}
 								if partCategoryID != nil && subcategoryID != nil {
-									lookupQuery = `SELECT id FROM Specification WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_category_id=? AND part_subcategory_id=?`
+									lookupQuery = `SELECT id FROM Specification WHERE ad_category_id=$1 AND make_id=$2 AND year_id=$3 AND model_id=$4 AND engine_id=$5 AND part_category_id=$6 AND part_subcategory_id=$7`
 									lookupArgs = []interface{}{categoryID, makeID, yearID, modelID, engineID, *partCategoryID, *subcategoryID}
 								} else if partCategoryID != nil {
-									lookupQuery = `SELECT id FROM Specification WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_category_id=? AND part_subcategory_id IS NULL`
+									lookupQuery = `SELECT id FROM Specification WHERE ad_category_id=$1 AND make_id=$2 AND year_id=$3 AND model_id=$4 AND engine_id=$5 AND part_category_id=$6 AND part_subcategory_id IS NULL`
 									lookupArgs = []interface{}{categoryID, makeID, yearID, modelID, engineID, *partCategoryID}
 								} else {
-									lookupQuery = `SELECT id FROM Specification WHERE ad_category_id=? AND make_id=? AND year_id=? AND model_id=? AND engine_id=? AND part_category_id IS NULL AND part_subcategory_id IS NULL`
+									lookupQuery = `SELECT id FROM Specification WHERE ad_category_id=$1 AND make_id=$2 AND year_id=$3 AND model_id=$4 AND engine_id=$5 AND part_category_id IS NULL AND part_subcategory_id IS NULL`
 									lookupArgs = []interface{}{categoryID, makeID, yearID, modelID, engineID}
 								}
 								err = db.QueryRow(lookupQuery, lookupArgs...).Scan(&specID)
@@ -825,13 +1280,14 @@ func importAds(db *sql.DB, jsonFile string, categoryID int, categoryMap map[stri
 									logger.Warn("Failed to find created spec", "error", err)
 									continue
 								}
-							} else {
-								specID = int(specID64)
+							} else if err != nil {
+								logger.Warn("Failed to insert spec", "error", err)
+								continue
 							}
 						}
 
 						// Insert AdSpecification relationship
-						db.Exec(`INSERT OR IGNORE INTO AdSpecification (ad_id, specification_id) VALUES (?, ?)`, adID, specID)
+						db.Exec(`INSERT INTO AdSpecification (ad_id, specification_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, adID, specID)
 					}
 				}
 			}
@@ -854,14 +1310,13 @@ func getOrInsertWithParentAndCategoryHelper(db *sql.DB, table, col, val string, 
 
 func getOrInsertWithParentAndCategoryFull(db *sql.DB, table, col, val string, categoryID, parentID int) int {
 	var id int
-	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=? AND parent_company_id=? AND ad_category_id=?", table, col), val, parentID, categoryID).Scan(&id)
+	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=$1 AND parent_company_id=$2 AND ad_category_id=$3", table, col), val, parentID, categoryID).Scan(&id)
 	if err == sql.ErrNoRows {
-		res, err := db.Exec(fmt.Sprintf("INSERT INTO %s (%s, parent_company_id, ad_category_id) VALUES (?, ?, ?)", table, col), val, parentID, categoryID)
+		err = db.QueryRow(fmt.Sprintf("INSERT INTO %s (%s, parent_company_id, ad_category_id) VALUES ($1, $2, $3) RETURNING id", table, col), val, parentID, categoryID).Scan(&id)
 		if err != nil {
 			logger.Fatal("Failed to insert into table", "table", table, "error", err)
 		}
-		id64, _ := res.LastInsertId()
-		return int(id64)
+		return id
 	} else if err != nil {
 		logger.Fatal("Failed to lookup table", "table", table, "error", err)
 	}

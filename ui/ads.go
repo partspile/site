@@ -22,15 +22,10 @@ func AdsPage(userID int, userName, csrfToken string, path string, activeTab stri
 			pageHeader("My Ads"),
 			Div(Class("text-gray-600 text-sm mb-6"), g.Text("Manage your ads and bookmarks.")),
 			Div(
-				ID("ads-navigation"),
-				adsNavigation(activeTab),
-			),
-			Div(
-				ID("ads-content"),
-				Class("mt-6"),
+				ID("ads-section"),
 				hx.Get("/ads/bookmarked"),
 				hx.Trigger("load"),
-				hx.Target("#ads-content"),
+				hx.Target("#ads-section"),
 				hx.Swap("outerHTML"),
 			),
 		},
@@ -40,9 +35,13 @@ func AdsPage(userID int, userName, csrfToken string, path string, activeTab stri
 // AdsPageWithContent renders the ads page with navigation and content for HTMX updates
 func AdsPageWithContent(userID int, userName string, path string, activeTab string, content g.Node) g.Node {
 	return Div(
+		ID("ads-section"),
+		adsNavigation(activeTab),
+		Div(
 			ID("ads-content"),
 			Class("mt-6"),
 			content,
+		),
 	)
 }
 
@@ -72,7 +71,7 @@ func adsNavigation(activeTab string) g.Node {
 				Href(tab.href),
 				Class(classes),
 				hx.Get(tab.href),
-				hx.Target("#ads-content"),
+				hx.Target("#ads-section"),
 				hx.Swap("outerHTML"),
 				g.Text(tab.label),
 			),

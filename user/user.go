@@ -10,7 +10,7 @@ import (
 
 // Table name constants
 const (
-	TableUser = "User"
+	TableUser = "Users"
 )
 
 // Notification method constants
@@ -62,7 +62,7 @@ func CreateUser(name, phone, passwordHash, passwordSalt, passwordAlgo string) (i
 	// Compute hashes for lookups
 	nameHash := HashForLookup(name)
 	phoneHash := HashForLookup(phone)
-	
+
 	// Encrypt with placeholder ID (0) - we'll re-encrypt with real ID after insert
 	encryptedName, nameNonce, err := EncryptName(0, name)
 	if err != nil {
@@ -74,13 +74,12 @@ func CreateUser(name, phone, passwordHash, passwordSalt, passwordAlgo string) (i
 	}
 
 	// Insert user with encrypted data
-	res, err := tx.Exec(`INSERT INTO User (encrypted_name, name_nonce, name_hash, encrypted_phone, phone_nonce, phone_hash, password_hash, password_salt, password_algo, phone_verified, notification_method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`, 
-		encryptedName, nameNonce, nameHash, encryptedPhone, phoneNonce, phoneHash, passwordHash, passwordSalt, passwordAlgo, NotificationMethodSMS)
+	var userID int
+	err = tx.QueryRow(`INSERT INTO Users (encrypted_name, name_nonce, name_hash, encrypted_phone, phone_nonce, phone_hash, password_hash, password_salt, password_algo, phone_verified, notification_method) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0, $10) RETURNING id`,
+		encryptedName, nameNonce, nameHash, encryptedPhone, phoneNonce, phoneHash, passwordHash, passwordSalt, passwordAlgo, NotificationMethodSMS).Scan(&userID)
 	if err != nil {
 		return 0, err
 	}
-	id, _ := res.LastInsertId()
-	userID := int(id)
 
 	// Re-encrypt with the real user ID
 	encryptedName, nameNonce, err = EncryptName(userID, name)
@@ -91,16 +90,16 @@ func CreateUser(name, phone, passwordHash, passwordSalt, passwordAlgo string) (i
 	if err != nil {
 		return 0, err
 	}
-	
+
 	// Update with properly encrypted data
-	_, err = tx.Exec(`UPDATE User SET encrypted_name = ?, name_nonce = ?, encrypted_phone = ?, phone_nonce = ? WHERE id = ?`,
+	_, err = tx.Exec(`UPDATE Users SET encrypted_name = $1, name_nonce = $2, encrypted_phone = $3, phone_nonce = $4 WHERE id = $5`,
 		encryptedName, nameNonce, encryptedPhone, phoneNonce, userID)
 	if err != nil {
 		return 0, err
 	}
 
 	// Initialize rock inventory
-	_, err = tx.Exec(`INSERT INTO UserRock (user_id, rock_count) VALUES (?, 3)`, userID)
+	_, err = tx.Exec(`INSERT INTO UserRock (user_id, rock_count) VALUES ($1, 3)`, userID)
 	if err != nil {
 		return 0, err
 	}
@@ -134,7 +133,7 @@ func GetUserByPhone(phone string) (User, error) {
 	row := db.QueryRow(`SELECT id, encrypted_name, name_nonce, encrypted_phone, phone_nonce, password_hash,
 		password_salt, password_algo, phone_verified, verification_code,
 		notification_method, encrypted_email_address, email_address_nonce, created_at, is_admin, sms_opted_out, deleted_at
-		FROM User WHERE phone_hash = ? AND deleted_at IS NULL`, phoneHash)
+		FROM Users WHERE phone_hash = $1 AND deleted_at IS NULL`, phoneHash)
 	var u User
 	var createdAt time.Time
 	var isAdmin int
@@ -149,7 +148,7 @@ func GetUserByPhone(phone string) (User, error) {
 	if err != nil {
 		return User{}, err
 	}
-	
+
 	// Decrypt name and phone
 	u.Name, err = DecryptName(u.ID, encryptedName, nameNonce)
 	if err != nil {
@@ -159,7 +158,7 @@ func GetUserByPhone(phone string) (User, error) {
 	if err != nil {
 		return User{}, fmt.Errorf("failed to decrypt phone: %w", err)
 	}
-	
+
 	// Decrypt email if present
 	if encryptedEmail.Valid && emailNonce.Valid {
 		email, err := DecryptEmailAddress(u.ID, encryptedEmail.String, emailNonce.String)
@@ -167,7 +166,7 @@ func GetUserByPhone(phone string) (User, error) {
 			u.EmailAddress = &email
 		}
 	}
-	
+
 	u.CreatedAt = createdAt
 	u.IsAdmin = isAdmin == 1
 	u.PhoneVerified = phoneVerified == 1
@@ -180,7 +179,7 @@ func GetUserByPhone(phone string) (User, error) {
 
 // GetUser retrieves a user by ID (includes both active and archived users)
 func GetUser(id int) (User, error) {
-	row := db.QueryRow(`SELECT id, encrypted_name, name_nonce, encrypted_phone, phone_nonce, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, encrypted_email_address, email_address_nonce, created_at, is_admin, sms_opted_out, deleted_at FROM User WHERE id = ?`, id)
+	row := db.QueryRow(`SELECT id, encrypted_name, name_nonce, encrypted_phone, phone_nonce, password_hash, password_salt, password_algo, phone_verified, verification_code, notification_method, encrypted_email_address, email_address_nonce, created_at, is_admin, sms_opted_out, deleted_at FROM Users WHERE id = $1`, id)
 	var u User
 	var createdAt time.Time
 	var isAdmin int
@@ -195,7 +194,7 @@ func GetUser(id int) (User, error) {
 	if err != nil {
 		return User{}, err
 	}
-	
+
 	// Decrypt name and phone
 	u.Name, err = DecryptName(u.ID, encryptedName, nameNonce)
 	if err != nil {
@@ -205,7 +204,7 @@ func GetUser(id int) (User, error) {
 	if err != nil {
 		return User{}, fmt.Errorf("failed to decrypt phone: %w", err)
 	}
-	
+
 	// Decrypt email if present
 	if encryptedEmail.Valid && emailNonce.Valid {
 		email, err := DecryptEmailAddress(u.ID, encryptedEmail.String, emailNonce.String)
@@ -213,7 +212,7 @@ func GetUser(id int) (User, error) {
 			u.EmailAddress = &email
 		}
 	}
-	
+
 	u.CreatedAt = createdAt
 	u.IsAdmin = isAdmin == 1
 	u.PhoneVerified = phoneVerified == 1
@@ -231,7 +230,7 @@ func GetUserByName(name string) (User, error) {
 	row := db.QueryRow(`SELECT id, encrypted_name, name_nonce, encrypted_phone, phone_nonce, password_hash,
 		password_salt, password_algo, phone_verified, verification_code,
 		notification_method, encrypted_email_address, email_address_nonce, created_at, is_admin, sms_opted_out, deleted_at
-		FROM User WHERE name_hash = ? AND deleted_at IS NULL`, nameHash)
+		FROM Users WHERE name_hash = $1 AND deleted_at IS NULL`, nameHash)
 	var u User
 	var createdAt time.Time
 	var isAdmin int
@@ -246,7 +245,7 @@ func GetUserByName(name string) (User, error) {
 	if err != nil {
 		return User{}, err
 	}
-	
+
 	// Decrypt name and phone
 	u.Name, err = DecryptName(u.ID, encryptedName, nameNonce)
 	if err != nil {
@@ -256,7 +255,7 @@ func GetUserByName(name string) (User, error) {
 	if err != nil {
 		return User{}, fmt.Errorf("failed to decrypt phone: %w", err)
 	}
-	
+
 	// Decrypt email if present
 	if encryptedEmail.Valid && emailNonce.Valid {
 		email, err := DecryptEmailAddress(u.ID, encryptedEmail.String, emailNonce.String)
@@ -264,7 +263,7 @@ func GetUserByName(name string) (User, error) {
 			u.EmailAddress = &email
 		}
 	}
-	
+
 	u.CreatedAt = createdAt
 	u.IsAdmin = isAdmin == 1
 	u.PhoneVerified = phoneVerified == 1
@@ -278,7 +277,7 @@ func GetUserByName(name string) (User, error) {
 
 // UpdateUserPassword updates a user's password hash, salt, and algo
 func UpdateUserPassword(userID int, newHash, newSalt, newAlgo string) (int, error) {
-	res, err := db.Exec(`UPDATE User SET password_hash = ?, password_salt = ?, password_algo = ? WHERE id = ?`, newHash, newSalt, newAlgo, userID)
+	res, err := db.Exec(`UPDATE Users SET password_hash = $1, password_salt = $2, password_algo = $3 WHERE id = $4`, newHash, newSalt, newAlgo, userID)
 	if err != nil {
 		return 0, err
 	}
@@ -288,7 +287,7 @@ func UpdateUserPassword(userID int, newHash, newSalt, newAlgo string) (int, erro
 
 // MarkPhoneVerified marks a user's phone number as verified
 func MarkPhoneVerified(userID int) error {
-	_, err := db.Exec(`UPDATE User SET phone_verified = 1, verification_code = '' WHERE id = ?`, userID)
+	_, err := db.Exec(`UPDATE Users SET phone_verified = 1, verification_code = '' WHERE id = $1`, userID)
 	if err != nil {
 		return fmt.Errorf("failed to mark phone verified: %w", err)
 	}
@@ -297,7 +296,7 @@ func MarkPhoneVerified(userID int) error {
 
 // UpdateNotificationMethod updates the user's notification method preference
 func UpdateNotificationMethod(userID int, method string) error {
-	_, err := db.Exec(`UPDATE User SET notification_method = ? WHERE id = ?`, method, userID)
+	_, err := db.Exec(`UPDATE Users SET notification_method = $1 WHERE id = $2`, method, userID)
 	return err
 }
 
@@ -305,30 +304,30 @@ func UpdateNotificationMethod(userID int, method string) error {
 func UpdateNotificationPreferences(userID int, method string, emailAddress *string) error {
 	if emailAddress == nil || *emailAddress == "" {
 		// Clear email
-		_, err := db.Exec(`UPDATE User SET notification_method = ?, encrypted_email_address = NULL, email_address_nonce = NULL WHERE id = ?`, method, userID)
+		_, err := db.Exec(`UPDATE Users SET notification_method = $1, encrypted_email_address = NULL, email_address_nonce = NULL WHERE id = $2`, method, userID)
 		return err
 	}
-	
+
 	// Encrypt email address
 	encryptedEmail, emailNonce, err := EncryptEmailAddress(userID, *emailAddress)
 	if err != nil {
 		return fmt.Errorf("failed to encrypt email: %w", err)
 	}
-	
-	_, err = db.Exec(`UPDATE User SET notification_method = ?, encrypted_email_address = ?, email_address_nonce = ? WHERE id = ?`, method, encryptedEmail, emailNonce, userID)
+
+	_, err = db.Exec(`UPDATE Users SET notification_method = $1, encrypted_email_address = $2, email_address_nonce = $3 WHERE id = $4`, method, encryptedEmail, emailNonce, userID)
 	return err
 }
 
 // ArchiveUser archives a user using soft delete
 func ArchiveUser(id int) error {
-	_, err := db.Exec("UPDATE User SET deleted_at = ? WHERE id = ?",
+	_, err := db.Exec("UPDATE Users SET deleted_at = $1 WHERE id = $2",
 		time.Now().UTC().Format(time.RFC3339Nano), id)
 	return err
 }
 
 // RestoreUser restores an archived user by clearing the deleted_at field
 func RestoreUser(userID int) error {
-	_, err := db.Exec("UPDATE User SET deleted_at = NULL WHERE id = ?", userID)
+	_, err := db.Exec("UPDATE Users SET deleted_at = NULL WHERE id = $1", userID)
 	return err
 }
 
@@ -338,7 +337,7 @@ func SetSMSOptOut(userID int, optedOut bool) error {
 	if optedOut {
 		val = 1
 	}
-	_, err := db.Exec("UPDATE User SET sms_opted_out = ? WHERE id = ?", val, userID)
+	_, err := db.Exec("UPDATE Users SET sms_opted_out = $1 WHERE id = $2", val, userID)
 	return err
 }
 

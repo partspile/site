@@ -13,14 +13,14 @@ func GetLatLon(id int) (latitude, longitude float64, err error) {
 	if id == 0 {
 		return
 	}
-	row := db.QueryRow("SELECT latitude, longitude FROM Location WHERE id = ?", id)
+	row := db.QueryRow("SELECT latitude, longitude FROM Location WHERE id = $1", id)
 	err = row.Scan(&latitude, &longitude)
 	return
 }
 
 // GetLatLonByRawText fetches latitude and longitude for a location by raw_text
 func GetLatLonByRawText(rawText string) (latitude, longitude float64, err error) {
-	row := db.QueryRow("SELECT latitude, longitude FROM Location WHERE raw_text = ?", rawText)
+	row := db.QueryRow("SELECT latitude, longitude FROM Location WHERE raw_text = $1", rawText)
 	err = row.Scan(&latitude, &longitude)
 	return
 }
