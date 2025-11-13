@@ -57,40 +57,18 @@ func (a Ad) IsArchived() bool {
 
 // populateSpecData fills in the spec data for the ad dynamically based on category fields
 func populateSpecData(adDetail *AdDetail) error {
-	// Initialize SpecData map
 	adDetail.SpecData = make(map[string][]string)
 
-	// Get category fields to determine which fields to query
-	fieldConfigs := spec.GetCategoryFields(adDetail.AdCategoryID)
+	fields := spec.GetDBFields(adDetail.AdCategoryID)
 
-	// Build dynamic SELECT clause for all fields
 	var selectParts []string
 	var joins []string
-	var fieldNames []string // Column names (same as field names)
+	var fieldNames []string
 
-	for _, fieldConfig := range fieldConfigs {
-		tableName := fieldConfig.TableName
-		tableFieldName := fieldConfig.TableFieldName
-		fieldName := fieldConfig.Name
-
-		// Add JOIN for this field's table
-		joins = append(joins, fmt.Sprintf("LEFT JOIN %s ON spec.%s = %s.id",
-			tableName, tableFieldName, tableName))
-
-		// Build SELECT clause based on field type
-		if fieldConfig.FieldType == "int" {
-			// For integer fields (like year), use GROUP_CONCAT with CAST
-			valueCol := fieldConfig.ValueColumnName
-			selectParts = append(selectParts,
-				fmt.Sprintf("COALESCE(GROUP_CONCAT(DISTINCT CAST(%s.%s AS TEXT)), '') as %s",
-					tableName, valueCol, fieldName))
-		} else {
-			// For string fields, use GROUP_CONCAT for both single and multi-value
-			selectParts = append(selectParts,
-				fmt.Sprintf("COALESCE(GROUP_CONCAT(DISTINCT %s.name), '') as %s",
-					tableName, fieldName))
-		}
-		fieldNames = append(fieldNames, fieldName)
+	for _, field := range fields {
+		joins = append(joins, field.BuildJoinClause())
+		selectParts = append(selectParts, field.BuildSelectClause())
+		fieldNames = append(fieldNames, field.Name())
 	}
 
 	// Build final query
@@ -102,7 +80,7 @@ func populateSpecData(adDetail *AdDetail) error {
 		WHERE ad_spec.ad_id = ?
 	`, strings.Join(selectParts, ", "), strings.Join(joins, " "))
 
-	// Execute query - use a map to store results dynamically
+	// Execute query - use a map to store results
 	rows, err := db.Query(query, adDetail.ID)
 	if err != nil {
 		return fmt.Errorf("failed to query spec data: %w", err)
@@ -282,7 +260,7 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 
 	adDetail := &adDetails[0]
 
-	// Populate spec data
+	// Populate spec data (populateSpecData always initializes SpecData to non-nil)
 	err = populateSpecData(adDetail)
 	if err != nil {
 		return nil, fmt.Errorf("failed to populate spec data: %w", err)

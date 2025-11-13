@@ -26,27 +26,25 @@ func HandleNewAd(c *fiber.Ctx) error {
 	adCat := cookie.GetAdCategory(c)
 	maxImagesPerAd := config.MaxImagesPerAd
 	csrfToken := local.GetCSRFToken(c)
-
-	// Get category fields to determine which fields need pre-population
-	fieldConfigs := spec.GetCategoryFields(adCat)
+	fields := spec.GetCategoryFields(adCat)
 
 	// Build map of first field of each chain -> values
 	firstFieldValues := make(map[string][]string)
 
-	for _, fieldConfig := range fieldConfigs {
-		if spec.IsFirstInChain(fieldConfig, fieldConfigs) {
+	for _, field := range fields {
+		if field.IsFirstInChain() {
 			// Get values for this first field (no parent filters)
-			values, err := spec.GetFieldValues(adCat, fieldConfig.Name, map[string]string{})
+			values, err := field.GetValues(map[string]string{})
 			if err != nil {
 				logger.Warn("Failed to get field values",
-					"error", err, "component", "ad-new", "fieldName", fieldConfig.Name, "adCat", adCat)
+					"error", err, "component", "ad-new", "fieldName", field.Name(), "adCat", adCat)
 				values = []string{}
 			}
-			firstFieldValues[fieldConfig.Name] = values
+			firstFieldValues[field.Name()] = values
 		}
 	}
 
-	return render(c, ui.NewAdPage(adCat, userID, userName, csrfToken, c.Path(), firstFieldValues, maxImagesPerAd))
+	return render(c, ui.NewAdPage(adCat, userID, userName, csrfToken, c.Path(), fields, firstFieldValues, maxImagesPerAd))
 }
 
 // HandleDuplicateAd shows the duplicate ad form with pre-filled data
@@ -65,15 +63,13 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	// Initialize SpecData if nil
-	if adDetail.SpecData == nil {
-		adDetail.SpecData = make(map[string][]string)
-	}
+	// Get category fields
+	fields := spec.GetCategoryFields(adDetail.AdCategoryID)
 
 	csrfToken := local.GetCSRFToken(c)
 
 	return render(c, ui.DuplicateAdPage(
-		userID, userName, csrfToken, c.Path(), *adDetail, config.MaxImagesPerAd))
+		userID, userName, csrfToken, c.Path(), *adDetail, fields, config.MaxImagesPerAd))
 }
 
 // HandleNewAdSubmission processes the new ad form submission
@@ -161,12 +157,12 @@ func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
 
 	// Build parent values map
 	parentValues := make(map[string]string)
-	fieldConfigs := spec.GetCategoryFields(adCat)
+	fields := spec.GetCategoryFields(adCat)
 
 	// Find current field index
 	currentFieldIndex := -1
-	for i, f := range fieldConfigs {
-		if f.Name == fieldName {
+	for i, f := range fields {
+		if f.Config().Name == fieldName {
 			currentFieldIndex = i
 			break
 		}
@@ -177,38 +173,41 @@ func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
 
 	// Get parent field values (fields that come before current field)
 	// For chained fields, only include parents from the same chain
-	currentField := fieldConfigs[currentFieldIndex]
+	currentField := fields[currentFieldIndex]
+	currentConfig := currentField.Config()
 	for i := 0; i < currentFieldIndex; i++ {
-		parentField := fieldConfigs[i]
+		parentField := fields[i]
+		parentConfig := parentField.Config()
 
 		// If current field is in a chain, only include parents from the same chain
-		if currentField.NextInChain != 0 || spec.IsFirstInChain(currentField, fieldConfigs) {
-			if !spec.FieldsInSameChain(parentField, currentField, fieldConfigs) {
+		if currentConfig.NextInChain != 0 || currentField.IsFirstInChain() {
+			if !spec.FieldsInSameChain(parentField, currentField, fields) {
 				// Skip fields from different chains
 				continue
 			}
 		}
 
 		// Use field name directly (no plural form)
-		queryKey := parentField.Name
+		queryKey := parentConfig.Name
 
 		// Check for single value or multiple values
 		if values, exists := q[queryKey]; exists && len(values) > 0 {
 			// For multi-value fields (years, models, engines), join with comma
 			// For single-value fields (make), use first value
-			if parentField.FieldMultiValue {
-				parentValues[parentField.Name] = strings.Join(values, ",")
+			if parentConfig.FieldMultiValue {
+				parentValues[parentConfig.Name] = strings.Join(values, ",")
 			} else {
-				parentValues[parentField.Name] = values[0]
+				parentValues[parentConfig.Name] = values[0]
 			}
 		}
 	}
 
 	// Check if required parent fields are present
 	for i := 0; i < currentFieldIndex; i++ {
-		parentField := fieldConfigs[i]
-		if parentField.IsRequired {
-			if _, exists := parentValues[parentField.Name]; !exists {
+		parentField := fields[i]
+		parentConfig := parentField.Config()
+		if parentConfig.IsRequired {
+			if _, exists := parentValues[parentConfig.Name]; !exists {
 				// Return empty selector
 				return renderEmptyFieldSelector(c, fieldName)
 			}
@@ -228,17 +227,17 @@ func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
 	}
 
 	// Find downstream fields in the same chain that need to be cleared
-	downstreamFields := spec.GetDownstreamFields(currentField, fieldConfigs)
+	downstreamFields := spec.GetDownstreamFields(currentField, fields)
 
 	if fieldDef.FieldMultiValue {
 		// Multi-select (checkboxes) - years, models, engines
 		mainNode := buildMultiSelectFieldNode(fieldName, values)
-		return renderWithDownstreamClears(c, mainNode, downstreamFields, fieldConfigs)
+		return renderWithDownstreamClears(c, mainNode, downstreamFields, fields)
 	} else {
 		// Single select (dropdown) - make, part_category, part_subcategory, breed
 		// For part_category and part_subcategory, we need to render with HTMX triggers
-		mainNode := buildSingleSelectFieldNode(fieldName, values, currentField, fieldConfigs, currentFieldIndex)
-		return renderWithDownstreamClears(c, mainNode, downstreamFields, fieldConfigs)
+		mainNode := buildSingleSelectFieldNode(fieldName, values, currentField, fields, currentFieldIndex)
+		return renderWithDownstreamClears(c, mainNode, downstreamFields, fields)
 	}
 }
 
@@ -254,9 +253,10 @@ func buildMultiSelectFieldNode(fieldName string, values []string) g.Node {
 }
 
 // buildSingleSelectFieldNode builds the node for a single-select field
-func buildSingleSelectFieldNode(fieldName string, values []string, currentField spec.FieldConfig, allFields []spec.FieldConfig, currentFieldIndex int) g.Node {
+func buildSingleSelectFieldNode(fieldName string, values []string, currentField spec.Field, allFields []spec.Field, currentFieldIndex int) g.Node {
+	currentConfig := currentField.Config()
 	// For chained single-select fields, render as dropdowns with HTMX triggers
-	if currentField.NextInChain != 0 {
+	if currentConfig.NextInChain != 0 {
 		// Create dropdown options
 		options := []g.Node{
 			Option(Value(""), g.Text(fmt.Sprintf("Select a %s", getFieldDisplayName(fieldName)))),
@@ -277,7 +277,7 @@ func buildSingleSelectFieldNode(fieldName string, values []string, currentField 
 		)
 
 		// Add HTMX trigger if there's a next field in chain
-		if currentField.NextInChain != 0 {
+		if currentConfig.NextInChain != 0 {
 			nextFieldName := spec.GetNextFieldName(currentField, allFields)
 			nextFieldDef, exists := spec.GetFieldDefinition(nextFieldName)
 			var nextFieldTarget string
@@ -291,10 +291,11 @@ func buildSingleSelectFieldNode(fieldName string, values []string, currentField 
 			var includeSelectors []string
 			for i := 0; i < currentFieldIndex; i++ {
 				parentField := allFields[i]
-				if parentField.FieldMultiValue {
-					includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%ss']:checked", parentField.Name))
+				parentConfig := parentField.Config()
+				if parentConfig.FieldMultiValue {
+					includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%ss']:checked", parentConfig.Name))
 				} else {
-					includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']", parentField.Name))
+					includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']", parentConfig.Name))
 				}
 			}
 			includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']", fieldNameAttr))
@@ -339,7 +340,7 @@ func getFieldDisplayName(fieldName string) string {
 
 // renderWithDownstreamClears returns the main content plus empty divs for downstream fields
 // Uses HTMX's hx-swap-oob to swap into multiple targets
-func renderWithDownstreamClears(c *fiber.Ctx, mainNode g.Node, downstreamFields []string, fieldConfigs []spec.FieldConfig) error {
+func renderWithDownstreamClears(c *fiber.Ctx, mainNode g.Node, downstreamFields []string, fields []spec.Field) error {
 	if len(downstreamFields) == 0 {
 		// No downstream fields to clear, just render main content
 		return render(c, mainNode)
@@ -347,7 +348,8 @@ func renderWithDownstreamClears(c *fiber.Ctx, mainNode g.Node, downstreamFields 
 
 	// Create a map of field names to their div IDs
 	fieldIDMap := make(map[string]string)
-	for _, fieldConfig := range fieldConfigs {
+	for _, field := range fields {
+		fieldConfig := field.Config()
 		divID := fieldConfig.Name + "Div"
 		if fieldConfig.FieldMultiValue {
 			divID = fieldConfig.Name + "sDiv"

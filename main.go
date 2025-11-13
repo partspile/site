@@ -206,8 +206,6 @@ func main() {
 	// User registration/authentication
 	app.Get("/register", h.HandleRegistration)
 	api.Post("/register/step1", h.RegistrationRateLimiter, h.HandleRegistrationStep1)
-	// Step 2 doesn't need rate limiting - it's protected by verification code from step1
-	// and password validation failures don't create accounts or cost money
 	api.Post("/register/step2", h.HandleRegistrationStep2)
 	api.Post("/sms/webhook", h.HandleSMSWebhook)
 	app.Get("/rocks", h.HandleRocksPage)

@@ -168,10 +168,11 @@ func ValidationErrorResponseWithStatus(c *fiber.Ctx, message string, statusCode 
 // ValidateAdForm validates the common ad form fields dynamically based on category configuration
 func ValidateAdForm(form *multipart.Form, adCat int) error {
 	// Get category fields to determine which fields to validate
-	fieldConfigs := spec.GetCategoryFields(adCat)
+	fields := spec.GetCategoryFields(adCat)
 
 	// Validate multi-value fields
-	for _, fieldConfig := range fieldConfigs {
+	for _, field := range fields {
+		fieldConfig := field.Config()
 		if fieldConfig.FieldMultiValue && fieldConfig.IsRequired {
 			values := form.Value[fieldConfig.Name]
 			if len(values) == 0 {
@@ -186,10 +187,11 @@ func ValidateAdForm(form *multipart.Form, adCat int) error {
 // validateAdFormMultipart validates ad form and returns the values dynamically
 func validateAdFormMultipart(form *multipart.Form, adCat int) (years, models, engines []string, err error) {
 	// Get category fields to determine which fields to validate
-	fieldConfigs := spec.GetCategoryFields(adCat)
+	fields := spec.GetCategoryFields(adCat)
 
 	// Validate multi-value fields
-	for _, fieldConfig := range fieldConfigs {
+	for _, field := range fields {
+		fieldConfig := field.Config()
 		if fieldConfig.FieldMultiValue && fieldConfig.IsRequired {
 			values := form.Value[fieldConfig.Name]
 			if len(values) == 0 {
@@ -309,7 +311,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	}
 
 	// Get category fields to determine which fields to validate
-	fieldConfigs := spec.GetCategoryFields(adCat)
+	fields := spec.GetCategoryFields(adCat)
 
 	form, err := c.MultipartForm()
 	if err != nil {
@@ -319,7 +321,8 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	// Validate and extract spec fields dynamically
 	specData := make(map[string][]string)
 
-	for _, fieldConfig := range fieldConfigs {
+	for _, field := range fields {
+		fieldConfig := field.Config()
 		if fieldConfig.IsRequired {
 			if fieldConfig.FieldMultiValue {
 				// Multi-value fields (year, model, engine, etc.)

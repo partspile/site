@@ -734,7 +734,7 @@ func partTypePath(a ad.AdDetail) g.Node {
 	var linkNodes []g.Node // Build link nodes
 
 	// Get category fields to determine display order
-	fieldConfigs := spec.GetCategoryFields(a.AdCategoryID)
+	fields := spec.GetCategoryFields(a.AdCategoryID)
 
 	// Initialize SpecData if nil
 	if a.SpecData == nil {
@@ -742,7 +742,8 @@ func partTypePath(a ad.AdDetail) g.Node {
 	}
 
 	// Iterate through fields in order
-	for _, fieldConfig := range fieldConfigs {
+	for _, field := range fields {
+		fieldConfig := field.Config()
 		fieldName := fieldConfig.Name
 		values, exists := a.SpecData[fieldName]
 		if !exists || len(values) == 0 {

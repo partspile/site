@@ -95,13 +95,13 @@ func GetModels(adCat int, makeName string, years []string) []string {
 		"make": makeName,
 		"year": strings.Join(years, ","),
 	}
-	fieldDef, exists := GetFieldDefinition("model")
-	if !exists {
-		logger.Warn("Field definition not found for model",
-			"component", "spec", "adCat", adCat)
+	field, err := GetCategoryField(adCat, "model")
+	if err != nil {
+		logger.Warn("Field not found for model",
+			"component", "spec", "adCat", adCat, "error", err)
 		return []string{}
 	}
-	query, args, err := BuildFieldQueryWithIntersection(adCat, fieldDef, parentValues)
+	query, args, err := BuildFieldQueryWithIntersection(adCat, field, parentValues)
 	if err != nil {
 		logger.Warn("Failed to build models query",
 			"error", err, "component", "spec", "adCat", adCat, "make", makeName)
@@ -138,13 +138,13 @@ func GetEngines(adCat int, makeName string, years []string, models []string) []s
 		"year":  strings.Join(years, ","),
 		"model": strings.Join(models, ","),
 	}
-	fieldDef, exists := GetFieldDefinition("engine")
-	if !exists {
-		logger.Warn("Field definition not found for engine",
-			"component", "spec", "adCat", adCat)
+	field, err := GetCategoryField(adCat, "engine")
+	if err != nil {
+		logger.Warn("Field not found for engine",
+			"component", "spec", "adCat", adCat, "error", err)
 		return []string{}
 	}
-	query, args, err := BuildFieldQueryWithIntersection(adCat, fieldDef, parentValues)
+	query, args, err := BuildFieldQueryWithIntersection(adCat, field, parentValues)
 	if err != nil {
 		logger.Warn("Failed to build engines query",
 			"error", err, "component", "spec", "adCat", adCat)

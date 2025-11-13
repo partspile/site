@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"strings"
 
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -14,49 +13,37 @@ import (
 
 // ---- New Ad Page ----
 
-func NewAdPage(adCat int, userID int, userName, csrfToken string, path string, firstFieldValues map[string][]string, maxImagesPerAd int) g.Node {
-	categoryName := ad.GetCategoryName(adCat)
-	headerText := fmt.Sprintf("Create New %s Ad", categoryName)
-
-	// Get category fields to dynamically render form
-	fieldConfigs := spec.GetCategoryFields(adCat)
+func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
+	fields []spec.Field, firstFieldValues map[string][]string, maxImagesPerAd int) g.Node {
 
 	// Build dynamic field nodes
 	fieldNodes := []g.Node{
-		titleInputField(""),
+		titleField(""),
 	}
 
 	// Render spec fields dynamically
 	// Render the first field of each chain independently
 	// Subsequent fields in the same chain will be populated via HTMX
-	for i, fieldConfig := range fieldConfigs {
-		isFirstInChain := spec.IsFirstInChain(fieldConfig, fieldConfigs)
-
-		if isFirstInChain {
+	for _, field := range fields {
+		if field.IsFirstInChain() {
 			// Render the first field of this chain
-			selected := []string{}
-			var defaultValue string
-			// Get pre-populated values for this field from the map
-			fieldValues := firstFieldValues[fieldConfig.Name]
-			fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, map[string][]string{}, fieldValues, defaultValue))
+			selected := make(map[string]bool)
+			fieldValues := firstFieldValues[field.Name()]
+			fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, fieldValues, ""))
 		} else {
 			// Chained field - render empty div for HTMX to populate
-			fieldID := fieldConfig.Name + "Div"
-			if fieldConfig.FieldMultiValue {
-				fieldID = fieldConfig.Name + "sDiv"
-			}
-			fieldNodes = append(fieldNodes, Div(ID(fieldID)))
+			fieldNodes = append(fieldNodes, Div(ID(field.Name()+"Div")))
 		}
 	}
 
-	// Add part category/subcategory (always shown)
 	fieldNodes = append(fieldNodes,
-		imagesInputField(maxImagesPerAd),
-		descriptionTextareaField(),
-		priceInputField(),
-		locationInputField(),
+		imagesField(maxImagesPerAd),
+		descriptionField(),
 		button("Submit", withType("submit")),
 	)
+
+	categoryName := ad.GetCategoryName(adCat)
+	headerText := fmt.Sprintf("Create New %s Ad", categoryName)
 
 	return Page(
 		"New Ad - Parts Pile",
@@ -80,55 +67,36 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string, f
 }
 
 // DuplicateAdPage renders the new ad form pre-filled with data from an existing ad
-func DuplicateAdPage(
-	userID int,
-	userName, csrfToken string,
-	path string,
-	originalAd ad.AdDetail,
-	maxImagesPerAd int,
-) g.Node {
-	adCat := originalAd.AdCategoryID
-
-	// Get category fields to dynamically render form
-	fieldConfigs := spec.GetCategoryFields(adCat)
-
-	// Initialize SpecData if nil
-	if originalAd.SpecData == nil {
-		originalAd.SpecData = make(map[string][]string)
-	}
-
-	// Build selected values map from AdDetail SpecData
-	selectedValues := make(map[string][]string)
-	for fieldName, fieldValues := range originalAd.SpecData {
-		if len(fieldValues) > 0 {
-			selectedValues[fieldName] = fieldValues
-		}
-	}
+func DuplicateAdPage(userID int, userName, csrfToken string, path string,
+	originalAd ad.AdDetail, fields []spec.Field, maxImagesPerAd int) g.Node {
 
 	// Build dynamic field nodes
 	fieldNodes := []g.Node{
-		titleInputField(originalAd.Title),
+		titleField(originalAd.Title),
 	}
 
 	// Render spec fields dynamically
 	// Build map of field values for first fields of each chain
 	firstFieldValues := make(map[string][]string)
-	for _, fieldConfig := range fieldConfigs {
-		if spec.IsFirstInChain(fieldConfig, fieldConfigs) {
+	for _, field := range fields {
+		if field.IsFirstInChain() {
 			// Get values for this first field (no parent filters)
-			values, err := spec.GetFieldValues(adCat, fieldConfig.Name, map[string]string{})
+			values, err := field.GetValues(map[string]string{})
 			if err != nil {
-				firstFieldValues[fieldConfig.Name] = []string{}
+				firstFieldValues[field.Name()] = []string{}
 			} else {
-				firstFieldValues[fieldConfig.Name] = values
+				firstFieldValues[field.Name()] = values
 			}
 		}
 	}
 
-	for i, fieldConfig := range fieldConfigs {
-		selected := []string{}
-		if sv, ok := selectedValues[fieldConfig.Name]; ok {
-			selected = sv
+	for _, field := range fields {
+		fieldConfig := field.Config()
+		selected := make(map[string]bool)
+		if sv, ok := originalAd.SpecData[fieldConfig.Name]; ok {
+			for _, val := range sv {
+				selected[val] = true
+			}
 		}
 		var defaultValue string
 		// Get default value for single-select fields
@@ -143,15 +111,12 @@ func DuplicateAdPage(
 			// For standalone fields without pre-loaded values, use empty
 			fieldValues = []string{}
 		}
-		fieldNodes = append(fieldNodes, renderFieldSelector(fieldConfig, i, fieldConfigs, selected, selectedValues, fieldValues, defaultValue))
+		fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, fieldValues, defaultValue))
 	}
 
-	// Add part category/subcategory
 	fieldNodes = append(fieldNodes,
-		imagesInputField(maxImagesPerAd),
-		descriptionTextareaField(),
-		priceInputField(),
-		locationInputField(),
+		imagesField(maxImagesPerAd),
+		descriptionField(),
 		button("Submit", withType("submit")),
 	)
 
@@ -176,7 +141,7 @@ func DuplicateAdPage(
 	)
 }
 
-func titleInputField(defaultValue string) g.Node {
+func titleField(defaultValue string) g.Node {
 	return formGroup("Title", "title",
 		Input(
 			Type("text"),
@@ -193,145 +158,7 @@ func titleInputField(defaultValue string) g.Node {
 	)
 }
 
-// renderFieldSelector renders a field selector dynamically based on field configuration
-func renderFieldSelector(fieldConfig spec.FieldConfig, fieldIndex int, allFields []spec.FieldConfig, selectedValues []string, allSelectedValues map[string][]string, fieldValues []string, defaultMake string) g.Node {
-	fieldID := fieldConfig.Name + "Div"
-	fieldName := fieldConfig.Name
-
-	// Build HTMX include selector for parent fields
-	var includeSelectors []string
-	for i := 0; i < fieldIndex; i++ {
-		parentField := allFields[i]
-		if parentField.FieldMultiValue {
-			includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']:checked", parentField.Name))
-		} else {
-			includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']", parentField.Name))
-		}
-	}
-
-	// Determine next field to update using chain information
-	var nextFieldName string
-	var nextFieldTarget string
-	if fieldConfig.NextInChain != 0 {
-		// This field is chained to another field
-		nextFieldName = spec.GetNextFieldName(fieldConfig, allFields)
-		// Use plural form for multi-value fields
-		nextFieldDef, exists := spec.GetFieldDefinition(nextFieldName)
-		if exists && nextFieldDef.FieldMultiValue {
-			nextFieldTarget = nextFieldName + "sDiv"
-		} else {
-			nextFieldTarget = nextFieldName + "Div"
-		}
-	} else if fieldIndex+1 < len(allFields) {
-		// No chain, but there's a next field - check if it's in a different chain
-		nextField := allFields[fieldIndex+1]
-		if !spec.FieldsInSameChain(fieldConfig, nextField, allFields) {
-			// Next field is in a different chain
-			if nextField.FieldMultiValue {
-				nextFieldTarget = nextField.Name + "sDiv"
-			} else {
-				nextFieldTarget = nextField.Name + "Div"
-			}
-			nextFieldName = nextField.Name
-		} else {
-			// Next field is in the same chain (shouldn't happen if chain logic is correct)
-			if nextField.FieldMultiValue {
-				nextFieldTarget = nextField.Name + "sDiv"
-			} else {
-				nextFieldTarget = nextField.Name + "Div"
-			}
-			nextFieldName = nextField.Name
-		}
-	}
-
-	if fieldConfig.FieldMultiValue {
-		// Multi-select (checkboxes)
-		selected := make(map[string]bool)
-		for _, val := range selectedValues {
-			selected[val] = true
-		}
-
-		checkboxes := []g.Node{}
-		for _, value := range fieldValues {
-			attrs := []g.Node{
-				Checkbox(fieldName, value, value, selected[value], false),
-			}
-
-			// Add HTMX trigger if there's a next field
-			if nextFieldTarget != "" && nextFieldName != "" {
-				includeStr := strings.Join(append(includeSelectors, fmt.Sprintf("[name='%s']:checked", fieldName)), ",")
-
-				// Use singular field name for endpoint (consistent with field config)
-				endpoint := fmt.Sprintf("/api/%s", nextFieldName)
-
-				attrs = append(attrs,
-					hx.Trigger("change"),
-					hx.Get(endpoint),
-					hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
-					hx.Include(includeStr),
-					hx.Swap("innerHTML"),
-				)
-				// HTMX will automatically replace content, no need to manually clear
-			}
-
-			checkboxes = append(checkboxes, g.Group(attrs))
-		}
-
-		return Div(
-			ID(fieldID),
-			Class("space-y-2"),
-			formGroup(fieldConfig.DisplayName, fieldName, GridContainer4(checkboxes...)),
-		)
-	} else {
-		// Single-select (dropdown)
-		// Use generic selector for all single-select fields
-		options := []g.Node{
-			Option(Value(""), g.Text(fmt.Sprintf("Select a %s", fieldConfig.DisplayName))),
-		}
-
-		// Add options from fieldValues
-		for _, value := range fieldValues {
-			optionAttrs := []g.Node{Value(value), g.Text(value)}
-			if value == defaultMake {
-				optionAttrs = append(optionAttrs, Selected())
-			}
-			options = append(options, Option(optionAttrs...))
-		}
-
-		attrs := []g.Node{
-			ID(fieldName),
-			Name(fieldName),
-			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
-		}
-
-		if fieldConfig.IsRequired {
-			attrs = append(attrs, Required())
-		}
-
-		// Add HTMX trigger if there's a next field in chain
-		if nextFieldTarget != "" && nextFieldName != "" {
-			includeStr := strings.Join(append(includeSelectors, fmt.Sprintf("[name='%s']", fieldName)), ",")
-
-			// Use singular field name for endpoint (consistent with field config)
-			endpoint := fmt.Sprintf("/api/%s", nextFieldName)
-
-			attrs = append(attrs,
-				hx.Trigger("change"),
-				hx.Get(endpoint),
-				hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
-				hx.Include(includeStr),
-				hx.Swap("innerHTML"),
-			)
-			// HTMX will automatically replace content, no need to manually clear
-		}
-
-		return formGroup(fieldConfig.DisplayName, fieldName,
-			Select(append(attrs, g.Group(options))...),
-		)
-	}
-}
-
-func imagesInputField(maxImagesPerAd int) g.Node {
+func imagesField(maxImagesPerAd int) g.Node {
 	return formGroup("Images", "images",
 		Div(
 			Input(
@@ -382,7 +209,7 @@ func imagesInputField(maxImagesPerAd int) g.Node {
 	)
 }
 
-func descriptionTextareaField() g.Node {
+func descriptionField() g.Node {
 	return formGroup("Description", "description",
 		Textarea(
 			ID("description"),

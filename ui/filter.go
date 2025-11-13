@@ -11,7 +11,7 @@ import (
 
 func filterControls(adCategory int, params map[string]string) g.Node {
 	// Get category fields to determine which filters to show
-	fieldConfigs := spec.GetCategoryFields(adCategory)
+	fields := spec.GetCategoryFields(adCategory)
 
 	// Build filter nodes dynamically based on category fields
 	var filterNodes []g.Node
@@ -22,7 +22,8 @@ func filterControls(adCategory int, params map[string]string) g.Node {
 
 	// Add spec field filters based on category configuration
 	// Only show fields marked with ShowInFilters=true
-	for _, fieldConfig := range fieldConfigs {
+	for _, field := range fields {
+		fieldConfig := field.Config()
 		if !fieldConfig.ShowInFilters {
 			continue
 		}
@@ -36,11 +37,11 @@ func filterControls(adCategory int, params map[string]string) g.Node {
 				// Generic range filter for other numeric fields
 				minKey := "min_" + fieldConfig.Name
 				maxKey := "max_" + fieldConfig.Name
-				filterNodes = append(filterNodes, genericRangeFilter(fieldConfig, params[minKey], params[maxKey]))
+				filterNodes = append(filterNodes, genericRangeFilter(field, params[minKey], params[maxKey]))
 			}
 		} else {
 			// Dropdown filter for string fields - show all available values (not filtered by parents)
-			filterNodes = append(filterNodes, genericDropdownFilter(adCategory, fieldConfig, params[fieldConfig.Name], false))
+			filterNodes = append(filterNodes, genericDropdownFilter(adCategory, field, params[fieldConfig.Name], false))
 		}
 	}
 
@@ -180,7 +181,8 @@ func applyFilters() g.Node {
 }
 
 // genericRangeFilter creates a range filter for numeric fields
-func genericRangeFilter(fieldConfig spec.FieldConfig, minValue, maxValue string) g.Node {
+func genericRangeFilter(field spec.Field, minValue, maxValue string) g.Node {
+	fieldConfig := field.Config()
 	minKey := "min_" + fieldConfig.Name
 	maxKey := "max_" + fieldConfig.Name
 
@@ -209,7 +211,8 @@ func genericRangeFilter(fieldConfig spec.FieldConfig, minValue, maxValue string)
 }
 
 // genericDropdownFilter creates a static dropdown filter for non-chained string fields
-func genericDropdownFilter(adCategory int, fieldConfig spec.FieldConfig, value string, hasChildren bool) g.Node {
+func genericDropdownFilter(adCategory int, field spec.Field, value string, hasChildren bool) g.Node {
+	fieldConfig := field.Config()
 	// Get all available values for this field (filter fields are independent)
 	values, err := spec.GetFieldValues(adCategory, fieldConfig.Name, map[string]string{})
 	if err != nil {
