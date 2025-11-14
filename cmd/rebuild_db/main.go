@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/logger"
@@ -51,40 +53,26 @@ func main() {
 		logger.Fatal("Failed to ping database", "error", err)
 	}
 
-	// Drop all tables to clean the database (equivalent to deleting SQLite file)
+	// Drop all tables to clean the database
 	logger.Info("Dropping all existing tables")
-	rows, err := database.Query(`
-		SELECT tablename 
+	var dropSQL string
+	err = database.QueryRow(`
+		SELECT 'DROP TABLE IF EXISTS ' || string_agg('"' || tablename || '"', ', ') || ' CASCADE'
 		FROM pg_tables 
 		WHERE schemaname = 'public'
-	`)
-	if err != nil {
-		logger.Fatal("Failed to query existing tables", "error", err)
-	}
-	defer rows.Close()
-
-	var tables []string
-	for rows.Next() {
-		var tablename string
-		if err := rows.Scan(&tablename); err != nil {
-			logger.Fatal("Failed to scan table name", "error", err)
-		}
-		tables = append(tables, tablename)
-	}
-	if err := rows.Err(); err != nil {
-		logger.Fatal("Error iterating tables", "error", err)
+	`).Scan(&dropSQL)
+	if err != nil && err != sql.ErrNoRows {
+		logger.Fatal("Failed to generate DROP statement", "error", err)
 	}
 
-	// Drop each table (quote table names to handle reserved keywords)
-	for _, table := range tables {
-		// Quote the table name to handle reserved keywords
-		quotedTable := fmt.Sprintf(`"%s"`, table)
-		_, err := database.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS %s CASCADE`, quotedTable))
-		if err != nil {
-			logger.Warn("Failed to drop table", "table", table, "error", err)
+	if dropSQL != "" {
+		if _, err := database.Exec(dropSQL); err != nil {
+			logger.Fatal("Failed to drop tables", "error", err)
 		}
+		logger.Info("All existing tables dropped")
+	} else {
+		logger.Info("No tables to drop")
 	}
-	logger.Info("All existing tables dropped", "count", len(tables))
 
 	// Read and execute schema.sql
 	schemaSQL, err := os.ReadFile(schemaFile)
@@ -92,52 +80,20 @@ func main() {
 		logger.Fatal("Failed to read schema.sql", "error", err, "schemaFile", schemaFile)
 	}
 
-	// Split schema into individual statements and execute them
-	// PostgreSQL Exec() can only execute one statement at a time
-	statements := splitSQLStatements(string(schemaSQL))
-	logger.Info("Executing schema", "statementCount", len(statements))
-
-	executedCount := 0
-	for i, stmt := range statements {
-		stmt = strings.TrimSpace(stmt)
-		if stmt == "" {
-			continue // Skip empty statements
-		}
-
-		// Remove leading comments from statement
-		lines := strings.Split(stmt, "\n")
-		var cleanLines []string
-		for _, line := range lines {
-			trimmed := strings.TrimSpace(line)
-			if trimmed != "" && !strings.HasPrefix(trimmed, "--") {
-				cleanLines = append(cleanLines, line)
-			}
-		}
-		stmt = strings.Join(cleanLines, "\n")
-		stmt = strings.TrimSpace(stmt)
-
-		if stmt == "" {
-			continue // Skip statements that are only comments
-		}
-
-		// Log first few statements for debugging
-		if i < 3 {
-			logger.Info("Executing schema statement", "number", i+1, "preview", truncateString(stmt, 150))
-		}
-
-		if _, err := database.Exec(stmt); err != nil {
-			logger.Fatal("Failed to execute schema statement",
-				"error", err,
-				"statementNumber", i+1,
-				"statement", truncateString(stmt, 500))
-		}
-
-		executedCount++
-		if executedCount%5 == 0 || executedCount == 1 {
-			logger.Info("Schema execution progress", "completed", executedCount, "total", len(statements))
-		}
+	// Use pgx directly to execute the entire schema file
+	// pgx supports executing multiple statements in a single call
+	logger.Info("Executing schema.sql using pgx")
+	conn, err := pgx.Connect(context.Background(), databaseURL)
+	if err != nil {
+		logger.Fatal("Failed to connect with pgx", "error", err)
 	}
-	logger.Info("Schema executed successfully", "statements", executedCount)
+	defer conn.Close(context.Background())
+
+	// Execute the entire schema file - pgx can handle multiple statements
+	if _, err := conn.Exec(context.Background(), string(schemaSQL)); err != nil {
+		logger.Fatal("Failed to execute schema.sql", "error", err)
+	}
+	logger.Info("Schema executed successfully")
 
 	// Import ad-category.json (AdCategory)
 	typeData, err := os.ReadFile(typeFile)
@@ -426,7 +382,7 @@ func main() {
 
 	// Create a map of parent company names to IDs for efficient lookup
 	parentCompanyMap := make(map[string]int)
-	rows, err = database.Query(`SELECT id, name FROM ParentCompany`)
+	rows, err := database.Query(`SELECT id, name FROM ParentCompany`)
 	if err != nil {
 		logger.Fatal("Failed to query ParentCompany", "error", err)
 	}
