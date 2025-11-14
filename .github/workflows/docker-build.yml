@@ -11,9 +11,6 @@ name: Publish Docker image
 
 on:
   push:
-    branches:
-      - dev
-      - '*'
     branches-ignore:
       - main
     tags:
