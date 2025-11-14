@@ -13,7 +13,9 @@ on:
   push:
     branches:
       - dev
-      - 'dev/**'
+      - '*'
+    branches-ignore:
+      - main
     tags:
       - 'v*'
   pull_request:
