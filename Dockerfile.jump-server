@@ -1,0 +1,168 @@
+# Dockerfile for Koyeb Jump Server with test_db_perf
+# Creates an SSH server with pre-built test_db_perf binary
+
+# Stage 1: Build Go binary
+FROM golang:1.25.3 AS go-builder
+WORKDIR /build
+
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Build test_db_perf binary (statically linked)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -o /build/test_db_perf \
+    ./cmd/test_db_perf
+
+# Build rebuild_db binary (statically linked)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -o /build/rebuild_db \
+    ./cmd/rebuild_db
+
+# Stage 2: Final image with SSH server
+FROM ubuntu:22.04
+
+# Install SSH server, basic tools, and monitoring tools
+RUN apt-get update && \
+    apt-get install -y \
+    openssh-server \
+    curl \
+    wget \
+    git \
+    vim \
+    htop \
+    iotop \
+    net-tools \
+    iputils-ping \
+    tcpdump \
+    strace \
+    postgresql-client \
+    ca-certificates \
+    ufw \
+    rsyslog \
+    sudo && \
+    rm -rf /var/lib/apt/lists/*
+
+# Configure SSH (key-only authentication)
+RUN mkdir /var/run/sshd && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
+    sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \
+    echo "AuthorizedKeysFile .ssh/authorized_keys" >> /etc/ssh/sshd_config && \
+    echo "AllowUsers root jump" >> /etc/ssh/sshd_config
+
+# Copy the pre-built binaries
+COPY --from=go-builder /build/test_db_perf /usr/local/bin/test_db_perf
+COPY --from=go-builder /build/rebuild_db /usr/local/bin/rebuild_db
+
+# Make them executable
+RUN chmod +x /usr/local/bin/test_db_perf && \
+    chmod +x /usr/local/bin/rebuild_db
+
+# Create workspace directory
+RUN mkdir -p /workspace && chmod 777 /workspace
+
+# Copy rebuild_db data files to workspace (needed for rebuild_db command)
+RUN mkdir -p /workspace/rebuild_db
+COPY --from=go-builder /build/cmd/rebuild_db/*.json /workspace/rebuild_db/
+COPY --from=go-builder /build/schema.sql /workspace/schema.sql
+
+# Create non-root jump user with sudo
+RUN useradd -m -s /bin/bash jump && \
+    echo "jump ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+    mkdir -p /home/jump/.ssh && \
+    chmod 700 /home/jump/.ssh && \
+    chown jump:jump /home/jump/.ssh
+
+# Create SSH directory for root
+RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
+
+# Configure firewall (allow SSH only)
+RUN ufw default deny incoming && \
+    ufw default allow outgoing && \
+    ufw allow 22/tcp && \
+    echo "y" | ufw enable || true
+
+# Set up command logging/auditing
+RUN printf '#!/bin/bash\n\
+# Log all commands executed by users\n\
+# Use a function to avoid quote escaping issues\n\
+log_command() {\n\
+    local cmd=$(history 1 | sed "s/^[ ]*[0-9]\\+[ ]*//")\n\
+    logger -p local0.info "$(whoami) [$$]: $cmd"\n\
+}\n\
+export PROMPT_COMMAND="history -a; log_command"\n' > /etc/profile.d/jump-server-audit.sh && \
+    chmod +x /etc/profile.d/jump-server-audit.sh
+
+# Configure rsyslog for jump server logging
+# Create minimal rsyslog config for Docker (no kernel log, fix permissions)
+# Disable imklog in default config (not available in Docker)
+RUN sed -i '/imklog/d' /etc/rsyslog.conf && \
+    # Override default log destinations to use our custom log file\n\
+    sed -i 's|/var/log/syslog|/var/log/jump-server.log|g' /etc/rsyslog.conf && \
+    sed -i 's|/var/log/auth.log|/var/log/jump-server.log|g' /etc/rsyslog.conf && \
+    sed -i 's|/var/log/mail.log|/var/log/jump-server.log|g' /etc/rsyslog.conf && \
+    sed -i 's|/var/log/kern.log|/var/log/jump-server.log|g' /etc/rsyslog.conf && \
+    echo '$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat\n\
+$FileCreateMode 0644\n\
+local0.*    /var/log/jump-server.log' > /etc/rsyslog.d/50-jump-server.conf && \
+    touch /var/log/jump-server.log && \
+    chmod 666 /var/log/jump-server.log && \
+    mkdir -p /var/run && \
+    chmod 755 /var/log
+
+# Create entrypoint script with logging
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+# Create log files with proper permissions before starting rsyslog\n\
+touch /var/log/jump-server.log /var/log/syslog /var/log/auth.log /var/log/mail.log /var/log/kern.log\n\
+chmod 666 /var/log/jump-server.log /var/log/syslog /var/log/auth.log /var/log/mail.log /var/log/kern.log\n\
+\n\
+# Start rsyslog for logging (run in background, no fork for Docker)\n\
+# Use -i NONE to prevent pid file issues, run as root for permissions\n\
+rsyslogd -n -i NONE -f /etc/rsyslog.conf &\n\
+\n\
+# Wait a moment for rsyslog to start\n\
+sleep 1\n\
+\n\
+# Log startup\n\
+logger -p local0.info "Jump server starting at $(date)"\n\
+echo "$(date): Jump server starting" >> /var/log/jump-server.log\n\
+\n\
+# If SSH_PUBLIC_KEY is set, add it to authorized_keys for root\n\
+if [ -n "$SSH_PUBLIC_KEY" ]; then\n\
+    echo "$SSH_PUBLIC_KEY" > /root/.ssh/authorized_keys\n\
+    chmod 600 /root/.ssh/authorized_keys\n\
+    echo "$SSH_PUBLIC_KEY" > /home/jump/.ssh/authorized_keys\n\
+    chmod 600 /home/jump/.ssh/authorized_keys\n\
+    chown jump:jump /home/jump/.ssh/authorized_keys\n\
+    logger -p local0.info "SSH public key configured from environment variable"\n\
+    echo "$(date): SSH public key configured" >> /var/log/jump-server.log\n\
+fi\n\
+\n\
+# If JUMP_USER_KEY is set, add it to jump user (alternative to root)\n\
+if [ -n "$JUMP_USER_KEY" ]; then\n\
+    echo "$JUMP_USER_KEY" > /home/jump/.ssh/authorized_keys\n\
+    chmod 600 /home/jump/.ssh/authorized_keys\n\
+    chown jump:jump /home/jump/.ssh/authorized_keys\n\
+    logger -p local0.info "SSH public key configured for jump user"\n\
+    echo "$(date): SSH public key configured for jump user" >> /var/log/jump-server.log\n\
+fi\n\
+\n\
+# Log SSH server startup\n\
+logger -p local0.info "Starting SSH server"\n\
+echo "$(date): Starting SSH server" >> /var/log/jump-server.log\n\
+\n\
+# Start SSH server\n\
+exec /usr/sbin/sshd -D' > /entrypoint.sh && \
+    chmod +x /entrypoint.sh
+
+# Expose SSH port
+EXPOSE 22
+
+# Use entrypoint script
+ENTRYPOINT ["/entrypoint.sh"]

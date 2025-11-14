@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"math/rand"
@@ -21,6 +22,10 @@ import (
 type MakeYearModel map[string]map[string]map[string][]string
 
 func main() {
+	// Parse command line flags
+	dbURL := flag.String("db", "", "Database URL (overrides DATABASE_URL env var)")
+	flag.Parse()
+
 	// Initialize logging
 	if err := logger.Init(config.LogLevel, config.LogFormat, config.LogFile); err != nil {
 		logger.Fatal("Failed to initialize logger", "error", err)
@@ -29,16 +34,32 @@ func main() {
 	// Validate security configuration (initializes encryption key)
 	config.SecurityCheck()
 
-	parentFile := "cmd/rebuild_db/parent.json"
-	makeParentFile := "cmd/rebuild_db/make-parent.json"
-	typeFile := "cmd/rebuild_db/ad-category.json"
-	schemaFile := "schema.sql"
+	// Determine base path: use workspace if available (for jump server), otherwise use relative paths
+	basePath := "/workspace/rebuild_db"
+	dataBasePath := "/workspace/rebuild_db"
+	if _, err := os.Stat("/workspace/rebuild_db/parent.json"); os.IsNotExist(err) {
+		basePath = "cmd/rebuild_db"
+		dataBasePath = "cmd/rebuild_db"
+	}
+	
+	parentFile := basePath + "/parent.json"
+	makeParentFile := basePath + "/make-parent.json"
+	typeFile := basePath + "/ad-category.json"
+	
+	// Schema file path
+	schemaFile := "/workspace/schema.sql"
+	if _, err := os.Stat(schemaFile); os.IsNotExist(err) {
+		schemaFile = "schema.sql"
+	}
 
-	// Get PostgreSQL connection string from environment variable
+	// Get PostgreSQL connection string from flag or environment variable
 	// Example: postgres://user:password@localhost:5432/dbname?sslmode=disable
-	databaseURL := os.Getenv("DATABASE_URL")
+	databaseURL := *dbURL
 	if databaseURL == "" {
-		logger.Fatal("DATABASE_URL must be set")
+		databaseURL = os.Getenv("DATABASE_URL")
+	}
+	if databaseURL == "" {
+		logger.Fatal("DATABASE_URL must be set (use -db flag or DATABASE_URL env var)")
 	}
 
 	// Open DB for direct access
@@ -146,7 +167,7 @@ func main() {
 	logger.Info("Populated category map", "count", categoryCount)
 
 	// Populate SpecificationField table with all field definitions
-	fieldFile := "cmd/rebuild_db/spec-fields.json"
+	fieldFile := dataBasePath + "/spec-fields.json"
 	fieldData, err := os.ReadFile(fieldFile)
 	if err != nil {
 		logger.Fatal("Failed to read spec-fields.json", "error", err, "file", fieldFile)
@@ -264,7 +285,7 @@ func main() {
 	logger.Info("Inserted ParentCompanies", "count", len(parentCompanies))
 
 	// Import user.json
-	userFile := "cmd/rebuild_db/user.json"
+	userFile := dataBasePath + "/user.json"
 	userData, err := os.ReadFile(userFile)
 	if err != nil {
 		logger.Fatal("Failed to read user.json", "error", err, "file", userFile)
@@ -411,12 +432,12 @@ func main() {
 				partFile string
 				adFile   string
 			}{
-				specFile: "cmd/rebuild_db/" + cat.SpecFile,
+				specFile: dataBasePath + "/" + cat.SpecFile,
 				partFile: "",
-				adFile:   "cmd/rebuild_db/" + cat.AdFile,
+				adFile:   dataBasePath + "/" + cat.AdFile,
 			}
 			if cat.PartFile != "" {
-				seedFiles.partFile = "cmd/rebuild_db/" + cat.PartFile
+				seedFiles.partFile = dataBasePath + "/" + cat.PartFile
 			}
 			categorySeedMap[cat.Name] = seedFiles
 		}

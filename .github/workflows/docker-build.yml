@@ -20,8 +20,8 @@ on:
       - main
 
 jobs:
-  push_to_registries:
-    name: Push Docker image to multiple registries
+  build_site:
+    name: Build and push site image
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -54,6 +54,12 @@ jobs:
           images: |
             ${{ github.repository }}
             ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
           labels: |
             org.opencontainers.image.title=Parts Pile Site
             org.opencontainers.image.description=Parts Pile Site
@@ -66,4 +72,58 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+  build_jump_server:
+    name: Build and push jump server image
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Log in to the Container registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for jump server
+        id: jump-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ github.repository }}-jump-server
+            ghcr.io/${{ github.repository }}-jump-server
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+          labels: |
+            org.opencontainers.image.title=Parts Pile Jump Server
+            org.opencontainers.image.description=Jump server with test_db_perf for database performance testing
+
+      - name: Build and push jump server image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.jump-server
+          platforms: linux/amd64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.jump-meta.outputs.tags }}
+          labels: ${{ steps.jump-meta.outputs.labels }}
 

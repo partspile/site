@@ -17,6 +17,9 @@ import (
 	"github.com/parts-pile/site/logger"
 )
 
+// Track inserted ad IDs for cleanup
+var insertedAdIDs sync.Map
+
 type TestResult struct {
 	Name     string
 	Duration time.Duration
@@ -78,6 +81,9 @@ func main() {
 	if err := db.Init(databaseURL); err != nil {
 		logger.Fatal("Failed to initialize database", "error", err)
 	}
+
+	// Cleanup inserted records on exit
+	defer cleanupInsertedRecords()
 
 	// Verify database connection and get some stats
 	if err := verifyDatabase(); err != nil {
@@ -331,11 +337,18 @@ func runWriteTests(duration time.Duration, concurrency int) []TestStats {
 
 			// Insert a test ad (we'll delete it later)
 			title := fmt.Sprintf("Perf test ad %d", time.Now().UnixNano())
-			_, err = db.Exec(`
+			var adID int
+			err = db.QueryRow(`
 				INSERT INTO Ad (ad_category_id, title, description, price, user_id, created_at)
 				VALUES ($1, $2, $3, $4, $5, NOW())
-			`, categoryID, title, "Test description", rand.Float64()*1000, userID)
-			return err
+				RETURNING id
+			`, categoryID, title, "Test description", rand.Float64()*1000, userID).Scan(&adID)
+			if err != nil {
+				return err
+			}
+			// Track the inserted ID for cleanup
+			insertedAdIDs.Store(adID, true)
+			return nil
 		}))
 
 	// Test 2: INSERT with transaction
@@ -368,15 +381,23 @@ func runWriteTests(duration time.Duration, concurrency int) []TestStats {
 			defer tx.Rollback()
 
 			title := fmt.Sprintf("Perf test ad %d", time.Now().UnixNano())
-			_, err = tx.Exec(`
+			var adID int
+			err = tx.QueryRow(`
 				INSERT INTO Ad (ad_category_id, title, description, price, user_id, created_at)
 				VALUES ($1, $2, $3, $4, $5, NOW())
-			`, categoryID, title, "Test description", rand.Float64()*1000, userID)
+				RETURNING id
+			`, categoryID, title, "Test description", rand.Float64()*1000, userID).Scan(&adID)
 			if err != nil {
 				return err
 			}
 
-			return tx.Commit()
+			if err := tx.Commit(); err != nil {
+				return err
+			}
+
+			// Track the inserted ID for cleanup
+			insertedAdIDs.Store(adID, true)
+			return nil
 		}))
 
 	// Test 3: UPDATE
@@ -603,6 +624,45 @@ func printSummary(stats []TestStats) {
 		}
 		fmt.Println()
 	}
+}
+
+func cleanupInsertedRecords() {
+	// Collect all inserted ad IDs
+	var ids []int
+	insertedAdIDs.Range(func(key, value interface{}) bool {
+		if adID, ok := key.(int); ok {
+			ids = append(ids, adID)
+		}
+		return true
+	})
+
+	if len(ids) == 0 {
+		return
+	}
+
+	fmt.Printf("\nCleaning up %d inserted test records...\n", len(ids))
+
+	// Delete in batches to avoid very large IN clauses
+	batchSize := 1000
+	for i := 0; i < len(ids); i += batchSize {
+		end := i + batchSize
+		if end > len(ids) {
+			end = len(ids)
+		}
+		batch := ids[i:end]
+
+		// Use soft delete (set deleted_at) to match application behavior
+		_, err := db.Exec(`
+			UPDATE Ad 
+			SET deleted_at = NOW() 
+			WHERE id = ANY($1) AND deleted_at IS NULL
+		`, batch)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: Failed to cleanup some test records: %v\n", err)
+		}
+	}
+
+	fmt.Printf("Cleanup complete.\n")
 }
 
 func maskURL(url string) string {
