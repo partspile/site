@@ -76,9 +76,9 @@ func main() {
 
 	// Drop all tables to clean the database
 	logger.Info("Dropping all existing tables")
-	var dropSQL string
+	var dropSQL sql.NullString
 	err = database.QueryRow(`
-		SELECT 'DROP TABLE IF EXISTS ' || string_agg('"' || tablename || '"', ', ') || ' CASCADE'
+		SELECT COALESCE('DROP TABLE IF EXISTS ' || string_agg('"' || tablename || '"', ', ') || ' CASCADE', '')
 		FROM pg_tables 
 		WHERE schemaname = 'public'
 	`).Scan(&dropSQL)
@@ -86,8 +86,13 @@ func main() {
 		logger.Fatal("Failed to generate DROP statement", "error", err)
 	}
 
-	if dropSQL != "" {
-		if _, err := database.Exec(dropSQL); err != nil {
+	dropSQLStr := ""
+	if dropSQL.Valid {
+		dropSQLStr = dropSQL.String
+	}
+
+	if dropSQLStr != "" {
+		if _, err := database.Exec(dropSQLStr); err != nil {
 			logger.Fatal("Failed to drop tables", "error", err)
 		}
 		logger.Info("All existing tables dropped")

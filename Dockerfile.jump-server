@@ -41,7 +41,6 @@ RUN apt-get update && \
     strace \
     postgresql-client \
     ca-certificates \
-    ufw \
     rsyslog \
     sudo && \
     rm -rf /var/lib/apt/lists/*
@@ -79,12 +78,6 @@ RUN useradd -m -s /bin/bash jump && \
 
 # Create SSH directory for root
 RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
-
-# Configure firewall (allow SSH only)
-RUN ufw default deny incoming && \
-    ufw default allow outgoing && \
-    ufw allow 22/tcp && \
-    echo "y" | ufw enable || true
 
 # Set up command logging/auditing
 RUN printf '#!/bin/bash\n\
