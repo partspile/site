@@ -198,7 +198,7 @@ func GetSpecTableName(specType string) string {
 	case "part":
 		return "SpecPart"
 	default:
-		return "Specification" // Legacy fallback
+		return "SpecVehicle" // Default fallback (matches GetSpecTypeFromChain default)
 	}
 }
 

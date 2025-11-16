@@ -595,54 +595,8 @@ func importAllAds(dataBasePath string, categoryMap map[string]int, userIDMap map
 	return nil
 }
 
-// truncateString truncates a string to maxLen characters for logging
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen] + "..."
-}
-
-func getOrInsertWithCategory(table, col, val string, categoryID int) int {
-	var id int
-	err := db.QueryRow(fmt.Sprintf("SELECT id FROM %s WHERE %s=$1 AND ad_category_id=$2", table, col), val, categoryID).Scan(&id)
-	if err == sql.ErrNoRows {
-		err = db.QueryRow(fmt.Sprintf("INSERT INTO %s (%s, ad_category_id) VALUES ($1, $2) RETURNING id", table, col), val, categoryID).Scan(&id)
-		if err != nil {
-			logger.Fatal("Failed to insert into table", "table", table, "error", err)
-		}
-		return id
-	} else if err != nil {
-		logger.Fatal("Failed to lookup table", "table", table, "error", err)
-	}
-	return id
-}
-
 // FieldConfig is an alias for spec.FieldConfig for convenience in rebuild_db
 type FieldConfig = spec.FieldConfig
-
-// getFirstChainFields returns the fields in the first chain for a given category
-// The first chain starts with the first field and includes all chained fields
-func getFirstChainFields(categoryID int) ([]spec.FieldConfig, error) {
-	chains, err := spec.GetAllChains(categoryID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Find the chain with the lowest start order
-	minOrder := -1
-	for order := range chains {
-		if minOrder == -1 || order < minOrder {
-			minOrder = order
-		}
-	}
-
-	if minOrder == -1 {
-		return nil, fmt.Errorf("no chains found for category %d", categoryID)
-	}
-
-	return chains[minOrder], nil
-}
 
 // buildFieldValueMaps creates []map[string]int from [][]string
 // Each map corresponds to a field position, with value -> 0 (will be updated with IDs later)
@@ -813,84 +767,6 @@ func buildFieldTables(categoryID int, fields []FieldConfig, fieldMaps []map[stri
 	return nil
 }
 
-// cartesianProduct creates a Cartesian product of multiple [][]string slices
-// Example: [[["a", "b"], ["c"]], [["1"], ["2"]]] -> [["a", "b", "1"], ["a", "b", "2"], ["c", "1"], ["c", "2"]]
-// getSpecTableType determines which spec table to use based on chain fields
-func getSpecTableType(chain []FieldConfig) string {
-	if len(chain) == 0 {
-		return ""
-	}
-
-	// Check if it's a part chain
-	if chain[0].Name == "part_category" {
-		return "part"
-	}
-
-	// Determine vehicle chain type based on fields
-	fieldNames := make([]string, len(chain))
-	for i, field := range chain {
-		fieldNames[i] = field.Name
-	}
-
-	// Check for 4-field vehicle chain (make->year->model->engine)
-	if len(fieldNames) == 4 && fieldNames[0] == "make" && fieldNames[1] == "year" &&
-		fieldNames[2] == "model" && fieldNames[3] == "engine" {
-		return "vehicle"
-	}
-
-	// Check for 3-field vehicle chain (make->year->model)
-	if len(fieldNames) == 3 && fieldNames[0] == "make" && fieldNames[1] == "year" &&
-		fieldNames[2] == "model" {
-		return "agricultural"
-	}
-
-	// Check for 2-field vehicle chain (make->model)
-	if len(fieldNames) == 2 && fieldNames[0] == "make" && fieldNames[1] == "model" {
-		return "bicycle"
-	}
-
-	// Default to vehicle for unknown patterns
-	return "vehicle"
-}
-
-// getSpecTableName returns the SQL table name for a spec type
-func getSpecTableName(specType string) string {
-	switch specType {
-	case "vehicle":
-		return "SpecVehicle"
-	case "agricultural":
-		return "SpecAgricultural"
-	case "bicycle":
-		return "SpecBicycle"
-	case "part":
-		return "SpecPart"
-	default:
-		return "Specification" // Legacy fallback
-	}
-}
-
-func cartesianProduct(chains [][][]string) [][]string {
-	if len(chains) == 0 {
-		return [][]string{}
-	}
-	if len(chains) == 1 {
-		return chains[0]
-	}
-
-	// Recursive: product of first chain with product of rest
-	rest := cartesianProduct(chains[1:])
-	var result [][]string
-	for _, firstRow := range chains[0] {
-		for _, restRow := range rest {
-			combined := make([]string, len(firstRow)+len(restRow))
-			copy(combined, firstRow)
-			copy(combined[len(firstRow):], restRow)
-			result = append(result, combined)
-		}
-	}
-	return result
-}
-
 // SpecLookupMaps contains lookup maps for each spec type
 type SpecLookupMaps struct {
 	Vehicle      map[string]int
@@ -902,7 +778,7 @@ type SpecLookupMaps struct {
 // buildSpecsForChain builds specs for a single chain and inserts them into the appropriate spec table
 func buildSpecsForChain(categoryID int, chain []FieldConfig, data [][]string, fieldMaps []map[string]int, specType string) (map[string]int, error) {
 	specLookupMap := make(map[string]int)
-	tableName := getSpecTableName(specType)
+	tableName := spec.GetSpecTableName(specType)
 
 	// Build field names for RETURNING clause
 	fieldNames := make([]string, len(chain))
@@ -1152,7 +1028,7 @@ func importSpecs(specFile string, partFile string, categoryID int) (SpecLookupMa
 		return result, fmt.Errorf("failed to build first chain field tables: %w", err)
 	}
 
-	firstChainSpecType := getSpecTableType(firstChain)
+	firstChainSpecType := spec.GetSpecTypeFromChain(firstChain)
 	firstChainLookup, err := buildSpecsForChain(categoryID, firstChain, specs, firstChainFieldMaps, firstChainSpecType)
 	if err != nil {
 		return result, fmt.Errorf("failed to build specs for first chain: %w", err)
@@ -1305,58 +1181,6 @@ func findSpecIDs(adSpecRows [][]string, specLookupMap map[string]int, specType s
 	}
 
 	return result
-}
-
-// buildFieldMapsForAds builds field value maps for ad processing
-// This loads existing field values from the database and creates maps similar to buildFieldValueMaps
-func buildFieldMapsForAds(categoryID int, fields []FieldConfig) ([]map[string]int, error) {
-	fieldMaps := make([]map[string]int, len(fields))
-	for i := range fieldMaps {
-		fieldMaps[i] = make(map[string]int)
-	}
-
-	// Load all existing field values from database
-	for i, field := range fields {
-		var query string
-		var rows *sql.Rows
-		var err error
-
-		if field.FieldType == "int" {
-			// Integer fields (like Year)
-			query = fmt.Sprintf(`SELECT id, %s FROM %s WHERE ad_category_id=$1`, field.ValueColumnName, field.TableName)
-			rows, err = db.Query(query, categoryID)
-			if err == nil {
-				defer rows.Close()
-				for rows.Next() {
-					var id int
-					var value int
-					if rows.Scan(&id, &value) == nil {
-						fieldMaps[i][strconv.Itoa(value)] = id
-					}
-				}
-			}
-		} else {
-			// String fields
-			query = fmt.Sprintf(`SELECT id, %s FROM %s WHERE ad_category_id=$1`, field.ValueColumnName, field.TableName)
-			rows, err = db.Query(query, categoryID)
-			if err == nil {
-				defer rows.Close()
-				for rows.Next() {
-					var id int
-					var value string
-					if rows.Scan(&id, &value) == nil {
-						fieldMaps[i][value] = id
-					}
-				}
-			}
-		}
-
-		if err != nil {
-			return nil, fmt.Errorf("failed to load field values for %s: %w", field.Name, err)
-		}
-	}
-
-	return fieldMaps, nil
 }
 
 // readPartFile reads a part JSON file and flattens it to [][]string format
@@ -1654,7 +1478,7 @@ func importAds(jsonFile string, categoryID int, categoryMap map[string]int, user
 
 		// Process first chain
 		firstChainSpecRows := convertAdToSpecRows(ad, firstChain)
-		firstChainSpecType := getSpecTableType(firstChain)
+		firstChainSpecType := spec.GetSpecTypeFromChain(firstChain)
 		var firstChainLookup map[string]int
 		switch firstChainSpecType {
 		case "vehicle":
