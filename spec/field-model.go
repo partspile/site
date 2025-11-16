@@ -21,11 +21,6 @@ func (f *FieldModel) BuildFilterCondition(c *fiber.Ctx, _ LocationResolver) *qdr
 	return qdrant.NewMatchKeywords("model", fieldValue)
 }
 
-func (f *FieldModel) RenderFilterField(params map[string]string) g.Node {
-	// Handled by existing UI code
-	return nil
-}
-
 func (f *FieldModel) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
 	config := f.config
 	return fieldCheckboxGrid(
@@ -44,4 +39,3 @@ func (f *FieldModel) Validate(value string) error {
 	}
 	return nil
 }
-

@@ -63,8 +63,36 @@ func (f *FieldPrice) RenderNewAdField(selectedValues map[string]bool, fieldValue
 }
 
 func (f *FieldPrice) RenderFilterField(params map[string]string) g.Node {
-	// Handled by existing UI code (priceFilter)
-	return nil
+	minPrice := params["min_price"]
+	maxPrice := params["max_price"]
+	config := f.config
+
+	return Div(
+		Label(Class("block text-sm font-medium mb-1"), g.Text(config.DisplayName+" Range")),
+		Div(
+			Class("flex gap-2 flex-nowrap"),
+			Input(
+				Type("number"),
+				Name("min_price"),
+				ID("minPriceFilter"),
+				Class("w-24 flex-shrink-0 p-2 border rounded-md"),
+				Placeholder("Min $"),
+				Min("0"),
+				Step("1"),
+				Value(minPrice),
+			),
+			Input(
+				Type("number"),
+				Name("max_price"),
+				ID("maxPriceFilter"),
+				Class("w-24 flex-shrink-0 p-2 border rounded-md"),
+				Placeholder("Max $"),
+				Min("0"),
+				Step("1"),
+				Value(maxPrice),
+			),
+		),
+	)
 }
 
 func (f *FieldPrice) Validate(value string) error {

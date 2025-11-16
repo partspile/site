@@ -21,11 +21,6 @@ func (f *FieldPartSubcategory) BuildFilterCondition(c *fiber.Ctx, _ LocationReso
 	return qdrant.NewMatch("part_subcategory", fieldValue)
 }
 
-func (f *FieldPartSubcategory) RenderFilterField(params map[string]string) g.Node {
-	// Handled by existing UI code
-	return nil
-}
-
 func (f *FieldPartSubcategory) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
 	config := f.config
 	return fieldSelect(
@@ -45,4 +40,3 @@ func (f *FieldPartSubcategory) Validate(value string) error {
 	}
 	return nil
 }
-

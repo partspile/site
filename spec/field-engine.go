@@ -21,10 +21,6 @@ func (f *FieldEngine) BuildFilterCondition(c *fiber.Ctx, _ LocationResolver) *qd
 	return qdrant.NewMatchKeywords("engine", fieldValue)
 }
 
-func (f *FieldEngine) RenderFilterField(params map[string]string) g.Node {
-	// Handled by existing UI code
-	return nil
-}
 
 func (f *FieldEngine) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
 	config := f.config

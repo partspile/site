@@ -131,6 +131,12 @@ func (b *BaseField) GetValues(parentValues map[string]string) ([]string, error) 
 	return values, err
 }
 
+// RenderFilterField provides a default fallback implementation
+// Returns an empty g.Group{} if the field doesn't implement its own RenderFilterField
+func (b *BaseField) RenderFilterField(params map[string]string) g.Node {
+	return g.Group{}
+}
+
 // RenderNewAdField provides a generic fallback implementation
 // Concrete field types should override this for field-specific rendering
 func (b *BaseField) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {

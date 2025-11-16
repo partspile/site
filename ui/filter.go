@@ -16,10 +16,6 @@ func filterControls(adCategory int, params map[string]string) g.Node {
 	// Build filter nodes dynamically based on category fields
 	var filterNodes []g.Node
 
-	// Always show location and radius filters
-	filterNodes = append(filterNodes, locationFilter(params["location"]))
-	filterNodes = append(filterNodes, radiusFilter(params["radius"]))
-
 	// Add spec field filters based on category configuration
 	// Only show fields marked with ShowInFilters=true
 	for _, field := range fields {
@@ -28,25 +24,10 @@ func filterControls(adCategory int, params map[string]string) g.Node {
 			continue
 		}
 
-		// Determine filter type based on field type
-		if fieldConfig.FieldType == "int" || fieldConfig.FieldType == "float64" {
-			// Range filter for numeric fields (year, etc.)
-			if fieldConfig.Name == "year" {
-				filterNodes = append(filterNodes, yearFilter(params["min_year"], params["max_year"]))
-			} else {
-				// Generic range filter for other numeric fields
-				minKey := "min_" + fieldConfig.Name
-				maxKey := "max_" + fieldConfig.Name
-				filterNodes = append(filterNodes, genericRangeFilter(field, params[minKey], params[maxKey]))
-			}
-		} else {
-			// Dropdown filter for string fields - show all available values (not filtered by parents)
-			filterNodes = append(filterNodes, genericDropdownFilter(adCategory, field, params[fieldConfig.Name], false))
-		}
+		// Use RenderFilterField to get the filter node(s)
+		filterNode := field.RenderFilterField(params)
+		filterNodes = append(filterNodes, filterNode)
 	}
-
-	// Always show price filter
-	filterNodes = append(filterNodes, priceFilter(params["min_price"], params["max_price"]))
 
 	return Div(
 		Class("grid grid-cols-2 gap-4 mt-4"),

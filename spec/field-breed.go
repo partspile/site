@@ -21,11 +21,6 @@ func (f *FieldBreed) BuildFilterCondition(c *fiber.Ctx, _ LocationResolver) *qdr
 	return qdrant.NewMatch("breed", fieldValue)
 }
 
-func (f *FieldBreed) RenderFilterField(params map[string]string) g.Node {
-	// Handled by existing UI code
-	return nil
-}
-
 func (f *FieldBreed) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
 	config := f.config
 	if config.FieldMultiValue {
@@ -55,4 +50,3 @@ func (f *FieldBreed) Validate(value string) error {
 	}
 	return nil
 }
-

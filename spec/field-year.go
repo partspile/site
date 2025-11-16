@@ -3,10 +3,12 @@ package spec
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
+	. "maragu.dev/gomponents/html"
 )
 
 // FieldYear handles the year field
@@ -83,8 +85,40 @@ func (f *FieldYear) RenderNewAdField(selectedValues map[string]bool, fieldValues
 }
 
 func (f *FieldYear) RenderFilterField(params map[string]string) g.Node {
-	// Handled by existing UI code
-	return nil
+	minYear := params["min_year"]
+	maxYear := params["max_year"]
+	config := f.config
+
+	// Calculate max year as current year + 2
+	maxYearValue := time.Now().Year() + 2
+	maxYearStr := fmt.Sprintf("%d", maxYearValue)
+
+	return Div(
+		Label(Class("block text-sm font-medium mb-1"), g.Text(config.DisplayName+" Range")),
+		Div(
+			Class("flex gap-2 flex-nowrap"),
+			Input(
+				Type("number"),
+				Name("min_year"),
+				ID("minYearFilter"),
+				Class("w-20 flex-shrink-0 p-2 border rounded-md"),
+				Placeholder("Min"),
+				Min("1900"),
+				Max(maxYearStr),
+				Value(minYear),
+			),
+			Input(
+				Type("number"),
+				Name("max_year"),
+				ID("maxYearFilter"),
+				Class("w-20 flex-shrink-0 p-2 border rounded-md"),
+				Placeholder("Max"),
+				Min("1900"),
+				Max(maxYearStr),
+				Value(maxYear),
+			),
+		),
+	)
 }
 
 func (f *FieldYear) Validate(value string) error {

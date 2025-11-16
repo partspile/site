@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
+	. "maragu.dev/gomponents/html"
 )
 
 // FieldPartCategory handles the part_category field
@@ -22,8 +23,36 @@ func (f *FieldPartCategory) BuildFilterCondition(c *fiber.Ctx, _ LocationResolve
 }
 
 func (f *FieldPartCategory) RenderFilterField(params map[string]string) g.Node {
-	// Handled by existing UI code
-	return nil
+	config := f.config
+	value := params[config.Name]
+
+	// Get all available values for this field (filter fields are independent)
+	values, err := GetFieldValues(f.categoryID, config.Name, map[string]string{})
+	if err != nil {
+		// If error, return empty dropdown
+		values = []string{}
+	}
+
+	// Build options list
+	var options []g.Node
+	options = append(options, Option(Value(""), g.Text("All"), g.If(value == "", Selected())))
+	for _, val := range values {
+		optionAttrs := []g.Node{Value(val), g.Text(val)}
+		if val == value {
+			optionAttrs = append(optionAttrs, Selected())
+		}
+		options = append(options, Option(optionAttrs...))
+	}
+
+	return Div(
+		Label(Class("block text-sm font-medium mb-1"), g.Text(config.DisplayName)),
+		Select(
+			Name(config.Name),
+			ID(config.Name+"Filter"),
+			Class("w-full p-2 border rounded-md"),
+			g.Group(options),
+		),
+	)
 }
 
 func (f *FieldPartCategory) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
