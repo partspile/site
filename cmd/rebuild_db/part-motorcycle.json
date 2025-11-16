@@ -43,8 +43,8 @@
   ],
   "Body & Frame": [
     "Fairing",
-    "Tank",
     "Seat",
+    "Tank",
     "Windshield"
   ],
   "Exhaust": [
@@ -53,4 +53,3 @@
     "Catalytic Converter"
   ]
 }
-

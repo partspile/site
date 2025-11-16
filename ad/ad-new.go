@@ -44,13 +44,45 @@ func AddAd(ad AdDetail) (int, error) {
 	return int(adID), nil
 }
 
-// findSpec finds a spec ID from the unified Specification table using dynamic field configuration
-func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int, error) {
-	// Get category fields
-	fieldConfigs := spec.GetCategoryFields(adCategoryID)
+// findSpec finds a spec ID from the appropriate spec table using dynamic field configuration
+func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int, string, error) {
+	// Get all chains to determine which spec table to use
+	allChains, err := spec.GetAllChains(adCategoryID)
+	if err != nil {
+		return 0, "", fmt.Errorf("failed to get chains: %w", err)
+	}
+
+	// Find the first chain (lowest order) that matches the provided field values
+	var targetChain []spec.FieldConfig
+	var targetSpecType string
+	minOrder := -1
+
+	for order, chain := range allChains {
+		// Check if this chain matches the field values
+		matches := true
+		for _, field := range chain {
+			value, hasValue := fieldValues[field.Name]
+			if !hasValue || value == "" {
+				matches = false
+				break
+			}
+		}
+		if matches && (minOrder == -1 || order < minOrder) {
+			minOrder = order
+			targetChain = chain
+			targetSpecType = spec.GetSpecTypeFromChain(chain)
+		}
+	}
+
+	if len(targetChain) == 0 {
+		return 0, "", fmt.Errorf("no matching chain found for field values: %v", fieldValues)
+	}
+
+	// Get spec table name
+	specTableName := spec.GetSpecTableName(targetSpecType)
 
 	// Build dynamic query
-	query := "SELECT spec.id FROM Specification spec"
+	query := fmt.Sprintf("SELECT spec.id FROM %s spec", specTableName)
 	var joins []string
 	var whereClauses []string
 	var args []interface{}
@@ -58,8 +90,8 @@ func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int,
 	whereClauses = append(whereClauses, fmt.Sprintf("spec.ad_category_id = $%d", len(args)+1))
 	args = append(args, adCategoryID)
 
-	// Add JOINs and WHERE clauses for each field
-	for _, fieldConfig := range fieldConfigs {
+	// Add JOINs and WHERE clauses for each field in the chain
+	for _, fieldConfig := range targetChain {
 		value, hasValue := fieldValues[fieldConfig.Name]
 		if !hasValue || value == "" {
 			continue
@@ -91,14 +123,14 @@ func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int,
 	query += " WHERE " + strings.Join(whereClauses, " AND ")
 
 	var specID int
-	err := tx.QueryRow(query, args...).Scan(&specID)
+	err = tx.QueryRow(query, args...).Scan(&specID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return 0, fmt.Errorf("spec not found for field values: %v", fieldValues)
+			return 0, "", fmt.Errorf("spec not found for field values: %v", fieldValues)
 		}
-		return 0, fmt.Errorf("error looking up spec: %w", err)
+		return 0, "", fmt.Errorf("error looking up spec: %w", err)
 	}
-	return specID, nil
+	return specID, targetSpecType, nil
 }
 
 // addFieldAssociations handles spec associations dynamically based on category field configuration
@@ -128,13 +160,13 @@ func addFieldAssociations(tx *sql.Tx, ad AdDetail) error {
 		maps.Copy(combinedValues, combination)
 
 		// Find spec for this combination
-		specID, err := findSpec(tx, ad.AdCategoryID, combinedValues)
+		specID, specType, err := findSpec(tx, ad.AdCategoryID, combinedValues)
 		if err != nil {
 			return err
 		}
 
 		// Insert association
-		if err := insertSpecAssociation(tx, ad.ID, specID); err != nil {
+		if err := insertSpecAssociation(tx, ad.ID, specID, specType); err != nil {
 			return err
 		}
 	}
@@ -222,12 +254,30 @@ func generateCombinationsRecursive(fieldNames []string, fieldValues [][]string, 
 	}
 }
 
-// insertSpecAssociation inserts the ad-spec association record
-func insertSpecAssociation(tx *sql.Tx, adID int, specID int) error {
-	_, err := tx.Exec("INSERT INTO AdSpecification (ad_id, specification_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
-		adID, specID)
+// insertSpecAssociation inserts the ad-spec association record into the appropriate AdSpec* table
+func insertSpecAssociation(tx *sql.Tx, adID int, specID int, specType string) error {
+	var tableName, idColumn string
+	switch specType {
+	case "vehicle":
+		tableName = "AdSpecVehicle"
+		idColumn = "spec_vehicle_id"
+	case "agricultural":
+		tableName = "AdSpecAgricultural"
+		idColumn = "spec_agricultural_id"
+	case "bicycle":
+		tableName = "AdSpecBicycle"
+		idColumn = "spec_bicycle_id"
+	case "part":
+		tableName = "AdSpecPart"
+		idColumn = "spec_part_id"
+	default:
+		return fmt.Errorf("unknown spec type: %s", specType)
+	}
+
+	query := fmt.Sprintf("INSERT INTO %s (ad_id, %s) VALUES ($1, $2) ON CONFLICT DO NOTHING", tableName, idColumn)
+	_, err := tx.Exec(query, adID, specID)
 	if err != nil {
-		return fmt.Errorf("failed to insert AdSpecification association: %w", err)
+		return fmt.Errorf("failed to insert %s association: %w", tableName, err)
 	}
 	return nil
 }

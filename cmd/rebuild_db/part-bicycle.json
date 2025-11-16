@@ -34,10 +34,10 @@
     "Sensor"
   ],
   "Frame & Fork": [
-    "Frame",
     "Fork",
-    "Stem",
-    "Handlebar"
+    "Frame",
+    "Handlebar",
+    "Stem"
   ],
   "Seat & Saddle": [
     "Saddle",
@@ -51,4 +51,3 @@
     "Bell"
   ]
 }
-

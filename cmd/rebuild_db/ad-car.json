@@ -28,13 +28,13 @@
   {
     "make": "FORD",
     "years": [
-      "2021"
+      "1975"
     ],
     "models": [
       "F-150"
     ],
     "engines": [
-      "3.5L V6 EcoBoost"
+      "3.9L 240cid L6"
     ],
     "title": "2021 Ford F-150 XLT",
     "description": "2021 Ford F-150 with low miles. 4WD, crew cab. All maintenance up to date. Excellent condition, no issues.",
@@ -48,7 +48,7 @@
       "admin_area": "TX",
       "country": "US",
       "latitude": 32.7767,
-      "longitude": -96.7970
+      "longitude": -96.797
     }
   }
 ]

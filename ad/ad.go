@@ -73,11 +73,17 @@ func populateSpecData(adDetail *AdDetail) error {
 		tableFieldName := fieldConfig.TableFieldName
 		fieldName := fieldConfig.Name
 
-		// Add JOIN for this field's table
-		joins = append(joins, fmt.Sprintf("LEFT JOIN %s ON spec.%s = %s.id",
-			tableName, tableFieldName, tableName))
+		// Add JOINs for this field's table from all spec tables using COALESCE
+		// Only one spec table will have the field, so COALESCE will pick the non-null value
+		joins = append(joins, fmt.Sprintf(`LEFT JOIN %s ON (
+			(ad_spec.spec_type = 'vehicle' AND spec_vehicle.%s = %s.id) OR
+			(ad_spec.spec_type = 'agricultural' AND spec_agricultural.%s = %s.id) OR
+			(ad_spec.spec_type = 'bicycle' AND spec_bicycle.%s = %s.id) OR
+			(ad_spec.spec_type = 'part' AND spec_part.%s = %s.id)
+		)`, tableName, tableFieldName, tableName, tableFieldName, tableName, tableFieldName, tableName, tableFieldName, tableName))
 
 		// Build SELECT clause based on field type
+		// Use COALESCE to get value from the appropriate spec table
 		if fieldConfig.FieldType == "int" {
 			// For integer fields (like year), use STRING_AGG with CAST (PostgreSQL)
 			valueCol := fieldConfig.ValueColumnName
@@ -93,15 +99,38 @@ func populateSpecData(adDetail *AdDetail) error {
 		fieldNames = append(fieldNames, fieldName)
 	}
 
-	// Build final query
-	query := fmt.Sprintf(`
-		SELECT %s
-		FROM AdSpecification ad_spec
-		JOIN Specification spec ON ad_spec.specification_id = spec.id
+	// Build final query - use UNION ALL to combine results from all AdSpec* tables
+	// Each AdSpec* table joins to its corresponding Spec* table
+	var unionQueries []string
+
+	adSpecTables := []struct {
+		tableName    string
+		specTableName string
+		idColumn      string
+	}{
+		{"AdSpecVehicle", "SpecVehicle", "spec_vehicle_id"},
+		{"AdSpecAgricultural", "SpecAgricultural", "spec_agricultural_id"},
+		{"AdSpecBicycle", "SpecBicycle", "spec_bicycle_id"},
+		{"AdSpecPart", "SpecPart", "spec_part_id"},
+	}
+
+	for _, adSpecTable := range adSpecTables {
+		// Build query for this spec type - use $1 for ad_id in all subqueries
+		query := fmt.Sprintf(`
+			SELECT %s
+			FROM %s ad_spec
+			JOIN %s spec ON ad_spec.%s = spec.id
+			%s
+			WHERE ad_spec.ad_id = $1
+		`, strings.Join(selectParts, ", "), adSpecTable.tableName, adSpecTable.specTableName, adSpecTable.idColumn, strings.Join(joins, " "))
+		unionQueries = append(unionQueries, query)
+	}
+
+	// Combine with UNION ALL and group
+	query := fmt.Sprintf(`SELECT %s FROM (
 		%s
-		WHERE ad_spec.ad_id = $1
-		GROUP BY ad_spec.ad_id
-	`, strings.Join(selectParts, ", "), strings.Join(joins, " "))
+	) combined
+	GROUP BY %s`, strings.Join(selectParts, ", "), strings.Join(unionQueries, " UNION ALL "), strings.Join(selectParts, ", "))
 
 	// Execute query - use a map to store results dynamically
 	// Note: query already uses PostgreSQL format ($1), so no rebinding needed

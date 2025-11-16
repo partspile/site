@@ -186,6 +186,60 @@ func GetCategoryFields(adCategoryID int) []FieldConfig {
 	return result
 }
 
+// GetSpecTableName returns the spec table name for a given spec type
+func GetSpecTableName(specType string) string {
+	switch specType {
+	case "vehicle":
+		return "SpecVehicle"
+	case "agricultural":
+		return "SpecAgricultural"
+	case "bicycle":
+		return "SpecBicycle"
+	case "part":
+		return "SpecPart"
+	default:
+		return "Specification" // Legacy fallback
+	}
+}
+
+// GetSpecTypeFromChain determines the spec type based on chain fields
+func GetSpecTypeFromChain(chain []FieldConfig) string {
+	if len(chain) == 0 {
+		return ""
+	}
+
+	// Check if it's a part chain
+	if chain[0].Name == "part_category" {
+		return "part"
+	}
+
+	// Determine vehicle chain type based on fields
+	fieldNames := make([]string, len(chain))
+	for i, field := range chain {
+		fieldNames[i] = field.Name
+	}
+
+	// Check for 4-field vehicle chain (make->year->model->engine)
+	if len(fieldNames) == 4 && fieldNames[0] == "make" && fieldNames[1] == "year" &&
+		fieldNames[2] == "model" && fieldNames[3] == "engine" {
+		return "vehicle"
+	}
+
+	// Check for 3-field vehicle chain (make->year->model)
+	if len(fieldNames) == 3 && fieldNames[0] == "make" && fieldNames[1] == "year" &&
+		fieldNames[2] == "model" {
+		return "agricultural"
+	}
+
+	// Check for 2-field vehicle chain (make->model)
+	if len(fieldNames) == 2 && fieldNames[0] == "make" && fieldNames[1] == "model" {
+		return "bicycle"
+	}
+
+	// Default to vehicle for unknown patterns
+	return "vehicle"
+}
+
 // IsFirstInChain returns true if the field is the first field in its chain
 // A field is first if no other field's NextInChain points to its Order
 func IsFirstInChain(field FieldConfig, allFields []FieldConfig) bool {
@@ -305,24 +359,74 @@ func BuildFieldPromptSnippet(fieldConfig FieldConfig, fieldValues []string) stri
 		return ""
 	}
 
-	// Special handling for "make" field - include parent company info
-	if fieldConfig.Name == "make" {
-		make := fieldValues[0]
-		snippet := fmt.Sprintf("%s: %s\n", fieldConfig.DisplayName, make)
-
-		// Get parent company information
-		if pcInfo, err := GetParentCompanyInfoForMake(make); err == nil && pcInfo != nil {
-			if pcInfo.Name != "" {
-				snippet += fmt.Sprintf("Parent Company: %s\n", pcInfo.Name)
-			}
-			if pcInfo.Country != "" {
-				snippet += fmt.Sprintf("Parent Company Country: %s\n", pcInfo.Country)
-			}
-		}
-
-		return snippet
-	}
-
 	// Default: simple field name and value
 	return fmt.Sprintf("%s: %s\n", fieldConfig.DisplayName, valueStr)
+}
+
+// GetAllChains returns all field chains for a given category
+// Returns a map: chain start order -> []FieldConfig
+// Uses the cached field configuration
+func GetAllChains(adCategoryID int) (map[int][]FieldConfig, error) {
+	allFields := GetCategoryFields(adCategoryID)
+	if len(allFields) == 0 {
+		return nil, fmt.Errorf("no fields found for category %d", adCategoryID)
+	}
+
+	// Build order -> field map
+	orderMap := make(map[int]FieldConfig)
+	for _, f := range allFields {
+		orderMap[f.Order] = f
+	}
+
+	// Find all chain starts (fields that are not pointed to by any other field's next_in_chain)
+	chainStarts := make(map[int]bool)
+	for _, f := range allFields {
+		chainStarts[f.Order] = true
+	}
+	for _, f := range allFields {
+		if f.NextInChain != 0 {
+			delete(chainStarts, f.NextInChain)
+		}
+	}
+
+	// Build all chains
+	chains := make(map[int][]FieldConfig)
+	for startOrder := range chainStarts {
+		var chainFields []FieldConfig
+		currentOrder := startOrder
+		for {
+			field, exists := orderMap[currentOrder]
+			if !exists {
+				break
+			}
+			chainFields = append(chainFields, field)
+			if field.NextInChain == 0 {
+				break // End of chain
+			}
+			currentOrder = field.NextInChain
+		}
+		if len(chainFields) > 0 {
+			chains[startOrder] = chainFields
+		}
+	}
+
+	return chains, nil
+}
+
+// GetChainStartingWith returns the chain that starts with the given field name
+// Returns nil if not found
+// Uses the cached field configuration
+func GetChainStartingWith(adCategoryID int, fieldName string) ([]FieldConfig, error) {
+	chains, err := GetAllChains(adCategoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, chain := range chains {
+		if len(chain) > 0 && chain[0].Name == fieldName {
+			return chain, nil
+		}
+	}
+
+	return nil, nil
 }

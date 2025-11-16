@@ -48,8 +48,37 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 		selectClause = fmt.Sprintf("SELECT DISTINCT %s.%s FROM %s", tableName, fieldDef.ValueColumnName, tableName)
 	}
 
-	// Build JOINs for Specification table and all parent fields
-	joins := []string{fmt.Sprintf("JOIN Specification spec ON %s.id = spec.%s", tableName, tableFieldName)}
+	// Determine which spec table(s) to query from based on the field's chain
+	// Get all chains to find which one contains this field
+	allChains, err := GetAllChains(adCategoryID)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to get chains: %w", err)
+	}
+
+	// Find the chain that contains this field
+	var targetChain []FieldConfig
+	for _, chain := range allChains {
+		for _, field := range chain {
+			if field.Name == fieldName {
+				targetChain = chain
+				break
+			}
+		}
+		if len(targetChain) > 0 {
+			break
+		}
+	}
+
+	if len(targetChain) == 0 {
+		return "", nil, fmt.Errorf("field %s not found in any chain", fieldName)
+	}
+
+	// Get spec table name for this chain
+	specType := GetSpecTypeFromChain(targetChain)
+	specTableName := GetSpecTableName(specType)
+
+	// Build JOINs for the appropriate spec table and all parent fields
+	joins := []string{fmt.Sprintf("JOIN %s spec ON %s.id = spec.%s", specTableName, tableName, tableFieldName)}
 	args := []interface{}{}
 
 	// Add JOINs for parent fields
@@ -167,6 +196,35 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 		}
 	}
 
+	// Determine which spec table(s) to query from based on the field's chain
+	// Get all chains to find which one contains this field
+	allChains, err := GetAllChains(adCategoryID)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to get chains: %w", err)
+	}
+
+	// Find the chain that contains this field
+	var targetChain []FieldConfig
+	for _, chain := range allChains {
+		for _, field := range chain {
+			if field.Name == fieldDef.Name {
+				targetChain = chain
+				break
+			}
+		}
+		if len(targetChain) > 0 {
+			break
+		}
+	}
+
+	if len(targetChain) == 0 {
+		return "", nil, fmt.Errorf("field %s not found in any chain", fieldDef.Name)
+	}
+
+	// Get spec table name for this chain
+	specType := GetSpecTypeFromChain(targetChain)
+	specTableName := GetSpecTableName(specType)
+
 	// If no parent filters provided, return all values for this field
 	// This happens when loading filter dropdowns without parent selections
 	if len(parentFiltersArray) == 0 {
@@ -199,11 +257,11 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 	if fieldDef.FieldType == "int" {
 		selectClause = fmt.Sprintf(`SELECT DISTINCT CAST(%s.%s AS TEXT) FROM %s
 	WHERE %s.ad_category_id = $1 AND %s.id IN (
-		SELECT spec.%s FROM Specification spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableName, tableFieldName)
+		SELECT spec.%s FROM %s spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableName, tableFieldName, specTableName)
 	} else {
 		selectClause = fmt.Sprintf(`SELECT DISTINCT %s.%s FROM %s
 	WHERE %s.ad_category_id = $1 AND %s.id IN (
-		SELECT spec.%s FROM Specification spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableName, tableFieldName)
+		SELECT spec.%s FROM %s spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableName, tableFieldName, specTableName)
 	}
 	query := selectClause
 	args := []interface{}{adCategoryID}
@@ -351,7 +409,6 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 
 	// Unified query building - all fields work the same way
 	tableName := fieldDef.TableName
-	tableFieldName := fieldDef.TableFieldName
 
 	// Determine SELECT clause based on field type
 	var selectClause string
@@ -363,61 +420,84 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 		selectClause = fmt.Sprintf("SELECT DISTINCT %s.%s FROM %s", tableName, fieldDef.ValueColumnName, tableName)
 	}
 
-	// Build JOINs for Specification table and all parent fields
-	joins := []string{fmt.Sprintf("JOIN Specification spec ON %s.id = spec.%s", tableName, tableFieldName)}
-	joins = append(joins, "JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id")
-	args := []interface{}{}
-
-	// Add JOINs for parent fields
-	for _, parentField := range parentFields {
-		parentDef, exists := GetFieldDefinition(parentField.Name)
-		if !exists {
-			continue
-		}
-		parentTableName := parentDef.TableName
-		parentTableFieldName := parentDef.TableFieldName
-		joins = append(joins, fmt.Sprintf("JOIN %s ON spec.%s = %s.id", parentTableName, parentTableFieldName, parentTableName))
+	// Build queries for each AdSpec* table using UNION ALL
+	adSpecTables := []struct {
+		adSpecTable string
+		specTable   string
+		idColumn    string
+	}{
+		{"AdSpecVehicle", "SpecVehicle", "spec_vehicle_id"},
+		{"AdSpecAgricultural", "SpecAgricultural", "spec_agricultural_id"},
+		{"AdSpecBicycle", "SpecBicycle", "spec_bicycle_id"},
+		{"AdSpecPart", "SpecPart", "spec_part_id"},
 	}
 
-	// Build WHERE clause with parent filters
-	whereConditions := []string{}
-	paramNum := 1
-	for _, parentField := range parentFields {
-		parentDef, exists := GetFieldDefinition(parentField.Name)
-		if !exists {
-			continue
-		}
-		parentValue, exists := parentValues[parentField.Name]
-		if !exists {
-			continue
-		}
+	var unionQueries []string
+	var allArgs []interface{}
 
-		parentTableName := parentDef.TableName
-		if parentDef.FieldType == "int" {
-			// For integer fields, compare the integer value
-			intValue, err := strconv.Atoi(parentValue)
-			if err != nil {
+	// Build placeholders for ad IDs
+	adIDPlaceholders := make([]string, len(adIDs))
+	for i := range adIDs {
+		adIDPlaceholders[i] = fmt.Sprintf("$%d", len(allArgs)+1)
+		allArgs = append(allArgs, adIDs[i])
+	}
+
+	for _, adSpecTable := range adSpecTables {
+		var joins []string
+		var whereConditions []string
+
+		// Join to spec table
+		joins = append(joins, fmt.Sprintf("JOIN %s spec ON %s_ad.%s = spec.id",
+			adSpecTable.specTable, adSpecTable.specTable, adSpecTable.idColumn))
+		joins = append(joins, fmt.Sprintf("JOIN %s %s_ad ON %s_ad.ad_id IN (%s)",
+			adSpecTable.adSpecTable, adSpecTable.specTable, adSpecTable.specTable, strings.Join(adIDPlaceholders, ",")))
+
+		// Add JOINs for parent fields
+		for _, parentField := range parentFields {
+			parentDef, exists := GetFieldDefinition(parentField.Name)
+			if !exists {
 				continue
 			}
-			whereConditions = append(whereConditions, fmt.Sprintf("%s.%s = $%d", parentTableName, parentDef.ValueColumnName, paramNum))
-			args = append(args, intValue)
-			paramNum++
-		} else {
-			// For string fields, compare the value column
-			whereConditions = append(whereConditions, fmt.Sprintf("%s.%s = $%d", parentTableName, parentDef.ValueColumnName, paramNum))
-			args = append(args, parentValue)
-			paramNum++
+			parentTableName := parentDef.TableName
+			parentTableFieldName := parentDef.TableFieldName
+			joins = append(joins, fmt.Sprintf("JOIN %s ON spec.%s = %s.id",
+				parentTableName, parentTableFieldName, parentTableName))
 		}
-	}
 
-	// Add ad ID filter
-	placeholders := make([]string, len(adIDs))
-	for i := range adIDs {
-		placeholders[i] = fmt.Sprintf("$%d", paramNum+i)
-	}
-	whereConditions = append(whereConditions, fmt.Sprintf("ad_spec.ad_id IN (%s)", strings.Join(placeholders, ",")))
-	for _, id := range adIDs {
-		args = append(args, id)
+		// Build WHERE clause with parent filters
+		paramNum := len(allArgs) + 1
+		for _, parentField := range parentFields {
+			parentDef, exists := GetFieldDefinition(parentField.Name)
+			if !exists {
+				continue
+			}
+			parentValue, exists := parentValues[parentField.Name]
+			if !exists {
+				continue
+			}
+
+			parentTableName := parentDef.TableName
+			if parentDef.FieldType == "int" {
+				intValue, err := strconv.Atoi(parentValue)
+				if err != nil {
+					continue
+				}
+				whereConditions = append(whereConditions, fmt.Sprintf("%s.%s = $%d", parentTableName, parentDef.ValueColumnName, paramNum))
+				allArgs = append(allArgs, intValue)
+				paramNum++
+			} else {
+				whereConditions = append(whereConditions, fmt.Sprintf("%s.%s = $%d", parentTableName, parentDef.ValueColumnName, paramNum))
+				allArgs = append(allArgs, parentValue)
+				paramNum++
+			}
+		}
+
+		// Build query for this spec type
+		query := fmt.Sprintf("%s %s", selectClause, strings.Join(joins, " "))
+		if len(whereConditions) > 0 {
+			query += " WHERE " + strings.Join(whereConditions, " AND ")
+		}
+		unionQueries = append(unionQueries, query)
 	}
 
 	// Build ORDER BY clause
@@ -428,18 +508,14 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 		orderBy = fmt.Sprintf("ORDER BY %s.%s", tableName, fieldDef.ValueColumnName)
 	}
 
-	// Build final query
-	query := fmt.Sprintf("%s %s", selectClause, strings.Join(joins, " "))
-	if len(whereConditions) > 0 {
-		query += " WHERE " + strings.Join(whereConditions, " AND ")
-	}
-	query += " " + orderBy
+	// Combine with UNION ALL
+	query := fmt.Sprintf("%s %s", strings.Join(unionQueries, " UNION ALL "), orderBy)
 
 	// Execute query
 	var results []string
 	if fieldDef.FieldType == "int" {
 		var intResults []int
-		err := db.Select(&intResults, query, args...)
+		err := db.Select(&intResults, query, allArgs...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to query field values: %w", err)
 		}
@@ -448,7 +524,7 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 			results = append(results, fmt.Sprintf("%d", val))
 		}
 	} else {
-		err := db.Select(&results, query, args...)
+		err := db.Select(&results, query, allArgs...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to query field values: %w", err)
 		}

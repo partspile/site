@@ -41,6 +41,7 @@ RUN apt-get update && \
     strace \
     postgresql-client \
     ca-certificates \
+    ufw \
     rsyslog \
     sudo && \
     rm -rf /var/lib/apt/lists/*
@@ -69,6 +70,9 @@ RUN mkdir -p /workspace/rebuild_db
 COPY --from=go-builder /build/cmd/rebuild_db/*.json /workspace/rebuild_db/
 COPY --from=go-builder /build/schema.sql /workspace/schema.sql
 
+# Set environment variable for rebuild_db data directory
+ENV REBUILD_DB_DATA_DIR=/workspace/rebuild_db
+
 # Create non-root jump user with sudo
 RUN useradd -m -s /bin/bash jump && \
     echo "jump ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
@@ -78,6 +82,12 @@ RUN useradd -m -s /bin/bash jump && \
 
 # Create SSH directory for root
 RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
+
+# Configure firewall (allow SSH only)
+RUN ufw default deny incoming && \
+    ufw default allow outgoing && \
+    ufw allow 22/tcp && \
+    echo "y" | ufw enable || true
 
 # Set up command logging/auditing
 RUN printf '#!/bin/bash\n\

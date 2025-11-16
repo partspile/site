@@ -12,11 +12,6 @@ import (
 	"github.com/parts-pile/site/logger"
 )
 
-type ParentCompanyInfo struct {
-	Name    string
-	Country string
-}
-
 var specCache *cache.Cache[[]string]
 
 func InitSpecCache() error {
@@ -633,28 +628,6 @@ func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, 
 	return engines, nil
 }
 
-// GetParentCompanyInfoForMake returns the parent company information for a given make
-func GetParentCompanyInfoForMake(makeName string) (*ParentCompanyInfo, error) {
-	rows, err := db.Query(`
-		SELECT pc.name, pc.country
-		FROM ParentCompany pc
-		JOIN Make m ON pc.id = m.parent_company_id
-		WHERE m.name = $1
-	`, makeName)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	if rows.Next() {
-		var pcInfo ParentCompanyInfo
-		if err := rows.Scan(&pcInfo.Name, &pcInfo.Country); err != nil {
-			return nil, err
-		}
-		return &pcInfo, nil
-	}
-	return nil, nil
-}
 
 // GetCacheStats returns cache statistics for admin monitoring
 func GetCacheStats() map[string]any {

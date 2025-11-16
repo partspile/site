@@ -106,7 +106,10 @@ func buildAdEmbeddingPrompt(adObj ad.AdDetail) string {
 	promptParts = append(promptParts, `Encode the following ad for semantic search. Focus on
 title and description, what the part is, what vehicles it fits, where
 the part is located, the price, how many rocks have been thown, and any
-relevant details for a buyer. Return only the embedding vector.
+relevant details for a buyer. When considering vehicle makes, consider the
+parent company and country of origin of the make, as well as sibling makes.
+For example, Ford and Mercury are related by both being under Ford Motor Company.
+Return only the embedding vector.
 
 Title: `+adObj.Title+`
 Description: `+adObj.Description)
