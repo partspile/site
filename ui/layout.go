@@ -83,3 +83,11 @@ func Page(title string, userID int, userName string, currentPath string, csrfTok
 func pageHeader(text string) g.Node {
 	return H1(Class("text-4xl font-bold mb-8"), g.Text(text))
 }
+
+func pageHeaderWithSubtitle(title string, subtitle string) g.Node {
+	return Div(
+		Class("mb-8"),
+		H1(Class("text-4xl font-bold"), g.Text(title)),
+		g.If(subtitle != "", P(Class("text-lg text-gray-600 mt-2"), g.Text(subtitle))),
+	)
+}

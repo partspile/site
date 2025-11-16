@@ -861,11 +861,24 @@ func importSpecs(specFile string, partFile string, categoryID int) (SpecLookupMa
 		return result, fmt.Errorf("no chains found for category %d", categoryID)
 	}
 
-	// Find the first chain (lowest order) and part_category chain
+	// Find the first chain (lowest order) that has database tables and part_category chain
+	// Filter out chains that don't have any fields with TableName (like location, price)
 	var firstChain []FieldConfig
 	var partChain []FieldConfig
 	minOrder := -1
 	for order, chain := range allChains {
+		// Only consider chains that have at least one field with a TableName
+		hasTableFields := false
+		for _, field := range chain {
+			if field.TableName != "" {
+				hasTableFields = true
+				break
+			}
+		}
+		if !hasTableFields {
+			continue // Skip chains without database table fields
+		}
+		
 		if minOrder == -1 || order < minOrder {
 			minOrder = order
 			firstChain = chain
@@ -878,6 +891,16 @@ func importSpecs(specFile string, partFile string, categoryID int) (SpecLookupMa
 	if len(firstChain) == 0 {
 		return result, fmt.Errorf("no first chain found for category %d", categoryID)
 	}
+
+	// Filter firstChain to only include fields with TableName (for spec import)
+	// This ensures we only validate against fields that are in the spec files
+	filteredFirstChain := make([]spec.FieldConfig, 0, len(firstChain))
+	for _, field := range firstChain {
+		if field.TableName != "" {
+			filteredFirstChain = append(filteredFirstChain, field)
+		}
+	}
+	firstChain = filteredFirstChain
 
 	logger.Info("Found chains for category", "categoryID", categoryID, "firstChain", len(firstChain), "partChain", len(partChain), "partFile", partFile)
 
@@ -1179,11 +1202,24 @@ func importAds(jsonFile string, categoryID int, categoryMap map[string]int, user
 		return fmt.Errorf("no chains found for category %d", categoryID)
 	}
 
-	// Find the first chain (lowest order) and part_category chain
+	// Find the first chain (lowest order) that has database tables and part_category chain
+	// Filter out chains that don't have any fields with TableName (like location, price)
 	var firstChain []FieldConfig
 	var partChain []FieldConfig
 	minOrder := -1
 	for order, chain := range allChains {
+		// Only consider chains that have at least one field with a TableName
+		hasTableFields := false
+		for _, field := range chain {
+			if field.TableName != "" {
+				hasTableFields = true
+				break
+			}
+		}
+		if !hasTableFields {
+			continue // Skip chains without database table fields
+		}
+		
 		if minOrder == -1 || order < minOrder {
 			minOrder = order
 			firstChain = chain
@@ -1196,6 +1232,16 @@ func importAds(jsonFile string, categoryID int, categoryMap map[string]int, user
 	if len(firstChain) == 0 {
 		return fmt.Errorf("no first chain found for category %d", categoryID)
 	}
+
+	// Filter firstChain to only include fields with TableName (for ad import)
+	// This ensures we only match against fields that are in the spec lookup maps
+	filteredFirstChain := make([]FieldConfig, 0, len(firstChain))
+	for _, field := range firstChain {
+		if field.TableName != "" {
+			filteredFirstChain = append(filteredFirstChain, field)
+		}
+	}
+	firstChain = filteredFirstChain
 
 	// Get part categories and subcategories
 	partCategoryMap := make(map[string]int)

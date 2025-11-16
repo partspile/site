@@ -43,7 +43,6 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
 	)
 
 	categoryName := ad.GetCategoryName(adCat)
-	headerText := fmt.Sprintf("Create New %s Ad", categoryName)
 
 	return Page(
 		"New Ad - Parts Pile",
@@ -52,7 +51,7 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
 		path,
 		csrfToken,
 		[]g.Node{
-			pageHeader(headerText),
+			pageHeaderWithSubtitle("Create New Ad", categoryName),
 			Form(
 				ID("newAdForm"),
 				Class("space-y-6"),
