@@ -53,9 +53,9 @@ func resolveAndStoreLocation(raw string) (int, error) {
 	return 0, err
 }
 
-// resolveLocationForFilter resolves a location text to lat/lon coordinates
+// ResolveLocation resolves a location text to lat/lon coordinates
 // Uses the common resolveAndStoreLocation function, then retrieves coordinates
-func resolveLocationForFilter(locationText string) (latitude, longitude float64, err error) {
+func ResolveLocation(locationText string) (latitude, longitude float64, err error) {
 	if locationText == "" {
 		return 0, 0, fmt.Errorf("empty location text")
 	}

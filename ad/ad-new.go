@@ -136,7 +136,13 @@ func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int,
 // addFieldAssociations handles spec associations dynamically based on category field configuration
 func addFieldAssociations(tx *sql.Tx, ad AdDetail) error {
 	// Get category fields
-	fieldConfigs := spec.GetCategoryFields(ad.AdCategoryID)
+	fields := spec.GetCategoryFields(ad.AdCategoryID)
+
+	// Convert Fields to FieldConfigs
+	fieldConfigs := make([]spec.FieldConfig, len(fields))
+	for i, field := range fields {
+		fieldConfigs[i] = field.Config()
+	}
 
 	// Extract single-value fields from AdDetail.SpecData for spec lookup
 	fieldValueMap := buildFieldValueMap(ad, fieldConfigs)

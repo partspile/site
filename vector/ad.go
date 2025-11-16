@@ -82,7 +82,7 @@ func BuildAdEmbeddings(ads []ad.AdDetail) error {
 // buildAdEmbeddingPrompt creates a prompt for generating embeddings
 func buildAdEmbeddingPrompt(adObj ad.AdDetail) string {
 	// Get category fields to determine which fields to include
-	fieldConfigs := spec.GetCategoryFields(adObj.AdCategoryID)
+	fields := spec.GetCategoryFields(adObj.AdCategoryID)
 
 	// Get rock count for this ad
 	rockCount := 0
@@ -115,13 +115,14 @@ Title: `+adObj.Title+`
 Description: `+adObj.Description)
 
 	// Add spec fields dynamically - each field generates its own snippet
-	for _, fieldConfig := range fieldConfigs {
+	for _, field := range fields {
+		fieldConfig := field.Config()
 		fieldValues, exists := adObj.SpecData[fieldConfig.Name]
 		if !exists {
 			continue
 		}
 
-		snippet := spec.BuildFieldPromptSnippet(fieldConfig, fieldValues)
+		snippet := spec.BuildFieldPromptSnippet(field, fieldValues)
 		if snippet != "" {
 			promptParts = append(promptParts, snippet)
 		}
@@ -163,12 +164,14 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 	}
 
 	// Get category fields to determine which fields to include
-	fieldConfigs := spec.GetCategoryFields(adObj.AdCategoryID)
+	fields := spec.GetCategoryFields(adObj.AdCategoryID)
 
 	// Add spec fields dynamically based on category configuration
-	for _, fieldConfig := range fieldConfigs {
+	for _, field := range fields {
+		config := field.Config()
+		fieldName := config.Name
 		// Extract value from SpecData
-		fieldValues, exists := adObj.SpecData[fieldConfig.Name]
+		fieldValues, exists := adObj.SpecData[fieldName]
 		if !exists || len(fieldValues) == 0 {
 			continue
 		}
@@ -184,13 +187,13 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 			continue
 		}
 
-		// Add to metadata based on field type - use fieldConfig.Name directly
-		if fieldConfig.FieldMultiValue {
+		// Add to metadata based on field type - use fieldName directly
+		if config.FieldMultiValue {
 			// Multi-value field - store as array
-			metadata[fieldConfig.Name] = nonEmptyValues
+			metadata[fieldName] = nonEmptyValues
 		} else {
 			// Single-value field - store as string
-			metadata[fieldConfig.Name] = nonEmptyValues[0]
+			metadata[fieldName] = nonEmptyValues[0]
 		}
 	}
 

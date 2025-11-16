@@ -93,7 +93,8 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 
 	if level < len(fieldConfigs) {
 		// This is a spec field level
-		fieldConfig := fieldConfigs[level]
+		field := fieldConfigs[level]
+		fieldConfig := field.Config()
 		parentValues := buildParentValuesFromPath(parts, fieldConfigs, level)
 
 		// Get field values dynamically
@@ -137,10 +138,10 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 }
 
 // buildParentValuesFromPath builds parent field values from path parts
-func buildParentValuesFromPath(parts []string, fieldConfigs []spec.FieldConfig, currentLevel int) map[string]string {
+func buildParentValuesFromPath(parts []string, fields []spec.Field, currentLevel int) map[string]string {
 	parentValues := make(map[string]string)
-	for i := 0; i < currentLevel && i < len(parts) && i < len(fieldConfigs); i++ {
-		fieldConfig := fieldConfigs[i]
+	for i := 0; i < currentLevel && i < len(parts) && i < len(fields); i++ {
+		fieldConfig := fields[i].Config()
 		parentValues[fieldConfig.Name] = parts[i]
 	}
 	return parentValues
@@ -184,7 +185,8 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 	// Map level to field index (same as browse mode)
 	if level < len(fieldConfigs) {
 		// This is a spec field level - use generic search mode function
-		fieldConfig := fieldConfigs[level]
+		field := fieldConfigs[level]
+		fieldConfig := field.Config()
 		parentValues := buildParentValuesFromPath(parts, fieldConfigs, level)
 
 		// Use generic function that works with any field

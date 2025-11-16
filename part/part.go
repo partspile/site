@@ -153,23 +153,24 @@ func buildAdCategoriesQuery(adCat int, fieldValues map[string]string) (string, [
 	args = append(args, adCat)
 
 	// Add JOINs and WHERE clauses for each spec field (excluding part_category and part_subcategory)
-	for _, fieldConfig := range fieldConfigs {
+	for _, field := range fieldConfigs {
+		config := field.Config()
 		// Skip part_category and part_subcategory - they're handled separately
-		if fieldConfig.Name == "part_category" || fieldConfig.Name == "part_subcategory" {
+		if config.Name == "part_category" || config.Name == "part_subcategory" {
 			continue
 		}
 
-		value, hasValue := fieldValues[fieldConfig.Name]
+		value, hasValue := fieldValues[config.Name]
 		if !hasValue || value == "" {
 			continue
 		}
 
-		tableName := fieldConfig.TableName
-		tableFieldName := fieldConfig.TableFieldName
+		tableName := config.TableName
+		tableFieldName := config.TableFieldName
 		joins = append(joins, fmt.Sprintf("JOIN %s ON spec.%s = %s.id",
 			tableName, tableFieldName, tableName))
 
-		if fieldConfig.FieldType == "int" {
+		if config.FieldType == "int" {
 			// For integer fields, convert string to int
 			intValue, err := strconv.Atoi(value)
 			if err == nil {
@@ -219,23 +220,24 @@ func buildAdSubCategoriesQuery(adCat int, fieldValues map[string]string, categor
 	args = append(args, adCat)
 
 	// Add JOINs and WHERE clauses for each spec field (excluding part_category and part_subcategory)
-	for _, fieldConfig := range fieldConfigs {
+	for _, field := range fieldConfigs {
+		config := field.Config()
 		// Skip part_category and part_subcategory - they're handled separately
-		if fieldConfig.Name == "part_category" || fieldConfig.Name == "part_subcategory" {
+		if config.Name == "part_category" || config.Name == "part_subcategory" {
 			continue
 		}
 
-		value, hasValue := fieldValues[fieldConfig.Name]
+		value, hasValue := fieldValues[config.Name]
 		if !hasValue || value == "" {
 			continue
 		}
 
-		tableName := fieldConfig.TableName
-		tableFieldName := fieldConfig.TableFieldName
+		tableName := config.TableName
+		tableFieldName := config.TableFieldName
 		joins = append(joins, fmt.Sprintf("JOIN %s ON spec.%s = %s.id",
 			tableName, tableFieldName, tableName))
 
-		if fieldConfig.FieldType == "int" {
+		if config.FieldType == "int" {
 			// For integer fields, convert string to int
 			intValue, err := strconv.Atoi(value)
 			if err == nil {

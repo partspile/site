@@ -4,42 +4,42 @@
     "spec_file": "spec-car.json",
     "part_file": "",
     "ad_file": "ad-car.json",
-    "field_names": ["*make->", "*year->", "model->", "engine"]
+    "field_names": ["*location", "*make->", "*year->", "model->", "engine", "*price"]
   },
   {
     "name": "Car & Truck Parts",
     "spec_file": "spec-car.json",
     "part_file": "part-car.json",
     "ad_file": "ad-car-part.json",
-    "field_names": ["*make->", "*year->", "model->", "engine", "*part_category->", "part_subcategory"]
+    "field_names": ["*location", "*make->", "*year->", "model->", "engine", "*part_category->", "part_subcategory", "*price"]
   },
   {
     "name": "Motorcycles",
     "spec_file": "spec-motorcycle.json",
     "part_file": "",
     "ad_file": "ad-motorcycle.json",
-    "field_names": ["*make->", "*year->", "model->", "engine"]
+    "field_names": ["*location", "*make->", "*year->", "model->", "engine", "*price"]
   },
   {
     "name": "Motorcycle Parts",
     "spec_file": "spec-motorcycle.json",
     "part_file": "part-motorcycle.json",
     "ad_file": "ad-motorcycle-part.json",
-    "field_names": ["*make->", "*year->", "model->", "engine", "*part_category->", "part_subcategory"]
+    "field_names": ["*location", "*make->", "*year->", "model->", "engine", "*part_category->", "part_subcategory", "*price"]
   },
   {
     "name": "Bicycles",
     "spec_file": "spec-bicycle.json",
     "part_file": "",
     "ad_file": "ad-bicycle.json",
-    "field_names": ["*make->", "model"]
+    "field_names": ["*location", "*make->", "model", "*price"]
   },
   {
     "name": "Bicycle Parts",
     "spec_file": "spec-bicycle.json",
     "part_file": "part-bicycle.json",
     "ad_file": "ad-bicycle-part.json",
-    "field_names": ["*make->", "model", "*part_category->", "part_subcategory"]
+    "field_names": ["*location", "*make->", "model", "*part_category->", "part_subcategory", "*price"]
   },
   {
     "name": "Agricultural Equipment",
@@ -53,7 +53,7 @@
     "spec_file": "spec-agricultural.json",
     "part_file": "part-agricultural.json",
     "ad_file": "ad-agricultural-part.json",
-    "field_names": ["*make->", "*year->", "model", "*part_category->", "part_subcategory"]
+    "field_names": ["*location", "*make->", "*year->", "model", "*part_category->", "part_subcategory", "*price"]
   }
 ]
 

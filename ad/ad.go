@@ -57,15 +57,16 @@ func (a Ad) IsArchived() bool {
 
 // populateSpecData fills in the spec data for the ad dynamically based on category fields
 func populateSpecData(adDetail *AdDetail) error {
-	// Initialize SpecData map
 	adDetail.SpecData = make(map[string][]string)
 
-	// Get category fields to determine which fields to query
-	fieldConfigs := spec.GetCategoryFields(adDetail.AdCategoryID)
+	fields := spec.GetDBFields(adDetail.AdCategoryID)
 
 	// Build field names for SELECT clause
 	var fieldNames []string
-	for _, fieldConfig := range fieldConfigs {
+	var fieldConfigs []spec.FieldConfig
+	for _, field := range fields {
+		fieldConfig := field.Config()
+		fieldConfigs = append(fieldConfigs, fieldConfig)
 		fieldNames = append(fieldNames, fieldConfig.Name)
 	}
 
@@ -339,7 +340,7 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 
 	adDetail := &adDetails[0]
 
-	// Populate spec data
+	// Populate spec data (populateSpecData always initializes SpecData to non-nil)
 	err = populateSpecData(adDetail)
 	if err != nil {
 		return nil, fmt.Errorf("failed to populate spec data: %w", err)

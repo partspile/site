@@ -54,6 +54,22 @@
     "table_name": "Breed",
     "table_field_name": "breed_id",
     "qdrant_type": "keyword"
+  },
+  {
+    "name": "location",
+    "display_name": "Location",
+    "field_type": "string",
+    "table_name": "",
+    "table_field_name": "",
+    "qdrant_type": "geo"
+  },
+  {
+    "name": "price",
+    "display_name": "Price",
+    "field_type": "float64",
+    "table_name": "",
+    "table_field_name": "",
+    "qdrant_type": "float"
   }
 ]
 
