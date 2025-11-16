@@ -61,12 +61,12 @@ func GetCategories(adCat int) []string {
 // Now uses the new schema where PartSubCategory has ad_category_id directly
 func getSubCategories(adCat int, category string) ([]string, error) {
 	query := `
-		SELECT psc.name 
+		SELECT psc.value 
 		FROM PartSubCategory psc
 		JOIN Specification spec ON spec.part_subcategory_id = psc.id
 		JOIN PartCategory pc ON spec.part_category_id = pc.id
-		WHERE pc.name = $1 AND psc.ad_category_id = $2 AND spec.ad_category_id = $3
-		ORDER BY psc.name
+		WHERE pc.value = $1 AND psc.ad_category_id = $2 AND spec.ad_category_id = $3
+		ORDER BY psc.value
 	`
 	var names []string
 	err := db.Select(&names, query, category, adCat, adCat)
@@ -137,7 +137,7 @@ func buildAdCategoriesQuery(adCat int, fieldValues map[string]string) (string, [
 
 	// Build base query - now PartCategory is joined via Specification
 	baseQuery := `
-		SELECT DISTINCT pc.name
+		SELECT DISTINCT pc.value
 		FROM PartCategory pc
 		JOIN Specification spec ON spec.part_category_id = pc.id
 		JOIN PartSubCategory psc ON spec.part_subcategory_id = psc.id
@@ -174,13 +174,13 @@ func buildAdCategoriesQuery(adCat int, fieldValues map[string]string) (string, [
 			intValue, err := strconv.Atoi(value)
 			if err == nil {
 				whereClauses = append(whereClauses,
-					fmt.Sprintf("%s.%s = $%d", tableName, fieldConfig.ValueColumnName, len(args)+1))
+					fmt.Sprintf("%s.value = $%d", tableName, len(args)+1))
 				args = append(args, intValue)
 			}
 		} else {
 			// For string fields, compare with value column
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.%s = $%d", tableName, fieldConfig.ValueColumnName, len(args)+1))
+				fmt.Sprintf("%s.value = $%d", tableName, len(args)+1))
 			args = append(args, value)
 		}
 	}
@@ -191,7 +191,7 @@ func buildAdCategoriesQuery(adCat int, fieldValues map[string]string) (string, [
 		query += " " + strings.Join(joins, " ")
 	}
 	query += " WHERE " + strings.Join(whereClauses, " AND ")
-	query += " ORDER BY pc.name"
+	query += " ORDER BY pc.value"
 
 	return query, args
 }
@@ -203,7 +203,7 @@ func buildAdSubCategoriesQuery(adCat int, fieldValues map[string]string, categor
 
 	// Build base query - now PartSubCategory has ad_category_id directly
 	baseQuery := `
-		SELECT DISTINCT psc.name
+		SELECT DISTINCT psc.value
 		FROM PartSubCategory psc
 		JOIN Specification spec ON spec.part_subcategory_id = psc.id
 		JOIN PartCategory pc ON spec.part_category_id = pc.id
@@ -240,19 +240,19 @@ func buildAdSubCategoriesQuery(adCat int, fieldValues map[string]string, categor
 			intValue, err := strconv.Atoi(value)
 			if err == nil {
 				whereClauses = append(whereClauses,
-					fmt.Sprintf("%s.%s = $%d", tableName, fieldConfig.ValueColumnName, len(args)+1))
+					fmt.Sprintf("%s.value = $%d", tableName, len(args)+1))
 				args = append(args, intValue)
 			}
 		} else {
 			// For string fields, compare with value column
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.%s = $%d", tableName, fieldConfig.ValueColumnName, len(args)+1))
+				fmt.Sprintf("%s.value = $%d", tableName, len(args)+1))
 			args = append(args, value)
 		}
 	}
 
 	// Add part category filter
-	whereClauses = append(whereClauses, fmt.Sprintf("pc.name = $%d", len(args)+1))
+	whereClauses = append(whereClauses, fmt.Sprintf("pc.value = $%d", len(args)+1))
 	args = append(args, category)
 
 	// Build final query
@@ -261,7 +261,7 @@ func buildAdSubCategoriesQuery(adCat int, fieldValues map[string]string, categor
 		query += " " + strings.Join(joins, " ")
 	}
 	query += " WHERE " + strings.Join(whereClauses, " AND ")
-	query += " ORDER BY psc.name"
+	query += " ORDER BY psc.value"
 
 	return query, args
 }
@@ -372,8 +372,8 @@ func GetCategoriesForAds(adIDs []int, fieldValues map[string]string) ([]string, 
 		placeholders[i] = fmt.Sprintf("$%d", len(baseArgs)+i+1)
 	}
 
-	query := strings.Replace(baseQuery, "ORDER BY pc.name",
-		fmt.Sprintf("AND a.id IN (%s) ORDER BY pc.name", strings.Join(placeholders, ",")), 1)
+	query := strings.Replace(baseQuery, "ORDER BY pc.value",
+		fmt.Sprintf("AND a.id IN (%s) ORDER BY pc.value", strings.Join(placeholders, ",")), 1)
 
 	args := append(baseArgs, make([]interface{}, len(adIDs))...)
 	for i, id := range adIDs {
@@ -418,8 +418,8 @@ func GetSubCategoriesForAds(adIDs []int, fieldValues map[string]string, category
 		placeholders[i] = fmt.Sprintf("$%d", len(baseArgs)+i+1)
 	}
 
-	query := strings.Replace(baseQuery, "ORDER BY psc.name",
-		fmt.Sprintf("AND a.id IN (%s) ORDER BY psc.name", strings.Join(placeholders, ",")), 1)
+	query := strings.Replace(baseQuery, "ORDER BY psc.value",
+		fmt.Sprintf("AND a.id IN (%s) ORDER BY psc.value", strings.Join(placeholders, ",")), 1)
 
 	args := append(baseArgs, make([]interface{}, len(adIDs))...)
 	for i, id := range adIDs {

@@ -18,7 +18,6 @@ type FieldConfig struct {
 	FieldType       string // 'string', 'int', 'float64'
 	TableName       string // Always required - table name (e.g., 'Make', 'Year', 'Model')
 	TableFieldName  string // Column name in Specification table (e.g., 'make_id', 'year_id')
-	ValueColumnName string // Column name in the foreign table for the value (e.g., 'name', 'year')
 	QdrantType      string // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
 	FieldMultiValue bool   // Whether this field can have multiple values
 	IsRequired      bool
@@ -65,20 +64,19 @@ func InitFieldCache() error {
 // loadFieldDefinitions loads all SpecificationField records from database
 func loadFieldDefinitions() (map[string]FieldConfig, error) {
 	query := `
-		SELECT id, name, display_name, field_type, table_name, table_field_name, value_column_name, qdrant_type
+		SELECT id, name, display_name, field_type, table_name, table_field_name, qdrant_type
 		FROM SpecificationField
 		ORDER BY id
 	`
 
 	type dbField struct {
-		ID              int    `db:"id"`
-		Name            string `db:"name"`
-		DisplayName     string `db:"display_name"`
-		FieldType       string `db:"field_type"`
-		TableName       string `db:"table_name"`
-		TableFieldName  string `db:"table_field_name"`
-		ValueColumnName string `db:"value_column_name"`
-		QdrantType      string `db:"qdrant_type"`
+		ID             int    `db:"id"`
+		Name           string `db:"name"`
+		DisplayName    string `db:"display_name"`
+		FieldType      string `db:"field_type"`
+		TableName      string `db:"table_name"`
+		TableFieldName string `db:"table_field_name"`
+		QdrantType     string `db:"qdrant_type"`
 	}
 
 	var dbFields []dbField
@@ -96,7 +94,6 @@ func loadFieldDefinitions() (map[string]FieldConfig, error) {
 			FieldType:       f.FieldType,
 			TableName:       f.TableName,
 			TableFieldName:  f.TableFieldName,
-			ValueColumnName: f.ValueColumnName,
 			QdrantType:      f.QdrantType,
 			FieldMultiValue: f.QdrantType == "keyword_array",
 		}

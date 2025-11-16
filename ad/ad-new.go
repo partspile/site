@@ -103,7 +103,7 @@ func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int,
 			tableName, tableFieldName, tableName))
 
 		whereClauses = append(whereClauses,
-			fmt.Sprintf("%s.%s = $%d", tableName, fieldConfig.ValueColumnName, len(args)+1))
+			fmt.Sprintf("%s.value = $%d", tableName, len(args)+1))
 
 		if fieldConfig.FieldType == "int" {
 			intValue, err := strconv.Atoi(value)

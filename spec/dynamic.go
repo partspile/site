@@ -38,16 +38,6 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 	tableName := fieldDef.TableName
 	tableFieldName := fieldDef.TableFieldName
 
-	// Determine SELECT clause based on field type
-	var selectClause string
-	if fieldDef.FieldType == "int" {
-		// For integer fields, select the integer value directly
-		selectClause = fmt.Sprintf("SELECT DISTINCT %s.%s FROM %s", tableName, fieldDef.ValueColumnName, tableName)
-	} else {
-		// For string fields, select the value column
-		selectClause = fmt.Sprintf("SELECT DISTINCT %s.%s FROM %s", tableName, fieldDef.ValueColumnName, tableName)
-	}
-
 	// Determine which spec table(s) to query from based on the field's chain
 	// Get all chains to find which one contains this field
 	allChains, err := GetAllChains(adCategoryID)
@@ -77,8 +67,12 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 	specType := GetSpecTypeFromChain(targetChain)
 	specTableName := GetSpecTableName(specType)
 
+	// Use table alias for cleaner queries
+	// All fields use the same value column
+	selectClause := fmt.Sprintf("SELECT DISTINCT t.value FROM %s t", tableName)
+
 	// Build JOINs for the appropriate spec table and all parent fields
-	joins := []string{fmt.Sprintf("JOIN %s spec ON %s.id = spec.%s", specTableName, tableName, tableFieldName)}
+	joins := []string{fmt.Sprintf("JOIN %s spec ON t.id = spec.%s", specTableName, tableFieldName)}
 	args := []interface{}{}
 
 	// Add JOINs for parent fields
@@ -99,7 +93,7 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 	// Build WHERE clause
 	whereClauses := []string{
 		fmt.Sprintf("spec.ad_category_id = $%d", len(args)+1),
-		fmt.Sprintf("%s.ad_category_id = $%d", tableName, len(args)+2),
+		fmt.Sprintf("t.ad_category_id = $%d", len(args)+2),
 	}
 	args = append(args, adCategoryID, adCategoryID)
 
@@ -123,12 +117,12 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 				continue
 			}
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.%s = $%d", parentTableName, parentDef.ValueColumnName, len(args)+1))
+				fmt.Sprintf("%s.value = $%d", parentTableName, len(args)+1))
 			args = append(args, intValue)
 		} else {
 			// For string fields, compare with value column
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.%s = $%d", parentTableName, parentDef.ValueColumnName, len(args)+1))
+				fmt.Sprintf("%s.value = $%d", parentTableName, len(args)+1))
 			args = append(args, parentValue)
 		}
 	}
@@ -137,9 +131,9 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 
 	// Order by clause
 	if fieldDef.FieldType == "int" {
-		query += fmt.Sprintf(" ORDER BY %s.%s DESC", tableName, fieldDef.ValueColumnName)
+		query += " ORDER BY t.value DESC"
 	} else {
-		query += fmt.Sprintf(" ORDER BY %s.%s", tableName, fieldDef.ValueColumnName)
+		query += " ORDER BY t.value"
 	}
 
 	return query, args, nil
@@ -231,38 +225,25 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 		// No parent filters provided - return all values for this field
 		// This happens when loading the first field in a chain
 		// For filters, show all available values from the table, not just those in Specification
-		var selectClause string
-		if fieldDef.FieldType == "int" {
-			selectClause = fmt.Sprintf(`SELECT DISTINCT CAST(%s.%s AS TEXT) FROM %s
-	WHERE %s.ad_category_id = $1`, tableName, fieldDef.ValueColumnName, tableName, tableName)
-		} else {
-			selectClause = fmt.Sprintf(`SELECT DISTINCT %s.%s FROM %s
-	WHERE %s.ad_category_id = $1`, tableName, fieldDef.ValueColumnName, tableName, tableName)
-		}
+		selectClause := fmt.Sprintf(`SELECT DISTINCT t.value FROM %s t
+	WHERE t.ad_category_id = $1`, tableName)
 		query := selectClause
 		args := []interface{}{adCategoryID}
 
 		// Order by clause
 		if fieldDef.FieldType == "int" {
-			query += fmt.Sprintf(" ORDER BY %s.%s DESC", tableName, fieldDef.ValueColumnName)
+			query += " ORDER BY t.value DESC"
 		} else {
-			query += fmt.Sprintf(" ORDER BY %s.%s", tableName, fieldDef.ValueColumnName)
+			query += " ORDER BY t.value"
 		}
 
 		return query, args, nil
 	}
 
-	// Determine SELECT clause - always return as text for consistency
-	var selectClause string
-	if fieldDef.FieldType == "int" {
-		selectClause = fmt.Sprintf(`SELECT DISTINCT CAST(%s.%s AS TEXT) FROM %s
-	WHERE %s.ad_category_id = $1 AND %s.id IN (
-		SELECT spec.%s FROM %s spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableName, tableFieldName, specTableName)
-	} else {
-		selectClause = fmt.Sprintf(`SELECT DISTINCT %s.%s FROM %s
-	WHERE %s.ad_category_id = $1 AND %s.id IN (
-		SELECT spec.%s FROM %s spec`, tableName, fieldDef.ValueColumnName, tableName, tableName, tableName, tableFieldName, specTableName)
-	}
+	// Determine SELECT clause - all fields are TEXT now
+	selectClause := fmt.Sprintf(`SELECT DISTINCT t.value FROM %s t
+	WHERE t.ad_category_id = $1 AND t.id IN (
+		SELECT spec.%s FROM %s spec`, tableName, tableFieldName, specTableName)
 	query := selectClause
 	args := []interface{}{adCategoryID}
 
@@ -308,7 +289,7 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 			}
 			if len(intValues) > 0 {
 				whereClauses = append(whereClauses,
-					fmt.Sprintf("%s.%s IN (%s)", parentTableName, parentDef.ValueColumnName, strings.Join(placeholders, ",")))
+					fmt.Sprintf("%s.value IN (%s)", parentTableName, strings.Join(placeholders, ",")))
 			}
 		} else {
 			// String fields - use IN clause
@@ -318,7 +299,7 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 				args = append(args, values[i])
 			}
 			whereClauses = append(whereClauses,
-				fmt.Sprintf("%s.%s IN (%s)", parentTableName, parentDef.ValueColumnName, strings.Join(placeholders, ",")))
+				fmt.Sprintf("%s.value IN (%s)", parentTableName, strings.Join(placeholders, ",")))
 		}
 	}
 
@@ -351,9 +332,9 @@ func BuildFieldQueryWithIntersection(adCategoryID int, fieldDef FieldConfig, par
 	query += `)`
 	// Order by the original value (before casting) for proper sorting
 	if fieldDef.FieldType == "int" {
-		query += fmt.Sprintf(" ORDER BY %s.%s DESC", tableName, fieldDef.ValueColumnName)
+		query += " ORDER BY t.value DESC"
 	} else {
-		query += fmt.Sprintf(" ORDER BY %s.%s", tableName, fieldDef.ValueColumnName)
+		query += " ORDER BY t.value"
 	}
 
 	return query, args, nil
@@ -410,15 +391,8 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 	// Unified query building - all fields work the same way
 	tableName := fieldDef.TableName
 
-	// Determine SELECT clause based on field type
-	var selectClause string
-	if fieldDef.FieldType == "int" {
-		// For integer fields, select the integer value directly
-		selectClause = fmt.Sprintf("SELECT DISTINCT %s.%s FROM %s", tableName, fieldDef.ValueColumnName, tableName)
-	} else {
-		// For string fields, select the value column
-		selectClause = fmt.Sprintf("SELECT DISTINCT %s.%s FROM %s", tableName, fieldDef.ValueColumnName, tableName)
-	}
+	// All fields use the same value column - use table alias for simplicity
+	selectClause := fmt.Sprintf("SELECT DISTINCT t.value FROM %s t", tableName)
 
 	// Build queries for each AdSpec* table using UNION ALL
 	adSpecTables := []struct {
@@ -482,11 +456,11 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 				if err != nil {
 					continue
 				}
-				whereConditions = append(whereConditions, fmt.Sprintf("%s.%s = $%d", parentTableName, parentDef.ValueColumnName, paramNum))
+				whereConditions = append(whereConditions, fmt.Sprintf("%s.value = $%d", parentTableName, paramNum))
 				allArgs = append(allArgs, intValue)
 				paramNum++
 			} else {
-				whereConditions = append(whereConditions, fmt.Sprintf("%s.%s = $%d", parentTableName, parentDef.ValueColumnName, paramNum))
+				whereConditions = append(whereConditions, fmt.Sprintf("%s.value = $%d", parentTableName, paramNum))
 				allArgs = append(allArgs, parentValue)
 				paramNum++
 			}
@@ -503,9 +477,9 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 	// Build ORDER BY clause
 	var orderBy string
 	if fieldDef.FieldType == "int" {
-		orderBy = fmt.Sprintf("ORDER BY %s.%s DESC", tableName, fieldDef.ValueColumnName)
+		orderBy = "ORDER BY t.value DESC"
 	} else {
-		orderBy = fmt.Sprintf("ORDER BY %s.%s", tableName, fieldDef.ValueColumnName)
+		orderBy = "ORDER BY t.value"
 	}
 
 	// Combine with UNION ALL

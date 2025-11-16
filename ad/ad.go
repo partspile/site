@@ -86,14 +86,13 @@ func populateSpecData(adDetail *AdDetail) error {
 		// Use COALESCE to get value from the appropriate spec table
 		if fieldConfig.FieldType == "int" {
 			// For integer fields (like year), use STRING_AGG with CAST (PostgreSQL)
-			valueCol := fieldConfig.ValueColumnName
 			selectParts = append(selectParts,
-				fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT CAST(%s.%s AS TEXT), ','), '') as %s",
-					tableName, valueCol, fieldName))
+				fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT CAST(%s.value AS TEXT), ','), '') as %s",
+					tableName, fieldName))
 		} else {
 			// For string fields, use STRING_AGG for both single and multi-value (PostgreSQL)
 			selectParts = append(selectParts,
-				fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT %s.name, ','), '') as %s",
+				fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT %s.value, ','), '') as %s",
 					tableName, fieldName))
 		}
 		fieldNames = append(fieldNames, fieldName)
@@ -104,7 +103,7 @@ func populateSpecData(adDetail *AdDetail) error {
 	var unionQueries []string
 
 	adSpecTables := []struct {
-		tableName    string
+		tableName     string
 		specTableName string
 		idColumn      string
 	}{

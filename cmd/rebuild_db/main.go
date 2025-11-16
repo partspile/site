@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -302,13 +301,12 @@ func importSpecificationFields(dataBasePath string) (map[string]int, error) {
 	}
 
 	type SpecificationFieldDef struct {
-		Name            string `json:"name"`
-		DisplayName     string `json:"display_name"`
-		FieldType       string `json:"field_type"`
-		TableName       string `json:"table_name"`
-		TableFieldName  string `json:"table_field_name"`
-		ValueColumnName string `json:"value_column_name"`
-		QdrantType      string `json:"qdrant_type"`
+		Name           string `json:"name"`
+		DisplayName    string `json:"display_name"`
+		FieldType      string `json:"field_type"`
+		TableName      string `json:"table_name"`
+		TableFieldName string `json:"table_field_name"`
+		QdrantType     string `json:"qdrant_type"`
 	}
 	var fieldDefinitions []SpecificationFieldDef
 	if err := json.Unmarshal(fieldData, &fieldDefinitions); err != nil {
@@ -318,8 +316,8 @@ func importSpecificationFields(dataBasePath string) (map[string]int, error) {
 	fieldIDMap := make(map[string]int)
 	for _, fieldDef := range fieldDefinitions {
 		var fieldID int
-		err := db.QueryRow(`INSERT INTO SpecificationField (name, display_name, field_type, table_name, table_field_name, value_column_name, qdrant_type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-			fieldDef.Name, fieldDef.DisplayName, fieldDef.FieldType, fieldDef.TableName, fieldDef.TableFieldName, fieldDef.ValueColumnName, fieldDef.QdrantType).Scan(&fieldID)
+		err := db.QueryRow(`INSERT INTO SpecificationField (name, display_name, field_type, table_name, table_field_name, qdrant_type) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+			fieldDef.Name, fieldDef.DisplayName, fieldDef.FieldType, fieldDef.TableName, fieldDef.TableFieldName, fieldDef.QdrantType).Scan(&fieldID)
 		if err != nil {
 			logger.Warn("Failed to insert SpecificationField", "name", fieldDef.Name, "error", err)
 			continue
@@ -644,45 +642,18 @@ func buildFieldTables(categoryID int, fields []FieldConfig, fieldMaps []map[stri
 		var query string
 		var args []interface{}
 
-		// Handle integer fields (like Year) vs string fields
-		if field.FieldType == "int" {
-			// For integer fields, convert string values to integers
-			intValueList := make([]interface{}, 0, len(valueList))
-			for _, val := range valueList {
-				if intVal, err := strconv.Atoi(val.(string)); err == nil {
-					intValueList = append(intValueList, intVal)
-				}
-			}
-			if len(intValueList) > 0 {
-				query = fmt.Sprintf(`SELECT id, %s FROM %s WHERE %s IN (%s) AND ad_category_id=$1`,
-					field.ValueColumnName, field.TableName, field.ValueColumnName, strings.Join(placeholders[:len(intValueList)], ","))
-				args = append([]interface{}{categoryID}, intValueList...)
-				rows, err := db.Query(query, args...)
-				if err == nil {
-					defer rows.Close()
-					for rows.Next() {
-						var id int
-						var value int
-						if rows.Scan(&id, &value) == nil {
-							fieldMap[strconv.Itoa(value)] = id
-						}
-					}
-				}
-			}
-		} else {
-			// For string fields
-			query = fmt.Sprintf(`SELECT id, %s FROM %s WHERE %s IN (%s) AND ad_category_id=$1`,
-				field.ValueColumnName, field.TableName, field.ValueColumnName, strings.Join(placeholders, ","))
-			args = append([]interface{}{categoryID}, valueList...)
-			rows, err := db.Query(query, args...)
-			if err == nil {
-				defer rows.Close()
-				for rows.Next() {
-					var id int
-					var value string
-					if rows.Scan(&id, &value) == nil {
-						fieldMap[value] = id
-					}
+		// All fields are now stored as TEXT, so treat them all as strings
+		query = fmt.Sprintf(`SELECT id, value FROM %s WHERE value IN (%s) AND ad_category_id=$1`,
+			field.TableName, strings.Join(placeholders, ","))
+		args = append([]interface{}{categoryID}, valueList...)
+		rows, err := db.Query(query, args...)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var id int
+				var value string
+				if rows.Scan(&id, &value) == nil {
+					fieldMap[value] = id
 				}
 			}
 		}
@@ -705,58 +676,27 @@ func buildFieldTables(categoryID int, fields []FieldConfig, fieldMaps []map[stri
 			return fmt.Errorf("failed to begin transaction: %w", err)
 		}
 
-		// Handle integer fields (like Year) vs string fields
-		if field.FieldType == "int" {
-			// For integer fields, convert string values to integers
-			values := make([]string, len(missingValues))
-			insertArgs := make([]interface{}, len(missingValues)*2)
-			for j, val := range missingValues {
-				argStart := j*2 + 1
-				values[j] = fmt.Sprintf("($%d, $%d)", argStart, argStart+1)
-				if intVal, err := strconv.Atoi(val); err == nil {
-					insertArgs[j*2] = intVal
-				} else {
-					logger.Warn("Failed to convert year to int", "value", val, "error", err)
-					continue
+		// All fields are now stored as TEXT, so treat them all as strings
+		values := make([]string, len(missingValues))
+		insertArgs := make([]interface{}, len(missingValues)*2)
+		for j, val := range missingValues {
+			argStart := j*2 + 1
+			values[j] = fmt.Sprintf("($%d, $%d)", argStart, argStart+1)
+			insertArgs[j*2] = val
+			insertArgs[j*2+1] = categoryID
+		}
+		insertQuery := fmt.Sprintf(`INSERT INTO %s (value, ad_category_id) VALUES %s RETURNING id, value`,
+			field.TableName, strings.Join(values, ","))
+		insertRows, err := tx.Query(insertQuery, insertArgs...)
+		if err == nil {
+			for insertRows.Next() {
+				var id int
+				var value string
+				if insertRows.Scan(&id, &value) == nil {
+					fieldMap[value] = id
 				}
-				insertArgs[j*2+1] = categoryID
 			}
-			insertQuery := fmt.Sprintf(`INSERT INTO %s (%s, ad_category_id) VALUES %s RETURNING id, %s`,
-				field.TableName, field.ValueColumnName, strings.Join(values, ","), field.ValueColumnName)
-			insertRows, err := tx.Query(insertQuery, insertArgs...)
-			if err == nil {
-				for insertRows.Next() {
-					var id int
-					var value int
-					if insertRows.Scan(&id, &value) == nil {
-						fieldMap[strconv.Itoa(value)] = id
-					}
-				}
-				insertRows.Close()
-			}
-		} else {
-			// For string fields
-			values := make([]string, len(missingValues))
-			insertArgs := make([]interface{}, len(missingValues)*2)
-			for j, val := range missingValues {
-				argStart := j*2 + 1
-				values[j] = fmt.Sprintf("($%d, $%d)", argStart, argStart+1)
-				insertArgs[j*2] = val
-				insertArgs[j*2+1] = categoryID
-			}
-			insertQuery := fmt.Sprintf(`INSERT INTO %s (%s, ad_category_id) VALUES %s RETURNING id, %s`,
-				field.TableName, field.ValueColumnName, strings.Join(values, ","), field.ValueColumnName)
-			insertRows, err := tx.Query(insertQuery, insertArgs...)
-			if err == nil {
-				for insertRows.Next() {
-					var id int
-					var value string
-					if insertRows.Scan(&id, &value) == nil {
-						fieldMap[value] = id
-					}
-				}
-				insertRows.Close()
-			}
+			insertRows.Close()
 		}
 
 		if err := tx.Commit(); err != nil {
@@ -1261,14 +1201,14 @@ func importAds(jsonFile string, categoryID int, categoryMap map[string]int, user
 	partCategoryMap := make(map[string]int)
 	subcategoryMap := make(map[string]int)
 
-	rows, err := db.Query(`SELECT id, name FROM PartCategory WHERE ad_category_id=$1`, categoryID)
+	rows, err := db.Query(`SELECT id, value FROM PartCategory WHERE ad_category_id=$1`, categoryID)
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var id int
-			var name string
-			if err := rows.Scan(&id, &name); err == nil {
-				partCategoryMap[name] = id
+			var value string
+			if err := rows.Scan(&id, &value); err == nil {
+				partCategoryMap[value] = id
 			}
 		}
 	}
@@ -1276,14 +1216,14 @@ func importAds(jsonFile string, categoryID int, categoryMap map[string]int, user
 		logger.Warn("Failed to query PartCategory", "error", err, "categoryID", categoryID)
 	}
 
-	rows2, err := db.Query(`SELECT id, name FROM PartSubCategory WHERE ad_category_id=$1`, categoryID)
+	rows2, err := db.Query(`SELECT id, value FROM PartSubCategory WHERE ad_category_id=$1`, categoryID)
 	if err == nil {
 		defer rows2.Close()
 		for rows2.Next() {
 			var id int
-			var name string
-			if err := rows2.Scan(&id, &name); err == nil {
-				subcategoryMap[name] = id
+			var value string
+			if err := rows2.Scan(&id, &value); err == nil {
+				subcategoryMap[value] = id
 			}
 		}
 	}

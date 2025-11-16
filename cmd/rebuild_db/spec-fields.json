@@ -5,7 +5,6 @@
     "field_type": "string",
     "table_name": "Make",
     "table_field_name": "make_id",
-    "value_column_name": "name",
     "qdrant_type": "keyword"
   },
   {
@@ -14,7 +13,6 @@
     "field_type": "int",
     "table_name": "Year",
     "table_field_name": "year_id",
-    "value_column_name": "year",
     "qdrant_type": "keyword_array"
   },
   {
@@ -23,7 +21,6 @@
     "field_type": "string",
     "table_name": "Model",
     "table_field_name": "model_id",
-    "value_column_name": "name",
     "qdrant_type": "keyword_array"
   },
   {
@@ -32,7 +29,6 @@
     "field_type": "string",
     "table_name": "Engine",
     "table_field_name": "engine_id",
-    "value_column_name": "name",
     "qdrant_type": "keyword_array"
   },
   {
@@ -41,7 +37,6 @@
     "field_type": "string",
     "table_name": "PartCategory",
     "table_field_name": "part_category_id",
-    "value_column_name": "name",
     "qdrant_type": "keyword"
   },
   {
@@ -50,7 +45,6 @@
     "field_type": "string",
     "table_name": "PartSubCategory",
     "table_field_name": "part_subcategory_id",
-    "value_column_name": "name",
     "qdrant_type": "keyword"
   },
   {
@@ -59,7 +53,6 @@
     "field_type": "string",
     "table_name": "Breed",
     "table_field_name": "breed_id",
-    "value_column_name": "name",
     "qdrant_type": "keyword"
   }
 ]

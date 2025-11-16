@@ -164,18 +164,18 @@ func GetEngines(adCat int, makeName string, years []string, models []string) []s
 
 // buildMakesQuery builds the SQL query for getting all makes for a category
 func buildMakesQuery(adCat int) (string, []interface{}) {
-	query := "SELECT name FROM Make WHERE ad_category_id = $1 ORDER BY name"
+	query := "SELECT value FROM Make WHERE ad_category_id = $1 ORDER BY value"
 	args := []interface{}{adCat}
 	return query, args
 }
 
 // buildYearsQuery builds the SQL query for getting years for a specific make and category
 func buildYearsQuery(adCat int, makeName string) (string, []interface{}) {
-	query := `SELECT DISTINCT Year.year FROM Specification spec
+	query := `SELECT DISTINCT Year.value FROM Specification spec
 	JOIN Make ON spec.make_id = Make.id
 	JOIN Year ON spec.year_id = Year.id
-	WHERE Make.name = $1 AND Make.ad_category_id = $2 AND Year.ad_category_id = $3
-	ORDER BY Year.year`
+	WHERE Make.value = $1 AND Make.ad_category_id = $2 AND Year.ad_category_id = $3
+	ORDER BY Year.value`
 	args := []interface{}{makeName, adCat, adCat}
 	return query, args
 }
@@ -185,12 +185,12 @@ func buildModelsQuery(adCat int, makeName string, years []string) (string, []int
 	// For multiple years, we want models that exist in ALL selected years (intersection)
 	// Build a query that finds models present in every selected year
 	paramNum := 1
-	query := `SELECT DISTINCT Model.name FROM Model
+	query := `SELECT DISTINCT Model.value FROM Model
 	WHERE Model.id IN (
 		SELECT spec.model_id FROM Specification spec
 		JOIN Make ON spec.make_id = Make.id
 		JOIN Year ON spec.year_id = Year.id
-		WHERE Make.name = $` + fmt.Sprintf("%d", paramNum) + ` AND Year.year = $` + fmt.Sprintf("%d", paramNum+1) + ` AND Make.ad_category_id = $` + fmt.Sprintf("%d", paramNum+2) + ` AND Year.ad_category_id = $` + fmt.Sprintf("%d", paramNum+3) + ` AND Model.ad_category_id = $` + fmt.Sprintf("%d", paramNum+4) + `
+		WHERE Make.value = $` + fmt.Sprintf("%d", paramNum) + ` AND Year.value = $` + fmt.Sprintf("%d", paramNum+1) + ` AND Make.ad_category_id = $` + fmt.Sprintf("%d", paramNum+2) + ` AND Year.ad_category_id = $` + fmt.Sprintf("%d", paramNum+3) + ` AND Model.ad_category_id = $` + fmt.Sprintf("%d", paramNum+4) + `
 	)`
 	paramNum += 5
 
@@ -200,12 +200,12 @@ func buildModelsQuery(adCat int, makeName string, years []string) (string, []int
 			SELECT spec.model_id FROM Specification spec
 			JOIN Make ON spec.make_id = Make.id
 			JOIN Year ON spec.year_id = Year.id
-			WHERE Make.name = $` + fmt.Sprintf("%d", paramNum) + ` AND Year.year = $` + fmt.Sprintf("%d", paramNum+1) + ` AND Make.ad_category_id = $` + fmt.Sprintf("%d", paramNum+2) + ` AND Year.ad_category_id = $` + fmt.Sprintf("%d", paramNum+3) + ` AND Model.ad_category_id = $` + fmt.Sprintf("%d", paramNum+4) + `
+			WHERE Make.value = $` + fmt.Sprintf("%d", paramNum) + ` AND Year.value = $` + fmt.Sprintf("%d", paramNum+1) + ` AND Make.ad_category_id = $` + fmt.Sprintf("%d", paramNum+2) + ` AND Year.ad_category_id = $` + fmt.Sprintf("%d", paramNum+3) + ` AND Model.ad_category_id = $` + fmt.Sprintf("%d", paramNum+4) + `
 		)`
 		paramNum += 5
 	}
 
-	query += ` ORDER BY Model.name`
+	query += ` ORDER BY Model.value`
 
 	// Build args: makeName, year, category_id repeated for each year
 	args := make([]interface{}, len(years)*5)
@@ -229,13 +229,13 @@ func buildEnginesQuery(adCat int, makeName string, years []string, models []stri
 	// The logic: engine must exist in (year1, model1) AND (year1, model2) AND ... AND (year2, model1) AND (year2, model2) AND ...
 
 	paramNum := 1
-	query := `SELECT DISTINCT Engine.name FROM Engine
+	query := `SELECT DISTINCT Engine.value FROM Engine
 	WHERE Engine.id IN (
 		SELECT spec.engine_id FROM Specification spec
 		JOIN Make ON spec.make_id = Make.id
 		JOIN Model ON spec.model_id = Model.id
 		JOIN Year ON spec.year_id = Year.id
-		WHERE Make.name = $` + fmt.Sprintf("%d", paramNum) + ` AND Year.year = $` + fmt.Sprintf("%d", paramNum+1) + ` AND Model.name = $` + fmt.Sprintf("%d", paramNum+2) + ` AND Make.ad_category_id = $` + fmt.Sprintf("%d", paramNum+3) + ` AND Year.ad_category_id = $` + fmt.Sprintf("%d", paramNum+4) + ` AND Model.ad_category_id = $` + fmt.Sprintf("%d", paramNum+5) + ` AND Engine.ad_category_id = $` + fmt.Sprintf("%d", paramNum+6) + `
+		WHERE Make.value = $` + fmt.Sprintf("%d", paramNum) + ` AND Year.value = $` + fmt.Sprintf("%d", paramNum+1) + ` AND Model.value = $` + fmt.Sprintf("%d", paramNum+2) + ` AND Make.ad_category_id = $` + fmt.Sprintf("%d", paramNum+3) + ` AND Year.ad_category_id = $` + fmt.Sprintf("%d", paramNum+4) + ` AND Model.ad_category_id = $` + fmt.Sprintf("%d", paramNum+5) + ` AND Engine.ad_category_id = $` + fmt.Sprintf("%d", paramNum+6) + `
 	)`
 	paramNum += 7
 
@@ -250,7 +250,7 @@ func buildEnginesQuery(adCat int, makeName string, years []string, models []stri
 					JOIN Make ON spec.make_id = Make.id
 					JOIN Model ON spec.model_id = Model.id
 					JOIN Year ON spec.year_id = Year.id
-					WHERE Make.name = $` + fmt.Sprintf("%d", paramNum) + ` AND Year.year = $` + fmt.Sprintf("%d", paramNum+1) + ` AND Model.name = $` + fmt.Sprintf("%d", paramNum+2) + ` AND Make.ad_category_id = $` + fmt.Sprintf("%d", paramNum+3) + ` AND Year.ad_category_id = $` + fmt.Sprintf("%d", paramNum+4) + ` AND Model.ad_category_id = $` + fmt.Sprintf("%d", paramNum+5) + ` AND Engine.ad_category_id = $` + fmt.Sprintf("%d", paramNum+6) + `
+					WHERE Make.value = $` + fmt.Sprintf("%d", paramNum) + ` AND Year.value = $` + fmt.Sprintf("%d", paramNum+1) + ` AND Model.value = $` + fmt.Sprintf("%d", paramNum+2) + ` AND Make.ad_category_id = $` + fmt.Sprintf("%d", paramNum+3) + ` AND Year.ad_category_id = $` + fmt.Sprintf("%d", paramNum+4) + ` AND Model.ad_category_id = $` + fmt.Sprintf("%d", paramNum+5) + ` AND Engine.ad_category_id = $` + fmt.Sprintf("%d", paramNum+6) + `
 				)`
 				paramNum += 7
 			}
@@ -258,7 +258,7 @@ func buildEnginesQuery(adCat int, makeName string, years []string, models []stri
 		}
 	}
 
-	query += ` ORDER BY Engine.name`
+	query += ` ORDER BY Engine.value`
 
 	// Build args: makeName, year, model, category_id for each combination
 	args := make([]interface{}, len(years)*len(models)*7)
@@ -415,12 +415,12 @@ func GetAdMakesForAdIDs(adIDs []int) ([]string, error) {
 	}
 
 	query := fmt.Sprintf(`
-		SELECT DISTINCT m.name
+		SELECT DISTINCT m.value
 		FROM Make m
 		JOIN Specification spec ON m.id = spec.make_id
 		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
 		WHERE ad_spec.ad_id IN (%s)
-		ORDER BY m.name
+		ORDER BY m.value
 	`, strings.Join(placeholders, ","))
 
 	var args []interface{}
@@ -470,13 +470,13 @@ func GetAdYearsForAdIDs(adIDs []int, makeName string) ([]string, error) {
 	}
 
 	query := fmt.Sprintf(`
-		SELECT DISTINCT y.year
+		SELECT DISTINCT y.value
 		FROM Year y
 		JOIN Specification spec ON y.id = spec.year_id
 		JOIN Make m ON spec.make_id = m.id
 		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
-		WHERE m.name = $1 AND ad_spec.ad_id IN (%s)
-		ORDER BY y.year DESC
+		WHERE m.value = $1 AND ad_spec.ad_id IN (%s)
+		ORDER BY y.value DESC
 	`, strings.Join(placeholders, ","))
 
 	var args []interface{}
@@ -485,15 +485,10 @@ func GetAdYearsForAdIDs(adIDs []int, makeName string) ([]string, error) {
 		args = append(args, id)
 	}
 
-	var yearInts []int
-	err := db.Select(&yearInts, query, args...)
+	var years []string
+	err := db.Select(&years, query, args...)
 	if err != nil {
 		return nil, err
-	}
-
-	var years []string
-	for _, year := range yearInts {
-		years = append(years, fmt.Sprintf("%d", year))
 	}
 
 	// Cache the result
@@ -535,14 +530,14 @@ func GetAdModelsForAdIDs(adIDs []int, makeName, year string) ([]string, error) {
 	}
 
 	query := fmt.Sprintf(`
-		SELECT DISTINCT mo.name
+		SELECT DISTINCT mo.value
 		FROM Model mo
 		JOIN Specification spec ON mo.id = spec.model_id
 		JOIN Make m ON spec.make_id = m.id
 		JOIN Year y ON spec.year_id = y.id
 		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
-		WHERE m.name = $1 AND y.year = $2 AND ad_spec.ad_id IN (%s)
-		ORDER BY mo.name
+		WHERE m.value = $1 AND y.value = $2 AND ad_spec.ad_id IN (%s)
+		ORDER BY mo.value
 	`, strings.Join(placeholders, ","))
 
 	var args []interface{}
@@ -596,15 +591,15 @@ func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, 
 	}
 
 	query := fmt.Sprintf(`
-		SELECT DISTINCT e.name
+		SELECT DISTINCT e.value
 		FROM Engine e
 		JOIN Specification spec ON e.id = spec.engine_id
 		JOIN Make m ON spec.make_id = m.id
 		JOIN Year y ON spec.year_id = y.id
 		JOIN Model mo ON spec.model_id = mo.id
 		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
-		WHERE m.name = $1 AND y.year = $2 AND mo.name = $3 AND ad_spec.ad_id IN (%s)
-		ORDER BY e.name
+		WHERE m.value = $1 AND y.value = $2 AND mo.value = $3 AND ad_spec.ad_id IN (%s)
+		ORDER BY e.value
 	`, strings.Join(placeholders, ","))
 
 	var args []interface{}
@@ -628,7 +623,6 @@ func GetAdEnginesForAdIDs(adIDs []int, makeName, year, model string) ([]string, 
 	return engines, nil
 }
 
-
 // GetCacheStats returns cache statistics for admin monitoring
 func GetCacheStats() map[string]any {
 	return specCache.Stats()
@@ -649,13 +643,13 @@ func ClearCache() map[string]any {
 // getMakesForAll returns all makes that have ads for a specific category
 func getMakesForAll(adCat int) ([]string, error) {
 	query := `
-		SELECT DISTINCT m.name
+		SELECT DISTINCT m.value
 		FROM Make m
 		JOIN Specification spec ON m.id = spec.make_id
 		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
 		JOIN Ad a ON ad_spec.ad_id = a.id
 		WHERE a.ad_category_id = $1
-		ORDER BY m.name
+		ORDER BY m.value
 	`
 	var makes []string
 	err := db.Select(&makes, query, adCat)
@@ -666,24 +660,19 @@ func getMakesForAll(adCat int) ([]string, error) {
 func getYearsForAll(adCat int, makeName string) ([]string, error) {
 	makeName, _ = url.QueryUnescape(makeName)
 	query := `
-		SELECT DISTINCT y.year
+		SELECT DISTINCT y.value
 		FROM Year y
 		JOIN Specification spec ON y.id = spec.year_id
 		JOIN Make m ON spec.make_id = m.id
 		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
 		JOIN Ad a ON ad_spec.ad_id = a.id
-		WHERE m.name = $1 AND a.ad_category_id = $2
-		ORDER BY y.year DESC
+		WHERE m.value = $1 AND a.ad_category_id = $2
+		ORDER BY y.value DESC
 	`
-	var yearInts []int
-	err := db.Select(&yearInts, query, makeName, adCat)
+	var years []string
+	err := db.Select(&years, query, makeName, adCat)
 	if err != nil {
 		return nil, err
-	}
-
-	var years []string
-	for _, year := range yearInts {
-		years = append(years, fmt.Sprintf("%d", year))
 	}
 	return years, nil
 }
@@ -693,15 +682,15 @@ func getModelsForAll(adCat int, makeName, year string) ([]string, error) {
 	makeName, _ = url.QueryUnescape(makeName)
 	year, _ = url.QueryUnescape(year)
 	query := `
-		SELECT DISTINCT mo.name
+		SELECT DISTINCT mo.value
 		FROM Model mo
 		JOIN Specification spec ON mo.id = spec.model_id
 		JOIN Make m ON spec.make_id = m.id
 		JOIN Year y ON spec.year_id = y.id
 		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
 		JOIN Ad a ON ad_spec.ad_id = a.id
-		WHERE m.name = $1 AND y.year = $2 AND a.ad_category_id = $3
-		ORDER BY mo.name
+		WHERE m.value = $1 AND y.value = $2 AND a.ad_category_id = $3
+		ORDER BY mo.value
 	`
 	var models []string
 	err := db.Select(&models, query, makeName, year, adCat)
@@ -714,7 +703,7 @@ func getEnginesForAll(adCat int, makeName, year, model string) ([]string, error)
 	year, _ = url.QueryUnescape(year)
 	model, _ = url.QueryUnescape(model)
 	query := `
-		SELECT DISTINCT e.name
+		SELECT DISTINCT e.value
 		FROM Engine e
 		JOIN Specification spec ON e.id = spec.engine_id
 		JOIN Make m ON spec.make_id = m.id
@@ -722,8 +711,8 @@ func getEnginesForAll(adCat int, makeName, year, model string) ([]string, error)
 		JOIN Model mo ON spec.model_id = mo.id
 		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
 		JOIN Ad a ON ad_spec.ad_id = a.id
-		WHERE m.name = $1 AND y.year = $2 AND mo.name = $3 AND a.ad_category_id = $4
-		ORDER BY e.name
+		WHERE m.value = $1 AND y.value = $2 AND mo.value = $3 AND a.ad_category_id = $4
+		ORDER BY e.value
 	`
 	var engines []string
 	err := db.Select(&engines, query, makeName, year, model, adCat)
