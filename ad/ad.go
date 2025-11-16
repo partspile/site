@@ -63,39 +63,10 @@ func populateSpecData(adDetail *AdDetail) error {
 	// Get category fields to determine which fields to query
 	fieldConfigs := spec.GetCategoryFields(adDetail.AdCategoryID)
 
-	// Build dynamic SELECT clause for all fields
-	var selectParts []string
-	var joins []string
-	var fieldNames []string // Column names (same as field names)
-
+	// Build field names for SELECT clause
+	var fieldNames []string
 	for _, fieldConfig := range fieldConfigs {
-		tableName := fieldConfig.TableName
-		tableFieldName := fieldConfig.TableFieldName
-		fieldName := fieldConfig.Name
-
-		// Add JOINs for this field's table from all spec tables using COALESCE
-		// Only one spec table will have the field, so COALESCE will pick the non-null value
-		joins = append(joins, fmt.Sprintf(`LEFT JOIN %s ON (
-			(ad_spec.spec_type = 'vehicle' AND spec_vehicle.%s = %s.id) OR
-			(ad_spec.spec_type = 'agricultural' AND spec_agricultural.%s = %s.id) OR
-			(ad_spec.spec_type = 'bicycle' AND spec_bicycle.%s = %s.id) OR
-			(ad_spec.spec_type = 'part' AND spec_part.%s = %s.id)
-		)`, tableName, tableFieldName, tableName, tableFieldName, tableName, tableFieldName, tableName, tableFieldName, tableName))
-
-		// Build SELECT clause based on field type
-		// Use COALESCE to get value from the appropriate spec table
-		if fieldConfig.FieldType == "int" {
-			// For integer fields (like year), use STRING_AGG with CAST (PostgreSQL)
-			selectParts = append(selectParts,
-				fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT CAST(%s.value AS TEXT), ','), '') as %s",
-					tableName, fieldName))
-		} else {
-			// For string fields, use STRING_AGG for both single and multi-value (PostgreSQL)
-			selectParts = append(selectParts,
-				fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT %s.value, ','), '') as %s",
-					tableName, fieldName))
-		}
-		fieldNames = append(fieldNames, fieldName)
+		fieldNames = append(fieldNames, fieldConfig.Name)
 	}
 
 	// Build final query - use UNION ALL to combine results from all AdSpec* tables
@@ -106,14 +77,61 @@ func populateSpecData(adDetail *AdDetail) error {
 		tableName     string
 		specTableName string
 		idColumn      string
+		validFields   map[string]bool // Map of table_field_name -> true for fields that exist in this spec table
 	}{
-		{"AdSpecVehicle", "SpecVehicle", "spec_vehicle_id"},
-		{"AdSpecAgricultural", "SpecAgricultural", "spec_agricultural_id"},
-		{"AdSpecBicycle", "SpecBicycle", "spec_bicycle_id"},
-		{"AdSpecPart", "SpecPart", "spec_part_id"},
+		{"AdSpecVehicle", "SpecVehicle", "spec_vehicle_id", map[string]bool{
+			"make_id": true, "year_id": true, "model_id": true, "engine_id": true,
+		}},
+		{"AdSpecAgricultural", "SpecAgricultural", "spec_agricultural_id", map[string]bool{
+			"make_id": true, "year_id": true, "model_id": true,
+		}},
+		{"AdSpecBicycle", "SpecBicycle", "spec_bicycle_id", map[string]bool{
+			"make_id": true, "model_id": true,
+		}},
+		{"AdSpecPart", "SpecPart", "spec_part_id", map[string]bool{
+			"part_category_id": true, "part_subcategory_id": true,
+		}},
 	}
 
 	for _, adSpecTable := range adSpecTables {
+		// Build SELECT clause and JOINs for this spec type
+		var selectParts []string
+		var joins []string
+
+		for _, fieldConfig := range fieldConfigs {
+			tableName := fieldConfig.TableName
+			tableFieldName := fieldConfig.TableFieldName
+			fieldName := fieldConfig.Name
+
+			// Only join fields that exist in this spec table
+			if !adSpecTable.validFields[tableFieldName] {
+				// Field doesn't exist in this spec type, use NULL
+				if fieldConfig.FieldType == "int" {
+					selectParts = append(selectParts, fmt.Sprintf("'' as %s", fieldName))
+				} else {
+					selectParts = append(selectParts, fmt.Sprintf("'' as %s", fieldName))
+				}
+				continue
+			}
+
+			// Join field table through the spec table
+			joins = append(joins, fmt.Sprintf(`LEFT JOIN %s ON spec.%s = %s.id`,
+				tableName, tableFieldName, tableName))
+
+			// Build SELECT clause based on field type
+			if fieldConfig.FieldType == "int" {
+				// For integer fields (like year), use STRING_AGG with CAST (PostgreSQL)
+				selectParts = append(selectParts,
+					fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT CAST(%s.value AS TEXT), ','), '') as %s",
+						tableName, fieldName))
+			} else {
+				// For string fields, use STRING_AGG for both single and multi-value (PostgreSQL)
+				selectParts = append(selectParts,
+					fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT %s.value, ','), '') as %s",
+						tableName, fieldName))
+			}
+		}
+
 		// Build query for this spec type - use $1 for ad_id in all subqueries
 		query := fmt.Sprintf(`
 			SELECT %s
@@ -125,11 +143,17 @@ func populateSpecData(adDetail *AdDetail) error {
 		unionQueries = append(unionQueries, query)
 	}
 
-	// Combine with UNION ALL and group
+	// Combine with UNION ALL and aggregate
+	// Since each subquery already aggregates, we need to aggregate again to combine results
+	// Use MAX() to combine values from different spec types
+	var maxSelectParts []string
+	for _, fieldName := range fieldNames {
+		maxSelectParts = append(maxSelectParts, fmt.Sprintf("MAX(combined.%s) as %s", fieldName, fieldName))
+	}
+	
 	query := fmt.Sprintf(`SELECT %s FROM (
 		%s
-	) combined
-	GROUP BY %s`, strings.Join(selectParts, ", "), strings.Join(unionQueries, " UNION ALL "), strings.Join(selectParts, ", "))
+	) combined`, strings.Join(maxSelectParts, ", "), strings.Join(unionQueries, " UNION ALL "))
 
 	// Execute query - use a map to store results dynamically
 	// Note: query already uses PostgreSQL format ($1), so no rebinding needed
