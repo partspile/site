@@ -193,9 +193,25 @@ func GetAdMakesForAdIDs(adIDs []int) ([]string, error) {
 	return makes, nil
 }
 
-/ ============================================================================
+// ============================================================================
 // DATABASE QUERY FUNCTIONS (Internal - used by cached functions above)
 // ============================================================================
+
+// getMakesForAll returns all makes for a specific category
+func getMakesForAll(adCat int) ([]string, error) {
+	query := `
+		SELECT DISTINCT m.value
+		FROM Make m
+		JOIN Specification spec ON m.id = spec.make_id
+		JOIN AdSpecification ad_spec ON spec.id = ad_spec.specification_id
+		JOIN Ad a ON ad_spec.ad_id = a.id
+		WHERE a.ad_category_id = $1
+		ORDER BY m.value
+	`
+	var makes []string
+	err := db.Select(&makes, query, adCat)
+	return makes, nil
+}
 
 // getYearsForAll returns all years for a specific make and category
 func getYearsForAll(adCat int, makeName string) ([]string, error) {
