@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
 	"sync"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -77,4 +78,14 @@ func Ping() error {
 // For PostgreSQL, this converts ? to $1, $2, $3, etc.
 func Rebind(query string) string {
 	return db.Rebind(query)
+}
+
+// QueryJSON executes a query that returns a single JSON result and unmarshals it into dst
+func QueryJSON(dst interface{}, query string, args ...interface{}) error {
+	var jsonResult []byte
+	err := db.QueryRow(query, args...).Scan(&jsonResult)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(jsonResult, dst)
 }

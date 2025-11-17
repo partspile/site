@@ -61,137 +61,140 @@ func populateSpecData(adDetail *AdDetail) error {
 
 	fields := spec.GetDBFields(adDetail.AdCategoryID)
 
-	// Build field names for SELECT clause
-	var fieldNames []string
-	var fieldConfigs []spec.FieldConfig
+	// Get all chains for this category to determine which spec tables are used
+	allChains, err := spec.GetAllChains(adDetail.AdCategoryID)
+	if err != nil {
+		return fmt.Errorf("failed to get chains: %w", err)
+	}
+
+	// Build map of spec table name -> AdSpec table info
+	// Only include spec tables that are actually used by this category
+	specTableMap := make(map[string]struct {
+		adSpecTableName string
+		idColumn        string
+		validFields     map[string]bool
+	})
+
+	for _, chain := range allChains {
+		specType := spec.GetSpecTypeFromChain(chain)
+		specTableName := spec.GetSpecTableName(specType)
+
+		// Map spec table to AdSpec table
+		var adSpecTableName, idColumn string
+		var validFields map[string]bool
+
+		switch specTableName {
+		case "SpecVehicle":
+			adSpecTableName = "AdSpecVehicle"
+			idColumn = "spec_vehicle_id"
+			validFields = map[string]bool{
+				"make_id": true, "year_id": true, "model_id": true, "engine_id": true,
+			}
+		case "SpecAgricultural":
+			adSpecTableName = "AdSpecAgricultural"
+			idColumn = "spec_agricultural_id"
+			validFields = map[string]bool{
+				"make_id": true, "year_id": true, "model_id": true,
+			}
+		case "SpecBicycle":
+			adSpecTableName = "AdSpecBicycle"
+			idColumn = "spec_bicycle_id"
+			validFields = map[string]bool{
+				"make_id": true, "model_id": true,
+			}
+		case "SpecPart":
+			adSpecTableName = "AdSpecPart"
+			idColumn = "spec_part_id"
+			validFields = map[string]bool{
+				"part_category_id": true, "part_subcategory_id": true,
+			}
+		default:
+			continue // Unknown spec table
+		}
+
+		specTableMap[specTableName] = struct {
+			adSpecTableName string
+			idColumn        string
+			validFields     map[string]bool
+		}{adSpecTableName, idColumn, validFields}
+	}
+
+	// Build json_build_object query with subqueries for each field
+	var jsonParts []string
+
 	for _, field := range fields {
-		fieldConfig := field.Config()
-		fieldConfigs = append(fieldConfigs, fieldConfig)
-		fieldNames = append(fieldNames, fieldConfig.Name)
-	}
+		config := field.Config()
+		fieldName := config.Name
+		tableName := config.TableName
+		tableFieldName := config.TableFieldName
 
-	// Build final query - use UNION ALL to combine results from all AdSpec* tables
-	// Each AdSpec* table joins to its corresponding Spec* table
-	var unionQueries []string
+		// Find which spec table(s) contain this field
+		var unionParts []string
 
-	adSpecTables := []struct {
-		tableName     string
-		specTableName string
-		idColumn      string
-		validFields   map[string]bool // Map of table_field_name -> true for fields that exist in this spec table
-	}{
-		{"AdSpecVehicle", "SpecVehicle", "spec_vehicle_id", map[string]bool{
-			"make_id": true, "year_id": true, "model_id": true, "engine_id": true,
-		}},
-		{"AdSpecAgricultural", "SpecAgricultural", "spec_agricultural_id", map[string]bool{
-			"make_id": true, "year_id": true, "model_id": true,
-		}},
-		{"AdSpecBicycle", "SpecBicycle", "spec_bicycle_id", map[string]bool{
-			"make_id": true, "model_id": true,
-		}},
-		{"AdSpecPart", "SpecPart", "spec_part_id", map[string]bool{
-			"part_category_id": true, "part_subcategory_id": true,
-		}},
-	}
-
-	for _, adSpecTable := range adSpecTables {
-		// Build SELECT clause and JOINs for this spec type
-		var selectParts []string
-		var joins []string
-
-		for _, fieldConfig := range fieldConfigs {
-			tableName := fieldConfig.TableName
-			tableFieldName := fieldConfig.TableFieldName
-			fieldName := fieldConfig.Name
-
-			// Only join fields that exist in this spec table
-			if !adSpecTable.validFields[tableFieldName] {
-				// Field doesn't exist in this spec type, use NULL
-				if fieldConfig.FieldType == "int" {
-					selectParts = append(selectParts, fmt.Sprintf("'' as %s", fieldName))
-				} else {
-					selectParts = append(selectParts, fmt.Sprintf("'' as %s", fieldName))
-				}
+		for specTableName, adSpecInfo := range specTableMap {
+			// Skip if this field doesn't exist in this spec table
+			if !adSpecInfo.validFields[tableFieldName] {
 				continue
 			}
 
-			// Join field table through the spec table
-			joins = append(joins, fmt.Sprintf(`LEFT JOIN %s ON spec.%s = %s.id`,
-				tableName, tableFieldName, tableName))
+			// Build FROM/JOIN clause matching original pattern:
+			// Start from value table, join to spec, then to ad_spec
+			fromClause := fmt.Sprintf(`
+			 FROM %s
+			 JOIN %s ON %s.id = %s.%s
+			 JOIN %s ON %s.%s = %s.id
+			 WHERE %s.ad_id = $1`,
+				tableName,
+				specTableName, tableName, specTableName, tableFieldName,
+				adSpecInfo.adSpecTableName, adSpecInfo.adSpecTableName, adSpecInfo.idColumn, specTableName,
+				adSpecInfo.adSpecTableName)
 
-			// Build SELECT clause based on field type
-			if fieldConfig.FieldType == "int" {
-				// For integer fields (like year), use STRING_AGG with CAST (PostgreSQL)
-				selectParts = append(selectParts,
-					fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT CAST(%s.value AS TEXT), ','), '') as %s",
-						tableName, fieldName))
-			} else {
-				// For string fields, use STRING_AGG for both single and multi-value (PostgreSQL)
-				selectParts = append(selectParts,
-					fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT %s.value, ','), '') as %s",
-						tableName, fieldName))
-			}
+			unionParts = append(unionParts, fromClause)
 		}
 
-		// Build query for this spec type - use $1 for ad_id in all subqueries
-		query := fmt.Sprintf(`
-			SELECT %s
-			FROM %s ad_spec
-			JOIN %s spec ON ad_spec.%s = spec.id
-			%s
-			WHERE ad_spec.ad_id = $1
-		`, strings.Join(selectParts, ", "), adSpecTable.tableName, adSpecTable.specTableName, adSpecTable.idColumn, strings.Join(joins, " "))
-		unionQueries = append(unionQueries, query)
+		if len(unionParts) == 0 {
+			// Field doesn't exist in any spec table for this category, return empty array
+			jsonParts = append(jsonParts, fmt.Sprintf("'%s', '[]'::json", fieldName))
+			continue
+		}
+
+		// If only one spec table, use direct aggregation (like original)
+		// If multiple spec tables, use UNION with subquery wrapper
+		var subquery string
+		if len(unionParts) == 1 {
+			// Single spec table - use subquery for DISTINCT, then json_agg with ORDER BY
+			// PostgreSQL doesn't support json_agg(DISTINCT value ORDER BY value)
+			subquery = fmt.Sprintf(`COALESCE(
+			(SELECT json_agg(value ORDER BY value)
+			 FROM (SELECT DISTINCT %s.value %s) AS distinct_values),
+			'[]'::json
+		)`, tableName, unionParts[0])
+		} else {
+			// Multiple spec tables - need UNION with subquery wrapper
+			// Build SELECT ... UNION SELECT ... then wrap
+			var selectParts []string
+			for _, fromClause := range unionParts {
+				selectParts = append(selectParts, fmt.Sprintf("SELECT %s.value%s", tableName, fromClause))
+			}
+			unionQuery := strings.Join(selectParts, " UNION ")
+			subquery = fmt.Sprintf(`COALESCE(
+			(SELECT json_agg(value ORDER BY value)
+			 FROM (SELECT DISTINCT value FROM (%s) AS unioned) AS distinct_values),
+			'[]'::json
+		)`, unionQuery)
+		}
+
+		jsonParts = append(jsonParts, fmt.Sprintf("'%s', %s", fieldName, subquery))
 	}
 
-	// Combine with UNION ALL and aggregate
-	// Since each subquery already aggregates, we need to aggregate again to combine results
-	// Use MAX() to combine values from different spec types
-	var maxSelectParts []string
-	for _, fieldName := range fieldNames {
-		maxSelectParts = append(maxSelectParts, fmt.Sprintf("MAX(combined.%s) as %s", fieldName, fieldName))
-	}
-	
-	query := fmt.Sprintf(`SELECT %s FROM (
-		%s
-	) combined`, strings.Join(maxSelectParts, ", "), strings.Join(unionQueries, " UNION ALL "))
+	// Build final query with json_build_object
+	query := fmt.Sprintf("SELECT json_build_object(%s) AS spec_fields",
+		strings.Join(jsonParts, ",\n    "))
 
-	// Execute query - use a map to store results dynamically
-	// Note: query already uses PostgreSQL format ($1), so no rebinding needed
-	rows, err := db.Query(query, adDetail.ID)
-	if err != nil {
+	// Execute query
+	if err := db.QueryJSON(&adDetail.SpecData, query, adDetail.ID); err != nil {
 		return fmt.Errorf("failed to query spec data: %w", err)
 	}
-	defer rows.Close()
-
-	if !rows.Next() {
-		return nil // No spec data is okay
-	}
-
-	// Scan row into values
-	values := make([]interface{}, len(fieldNames))
-	valuePtrs := make([]interface{}, len(fieldNames))
-	for i := range values {
-		valuePtrs[i] = &values[i]
-	}
-	if err := rows.Scan(valuePtrs...); err != nil {
-		return fmt.Errorf("failed to scan row: %w", err)
-	}
-
-	// Map column values to field names
-	for i, fieldName := range fieldNames {
-		if values[i] == nil {
-			continue
-		}
-
-		valueStr := fmt.Sprintf("%v", values[i])
-		if valueStr == "" {
-			continue
-		}
-
-		adDetail.SpecData[fieldName] = strings.Split(valueStr, ",")
-	}
-
 	return nil
 }
 
@@ -209,8 +212,7 @@ func GetAdsByIDsWithDeleted(ids []int, userID int, includeDeleted bool) ([]Ad, e
 	query, args := buildAdQueryWithDeleted(ids, userID, includeDeleted)
 
 	var ads []Ad
-	err := db.Select(&ads, query, args...)
-	if err != nil {
+	if err := db.QueryJSON(&ads, query, args...); err != nil {
 		return nil, err
 	}
 
@@ -221,54 +223,81 @@ func GetAdsByIDsWithDeleted(ids []int, userID int, includeDeleted bool) ([]Ad, e
 
 // buildAdQueryWithDeleted builds the minimal query for fetching ads with IDs and user context, optionally including deleted ads
 func buildAdQueryWithDeleted(ids []int, userID int, includeDeleted bool) (string, []interface{}) {
-	var query string
 	var args []interface{}
+	argNum := 1
 
-	if userID != 0 {
-		// Query with bookmark status - minimal fields only
-		query = `
-			SELECT a.id, a.ad_category_id, a.title, a.price, a.created_at, a.deleted_at, a.user_id, a.image_count,
-			       l.city, l.admin_area, l.country,
-			       CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked
-			FROM Ad a
-			LEFT JOIN Location l ON a.location_id = l.id
-			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = $1
-		`
-		args = append(args, userID)
-	} else {
-		// Query without bookmark status (default to false) - minimal fields only
-		query = `
-			SELECT a.id, a.ad_category_id, a.title, a.price, a.created_at, a.deleted_at, a.user_id, a.image_count,
-			       l.city, l.admin_area, l.country,
-			       0 as is_bookmarked
-			FROM Ad a
-			LEFT JOIN Location l ON a.location_id = l.id
-		`
-	}
-
-	if !includeDeleted {
-		query += " WHERE a.deleted_at IS NULL"
-	}
-
-	// Build PostgreSQL placeholders ($1, $2, etc.) based on current arg count
+	// Build WHERE clause for IDs
 	placeholders := make([]string, len(ids))
-	argNum := len(args) + 1
 	for i := range ids {
 		placeholders[i] = fmt.Sprintf("$%d", argNum)
 		argNum++
 	}
-	if includeDeleted {
-		query += " WHERE a.id IN (" + strings.Join(placeholders, ",") + ")"
-	} else {
-		query += " AND a.id IN (" + strings.Join(placeholders, ",") + ")"
-	}
+	idFilter := "a.id IN (" + strings.Join(placeholders, ",") + ")"
 
-	// Add ORDER BY to preserve the input order using CASE statement
-	query += " ORDER BY CASE a.id"
+	// Build ORDER BY CASE to preserve input order
+	orderByCase := "CASE a.id"
 	for i, id := range ids {
-		query += fmt.Sprintf(" WHEN %d THEN %d", id, i)
+		orderByCase += fmt.Sprintf(" WHEN %d THEN %d", id, i)
 	}
-	query += " END"
+	orderByCase += " END"
+
+	var query string
+	if userID != 0 {
+		args = append(args, userID)
+		bookmarkCase := "CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END"
+		query = fmt.Sprintf(`
+			SELECT json_agg(
+				json_build_object(
+					'id', a.id,
+					'ad_category_id', a.ad_category_id,
+					'title', a.title,
+					'price', a.price,
+					'created_at', a.created_at,
+					'deleted_at', a.deleted_at,
+					'user_id', a.user_id,
+					'image_count', a.image_count,
+					'city', l.city,
+					'admin_area', l.admin_area,
+					'country', l.country,
+					'bookmarked', %s
+				)
+				ORDER BY %s
+			) AS ads
+			FROM Ad a
+			LEFT JOIN Location l ON a.location_id = l.id
+			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = $1
+			WHERE %s`,
+			bookmarkCase, orderByCase, idFilter)
+		if !includeDeleted {
+			query += " AND a.deleted_at IS NULL"
+		}
+	} else {
+		query = fmt.Sprintf(`
+			SELECT json_agg(
+				json_build_object(
+					'id', a.id,
+					'ad_category_id', a.ad_category_id,
+					'title', a.title,
+					'price', a.price,
+					'created_at', a.created_at,
+					'deleted_at', a.deleted_at,
+					'user_id', a.user_id,
+					'image_count', a.image_count,
+					'city', l.city,
+					'admin_area', l.admin_area,
+					'country', l.country,
+					'bookmarked', 0
+				)
+				ORDER BY %s
+			) AS ads
+			FROM Ad a
+			LEFT JOIN Location l ON a.location_id = l.id
+			WHERE %s`,
+			orderByCase, idFilter)
+		if !includeDeleted {
+			query += " AND a.deleted_at IS NULL"
+		}
+	}
 
 	for _, id := range ids {
 		args = append(args, id)
@@ -331,10 +360,14 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 	var adDetails []AdDetail
 	err := db.Select(&adDetails, query, args...)
 	if err != nil {
+		logger.Debug("GetAdDetailByID query error",
+			"component", "ad", "adID", adID, "userID", userID, "error", err)
 		return nil, err
 	}
 
 	if len(adDetails) == 0 {
+		logger.Debug("GetAdDetailByID no results",
+			"component", "ad", "adID", adID, "userID", userID)
 		return nil, fmt.Errorf("ad with ID %d not found", adID)
 	}
 
@@ -343,10 +376,75 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 	// Populate spec data (populateSpecData always initializes SpecData to non-nil)
 	err = populateSpecData(adDetail)
 	if err != nil {
+		logger.Debug("GetAdDetailByID populateSpecData error",
+			"component", "ad", "adID", adID, "error", err)
 		return nil, fmt.Errorf("failed to populate spec data: %w", err)
 	}
 
 	return adDetail, nil
+}
+
+// formatSQLQuery formats a SQL query string for better readability in logs
+func formatSQLQuery(query string) string {
+	// First, fix common formatting issues
+	formatted := query
+
+	// Fix "LEFT" appearing on separate line from "JOIN"
+	formatted = strings.ReplaceAll(formatted, " LEFT\n", " LEFT ")
+	formatted = strings.ReplaceAll(formatted, "\nLEFT JOIN", " LEFT JOIN")
+	formatted = strings.ReplaceAll(formatted, " LEFT JOIN", "\n  LEFT JOIN")
+
+	// Replace common SQL keywords with newline + keyword for better formatting
+	keywords := []string{
+		"SELECT", "FROM", "WHERE", "JOIN", "RIGHT JOIN",
+		"INNER JOIN", "OUTER JOIN", "UNION ALL", "GROUP BY", "ORDER BY",
+		"HAVING", "LIMIT", "OFFSET",
+	}
+
+	// Add newline before each keyword (case-insensitive)
+	for _, keyword := range keywords {
+		replacement := "\n" + strings.ToUpper(keyword)
+		formatted = strings.ReplaceAll(formatted, " "+keyword+" ", " "+replacement+" ")
+		formatted = strings.ReplaceAll(formatted, " "+keyword+"\n", " "+replacement+"\n")
+		formatted = strings.ReplaceAll(formatted, "\n"+keyword+" ", "\n"+replacement+" ")
+		formatted = strings.ReplaceAll(formatted, "("+keyword+" ", "("+replacement+" ")
+	}
+
+	// Clean up multiple consecutive newlines
+	for strings.Contains(formatted, "\n\n\n") {
+		formatted = strings.ReplaceAll(formatted, "\n\n\n", "\n\n")
+	}
+
+	// Add indentation after newlines (simple 2-space indent)
+	lines := strings.Split(formatted, "\n")
+	indented := make([]string, 0, len(lines))
+	indentLevel := 0
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+
+		// Decrease indent for closing parentheses and certain keywords
+		if strings.HasPrefix(trimmed, ")") || strings.HasPrefix(trimmed, "END") {
+			indentLevel--
+			if indentLevel < 0 {
+				indentLevel = 0
+			}
+		}
+
+		// Add indented line
+		indent := strings.Repeat("  ", indentLevel)
+		indented = append(indented, indent+trimmed)
+
+		// Increase indent for opening parentheses and subqueries
+		if strings.HasSuffix(trimmed, "(") || strings.Contains(trimmed, "FROM (") {
+			indentLevel++
+		}
+	}
+
+	return strings.Join(indented, "\n")
 }
 
 // GetMostPopularAds returns the top n ads by popularity using SQL

@@ -1,6 +1,7 @@
 package spec
 
 import (
+	"encoding/json"
 	"fmt"
 	"maps"
 	"sort"
@@ -324,39 +325,31 @@ func InitFieldCache() error {
 // loadFieldDefinitions loads all SpecificationField records from database
 func loadFieldDefinitions() (map[string]FieldConfig, error) {
 	query := `
-		SELECT id, name, display_name, field_type, table_name, table_field_name, qdrant_type
+		SELECT json_object_agg(
+			name,
+			json_build_object(
+				'id', id,
+				'name', name,
+				'display_name', display_name,
+				'field_type', field_type,
+				'table_name', table_name,
+				'table_field_name', table_field_name,
+				'qdrant_type', qdrant_type,
+				'field_multi_value', qdrant_type = 'keyword_array'
+			)
+		) AS fields
 		FROM SpecificationField
-		ORDER BY id
 	`
 
-	type dbField struct {
-		ID             int    `db:"id"`
-		Name           string `db:"name"`
-		DisplayName    string `db:"display_name"`
-		FieldType      string `db:"field_type"`
-		TableName      string `db:"table_name"`
-		TableFieldName string `db:"table_field_name"`
-		QdrantType     string `db:"qdrant_type"`
-	}
-
-	var dbFields []dbField
-	err := db.Select(&dbFields, query)
+	var jsonResult []byte
+	err := db.QueryRow(query).Scan(&jsonResult)
 	if err != nil {
 		return nil, err
 	}
 
-	fieldDefs := make(map[string]FieldConfig)
-	for _, f := range dbFields {
-		fieldDefs[f.Name] = FieldConfig{
-			ID:              f.ID,
-			Name:            f.Name,
-			DisplayName:     f.DisplayName,
-			FieldType:       f.FieldType,
-			TableName:       f.TableName,
-			TableFieldName:  f.TableFieldName,
-			QdrantType:      f.QdrantType,
-			FieldMultiValue: f.QdrantType == "keyword_array",
-		}
+	var fieldDefs map[string]FieldConfig
+	if err := json.Unmarshal(jsonResult, &fieldDefs); err != nil {
+		return nil, err
 	}
 
 	return fieldDefs, nil

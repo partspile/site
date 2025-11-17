@@ -106,6 +106,19 @@ func GetAdEngines(adCat int, makeName, year, model string) ([]string, error) {
 	return engines, nil
 }
 
+// GetCacheStats returns cache statistics for admin monitoring
+func GetCacheStats() map[string]any {
+	return specCache.Stats()
+}
+
+// ClearCache clears all items from the spec cache and returns updated stats
+func ClearCache() map[string]any {
+	specCache.Clear()
+	logger.Info("Cache cleared",
+		"component", "spec-cache")
+	return specCache.Stats()
+}
+
 // ============================================================================
 // FUNCTIONS FOR AD DATA (Tree View Search Mode when q!="")
 // ============================================================================
