@@ -224,34 +224,6 @@ func descriptionField() g.Node {
 	)
 }
 
-func priceInputField() g.Node {
-	return formGroup("Price", "price",
-		Input(
-			Type("number"),
-			ID("price"),
-			Name("price"),
-			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
-			Required(),
-			Step("1"),
-			Min("0"),
-			g.Attr("title", "Price must be >= 0"),
-			g.Attr("oninput", "this.checkValidity()"),
-		),
-	)
-}
-
-func locationInputField() g.Node {
-	return formGroup("Location", "location",
-		Input(
-			Type("text"),
-			ID("location"),
-			Name("location"),
-			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
-			Placeholder("(Optional)"),
-		),
-	)
-}
-
 // GenericMultiSelectField creates a generic multi-select field (checkboxes) for any field
 func GenericMultiSelectField(fieldName, displayName string, values []string) g.Node {
 	fieldID := fieldName + "sDiv"

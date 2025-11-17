@@ -100,8 +100,12 @@ func (f *FieldPrice) Validate(value string) error {
 		return fmt.Errorf("%s is required", f.config.DisplayName)
 	}
 	if value != "" {
-		if _, err := strconv.ParseFloat(value, 64); err != nil {
+		price, err := strconv.ParseFloat(value, 64)
+		if err != nil {
 			return fmt.Errorf("%s must be a valid number", f.config.DisplayName)
+		}
+		if price < 0 {
+			return fmt.Errorf("%s cannot be negative", f.config.DisplayName)
 		}
 	}
 	return nil

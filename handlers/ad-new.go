@@ -76,14 +76,7 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 func HandleNewAdSubmission(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 
-	// Resolve and store location first
-	locationRaw := c.FormValue("location")
-	locID, err := resolveAndStoreLocation(locationRaw)
-	if err != nil {
-		return ValidationErrorResponse(c, "Could not resolve location.")
-	}
-
-	newAd, imageFiles, _, err := BuildAdFromForm(c, userID, locID)
+	newAd, imageFiles, _, err := BuildAdFromForm(c, userID)
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}

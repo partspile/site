@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/local"
+	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -18,14 +19,24 @@ func NewTreeView(ctx *fiber.Ctx) *TreeView {
 }
 
 func (v *TreeView) GetAdIDs() ([]int, uint64, error) {
-	// Check if any filters are applied (search query, location, make, year range, price range)
-	hasFilters := v.ctx.FormValue("q") != "" ||
-		v.ctx.FormValue("location") != "" ||
-		v.ctx.FormValue("make") != "" ||
-		v.ctx.FormValue("min_year") != "" ||
-		v.ctx.FormValue("max_year") != "" ||
-		v.ctx.FormValue("min_price") != "" ||
-		v.ctx.FormValue("max_price") != ""
+	// Check if search query is present
+	hasSearchQuery := v.ctx.FormValue("q") != ""
+
+	// Check if any field filters are applied using field implementations
+	adCat := cookie.GetAdCategory(v.ctx)
+	fields := spec.GetCategoryFields(adCat)
+	locationResolver := spec.LocationResolver(ResolveLocation)
+
+	hasFieldFilters := false
+	for _, field := range fields {
+		condition := field.BuildFilterCondition(v.ctx, locationResolver)
+		if condition != nil {
+			hasFieldFilters = true
+			break
+		}
+	}
+
+	hasFilters := hasSearchQuery || hasFieldFilters
 
 	if !hasFilters {
 		// Browse mode - no search query and no filters, return empty slice for full tree

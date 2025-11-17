@@ -205,25 +205,6 @@ func validateAdFormMultipart(form *multipart.Form, adCat int) (years, models, en
 	return years, models, engines, nil
 }
 
-// ValidateAndParsePrice validates and parses a price field
-func ValidateAndParsePrice(c *fiber.Ctx) (float64, error) {
-	priceStr := c.FormValue("price")
-	if priceStr == "" {
-		return 0, fmt.Errorf("price is required")
-	}
-
-	price, err := strconv.ParseFloat(priceStr, 64)
-	if err != nil {
-		return 0, fmt.Errorf("invalid price format")
-	}
-
-	if price < 0 {
-		return 0, fmt.Errorf("price cannot be negative")
-	}
-
-	return price, nil
-}
-
 // Allowed image MIME types
 var allowedImageMIMETypes = map[string]bool{
 	"image/jpeg": true,
@@ -302,7 +283,7 @@ func ValidateImageFiles(files []*multipart.FileHeader) error {
 }
 
 // BuildAdFromForm builds an Ad struct from form data dynamically based on category field configuration
-func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.AdDetail, []*multipart.FileHeader, []int, error) {
+func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.AdDetail, []*multipart.FileHeader, []int, error) {
 	adCat := cookie.GetAdCategory(c)
 
 	title, err := ValidateCleanText(c, "title", "Title", 35)
@@ -323,27 +304,49 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 
 	for _, field := range fields {
 		fieldConfig := field.Config()
-		if fieldConfig.IsRequired {
-			if fieldConfig.FieldMultiValue {
-				// Multi-value fields (year, model, engine, etc.)
-				values := form.Value[fieldConfig.Name]
-				if len(values) == 0 {
-					return ad.AdDetail{}, nil, nil,
-						fmt.Errorf("please select at least one %s",
-							fieldConfig.DisplayName)
-				}
-				specData[fieldConfig.Name] = values
-			} else {
-				// Single-value fields (make, breed, etc.)
-				value, err := ValidateRequired(c, fieldConfig.Name, fieldConfig.DisplayName)
-				if err != nil {
+		fieldName := fieldConfig.Name
+
+		if fieldConfig.FieldMultiValue {
+			// Multi-value fields (year, model, engine, etc.)
+			values := form.Value[fieldName]
+			if fieldConfig.IsRequired && len(values) == 0 {
+				return ad.AdDetail{}, nil, nil,
+					fmt.Errorf("please select at least one %s",
+						fieldConfig.DisplayName)
+			}
+			// Validate each value
+			for _, value := range values {
+				if err := field.Validate(value); err != nil {
 					return ad.AdDetail{}, nil, nil, err
 				}
-				if value != "" {
-					specData[fieldConfig.Name] = []string{value}
-				}
+			}
+			if len(values) > 0 {
+				specData[fieldName] = values
+			}
+		} else {
+			// Single-value fields (make, breed, price, location, etc.)
+			value := c.FormValue(fieldName)
+			if err := field.Validate(value); err != nil {
+				return ad.AdDetail{}, nil, nil, err
+			}
+			if value != "" {
+				specData[fieldName] = []string{value}
 			}
 		}
+	}
+
+	// Extract and parse price after validation
+	priceStr := c.FormValue("price")
+	price, err := strconv.ParseFloat(priceStr, 64)
+	if err != nil {
+		return ad.AdDetail{}, nil, nil, fmt.Errorf("invalid price format")
+	}
+
+	// Resolve and store location after validation
+	locationRaw := c.FormValue("location")
+	locationID, err := resolveAndStoreLocation(locationRaw)
+	if err != nil {
+		return ad.AdDetail{}, nil, nil, fmt.Errorf("could not resolve location")
 	}
 
 	// Extract image files
@@ -357,10 +360,6 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, locationID int, adID ...int) (ad.
 	}
 
 	description, err := ValidateCleanText(c, "description", "Description", 500)
-	if err != nil {
-		return ad.AdDetail{}, nil, nil, err
-	}
-	price, err := ValidateAndParsePrice(c)
 	if err != nil {
 		return ad.AdDetail{}, nil, nil, err
 	}

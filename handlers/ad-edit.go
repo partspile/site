@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/local"
+	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 )
@@ -32,10 +34,12 @@ func HandleUpdateAdPrice(c *fiber.Ctx) error {
 	}
 
 	// Validate and parse price
-	price, err := ValidateAndParsePrice(c)
-	if err != nil {
+	priceField := &spec.FieldPrice{}
+	priceStr := c.FormValue("price")
+	if err := priceField.Validate(priceStr); err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
+	price, _ := strconv.ParseFloat(priceStr, 64)
 
 	// Update only the price
 	_, err = db.Exec("UPDATE Ad SET price = $1 WHERE id = $2", price, adID)
@@ -149,7 +153,7 @@ func HandleUpdateAdLocation(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusForbidden, "You do not own this ad")
 	}
 
-	// Resolve and store location
+	// Resolve and store location using field implementation
 	locationRaw := c.FormValue("location")
 	locID, err := resolveAndStoreLocation(locationRaw)
 	if err != nil {

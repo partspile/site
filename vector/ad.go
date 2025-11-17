@@ -115,6 +115,7 @@ Title: `+adObj.Title+`
 Description: `+adObj.Description)
 
 	// Add spec fields dynamically - each field generates its own snippet
+	// This includes all fields including part_category and part_subcategory
 	for _, field := range fields {
 		fieldConfig := field.Config()
 		fieldValues, exists := adObj.SpecData[fieldConfig.Name]
@@ -128,14 +129,6 @@ Description: `+adObj.Description)
 		}
 	}
 
-	// Add part category/subcategory if available (not in fieldConfigs but always present for parts)
-	if catValues, exists := adObj.SpecData["part_category"]; exists && len(catValues) > 0 {
-		promptParts = append(promptParts, fmt.Sprintf("Category: %s\n", catValues[0]))
-	}
-	if subcatValues, exists := adObj.SpecData["part_subcategory"]; exists && len(subcatValues) > 0 {
-		promptParts = append(promptParts, fmt.Sprintf("Subcategory: %s\n", subcatValues[0]))
-	}
-
 	// Add location and quality indicator
 	promptParts = append(promptParts, fmt.Sprintf("Location: %s, %s, %s\n", adObj.City, adObj.AdminArea, adObj.Country))
 	promptParts = append(promptParts, fmt.Sprintf("Quality Indicator: %s", rockContext))
@@ -145,22 +138,15 @@ Description: `+adObj.Description)
 
 // buildAdEmbeddingMetadata creates metadata for embeddings dynamically based on category field configuration
 func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
-	// Initialize metadata with non-SpecData fields
 	lat, lon, _ := ad.GetLatLon(adObj.LocationID)
 	rockCount, _ := rock.GetAdRockCount(adObj.ID)
 
+	// Initialize metadata with non-SpecData fields
 	metadata := map[string]interface{}{
 		"ad_category_id": adObj.AdCategoryID,
 		"price":          adObj.Price,
 		"rock_count":     rockCount,
-	}
-
-	// Add geo payload if we have coordinates
-	if lat != 0 && lon != 0 {
-		metadata["location"] = map[string]interface{}{
-			"lat": lat,
-			"lon": lon,
-		}
+		"location":       map[string]interface{}{"lat": lat, "lon": lon},
 	}
 
 	// Get category fields to determine which fields to include
@@ -176,24 +162,13 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 			continue
 		}
 
-		// Filter out empty values
-		nonEmptyValues := []string{}
-		for _, val := range fieldValues {
-			if val != "" {
-				nonEmptyValues = append(nonEmptyValues, val)
-			}
-		}
-		if len(nonEmptyValues) == 0 {
-			continue
-		}
-
 		// Add to metadata based on field type - use fieldName directly
 		if config.FieldMultiValue {
 			// Multi-value field - store as array
-			metadata[fieldName] = nonEmptyValues
+			metadata[fieldName] = fieldValues
 		} else {
 			// Single-value field - store as string
-			metadata[fieldName] = nonEmptyValues[0]
+			metadata[fieldName] = fieldValues[0]
 		}
 	}
 
