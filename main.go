@@ -166,11 +166,7 @@ func main() {
 	api.Post("/update-ad-description/:id", h.AuthRequired, h.HandleUpdateAdDescription)
 	api.Post("/bookmark-ad/:id", h.AuthRequired, h.HandleBookmarkAd)
 	api.Delete("/bookmark-ad/:id", h.AuthRequired, h.HandleUnbookmarkAd)
-	api.Get("/year", h.HandleYears)
-	api.Get("/model", h.HandleModels)
-	api.Get("/engine", h.HandleEngines)
-	api.Get("/part_category", h.HandlePartCategory)
-	api.Get("/part_subcategory", h.HandlePartSubcategory)
+	api.Get("/field/:fieldName", h.HandleFieldValues)
 	api.Get("/subcategories", h.HandleSubCategories)
 	api.Get("/ad-image-url/:adID", h.HandleAdImageSignedURL)
 

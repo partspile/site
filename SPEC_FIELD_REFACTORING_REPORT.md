@@ -83,11 +83,16 @@ However, there are many places where these fields are still hardcoded with direc
 
 ### 6. handlers/ad-new.go
 
-**Lines 123-146**: Handler functions for specific fields (`HandleYears`, `HandleModels`, `HandleEngines`, `HandlePartCategory`, `HandlePartSubcategory`)
+**Status**: ✅ FIXED
 
-- **Issue**: These are wrapper functions that call `HandleFieldValues()` with hardcoded field names
-- **Impact**: These could be made more generic, but they're acceptable as convenience wrappers
-- **Priority**: Low - convenience wrappers are acceptable
+- **Previous Issue**: Handler functions for specific fields (`HandleYears`, `HandleModels`, `HandleEngines`, `HandlePartCategory`, `HandlePartSubcategory`) were wrapper functions with hardcoded field names
+- **Current State**: Removed all specific handler functions. Now uses a single generic endpoint `/api/field/:fieldName` with `HandleFieldValuesFromRoute()` handler
+- **Changes Made**:
+  - Removed `HandleYears`, `HandleModels`, `HandleEngines`, `HandlePartCategory`, `HandlePartSubcategory` functions
+  - Created `HandleFieldValuesFromRoute()` that extracts field name from route parameter
+  - Updated `spec/field.go` and `handlers/ad-new.go` to use `/api/field/:fieldName` endpoint
+  - Removed specific routes from `main.go`
+  - Updated `PRD.md` to reflect new API endpoint
 
 ### 7. spec/spec.go
 

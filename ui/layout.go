@@ -88,6 +88,6 @@ func pageHeaderWithSubtitle(title string, subtitle string) g.Node {
 	return Div(
 		Class("mb-8"),
 		H1(Class("text-4xl font-bold"), g.Text(title)),
-		g.If(subtitle != "", P(Class("text-lg text-gray-600 mt-2"), g.Text(subtitle))),
+		g.If(subtitle != "", P(Class("text-lg text-gray-600 mt-2 italic"), g.Text(subtitle))),
 	)
 }

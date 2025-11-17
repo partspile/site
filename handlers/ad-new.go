@@ -113,33 +113,18 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	return render(c, ui.SuccessMessage("Ad created successfully", "/", redirectDelayMs))
 }
 
-// HandleYears handles the years dropdown for new ad form
-func HandleYears(c *fiber.Ctx) error {
-	return HandleFieldValues(c, "year")
-}
-
-// HandleModels handles the models dropdown for new ad form
-func HandleModels(c *fiber.Ctx) error {
-	return HandleFieldValues(c, "model")
-}
-
-// HandleEngines handles the engines dropdown for new ad form
-func HandleEngines(c *fiber.Ctx) error {
-	return HandleFieldValues(c, "engine")
-}
-
-// HandlePartCategory handles the part category dropdown for new ad form
-func HandlePartCategory(c *fiber.Ctx) error {
-	return HandleFieldValues(c, "part_category")
-}
-
-// HandlePartSubcategory handles the part subcategory dropdown for new ad form
-func HandlePartSubcategory(c *fiber.Ctx) error {
-	return HandleFieldValues(c, "part_subcategory")
-}
-
 // HandleFieldValues handles field value requests generically for any field
-func HandleFieldValues(c *fiber.Ctx, fieldName string) error {
+// The field name is extracted from the route parameter
+func HandleFieldValues(c *fiber.Ctx) error {
+	fieldName := c.Params("fieldName")
+	if fieldName == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Field name is required")
+	}
+	return handleFieldValues(c, fieldName)
+}
+
+// handleFieldValues handles field value requests generically for any field
+func handleFieldValues(c *fiber.Ctx, fieldName string) error {
 	adCat := cookie.GetAdCategory(c)
 
 	// Get parent field values from query parameters
@@ -294,7 +279,7 @@ func buildSingleSelectFieldNode(fieldName string, values []string, currentField 
 			includeSelectors = append(includeSelectors, fmt.Sprintf("[name='%s']", fieldNameAttr))
 			includeStr := strings.Join(includeSelectors, ",")
 
-			endpoint := fmt.Sprintf("/api/%s", nextFieldName)
+			endpoint := fmt.Sprintf("/api/field/%s", nextFieldName)
 			selectAttrs = append(selectAttrs,
 				hx.Trigger("change"),
 				hx.Get(endpoint),

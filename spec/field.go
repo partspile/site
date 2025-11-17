@@ -233,7 +233,7 @@ func (b *BaseField) RenderNewAdField(selectedValues map[string]bool, fieldValues
 
 		// Add HTMX trigger if there's a next field in chain
 		if nextFieldTarget != "" && nextFieldName != "" {
-			endpoint := fmt.Sprintf("/api/%s", nextFieldName)
+			endpoint := fmt.Sprintf("/api/field/%s", nextFieldName)
 			attrs = append(attrs,
 				hx.Trigger("change"),
 				hx.Get(endpoint),

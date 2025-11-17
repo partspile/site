@@ -750,33 +750,22 @@ func partTypePath(a ad.AdDetail) g.Node {
 			continue
 		}
 
-		// Filter out empty values
-		nonEmptyValues := []string{}
-		for _, val := range values {
-			if strings.TrimSpace(val) != "" {
-				nonEmptyValues = append(nonEmptyValues, val)
-			}
-		}
-		if len(nonEmptyValues) == 0 {
-			continue
-		}
-
 		// Format based on field type
 		if fieldConfig.FieldMultiValue {
 			// Multi-value field - join with comma
 			// Special handling for year field - format as ranges
 			if fieldName == "year" {
-				yearRanges := formatYearRanges(nonEmptyValues)
+				yearRanges := formatYearRanges(values)
 				segments = append(segments, yearRanges)
 				linkNodes = append(linkNodes, commaSeparatedLinks(yearRanges, segments))
 			} else {
-				joined := strings.Join(nonEmptyValues, ", ")
+				joined := strings.Join(values, ", ")
 				segments = append(segments, joined)
 				linkNodes = append(linkNodes, commaSeparatedLinks(joined, segments))
 			}
 		} else {
 			// Single-value field - use first value
-			value := nonEmptyValues[0]
+			value := values[0]
 			segments = append(segments, value)
 			linkNodes = append(linkNodes, pathSegmentLink(value, segments))
 		}

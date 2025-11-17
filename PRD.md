@@ -489,9 +489,7 @@ See `schema.sql` for full schema and indexes.
 - `GET /ad/{id}` — View ad details
 - `GET /search` — Search ads (supports query and cursor for pagination)
 - `GET /api/makes` — List all makes
-- `GET /api/years?make=...` — List years for a make
-- `GET /api/models?make=...&years=...` — List models for make/years
-- `GET /api/engines?make=...&years=...&models=...` — List engines for make/years/models
+- `GET /api/field/:fieldName?parent1=...&parent2=...` — Get field values dynamically for any field (e.g., `/api/field/year?make=Ford`, `/api/field/model?make=Ford&year=2020`)
 - `POST /api/new-ad` — Create new ad
 - `POST /api/update-ad-price/:id` — Update ad price
 - `POST /api/update-ad-location/:id` — Update ad location
