@@ -121,6 +121,7 @@ func populateSpecData(adDetail *AdDetail) error {
 
 	// Build json_build_object query with subqueries for each field
 	var jsonParts []string
+	hasPlaceholders := false
 
 	for _, field := range fields {
 		config := field.Config()
@@ -158,6 +159,8 @@ func populateSpecData(adDetail *AdDetail) error {
 			continue
 		}
 
+		hasPlaceholders = true
+
 		// If only one spec table, use direct aggregation (like original)
 		// If multiple spec tables, use UNION with subquery wrapper
 		var subquery string
@@ -188,12 +191,25 @@ func populateSpecData(adDetail *AdDetail) error {
 	}
 
 	// Build final query with json_build_object
+	if len(jsonParts) == 0 {
+		// No fields at all - return empty spec data
+		return nil
+	}
+
 	query := fmt.Sprintf("SELECT json_build_object(%s) AS spec_fields",
 		strings.Join(jsonParts, ",\n    "))
 
-	// Execute query
-	if err := db.QueryJSON(&adDetail.SpecData, query, adDetail.ID); err != nil {
-		return fmt.Errorf("failed to query spec data: %w", err)
+	// Execute query - only pass adDetail.ID if the query actually uses $1
+	if hasPlaceholders {
+		if err := db.QueryJSON(&adDetail.SpecData, query, adDetail.ID); err != nil {
+			return fmt.Errorf("failed to query spec data: %w", err)
+		}
+	} else {
+		// Query has no placeholders (all fields returned empty arrays)
+		// Execute without arguments
+		if err := db.QueryJSON(&adDetail.SpecData, query); err != nil {
+			return fmt.Errorf("failed to query spec data: %w", err)
+		}
 	}
 	return nil
 }
@@ -226,6 +242,19 @@ func buildAdQueryWithDeleted(ids []int, userID int, includeDeleted bool) (string
 	var args []interface{}
 	argNum := 1
 
+	// Build bookmark expression and JOIN clause conditionally
+	var bookmarkExpr string
+	var bookmarkJoin string
+	if userID != 0 {
+		args = append(args, userID)
+		bookmarkExpr = "(CASE WHEN ba.ad_id IS NOT NULL THEN true ELSE false END)::boolean"
+		bookmarkJoin = "LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = $1"
+		argNum++ // IDs start at $2
+	} else {
+		bookmarkExpr = "false"
+		bookmarkJoin = ""
+	}
+
 	// Build WHERE clause for IDs
 	placeholders := make([]string, len(ids))
 	for i := range ids {
@@ -241,62 +270,32 @@ func buildAdQueryWithDeleted(ids []int, userID int, includeDeleted bool) (string
 	}
 	orderByCase += " END"
 
-	var query string
-	if userID != 0 {
-		args = append(args, userID)
-		bookmarkCase := "CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END"
-		query = fmt.Sprintf(`
-			SELECT json_agg(
-				json_build_object(
-					'id', a.id,
-					'ad_category_id', a.ad_category_id,
-					'title', a.title,
-					'price', a.price,
-					'created_at', a.created_at,
-					'deleted_at', a.deleted_at,
-					'user_id', a.user_id,
-					'image_count', a.image_count,
-					'city', l.city,
-					'admin_area', l.admin_area,
-					'country', l.country,
-					'bookmarked', %s
-				)
-				ORDER BY %s
-			) AS ads
-			FROM Ad a
-			LEFT JOIN Location l ON a.location_id = l.id
-			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = $1
-			WHERE %s`,
-			bookmarkCase, orderByCase, idFilter)
-		if !includeDeleted {
-			query += " AND a.deleted_at IS NULL"
-		}
-	} else {
-		query = fmt.Sprintf(`
-			SELECT json_agg(
-				json_build_object(
-					'id', a.id,
-					'ad_category_id', a.ad_category_id,
-					'title', a.title,
-					'price', a.price,
-					'created_at', a.created_at,
-					'deleted_at', a.deleted_at,
-					'user_id', a.user_id,
-					'image_count', a.image_count,
-					'city', l.city,
-					'admin_area', l.admin_area,
-					'country', l.country,
-					'bookmarked', 0
-				)
-				ORDER BY %s
-			) AS ads
-			FROM Ad a
-			LEFT JOIN Location l ON a.location_id = l.id
-			WHERE %s`,
-			orderByCase, idFilter)
-		if !includeDeleted {
-			query += " AND a.deleted_at IS NULL"
-		}
+	query := fmt.Sprintf(`
+		SELECT json_agg(
+			json_build_object(
+				'id', a.id,
+				'ad_category_id', a.ad_category_id,
+				'title', a.title,
+				'price', a.price,
+				'created_at', a.created_at AT TIME ZONE 'UTC',
+				'deleted_at', a.deleted_at AT TIME ZONE 'UTC',
+				'user_id', a.user_id,
+				'image_count', a.image_count,
+				'city', l.city,
+				'admin_area', l.admin_area,
+				'country', l.country,
+				'bookmarked', %s
+			)
+			ORDER BY %s
+		) AS ads
+		FROM Ad a
+		LEFT JOIN Location l ON a.location_id = l.id
+		%s
+		WHERE %s`,
+		bookmarkExpr, orderByCase, bookmarkJoin, idFilter)
+
+	if !includeDeleted {
+		query += " AND a.deleted_at IS NULL"
 	}
 
 	for _, id := range ids {
@@ -320,131 +319,67 @@ func GetAdByID(adID int, userID int) (*Ad, error) {
 
 // GetAdDetailByID returns the full AdDetail for a single ad ID
 func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
-	var query string
 	var args []interface{}
+	var bookmarkExpr string
+	var bookmarkJoin string
+	var adIDParam string
 
 	if userID != 0 {
-		// Query with bookmark status - full fields for detail view
-		query = `
-			SELECT a.id, a.title, a.description, a.price,
-				a.created_at, a.deleted_at, a.user_id,
-				a.location_id, a.image_count, a.has_vector,
-				l.raw_text as raw_location, l.city, l.admin_area, l.country,
-				CASE WHEN ba.ad_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked,
-				a.ad_category_id,
-				CASE WHEN u.sms_opted_out = 1 AND u.notification_method = 'sms' THEN 1 ELSE 0 END as owner_unreachable
-			FROM Ad a
-			LEFT JOIN Location l ON a.location_id = l.id
-			LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = $1
-			LEFT JOIN Users u ON a.user_id = u.id
-			WHERE a.id = $2
-		`
 		args = append(args, userID, adID)
+		bookmarkExpr = "(CASE WHEN ba.ad_id IS NOT NULL THEN true ELSE false END)::boolean"
+		bookmarkJoin = "LEFT JOIN BookmarkedAd ba ON a.id = ba.ad_id AND ba.user_id = $1"
+		adIDParam = "$2"
 	} else {
-		// Query without bookmark status (default to false) - full fields for detail view
-		query = `
-			SELECT a.id, a.title, a.description, a.price,
-				a.created_at, a.deleted_at, a.user_id,
-				a.location_id, a.image_count, a.has_vector,
-				l.raw_text as raw_location, l.city, l.admin_area, l.country,
-				0 as is_bookmarked, a.ad_category_id,
-				CASE WHEN u.sms_opted_out = 1 AND u.notification_method = 'sms' THEN 1 ELSE 0 END as owner_unreachable
-			FROM Ad a
-			LEFT JOIN Location l ON a.location_id = l.id
-			LEFT JOIN Users u ON a.user_id = u.id
-			WHERE a.id = $1
-		`
 		args = append(args, adID)
+		bookmarkExpr = "false"
+		bookmarkJoin = ""
+		adIDParam = "$1"
 	}
 
-	var adDetails []AdDetail
-	err := db.Select(&adDetails, query, args...)
+	query := fmt.Sprintf(`
+		SELECT json_build_object(
+			'id', a.id,
+			'title', a.title,
+			'description', a.description,
+			'price', a.price,
+			'created_at', a.created_at AT TIME ZONE 'UTC',
+			'deleted_at', a.deleted_at AT TIME ZONE 'UTC',
+			'user_id', a.user_id,
+			'location_id', a.location_id,
+			'image_count', a.image_count,
+			'has_vector', (a.has_vector = 1)::boolean,
+			'raw_location', l.raw_text,
+			'city', l.city,
+			'admin_area', l.admin_area,
+			'country', l.country,
+			'bookmarked', %s,
+			'ad_category_id', a.ad_category_id,
+			'owner_unreachable', CASE WHEN u.sms_opted_out = 1 AND u.notification_method = 'sms' THEN 1 ELSE 0 END
+		) AS ad_detail
+		FROM Ad a
+		LEFT JOIN Location l ON a.location_id = l.id
+		%s
+		LEFT JOIN Users u ON a.user_id = u.id
+		WHERE a.id = %s`,
+		bookmarkExpr, bookmarkJoin, adIDParam)
+
+	var adDetail AdDetail
+	err := db.QueryJSON(&adDetail, query, args...)
 	if err != nil {
 		logger.Debug("GetAdDetailByID query error",
 			"component", "ad", "adID", adID, "userID", userID, "error", err)
-		return nil, err
-	}
-
-	if len(adDetails) == 0 {
-		logger.Debug("GetAdDetailByID no results",
-			"component", "ad", "adID", adID, "userID", userID)
 		return nil, fmt.Errorf("ad with ID %d not found", adID)
 	}
 
-	adDetail := &adDetails[0]
-
 	// Populate spec data (populateSpecData always initializes SpecData to non-nil)
-	err = populateSpecData(adDetail)
+	err = populateSpecData(&adDetail)
 	if err != nil {
 		logger.Debug("GetAdDetailByID populateSpecData error",
 			"component", "ad", "adID", adID, "error", err)
 		return nil, fmt.Errorf("failed to populate spec data: %w", err)
 	}
 
-	return adDetail, nil
-}
-
-// formatSQLQuery formats a SQL query string for better readability in logs
-func formatSQLQuery(query string) string {
-	// First, fix common formatting issues
-	formatted := query
-
-	// Fix "LEFT" appearing on separate line from "JOIN"
-	formatted = strings.ReplaceAll(formatted, " LEFT\n", " LEFT ")
-	formatted = strings.ReplaceAll(formatted, "\nLEFT JOIN", " LEFT JOIN")
-	formatted = strings.ReplaceAll(formatted, " LEFT JOIN", "\n  LEFT JOIN")
-
-	// Replace common SQL keywords with newline + keyword for better formatting
-	keywords := []string{
-		"SELECT", "FROM", "WHERE", "JOIN", "RIGHT JOIN",
-		"INNER JOIN", "OUTER JOIN", "UNION ALL", "GROUP BY", "ORDER BY",
-		"HAVING", "LIMIT", "OFFSET",
-	}
-
-	// Add newline before each keyword (case-insensitive)
-	for _, keyword := range keywords {
-		replacement := "\n" + strings.ToUpper(keyword)
-		formatted = strings.ReplaceAll(formatted, " "+keyword+" ", " "+replacement+" ")
-		formatted = strings.ReplaceAll(formatted, " "+keyword+"\n", " "+replacement+"\n")
-		formatted = strings.ReplaceAll(formatted, "\n"+keyword+" ", "\n"+replacement+" ")
-		formatted = strings.ReplaceAll(formatted, "("+keyword+" ", "("+replacement+" ")
-	}
-
-	// Clean up multiple consecutive newlines
-	for strings.Contains(formatted, "\n\n\n") {
-		formatted = strings.ReplaceAll(formatted, "\n\n\n", "\n\n")
-	}
-
-	// Add indentation after newlines (simple 2-space indent)
-	lines := strings.Split(formatted, "\n")
-	indented := make([]string, 0, len(lines))
-	indentLevel := 0
-
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" {
-			continue
-		}
-
-		// Decrease indent for closing parentheses and certain keywords
-		if strings.HasPrefix(trimmed, ")") || strings.HasPrefix(trimmed, "END") {
-			indentLevel--
-			if indentLevel < 0 {
-				indentLevel = 0
-			}
-		}
-
-		// Add indented line
-		indent := strings.Repeat("  ", indentLevel)
-		indented = append(indented, indent+trimmed)
-
-		// Increase indent for opening parentheses and subqueries
-		if strings.HasSuffix(trimmed, "(") || strings.Contains(trimmed, "FROM (") {
-			indentLevel++
-		}
-	}
-
-	return strings.Join(indented, "\n")
+	return &adDetail, nil
 }
 
 // GetMostPopularAds returns the top n ads by popularity using SQL
@@ -452,23 +387,39 @@ func GetMostPopularAds(n int) []Ad {
 	logger.Debug("Querying for top popular ads",
 		"component", "ad", "limit", n)
 	query := `
-		SELECT 
-			a.id, a.ad_category_id, a.title, a.price, a.created_at, a.deleted_at, a.user_id, a.image_count,
-			l.city, l.admin_area, l.country,
-			0 as is_bookmarked
-		FROM Ad a
-		LEFT JOIN Location l ON a.location_id = l.id
-		WHERE a.deleted_at IS NULL
-		ORDER BY (
-			CAST(a.click_count AS DOUBLE PRECISION) * 2.0 + 
-			CAST(COALESCE((SELECT COUNT(*) FROM BookmarkedAd ba WHERE ba.ad_id = a.id), 0) AS DOUBLE PRECISION) * 3.0 + 
-			100.0 / GREATEST(EXTRACT(EPOCH FROM (NOW() - a.created_at)) / 86400.0, 0.1)
-		) DESC
-		LIMIT $1
+		SELECT json_agg(
+			json_build_object(
+				'id', a.id,
+				'ad_category_id', a.ad_category_id,
+				'title', a.title,
+				'price', a.price,
+				'created_at', a.created_at AT TIME ZONE 'UTC',
+				'deleted_at', a.deleted_at AT TIME ZONE 'UTC',
+				'user_id', a.user_id,
+				'image_count', a.image_count,
+				'city', l.city,
+				'admin_area', l.admin_area,
+				'country', l.country,
+				'bookmarked', false
+			)
+		) AS ads
+		FROM (
+			SELECT a.id, a.ad_category_id, a.title, a.price, a.created_at, a.deleted_at, a.user_id, a.image_count,
+			       l.city, l.admin_area, l.country
+			FROM Ad a
+			LEFT JOIN Location l ON a.location_id = l.id
+			WHERE a.deleted_at IS NULL
+			ORDER BY (
+				CAST(a.click_count AS DOUBLE PRECISION) * 2.0 + 
+				CAST(COALESCE((SELECT COUNT(*) FROM BookmarkedAd ba WHERE ba.ad_id = a.id), 0) AS DOUBLE PRECISION) * 3.0 + 
+				100.0 / GREATEST(EXTRACT(EPOCH FROM (NOW() - a.created_at)) / 86400.0, 0.1)
+			) DESC
+			LIMIT $1
+		) a
 	`
 
 	var ads []Ad
-	err := db.Select(&ads, query, n)
+	err := db.QueryJSON(&ads, query, n)
 	if err != nil {
 		logger.Error("SQL error querying popular ads",
 			"error", err, "component", "ad")
