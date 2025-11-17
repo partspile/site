@@ -210,7 +210,7 @@ func getMakesForAll(adCat int) ([]string, error) {
 	`
 	var makes []string
 	err := db.Select(&makes, query, adCat)
-	return makes, nil
+	return makes, err
 }
 
 // getYearsForAll returns all years for a specific make and category
