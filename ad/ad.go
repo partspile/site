@@ -7,7 +7,6 @@ import (
 
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
-	"github.com/parts-pile/site/spec"
 )
 
 // Ad represents the minimal advertisement data needed for list/grid/tree views
@@ -59,158 +58,10 @@ func (a Ad) IsArchived() bool {
 func populateSpecData(adDetail *AdDetail) error {
 	adDetail.SpecData = make(map[string][]string)
 
-	fields := spec.GetDBFields(adDetail.AdCategoryID)
+	fields := GetCategoryFields(adDetail.AdCategoryID)
 
-	// Get all chains for this category to determine which spec tables are used
-	allChains, err := spec.GetAllChains(adDetail.AdCategoryID)
-	if err != nil {
-		return fmt.Errorf("failed to get chains: %w", err)
-	}
+	// TODO: Implement this
 
-	// Build map of spec table name -> AdSpec table info
-	// Only include spec tables that are actually used by this category
-	specTableMap := make(map[string]struct {
-		adSpecTableName string
-		idColumn        string
-		validFields     map[string]bool
-	})
-
-	for _, chain := range allChains {
-		specType := spec.GetSpecTypeFromChain(chain)
-		specTableName := spec.GetSpecTableName(specType)
-
-		// Map spec table to AdSpec table
-		var adSpecTableName, idColumn string
-		var validFields map[string]bool
-
-		switch specTableName {
-		case "SpecVehicle":
-			adSpecTableName = "AdSpecVehicle"
-			idColumn = "spec_vehicle_id"
-			validFields = map[string]bool{
-				"make_id": true, "year_id": true, "model_id": true, "engine_id": true,
-			}
-		case "SpecAgricultural":
-			adSpecTableName = "AdSpecAgricultural"
-			idColumn = "spec_agricultural_id"
-			validFields = map[string]bool{
-				"make_id": true, "year_id": true, "model_id": true,
-			}
-		case "SpecBicycle":
-			adSpecTableName = "AdSpecBicycle"
-			idColumn = "spec_bicycle_id"
-			validFields = map[string]bool{
-				"make_id": true, "model_id": true,
-			}
-		case "SpecPart":
-			adSpecTableName = "AdSpecPart"
-			idColumn = "spec_part_id"
-			validFields = map[string]bool{
-				"part_category_id": true, "part_subcategory_id": true,
-			}
-		default:
-			continue // Unknown spec table
-		}
-
-		specTableMap[specTableName] = struct {
-			adSpecTableName string
-			idColumn        string
-			validFields     map[string]bool
-		}{adSpecTableName, idColumn, validFields}
-	}
-
-	// Build json_build_object query with subqueries for each field
-	var jsonParts []string
-	hasPlaceholders := false
-
-	for _, field := range fields {
-		config := field.Config()
-		fieldName := config.Name
-		tableName := config.TableName
-		tableFieldName := config.TableFieldName
-
-		// Find which spec table(s) contain this field
-		var unionParts []string
-
-		for specTableName, adSpecInfo := range specTableMap {
-			// Skip if this field doesn't exist in this spec table
-			if !adSpecInfo.validFields[tableFieldName] {
-				continue
-			}
-
-			// Build FROM/JOIN clause matching original pattern:
-			// Start from value table, join to spec, then to ad_spec
-			fromClause := fmt.Sprintf(`
-			 FROM %s
-			 JOIN %s ON %s.id = %s.%s
-			 JOIN %s ON %s.%s = %s.id
-			 WHERE %s.ad_id = $1`,
-				tableName,
-				specTableName, tableName, specTableName, tableFieldName,
-				adSpecInfo.adSpecTableName, adSpecInfo.adSpecTableName, adSpecInfo.idColumn, specTableName,
-				adSpecInfo.adSpecTableName)
-
-			unionParts = append(unionParts, fromClause)
-		}
-
-		if len(unionParts) == 0 {
-			// Field doesn't exist in any spec table for this category, return empty array
-			jsonParts = append(jsonParts, fmt.Sprintf("'%s', '[]'::json", fieldName))
-			continue
-		}
-
-		hasPlaceholders = true
-
-		// If only one spec table, use direct aggregation (like original)
-		// If multiple spec tables, use UNION with subquery wrapper
-		var subquery string
-		if len(unionParts) == 1 {
-			// Single spec table - use subquery for DISTINCT, then json_agg with ORDER BY
-			// PostgreSQL doesn't support json_agg(DISTINCT value ORDER BY value)
-			subquery = fmt.Sprintf(`COALESCE(
-			(SELECT json_agg(value ORDER BY value)
-			 FROM (SELECT DISTINCT %s.value %s) AS distinct_values),
-			'[]'::json
-		)`, tableName, unionParts[0])
-		} else {
-			// Multiple spec tables - need UNION with subquery wrapper
-			// Build SELECT ... UNION SELECT ... then wrap
-			var selectParts []string
-			for _, fromClause := range unionParts {
-				selectParts = append(selectParts, fmt.Sprintf("SELECT %s.value%s", tableName, fromClause))
-			}
-			unionQuery := strings.Join(selectParts, " UNION ")
-			subquery = fmt.Sprintf(`COALESCE(
-			(SELECT json_agg(value ORDER BY value)
-			 FROM (SELECT DISTINCT value FROM (%s) AS unioned) AS distinct_values),
-			'[]'::json
-		)`, unionQuery)
-		}
-
-		jsonParts = append(jsonParts, fmt.Sprintf("'%s', %s", fieldName, subquery))
-	}
-
-	// Build final query with json_build_object
-	if len(jsonParts) == 0 {
-		// No fields at all - return empty spec data
-		return nil
-	}
-
-	query := fmt.Sprintf("SELECT json_build_object(%s) AS spec_fields",
-		strings.Join(jsonParts, ",\n    "))
-
-	// Execute query - only pass adDetail.ID if the query actually uses $1
-	if hasPlaceholders {
-		if err := db.QueryJSON(&adDetail.SpecData, query, adDetail.ID); err != nil {
-			return fmt.Errorf("failed to query spec data: %w", err)
-		}
-	} else {
-		// Query has no placeholders (all fields returned empty arrays)
-		// Execute without arguments
-		if err := db.QueryJSON(&adDetail.SpecData, query); err != nil {
-			return fmt.Errorf("failed to query spec data: %w", err)
-		}
-	}
 	return nil
 }
 
