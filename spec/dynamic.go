@@ -394,10 +394,10 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 		specTable   string
 		idColumn    string
 	}{
-		{"AdSpecVehicle", "SpecVehicle", "spec_vehicle_id"},
-		{"AdSpecAgricultural", "SpecAgricultural", "spec_agricultural_id"},
-		{"AdSpecBicycle", "SpecBicycle", "spec_bicycle_id"},
-		{"AdSpecPart", "SpecPart", "spec_part_id"},
+		{"AdSpecVehicle", "SpecVehicle", "spec_id"},
+		{"AdSpecAgricultural", "SpecAgricultural", "spec_id"},
+		{"AdSpecBicycle", "SpecBicycle", "spec_id"},
+		{"AdSpecPart", "SpecPart", "spec_id"},
 	}
 
 	var unionQueries []string

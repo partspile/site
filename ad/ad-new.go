@@ -266,16 +266,16 @@ func insertSpecAssociation(tx *sql.Tx, adID int, specID int, specType string) er
 	switch specType {
 	case "vehicle":
 		tableName = "AdSpecVehicle"
-		idColumn = "spec_vehicle_id"
+		idColumn = "spec_id"
 	case "agricultural":
 		tableName = "AdSpecAgricultural"
-		idColumn = "spec_agricultural_id"
+		idColumn = "spec_id"
 	case "bicycle":
 		tableName = "AdSpecBicycle"
-		idColumn = "spec_bicycle_id"
+		idColumn = "spec_id"
 	case "part":
 		tableName = "AdSpecPart"
-		idColumn = "spec_part_id"
+		idColumn = "spec_id"
 	default:
 		return fmt.Errorf("unknown spec type: %s", specType)
 	}

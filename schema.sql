@@ -205,35 +205,35 @@ CREATE INDEX idx_ad_ad_category_id ON Ad(ad_category_id);
 -- AdSpecification tables - one per spec table type
 CREATE TABLE AdSpecVehicle (
     ad_id INTEGER NOT NULL REFERENCES Ad(id),
-    spec_vehicle_id INTEGER NOT NULL REFERENCES SpecVehicle(id),
-    PRIMARY KEY (ad_id, spec_vehicle_id)
+    spec_id INTEGER NOT NULL REFERENCES SpecVehicle(id),
+    PRIMARY KEY (ad_id, spec_id)
 );
 CREATE INDEX idx_adspecvehicle_ad_id ON AdSpecVehicle(ad_id);
-CREATE INDEX idx_adspecvehicle_spec_vehicle_id ON AdSpecVehicle(spec_vehicle_id);
+CREATE INDEX idx_adspecvehicle_spec_id ON AdSpecVehicle(spec_id);
 
 CREATE TABLE AdSpecAgricultural (
     ad_id INTEGER NOT NULL REFERENCES Ad(id),
-    spec_agricultural_id INTEGER NOT NULL REFERENCES SpecAgricultural(id),
-    PRIMARY KEY (ad_id, spec_agricultural_id)
+    spec_id INTEGER NOT NULL REFERENCES SpecAgricultural(id),
+    PRIMARY KEY (ad_id, spec_id)
 );
 CREATE INDEX idx_adspecagricultural_ad_id ON AdSpecAgricultural(ad_id);
-CREATE INDEX idx_adspecagricultural_spec_agricultural_id ON AdSpecAgricultural(spec_agricultural_id);
+CREATE INDEX idx_adspecagricultural_spec_id ON AdSpecAgricultural(spec_id);
 
 CREATE TABLE AdSpecBicycle (
     ad_id INTEGER NOT NULL REFERENCES Ad(id),
-    spec_bicycle_id INTEGER NOT NULL REFERENCES SpecBicycle(id),
-    PRIMARY KEY (ad_id, spec_bicycle_id)
+    spec_id INTEGER NOT NULL REFERENCES SpecBicycle(id),
+    PRIMARY KEY (ad_id, spec_id)
 );
 CREATE INDEX idx_adspecbicycle_ad_id ON AdSpecBicycle(ad_id);
-CREATE INDEX idx_adspecbicycle_spec_bicycle_id ON AdSpecBicycle(spec_bicycle_id);
+CREATE INDEX idx_adspecbicycle_spec_id ON AdSpecBicycle(spec_id);
 
 CREATE TABLE AdSpecPart (
     ad_id INTEGER NOT NULL REFERENCES Ad(id),
-    spec_part_id INTEGER NOT NULL REFERENCES SpecPart(id),
-    PRIMARY KEY (ad_id, spec_part_id)
+    spec_id INTEGER NOT NULL REFERENCES SpecPart(id),
+    PRIMARY KEY (ad_id, spec_id)
 );
 CREATE INDEX idx_adspecpart_ad_id ON AdSpecPart(ad_id);
-CREATE INDEX idx_adspecpart_spec_part_id ON AdSpecPart(spec_part_id);
+CREATE INDEX idx_adspecpart_spec_id ON AdSpecPart(spec_id);
 
 CREATE TABLE BookmarkedAd (
     user_id INTEGER NOT NULL REFERENCES Users(id),

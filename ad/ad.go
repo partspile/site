@@ -60,8 +60,56 @@ func populateSpecData(adDetail *AdDetail) error {
 
 	fields := GetCategoryFields(adDetail.AdCategoryID)
 
-	// TODO: Implement this
+	// Build JSON object keys for each field that has a database table
+	jsonKeys := []string{}
+	for _, field := range fields {
+		// Get AdCategoryField configuration
+		acField := field.GetAdCategoryField()
 
+		// Skip fields without database tables
+		if acField.TableName == "" {
+			continue
+		}
+
+		tableName := acField.TableName
+		specTableName := acField.SpecTableName
+		specTableFieldName := acField.SpecTableFieldName
+		adSpecTableName := acField.AdSpecTableName
+		fieldName := field.Name()
+
+		// Build the subquery for this field
+		subquery := fmt.Sprintf(`(
+			SELECT json_agg(value ORDER BY value)
+			FROM (
+				SELECT DISTINCT %s.value
+				FROM %s
+				JOIN %s sv ON %s.id = sv.%s
+				JOIN %s asv ON asv.spec_id = sv.id
+				WHERE asv.ad_id = $1
+			) AS distinct_values
+		)`, tableName, tableName, specTableName, tableName, specTableFieldName, adSpecTableName)
+
+		jsonKeys = append(jsonKeys, fmt.Sprintf("'%s', COALESCE(%s, '[]'::json)", fieldName, subquery))
+	}
+
+	if len(jsonKeys) == 0 {
+		// No fields to query, return empty map
+		return nil
+	}
+
+	// Build the full query
+	query := fmt.Sprintf("SELECT json_build_object(%s) AS spec_fields", strings.Join(jsonKeys, ", "))
+
+	// Execute query and get result
+	var result struct {
+		SpecFields map[string][]string `json:"spec_fields"`
+	}
+	err := db.QueryJSON(&result, query, adDetail.ID)
+	if err != nil {
+		return fmt.Errorf("failed to query spec data: %w", err)
+	}
+
+	adDetail.SpecData = result.SpecFields
 	return nil
 }
 

@@ -95,6 +95,9 @@ type Field interface {
 	// GetValues returns the available values for this field given parent filters
 	// parentValues maps parent field names to their values
 	GetValues(parentValues map[string]string) ([]string, error)
+
+	// GetAdCategoryField returns the AdCategoryField configuration for this field
+	GetAdCategoryField() AdCategoryField
 }
 
 // BaseField provides common functionality for all field types
@@ -142,6 +145,10 @@ func (b *BaseField) GetValues(parentValues map[string]string) ([]string, error) 
 	var values []string
 	err = db.Select(&values, query, args...)
 	return values, err
+}
+
+func (b *BaseField) GetAdCategoryField() AdCategoryField {
+	return b.AdCategoryField
 }
 
 // RenderFilterField provides a default fallback implementation

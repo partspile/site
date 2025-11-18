@@ -1618,10 +1618,10 @@ func importAds(jsonFile string, categoryID int, categoryMap map[string]int, user
 		"part":         "AdSpecPart",
 	}
 	specIDColumnMap := map[string]string{
-		"vehicle":      "spec_vehicle_id",
-		"agricultural": "spec_agricultural_id",
-		"bicycle":      "spec_bicycle_id",
-		"part":         "spec_part_id",
+		"vehicle":      "spec_id",
+		"agricultural": "spec_id",
+		"bicycle":      "spec_id",
+		"part":         "spec_id",
 	}
 
 	for specType, pairs := range adSpecByType {
