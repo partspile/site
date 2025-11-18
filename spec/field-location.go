@@ -42,14 +42,13 @@ func (f *FieldLocation) BuildFilterCondition(c *fiber.Ctx, locationResolver Loca
 }
 
 func (f *FieldLocation) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
-	config := f.config
 	return fieldInput(
-		config.Name+"Div",
-		config.Name,
-		config.DisplayName,
+		f.Name+"Div",
+		f.Name,
+		f.DisplayName,
 		"text",
 		defaultValue,
-		config.IsRequired,
+		f.IsRequired,
 		"(Optional)",
 	)
 }
@@ -92,8 +91,8 @@ func (f *FieldLocation) RenderFilterField(params map[string]string) g.Node {
 }
 
 func (f *FieldLocation) Validate(value string) error {
-	if f.config.IsRequired && value == "" {
-		return fmt.Errorf("%s is required", f.config.DisplayName)
+	if f.IsRequired && value == "" {
+		return fmt.Errorf("%s is required", f.DisplayName)
 	}
 	return nil
 }

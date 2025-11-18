@@ -23,11 +23,10 @@ func (f *FieldPartCategory) BuildFilterCondition(c *fiber.Ctx, _ LocationResolve
 }
 
 func (f *FieldPartCategory) RenderFilterField(params map[string]string) g.Node {
-	config := f.config
-	value := params[config.Name]
+	value := params[f.Name]
 
 	// Get all available values for this field (filter fields are independent)
-	values, err := GetFieldValues(f.categoryID, config.Name, map[string]string{})
+	values, err := GetFieldValues(f.AdCategoryID, f.Name, map[string]string{})
 	if err != nil {
 		// If error, return empty dropdown
 		values = []string{}
@@ -45,10 +44,10 @@ func (f *FieldPartCategory) RenderFilterField(params map[string]string) g.Node {
 	}
 
 	return Div(
-		Label(Class("block text-sm font-medium mb-1"), g.Text(config.DisplayName)),
+		Label(Class("block text-sm font-medium mb-1"), g.Text(f.DisplayName)),
 		Select(
-			Name(config.Name),
-			ID(config.Name+"Filter"),
+			Name(f.Name),
+			ID(f.Name+"Filter"),
 			Class("w-full p-2 border rounded-md"),
 			g.Group(options),
 		),
@@ -56,22 +55,20 @@ func (f *FieldPartCategory) RenderFilterField(params map[string]string) g.Node {
 }
 
 func (f *FieldPartCategory) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
-	config := f.config
 	return fieldSelect(
-		config.Name+"Div",
-		config.Name,
-		config.DisplayName,
+		f.Name+"Div",
+		f.Name,
+		f.DisplayName,
 		fieldValues,
 		defaultValue,
-		config.IsRequired,
-		config.NextFieldName,
+		f.IsRequired,
+		f.NextFieldName,
 	)
 }
 
 func (f *FieldPartCategory) Validate(value string) error {
-	if f.config.IsRequired && value == "" {
-		return fmt.Errorf("%s is required", f.config.DisplayName)
+	if f.IsRequired && value == "" {
+		return fmt.Errorf("%s is required", f.DisplayName)
 	}
 	return nil
 }
-

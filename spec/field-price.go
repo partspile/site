@@ -46,14 +46,13 @@ func (f *FieldPrice) BuildFilterCondition(c *fiber.Ctx, _ LocationResolver) *qdr
 }
 
 func (f *FieldPrice) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
-	config := f.config
 	return fieldInput(
-		config.Name+"Div",
-		config.Name,
-		config.DisplayName,
+		f.Name+"Div",
+		f.Name,
+		f.DisplayName,
 		"number",
 		defaultValue,
-		config.IsRequired,
+		f.IsRequired,
 		"",
 		Step("1"),
 		Min("0"),
@@ -65,10 +64,9 @@ func (f *FieldPrice) RenderNewAdField(selectedValues map[string]bool, fieldValue
 func (f *FieldPrice) RenderFilterField(params map[string]string) g.Node {
 	minPrice := params["min_price"]
 	maxPrice := params["max_price"]
-	config := f.config
 
 	return Div(
-		Label(Class("block text-sm font-medium mb-1"), g.Text(config.DisplayName+" Range")),
+		Label(Class("block text-sm font-medium mb-1"), g.Text(f.DisplayName+" Range")),
 		Div(
 			Class("flex gap-2 flex-nowrap"),
 			Input(
@@ -96,16 +94,16 @@ func (f *FieldPrice) RenderFilterField(params map[string]string) g.Node {
 }
 
 func (f *FieldPrice) Validate(value string) error {
-	if f.config.IsRequired && value == "" {
-		return fmt.Errorf("%s is required", f.config.DisplayName)
+	if f.IsRequired && value == "" {
+		return fmt.Errorf("%s is required", f.DisplayName)
 	}
 	if value != "" {
 		price, err := strconv.ParseFloat(value, 64)
 		if err != nil {
-			return fmt.Errorf("%s must be a valid number", f.config.DisplayName)
+			return fmt.Errorf("%s must be a valid number", f.DisplayName)
 		}
 		if price < 0 {
-			return fmt.Errorf("%s cannot be negative", f.config.DisplayName)
+			return fmt.Errorf("%s cannot be negative", f.DisplayName)
 		}
 	}
 	return nil

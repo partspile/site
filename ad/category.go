@@ -1,26 +1,29 @@
 package ad
 
 import (
+	"fmt"
+	"sort"
+	"strconv"
+
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
+	"github.com/parts-pile/site/spec"
 )
 
-// Cached ad category names map (id -> name)
-var adCategoryNames map[int]string
+var (
+	adCategoryNames  map[int]string       // id -> name
+	adCategoryIDs    map[string]int       // name -> id
+	adCategoryFields map[int][]spec.Field // id -> []Field
+)
 
-// Cached ad category IDs map (name -> id)
-var adCategoryIDs map[string]int
-
-// INitCategoryNames populates the cached adCategoryNames and adCategoryIDs maps from the database
-func InitCategoryNames() {
+// loadCategoriesFromDB loads category data from the database and populates the maps
+func loadCategoriesFromDB() error {
 	adCategoryNames = make(map[int]string)
 	adCategoryIDs = make(map[string]int)
 
 	rows, err := db.Query("SELECT id, name FROM AdCategory ORDER BY id")
 	if err != nil {
-		logger.Error("Failed to query AdCategory",
-			"error", err, "component", "ad-category")
-		return
+		return err
 	}
 	defer rows.Close()
 
@@ -35,17 +38,96 @@ func InitCategoryNames() {
 		adCategoryNames[id] = name
 		adCategoryIDs[name] = id
 	}
+	return nil
+}
+
+func loadCategoryFieldsFromDB() error {
+	adCategoryFields = make(map[int][]spec.Field)
+
+	query := `
+		SELECT json_object_agg(
+			acf.ad_category_id::text,
+			COALESCE(
+				json_agg(
+					json_build_object(
+						'ad_category_id', acf.ad_category_id,
+						'name', sf.name,
+						'display_name', sf.display_name,
+						'field_type', sf.field_type,
+						'table_name', sf.table_name,
+						'qdrant_type', sf.qdrant_type,
+						'spec_table_name', acf.spec_table_name,
+						'spec_table_field_name', acf.spec_table_field_name,
+						'ad_spec_table_name', acf.ad_spec_table_name,
+						'next_in_chain', acf.next_in_chain,
+						'is_required', acf.is_required::boolean,
+						'show_in_filters', acf.show_in_filters::boolean
+					) ORDER BY acf.priority_order
+				),
+				'[]'::json
+			)
+		)
+		FROM AdCategoryField acf
+		JOIN SpecField sf ON acf.spec_field_id = sf.id
+		GROUP BY acf.ad_category_id
+	`
+
+	var result map[string][]spec.AdCategoryField
+	if err := db.QueryJSON(&result, query); err != nil {
+		return err
+	}
+
+	// Create concrete Field instances from AdCategoryField
+	for idStr, acFields := range result {
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			logger.Error("Failed to convert category ID",
+				"error", err, "id", idStr, "component", "ad-category")
+			continue
+		}
+
+		fields := make([]spec.Field, 0, len(acFields))
+		for _, acField := range acFields {
+			field, err := spec.NewField(id, acField)
+			if err != nil {
+				logger.Error("Failed to create field instance",
+					"error", err, "category_id", id,
+					"field_name", acField.Name, "component", "ad-category")
+				continue
+			}
+			fields = append(fields, field)
+		}
+		adCategoryFields[id] = fields
+	}
+	return nil
+}
+
+func InitAdCategories() error {
+
+	// Load AdCategory table
+	if err := loadCategoriesFromDB(); err != nil {
+		logger.Error("Failed to query AdCategory",
+			"error", err, "component", "ad-category")
+		return err
+	}
+
+	// Load AdCategoryField table
+	if err := loadCategoryFieldsFromDB(); err != nil {
+		logger.Error("Failed to query AdCategoryField",
+			"error", err, "component", "ad-category")
+		return err
+	}
+
+	return nil
 }
 
 // GetCategoryIDs returns all category IDs in order
 func GetCategoryIDs() []int {
-	var ids []int
-	for i := 1; ; i++ {
-		if _, exists := adCategoryNames[i]; !exists {
-			break
-		}
-		ids = append(ids, i)
+	ids := make([]int, 0, len(adCategoryNames))
+	for id := range adCategoryNames {
+		ids = append(ids, id)
 	}
+	sort.Ints(ids)
 	return ids
 }
 
@@ -64,9 +146,21 @@ func IsValidCategory(adCat int) bool {
 }
 
 // GetCategoryIDByName returns the category ID for a given category name, or 0 if not found
-func GetCategoryIDByName(name string) int {
-	if id, exists := adCategoryIDs[name]; exists {
-		return id
+func GetCategoryIDByName(name string) (id int) {
+	id = adCategoryIDs[name]
+	return
+}
+
+func GetCategoryFields(adCat int) []spec.Field {
+	return adCategoryFields[adCat]
+}
+
+func GetCategoryField(adCat int, fieldName string) (spec.Field, error) {
+	fields := adCategoryFields[adCat]
+	for _, field := range fields {
+		if field.Name() == fieldName {
+			return field, nil
+		}
 	}
-	return 0
+	return nil, fmt.Errorf("field %s not found in category %d", fieldName, adCat)
 }

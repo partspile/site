@@ -73,28 +73,26 @@ func (f *FieldYear) BuildFilterCondition(c *fiber.Ctx, _ LocationResolver) *qdra
 }
 
 func (f *FieldYear) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
-	config := f.config
 	return fieldCheckboxGrid(
-		config.Name+"Div",
-		config.Name,
-		config.DisplayName,
+		f.Name+"Div",
+		f.Name,
+		f.DisplayName,
 		fieldValues,
 		selectedValues,
-		config.NextFieldName,
+		f.NextFieldName,
 	)
 }
 
 func (f *FieldYear) RenderFilterField(params map[string]string) g.Node {
 	minYear := params["min_year"]
 	maxYear := params["max_year"]
-	config := f.config
 
 	// Calculate max year as current year + 2
 	maxYearValue := time.Now().Year() + 2
 	maxYearStr := fmt.Sprintf("%d", maxYearValue)
 
 	return Div(
-		Label(Class("block text-sm font-medium mb-1"), g.Text(config.DisplayName+" Range")),
+		Label(Class("block text-sm font-medium mb-1"), g.Text(f.DisplayName+" Range")),
 		Div(
 			Class("flex gap-2 flex-nowrap"),
 			Input(
@@ -122,8 +120,8 @@ func (f *FieldYear) RenderFilterField(params map[string]string) g.Node {
 }
 
 func (f *FieldYear) Validate(value string) error {
-	if f.config.IsRequired && value == "" {
-		return fmt.Errorf("%s is required", f.config.DisplayName)
+	if f.IsRequired && value == "" {
+		return fmt.Errorf("%s is required", f.DisplayName)
 	}
 	return nil
 }

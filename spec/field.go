@@ -16,6 +16,13 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
+var (
+	// In-memory caches for field configurations
+	categoryFieldsCache   map[int][]Field
+	dbFieldsCache         map[int][]Field
+	fieldDefinitionsCache map[string]FieldConfig
+)
+
 // FieldConfig represents a specification field configuration
 type FieldConfig struct {
 	ID              int
@@ -34,17 +41,28 @@ type FieldConfig struct {
 	ShowInFilters   bool   // Whether this field should be shown in filter UI
 }
 
+type AdCategoryField struct {
+	AdCategoryID       int    `json:"ad_category_id"`        // Ad category ID
+	Name               string `json:"name"`                  // 'make'
+	DisplayName        string `json:"display_name"`          // 'Make'
+	FieldType          string `json:"field_type"`            // 'string', 'int', 'float64'
+	TableName          string `json:"table_name"`            // 'Make'
+	QdrantType         string `json:"qdrant_type"`           // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
+	SpecTableName      string `json:"spec_table_name"`       // 'SpecVehicle'
+	SpecTableFieldName string `json:"spec_table_field_name"` // 'make_id'
+	AdSpecTableName    string `json:"ad_spec_table_name"`    // 'AdSpecVehicle'
+	NextInChain        int    `json:"next_in_chain"`         // 0-based array index of next field in chain (0 = last field in chain or standalone, > 0 = index of next field)
+	IsRequired         bool   `json:"is_required"`           // Is required field on new ad form
+	ShowInFilters      bool   `json:"show_in_filters"`       // Show field in filter UI
+}
+
 // LocationResolver is a function type for resolving location text to coordinates
 type LocationResolver func(locationText string) (latitude, longitude float64, err error)
 
 // Field represents a field that can be used in forms, filters, and validation
 type Field interface {
-	// Name returns the field name
+	// Name returns the name of the field
 	Name() string
-
-	// Config returns the underlying FieldConfig
-	// TODO: Consider removing this and adding specific getter methods as needed
-	Config() FieldConfig
 
 	// BuildFilterCondition builds a Qdrant filter condition from form values
 	// Returns nil if no filter should be applied
@@ -81,48 +99,42 @@ type Field interface {
 
 // BaseField provides common functionality for all field types
 type BaseField struct {
-	config     FieldConfig
-	categoryID int // The ad category ID this field belongs to
+	AdCategoryField
 }
 
 func (b *BaseField) Name() string {
-	return b.config.Name
-}
-
-func (b *BaseField) Config() FieldConfig {
-	return b.config
+	return b.AdCategoryField.Name
 }
 
 func (b *BaseField) BuildJoinClause() string {
-	config := b.config
-	if config.TableName == "" {
+	if b.TableName == "" {
 		return ""
 	}
-	return fmt.Sprintf("LEFT JOIN %s ON spec.%s = %s.id",
-		config.TableName, config.TableFieldName, config.TableName)
+	return fmt.Sprintf("LEFT JOIN %s ON spec.value = %s.id",
+		b.TableName, b.TableName)
 }
 
 func (b *BaseField) BuildSelectClause() string {
-	config := b.config
-	if config.TableName == "" {
+	if b.TableName == "" {
 		return ""
 	}
 	return fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT CAST(%s.value AS TEXT), ','), '') as %s",
-		config.TableName, config.Name)
+		b.TableName, b.Name)
 }
 
 func (b *BaseField) IsFirstInChain() bool {
-	return b.config.IsFirstInChain
+	// TODO
+	return false
 }
 
 func (b *BaseField) GetValues(parentValues map[string]string) ([]string, error) {
 	// Get the field from the category to ensure we have a full Field implementation
-	field, err := GetCategoryField(b.categoryID, b.config.Name)
+	field, err := GetCategoryField(b.AdCategoryID, b.Name)
 	if err != nil {
-		return nil, fmt.Errorf("field not found: %s", b.config.Name)
+		return nil, fmt.Errorf("field not found: %s", b.Name)
 	}
 
-	query, args, err := BuildFieldQueryWithIntersection(b.categoryID, field, parentValues)
+	query, args, err := BuildFieldQueryWithIntersection(b.AdCategoryID, field, parentValues)
 	if err != nil {
 		return nil, err
 	}
@@ -141,16 +153,14 @@ func (b *BaseField) RenderFilterField(params map[string]string) g.Node {
 // RenderNewAdField provides a generic fallback implementation
 // Concrete field types should override this for field-specific rendering
 func (b *BaseField) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
-	config := b.config
-	fieldID := config.Name + "Div"
-	fieldName := config.Name
-	nextFieldName := config.NextFieldName
+	fieldID := b.Name + "Div"
+	fieldName := b.Name
+	nextFieldName := b.NextFieldName
 	nextFieldTarget := ""
 	if nextFieldName != "" {
 		nextFieldTarget = nextFieldName + "Div"
 	}
-
-	if config.FieldMultiValue {
+	if b.FieldMultiValue {
 		// Multi-select (checkboxes)
 		selected := selectedValues
 		if selected == nil {
@@ -199,7 +209,7 @@ func (b *BaseField) RenderNewAdField(selectedValues map[string]bool, fieldValues
 
 		formGroup := Div(
 			Class("space-y-2"),
-			Label(For(fieldName), Class("block"), g.Text(config.DisplayName)),
+			Label(For(fieldName), Class("block"), g.Text(b.DisplayName)),
 			gridContainer,
 		)
 
@@ -211,7 +221,7 @@ func (b *BaseField) RenderNewAdField(selectedValues map[string]bool, fieldValues
 	} else {
 		// Single-select (dropdown)
 		options := []g.Node{
-			Option(Value(""), g.Text(fmt.Sprintf("Select a %s", config.DisplayName))),
+			Option(Value(""), g.Text(fmt.Sprintf("Select a %s", b.DisplayName))),
 		}
 
 		for _, value := range fieldValues {
@@ -228,7 +238,7 @@ func (b *BaseField) RenderNewAdField(selectedValues map[string]bool, fieldValues
 			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 		}
 
-		if config.IsRequired {
+		if b.IsRequired {
 			attrs = append(attrs, Required())
 		}
 
@@ -246,7 +256,7 @@ func (b *BaseField) RenderNewAdField(selectedValues map[string]bool, fieldValues
 
 		formGroup := Div(
 			Class("space-y-2"),
-			Label(For(fieldName), Class("block"), g.Text(config.DisplayName)),
+			Label(For(fieldName), Class("block"), g.Text(b.DisplayName)),
 			Select(append(attrs, g.Group(options)...)...),
 		)
 
@@ -258,48 +268,39 @@ func (b *BaseField) RenderNewAdField(selectedValues map[string]bool, fieldValues
 }
 
 // NewField creates a Field instance based on the field name
-func NewField(config FieldConfig, categoryID int) (Field, error) {
-	base := BaseField{config: config, categoryID: categoryID}
-
-	switch config.Name {
+func NewField(categoryID int, adCategoryField AdCategoryField) (Field, error) {
+	switch adCategoryField.Name {
 	case "year":
-		return &FieldYear{BaseField: base}, nil
+		return &FieldYear{adCategoryField}, nil
 	case "make":
-		return &FieldMake{BaseField: base}, nil
+		return &FieldMake{adCategoryField}, nil
 	case "model":
-		return &FieldModel{BaseField: base}, nil
+		return &FieldModel{adCategoryField}, nil
 	case "engine":
-		return &FieldEngine{BaseField: base}, nil
+		return &FieldEngine{adCategoryField}, nil
 	case "part_category":
-		return &FieldPartCategory{BaseField: base}, nil
+		return &FieldPartCategory{adCategoryField}, nil
 	case "part_subcategory":
-		return &FieldPartSubcategory{BaseField: base}, nil
+		return &FieldPartSubcategory{adCategoryField}, nil
 	case "breed":
-		return &FieldBreed{BaseField: base}, nil
+		return &FieldBreed{adCategoryField}, nil
 	case "location":
-		return &FieldLocation{BaseField: base}, nil
+		return &FieldLocation{adCategoryField}, nil
 	case "price":
-		return &FieldPrice{BaseField: base}, nil
+		return &FieldPrice{adCategoryField}, nil
 	default:
-		return nil, fmt.Errorf("unknown field name: %s", config.Name)
+		return nil, fmt.Errorf("unknown field name: %s", adCategoryField.Name)
 	}
 }
 
-var (
-	// In-memory caches for field configurations
-	categoryFieldsCache   map[int][]Field
-	dbFieldsCache         map[int][]Field
-	fieldDefinitionsCache map[string]FieldConfig
-)
-
-// InitFieldCache loads SpecificationField and AdCategoryField into memory maps at startup
+// InitFieldCache loads SpecField and AdCategoryField into memory maps at startup
 func InitFieldCache() error {
 	// Initialize maps
 	categoryFieldsCache = make(map[int][]Field)
 	dbFieldsCache = make(map[int][]Field)
 	fieldDefinitionsCache = make(map[string]FieldConfig)
 
-	// Load all SpecificationField records
+	// Load all SpecField records
 	fieldDefs, err := loadFieldDefinitions()
 	if err != nil {
 		return fmt.Errorf("failed to load field definitions: %w", err)
@@ -322,7 +323,7 @@ func InitFieldCache() error {
 	return nil
 }
 
-// loadFieldDefinitions loads all SpecificationField records from database
+// loadFieldDefinitions loads all SpecField records from database
 func loadFieldDefinitions() (map[string]FieldConfig, error) {
 	query := `
 		SELECT json_object_agg(
@@ -337,7 +338,7 @@ func loadFieldDefinitions() (map[string]FieldConfig, error) {
 				'field_multi_value', qdrant_type = 'keyword_array'
 			)
 		) AS fields
-		FROM SpecificationField
+		FROM SpecField
 	`
 
 	var jsonResult []byte
@@ -360,17 +361,17 @@ func loadCategoryFields(fieldDefs map[string]FieldConfig) (map[int][]Field, erro
 	query := `
 		SELECT acf.ad_category_id, acf.spec_field_id, acf.priority_order, acf.next_in_chain, acf.is_required, acf.show_in_filters
 		FROM AdCategoryField acf
-		JOIN SpecificationField sf ON acf.spec_field_id = sf.id
+		JOIN SpecField sf ON acf.spec_field_id = sf.id
 		ORDER BY acf.ad_category_id, acf.priority_order
 	`
 
 	type dbCategoryField struct {
-		AdCategoryID         int `db:"ad_category_id"`
-		SpecificationFieldID int `db:"spec_field_id"`
-		Order                int `db:"priority_order"`
-		NextInChain          int `db:"next_in_chain"`
-		IsRequired           int `db:"is_required"`
-		ShowInFilters        int `db:"show_in_filters"`
+		AdCategoryID  int `db:"ad_category_id"`
+		SpecFieldID   int `db:"spec_field_id"`
+		Order         int `db:"priority_order"`
+		NextInChain   int `db:"next_in_chain"`
+		IsRequired    int `db:"is_required"`
+		ShowInFilters int `db:"show_in_filters"`
 	}
 
 	var dbCategoryFields []dbCategoryField
@@ -388,11 +389,11 @@ func loadCategoryFields(fieldDefs map[string]FieldConfig) (map[int][]Field, erro
 	// Group by category and sort by display_order
 	categoryFieldsMap := make(map[int][]Field)
 	for _, cf := range dbCategoryFields {
-		fieldConfig, exists := fieldIDMap[cf.SpecificationFieldID]
+		fieldConfig, exists := fieldIDMap[cf.SpecFieldID]
 		if !exists {
 			logger.Warn("Field definition not found for category field",
 				"component", "spec-field",
-				"specification_field_id", cf.SpecificationFieldID,
+				"spec_field_id", cf.SpecFieldID,
 				"ad_category_id", cf.AdCategoryID)
 			continue
 		}

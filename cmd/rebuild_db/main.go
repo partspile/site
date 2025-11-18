@@ -59,10 +59,10 @@ func main() {
 		logger.Fatal("Failed to import AdCategories", "error", err)
 	}
 
-	// Import SpecificationFields
-	fieldIDMap, err := importSpecificationFields(dataDir)
+	// Import SpecFields
+	fieldIDMap, err := importSpecFields(dataDir)
 	if err != nil {
-		logger.Fatal("Failed to import SpecificationFields", "error", err)
+		logger.Fatal("Failed to import SpecFields", "error", err)
 	}
 
 	// Import AdCategoryFields
@@ -226,21 +226,21 @@ func setupDatabase(databaseURL string) error {
 
 // AdCategoryForImport represents a category for import processing
 type AdCategoryForImport struct {
-	Name       string
-	SpecFile   string
-	PartFile   string
-	AdFile     string
-	Fields     []FieldForImport
+	Name     string
+	SpecFile string
+	PartFile string
+	AdFile   string
+	Fields   []FieldForImport
 }
 
 type FieldForImport struct {
-	FieldName           string `json:"field_name"`
-	NextInChain         int    `json:"next_in_chain"`
-	ShowInFilter        bool   `json:"show_in_filter"`
-	IsRequired          bool   `json:"is_required"`
-	SpecTableName       string `json:"spec_table_name"`
-	SpecTableFieldName  string `json:"spec_table_field_name"`
-	AdSpecTable         string `json:"ad_spec_table"`
+	FieldName          string `json:"field_name"`
+	NextInChain        int    `json:"next_in_chain"`
+	ShowInFilter       bool   `json:"show_in_filter"`
+	IsRequired         bool   `json:"is_required"`
+	SpecTableName      string `json:"spec_table_name"`
+	SpecTableFieldName string `json:"spec_table_field_name"`
+	AdSpecTable        string `json:"ad_spec_table"`
 }
 
 // importAdCategories imports AdCategory data from ad-category.json
@@ -302,22 +302,22 @@ func importAdCategories(categoryFile string) (map[string]int, []AdCategoryForImp
 	return categoryMap, adCategoriesForImport, nil
 }
 
-// importSpecificationFields imports SpecificationField data from spec-fields.json
-func importSpecificationFields(dataBasePath string) (map[string]int, error) {
+// importSpecFields imports SpecField data from spec-fields.json
+func importSpecFields(dataBasePath string) (map[string]int, error) {
 	fieldFile := dataBasePath + "/spec-fields.json"
 	fieldData, err := os.ReadFile(fieldFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read spec-fields.json: %w", err)
 	}
 
-	type SpecificationFieldDef struct {
+	type SpecFieldDef struct {
 		Name        string `json:"name"`
 		DisplayName string `json:"display_name"`
 		FieldType   string `json:"field_type"`
 		TableName   string `json:"table_name"`
 		QdrantType  string `json:"qdrant_type"`
 	}
-	var fieldDefinitions []SpecificationFieldDef
+	var fieldDefinitions []SpecFieldDef
 	if err := json.Unmarshal(fieldData, &fieldDefinitions); err != nil {
 		return nil, fmt.Errorf("failed to parse spec-fields.json: %w", err)
 	}
@@ -325,15 +325,15 @@ func importSpecificationFields(dataBasePath string) (map[string]int, error) {
 	fieldIDMap := make(map[string]int)
 	for _, fieldDef := range fieldDefinitions {
 		var fieldID int
-		err := db.QueryRow(`INSERT INTO SpecificationField (name, display_name, field_type, table_name, qdrant_type) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		err := db.QueryRow(`INSERT INTO SpecField (name, display_name, field_type, table_name, qdrant_type) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
 			fieldDef.Name, fieldDef.DisplayName, fieldDef.FieldType, fieldDef.TableName, fieldDef.QdrantType).Scan(&fieldID)
 		if err != nil {
-			logger.Warn("Failed to insert SpecificationField", "name", fieldDef.Name, "error", err)
+			logger.Warn("Failed to insert SpecField", "name", fieldDef.Name, "error", err)
 			continue
 		}
 		fieldIDMap[fieldDef.Name] = fieldID
 	}
-	logger.Info("Inserted SpecificationFields", "count", len(fieldIDMap))
+	logger.Info("Inserted SpecFields", "count", len(fieldIDMap))
 	return fieldIDMap, nil
 }
 

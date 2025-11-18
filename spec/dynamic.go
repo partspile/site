@@ -22,7 +22,7 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 	// Find the current field's position in the field list
 	currentFieldIndex := -1
 	for i, f := range categoryFields {
-		if f.Config().Name == fieldName {
+		if f.Name() == fieldName {
 			currentFieldIndex = i
 			break
 		}
@@ -77,7 +77,7 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 
 	// Add JOINs for parent fields
 	for _, parentField := range parentFields {
-		parentDef, exists := GetFieldDefinition(parentField.Config().Name)
+		parentDef, exists := GetFieldDefinition(parentField.Name)
 		if !exists {
 			continue
 		}
@@ -99,12 +99,12 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 
 	// Add filters for parent fields
 	for _, parentField := range parentFields {
-		parentValue, hasValue := parentFilters[parentField.Config().Name]
+		parentValue, hasValue := parentFilters[parentField.Name()]
 		if !hasValue || parentValue == "" {
 			continue
 		}
 
-		parentDef, exists := GetFieldDefinition(parentField.Config().Name)
+		parentDef, exists := GetFieldDefinition(parentField.Name())
 		if !exists {
 			continue
 		}
@@ -143,41 +143,41 @@ func BuildFieldQuery(adCategoryID int, fieldName string, parentFilters map[strin
 // Supports both single and multiple parent filter values using intersection logic
 // parentFilters can contain comma-separated values (e.g., "2020,2021") or single values
 func BuildFieldQueryWithIntersection(adCategoryID int, field Field, parentFilters map[string]string) (string, []interface{}, error) {
-	fieldDef := field.Config()
+	fieldDef := field.Name
 	// Get category fields to determine field order
 	categoryFields := GetCategoryFields(adCategoryID)
 
 	// Find the current field's position
 	currentFieldIndex := -1
 	for i, f := range categoryFields {
-		if f.Config().Name == fieldDef.Name {
+		if f.Name() == fieldDef.Name {
 			currentFieldIndex = i
 			break
 		}
 	}
 	if currentFieldIndex == -1 {
-		return "", nil, fmt.Errorf("field %s not found in category %d", fieldDef.Name, adCategoryID)
+		return "", nil, fmt.Errorf("field %s not found in category %d", fieldDef.Name(), adCategoryID)
 	}
 
 	parentFields := categoryFields[:currentFieldIndex]
 
-	tableName := fieldDef.TableName
-	tableFieldName := fieldDef.TableFieldName
+	tableName := fieldDef.TableName()
+	tableFieldName := fieldDef.TableFieldName()
 
 	// Convert parent filters to array format (handle comma-separated values)
 	// Only include parent fields that have values - work with whatever data is available
 	parentFiltersArray := make(map[string][]string)
 	for _, parentField := range parentFields {
-		parentValue, exists := parentFilters[parentField.Config().Name]
+		parentValue, exists := parentFilters[parentField.Name()]
 		if !exists || parentValue == "" {
 			// Skip parent fields without values - they're optional
 			continue
 		}
 		// Split comma-separated values or use single value
 		if strings.Contains(parentValue, ",") {
-			parentFiltersArray[parentField.Config().Name] = strings.Split(parentValue, ",")
+			parentFiltersArray[parentField.Name()] = strings.Split(parentValue, ",")
 		} else {
-			parentFiltersArray[parentField.Config().Name] = []string{parentValue}
+			parentFiltersArray[parentField.Name()] = []string{parentValue}
 		}
 	}
 
@@ -202,7 +202,7 @@ func BuildFieldQueryWithIntersection(adCategoryID int, field Field, parentFilter
 	var targetChain []FieldConfig
 	for _, chain := range allChains {
 		for _, field := range chain {
-			if field.Name == fieldDef.Name {
+			if field.Name() == fieldDef.Name() {
 				targetChain = chain
 				break
 			}
@@ -213,7 +213,7 @@ func BuildFieldQueryWithIntersection(adCategoryID int, field Field, parentFilter
 	}
 
 	if len(targetChain) == 0 {
-		return "", nil, fmt.Errorf("field %s not found in any chain", fieldDef.Name)
+		return "", nil, fmt.Errorf("field %s not found in any chain", fieldDef.Name())
 	}
 
 	// Get spec table name for this chain
@@ -232,7 +232,7 @@ func BuildFieldQueryWithIntersection(adCategoryID int, field Field, parentFilter
 		args := []interface{}{adCategoryID}
 
 		// Order by clause
-		if fieldDef.FieldType == "int" {
+		if fieldDef.FieldType() == "int" {
 			query += " ORDER BY t.value DESC"
 		} else {
 			query += " ORDER BY t.value"
@@ -370,7 +370,7 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 	// Find the current field's position in the field list
 	currentFieldIndex := -1
 	for i, f := range categoryFields {
-		if f.Config().Name == fieldName {
+		if f.Name == fieldName {
 			currentFieldIndex = i
 			break
 		}
@@ -422,7 +422,7 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 
 		// Add JOINs for parent fields
 		for _, parentField := range parentFields {
-			parentDef, exists := GetFieldDefinition(parentField.Name())
+			parentDef, exists := GetFieldDefinition(parentField.Name)
 			if !exists {
 				continue
 			}
@@ -435,7 +435,7 @@ func GetAdFieldValuesForAdIDs(adCategoryID int, fieldName string, adIDs []int, p
 		// Build WHERE clause with parent filters
 		paramNum := len(allArgs) + 1
 		for _, parentField := range parentFields {
-			parentDef, exists := GetFieldDefinition(parentField.Name())
+			parentDef, exists := GetFieldDefinition(parentField.Name)
 			if !exists {
 				continue
 			}

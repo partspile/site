@@ -13,22 +13,22 @@ import (
 // Ad represents the minimal advertisement data needed for list/grid/tree views
 type Ad struct {
 	// Core database fields
-	ID           int        `json:"id" db:"id"`
-	AdCategoryID int        `json:"ad_category_id" db:"ad_category_id"`
-	Title        string     `json:"title" db:"title"`
-	Price        float64    `json:"price" db:"price"`
-	CreatedAt    time.Time  `json:"created_at" db:"created_at"`
-	DeletedAt    *time.Time `json:"deleted_at,omitempty" db:"deleted_at"`
-	UserID       int        `json:"user_id" db:"user_id"`
-	ImageCount   int        `json:"image_count" db:"image_count"`
+	ID           int        `json:"id"`
+	AdCategoryID int        `json:"ad_category_id"`
+	Title        string     `json:"title"`
+	Price        float64    `json:"price"`
+	CreatedAt    time.Time  `json:"created_at"`
+	DeletedAt    *time.Time `json:"deleted_at,omitempty"`
+	UserID       int        `json:"user_id"`
+	ImageCount   int        `json:"image_count"`
 
 	// Location fields from joins
-	City      string `json:"city" db:"city"`
-	AdminArea string `json:"admin_area" db:"admin_area"`
-	Country   string `json:"country" db:"country"`
+	City      string `json:"city"`
+	AdminArea string `json:"admin_area"`
+	Country   string `json:"country"`
 
 	// User-specific computed fields
-	Bookmarked bool `json:"bookmarked" db:"is_bookmarked"`
+	Bookmarked bool `json:"bookmarked"`
 }
 
 // AdDetail extends Ad with additional fields needed for detail view
@@ -36,10 +36,10 @@ type AdDetail struct {
 	Ad // Embed the minimal Ad struct
 
 	// Additional fields for detail view
-	Description string `json:"description" db:"description"`
-	LocationID  int    `json:"location_id" db:"location_id"`
-	HasVector   bool   `json:"has_vector" db:"has_vector"`
-	RawLocation string `json:"raw_location" db:"raw_location"`
+	Description string `json:"description"`
+	LocationID  int    `json:"location_id"`
+	HasVector   bool   `json:"has_vector"`
+	RawLocation string `json:"raw_location"`
 
 	// Spec data from spec joins - map of field name to array of values
 	// Single-value fields have arrays with one element, multi-value fields
@@ -47,7 +47,7 @@ type AdDetail struct {
 	SpecData map[string][]string `json:"spec_data"`
 
 	// Computed fields
-	OwnerUnreachable int `json:"owner_unreachable" db:"owner_unreachable"`
+	OwnerUnreachable int `json:"owner_unreachable"`
 }
 
 // IsArchived returns true if the ad is archived (deleted)

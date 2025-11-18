@@ -38,7 +38,9 @@ func main() {
 	}
 
 	// Initialize ad category names cache
-	ad.InitCategoryNames()
+	if err := ad.InitAdCategories(); err != nil {
+		logger.Fatal("Failed to initialize ad categories", "error", err)
+	}
 
 	// Initialize spec cache
 	if err := spec.InitSpecCache(); err != nil {

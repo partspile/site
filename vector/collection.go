@@ -20,7 +20,7 @@ type QdrantFieldSchema struct {
 }
 
 // GetIndexedFields returns the list of fields that need indexes
-// This queries SpecificationField table to get ALL spec fields dynamically
+// This queries SpecField table to get ALL spec fields dynamically
 func GetIndexedFields() []QdrantFieldSchema {
 	// Get all field definitions from cache
 	// We need to query the database to get all fields
@@ -38,7 +38,7 @@ func GetIndexedFields() []QdrantFieldSchema {
 		QdrantFieldSchema{Name: "location", QdrantType: qdrant.FieldType_FieldTypeGeo, IsStruct: true},
 	)
 
-	// Add all spec fields from SpecificationField table
+	// Add all spec fields from SpecField table
 	for _, fieldDef := range allFields {
 		var qdrantType qdrant.FieldType
 		isArray := false
@@ -72,12 +72,12 @@ func GetIndexedFields() []QdrantFieldSchema {
 
 // getAllSpecFields gets all field definitions from the database
 func getAllSpecFields() []spec.FieldConfig {
-	// Query all SpecificationField records
+	// Query all SpecField records
 	// Since we can't easily access the cache from here, we'll query the DB
 	// In practice, this should use the cache, but for initialization we query DB
 	query := `
 		SELECT id, name, display_name, field_type, table_name, qdrant_type
-		FROM SpecificationField
+		FROM SpecField
 		ORDER BY id
 	`
 
@@ -93,7 +93,7 @@ func getAllSpecFields() []spec.FieldConfig {
 	var dbFields []dbField
 	err := db.Select(&dbFields, query)
 	if err != nil {
-		logger.Warn("Failed to query SpecificationField for Qdrant indexes",
+		logger.Warn("Failed to query SpecField for Qdrant indexes",
 			"error", err, "component", "qdrant")
 		return []spec.FieldConfig{}
 	}

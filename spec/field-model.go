@@ -22,20 +22,19 @@ func (f *FieldModel) BuildFilterCondition(c *fiber.Ctx, _ LocationResolver) *qdr
 }
 
 func (f *FieldModel) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
-	config := f.config
 	return fieldCheckboxGrid(
-		config.Name+"Div",
-		config.Name,
-		config.DisplayName,
+		f.Name+"Div",
+		f.Name,
+		f.DisplayName,
 		fieldValues,
 		selectedValues,
-		config.NextFieldName,
+		f.NextFieldName,
 	)
 }
 
 func (f *FieldModel) Validate(value string) error {
-	if f.config.IsRequired && value == "" {
-		return fmt.Errorf("%s is required", f.config.DisplayName)
+	if f.IsRequired && value == "" {
+		return fmt.Errorf("%s is required", f.DisplayName)
 	}
 	return nil
 }

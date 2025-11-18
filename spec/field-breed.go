@@ -22,31 +22,30 @@ func (f *FieldBreed) BuildFilterCondition(c *fiber.Ctx, _ LocationResolver) *qdr
 }
 
 func (f *FieldBreed) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
-	config := f.config
-	if config.FieldMultiValue {
+	if f.FieldMultiValue {
 		return fieldCheckboxGrid(
-			config.Name+"Div",
-			config.Name,
-			config.DisplayName,
+			f.Name+"Div",
+			f.Name,
+			f.DisplayName,
 			fieldValues,
 			selectedValues,
-			config.NextFieldName,
+			f.NextFieldName,
 		)
 	}
 	return fieldSelect(
-		config.Name+"Div",
-		config.Name,
-		config.DisplayName,
+		f.Name+"Div",
+		f.Name,
+		f.DisplayName,
 		fieldValues,
 		defaultValue,
-		config.IsRequired,
-		config.NextFieldName,
+		f.IsRequired,
+		f.NextFieldName,
 	)
 }
 
 func (f *FieldBreed) Validate(value string) error {
-	if f.config.IsRequired && value == "" {
-		return fmt.Errorf("%s is required", f.config.DisplayName)
+	if f.IsRequired && value == "" {
+		return fmt.Errorf("%s is required", f.DisplayName)
 	}
 	return nil
 }
