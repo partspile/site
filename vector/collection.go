@@ -76,19 +76,18 @@ func getAllSpecFields() []spec.FieldConfig {
 	// Since we can't easily access the cache from here, we'll query the DB
 	// In practice, this should use the cache, but for initialization we query DB
 	query := `
-		SELECT id, name, display_name, field_type, table_name, table_field_name, qdrant_type
+		SELECT id, name, display_name, field_type, table_name, qdrant_type
 		FROM SpecificationField
 		ORDER BY id
 	`
 
 	type dbField struct {
-		ID             int    `db:"id"`
-		Name           string `db:"name"`
-		DisplayName    string `db:"display_name"`
-		FieldType      string `db:"field_type"`
-		TableName      string `db:"table_name"`
-		TableFieldName string `db:"table_field_name"`
-		QdrantType     string `db:"qdrant_type"`
+		ID          int    `db:"id"`
+		Name        string `db:"name"`
+		DisplayName string `db:"display_name"`
+		FieldType   string `db:"field_type"`
+		TableName   string `db:"table_name"`
+		QdrantType  string `db:"qdrant_type"`
 	}
 
 	var dbFields []dbField
@@ -102,13 +101,12 @@ func getAllSpecFields() []spec.FieldConfig {
 	var fieldConfigs []spec.FieldConfig
 	for _, f := range dbFields {
 		fieldConfigs = append(fieldConfigs, spec.FieldConfig{
-			ID:             f.ID,
-			Name:           f.Name,
-			DisplayName:    f.DisplayName,
-			FieldType:      f.FieldType,
-			TableName:      f.TableName,
-			TableFieldName: f.TableFieldName,
-			QdrantType:     f.QdrantType,
+			ID:          f.ID,
+			Name:        f.Name,
+			DisplayName: f.DisplayName,
+			FieldType:   f.FieldType,
+			TableName:   f.TableName,
+			QdrantType:  f.QdrantType,
 		})
 	}
 

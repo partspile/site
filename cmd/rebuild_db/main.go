@@ -230,7 +230,17 @@ type AdCategoryForImport struct {
 	SpecFile   string
 	PartFile   string
 	AdFile     string
-	FieldNames []string
+	Fields     []FieldForImport
+}
+
+type FieldForImport struct {
+	FieldName           string `json:"field_name"`
+	NextInChain         int    `json:"next_in_chain"`
+	ShowInFilter        bool   `json:"show_in_filter"`
+	IsRequired          bool   `json:"is_required"`
+	SpecTableName       string `json:"spec_table_name"`
+	SpecTableFieldName  string `json:"spec_table_field_name"`
+	AdSpecTable         string `json:"ad_spec_table"`
 }
 
 // importAdCategories imports AdCategory data from ad-category.json
@@ -241,11 +251,11 @@ func importAdCategories(categoryFile string) (map[string]int, []AdCategoryForImp
 	}
 
 	type AdCategory struct {
-		Name       string   `json:"name"`
-		SpecFile   string   `json:"spec_file,omitempty"`
-		PartFile   string   `json:"part_file,omitempty"`
-		AdFile     string   `json:"ad_file,omitempty"`
-		FieldNames []string `json:"field_names,omitempty"`
+		Name     string           `json:"name"`
+		SpecFile string           `json:"spec_file,omitempty"`
+		PartFile string           `json:"part_file,omitempty"`
+		AdFile   string           `json:"ad_file,omitempty"`
+		Fields   []FieldForImport `json:"fields,omitempty"`
 	}
 	var adCategories []AdCategory
 	if err := json.Unmarshal(categoryData, &adCategories); err != nil {
@@ -281,11 +291,11 @@ func importAdCategories(categoryFile string) (map[string]int, []AdCategoryForImp
 	adCategoriesForImport := make([]AdCategoryForImport, len(adCategories))
 	for i, cat := range adCategories {
 		adCategoriesForImport[i] = AdCategoryForImport{
-			Name:       cat.Name,
-			SpecFile:   cat.SpecFile,
-			PartFile:   cat.PartFile,
-			AdFile:     cat.AdFile,
-			FieldNames: cat.FieldNames,
+			Name:     cat.Name,
+			SpecFile: cat.SpecFile,
+			PartFile: cat.PartFile,
+			AdFile:   cat.AdFile,
+			Fields:   cat.Fields,
 		}
 	}
 
@@ -301,12 +311,11 @@ func importSpecificationFields(dataBasePath string) (map[string]int, error) {
 	}
 
 	type SpecificationFieldDef struct {
-		Name           string `json:"name"`
-		DisplayName    string `json:"display_name"`
-		FieldType      string `json:"field_type"`
-		TableName      string `json:"table_name"`
-		TableFieldName string `json:"table_field_name"`
-		QdrantType     string `json:"qdrant_type"`
+		Name        string `json:"name"`
+		DisplayName string `json:"display_name"`
+		FieldType   string `json:"field_type"`
+		TableName   string `json:"table_name"`
+		QdrantType  string `json:"qdrant_type"`
 	}
 	var fieldDefinitions []SpecificationFieldDef
 	if err := json.Unmarshal(fieldData, &fieldDefinitions); err != nil {
@@ -316,8 +325,8 @@ func importSpecificationFields(dataBasePath string) (map[string]int, error) {
 	fieldIDMap := make(map[string]int)
 	for _, fieldDef := range fieldDefinitions {
 		var fieldID int
-		err := db.QueryRow(`INSERT INTO SpecificationField (name, display_name, field_type, table_name, table_field_name, qdrant_type) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-			fieldDef.Name, fieldDef.DisplayName, fieldDef.FieldType, fieldDef.TableName, fieldDef.TableFieldName, fieldDef.QdrantType).Scan(&fieldID)
+		err := db.QueryRow(`INSERT INTO SpecificationField (name, display_name, field_type, table_name, qdrant_type) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+			fieldDef.Name, fieldDef.DisplayName, fieldDef.FieldType, fieldDef.TableName, fieldDef.QdrantType).Scan(&fieldID)
 		if err != nil {
 			logger.Warn("Failed to insert SpecificationField", "name", fieldDef.Name, "error", err)
 			continue
@@ -330,10 +339,9 @@ func importSpecificationFields(dataBasePath string) (map[string]int, error) {
 
 // importAdCategoryFields imports AdCategoryField mappings from ad-category.json
 func importAdCategoryFields(categoryMap map[string]int, fieldIDMap map[string]int, adCategories []AdCategoryForImport) error {
-	// Field mappings are now in ad-category.json
-	// Chain syntax: "field->" indicates field is chained to next field
+	// Field mappings are now in ad-category.json with explicit field objects
 	for _, cat := range adCategories {
-		if len(cat.FieldNames) == 0 {
+		if len(cat.Fields) == 0 {
 			logger.Debug("Category has no field mappings, skipping", "category", cat.Name)
 			continue
 		}
@@ -344,50 +352,34 @@ func importAdCategoryFields(categoryMap map[string]int, fieldIDMap map[string]in
 			continue
 		}
 
-		// Parse field names and extract chain information
-		// Build order -> fieldID map for calculating next_in_chain
-		orderToFieldID := make(map[int]int)
-		for order, fieldNameWithChain := range cat.FieldNames {
-			// Remove "*" prefix (indicates show in filters) and "->" suffix (indicates chained) for database lookup
-			fieldName := strings.TrimPrefix(fieldNameWithChain, "*") // Remove "*" prefix if present
-			fieldName = strings.TrimSuffix(fieldName, "->")          // Remove "->" suffix if present
-			fieldID, exists := fieldIDMap[fieldName]
+		// Insert fields using position in array for priority_order (0-based array index + 1 for 1-based priority_order)
+		for order, field := range cat.Fields {
+			fieldID, exists := fieldIDMap[field.FieldName]
 			if !exists {
-				logger.Warn("Field not found for category mapping", "field", fieldName, "category", cat.Name)
+				logger.Warn("Field not found for category mapping", "field", field.FieldName, "category", cat.Name)
 				continue
 			}
-			orderToFieldID[order+1] = fieldID
-		}
 
-		// Insert fields and calculate next_in_chain
-		for order, fieldNameWithChain := range cat.FieldNames {
-			// Parse field name: remove "*" prefix (indicates show in filters) and "->" suffix (indicates chained)
-			fieldName := fieldNameWithChain
+			// Convert boolean to integer for database
+			isRequired := 0
+			if field.IsRequired {
+				isRequired = 1
+			}
 			showInFilters := 0
-			if strings.HasPrefix(fieldName, "*") {
+			if field.ShowInFilter {
 				showInFilters = 1
-				fieldName = fieldName[1:] // Remove "*" prefix
-			}
-			fieldName = strings.TrimSuffix(fieldName, "->") // Remove "->" suffix if present
-
-			fieldID, exists := fieldIDMap[fieldName]
-			if !exists {
-				continue
 			}
 
-			// Calculate next_in_chain: if field has "->" suffix, next field's order, else 0
-			nextInChain := 0
-			isChained := strings.HasSuffix(fieldNameWithChain, "->")
-			if isChained && order+1 < len(cat.FieldNames) {
-				// This field chains to the next field
-				nextOrder := order + 2 // order is 0-based, DB order is 1-based
-				nextInChain = nextOrder
-			}
+			// Store next_in_chain exactly as read from JSON file (0-based array index)
+			// No conversion - store as-is
+			nextInChain := field.NextInChain
 
-			_, err := db.Exec(`INSERT INTO AdCategoryField (ad_category_id, specification_field_id, priority_order, next_in_chain, is_required, show_in_filters) VALUES ($1, $2, $3, $4, $5, $6)`,
-				categoryID, fieldID, order+1, nextInChain, 1, showInFilters)
+			priorityOrder := order + 1 // Convert from 0-based array index to 1-based priority_order
+
+			_, err := db.Exec(`INSERT INTO AdCategoryField (ad_category_id, spec_field_id, spec_table_name, spec_table_field_name, ad_spec_table_name, priority_order, next_in_chain, is_required, show_in_filters) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+				categoryID, fieldID, field.SpecTableName, field.SpecTableFieldName, field.AdSpecTable, priorityOrder, nextInChain, isRequired, showInFilters)
 			if err != nil {
-				logger.Warn("Failed to insert AdCategoryField", "category", cat.Name, "field", fieldName, "error", err)
+				logger.Warn("Failed to insert AdCategoryField", "category", cat.Name, "field", field.FieldName, "error", err)
 			}
 		}
 	}
@@ -878,7 +870,7 @@ func importSpecs(specFile string, partFile string, categoryID int) (SpecLookupMa
 		if !hasTableFields {
 			continue // Skip chains without database table fields
 		}
-		
+
 		if minOrder == -1 || order < minOrder {
 			minOrder = order
 			firstChain = chain
@@ -1219,7 +1211,7 @@ func importAds(jsonFile string, categoryID int, categoryMap map[string]int, user
 		if !hasTableFields {
 			continue // Skip chains without database table fields
 		}
-		
+
 		if minOrder == -1 || order < minOrder {
 			minOrder = order
 			firstChain = chain

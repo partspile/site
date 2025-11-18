@@ -4,56 +4,513 @@
     "spec_file": "spec-car.json",
     "part_file": "",
     "ad_file": "ad-car.json",
-    "field_names": ["*location", "*make->", "*year->", "model->", "engine", "*price"]
+    "fields": [
+      {
+        "field_name": "location",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": false,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      },
+      {
+        "field_name": "make",
+        "next_in_chain": 2,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "make_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "year",
+        "next_in_chain": 3,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "year_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "model",
+        "next_in_chain": 4,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "model_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "engine",
+        "next_in_chain": 0,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "engine_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "price",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      }
+    ]
   },
   {
     "name": "Car & Truck Parts",
     "spec_file": "spec-car.json",
     "part_file": "part-car.json",
     "ad_file": "ad-car-part.json",
-    "field_names": ["*location", "*make->", "*year->", "model->", "engine", "*part_category->", "part_subcategory", "*price"]
+    "fields": [
+      {
+        "field_name": "location",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": false,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      },
+      {
+        "field_name": "make",
+        "next_in_chain": 2,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "make_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "year",
+        "next_in_chain": 3,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "year_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "model",
+        "next_in_chain": 4,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "model_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "engine",
+        "next_in_chain": 0,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "engine_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "part_category",
+        "next_in_chain": 6,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecPart",
+        "spec_table_field_name": "part_category_id",
+        "ad_spec_table": "AdSpecPart"
+      },
+      {
+        "field_name": "part_subcategory",
+        "next_in_chain": 0,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecPart",
+        "spec_table_field_name": "part_subcategory_id",
+        "ad_spec_table": "AdSpecPart"
+      },
+      {
+        "field_name": "price",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      }
+    ]
   },
   {
     "name": "Motorcycles",
     "spec_file": "spec-motorcycle.json",
     "part_file": "",
     "ad_file": "ad-motorcycle.json",
-    "field_names": ["*location", "*make->", "*year->", "model->", "engine", "*price"]
+    "fields": [
+      {
+        "field_name": "location",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": false,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      },
+      {
+        "field_name": "make",
+        "next_in_chain": 2,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "make_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "year",
+        "next_in_chain": 3,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "year_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "model",
+        "next_in_chain": 4,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "model_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "engine",
+        "next_in_chain": 0,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "engine_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "price",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      }
+    ]
   },
   {
     "name": "Motorcycle Parts",
     "spec_file": "spec-motorcycle.json",
     "part_file": "part-motorcycle.json",
     "ad_file": "ad-motorcycle-part.json",
-    "field_names": ["*location", "*make->", "*year->", "model->", "engine", "*part_category->", "part_subcategory", "*price"]
+    "fields": [
+      {
+        "field_name": "location",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": false,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      },
+      {
+        "field_name": "make",
+        "next_in_chain": 2,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "make_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "year",
+        "next_in_chain": 3,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "year_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "model",
+        "next_in_chain": 4,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "model_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "engine",
+        "next_in_chain": 0,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecVehicle",
+        "spec_table_field_name": "engine_id",
+        "ad_spec_table": "AdSpecVehicle"
+      },
+      {
+        "field_name": "part_category",
+        "next_in_chain": 6,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecPart",
+        "spec_table_field_name": "part_category_id",
+        "ad_spec_table": "AdSpecPart"
+      },
+      {
+        "field_name": "part_subcategory",
+        "next_in_chain": 0,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecPart",
+        "spec_table_field_name": "part_subcategory_id",
+        "ad_spec_table": "AdSpecPart"
+      },
+      {
+        "field_name": "price",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      }
+    ]
   },
   {
     "name": "Bicycles",
     "spec_file": "spec-bicycle.json",
     "part_file": "",
     "ad_file": "ad-bicycle.json",
-    "field_names": ["*location", "*make->", "model", "*price"]
+    "fields": [
+      {
+        "field_name": "location",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": false,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      },
+      {
+        "field_name": "make",
+        "next_in_chain": 2,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecBicycle",
+        "spec_table_field_name": "make_id",
+        "ad_spec_table": "AdSpecBicycle"
+      },
+      {
+        "field_name": "model",
+        "next_in_chain": 0,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecBicycle",
+        "spec_table_field_name": "model_id",
+        "ad_spec_table": "AdSpecBicycle"
+      },
+      {
+        "field_name": "price",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      }
+    ]
   },
   {
     "name": "Bicycle Parts",
     "spec_file": "spec-bicycle.json",
     "part_file": "part-bicycle.json",
     "ad_file": "ad-bicycle-part.json",
-    "field_names": ["*location", "*make->", "model", "*part_category->", "part_subcategory", "*price"]
+    "fields": [
+      {
+        "field_name": "location",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": false,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      },
+      {
+        "field_name": "make",
+        "next_in_chain": 2,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecBicycle",
+        "spec_table_field_name": "make_id",
+        "ad_spec_table": "AdSpecBicycle"
+      },
+      {
+        "field_name": "model",
+        "next_in_chain": 0,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecBicycle",
+        "spec_table_field_name": "model_id",
+        "ad_spec_table": "AdSpecBicycle"
+      },
+      {
+        "field_name": "part_category",
+        "next_in_chain": 4,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecPart",
+        "spec_table_field_name": "part_category_id",
+        "ad_spec_table": "AdSpecPart"
+      },
+      {
+        "field_name": "part_subcategory",
+        "next_in_chain": 0,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecPart",
+        "spec_table_field_name": "part_subcategory_id",
+        "ad_spec_table": "AdSpecPart"
+      },
+      {
+        "field_name": "price",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      }
+    ]
   },
   {
     "name": "Agricultural Equipment",
     "spec_file": "spec-agricultural.json",
     "part_file": "",
     "ad_file": "ad-agricultural.json",
-    "field_names": ["*location", "*make->", "*year->", "model", "*price"]
+    "fields": [
+      {
+        "field_name": "location",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": false,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      },
+      {
+        "field_name": "make",
+        "next_in_chain": 2,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecAgricultural",
+        "spec_table_field_name": "make_id",
+        "ad_spec_table": "AdSpecAgricultural"
+      },
+      {
+        "field_name": "year",
+        "next_in_chain": 3,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecAgricultural",
+        "spec_table_field_name": "year_id",
+        "ad_spec_table": "AdSpecAgricultural"
+      },
+      {
+        "field_name": "model",
+        "next_in_chain": 0,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecAgricultural",
+        "spec_table_field_name": "model_id",
+        "ad_spec_table": "AdSpecAgricultural"
+      },
+      {
+        "field_name": "price",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      }
+    ]
   },
   {
     "name": "Agricultural Equipment Parts",
     "spec_file": "spec-agricultural.json",
     "part_file": "part-agricultural.json",
     "ad_file": "ad-agricultural-part.json",
-    "field_names": ["*location", "*make->", "*year->", "model", "*part_category->", "part_subcategory", "*price"]
+    "fields": [
+      {
+        "field_name": "location",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": false,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      },
+      {
+        "field_name": "make",
+        "next_in_chain": 2,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecAgricultural",
+        "spec_table_field_name": "make_id",
+        "ad_spec_table": "AdSpecAgricultural"
+      },
+      {
+        "field_name": "year",
+        "next_in_chain": 3,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecAgricultural",
+        "spec_table_field_name": "year_id",
+        "ad_spec_table": "AdSpecAgricultural"
+      },
+      {
+        "field_name": "model",
+        "next_in_chain": 0,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecAgricultural",
+        "spec_table_field_name": "model_id",
+        "ad_spec_table": "AdSpecAgricultural"
+      },
+      {
+        "field_name": "part_category",
+        "next_in_chain": 5,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "SpecPart",
+        "spec_table_field_name": "part_category_id",
+        "ad_spec_table": "AdSpecPart"
+      },
+      {
+        "field_name": "part_subcategory",
+        "next_in_chain": 0,
+        "show_in_filter": false,
+        "is_required": false,
+        "spec_table_name": "SpecPart",
+        "spec_table_field_name": "part_subcategory_id",
+        "ad_spec_table": "AdSpecPart"
+      },
+      {
+        "field_name": "price",
+        "next_in_chain": 0,
+        "show_in_filter": true,
+        "is_required": true,
+        "spec_table_name": "",
+        "spec_table_field_name": "",
+        "ad_spec_table": ""
+      }
+    ]
   }
 ]
-

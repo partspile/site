@@ -28,7 +28,7 @@ type FieldConfig struct {
 	FieldMultiValue bool   // Whether this field can have multiple values
 	IsRequired      bool
 	Order           int    // Priority order (from priority_order column) - used for display and determining chains
-	NextInChain     int    // Priority order of next field in chain (0 = last field in chain or standalone)
+	NextInChain     int    // 0-based array index of next field in chain (0 = last field in chain or standalone, > 0 = index of next field)
 	NextFieldName   string // Name of next field in chain (populated during load) - empty if last in chain
 	IsFirstInChain  bool   // Whether this field is the first in its chain (populated during load)
 	ShowInFilters   bool   // Whether this field should be shown in filter UI
@@ -333,7 +333,6 @@ func loadFieldDefinitions() (map[string]FieldConfig, error) {
 				'display_name', display_name,
 				'field_type', field_type,
 				'table_name', table_name,
-				'table_field_name', table_field_name,
 				'qdrant_type', qdrant_type,
 				'field_multi_value', qdrant_type = 'keyword_array'
 			)
@@ -359,15 +358,15 @@ func loadFieldDefinitions() (map[string]FieldConfig, error) {
 // Chain information is determined by order and next_in_chain fields
 func loadCategoryFields(fieldDefs map[string]FieldConfig) (map[int][]Field, error) {
 	query := `
-		SELECT acf.ad_category_id, acf.specification_field_id, acf.priority_order, acf.next_in_chain, acf.is_required, acf.show_in_filters
+		SELECT acf.ad_category_id, acf.spec_field_id, acf.priority_order, acf.next_in_chain, acf.is_required, acf.show_in_filters
 		FROM AdCategoryField acf
-		JOIN SpecificationField sf ON acf.specification_field_id = sf.id
+		JOIN SpecificationField sf ON acf.spec_field_id = sf.id
 		ORDER BY acf.ad_category_id, acf.priority_order
 	`
 
 	type dbCategoryField struct {
 		AdCategoryID         int `db:"ad_category_id"`
-		SpecificationFieldID int `db:"specification_field_id"`
+		SpecificationFieldID int `db:"spec_field_id"`
 		Order                int `db:"priority_order"`
 		NextInChain          int `db:"next_in_chain"`
 		IsRequired           int `db:"is_required"`
@@ -440,8 +439,10 @@ func loadCategoryFields(fieldDefs map[string]FieldConfig) (map[int][]Field, erro
 			config := fields[i].Config()
 
 			// Set NextFieldName if there's a next field in chain
+			// NextInChain is 0-based array index, convert to 1-based Order for lookup
 			if config.NextInChain != 0 {
-				if nextName, exists := orderToName[config.NextInChain]; exists {
+				nextOrder := config.NextInChain + 1 // Convert 0-based index to 1-based Order
+				if nextName, exists := orderToName[nextOrder]; exists {
 					config.NextFieldName = nextName
 				}
 			}
@@ -454,8 +455,9 @@ func loadCategoryFields(fieldDefs map[string]FieldConfig) (map[int][]Field, erro
 				isFirst = true
 			} else {
 				// Check if any other field points to this field's order
+				// NextInChain is 0-based, Order is 1-based, so compare: NextInChain + 1 == Order
 				for _, otherField := range fields {
-					if otherField.Config().NextInChain == config.Order {
+					if otherField.Config().NextInChain+1 == config.Order {
 						isFirst = false
 						break
 					}
@@ -580,10 +582,13 @@ func IsFirstInChain(field Field) bool {
 func chainContains(field Field, targetOrder int, orderMap map[int]Field) bool {
 	current := field.Config()
 	for current.NextInChain != 0 {
-		if current.NextInChain == targetOrder {
+		// NextInChain is 0-based array index, convert to 1-based Order for comparison
+		if current.NextInChain+1 == targetOrder {
 			return true
 		}
-		nextField, exists := orderMap[current.NextInChain]
+		// Convert 0-based NextInChain to 1-based Order for lookup
+		nextOrder := current.NextInChain + 1
+		nextField, exists := orderMap[nextOrder]
 		if !exists {
 			break
 		}
@@ -615,8 +620,10 @@ func GetNextFieldName(field Field, allFields []Field) string {
 	if config.NextInChain == 0 {
 		return ""
 	}
+	// NextInChain is 0-based array index, convert to 1-based Order for comparison
+	nextOrder := config.NextInChain + 1
 	for _, f := range allFields {
-		if f.Config().Order == config.NextInChain {
+		if f.Config().Order == nextOrder {
 			return f.Config().Name
 		}
 	}
@@ -636,14 +643,20 @@ func GetDownstreamFields(field Field, allFields []Field) []string {
 	}
 
 	var downstream []string
-	currentOrder := config.NextInChain
+	// NextInChain is 0-based array index, convert to 1-based Order for lookup
+	currentOrder := config.NextInChain + 1
 	for currentOrder != 0 {
 		nextField, exists := orderMap[currentOrder]
 		if !exists {
 			break
 		}
 		downstream = append(downstream, nextField.Config().Name)
-		currentOrder = nextField.Config().NextInChain
+		// Convert 0-based NextInChain to 1-based Order
+		if nextField.Config().NextInChain == 0 {
+			currentOrder = 0
+		} else {
+			currentOrder = nextField.Config().NextInChain + 1
+		}
 	}
 
 	return downstream
@@ -881,7 +894,12 @@ func GetAllChains(adCategoryID int) (map[int][]FieldConfig, error) {
 	for _, f := range allFields {
 		config := f.Config()
 		if config.NextInChain != 0 {
-			delete(chainStarts, config.NextInChain)
+			// NextInChain is 0-based array index, convert to 1-based Order
+			// NextInChain points to the array index of the next field
+			// Array index 0 = Order 1, array index 1 = Order 2, etc.
+			// So: Order = NextInChain + 1
+			nextOrder := config.NextInChain + 1
+			delete(chainStarts, nextOrder)
 		}
 	}
 
@@ -899,7 +917,8 @@ func GetAllChains(adCategoryID int) (map[int][]FieldConfig, error) {
 			if field.NextInChain == 0 {
 				break // End of chain
 			}
-			currentOrder = field.NextInChain
+			// Convert 0-based NextInChain to 1-based Order
+			currentOrder = field.NextInChain + 1
 		}
 		if len(chainFields) > 0 {
 			chains[startOrder] = chainFields

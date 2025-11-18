@@ -4,7 +4,6 @@
     "display_name": "Make",
     "field_type": "string",
     "table_name": "Make",
-    "table_field_name": "make_id",
     "qdrant_type": "keyword"
   },
   {
@@ -12,7 +11,6 @@
     "display_name": "Year",
     "field_type": "int",
     "table_name": "Year",
-    "table_field_name": "year_id",
     "qdrant_type": "keyword_array"
   },
   {
@@ -20,7 +18,6 @@
     "display_name": "Model",
     "field_type": "string",
     "table_name": "Model",
-    "table_field_name": "model_id",
     "qdrant_type": "keyword_array"
   },
   {
@@ -28,7 +25,6 @@
     "display_name": "Engine",
     "field_type": "string",
     "table_name": "Engine",
-    "table_field_name": "engine_id",
     "qdrant_type": "keyword_array"
   },
   {
@@ -36,7 +32,6 @@
     "display_name": "Part Category",
     "field_type": "string",
     "table_name": "PartCategory",
-    "table_field_name": "part_category_id",
     "qdrant_type": "keyword"
   },
   {
@@ -44,7 +39,6 @@
     "display_name": "Part Subcategory",
     "field_type": "string",
     "table_name": "PartSubCategory",
-    "table_field_name": "part_subcategory_id",
     "qdrant_type": "keyword"
   },
   {
@@ -52,7 +46,6 @@
     "display_name": "Breed",
     "field_type": "string",
     "table_name": "Breed",
-    "table_field_name": "breed_id",
     "qdrant_type": "keyword"
   },
   {
@@ -60,7 +53,6 @@
     "display_name": "Location",
     "field_type": "string",
     "table_name": "",
-    "table_field_name": "",
     "qdrant_type": "geo"
   },
   {
@@ -68,7 +60,6 @@
     "display_name": "Price",
     "field_type": "float64",
     "table_name": "",
-    "table_field_name": "",
     "qdrant_type": "float"
   }
 ]
