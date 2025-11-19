@@ -1,0 +1,443 @@
+package ad
+
+import (
+	"fmt"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/qdrant/go-client/qdrant"
+	g "maragu.dev/gomponents"
+	hx "maragu.dev/gomponents-htmx"
+	. "maragu.dev/gomponents/html"
+)
+
+// Field represents a field that can be used in forms, filters, and validation
+type Field interface {
+	// Name returns the name of the field
+	Name() string
+
+	// BuildFilterCondition builds a Qdrant filter condition from form values
+	// Returns nil if no filter should be applied
+	BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition
+
+	// RenderNewAdField renders the field for the new ad form
+	// selectedValues is a map of selected values (for efficient lookup)
+	// fieldValues are the available values to choose from
+	// defaultValue is the default value for single-select fields
+	RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node
+
+	// RenderFilterField renders the field for the filter dialog
+	RenderFilterField(params map[string]string) g.Node
+
+	// Validate validates a field value
+	Validate(value string) error
+
+	// BuildJoinClause builds the SQL JOIN clause for this field
+	// Returns empty string if field doesn't use a database table
+	BuildJoinClause() string
+
+	// BuildSelectClause builds the SQL SELECT clause for this field
+	// Returns empty string if field doesn't use a database table
+	BuildSelectClause() string
+
+	// GetValues returns the available values for this field given parent filters
+	// parentValues maps parent field names to their values
+	GetValues(parentValues map[string]string) ([]string, error)
+
+	// BuildSpecDataSubquery builds the SQL JSON key-value pair for fetching spec data values for an ad
+	// Returns empty string if field is not a spec field
+	BuildSpecDataSubquery() string
+
+	// IsSpecField returns true if the field is a spec field
+	IsSpecField() bool
+}
+
+type adField struct {
+	AdCategoryID       int    `json:"ad_category_id"`        // Ad category ID
+	FieldName          string `json:"name"`                  // 'make'
+	DisplayName        string `json:"display_name"`          // 'Make'
+	FieldType          string `json:"field_type"`            // 'string', 'int', 'float64'
+	TableName          string `json:"table_name"`            // 'Make'
+	QdrantType         string `json:"qdrant_type"`           // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
+	NextInChain        int    `json:"next_in_chain"`         // 0-based array index of next field in chain (0 = last field in chain or standalone, > 0 = index of next field)
+	IsRequired         bool   `json:"is_required"`           // Is required field on new ad form
+	ShowInFilters      bool   `json:"show_in_filters"`       // Show field in filter UI
+	SpecTableName      string `json:"spec_table_name"`       // 'SpecVehicle'
+	SpecTableFieldName string `json:"spec_table_field_name"` // 'make_id'
+	AdSpecTableName    string `json:"ad_spec_table_name"`    // 'AdSpecVehicle'
+}
+
+func (f adField) Name() string {
+	return f.FieldName
+}
+
+func (f adField) IsSpecField() bool {
+	return f.SpecTableName != ""
+}
+
+func (f adField) BuildJoinClause() string {
+	if f.TableName == "" {
+		return ""
+	}
+	return fmt.Sprintf("LEFT JOIN %s ON spec.value = %s.id",
+		f.TableName, f.TableName)
+}
+
+func (f adField) BuildSelectClause() string {
+	if f.TableName == "" {
+		return ""
+	}
+	return fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT CAST(%s.value AS TEXT), ','), '') as %s",
+		f.TableName, f.FieldName)
+}
+
+func (f adField) GetValues(parentValues map[string]string) ([]string, error) {
+	/*
+		// Get the field from the category to ensure we have a full Field implementation
+		field, err := GetCategoryField(f.adCategoryID, f.name)
+		if err != nil {
+			return nil, fmt.Errorf("field not found: %s", f.name)
+		}
+
+		query, args, err := BuildFieldQueryWithIntersection(f.adCategoryID, field, parentValues)
+		if err != nil {
+			return nil, err
+		}
+
+		var values []string
+		err = db.Select(&values, query, args...)
+		return values, err
+	*/
+	return nil, nil
+}
+
+// RenderFilterField provides a default fallback implementation
+// Returns an empty g.Group{} if the field doesn't implement its own RenderFilterField
+func (f adField) RenderFilterField(params map[string]string) g.Node {
+	return g.Group{}
+}
+
+// RenderNewAdField provides a generic fallback implementation
+// Concrete field types should override this for field-specific rendering
+func (f adField) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
+	fieldID := f.FieldName + "Div"
+	fieldName := f.FieldName
+	nextFieldOrder := f.NextInChain
+	nextFieldTarget := ""
+	if nextFieldOrder != 0 {
+		nextFieldTarget = fmt.Sprintf("%dDiv", nextFieldOrder)
+	}
+	if f.QdrantType == "keyword_array" {
+		// Multi-select (checkboxes)
+		selected := selectedValues
+		if selected == nil {
+			selected = make(map[string]bool)
+		}
+
+		checkboxes := []g.Node{}
+		for _, value := range fieldValues {
+			attrs := []g.Node{
+				Type("checkbox"),
+				Name(fieldName),
+				Value(value),
+				ID(fieldName + "-" + value),
+			}
+			if selected[value] {
+				attrs = append(attrs, Checked())
+			}
+
+			// Add HTMX trigger if there's a next field
+			if nextFieldTarget != "" && nextFieldOrder != 0 {
+				endpoint := fmt.Sprintf("/api/%s", nextFieldOrder)
+				attrs = append(attrs,
+					hx.Trigger("change"),
+					hx.Get(endpoint),
+					hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
+					hx.Include("form"),
+					hx.Swap("innerHTML"),
+				)
+			}
+
+			checkboxNode := Div(
+				Class("flex items-center space-x-2"),
+				Input(attrs...),
+				Label(
+					For(fieldName+"-"+value),
+					g.Text(value),
+				),
+			)
+			checkboxes = append(checkboxes, checkboxNode)
+		}
+
+		gridContainer := Div(
+			Class("grid grid-cols-4 gap-2 p-4 bg-gray-50 border border-gray-200 rounded-lg"),
+			g.Group(checkboxes),
+		)
+
+		formGroup := Div(
+			Class("space-y-2"),
+			Label(For(fieldName), Class("block"), g.Text(f.DisplayName)),
+			gridContainer,
+		)
+
+		return Div(
+			ID(fieldID),
+			Class("space-y-2"),
+			formGroup,
+		)
+	} else {
+		// Single-select (dropdown)
+		options := []g.Node{
+			Option(Value(""), g.Text(fmt.Sprintf("Select a %s", f.DisplayName))),
+		}
+
+		for _, value := range fieldValues {
+			optionAttrs := []g.Node{Value(value), g.Text(value)}
+			if value == defaultValue {
+				optionAttrs = append(optionAttrs, Selected())
+			}
+			options = append(options, Option(optionAttrs...))
+		}
+
+		attrs := []g.Node{
+			ID(fieldName),
+			Name(fieldName),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
+		}
+
+		if f.IsRequired {
+			attrs = append(attrs, Required())
+		}
+
+		// Add HTMX trigger if there's a next field in chain
+		if nextFieldTarget != "" && nextFieldOrder != 0 {
+			endpoint := fmt.Sprintf("/api/%d", nextFieldOrder)
+			attrs = append(attrs,
+				hx.Trigger("change"),
+				hx.Get(endpoint),
+				hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
+				hx.Include("form"),
+				hx.Swap("innerHTML"),
+			)
+		}
+
+		formGroup := Div(
+			Class("space-y-2"),
+			Label(For(fieldName), Class("block"), g.Text(f.DisplayName)),
+			Select(append(attrs, g.Group(options)...)...),
+		)
+
+		return Div(
+			ID(fieldID),
+			formGroup,
+		)
+	}
+}
+
+func (f adField) BuildSpecDataSubquery() string {
+	subquery := fmt.Sprintf(`(
+		SELECT json_agg(value ORDER BY value)
+		FROM (
+			SELECT DISTINCT %s.value
+			FROM %s
+			JOIN %s sv ON %s.id = sv.%s
+			JOIN %s asv ON asv.spec_id = sv.id
+			WHERE asv.ad_id = $1
+		) AS distinct_values
+	)`, f.TableName, f.TableName, f.SpecTableName, f.TableName, f.SpecTableFieldName, f.AdSpecTableName)
+	return fmt.Sprintf("'%s', COALESCE(%s, '[]'::json)", f.FieldName, subquery)
+}
+
+// NewAdField creates a Field instance based on the field name
+func NewAdField(adField adField) (Field, error) {
+	switch adField.FieldName {
+	case "location":
+		return &FieldLocation{adField}, nil
+	case "price":
+		return &FieldPrice{adField}, nil
+	case "year":
+		return &FieldYear{adField}, nil
+	case "make":
+		return &FieldMake{adField}, nil
+	case "model":
+		return &FieldModel{adField}, nil
+	case "engine":
+		return &FieldEngine{adField}, nil
+	case "part_category":
+		return &FieldPartCategory{adField}, nil
+	case "part_subcategory":
+		return &FieldPartSubcategory{adField}, nil
+	case "breed":
+		return &FieldBreed{adField}, nil
+	default:
+		return nil, fmt.Errorf("unknown field name: %s", adField.FieldName)
+	}
+}
+
+// fieldSelect creates a reusable select dropdown field for single-select fields
+// fieldID: ID for the container div (e.g., "makeDiv")
+// fieldName: Name attribute for select (e.g., "make")
+// displayName: Label text (e.g., "Make")
+// fieldValues: Available values to display as options
+// defaultValue: Default selected value (empty string if none)
+// isRequired: Whether the field is required
+// nextFieldName: Optional next field name for HTMX chain (empty string if none)
+func fieldSelect(fieldID, fieldName, displayName string, fieldValues []string, defaultValue string, isRequired bool, nextFieldName string) g.Node {
+	options := []g.Node{
+		Option(Value(""), g.Text(fmt.Sprintf("Select a %s", displayName))),
+	}
+
+	for _, value := range fieldValues {
+		optionAttrs := []g.Node{Value(value), g.Text(value)}
+		if value == defaultValue {
+			optionAttrs = append(optionAttrs, Selected())
+		}
+		options = append(options, Option(optionAttrs...))
+	}
+
+	attrs := []g.Node{
+		ID(fieldName),
+		Name(fieldName),
+		Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
+	}
+
+	if isRequired {
+		attrs = append(attrs, Required())
+	}
+
+	// Add HTMX trigger if there's a next field in chain
+	nextFieldTarget := ""
+	if nextFieldName != "" {
+		nextFieldTarget = nextFieldName + "Div"
+		endpoint := fmt.Sprintf("/api/%s", nextFieldName)
+		attrs = append(attrs,
+			hx.Trigger("change"),
+			hx.Get(endpoint),
+			hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
+			hx.Include("form"),
+			hx.Swap("innerHTML"),
+		)
+	}
+
+	formGroup := Div(
+		Class("space-y-2"),
+		Label(For(fieldName), Class("block"), g.Text(displayName)),
+		Select(append(attrs, g.Group(options)...)...),
+	)
+
+	return Div(
+		ID(fieldID),
+		formGroup,
+	)
+}
+
+// fieldInput creates a reusable input field for text/number inputs
+// fieldID: ID for the container div (e.g., "priceDiv")
+// fieldName: Name attribute for input (e.g., "price")
+// displayName: Label text (e.g., "Price")
+// inputType: Input type (e.g., "text", "number")
+// defaultValue: Default value (empty string if none)
+// isRequired: Whether the field is required
+// placeholder: Placeholder text (empty string if none)
+// additionalAttrs: Additional attributes to add to the input
+func fieldInput(fieldID, fieldName, displayName, inputType, defaultValue string, isRequired bool, placeholder string, additionalAttrs ...g.Node) g.Node {
+	attrs := []g.Node{
+		Type(inputType),
+		ID(fieldName),
+		Name(fieldName),
+		Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
+	}
+
+	if defaultValue != "" {
+		attrs = append(attrs, Value(defaultValue))
+	}
+
+	if isRequired {
+		attrs = append(attrs, Required())
+	}
+
+	if placeholder != "" {
+		attrs = append(attrs, Placeholder(placeholder))
+	}
+
+	attrs = append(attrs, additionalAttrs...)
+
+	formGroup := Div(
+		Class("space-y-2"),
+		Label(For(fieldName), Class("block"), g.Text(displayName)),
+		Input(attrs...),
+	)
+
+	return Div(
+		ID(fieldID),
+		formGroup,
+	)
+}
+
+// fieldCheckboxGrid creates a reusable checkbox grid field for multi-select fields
+// This is a helper function that can be used by field implementations
+// fieldID: ID for the container div (e.g., "yearDiv")
+// fieldName: Name attribute for checkboxes (e.g., "year")
+// displayName: Label text (e.g., "Year")
+// fieldValues: Available values to display as checkboxes
+// selectedValues: Map of selected values (for pre-selecting)
+// nextFieldName: Optional next field name for HTMX chain (empty string if none)
+func fieldCheckboxGrid(fieldID, fieldName, displayName string, fieldValues []string, selectedValues map[string]bool, nextFieldName string) g.Node {
+	// Create checkbox grid
+	checkboxes := []g.Node{}
+	for _, value := range fieldValues {
+		attrs := []g.Node{
+			Type("checkbox"),
+			Name(fieldName),
+			Value(value),
+			ID(fieldName + "-" + value),
+		}
+		if selectedValues != nil {
+			if _, ok := selectedValues[value]; ok {
+				attrs = append(attrs, Checked())
+			}
+		}
+
+		checkboxNode := Div(
+			Class("flex items-center space-x-2"),
+			Input(attrs...),
+			Label(
+				For(fieldName+"-"+value),
+				g.Text(value),
+			),
+		)
+		checkboxes = append(checkboxes, checkboxNode)
+	}
+
+	// Grid container for checkboxes
+	// Add HTMX trigger on parent to listen for changes from any checkbox
+	gridAttrs := []g.Node{
+		Class("grid grid-cols-4 gap-2 p-4 bg-gray-50 border border-gray-200 rounded-lg"),
+	}
+	if nextFieldName != "" {
+		endpoint := fmt.Sprintf("/api/%s", nextFieldName)
+		gridAttrs = append(gridAttrs,
+			hx.Trigger("change from:input"),
+			hx.Get(endpoint),
+			hx.Target(fmt.Sprintf("#%s", nextFieldName+"Div")),
+			hx.Include("form"),
+			hx.Swap("innerHTML"),
+		)
+	}
+
+	gridContainer := Div(
+		append(gridAttrs, g.Group(checkboxes)...)...,
+	)
+
+	// Form group wrapper
+	formGroup := Div(
+		Class("space-y-2"),
+		Label(For(fieldName), Class("block"), g.Text(displayName)),
+		gridContainer,
+	)
+
+	return Div(
+		ID(fieldID),
+		Class("space-y-2"),
+		formGroup,
+	)
+}
