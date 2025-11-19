@@ -7,13 +7,12 @@ import (
 
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
-	"github.com/parts-pile/site/spec"
 )
 
 var (
-	adCategoryNames  map[int]string       // id -> name
-	adCategoryIDs    map[string]int       // name -> id
-	adCategoryFields map[int][]spec.Field // id -> []Field
+	adCategoryNames map[int]string  // id -> name
+	adCategoryIDs   map[string]int  // name -> id
+	adFields        map[int][]Field // id -> []Field
 )
 
 // loadCategoriesFromDB loads category data from the database and populates the maps
@@ -42,7 +41,7 @@ func loadCategoriesFromDB() error {
 }
 
 func loadCategoryFieldsFromDB() error {
-	adCategoryFields = make(map[int][]spec.Field)
+	adFields = make(map[int][]Field)
 
 	query := `
 		SELECT json_object_agg(
@@ -72,13 +71,13 @@ func loadCategoryFieldsFromDB() error {
 		GROUP BY acf.ad_category_id
 	`
 
-	var result map[string][]spec.AdCategoryField
+	var result map[string][]adField
 	if err := db.QueryJSON(&result, query); err != nil {
 		return err
 	}
 
-	// Create concrete Field instances from AdCategoryField
-	for idStr, acFields := range result {
+	// Create concrete Field instances from adField
+	for idStr, fields := range result {
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
 			logger.Error("Failed to convert category ID",
@@ -86,18 +85,18 @@ func loadCategoryFieldsFromDB() error {
 			continue
 		}
 
-		fields := make([]spec.Field, 0, len(acFields))
-		for _, acField := range acFields {
-			field, err := spec.NewField(id, acField)
+		newFields := make([]Field, 0, len(fields))
+		for _, field := range fields {
+			newField, err := NewAdField(field)
 			if err != nil {
 				logger.Error("Failed to create field instance",
 					"error", err, "category_id", id,
-					"field_name", acField.Name, "component", "ad-category")
+					"field_name", field.FieldName, "component", "ad-category")
 				continue
 			}
-			fields = append(fields, field)
+			newFields = append(newFields, newField)
 		}
-		adCategoryFields[id] = fields
+		adFields[id] = newFields
 	}
 	return nil
 }
@@ -151,12 +150,12 @@ func GetCategoryIDByName(name string) (id int) {
 	return
 }
 
-func GetCategoryFields(adCat int) []spec.Field {
-	return adCategoryFields[adCat]
+func GetCategoryFields(adCat int) []Field {
+	return adFields[adCat]
 }
 
-func GetCategoryField(adCat int, fieldName string) (spec.Field, error) {
-	fields := adCategoryFields[adCat]
+func GetCategoryField(adCat int, fieldName string) (Field, error) {
+	fields := adFields[adCat]
 	for _, field := range fields {
 		if field.Name() == fieldName {
 			return field, nil

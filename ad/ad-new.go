@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"maps"
-	"strconv"
-	"strings"
 
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/spec"
@@ -46,183 +44,160 @@ func AddAd(ad AdDetail) (int, error) {
 
 // findSpec finds a spec ID from the appropriate spec table using dynamic field configuration
 func findSpec(tx *sql.Tx, adCategoryID int, fieldValues map[string]string) (int, string, error) {
-	// Get all chains to determine which spec table to use
-	allChains, err := spec.GetAllChains(adCategoryID)
-	if err != nil {
-		return 0, "", fmt.Errorf("failed to get chains: %w", err)
-	}
+	/*
+		// Get all chains to determine which spec table to use
+		allChains, err := spec.GetAllChains(adCategoryID)
+		if err != nil {
+			return 0, "", fmt.Errorf("failed to get chains: %w", err)
+		}
 
-	// Find the first chain (lowest order) that matches the provided field values
-	var targetChain []spec.FieldConfig
-	var targetSpecType string
-	minOrder := -1
+		// Find the first chain (lowest order) that matches the provided field values
+		var targetChain []spec.FieldConfig
+		var targetSpecType string
+		minOrder := -1
 
-	for order, chain := range allChains {
-		// Check if this chain matches the field values
-		matches := true
-		for _, field := range chain {
-			value, hasValue := fieldValues[field.Name]
-			if !hasValue || value == "" {
-				matches = false
-				break
+		for order, chain := range allChains {
+			// Check if this chain matches the field values
+			matches := true
+			for _, field := range chain {
+				value, hasValue := fieldValues[field.Name]
+				if !hasValue || value == "" {
+					matches = false
+					break
+				}
+			}
+			if matches && (minOrder == -1 || order < minOrder) {
+				minOrder = order
+				targetChain = chain
+				targetSpecType = spec.GetSpecTypeFromChain(chain)
 			}
 		}
-		if matches && (minOrder == -1 || order < minOrder) {
-			minOrder = order
-			targetChain = chain
-			targetSpecType = spec.GetSpecTypeFromChain(chain)
-		}
-	}
 
-	if len(targetChain) == 0 {
-		return 0, "", fmt.Errorf("no matching chain found for field values: %v", fieldValues)
-	}
-
-	// Get spec table name
-	specTableName := spec.GetSpecTableName(targetSpecType)
-
-	// Build dynamic query
-	query := fmt.Sprintf("SELECT spec.id FROM %s spec", specTableName)
-	var joins []string
-	var whereClauses []string
-	var args []interface{}
-
-	whereClauses = append(whereClauses, fmt.Sprintf("spec.ad_category_id = $%d", len(args)+1))
-	args = append(args, adCategoryID)
-
-	// Add JOINs and WHERE clauses for each field in the chain
-	for _, fieldConfig := range targetChain {
-		value, hasValue := fieldValues[fieldConfig.Name]
-		if !hasValue || value == "" {
-			continue
+		if len(targetChain) == 0 {
+			return 0, "", fmt.Errorf("no matching chain found for field values: %v", fieldValues)
 		}
 
-		tableName := fieldConfig.TableName
-		tableFieldName := fieldConfig.TableFieldName
-		joins = append(joins, fmt.Sprintf("LEFT JOIN %s ON spec.%s = %s.id",
-			tableName, tableFieldName, tableName))
+		// Get spec table name
+		specTableName := spec.GetSpecTableName(targetSpecType)
 
-		whereClauses = append(whereClauses,
-			fmt.Sprintf("%s.value = $%d", tableName, len(args)+1))
+		// Build dynamic query
+		query := fmt.Sprintf("SELECT spec.id FROM %s spec", specTableName)
+		var joins []string
+		var whereClauses []string
+		var args []interface{}
 
-		if fieldConfig.FieldType == "int" {
-			intValue, err := strconv.Atoi(value)
-			if err != nil {
+		whereClauses = append(whereClauses, fmt.Sprintf("spec.ad_category_id = $%d", len(args)+1))
+		args = append(args, adCategoryID)
+
+		// Add JOINs and WHERE clauses for each field in the chain
+		for _, fieldConfig := range targetChain {
+			value, hasValue := fieldValues[fieldConfig.Name]
+			if !hasValue || value == "" {
 				continue
 			}
-			args = append(args, intValue)
-		} else {
-			args = append(args, value)
-		}
-	}
 
-	// Build final query
-	if len(joins) > 0 {
-		query += " " + strings.Join(joins, " ")
-	}
-	query += " WHERE " + strings.Join(whereClauses, " AND ")
+			tableName := fieldConfig.TableName
+			tableFieldName := fieldConfig.TableFieldName
+			joins = append(joins, fmt.Sprintf("LEFT JOIN %s ON spec.%s = %s.id",
+				tableName, tableFieldName, tableName))
 
-	var specID int
-	err = tx.QueryRow(query, args...).Scan(&specID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return 0, "", fmt.Errorf("spec not found for field values: %v", fieldValues)
+			whereClauses = append(whereClauses,
+				fmt.Sprintf("%s.value = $%d", tableName, len(args)+1))
+
+			if fieldConfig.FieldType == "int" {
+				intValue, err := strconv.Atoi(value)
+				if err != nil {
+					continue
+				}
+				args = append(args, intValue)
+			} else {
+				args = append(args, value)
+			}
 		}
-		return 0, "", fmt.Errorf("error looking up spec: %w", err)
-	}
-	return specID, targetSpecType, nil
+
+		// Build final query
+		if len(joins) > 0 {
+			query += " " + strings.Join(joins, " ")
+		}
+		query += " WHERE " + strings.Join(whereClauses, " AND ")
+
+		var specID int
+		err = tx.QueryRow(query, args...).Scan(&specID)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				return 0, "", fmt.Errorf("spec not found for field values: %v", fieldValues)
+			}
+			return 0, "", fmt.Errorf("error looking up spec: %w", err)
+		}
+		return specID, targetSpecType, nil
+	*/
+	return 0, "", nil
 }
 
 // addFieldAssociations handles spec associations dynamically based on category field configuration
 func addFieldAssociations(tx *sql.Tx, ad AdDetail) error {
-	// Get category fields
-	fields := spec.GetCategoryFields(ad.AdCategoryID)
+	fields := spec.GetSpecFields(ad.AdCategoryID)
 
-	// Convert Fields to FieldConfigs
-	fieldConfigs := make([]spec.FieldConfig, len(fields))
-	for i, field := range fields {
-		fieldConfigs[i] = field.Config()
+	// Group fields by their AdSpecTableName (which identifies the chain)
+	fieldsByChain := make(map[string][]spec.Field)
+	for _, field := range fields {
+		adSpecTableName := field.AdSpecTableName()
+		fieldsByChain[adSpecTableName] = append(fieldsByChain[adSpecTableName], field)
 	}
 
-	// Extract single-value fields from AdDetail.SpecData for spec lookup
-	fieldValueMap := buildFieldValueMap(ad, fieldConfigs)
+	// Process each chain
+	for _, chainFields := range fieldsByChain {
+		// Extract field values from SpecData for this chain
+		multiValueFields := make(map[string][]string)
+		singleValueFields := make(map[string]string)
 
-	// Get multi-value fields (fields that can have multiple selections)
-	multiValueFields := getMultiValueFields(ad, fieldConfigs)
+		for _, field := range chainFields {
+			fieldName := field.Name()
 
-	// Generate all combinations of multi-value fields
-	combinations := generateFieldCombinations(multiValueFields)
+			// Get values from SpecData
+			values, exists := ad.SpecData[fieldName]
+			if !exists || len(values) == 0 {
+				continue
+			}
 
-	// If no multi-value fields, process single combination
-	if len(combinations) == 0 {
-		combinations = []map[string]string{{}}
-	}
-
-	// Process each combination
-	for _, combination := range combinations {
-		// Merge combination with base field values
-		combinedValues := make(map[string]string)
-		maps.Copy(combinedValues, fieldValueMap)
-		maps.Copy(combinedValues, combination)
-
-		// Find spec for this combination
-		specID, specType, err := findSpec(tx, ad.AdCategoryID, combinedValues)
-		if err != nil {
-			return err
+			// Check if this is a multi-value field
+			if field.QdrantType() == "keyword_array" {
+				multiValueFields[fieldName] = values
+			} else {
+				// Single value - take first one
+				if len(values) > 0 && values[0] != "" {
+					singleValueFields[fieldName] = values[0]
+				}
+			}
 		}
 
-		// Insert association
-		if err := insertSpecAssociation(tx, ad.ID, specID, specType); err != nil {
-			return err
+		// Generate all combinations of multi-value fields
+		combinations := generateFieldCombinations(multiValueFields)
+		if len(combinations) == 0 {
+			combinations = []map[string]string{{}}
+		}
+
+		// Process each combination
+		for _, combination := range combinations {
+			// Merge single values with combination
+			combinedValues := make(map[string]string)
+			maps.Copy(combinedValues, singleValueFields)
+			maps.Copy(combinedValues, combination)
+
+			// Find spec for this combination
+			specID, specType, err := findSpec(tx, ad.AdCategoryID, combinedValues)
+			if err != nil {
+				return err
+			}
+
+			// Insert association
+			if err := insertSpecAssociation(tx, ad.ID, specID, specType); err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
-}
-
-// buildFieldValueMap builds a map of field values from AdDetail SpecData
-func buildFieldValueMap(ad AdDetail, fieldConfigs []spec.FieldConfig) map[string]string {
-	values := make(map[string]string)
-
-	for _, fieldConfig := range fieldConfigs {
-		// Only handle single-value fields here (multi-value handled separately)
-		if fieldConfig.FieldMultiValue {
-			continue
-		}
-
-		// Extract value from SpecData
-		fieldValues, exists := ad.SpecData[fieldConfig.Name]
-		if exists && len(fieldValues) > 0 && fieldValues[0] != "" {
-			values[fieldConfig.Name] = fieldValues[0]
-		}
-	}
-
-	return values
-}
-
-// getMultiValueFields returns fields that have multiple values from AdDetail SpecData
-func getMultiValueFields(ad AdDetail, fieldConfigs []spec.FieldConfig) map[string][]string {
-	multiValueFields := make(map[string][]string)
-
-	// Initialize SpecData if nil
-	if ad.SpecData == nil {
-		ad.SpecData = make(map[string][]string)
-	}
-
-	for _, fieldConfig := range fieldConfigs {
-		// Only handle multi-value fields
-		if !fieldConfig.FieldMultiValue {
-			continue
-		}
-
-		// Extract values from SpecData
-		fieldValues, exists := ad.SpecData[fieldConfig.Name]
-		if exists && len(fieldValues) > 0 {
-			multiValueFields[fieldConfig.Name] = fieldValues
-		}
-	}
-
-	return multiValueFields
 }
 
 // generateFieldCombinations generates all combinations of multi-value fields

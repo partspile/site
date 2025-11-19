@@ -41,19 +41,19 @@ type FieldConfig struct {
 	ShowInFilters   bool   // Whether this field should be shown in filter UI
 }
 
-type AdCategoryField struct {
-	AdCategoryID       int    `json:"ad_category_id"`        // Ad category ID
-	Name               string `json:"name"`                  // 'make'
-	DisplayName        string `json:"display_name"`          // 'Make'
-	FieldType          string `json:"field_type"`            // 'string', 'int', 'float64'
-	TableName          string `json:"table_name"`            // 'Make'
-	QdrantType         string `json:"qdrant_type"`           // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
-	SpecTableName      string `json:"spec_table_name"`       // 'SpecVehicle'
-	SpecTableFieldName string `json:"spec_table_field_name"` // 'make_id'
-	AdSpecTableName    string `json:"ad_spec_table_name"`    // 'AdSpecVehicle'
-	NextInChain        int    `json:"next_in_chain"`         // 0-based array index of next field in chain (0 = last field in chain or standalone, > 0 = index of next field)
-	IsRequired         bool   `json:"is_required"`           // Is required field on new ad form
-	ShowInFilters      bool   `json:"show_in_filters"`       // Show field in filter UI
+type adCategoryField struct {
+	adCategoryID       int    `json:"ad_category_id"`        // Ad category ID
+	name               string `json:"name"`                  // 'make'
+	displayName        string `json:"display_name"`          // 'Make'
+	fieldType          string `json:"field_type"`            // 'string', 'int', 'float64'
+	tableName          string `json:"table_name"`            // 'Make'
+	qdrantType         string `json:"qdrant_type"`           // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
+	specTableName      string `json:"spec_table_name"`       // 'SpecVehicle'
+	specTableFieldName string `json:"spec_table_field_name"` // 'make_id'
+	adSpecTableName    string `json:"ad_spec_table_name"`    // 'AdSpecVehicle'
+	nextInChain        int    `json:"next_in_chain"`         // 0-based array index of next field in chain (0 = last field in chain or standalone, > 0 = index of next field)
+	isRequired         bool   `json:"is_required"`           // Is required field on new ad form
+	showInFilters      bool   `json:"show_in_filters"`       // Show field in filter UI
 }
 
 // LocationResolver is a function type for resolving location text to coordinates
@@ -63,6 +63,8 @@ type LocationResolver func(locationText string) (latitude, longitude float64, er
 type Field interface {
 	// Name returns the name of the field
 	Name() string
+
+	IsSpecField() bool
 
 	// BuildFilterCondition builds a Qdrant filter condition from form values
 	// Returns nil if no filter should be applied
@@ -96,48 +98,88 @@ type Field interface {
 	// parentValues maps parent field names to their values
 	GetValues(parentValues map[string]string) ([]string, error)
 
-	// GetAdCategoryField returns the AdCategoryField configuration for this field
-	GetAdCategoryField() AdCategoryField
+	// BuildSpecDataSubquery builds the SQL JSON key-value pair for fetching spec data values for an ad
+	// Returns the format: 'fieldName', COALESCE(subquery, '[]'::json)
+	// Returns empty string if field is not a spec field (doesn't use a database table)
+	BuildSpecDataSubquery() string
+
+	// AdSpecTableName returns the AdSpec table name for this field (e.g., "AdSpecVehicle")
+	// Returns empty string if field is not a spec field
+	AdSpecTableName() string
+
+	// QdrantType returns the Qdrant type for this field (e.g., "keyword", "keyword_array")
+	// Returns empty string if field is not a spec field
+	QdrantType() string
 }
 
-// BaseField provides common functionality for all field types
-type BaseField struct {
-	AdCategoryField
+func (f *adCategoryField) Name() string {
+	return f.name
 }
 
-func (b *BaseField) Name() string {
-	return b.AdCategoryField.Name
+func (f *adCategoryField) IsSpecField() bool {
+	return f.tableName != ""
 }
 
-func (b *BaseField) BuildJoinClause() string {
-	if b.TableName == "" {
+func (f *adCategoryField) BuildJoinClause() string {
+	if f.tableName == "" {
 		return ""
 	}
 	return fmt.Sprintf("LEFT JOIN %s ON spec.value = %s.id",
-		b.TableName, b.TableName)
+		f.tableName, f.tableName)
 }
 
-func (b *BaseField) BuildSelectClause() string {
-	if b.TableName == "" {
+func (f *adCategoryField) BuildSpecDataSubquery() string {
+	if !f.IsSpecField() {
+		return ""
+	}
+	subquery := fmt.Sprintf(`(
+		SELECT json_agg(value ORDER BY value)
+		FROM (
+			SELECT DISTINCT %s.value
+			FROM %s
+			JOIN %s sv ON %s.id = sv.%s
+			JOIN %s asv ON asv.spec_id = sv.id
+			WHERE asv.ad_id = $1
+		) AS distinct_values
+	)`, f.tableName, f.tableName, f.specTableName, f.tableName, f.specTableFieldName, f.adSpecTableName)
+	return fmt.Sprintf("'%s', COALESCE(%s, '[]'::json)", f.name, subquery)
+}
+
+func (f *adCategoryField) AdSpecTableName() string {
+	if !f.IsSpecField() {
+		return ""
+	}
+	return f.adSpecTableName
+}
+
+func (f *adCategoryField) QdrantType() string {
+	if !f.IsSpecField() {
+		return ""
+	}
+	return f.qdrantType
+}
+
+func (f *AdCategoryField) BuildSelectClause() string {
+	if f.TableName == "" {
 		return ""
 	}
 	return fmt.Sprintf("COALESCE(STRING_AGG(DISTINCT CAST(%s.value AS TEXT), ','), '') as %s",
-		b.TableName, b.Name)
+		f.TableName, f.Name)
 }
 
-func (b *BaseField) IsFirstInChain() bool {
+func (f *AdCategoryField) IsFirstInChain() bool {
 	// TODO
 	return false
 }
 
-func (b *BaseField) GetValues(parentValues map[string]string) ([]string, error) {
+func (f *AdCategoryField) GetValues(parentValues map[string]string) ([]string, error) {
 	// Get the field from the category to ensure we have a full Field implementation
-	field, err := GetCategoryField(b.AdCategoryID, b.Name)
+	field, err := GetCategoryField(f.AdCategoryID, f.Name)
 	if err != nil {
-		return nil, fmt.Errorf("field not found: %s", b.Name)
+		return nil, fmt.Errorf("field not found: %s", f.Name)
 	}
 
-	query, args, err := BuildFieldQueryWithIntersection(b.AdCategoryID, field, parentValues)
+	query, args, err := BuildFieldQueryWithIntersection(f.AdCategoryID, field, parentValues)
 	if err != nil {
 		return nil, err
 	}
@@ -147,27 +189,23 @@ func (b *BaseField) GetValues(parentValues map[string]string) ([]string, error) 
 	return values, err
 }
 
-func (b *BaseField) GetAdCategoryField() AdCategoryField {
-	return b.AdCategoryField
-}
-
 // RenderFilterField provides a default fallback implementation
 // Returns an empty g.Group{} if the field doesn't implement its own RenderFilterField
-func (b *BaseField) RenderFilterField(params map[string]string) g.Node {
+func (f *AdCategoryField) RenderFilterField(params map[string]string) g.Node {
 	return g.Group{}
 }
 
 // RenderNewAdField provides a generic fallback implementation
 // Concrete field types should override this for field-specific rendering
-func (b *BaseField) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
-	fieldID := b.Name + "Div"
-	fieldName := b.Name
-	nextFieldName := b.NextFieldName
+func (f *AdCategoryField) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
+	fieldID := f.FieldName + "Div"
+	fieldName := f.FieldName
+	nextFieldOrder := f.NextInChain
 	nextFieldTarget := ""
-	if nextFieldName != "" {
-		nextFieldTarget = nextFieldName + "Div"
+	if nextFieldOrder != 0 {
+		nextFieldTarget = nextFieldOrder + "Div"
 	}
-	if b.FieldMultiValue {
+	if f.QdrantType == "keyword_array" {
 		// Multi-select (checkboxes)
 		selected := selectedValues
 		if selected == nil {
@@ -187,8 +225,8 @@ func (b *BaseField) RenderNewAdField(selectedValues map[string]bool, fieldValues
 			}
 
 			// Add HTMX trigger if there's a next field
-			if nextFieldTarget != "" && nextFieldName != "" {
-				endpoint := fmt.Sprintf("/api/%s", nextFieldName)
+			if nextFieldTarget != "" && nextFieldOrder != 0 {
+				endpoint := fmt.Sprintf("/api/%s", nextFieldOrder)
 				attrs = append(attrs,
 					hx.Trigger("change"),
 					hx.Get(endpoint),
@@ -276,7 +314,7 @@ func (b *BaseField) RenderNewAdField(selectedValues map[string]bool, fieldValues
 
 // NewField creates a Field instance based on the field name
 func NewField(categoryID int, adCategoryField AdCategoryField) (Field, error) {
-	switch adCategoryField.Name {
+	switch adCategoryField.Name() {
 	case "year":
 		return &FieldYear{adCategoryField}, nil
 	case "make":
@@ -524,6 +562,18 @@ func GetDBFields(adCategoryID int) []Field {
 	}
 
 	return fields
+}
+
+// GetSpecFields returns only spec fields (fields with spec tables) for a category
+func GetSpecFields(adCategoryID int) []Field {
+	allFields := GetCategoryFields(adCategoryID)
+	specFields := make([]Field, 0, len(allFields))
+	for _, field := range allFields {
+		if field.IsSpecField() {
+			specFields = append(specFields, field)
+		}
+	}
+	return specFields
 }
 
 // GetSpecTableName returns the spec table name for a given spec type
