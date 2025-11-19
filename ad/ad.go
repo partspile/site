@@ -58,16 +58,16 @@ func (a Ad) IsArchived() bool {
 func populateSpecData(adDetail *AdDetail) error {
 	adDetail.SpecData = make(map[string][]string)
 
-	specFields := GetSpecFields(adDetail.AdCategoryID)
-	if len(specFields) == 0 {
+	fields := GetSpecFields(adDetail.AdCategoryID)
+	if len(fields) == 0 {
 		// No spec fields for this category, return empty map
 		return nil
 	}
 
 	// Build JSON object keys for each spec field
-	jsonKeys := make([]string, len(specFields))
-	for i, specField := range specFields {
-		jsonKeys[i] = specField.BuildSpecDataSubquery()
+	jsonKeys := make([]string, len(fields))
+	for i, field := range fields {
+		jsonKeys[i] = field.BuildSpecDataSubquery()
 	}
 
 	// Build the full query - return the object directly without wrapper

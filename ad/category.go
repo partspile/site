@@ -173,3 +173,14 @@ func GetCategoryField(adCat int, fieldName string) (Field, error) {
 	}
 	return nil, fmt.Errorf("field %s not found in category %d", fieldName, adCat)
 }
+
+func GetSpecFields(adCat int) []Field {
+	fields := adFields[adCat]
+	specFields := make([]Field, 0)
+	for _, field := range fields {
+		if field.IsSpecField() {
+			specFields = append(specFields, field)
+		}
+	}
+	return specFields
+}
