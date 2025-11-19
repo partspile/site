@@ -76,6 +76,16 @@ func loadCategoryFieldsFromDB() error {
 		return err
 	}
 
+	// Populate NextInChainName for each field in all categories
+	// Fields are already ordered by priority_order from the query
+	for _, fields := range result {
+		for i, field := range fields {
+			if field.NextInChain != 0 && field.NextInChain < len(fields) {
+				fields[i].NextInChainName = fields[field.NextInChain].FieldName
+			}
+		}
+	}
+
 	// Create concrete Field instances from adField
 	for idStr, fields := range result {
 		id, err := strconv.Atoi(idStr)

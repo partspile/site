@@ -59,6 +59,7 @@ type adField struct {
 	TableName          string `json:"table_name"`            // 'Make'
 	QdrantType         string `json:"qdrant_type"`           // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
 	NextInChain        int    `json:"next_in_chain"`         // 0-based array index of next field in chain (0 = last field in chain or standalone, > 0 = index of next field)
+	NextInChainName    string `json:"next_in_chain_name"`    // 'year'
 	IsRequired         bool   `json:"is_required"`           // Is required field on new ad form
 	ShowInFilters      bool   `json:"show_in_filters"`       // Show field in filter UI
 	SpecTableName      string `json:"spec_table_name"`       // 'SpecVehicle'
