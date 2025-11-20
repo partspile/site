@@ -36,6 +36,7 @@ func adminNavigation(activeSection string) g.Node {
 		{"embedding-cache", "Embedding Cache", "/admin/embedding-cache"},
 		{"spec-cache", "Spec Cache", "/admin/spec-cache"},
 		{"part-cache", "Part Cache", "/admin/part-cache"},
+		{"field-values-cache", "Field Values Cache", "/admin/field-values-cache"},
 		{"monitor", "Monitor", "/admin/metrics"},
 	}
 
@@ -167,6 +168,15 @@ func AdminPartCacheSection(stats map[string]interface{}) g.Node {
 		Div(Class("text-lg font-medium text-gray-900"), g.Text("Part Cache Management")),
 		Div(Class("text-gray-600 text-sm"), g.Text("Manage part data cache performance and statistics.")),
 		CacheStatsPanel("Cache Statistics", stats, "/api/admin/part-cache/clear", "/api/admin/part-cache/refresh"),
+	)
+}
+
+func AdminFieldValuesCacheSection(stats map[string]interface{}) g.Node {
+	return Div(
+		Class("space-y-4"),
+		Div(Class("text-lg font-medium text-gray-900"), g.Text("Field Values Cache Management")),
+		Div(Class("text-gray-600 text-sm"), g.Text("Manage field values cache performance and statistics.")),
+		CacheStatsPanel("Cache Statistics", stats, "/api/admin/field-values-cache/clear", "/api/admin/field-values-cache/refresh"),
 	)
 }
 

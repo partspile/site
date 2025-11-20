@@ -52,6 +52,11 @@ func main() {
 		logger.Fatal("Failed to initialize field cache", "error", err)
 	}
 
+	// Initialize field values cache
+	if err := ad.InitFieldValuesCache(); err != nil {
+		logger.Fatal("Failed to initialize field values cache", "error", err)
+	}
+
 	// Initialize part cache
 	if err := part.InitPartCache(); err != nil {
 		logger.Fatal("Failed to initialize part cache", "error", err)
@@ -185,6 +190,7 @@ func main() {
 	admin.Get("/embedding-cache", h.HandleAdminEmbeddingCache)
 	admin.Get("/spec-cache", h.HandleAdminSpecCache)
 	admin.Get("/part-cache", h.HandleAdminPartCache)
+	admin.Get("/field-values-cache", h.HandleAdminFieldValuesCache)
 	admin.Get("/metrics", h.HandleMonitor)
 
 	// Admin API group
@@ -199,6 +205,8 @@ func main() {
 	adminAPI.Get("/spec-cache/refresh", h.HandleRefreshSpecCache)
 	adminAPI.Post("/part-cache/clear", h.HandleClearPartCache)
 	adminAPI.Get("/part-cache/refresh", h.HandleRefreshPartCache)
+	adminAPI.Post("/field-values-cache/clear", h.HandleClearFieldValuesCache)
+	adminAPI.Get("/field-values-cache/refresh", h.HandleRefreshFieldValuesCache)
 	adminAPI.Get("/metrics/refresh", h.HandleMonitorRefresh)
 
 	// User registration/authentication

@@ -26,7 +26,8 @@ func (f *FieldMake) RenderFilterField(params map[string]string) g.Node {
 	value := params[f.FieldName]
 
 	// Get all available values for this field (filter fields are independent)
-	values, err := GetFieldValues(f.AdCategoryID, f.FieldName, map[string]string{})
+	// Use GetValues method which may use caching
+	values, err := f.GetValues(map[string]string{})
 	if err != nil {
 		// If error, return empty dropdown
 		values = []string{}

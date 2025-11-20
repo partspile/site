@@ -2,12 +2,21 @@ package ad
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/cache"
+	"github.com/parts-pile/site/db"
+	"github.com/parts-pile/site/logger"
 	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
+)
+
+var (
+	// Cache for field values - values don't change frequently
+	fieldValuesCache *cache.Cache[[]string]
 )
 
 // Field represents a field that can be used in forms, filters, and validation
@@ -107,24 +116,59 @@ func (f adField) BuildSelectClause() string {
 		f.TableName, f.FieldName)
 }
 
-func (f adField) GetValues(parentValues map[string]string) ([]string, error) {
-	/*
-		// Get the field from the category to ensure we have a full Field implementation
-		field, err := GetCategoryField(f.adCategoryID, f.name)
-		if err != nil {
-			return nil, fmt.Errorf("field not found: %s", f.name)
-		}
+// InitFieldValuesCache initializes the field values cache
+func InitFieldValuesCache() error {
+	var err error
+	fieldValuesCache, err = cache.New[[]string](func(value []string) int64 {
+		// Estimate cost: ~50 bytes per string
+		return int64(len(value) * 50)
+	}, "Field Values Cache")
+	if err != nil {
+		return fmt.Errorf("failed to initialize field values cache: %w", err)
+	}
+	logger.Info("Initialized successfully",
+		"component", "field-values-cache")
+	return nil
+}
 
-		query, args, err := BuildFieldQueryWithIntersection(f.adCategoryID, field, parentValues)
-		if err != nil {
-			return nil, err
-		}
+// GetFieldValuesCacheStats returns cache statistics for admin monitoring
+func GetFieldValuesCacheStats() map[string]interface{} {
 
-		var values []string
-		err = db.Select(&values, query, args...)
-		return values, err
-	*/
-	return nil, nil
+	return fieldValuesCache.Stats()
+}
+
+// ClearFieldValuesCache clears all items from the field values cache
+func ClearFieldValuesCache() {
+	fieldValuesCache.Clear()
+}
+
+func (f adField) GetValues() ([]string, error) {
+	if f.TableName == "" {
+		// For fields without a table, return empty
+		return []string{}, nil
+	}
+
+	// Check cache first
+	cacheKey := fmt.Sprintf("field:%s:%d", f.TableName, f.AdCategoryID)
+	if cached, found := fieldValuesCache.Get(cacheKey); found {
+		return cached, nil
+	}
+
+	// Query database
+	var values []string
+	query := fmt.Sprintf("SELECT DISTINCT value FROM %s WHERE ad_category_id = $1 ORDER BY value", f.TableName)
+	err := db.Select(&values, query, f.AdCategoryID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the results with a longer TTL since values rarely change (24 hours)
+	if fieldValuesCache != nil {
+		cost := int64(len(values) * 50)
+		fieldValuesCache.SetWithTTL(cacheKey, values, cost, 24*time.Hour)
+	}
+
+	return values, nil
 }
 
 // RenderFilterField provides a default fallback implementation
@@ -289,6 +333,8 @@ func NewAdField(adField adField) (Field, error) {
 		return nil, fmt.Errorf("unknown field name: %s", adField.FieldName)
 	}
 }
+
+// TODO move these to ui pkg once ad pkg is removed from ui pkg
 
 // fieldSelect creates a reusable select dropdown field for single-select fields
 // fieldID: ID for the container div (e.g., "makeDiv")
