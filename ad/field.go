@@ -49,6 +49,13 @@ type Field interface {
 
 	// IsSpecField returns true if the field is a spec field
 	IsSpecField() bool
+
+	// GetTableNames returns all table-related names for the field
+	// Returns: specTableName, specTableFieldName, adSpecTableName, tableName
+	GetTableNames() (string, string, string, string)
+
+	// IsMultiValue returns true if the field can have multiple values
+	IsMultiValue() bool
 }
 
 type adField struct {
@@ -59,12 +66,13 @@ type adField struct {
 	TableName          string `json:"table_name"`            // 'Make'
 	QdrantType         string `json:"qdrant_type"`           // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
 	NextInChain        int    `json:"next_in_chain"`         // 0-based array index of next field in chain (0 = last field in chain or standalone, > 0 = index of next field)
-	NextInChainName    string `json:"next_in_chain_name"`    // 'year'
+	NextFieldName      string `json:"next_field_name"`       // 'year'
 	IsRequired         bool   `json:"is_required"`           // Is required field on new ad form
 	ShowInFilters      bool   `json:"show_in_filters"`       // Show field in filter UI
 	SpecTableName      string `json:"spec_table_name"`       // 'SpecVehicle'
 	SpecTableFieldName string `json:"spec_table_field_name"` // 'make_id'
 	AdSpecTableName    string `json:"ad_spec_table_name"`    // 'AdSpecVehicle'
+	IsMultiValueField  bool   `json:"is_multi_value_field"`  // True if multi-value field
 }
 
 func (f adField) Name() string {
@@ -73,6 +81,14 @@ func (f adField) Name() string {
 
 func (f adField) IsSpecField() bool {
 	return f.SpecTableName != ""
+}
+
+func (f adField) GetTableNames() (string, string, string, string) {
+	return f.SpecTableName, f.SpecTableFieldName, f.AdSpecTableName, f.TableName
+}
+
+func (f adField) IsMultiValue() bool {
+	return f.IsMultiValueField
 }
 
 func (f adField) BuildJoinClause() string {

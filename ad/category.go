@@ -10,9 +10,10 @@ import (
 )
 
 var (
-	adCategoryNames map[int]string  // id -> name
-	adCategoryIDs   map[string]int  // name -> id
-	adFields        map[int][]Field // id -> []Field
+	adCategoryNames map[int]string    // id -> name
+	adCategoryIDs   map[string]int    // name -> id
+	adFields        map[int][]Field   // id -> []Field
+	adFieldChains   map[int][][]Field // id -> [][]Field (array of field chains per category)
 )
 
 // loadCategoriesFromDB loads category data from the database and populates the maps
@@ -42,6 +43,7 @@ func loadCategoriesFromDB() error {
 
 func loadCategoryFieldsFromDB() error {
 	adFields = make(map[int][]Field)
+	adFieldChains = make(map[int][][]Field)
 
 	query := `
 		SELECT json_object_agg(
@@ -60,7 +62,8 @@ func loadCategoryFieldsFromDB() error {
 						'ad_spec_table_name', acf.ad_spec_table_name,
 						'next_in_chain', acf.next_in_chain,
 						'is_required', acf.is_required::boolean,
-						'show_in_filters', acf.show_in_filters::boolean
+						'show_in_filters', acf.show_in_filters::boolean,
+						'is_multi_value_field', (sf.qdrant_type = 'keyword_array')::boolean
 					) ORDER BY acf.priority_order
 				),
 				'[]'::json
@@ -76,12 +79,11 @@ func loadCategoryFieldsFromDB() error {
 		return err
 	}
 
-	// Populate NextInChainName for each field in all categories
-	// Fields are already ordered by priority_order from the query
+	// Populate NextFieldName for each field in all categories
 	for _, fields := range result {
 		for i, field := range fields {
 			if field.NextInChain != 0 && field.NextInChain < len(fields) {
-				fields[i].NextInChainName = fields[field.NextInChain].FieldName
+				fields[i].NextFieldName = fields[field.NextInChain].FieldName
 			}
 		}
 	}
@@ -95,18 +97,35 @@ func loadCategoryFieldsFromDB() error {
 			continue
 		}
 
-		newFields := make([]Field, 0, len(fields))
-		for _, field := range fields {
-			newField, err := NewAdField(field)
+		// Create concrete Field instances from adField
+		var newFields []Field
+		var newChains [][]Field
+		var newChain []Field
+		var inChain bool
+		for i := range fields {
+			newField, err := NewAdField(fields[i])
 			if err != nil {
 				logger.Error("Failed to create field instance",
 					"error", err, "category_id", id,
-					"field_name", field.FieldName, "component", "ad-category")
+					"field_name", fields[i].FieldName, "component", "ad-category")
 				continue
 			}
 			newFields = append(newFields, newField)
+			// Build the chains wile we're at it
+			if fields[i].NextInChain == 0 {
+				if inChain {
+					newChain = append(newChain, newField)
+					newChains = append(newChains, newChain)
+					inChain = false
+				}
+				newChain = nil
+			} else {
+				newChain = append(newChain, newField)
+				inChain = true
+			}
 		}
 		adFields[id] = newFields
+		adFieldChains[id] = newChains
 	}
 	return nil
 }

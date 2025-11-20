@@ -23,10 +23,10 @@ func (f *FieldMake) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 }
 
 func (f *FieldMake) RenderFilterField(params map[string]string) g.Node {
-	value := params[f.name]
+	value := params[f.FieldName]
 
 	// Get all available values for this field (filter fields are independent)
-	values, err := GetFieldValues(f.adCategoryID, f.name, map[string]string{})
+	values, err := GetFieldValues(f.AdCategoryID, f.FieldName, map[string]string{})
 	if err != nil {
 		// If error, return empty dropdown
 		values = []string{}
@@ -46,8 +46,8 @@ func (f *FieldMake) RenderFilterField(params map[string]string) g.Node {
 	return Div(
 		Label(Class("block text-sm font-medium mb-1"), g.Text(f.DisplayName)),
 		Select(
-			Name(f.name),
-			ID(f.name+"Filter"),
+			Name(f.FieldName),
+			ID(f.FieldName+"Filter"),
 			Class("w-full p-2 border rounded-md"),
 			g.Group(options),
 		),
@@ -56,8 +56,8 @@ func (f *FieldMake) RenderFilterField(params map[string]string) g.Node {
 
 func (f *FieldMake) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
 	return fieldSelect(
-		f.name+"Div",
-		f.name,
+		f.FieldName+"Div",
+		f.FieldName,
 		f.DisplayName,
 		fieldValues,
 		defaultValue,
