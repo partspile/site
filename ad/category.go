@@ -97,12 +97,13 @@ func loadCategoryFieldsFromDB() error {
 			continue
 		}
 
-		// Create concrete Field instances from adField
 		var newFields []Field
 		var newChains [][]Field
 		var newChain []Field
 		var inChain bool
 		for i := range fields {
+
+			// Concrete Field instance
 			newField, err := NewAdField(fields[i])
 			if err != nil {
 				logger.Error("Failed to create field instance",
@@ -111,6 +112,7 @@ func loadCategoryFieldsFromDB() error {
 				continue
 			}
 			newFields = append(newFields, newField)
+
 			// Build the chains wile we're at it
 			if fields[i].NextInChain == 0 {
 				if inChain {
@@ -127,6 +129,7 @@ func loadCategoryFieldsFromDB() error {
 		adFields[id] = newFields
 		adFieldChains[id] = newChains
 	}
+
 	return nil
 }
 
