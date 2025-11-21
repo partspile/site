@@ -78,8 +78,8 @@ func (f *FieldYear) RenderNewAdField(selectedValues map[string]bool, fieldValues
 		nextFieldName = fmt.Sprintf("%d", f.NextInChain)
 	}
 	return fieldCheckboxGrid(
-		f.name+"Div",
-		f.name,
+		f.FieldName+"Div",
+		f.FieldName,
 		f.DisplayName,
 		fieldValues,
 		selectedValues,

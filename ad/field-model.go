@@ -23,8 +23,8 @@ func (f *FieldModel) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 
 func (f *FieldModel) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
 	return fieldCheckboxGrid(
-		f.name+"Div",
-		f.name,
+		f.FieldName+"Div",
+		f.FieldName,
 		f.DisplayName,
 		fieldValues,
 		selectedValues,

@@ -2,21 +2,14 @@ package ad
 
 import (
 	"fmt"
-	"time"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/parts-pile/site/cache"
 	"github.com/parts-pile/site/db"
-	"github.com/parts-pile/site/logger"
 	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
-)
-
-var (
-	// Cache for field values - values don't change frequently
-	fieldValuesCache *cache.Cache[[]string]
 )
 
 // Field represents a field that can be used in forms, filters, and validation
@@ -68,20 +61,21 @@ type Field interface {
 }
 
 type adField struct {
-	AdCategoryID       int    `json:"ad_category_id"`        // Ad category ID
-	FieldName          string `json:"name"`                  // 'make'
-	DisplayName        string `json:"display_name"`          // 'Make'
-	FieldType          string `json:"field_type"`            // 'string', 'int', 'float64'
-	TableName          string `json:"table_name"`            // 'Make'
-	QdrantType         string `json:"qdrant_type"`           // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
-	NextInChain        int    `json:"next_in_chain"`         // 0-based array index of next field in chain (0 = last field in chain or standalone, > 0 = index of next field)
-	NextFieldName      string `json:"next_field_name"`       // 'year'
-	IsRequired         bool   `json:"is_required"`           // Is required field on new ad form
-	ShowInFilters      bool   `json:"show_in_filters"`       // Show field in filter UI
-	SpecTableName      string `json:"spec_table_name"`       // 'SpecVehicle'
-	SpecTableFieldName string `json:"spec_table_field_name"` // 'make_id'
-	AdSpecTableName    string `json:"ad_spec_table_name"`    // 'AdSpecVehicle'
-	IsMultiValueField  bool   `json:"is_multi_value_field"`  // True if multi-value field
+	AdCategoryID       int      `json:"ad_category_id"`        // Ad category ID
+	FieldName          string   `json:"name"`                  // 'make'
+	DisplayName        string   `json:"display_name"`          // 'Make'
+	FieldType          string   `json:"field_type"`            // 'string', 'int', 'float64'
+	TableName          string   `json:"table_name"`            // 'Make'
+	QdrantType         string   `json:"qdrant_type"`           // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
+	NextInChain        int      `json:"next_in_chain"`         // 0-based array index of next field in chain (0 = last field in chain or standalone, > 0 = index of next field)
+	NextFieldName      string   `json:"next_field_name"`       // 'year'
+	IsRequired         bool     `json:"is_required"`           // Is required field on new ad form
+	ShowInFilters      bool     `json:"show_in_filters"`       // Show field in filter UI
+	SpecTableName      string   `json:"spec_table_name"`       // 'SpecVehicle'
+	SpecTableFieldName string   `json:"spec_table_field_name"` // 'make_id'
+	AdSpecTableName    string   `json:"ad_spec_table_name"`    // 'AdSpecVehicle'
+	IsMultiValueField  bool     `json:"is_multi_value_field"`  // True if multi-value field
+	ParentField        *adField `json:"-"`                     // Backlink to parent field in chain (populated during initialization)
 }
 
 func (f adField) Name() string {
@@ -116,59 +110,131 @@ func (f adField) BuildSelectClause() string {
 		f.TableName, f.FieldName)
 }
 
-// InitFieldValuesCache initializes the field values cache
-func InitFieldValuesCache() error {
-	var err error
-	fieldValuesCache, err = cache.New[[]string](func(value []string) int64 {
-		// Estimate cost: ~50 bytes per string
-		return int64(len(value) * 50)
-	}, "Field Values Cache")
-	if err != nil {
-		return fmt.Errorf("failed to initialize field values cache: %w", err)
-	}
-	logger.Info("Initialized successfully",
-		"component", "field-values-cache")
-	return nil
-}
-
-// GetFieldValuesCacheStats returns cache statistics for admin monitoring
-func GetFieldValuesCacheStats() map[string]interface{} {
-
-	return fieldValuesCache.Stats()
-}
-
-// ClearFieldValuesCache clears all items from the field values cache
-func ClearFieldValuesCache() {
-	fieldValuesCache.Clear()
-}
-
-func (f adField) GetValues() ([]string, error) {
+func (f adField) GetValues(params map[string]string) ([]string, error) {
 	if f.TableName == "" {
 		// For fields without a table, return empty
 		return []string{}, nil
 	}
 
-	// Check cache first
-	cacheKey := fmt.Sprintf("field:%s:%d", f.TableName, f.AdCategoryID)
-	if cached, found := fieldValuesCache.Get(cacheKey); found {
-		return cached, nil
+	// If not a spec field or no params, use simple query without parent filtering
+	if f.SpecTableName == "" || len(params) == 0 {
+		return f.getSimpleFieldValues()
 	}
 
-	// Query database
+	// Collect parent fields from params by walking backwards through the chain
+	parentFields := f.collectParentFields(params)
+	if len(parentFields) == 0 {
+		// No parent fields in params, fall back to simple query
+		return f.getSimpleFieldValues()
+	}
+
+	// Build and execute filtered query
+	return f.executeFilteredQuery(parentFields)
+}
+
+// getSimpleFieldValues returns all values for a field without parent filtering
+func (f adField) getSimpleFieldValues() ([]string, error) {
 	var values []string
 	query := fmt.Sprintf("SELECT DISTINCT value FROM %s WHERE ad_category_id = $1 ORDER BY value", f.TableName)
 	err := db.Select(&values, query, f.AdCategoryID)
 	if err != nil {
 		return nil, err
 	}
+	return values, nil
+}
 
-	// Cache the results with a longer TTL since values rarely change (24 hours)
-	if fieldValuesCache != nil {
-		cost := int64(len(values) * 50)
-		fieldValuesCache.SetWithTTL(cacheKey, values, cost, 24*time.Hour)
+// collectParentFields walks backwards through parent fields and collects those present in params
+func (f adField) collectParentFields(params map[string]string) []parentFieldInfo {
+	var parentFields []parentFieldInfo
+
+	parent := f.ParentField
+	for parent != nil {
+		parentName := parent.FieldName
+		if parentValue, exists := params[parentName]; exists && parentValue != "" {
+			if parent.SpecTableName != "" && parent.TableName != "" && parent.SpecTableFieldName != "" {
+				parentFields = append(parentFields, parentFieldInfo{
+					parent: parent,
+					value:  parentValue,
+				})
+			}
+		}
+		// Get next parent by following the backlink
+		parent = parent.ParentField
+	}
+
+	return parentFields
+}
+
+// executeFilteredQuery builds and executes a SQL query with parent field filters
+func (f adField) executeFilteredQuery(parentFields []parentFieldInfo) ([]string, error) {
+	query, args := f.buildFilteredQuery(parentFields)
+
+	var values []string
+	err := db.Select(&values, query, args...)
+	if err != nil {
+		return nil, err
 	}
 
 	return values, nil
+}
+
+// buildFilteredQuery constructs the SQL query with JOINs and WHERE clauses for parent filters
+func (f adField) buildFilteredQuery(parentFields []parentFieldInfo) (string, []interface{}) {
+	var whereClauses []string
+	var args []interface{}
+
+	// Base query: select distinct values from current field table
+	query := fmt.Sprintf("SELECT DISTINCT %s.value", f.TableName)
+
+	// FROM and JOIN spec table
+	query += fmt.Sprintf(" FROM %s", f.TableName)
+	query += fmt.Sprintf(" JOIN %s ON %s.%s = %s.id",
+		f.SpecTableName, f.SpecTableName, f.SpecTableFieldName, f.TableName)
+
+	// Add WHERE clause for category
+	args = append(args, f.AdCategoryID)
+	whereClauses = append(whereClauses, fmt.Sprintf("%s.ad_category_id = $%d", f.SpecTableName, len(args)))
+
+	// Add JOINs and WHERE clauses for each parent field
+	for _, pf := range parentFields {
+		// JOIN parent field table through the same spec table
+		query += fmt.Sprintf(" JOIN %s ON %s.%s = %s.id",
+			pf.parent.TableName, f.SpecTableName, pf.parent.SpecTableFieldName, pf.parent.TableName)
+
+		// Add WHERE clause for parent field value
+		whereClause := f.buildParentFieldWhereClause(pf, &args)
+		if whereClause != "" {
+			whereClauses = append(whereClauses, whereClause)
+		}
+	}
+
+	// Add WHERE clause
+	if len(whereClauses) > 0 {
+		query += " WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	// Add ORDER BY
+	query += fmt.Sprintf(" ORDER BY %s.value", f.TableName)
+
+	return query, args
+}
+
+// buildParentFieldWhereClause builds a WHERE clause for a parent field filter
+func (f adField) buildParentFieldWhereClause(pf parentFieldInfo, args *[]interface{}) string {
+	if pf.parent.IsMultiValueField {
+		// Multi-value: split comma-separated values and use IN clause
+		values := strings.Split(pf.value, ",")
+		var placeholders []string
+		for _, v := range values {
+			*args = append(*args, v)
+			placeholders = append(placeholders, fmt.Sprintf("$%d", len(*args)))
+		}
+		return fmt.Sprintf("%s.value IN (%s)", pf.parent.TableName, strings.Join(placeholders, ", "))
+	}
+
+	// Single value
+	*args = append(*args, pf.value)
+	return fmt.Sprintf("%s.value = $%d", pf.parent.TableName, len(*args))
 }
 
 // RenderFilterField provides a default fallback implementation
@@ -332,6 +398,12 @@ func NewAdField(adField adField) (Field, error) {
 	default:
 		return nil, fmt.Errorf("unknown field name: %s", adField.FieldName)
 	}
+}
+
+// parentFieldInfo holds information about a parent field used in filtering
+type parentFieldInfo struct {
+	parent *adField
+	value  string
 }
 
 // TODO move these to ui pkg once ad pkg is removed from ui pkg

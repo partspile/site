@@ -113,19 +113,24 @@ func loadCategoryFieldsFromDB() error {
 			}
 			newFields = append(newFields, newField)
 
-			// Build the chains wile we're at it
+			// Build the chains while we're at it
 			if fields[i].NextInChain == 0 {
 				if inChain {
 					newChain = append(newChain, newField)
 					newChains = append(newChains, newChain)
+					fields[i].ParentField = &fields[i-1]
 					inChain = false
 				}
 				newChain = nil
 			} else {
+				if inChain {
+					fields[i].ParentField = &fields[i-1]
+				}
 				newChain = append(newChain, newField)
 				inChain = true
 			}
 		}
+
 		adFields[id] = newFields
 		adFieldChains[id] = newChains
 	}

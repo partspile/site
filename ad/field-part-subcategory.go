@@ -23,8 +23,8 @@ func (f *FieldPartSubcategory) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condit
 
 func (f *FieldPartSubcategory) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
 	return fieldSelect(
-		f.name+"Div",
-		f.name,
+		f.FieldName+"Div",
+		f.FieldName,
 		f.DisplayName,
 		fieldValues,
 		defaultValue,

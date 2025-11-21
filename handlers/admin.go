@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/metrics"
@@ -116,24 +115,6 @@ func HandleClearPartCache(c *fiber.Ctx) error {
 func HandleRefreshPartCache(c *fiber.Ctx) error {
 	stats := part.GetPartCacheStats()
 	return render(c, ui.AdminPartCacheSection(stats))
-}
-
-// Field Values Cache
-
-func HandleAdminFieldValuesCache(c *fiber.Ctx) error {
-	stats := ad.GetFieldValuesCacheStats()
-	return renderAdminSection(c, "field-values-cache", ui.AdminFieldValuesCacheSection(stats))
-}
-
-func HandleClearFieldValuesCache(c *fiber.Ctx) error {
-	ad.ClearFieldValuesCache()
-	stats := ad.GetFieldValuesCacheStats()
-	return render(c, ui.AdminFieldValuesCacheSection(stats))
-}
-
-func HandleRefreshFieldValuesCache(c *fiber.Ctx) error {
-	stats := ad.GetFieldValuesCacheStats()
-	return render(c, ui.AdminFieldValuesCacheSection(stats))
 }
 
 // Monitor

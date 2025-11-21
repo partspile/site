@@ -11,7 +11,6 @@ import (
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/local"
-	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 )

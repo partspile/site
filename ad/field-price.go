@@ -47,8 +47,8 @@ func (f *FieldPrice) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 
 func (f *FieldPrice) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
 	return fieldInput(
-		f.name+"Div",
-		f.name,
+		f.FieldName+"Div",
+		f.FieldName,
 		f.DisplayName,
 		"number",
 		defaultValue,

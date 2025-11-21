@@ -25,15 +25,11 @@ func (f *FieldMake) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 func (f *FieldMake) RenderFilterField(params map[string]string) g.Node {
 	value := params[f.FieldName]
 
-	// Get all available values for this field (filter fields are independent)
-	// Use GetValues method which may use caching
-	values, err := f.GetValues(map[string]string{})
+	values, err := f.GetValues(params)
 	if err != nil {
-		// If error, return empty dropdown
 		values = []string{}
 	}
 
-	// Build options list
 	var options []g.Node
 	options = append(options, Option(Value(""), g.Text("All"), g.If(value == "", Selected())))
 	for _, val := range values {
