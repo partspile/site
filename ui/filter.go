@@ -5,13 +5,13 @@ import (
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/logger"
-	"github.com/parts-pile/site/spec"
 )
 
 func filterControls(adCategory int, params map[string]string) g.Node {
 	// Get category fields to determine which filters to show
-	fields := spec.GetCategoryFields(adCategory)
+	fields := ad.GetCategoryFields(adCategory)
 
 	// Build filter nodes dynamically based on category fields
 	var filterNodes []g.Node
@@ -69,13 +69,12 @@ func applyFilters() g.Node {
 }
 
 // genericRangeFilter creates a range filter for numeric fields
-func genericRangeFilter(field spec.Field, minValue, maxValue string) g.Node {
-	fieldConfig := field.Config()
-	minKey := "min_" + fieldConfig.Name
-	maxKey := "max_" + fieldConfig.Name
+func genericRangeFilter(field ad.Field, minValue, maxValue string) g.Node {
+	minKey := "min_" + field.Name()
+	maxKey := "max_" + field.Name()
 
 	return Div(
-		Label(Class("block text-sm font-medium mb-1"), g.Text(fieldConfig.DisplayName+" Range")),
+		Label(Class("block text-sm font-medium mb-1"), g.Text(field.DisplayName()+" Range")),
 		Div(
 			Class("flex gap-2 flex-nowrap"),
 			Input(
@@ -99,13 +98,12 @@ func genericRangeFilter(field spec.Field, minValue, maxValue string) g.Node {
 }
 
 // genericDropdownFilter creates a static dropdown filter for non-chained string fields
-func genericDropdownFilter(adCategory int, field spec.Field, value string, hasChildren bool) g.Node {
-	fieldConfig := field.Config()
+func genericDropdownFilter(adCategory int, field ad.Field, value string, hasChildren bool) g.Node {
 	// Get all available values for this field (filter fields are independent)
-	values, err := spec.GetFieldValues(adCategory, fieldConfig.Name, map[string]string{})
+	values, err := field.GetValues(map[string]string{})
 	if err != nil {
 		logger.Warn("Failed to get field values for filter",
-			"error", err, "component", "filter-ui", "adCategory", adCategory, "fieldName", fieldConfig.Name)
+			"error", err, "component", "filter-ui", "adCategory", adCategory, "fieldName", field.Name())
 		values = []string{}
 	}
 
@@ -121,10 +119,10 @@ func genericDropdownFilter(adCategory int, field spec.Field, value string, hasCh
 	}
 
 	return Div(
-		Label(Class("block text-sm font-medium mb-1"), g.Text(fieldConfig.DisplayName)),
+		Label(Class("block text-sm font-medium mb-1"), g.Text(field.DisplayName())),
 		Select(
-			Name(fieldConfig.Name),
-			ID(fieldConfig.Name+"Filter"),
+			Name(field.Name()),
+			ID(field.Name()+"Filter"),
 			Class("w-full p-2 border rounded-md"),
 			g.Group(options),
 		),

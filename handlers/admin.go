@@ -5,7 +5,6 @@ import (
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/metrics"
-	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
@@ -98,23 +97,6 @@ func HandleClearSpecCache(c *fiber.Ctx) error {
 func HandleRefreshSpecCache(c *fiber.Ctx) error {
 	stats := spec.GetCacheStats()
 	return render(c, ui.AdminSpecCacheSection(stats))
-}
-
-// Part Cache
-
-func HandleAdminPartCache(c *fiber.Ctx) error {
-	stats := part.GetPartCacheStats()
-	return renderAdminSection(c, "part-cache", ui.AdminPartCacheSection(stats))
-}
-
-func HandleClearPartCache(c *fiber.Ctx) error {
-	stats := part.ClearPartCache()
-	return render(c, ui.AdminPartCacheSection(stats))
-}
-
-func HandleRefreshPartCache(c *fiber.Ctx) error {
-	stats := part.GetPartCacheStats()
-	return render(c, ui.AdminPartCacheSection(stats))
 }
 
 // Monitor

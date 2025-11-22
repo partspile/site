@@ -137,10 +137,7 @@ func (f adField) getSimpleFieldValues() ([]string, error) {
 	var values []string
 	query := fmt.Sprintf("SELECT DISTINCT value FROM %s WHERE ad_category_id = $1 ORDER BY value", f.TableName)
 	err := db.Select(&values, query, f.AdCategoryID)
-	if err != nil {
-		return nil, err
-	}
-	return values, nil
+	return values, err
 }
 
 // collectParentFields walks backwards through parent fields and collects those present in params
@@ -151,12 +148,10 @@ func (f adField) collectParentFields(params map[string]string) []parentFieldInfo
 	for parent != nil {
 		parentName := parent.FieldName
 		if parentValue, exists := params[parentName]; exists && parentValue != "" {
-			if parent.SpecTableName != "" && parent.TableName != "" && parent.SpecTableFieldName != "" {
-				parentFields = append(parentFields, parentFieldInfo{
-					parent: parent,
-					value:  parentValue,
-				})
-			}
+			parentFields = append(parentFields, parentFieldInfo{
+				parent: parent,
+				value:  parentValue,
+			})
 		}
 		// Get next parent by following the backlink
 		parent = parent.ParentField
@@ -171,11 +166,7 @@ func (f adField) executeFilteredQuery(parentFields []parentFieldInfo) ([]string,
 
 	var values []string
 	err := db.Select(&values, query, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	return values, nil
+	return values, err
 }
 
 // buildFilteredQuery constructs the SQL query with JOINs and WHERE clauses for parent filters

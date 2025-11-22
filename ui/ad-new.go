@@ -8,13 +8,12 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/spec"
 )
 
 // ---- New Ad Page ----
 
 func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
-	fields []spec.Field, firstFieldValues map[string][]string, maxImagesPerAd int) g.Node {
+	fields []ad.Field, firstFieldValues map[string][]string, maxImagesPerAd int) g.Node {
 
 	// Build dynamic field nodes
 	fieldNodes := []g.Node{
@@ -67,7 +66,7 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
 
 // DuplicateAdPage renders the new ad form pre-filled with data from an existing ad
 func DuplicateAdPage(userID int, userName, csrfToken string, path string,
-	originalAd ad.AdDetail, fields []spec.Field, maxImagesPerAd int) g.Node {
+	originalAd ad.AdDetail, fields []ad.Field, maxImagesPerAd int) g.Node {
 
 	// Build dynamic field nodes
 	fieldNodes := []g.Node{
@@ -90,23 +89,22 @@ func DuplicateAdPage(userID int, userName, csrfToken string, path string,
 	}
 
 	for _, field := range fields {
-		fieldConfig := field.Config()
 		selected := make(map[string]bool)
-		if sv, ok := originalAd.SpecData[fieldConfig.Name]; ok {
+		if sv, ok := originalAd.SpecData[field.Name()]; ok {
 			for _, val := range sv {
 				selected[val] = true
 			}
 		}
 		var defaultValue string
 		// Get default value for single-select fields
-		if !fieldConfig.FieldMultiValue {
-			if fieldValues, exists := originalAd.SpecData[fieldConfig.Name]; exists && len(fieldValues) > 0 {
+		if !field.IsMultiValue() {
+			if fieldValues, exists := originalAd.SpecData[field.Name()]; exists && len(fieldValues) > 0 {
 				defaultValue = fieldValues[0]
 			}
 		}
 		// Get field values - use pre-loaded for first fields, empty for chained fields
-		fieldValues := firstFieldValues[fieldConfig.Name]
-		if len(fieldValues) == 0 && fieldConfig.NextInChain == 0 {
+		fieldValues := firstFieldValues[field.Name()]
+		if len(fieldValues) == 0 && field.NextInChain() == 0 {
 			// For standalone fields without pre-loaded values, use empty
 			fieldValues = []string{}
 		}

@@ -13,7 +13,6 @@ import (
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/b2util"
-	"github.com/parts-pile/site/spec"
 )
 
 func AdDetail(a ad.AdDetail, userID int, loc *time.Location, csrfToken, view string) g.Node {
@@ -734,7 +733,7 @@ func partTypePath(a ad.AdDetail) g.Node {
 	var linkNodes []g.Node // Build link nodes
 
 	// Get category fields to determine display order
-	fields := spec.GetCategoryFields(a.AdCategoryID)
+	fields := ad.GetCategoryFields(a.AdCategoryID)
 
 	// Initialize SpecData if nil
 	if a.SpecData == nil {

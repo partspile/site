@@ -12,7 +12,6 @@ import (
 	h "github.com/parts-pile/site/handlers"
 	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/metrics"
-	"github.com/parts-pile/site/part"
 	"github.com/parts-pile/site/sms"
 	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/vector"
@@ -53,11 +52,6 @@ func main() {
 	}
 
 	// Initialize field values cache
-
-	// Initialize part cache
-	if err := part.InitPartCache(); err != nil {
-		logger.Fatal("Failed to initialize part cache", "error", err)
-	}
 
 	// Initialize B2 cache
 	if err := b2util.Init(); err != nil {
@@ -186,7 +180,6 @@ func main() {
 	admin.Get("/b2-cache", h.HandleAdminB2Cache)
 	admin.Get("/embedding-cache", h.HandleAdminEmbeddingCache)
 	admin.Get("/spec-cache", h.HandleAdminSpecCache)
-	admin.Get("/part-cache", h.HandleAdminPartCache)
 	admin.Get("/metrics", h.HandleMonitor)
 
 	// Admin API group
@@ -199,8 +192,6 @@ func main() {
 	adminAPI.Post("/embedding-cache/site/clear", h.HandleClearSiteEmbeddingCache)
 	adminAPI.Post("/spec-cache/clear", h.HandleClearSpecCache)
 	adminAPI.Get("/spec-cache/refresh", h.HandleRefreshSpecCache)
-	adminAPI.Post("/part-cache/clear", h.HandleClearPartCache)
-	adminAPI.Get("/part-cache/refresh", h.HandleRefreshPartCache)
 	adminAPI.Get("/metrics/refresh", h.HandleMonitorRefresh)
 
 	// User registration/authentication

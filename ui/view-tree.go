@@ -8,7 +8,6 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/logger"
-	"github.com/parts-pile/site/spec"
 )
 
 // encodeAdIDs encodes a slice of integers to a base64 string
@@ -49,7 +48,7 @@ func TreeViewResults(adIDs []int, adCat int, q string, userID int, csrfToken str
 
 // treeBrowseMakes returns the initial tree view for browsing
 func treeBrowseMakes(adCat int) g.Node {
-	makes, err := spec.GetAdMakes(adCat)
+	makes, err := ad.GetAdMakes(adCat)
 	if err != nil {
 		logger.Error("Error getting makes",
 			"error", err, "component", "tree-view")
@@ -61,7 +60,7 @@ func treeBrowseMakes(adCat int) g.Node {
 
 // treeSearchMakes returns the initial tree view for search results
 func treeSearchMakes(adIDs []int) g.Node {
-	makes, err := spec.GetAdMakesForAdIDs(adIDs)
+	makes, err := ad.GetAdMakesForAdIDs(adIDs)
 	if err != nil {
 		logger.Error("Error getting makes for ad IDs",
 			"error", err, "component", "tree-search")
