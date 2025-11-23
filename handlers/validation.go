@@ -171,11 +171,10 @@ func ValidateAdForm(form *multipart.Form, adCat int) error {
 
 	// Validate multi-value fields
 	for _, field := range fields {
-		fieldConfig := field.Config()
-		if fieldConfig.FieldMultiValue && fieldConfig.IsRequired {
-			values := form.Value[fieldConfig.Name]
+		if field.IsMultiValue() && field.Required() {
+			values := form.Value[field.Name()]
 			if len(values) == 0 {
-				return fmt.Errorf("please select at least one %s", fieldConfig.DisplayName)
+				return fmt.Errorf("please select at least one %s", field.Name())
 			}
 		}
 	}
@@ -193,7 +192,7 @@ func validateAdFormMultipart(form *multipart.Form, adCat int) (years, models, en
 		if field.IsMultiValue() && field.Required() {
 			values := form.Value[field.Name()]
 			if len(values) == 0 {
-				return nil, nil, nil, fmt.Errorf("please select at least one %s", field.DisplayName)
+				return nil, nil, nil, fmt.Errorf("please select at least one %s", field.Name())
 			}
 			// Store values generically - no need for hard-coded switch
 			// The caller will extract what it needs
@@ -281,7 +280,7 @@ func ValidateImageFiles(files []*multipart.FileHeader) error {
 }
 
 // BuildAdFromForm builds an Ad struct from form data dynamically based on category field configuration
-func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.AdDetail, []*multipart.FileHeader, []int, error) {
+func BuildAdFromForm(c *fiber.Ctx, userID int) (ad.AdDetail, []*multipart.FileHeader, []int, error) {
 	adCat := cookie.GetAdCategory(c)
 
 	title, err := ValidateCleanText(c, "title", "Title", 35)
@@ -297,20 +296,19 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.AdDetail, []*mul
 		return ad.AdDetail{}, nil, nil, err
 	}
 
-	// Validate and extract spec fields dynamically
+	// Validate fields
 	specData := make(map[string][]string)
 
 	for _, field := range fields {
-		fieldConfig := field.Config()
-		fieldName := fieldConfig.Name
+		fieldName := field.Name()
 
-		if fieldConfig.FieldMultiValue {
+		if field.IsMultiValue() {
 			// Multi-value fields (year, model, engine, etc.)
 			values := form.Value[fieldName]
-			if fieldConfig.IsRequired && len(values) == 0 {
+			if field.Required() && len(values) == 0 {
 				return ad.AdDetail{}, nil, nil,
 					fmt.Errorf("please select at least one %s",
-						fieldConfig.DisplayName)
+						field.Name())
 			}
 			// Validate each value
 			for _, value := range values {
@@ -328,7 +326,10 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.AdDetail, []*mul
 				return ad.AdDetail{}, nil, nil, err
 			}
 			if value != "" {
-				specData[fieldName] = []string{value}
+				// Add to specData for spec fields
+				if field.IsSpecField() {
+					specData[fieldName] = []string{value}
+				}
 			}
 		}
 	}
@@ -362,11 +363,6 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.AdDetail, []*mul
 		return ad.AdDetail{}, nil, nil, err
 	}
 
-	id := 0
-	if len(adID) > 0 {
-		id = adID[0]
-	}
-
 	// Parse deleted images
 	deletedImagesStr := c.FormValue("deleted_images")
 	deletedImages := []int{}
@@ -387,7 +383,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.AdDetail, []*mul
 	// Create a simple AdDetail struct with SpecData map
 	newAd := ad.AdDetail{
 		Ad: ad.Ad{
-			ID:           id,
+			ID:           0, // will be set by AddAd
 			AdCategoryID: adCat,
 			Title:        title,
 			Price:        price,

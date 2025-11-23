@@ -104,33 +104,36 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	if err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
-	adID, err := ad.AddAd(newAd)
+
+	err = ad.AddAd(&newAd)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create ad")
 	}
+
 	logger.Debug("Created ad",
-		"component", "ad-new", "adID", adID, "imageCount", newAd.ImageCount)
+		"component", "ad-new", "adID", newAd.ID, "imageCount", newAd.ImageCount)
 	logger.Debug("Image files count",
 		"component", "ad-new", "count", len(imageFiles))
+
 	if len(imageFiles) > 0 {
 		for i, file := range imageFiles {
 			logger.Debug("Image file details",
 				"component", "ad-new", "index", i+1, "filename", file.Filename, "size", file.Size)
 		}
 	}
-	uploadAdImagesToB2(adID, imageFiles)
+	uploadAdImagesToB2(newAd.ID, imageFiles)
 
 	// Attempt inline vector processing, fallback to queue if it fails
 	logger.Debug("Attempting inline vector processing",
-		"component", "embedding", "adID", adID)
+		"component", "embedding", "adID", newAd.ID)
 	err = vector.BuildAdEmbedding(newAd)
 	if err != nil {
 		logger.Debug("Inline processing failed, queuing for background processing",
-			"error", err, "component", "embedding", "adID", adID)
+			"error", err, "component", "embedding", "adID", newAd.ID)
 		vector.QueueAd(newAd.ID)
 	} else {
 		logger.Debug("Successfully processed ad inline",
-			"component", "embedding", "adID", adID)
+			"component", "embedding", "adID", newAd.ID)
 	}
 
 	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()

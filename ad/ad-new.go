@@ -9,10 +9,10 @@ import (
 )
 
 // AddAd creates a new ad in the database and returns the ad ID
-func AddAd(ad AdDetail) (int, error) {
+func AddAd(ad *AdDetail) error {
 	tx, err := db.Begin()
 	if err != nil {
-		return 0, fmt.Errorf("failed to begin transaction: %w", err)
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback()
 
@@ -25,24 +25,24 @@ func AddAd(ad AdDetail) (int, error) {
 		ad.AdCategoryID, ad.Title, ad.Description, ad.Price,
 		ad.UserID, ad.LocationID, ad.ImageCount, ad.HasVector).Scan(&adID)
 	if err != nil {
-		return 0, fmt.Errorf("failed to insert ad: %w", err)
+		return fmt.Errorf("failed to insert ad: %w", err)
 	}
 
 	ad.ID = adID
 
 	if err := saveSpecData(tx, ad); err != nil {
-		return 0, fmt.Errorf("failed to save spec data: %w", err)
+		return fmt.Errorf("failed to save spec data: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return 0, fmt.Errorf("failed to commit transaction: %w", err)
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	return int(adID), nil
+	return nil
 }
 
 // saveSpecData saves spec associations dynamically based on category field configuration
-func saveSpecData(tx *sql.Tx, ad AdDetail) error {
+func saveSpecData(tx *sql.Tx, ad *AdDetail) error {
 	chains := adFieldChains[ad.AdCategoryID]
 	if len(chains) == 0 {
 		// No chains for this category, nothing to save
