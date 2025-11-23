@@ -21,52 +21,36 @@ func (f *FieldYear) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 	maxKey := "max_year"
 	minValue := c.FormValue(minKey)
 	maxValue := c.FormValue(maxKey)
-	fieldValue := c.FormValue("year")
 
-	if minValue != "" || maxValue != "" {
-		// Range filter
-		var minVal, maxVal int
-		var hasMin, hasMax bool
+	if minValue == "" && maxValue == "" {
+		return nil
+	}
 
+	// Preset defaults
+	currentYear := time.Now().Year()
+	minVal := 1900
+	maxVal := currentYear + 2
+
+	// Override with provided values if valid
 		if minValue != "" {
 			if val, err := strconv.Atoi(minValue); err == nil {
 				minVal = val
-				hasMin = true
 			}
 		}
 		if maxValue != "" {
 			if val, err := strconv.Atoi(maxValue); err == nil {
 				maxVal = val
-				hasMax = true
 			}
 		}
 
 		// Convert range to list of values
 		var valueList []string
-		if hasMin && hasMax {
 			for val := minVal; val <= maxVal; val++ {
 				valueList = append(valueList, strconv.Itoa(val))
-			}
-		} else if hasMin {
-			// Default max to 2029 for year fields
-			maxVal = 2029
-			for val := minVal; val <= maxVal; val++ {
-				valueList = append(valueList, strconv.Itoa(val))
-			}
-		} else if hasMax {
-			// Default min to 1900 for year fields
-			minVal = 1900
-			for val := minVal; val <= maxVal; val++ {
-				valueList = append(valueList, strconv.Itoa(val))
-			}
 		}
 
 		if len(valueList) > 0 {
 			return qdrant.NewMatchKeywords("year", valueList...)
-		}
-	} else if fieldValue != "" {
-		// Single value
-		return qdrant.NewMatchKeywords("year", fieldValue)
 	}
 
 	return nil

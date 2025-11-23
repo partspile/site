@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
@@ -24,11 +25,10 @@ func (v *TreeView) GetAdIDs() ([]int, uint64, error) {
 	// Check if any field filters are applied using field implementations
 	adCat := cookie.GetAdCategory(v.ctx)
 	fields := ad.GetCategoryFields(adCat)
-	locationResolver := ad.LocationResolver(ResolveLocation)
 
 	hasFieldFilters := false
 	for _, field := range fields {
-		condition := field.BuildFilterCondition(v.ctx, locationResolver)
+		condition := field.BuildFilterCondition(v.ctx)
 		if condition != nil {
 			hasFieldFilters = true
 			break

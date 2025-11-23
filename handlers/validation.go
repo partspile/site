@@ -342,7 +342,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.AdDetail, []*mul
 
 	// Resolve and store location after validation
 	locationRaw := c.FormValue("location")
-	locationID, err := resolveAndStoreLocation(locationRaw)
+	locationID, err := ad.ResolveAndStoreLocation(locationRaw)
 	if err != nil {
 		return ad.AdDetail{}, nil, nil, fmt.Errorf("could not resolve location")
 	}

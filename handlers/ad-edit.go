@@ -157,7 +157,7 @@ func HandleUpdateAdLocation(c *fiber.Ctx) error {
 
 	// Resolve and store location using field implementation
 	locationRaw := c.FormValue("location")
-	locID, err := resolveAndStoreLocation(locationRaw)
+	locID, err := ad.ResolveAndStoreLocation(locationRaw)
 	if err != nil {
 		return ValidationErrorResponse(c, "Could not resolve location.")
 	}

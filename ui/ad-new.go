@@ -10,28 +10,17 @@ import (
 	"github.com/parts-pile/site/ad"
 )
 
-// ---- New Ad Page ----
-
 func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
-	fields []ad.Field, maxImagesPerAd int) g.Node {
+	fieldNodes []g.Node, maxImagesPerAd int) g.Node {
 
-	// Build dynamic field nodes
-	fieldNodes := []g.Node{
-		titleField(""),
+	allFieldNodes := []g.Node{
+		titleField(),
 	}
-
-	// Render spec fields dynamically
-	// Render the first field of each chain independently
-	// Subsequent fields in the same chain will be populated via HTMX
-	for _, field := range fields {
-			selected := make(map[string]bool)
-		fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, "", map[string]string{}))
-	}
-
-	fieldNodes = append(fieldNodes,
+	allFieldNodes = append(allFieldNodes, fieldNodes...)
+	allFieldNodes = append(allFieldNodes,
 		imagesField(maxImagesPerAd),
 		descriptionField(),
-		button("Submit", withType("submit")),
+		SubmitButton(),
 	)
 
 	categoryName := ad.GetCategoryName(adCat)
@@ -50,70 +39,17 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
 				hx.Post("/api/new-ad"),
 				hx.Encoding("multipart/form-data"),
 				hx.Target("#result"),
-				g.Group(fieldNodes),
+				g.Group(allFieldNodes),
 			),
 			resultContainer(),
 		},
 	)
 }
 
-// DuplicateAdPage renders the new ad form pre-filled with data from an existing ad
-func DuplicateAdPage(userID int, userName, csrfToken string, path string,
-	originalAd ad.AdDetail, fields []ad.Field, maxImagesPerAd int) g.Node {
-
-	// Build dynamic field nodes
-	fieldNodes := []g.Node{
-		titleField(originalAd.Title),
-	}
-
-	// Render spec fields dynamically
-	// RenderNewAdField handles determining if field is first in chain and renders accordingly
-	for _, field := range fields {
-		selected := make(map[string]bool)
-		if sv, ok := originalAd.SpecData[field.Name()]; ok {
-			for _, val := range sv {
-				selected[val] = true
-			}
-		}
-		var defaultValue string
-		// Get default value for single-select fields
-		if !field.IsMultiValue() {
-			if fieldValues, exists := originalAd.SpecData[field.Name()]; exists && len(fieldValues) > 0 {
-				defaultValue = fieldValues[0]
-			}
-		}
-		fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, defaultValue, map[string]string{}))
-	}
-
-	fieldNodes = append(fieldNodes,
-		imagesField(maxImagesPerAd),
-		descriptionField(),
-		button("Submit", withType("submit")),
-	)
-
-	return Page(
-		"Duplicate Ad - Parts Pile",
-		userID,
-		userName,
-		path,
-		csrfToken,
-		[]g.Node{
-			pageHeader("Create New Ad"),
-			Form(
-				ID("newAdForm"),
-				Class("space-y-6"),
-				hx.Post("/api/new-ad"),
-				hx.Encoding("multipart/form-data"),
-				hx.Target("#result"),
-				g.Group(fieldNodes),
-			),
-			resultContainer(),
-		},
-	)
-}
-
-func titleField(defaultValue string) g.Node {
-	return formGroup("Title", "title",
+func titleField() g.Node {
+	return Div(
+		Class("space-y-2"),
+		Label(For("title"), Class("block text-sm font-medium text-gray-700"), g.Text("Title")),
 		Input(
 			Type("text"),
 			ID("title"),
@@ -124,13 +60,14 @@ func titleField(defaultValue string) g.Node {
 			Pattern("[\\x20-\\x7E]+"),
 			Title("Title must be 1-35 characters, printable ASCII characters only"),
 			g.Attr("oninput", "this.checkValidity()"),
-			g.If(defaultValue != "", Value(defaultValue)),
 		),
 	)
 }
 
 func imagesField(maxImagesPerAd int) g.Node {
-	return formGroup("Images", "images",
+	return Div(
+		Class("space-y-2"),
+		Label(Class("block text-sm font-medium text-gray-700"), g.Text("Images")),
 		Div(
 			Input(
 				Type("file"),
@@ -181,7 +118,9 @@ func imagesField(maxImagesPerAd int) g.Node {
 }
 
 func descriptionField() g.Node {
-	return formGroup("Description", "description",
+	return Div(
+		Class("space-y-2"),
+		Label(For("description"), Class("block text-sm font-medium text-gray-700"), g.Text("Description")),
 		Textarea(
 			ID("description"),
 			Name("description"),
@@ -196,75 +135,11 @@ func descriptionField() g.Node {
 	)
 }
 
-// GenericMultiSelectField creates a generic multi-select field (checkboxes) for any field
-func GenericMultiSelectField(fieldName, displayName string, values []string) g.Node {
-	fieldID := fieldName + "sDiv"
-	checkboxes := []g.Node{}
-	for _, value := range values {
-		checkboxes = append(checkboxes,
-			Checkbox(fieldName, value, value, false, false),
-		)
-	}
-	return Div(
-		ID(fieldID),
-		Class("space-y-2"),
-		formGroup(displayName, fieldName, GridContainer4(checkboxes...)),
-	)
-}
-
-func categoriesSelector(categories []string, selectedCategory string) g.Node {
-	options := []g.Node{
-		Option(Value(""), g.Text("Select a category")),
-	}
-
-	for _, category := range categories {
-		attrs := []g.Node{Value(category), g.Text(category)}
-		if category == selectedCategory {
-			attrs = append(attrs, Selected())
-		}
-		options = append(options, Option(attrs...))
-	}
-
-	return formGroup("Category", "category",
-		Select(
-			ID("category"),
-			Name("category"),
-			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
-			Required(),
-			hx.Trigger("change"),
-			hx.Get("/api/subcategories"),
-			hx.Target("#subcategoriesDiv"),
-			hx.Include("this"),
-			g.Group(options),
-		),
-	)
-}
-
-func SubCategoriesSelector(subCategoryNames []string, selectedSubCategory string) g.Node {
-	options := []g.Node{
-		Option(Value(""), g.Text("Select a subcategory")),
-	}
-
-	for _, subCategoryName := range subCategoryNames {
-		attrs := []g.Node{Value(subCategoryName), g.Text(subCategoryName)}
-		if subCategoryName == selectedSubCategory {
-			attrs = append(attrs, Selected())
-		}
-		options = append(options, Option(attrs...))
-	}
-
-	return Div(
-		ID("part_subcategoryDiv"),
-		Class("space-y-2"),
-		formGroup("Subcategory", "part_subcategory",
-			Select(
-				ID("part_subcategory"),
-				Name("part_subcategory"),
-				Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
-				Required(),
-				g.Group(options),
-			),
-		),
+func SubmitButton() g.Node {
+	return Button(
+		Type("submit"),
+		Class("px-4 py-2 rounded inline-block bg-blue-500 text-white hover:bg-blue-600"),
+		g.Text("Submit"),
 	)
 }
 

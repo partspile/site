@@ -15,8 +15,13 @@ type FieldLocation struct {
 }
 
 func (f *FieldLocation) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
-	l := c.FormValue("location")
-	if l == "" {
+	locationRaw := c.FormValue("location")
+	if locationRaw == "" {
+		return nil
+	}
+
+	lat, lon, err := ResolveLocationToCoords(locationRaw)
+	if err != nil {
 		return nil
 	}
 
@@ -27,19 +32,6 @@ func (f *FieldLocation) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 			r = 25 // default to 25 miles if invalid
 		}
 	}
-
-	/*
-		if locationResolver == nil {
-			return nil
-		}
-		lat, lon, err := locationResolver(l)
-		if err != nil {
-			return nil
-		}
-
-	*/
-
-	var lat, lon float64
 
 	// Convert miles to meters and create geo radius condition
 	rm := r * 1609.34

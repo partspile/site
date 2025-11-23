@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/logger"
@@ -16,15 +17,11 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 	logger.Debug("Added ad_category_id filter",
 		"component", "buildSearchFilters", "adCategoryID", ac)
 
-	// Get category fields - now returns Field objects
 	fields := ad.GetCategoryFields(ac)
-
-	// Create location resolver function
-	locationResolver := ad.LocationResolver(ResolveLocation)
 
 	// Build filter conditions using Field interface
 	for _, field := range fields {
-		condition := field.BuildFilterCondition(c, locationResolver)
+		condition := field.BuildFilterCondition(c)
 		if condition != nil {
 			conditions = append(conditions, condition)
 			logger.Debug("Added filter condition",
