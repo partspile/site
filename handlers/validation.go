@@ -12,7 +12,6 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
-	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -168,7 +167,7 @@ func ValidationErrorResponseWithStatus(c *fiber.Ctx, message string, statusCode 
 // ValidateAdForm validates the common ad form fields dynamically based on category configuration
 func ValidateAdForm(form *multipart.Form, adCat int) error {
 	// Get category fields to determine which fields to validate
-	fields := spec.GetCategoryFields(adCat)
+	fields := ad.GetCategoryFields(adCat)
 
 	// Validate multi-value fields
 	for _, field := range fields {
@@ -187,15 +186,14 @@ func ValidateAdForm(form *multipart.Form, adCat int) error {
 // validateAdFormMultipart validates ad form and returns the values dynamically
 func validateAdFormMultipart(form *multipart.Form, adCat int) (years, models, engines []string, err error) {
 	// Get category fields to determine which fields to validate
-	fields := spec.GetCategoryFields(adCat)
+	fields := ad.GetCategoryFields(adCat)
 
 	// Validate multi-value fields
 	for _, field := range fields {
-		fieldConfig := field.Config()
-		if fieldConfig.FieldMultiValue && fieldConfig.IsRequired {
-			values := form.Value[fieldConfig.Name]
+		if field.IsMultiValue() && field.Required() {
+			values := form.Value[field.Name()]
 			if len(values) == 0 {
-				return nil, nil, nil, fmt.Errorf("please select at least one %s", fieldConfig.DisplayName)
+				return nil, nil, nil, fmt.Errorf("please select at least one %s", field.DisplayName)
 			}
 			// Store values generically - no need for hard-coded switch
 			// The caller will extract what it needs
@@ -292,7 +290,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int, adID ...int) (ad.AdDetail, []*mul
 	}
 
 	// Get category fields to determine which fields to validate
-	fields := spec.GetCategoryFields(adCat)
+	fields := ad.GetCategoryFields(adCat)
 
 	form, err := c.MultipartForm()
 	if err != nil {

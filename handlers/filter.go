@@ -5,7 +5,6 @@ import (
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/logger"
-	"github.com/parts-pile/site/spec"
 	"github.com/qdrant/go-client/qdrant"
 )
 
@@ -18,10 +17,10 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 		"component", "buildSearchFilters", "adCategoryID", ac)
 
 	// Get category fields - now returns Field objects
-	fields := spec.GetCategoryFields(ac)
+	fields := ad.GetCategoryFields(ac)
 
 	// Create location resolver function
-	locationResolver := spec.LocationResolver(ResolveLocation)
+	locationResolver := ad.LocationResolver(ResolveLocation)
 
 	// Build filter conditions using Field interface
 	for _, field := range fields {

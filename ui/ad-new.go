@@ -24,8 +24,8 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
 	// Render the first field of each chain independently
 	// Subsequent fields in the same chain will be populated via HTMX
 	for _, field := range fields {
-		selected := make(map[string]bool)
-		fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, ""))
+			selected := make(map[string]bool)
+		fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, "", map[string]string{}))
 	}
 
 	fieldNodes = append(fieldNodes,
@@ -82,7 +82,7 @@ func DuplicateAdPage(userID int, userName, csrfToken string, path string,
 				defaultValue = fieldValues[0]
 			}
 		}
-		fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, defaultValue))
+		fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, defaultValue, map[string]string{}))
 	}
 
 	fieldNodes = append(fieldNodes,

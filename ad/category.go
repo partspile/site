@@ -216,3 +216,60 @@ func GetSpecFields(adCat int) []Field {
 func GetFieldChains(adCat int) [][]Field {
 	return adFieldChains[adCat]
 }
+
+// FieldsInSameChain checks if two fields are in the same chain
+func FieldsInSameChain(field1, field2 Field, allFields []Field) bool {
+	// Get chains for the category (we need to find which category these fields belong to)
+	// Since we don't have category ID here, we'll check by iterating through chains
+	// For now, let's use a simpler approach: check if field2 is reachable from field1 via NextFieldName
+
+	// If field1 has no next field, it's not in a chain with field2 (unless field2 is field1)
+	if field1.NextField() == "" {
+		return field1.Name() == field2.Name()
+	}
+
+	// Check if field2 is in the chain starting from field1
+	currentName := field1.Name()
+	for {
+		if currentName == field2.Name() {
+			return true
+		}
+
+		// Find the next field
+		found := false
+		for _, f := range allFields {
+			if f.Name() == currentName {
+				currentName = f.NextField()
+				found = true
+				break
+			}
+		}
+
+		if !found || currentName == "" {
+			break
+		}
+	}
+
+	// Also check reverse: if field2 is before field1 in the chain
+	currentName = field2.Name()
+	for {
+		if currentName == field1.Name() {
+			return true
+		}
+
+		found := false
+		for _, f := range allFields {
+			if f.Name() == currentName {
+				currentName = f.NextField()
+				found = true
+				break
+			}
+		}
+
+		if !found || currentName == "" {
+			break
+		}
+	}
+
+	return false
+}

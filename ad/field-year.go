@@ -72,14 +72,14 @@ func (f *FieldYear) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 	return nil
 }
 
-func (f *FieldYear) RenderNewAdField(selectedValues map[string]bool, defaultValue string) g.Node {
+func (f *FieldYear) RenderNewAdField(selectedValues map[string]bool, defaultValue string, parentValues map[string]string) g.Node {
 	// If field has a parent and no selected values, render empty div for HTMX
 	if f.ParentField != nil && len(selectedValues) == 0 {
 		fieldID := f.FieldName + "Div"
 		return Div(ID(fieldID))
 	}
 
-	values, err := f.GetValues(map[string]string{})
+	values, err := f.GetValues(parentValues)
 	if err != nil {
 		values = []string{}
 	}

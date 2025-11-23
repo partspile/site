@@ -22,14 +22,14 @@ func (f *FieldBreed) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 	return qdrant.NewMatch("breed", fieldValue)
 }
 
-func (f *FieldBreed) RenderNewAdField(selectedValues map[string]bool, defaultValue string) g.Node {
+func (f *FieldBreed) RenderNewAdField(selectedValues map[string]bool, defaultValue string, parentValues map[string]string) g.Node {
 	// If field has a parent and no values to pre-populate, render empty div for HTMX
 	if f.ParentField != nil && len(selectedValues) == 0 && defaultValue == "" {
 		fieldID := f.FieldName + "Div"
 		return Div(ID(fieldID))
 	}
 
-	values, err := f.GetValues(map[string]string{})
+	values, err := f.GetValues(parentValues)
 	if err != nil {
 		values = []string{}
 	}

@@ -24,7 +24,8 @@ type Field interface {
 	// RenderNewAdField renders the field for the new ad form
 	// selectedValues is a map of selected values (for efficient lookup)
 	// defaultValue is the default value for single-select fields
-	RenderNewAdField(selectedValues map[string]bool, defaultValue string) g.Node
+	// parentValues maps parent field names to their values (for filtering options)
+	RenderNewAdField(selectedValues map[string]bool, defaultValue string, parentValues map[string]string) g.Node
 
 	// RenderFilterField renders the field for the filter dialog
 	RenderFilterField(params map[string]string) g.Node
@@ -57,6 +58,12 @@ type Field interface {
 
 	// IsMultiValue returns true if the field can have multiple values
 	IsMultiValue() bool
+
+	// Required returns true if the field is required
+	Required() bool
+
+	// NextField returns the name of the next field in the chain, or empty string if none
+	NextField() string
 }
 
 type adField struct {
@@ -91,6 +98,14 @@ func (f adField) GetTableNames() (string, string, string, string) {
 
 func (f adField) IsMultiValue() bool {
 	return f.IsMultiValueField
+}
+
+func (f adField) Required() bool {
+	return f.IsRequired
+}
+
+func (f adField) NextField() string {
+	return f.NextFieldName
 }
 
 func (f adField) BuildJoinClause() string {
@@ -231,7 +246,7 @@ func (f adField) RenderFilterField(params map[string]string) g.Node {
 	return g.Group{}
 }
 
-func (f adField) RenderNewAdField(selectedValues map[string]bool, defaultValue string) g.Node {
+func (f adField) RenderNewAdField(selectedValues map[string]bool, defaultValue string, parentValues map[string]string) g.Node {
 	return g.Group{}
 }
 
@@ -318,7 +333,7 @@ func fieldSelect(fieldID, fieldName, displayName string, fieldValues []string, d
 	nextFieldTarget := ""
 	if nextFieldName != "" {
 		nextFieldTarget = nextFieldName + "Div"
-		endpoint := fmt.Sprintf("/api/%s", nextFieldName)
+		endpoint := fmt.Sprintf("/api/field/%s", nextFieldName)
 		attrs = append(attrs,
 			hx.Trigger("change"),
 			hx.Get(endpoint),
@@ -424,7 +439,7 @@ func fieldCheckboxGrid(fieldID, fieldName, displayName string, fieldValues []str
 		Class("grid grid-cols-4 gap-2 p-4 bg-gray-50 border border-gray-200 rounded-lg"),
 	}
 	if nextFieldName != "" {
-		endpoint := fmt.Sprintf("/api/%s", nextFieldName)
+		endpoint := fmt.Sprintf("/api/field/%s", nextFieldName)
 		gridAttrs = append(gridAttrs,
 			hx.Trigger("change from:input"),
 			hx.Get(endpoint),

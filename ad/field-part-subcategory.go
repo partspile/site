@@ -22,14 +22,14 @@ func (f *FieldPartSubcategory) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condit
 	return qdrant.NewMatch("part_subcategory", fieldValue)
 }
 
-func (f *FieldPartSubcategory) RenderNewAdField(selectedValues map[string]bool, defaultValue string) g.Node {
+func (f *FieldPartSubcategory) RenderNewAdField(selectedValues map[string]bool, defaultValue string, parentValues map[string]string) g.Node {
 	// If field has a parent and no default value, render empty div for HTMX
 	if f.ParentField != nil && defaultValue == "" {
 		fieldID := f.FieldName + "Div"
 		return Div(ID(fieldID))
 	}
 
-	values, err := f.GetValues(map[string]string{})
+	values, err := f.GetValues(parentValues)
 	if err != nil {
 		values = []string{}
 	}

@@ -9,7 +9,6 @@ import (
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/rock"
-	"github.com/parts-pile/site/spec"
 )
 
 // Static queue for ad processing
@@ -82,7 +81,7 @@ func BuildAdEmbeddings(ads []ad.AdDetail) error {
 // buildAdEmbeddingPrompt creates a prompt for generating embeddings
 func buildAdEmbeddingPrompt(adObj ad.AdDetail) string {
 	// Get category fields to determine which fields to include
-	fields := spec.GetCategoryFields(adObj.AdCategoryID)
+	fields := ad.GetCategoryFields(adObj.AdCategoryID)
 
 	// Get rock count for this ad
 	rockCount := 0
@@ -117,13 +116,12 @@ Description: `+adObj.Description)
 	// Add spec fields dynamically - each field generates its own snippet
 	// This includes all fields including part_category and part_subcategory
 	for _, field := range fields {
-		fieldConfig := field.Config()
-		fieldValues, exists := adObj.SpecData[fieldConfig.Name]
+		fieldValues, exists := adObj.SpecData[field.Name()]
 		if !exists {
 			continue
 		}
 
-		snippet := spec.BuildFieldPromptSnippet(field, fieldValues)
+		snippet := field.BuildPromptSnippet(fieldValues)
 		if snippet != "" {
 			promptParts = append(promptParts, snippet)
 		}

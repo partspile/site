@@ -5,7 +5,6 @@ import (
 	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/metrics"
-	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 	g "maragu.dev/gomponents"
@@ -80,23 +79,6 @@ func HandleClearSiteEmbeddingCache(c *fiber.Ctx) error {
 	vector.ClearSiteEmbeddingCache()
 	stats := vector.GetEmbeddingCacheStats()
 	return render(c, ui.AdminEmbeddingCacheSection(stats))
-}
-
-// Spec Cache
-
-func HandleAdminSpecCache(c *fiber.Ctx) error {
-	stats := spec.GetCacheStats()
-	return renderAdminSection(c, "spec-cache", ui.AdminSpecCacheSection(stats))
-}
-
-func HandleClearSpecCache(c *fiber.Ctx) error {
-	stats := spec.ClearCache()
-	return render(c, ui.AdminSpecCacheSection(stats))
-}
-
-func HandleRefreshSpecCache(c *fiber.Ctx) error {
-	stats := spec.GetCacheStats()
-	return render(c, ui.AdminSpecCacheSection(stats))
 }
 
 // Monitor

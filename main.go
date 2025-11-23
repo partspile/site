@@ -165,7 +165,6 @@ func main() {
 	api.Post("/bookmark-ad/:id", h.AuthRequired, h.HandleBookmarkAd)
 	api.Delete("/bookmark-ad/:id", h.AuthRequired, h.HandleUnbookmarkAd)
 	api.Get("/field/:fieldName", h.HandleFieldValues)
-	api.Get("/subcategories", h.HandleSubCategories)
 	api.Get("/ad-image-url/:adID", h.HandleAdImageSignedURL)
 
 	// Rock system (API)
