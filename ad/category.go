@@ -211,3 +211,8 @@ func GetSpecFields(adCat int) []Field {
 	}
 	return specFields
 }
+
+// GetFieldChains returns the field chains for a category
+func GetFieldChains(adCat int) [][]Field {
+	return adFieldChains[adCat]
+}

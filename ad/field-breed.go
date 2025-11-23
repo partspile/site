@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
+	. "maragu.dev/gomponents/html"
 )
 
 // FieldBreed handles the breed field
@@ -21,29 +22,26 @@ func (f *FieldBreed) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 	return qdrant.NewMatch("breed", fieldValue)
 }
 
-func (f *FieldBreed) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
-	nextFieldName := ""
-	if f.NextInChain != 0 {
-		nextFieldName = fmt.Sprintf("%d", f.NextInChain)
+func (f *FieldBreed) RenderNewAdField(selectedValues map[string]bool, defaultValue string) g.Node {
+	// If field has a parent and no values to pre-populate, render empty div for HTMX
+	if f.ParentField != nil && len(selectedValues) == 0 && defaultValue == "" {
+		fieldID := f.FieldName + "Div"
+		return Div(ID(fieldID))
 	}
-	if f.QdrantType == "keyword_array" {
-		return fieldCheckboxGrid(
-			f.FieldName+"Div",
-			f.FieldName,
-			f.DisplayName,
-			fieldValues,
-			selectedValues,
-			nextFieldName,
-		)
+
+	values, err := f.GetValues(map[string]string{})
+	if err != nil {
+		values = []string{}
 	}
+
 	return fieldSelect(
 		f.FieldName+"Div",
 		f.FieldName,
 		f.DisplayName,
-		fieldValues,
+		values,
 		defaultValue,
 		f.IsRequired,
-		nextFieldName,
+		f.NextFieldName,
 	)
 }
 

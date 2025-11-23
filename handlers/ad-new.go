@@ -11,7 +11,6 @@ import (
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/logger"
-	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 	g "maragu.dev/gomponents"
@@ -21,36 +20,13 @@ import (
 
 // HandleNewAd shows the new ad form
 func HandleNewAd(c *fiber.Ctx) error {
-	userID := local.GetUserID(c)
-	userName := local.GetUserName(c)
 	adCat := cookie.GetAdCategory(c)
-	maxImagesPerAd := config.MaxImagesPerAd
-	csrfToken := local.GetCSRFToken(c)
-	fields := spec.GetCategoryFields(adCat)
-
-	// Build map of first field of each chain -> values
-	firstFieldValues := make(map[string][]string)
-
-	for _, field := range fields {
-		if field.IsFirstInChain() {
-			// Get values for this first field (no parent filters)
-			values, err := field.GetValues(map[string]string{})
-			if err != nil {
-				logger.Warn("Failed to get field values",
-					"error", err, "component", "ad-new", "fieldName", field.Name(), "adCat", adCat)
-				values = []string{}
-			}
-			firstFieldValues[field.Name()] = values
-		}
-	}
-
-	return render(c, ui.NewAdPage(adCat, userID, userName, csrfToken, c.Path(), fields, firstFieldValues, maxImagesPerAd))
+	return renderNewAdPage(c, adCat, nil)
 }
 
 // HandleDuplicateAd shows the duplicate ad form with pre-filled data
 func HandleDuplicateAd(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
-	userName := local.GetUserName(c)
 
 	adID, err := AdID(c)
 	if err != nil {
@@ -63,13 +39,200 @@ func HandleDuplicateAd(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
 
-	// Get category fields
-	fields := spec.GetCategoryFields(adDetail.AdCategoryID)
+	// Switch to the duplicated ad's category
+	cookie.SetAdCategory(c, adDetail.AdCategoryID)
 
+	return renderNewAdPage(c, adDetail.AdCategoryID, adDetail.SpecData)
+}
+
+// renderNewAdPage renders the new ad form page
+// adCat: the ad category ID
+// specData: pre-filled spec data (nil for new ad, map[string][]string for duplicate)
+func renderNewAdPage(c *fiber.Ctx, adCat int, specData map[string][]string) error {
+	userID := local.GetUserID(c)
+	userName := local.GetUserName(c)
+	maxImagesPerAd := config.MaxImagesPerAd
 	csrfToken := local.GetCSRFToken(c)
+	fields := ad.GetCategoryFields(adCat)
 
-	return render(c, ui.DuplicateAdPage(
-		userID, userName, csrfToken, c.Path(), *adDetail, fields, config.MaxImagesPerAd))
+	fieldNodes := []g.Node{
+		titleField(""),
+	}
+
+	// Render fields with values from specData if provided
+	for _, field := range fields {
+		selected := make(map[string]bool)
+		var defaultValue string
+
+		if specData != nil {
+			// Get values from specData if they exist
+			if fieldValues, exists := specData[field.Name()]; exists {
+				// For multi-value fields, populate selected map
+				for _, val := range fieldValues {
+					selected[val] = true
+				}
+				// For single-value fields, set defaultValue
+				if !field.IsMultiValue() && len(fieldValues) > 0 {
+					defaultValue = fieldValues[0]
+				}
+			}
+		}
+
+		fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, defaultValue))
+	}
+
+	fieldNodes = append(fieldNodes,
+		imagesField(maxImagesPerAd),
+		descriptionField(),
+		submitButton(),
+	)
+
+	categoryName := ad.GetCategoryName(adCat)
+
+	return render(c, ui.Page(
+		"New Ad - Parts Pile",
+		userID,
+		userName,
+		c.Path(),
+		csrfToken,
+		[]g.Node{
+			pageHeaderWithSubtitle("Create New Ad", categoryName),
+			Form(
+				ID("newAdForm"),
+				Class("space-y-6"),
+				hx.Post("/api/new-ad"),
+				hx.Encoding("multipart/form-data"),
+				hx.Target("#result"),
+				g.Group(fieldNodes),
+			),
+			resultContainer(),
+		},
+	))
+}
+
+// titleField creates the title input field
+func titleField(defaultValue string) g.Node {
+	return Div(
+		Class("space-y-2"),
+		Label(For("title"), Class("block text-sm font-medium text-gray-700"), g.Text("Title")),
+		Input(
+			Type("text"),
+			ID("title"),
+			Name("title"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
+			Required(),
+			MaxLength("35"),
+			Pattern("[\\x20-\\x7E]+"),
+			Title("Title must be 1-35 characters, printable ASCII characters only"),
+			g.Attr("oninput", "this.checkValidity()"),
+			g.If(defaultValue != "", Value(defaultValue)),
+		),
+	)
+}
+
+// imagesField creates the images upload field
+func imagesField(maxImagesPerAd int) g.Node {
+	return Div(
+		Class("space-y-2"),
+		Label(Class("block text-sm font-medium text-gray-700"), g.Text("Images")),
+		Div(
+			Input(
+				Type("file"),
+				ID("images"),
+				Name("images"),
+				Class("hidden"),
+				g.Attr("accept", "image/*"),
+				g.Attr("multiple"),
+				g.Attr("onchange", "previewImages(this)"),
+			),
+			Div(
+				ID("upload-area"),
+				Class("border rounded p-6 hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200 cursor-pointer"),
+				g.Attr("onclick", "handleUploadClick()"),
+				g.Attr("ondragover", "event.preventDefault(); this.classList.add('border-blue-400', 'bg-blue-50')"),
+				g.Attr("ondragleave", "this.classList.remove('border-blue-400', 'bg-blue-50')"),
+				g.Attr("ondrop", "event.preventDefault(); this.classList.remove('border-blue-400', 'bg-blue-50'); handleDrop(event)"),
+				Div(
+					ID("upload-content"),
+					Class("flex flex-col items-center space-y-4"),
+					Div(
+						Class("flex flex-col items-center space-y-2"),
+						Div(
+							Class("w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center"),
+							g.Raw(`<svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+							</svg>`),
+						),
+						Div(
+							Class("text-lg font-medium text-gray-700"),
+							g.Text("Upload Images"),
+						),
+						Div(
+							Class("text-sm text-gray-500"),
+							g.Text("Click to browse or drag and drop"),
+						),
+					),
+				),
+				Div(
+					ID("image-preview"),
+					Class("hidden image-preview flex flex-row flex-wrap gap-2 justify-center mt-4"),
+				),
+			),
+			g.Raw(fmt.Sprintf(`<script>const MAX_IMAGES_PER_AD = %d;</script>`, maxImagesPerAd)),
+			g.Raw(`<script src="/js/image-preview.js" defer></script>`),
+		),
+	)
+}
+
+// descriptionField creates the description textarea field
+func descriptionField() g.Node {
+	return descriptionFieldWithValue("")
+}
+
+// descriptionFieldWithValue creates the description textarea field with a value
+func descriptionFieldWithValue(value string) g.Node {
+	return Div(
+		Class("space-y-2"),
+		Label(For("description"), Class("block text-sm font-medium text-gray-700"), g.Text("Description")),
+		Textarea(
+			ID("description"),
+			Name("description"),
+			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
+			Required(),
+			MaxLength("500"),
+			Rows("4"),
+			Pattern("[\\x20-\\x7E]+"),
+			Title("Description must contain printable ASCII characters only"),
+			g.Attr("oninput", "this.checkValidity()"),
+			g.If(value != "", g.Text(value)),
+		),
+	)
+}
+
+// submitButton creates the submit button
+func submitButton() g.Node {
+	return Button(
+		Type("submit"),
+		Class("px-4 py-2 rounded inline-block bg-blue-500 text-white hover:bg-blue-600"),
+		g.Text("Submit"),
+	)
+}
+
+// pageHeaderWithSubtitle creates a page header with subtitle
+func pageHeaderWithSubtitle(title string, subtitle string) g.Node {
+	return Div(
+		Class("mb-8"),
+		H1(Class("text-4xl font-bold"), g.Text(title)),
+		g.If(subtitle != "", P(Class("text-lg text-gray-600 mt-2 italic"), g.Text(subtitle))),
+	)
+}
+
+// resultContainer creates the result container div
+func resultContainer() g.Node {
+	return Div(
+		ID("result"),
+		Class("mt-4"),
+	)
 }
 
 // HandleNewAdSubmission processes the new ad form submission
@@ -135,7 +298,7 @@ func handleFieldValues(c *fiber.Ctx, fieldName string) error {
 
 	// Build parent values map
 	parentValues := make(map[string]string)
-	fields := spec.GetCategoryFields(adCat)
+	fields := ad.GetCategoryFields(adCat)
 
 	// Find current field index
 	currentFieldIndex := -1
@@ -159,7 +322,7 @@ func handleFieldValues(c *fiber.Ctx, fieldName string) error {
 
 		// If current field is in a chain, only include parents from the same chain
 		if currentConfig.NextInChain != 0 || currentField.IsFirstInChain() {
-			if !spec.FieldsInSameChain(parentField, currentField, fields) {
+			if !ad.FieldsInSameChain(parentField, currentField, fields) {
 				// Skip fields from different chains
 				continue
 			}

@@ -13,7 +13,7 @@ import (
 // ---- New Ad Page ----
 
 func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
-	fields []ad.Field, firstFieldValues map[string][]string, maxImagesPerAd int) g.Node {
+	fields []ad.Field, maxImagesPerAd int) g.Node {
 
 	// Build dynamic field nodes
 	fieldNodes := []g.Node{
@@ -24,15 +24,8 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
 	// Render the first field of each chain independently
 	// Subsequent fields in the same chain will be populated via HTMX
 	for _, field := range fields {
-		if field.IsFirstInChain() {
-			// Render the first field of this chain
-			selected := make(map[string]bool)
-			fieldValues := firstFieldValues[field.Name()]
-			fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, fieldValues, ""))
-		} else {
-			// Chained field - render empty div for HTMX to populate
-			fieldNodes = append(fieldNodes, Div(ID(field.Name()+"Div")))
-		}
+		selected := make(map[string]bool)
+		fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, ""))
 	}
 
 	fieldNodes = append(fieldNodes,
@@ -74,20 +67,7 @@ func DuplicateAdPage(userID int, userName, csrfToken string, path string,
 	}
 
 	// Render spec fields dynamically
-	// Build map of field values for first fields of each chain
-	firstFieldValues := make(map[string][]string)
-	for _, field := range fields {
-		if field.IsFirstInChain() {
-			// Get values for this first field (no parent filters)
-			values, err := field.GetValues(map[string]string{})
-			if err != nil {
-				firstFieldValues[field.Name()] = []string{}
-			} else {
-				firstFieldValues[field.Name()] = values
-			}
-		}
-	}
-
+	// RenderNewAdField handles determining if field is first in chain and renders accordingly
 	for _, field := range fields {
 		selected := make(map[string]bool)
 		if sv, ok := originalAd.SpecData[field.Name()]; ok {
@@ -102,13 +82,7 @@ func DuplicateAdPage(userID int, userName, csrfToken string, path string,
 				defaultValue = fieldValues[0]
 			}
 		}
-		// Get field values - use pre-loaded for first fields, empty for chained fields
-		fieldValues := firstFieldValues[field.Name()]
-		if len(fieldValues) == 0 && field.NextInChain() == 0 {
-			// For standalone fields without pre-loaded values, use empty
-			fieldValues = []string{}
-		}
-		fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, fieldValues, defaultValue))
+		fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, defaultValue))
 	}
 
 	fieldNodes = append(fieldNodes,

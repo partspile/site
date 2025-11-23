@@ -11,8 +11,6 @@ import (
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/logger"
-	"github.com/parts-pile/site/part"
-	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/ui"
 )
 
@@ -67,17 +65,14 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
 	loc := cookie.GetLocation(c)
+	category := cookie.GetAdCategory(c)
 	path := c.Params("*")
+
 	name, level, parts := parsePath(path)
 
-	category := cookie.GetAdCategory(c)
-
-	// Get category fields to determine tree structure
-	fieldConfigs := spec.GetCategoryFields(category)
-
-	// Browse mode: No ad IDs filtering needed
-	logger.Debug("Browse mode: no ad ID filtering",
-		"component", "tree-view")
+	// Get all category fields - these are already flattened in order
+	// Tree structure: first field of first chain -> last field of last chain
+	fields := ad.GetCategoryFields(category)
 
 	// Get children for the current level using dynamic field configuration
 	var children []string
@@ -85,43 +80,33 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 	var err error
 
 	// Map level to field index
-	// Level 0 = first field (usually make)
-	// Level 1 = second field (usually year)
-	// etc.
-	// After all spec fields, we have part category and subcategory
-	// Then finally ads
+	// Level 0 = first field (e.g., make)
+	// Level 1 = second field (e.g., year)
+	// ...
+	// Level len(fields)-1 = last field (e.g., part_subcategory)
+	// Level len(fields) = ads
 
-	if level < len(fieldConfigs) {
-		// This is a spec field level
-		field := fieldConfigs[level]
-		fieldConfig := field.Config()
-		parentValues := buildParentValuesFromPath(parts, fieldConfigs, level)
+	if level < len(fields) {
+		// This is a field level
+		field := fields[level]
+		parentValues := buildParentValuesFromPath(parts, fields, level)
 
-		// Get field values dynamically
-		values, err := spec.GetFieldValues(category, fieldConfig.Name, parentValues)
+		// Get field values dynamically using Field interface
+		children, err = field.GetValues(parentValues)
 		if err != nil {
-			return fmt.Errorf("failed to get field values: %w", err)
+			return fmt.Errorf("failed to get field values for %s: %w", field.Name(), err)
 		}
-		children = values
-	} else if level == len(fieldConfigs) {
-		// Part category level
-		parentValues := buildParentValuesFromPath(parts, fieldConfigs, level)
-		children, err = part.GetAdCategories(category, parentValues)
-	} else if level == len(fieldConfigs)+1 {
-		// Part subcategory level
-		parentValues := buildParentValuesFromPath(parts[:len(parts)-1], fieldConfigs, level-1)
-		partCategory := parts[len(parts)-1]
-		children, err = part.GetAdSubCategories(category, parentValues, partCategory)
-	} else if level == len(fieldConfigs)+2 {
-		// Ads level
-		ads, err = ad.GetAdsForAll()
+	} else if level == len(fields) {
+		// Ads level - show ads filtered by all field values in path
+		fieldValues := buildParentValuesFromPath(parts, fields, level)
+		ads, err = ad.GetAdsForAll(fieldValues, category, fields)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get ads: %w", err)
 		}
 		logger.Debug("Found ads",
 			"component", "tree-view", "count", len(ads))
 	} else {
-		return fmt.Errorf("invalid tree level: %d", level)
+		return fmt.Errorf("invalid tree level: %d (max: %d)", level, len(fields))
 	}
 
 	if err != nil {
@@ -138,11 +123,11 @@ func HandleTreeExpandBrowse(c *fiber.Ctx) error {
 }
 
 // buildParentValuesFromPath builds parent field values from path parts
-func buildParentValuesFromPath(parts []string, fields []spec.Field, currentLevel int) map[string]string {
+func buildParentValuesFromPath(parts []string, fields []ad.Field, currentLevel int) map[string]string {
 	parentValues := make(map[string]string)
 	for i := 0; i < currentLevel && i < len(parts) && i < len(fields); i++ {
-		fieldConfig := fields[i].Config()
-		parentValues[fieldConfig.Name] = parts[i]
+		field := fields[i]
+		parentValues[field.Name()] = parts[i]
 	}
 	return parentValues
 }
@@ -175,44 +160,36 @@ func HandleTreeExpandSearch(c *fiber.Ctx) error {
 	logger.Debug("Using ad IDs from DOM storage",
 		"component", "tree-search", "count", len(adIDs))
 
-	// Get category fields to determine tree structure
-	fieldConfigs := spec.GetCategoryFields(category)
+	// Get all category fields - these are already flattened in order
+	fields := ad.GetCategoryFields(category)
 
 	// Get children for the current level using dynamic field configuration
 	var children []string
 	var ads []ad.Ad
 
 	// Map level to field index (same as browse mode)
-	if level < len(fieldConfigs) {
-		// This is a spec field level - use generic search mode function
-		field := fieldConfigs[level]
-		fieldConfig := field.Config()
-		parentValues := buildParentValuesFromPath(parts, fieldConfigs, level)
+	if level < len(fields) {
+		// This is a field level
+		field := fields[level]
+		parentValues := buildParentValuesFromPath(parts, fields, level)
 
-		// Use generic function that works with any field
-		children, err = spec.GetAdFieldValuesForAdIDs(category, fieldConfig.Name, adIDs, parentValues)
+		// TODO: Need to filter field values by ad IDs for search mode
+		// For now, get all values (will need new method or approach)
+		children, err = field.GetValues(parentValues)
 		if err != nil {
 			logger.Warn("Failed to get field values for ad IDs",
-				"error", err, "component", "tree-search", "field", fieldConfig.Name, "adCategoryID", category)
+				"error", err, "component", "tree-search", "field", field.Name(), "adCategoryID", category)
 			children = []string{}
 		}
-	} else if level == len(fieldConfigs) {
-		// Part category level
-		parentValues := buildParentValuesFromPath(parts, fieldConfigs, level)
-		children, err = part.GetCategoriesForAds(adIDs, parentValues)
-	} else if level == len(fieldConfigs)+1 {
-		// Part subcategory level
-		parentValues := buildParentValuesFromPath(parts[:len(parts)-1], fieldConfigs, level-1)
-		category := parts[len(parts)-1]
-		children, err = part.GetSubCategoriesForAds(adIDs, parentValues, category)
-	} else if level == len(fieldConfigs)+2 {
+		// TODO: Filter children to only include values that exist in the ad IDs
+	} else if level == len(fields) {
 		// Ads level
 		ads, err = ad.GetAdsForAdIDs(adIDs)
 		if err != nil {
 			return err
 		}
 	} else {
-		return fmt.Errorf("invalid tree level: %d", level)
+		return fmt.Errorf("invalid tree level: %d (max: %d)", level, len(fields))
 	}
 
 	if err != nil {

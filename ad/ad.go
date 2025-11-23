@@ -326,10 +326,299 @@ func ArchiveAdsByUserID(userID int) error {
 	return err
 }
 
-// GetAdsForAll returns all ads (placeholder implementation)
-func GetAdsForAll() ([]Ad, error) {
-	// This is a placeholder implementation
-	return nil, fmt.Errorf("GetAdsForAll not implemented yet")
+// GetAdsForAll returns all ads filtered by field values
+func GetAdsForAll(fieldValues map[string]string, adCategoryID int, fields []Field) ([]Ad, error) {
+	if len(fieldValues) == 0 {
+		// No filters, return empty
+		return []Ad{}, nil
+	}
+
+	// Get chains from adFieldChains - already grouped by spec table
+	chains := adFieldChains[adCategoryID]
+	if len(chains) == 0 {
+		return []Ad{}, nil
+	}
+
+	// Filter chains to only those with field values
+	activeChains := make([][]Field, 0)
+	for _, chain := range chains {
+		if len(chain) == 0 {
+			continue
+		}
+
+		// Check if this chain has any fields with values
+		hasValues := false
+		for _, field := range chain {
+			if value, exists := fieldValues[field.Name()]; exists && value != "" {
+				hasValues = true
+				break
+			}
+		}
+		if hasValues {
+			activeChains = append(activeChains, chain)
+		}
+	}
+
+	if len(activeChains) == 0 {
+		return []Ad{}, nil
+	}
+
+	// Build single query that joins all chains
+	adIDs, err := findAdIDsForAllChains(activeChains, fieldValues, adCategoryID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find ad IDs: %w", err)
+	}
+
+	if len(adIDs) == 0 {
+		return []Ad{}, nil
+	}
+
+	// Get ads for the filtered ad IDs
+	return GetAdsByIDs(adIDs, 0)
+}
+
+// findAdIDsForAllChains finds ad IDs that match field values across all chains in a single query
+func findAdIDsForAllChains(chains [][]Field, fieldValues map[string]string, adCategoryID int) ([]int, error) {
+	if len(chains) == 0 {
+		return []int{}, nil
+	}
+
+	// Build query that joins all chains together
+	var joins []string
+	var whereClauses []string
+	var args []interface{}
+
+	// Start from Ad table
+	query := "SELECT DISTINCT a.id FROM Ad a"
+
+	// Add category and deleted filter
+	args = append(args, adCategoryID)
+	whereClauses = append(whereClauses, "a.ad_category_id = $1")
+	whereClauses = append(whereClauses, "a.deleted_at IS NULL")
+
+	argNum := 2
+
+	// Process each chain
+	for chainIdx, chain := range chains {
+		if len(chain) == 0 {
+			continue
+		}
+
+		// Get spec table info from first field in chain
+		firstField := chain[0]
+		specTableName, _, adSpecTableName, _ := firstField.GetTableNames()
+		if specTableName == "" || adSpecTableName == "" {
+			continue
+		}
+
+		// Create unique aliases for this chain
+		specAlias := fmt.Sprintf("spec%d", chainIdx)
+		adSpecAlias := fmt.Sprintf("adspec%d", chainIdx)
+
+		// Join AdSpec table
+		joins = append(joins, fmt.Sprintf(
+			"JOIN %s %s ON a.id = %s.ad_id",
+			adSpecTableName, adSpecAlias, adSpecAlias))
+
+		// Join Spec table
+		joins = append(joins, fmt.Sprintf(
+			"JOIN %s %s ON %s.spec_id = %s.id",
+			specTableName, specAlias, adSpecAlias, specAlias))
+
+		// Add category filter for this spec table
+		whereClauses = append(whereClauses,
+			fmt.Sprintf("%s.ad_category_id = $%d", specAlias, argNum))
+		args = append(args, adCategoryID)
+		argNum++
+
+		// Process fields in this chain
+		for _, field := range chain {
+			fieldName := field.Name()
+			value, hasValue := fieldValues[fieldName]
+			if !hasValue || value == "" {
+				continue
+			}
+
+			_, specTableFieldName, _, tableName := field.GetTableNames()
+			if tableName == "" || specTableFieldName == "" {
+				continue
+			}
+
+			// Create unique alias for this field table
+			fieldAlias := fmt.Sprintf("%s_%d", tableName, chainIdx)
+
+			// Join field table
+			joins = append(joins, fmt.Sprintf(
+				"JOIN %s %s ON %s.%s = %s.id",
+				tableName, fieldAlias, specAlias, specTableFieldName, fieldAlias))
+
+			// Add field value filter
+			if field.IsMultiValue() {
+				// Multi-value: split comma-separated values and use IN clause
+				values := strings.Split(value, ",")
+				var placeholders []string
+				for _, v := range values {
+					args = append(args, strings.TrimSpace(v))
+					placeholders = append(placeholders, fmt.Sprintf("$%d", argNum))
+					argNum++
+				}
+				whereClauses = append(whereClauses,
+					fmt.Sprintf("%s.value IN (%s)", fieldAlias, strings.Join(placeholders, ", ")))
+			} else {
+				// Single value
+				args = append(args, value)
+				whereClauses = append(whereClauses,
+					fmt.Sprintf("%s.value = $%d", fieldAlias, argNum))
+				argNum++
+			}
+		}
+	}
+
+	if len(joins) == 0 {
+		return []int{}, nil
+	}
+
+	// Build final query
+	query += " " + strings.Join(joins, " ")
+	query += " WHERE " + strings.Join(whereClauses, " AND ")
+
+	var adIDs []int
+	err := db.Select(&adIDs, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query ad IDs: %w", err)
+	}
+
+	return adIDs, nil
+}
+
+// findAdIDsForChain finds ad IDs that match field values for a specific chain
+// (kept for potential future use, but currently unused)
+func findAdIDsForChain(chain []Field, fieldValues map[string]string, adCategoryID int) ([]int, error) {
+	if len(chain) == 0 {
+		return []int{}, nil
+	}
+
+	// Get spec table info from first field in chain
+	firstField := chain[0]
+	specTableName, _, adSpecTableName, _ := firstField.GetTableNames()
+	if specTableName == "" || adSpecTableName == "" {
+		return []int{}, nil
+	}
+
+	// Build field metadata
+	type fieldMeta struct {
+		name               string
+		tableName          string
+		specTableFieldName string
+		alias              string
+		isMultiValue       bool
+	}
+	fieldMetas := make([]fieldMeta, 0)
+	for _, field := range chain {
+		fieldName := field.Name()
+		value, hasValue := fieldValues[fieldName]
+		if !hasValue || value == "" {
+			continue
+		}
+
+		_, specTableFieldName, _, tableName := field.GetTableNames()
+		if tableName == "" || specTableFieldName == "" {
+			continue
+		}
+
+		fieldMetas = append(fieldMetas, fieldMeta{
+			name:               fieldName,
+			tableName:          tableName,
+			specTableFieldName: specTableFieldName,
+			alias:              tableName,
+			isMultiValue:       field.IsMultiValue(),
+		})
+	}
+
+	if len(fieldMetas) == 0 {
+		return nil, nil
+	}
+
+	// Build JOINs
+	var joins []string
+	for _, fm := range fieldMetas {
+		joins = append(joins, fmt.Sprintf(
+			"JOIN %s %s ON %s.%s = %s.id",
+			fm.tableName, fm.alias, specTableName,
+			fm.specTableFieldName, fm.alias))
+	}
+
+	// Build WHERE clauses
+	var args []interface{}
+	var whereClauses []string
+
+	// Category filter
+	args = append(args, adCategoryID)
+	whereClauses = append(whereClauses, fmt.Sprintf("%s.ad_category_id = $%d", specTableName, len(args)))
+
+	// Field value filters
+	for _, fm := range fieldMetas {
+		value := fieldValues[fm.name]
+		if fm.isMultiValue {
+			// Multi-value: split comma-separated values and use IN clause
+			values := strings.Split(value, ",")
+			var placeholders []string
+			for _, v := range values {
+				args = append(args, strings.TrimSpace(v))
+				placeholders = append(placeholders, fmt.Sprintf("$%d", len(args)))
+			}
+			whereClauses = append(whereClauses,
+				fmt.Sprintf("%s.value IN (%s)", fm.alias, strings.Join(placeholders, ", ")))
+		} else {
+			// Single value
+			args = append(args, value)
+			whereClauses = append(whereClauses,
+				fmt.Sprintf("%s.value = $%d", fm.alias, len(args)))
+		}
+	}
+
+	// Query: find spec IDs, then ad IDs
+	specQuery := fmt.Sprintf(`
+		SELECT DISTINCT %s.id
+		FROM %s
+		%s
+		WHERE %s`,
+		specTableName, specTableName,
+		strings.Join(joins, " "),
+		strings.Join(whereClauses, " AND "))
+
+	var specIDs []int
+	err := db.Select(&specIDs, specQuery, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query spec IDs: %w", err)
+	}
+
+	if len(specIDs) == 0 {
+		return []int{}, nil
+	}
+
+	// Find ad IDs that have these spec IDs
+	specPlaceholders := make([]string, len(specIDs))
+	specArgs := make([]interface{}, len(specIDs))
+	for i, id := range specIDs {
+		specPlaceholders[i] = fmt.Sprintf("$%d", i+1)
+		specArgs[i] = id
+	}
+
+	adQuery := fmt.Sprintf(`
+		SELECT DISTINCT ad_id
+		FROM %s
+		WHERE spec_id IN (%s)
+		AND ad_id IN (SELECT id FROM Ad WHERE deleted_at IS NULL)`,
+		adSpecTableName, strings.Join(specPlaceholders, ", "))
+
+	var adIDs []int
+	err = db.Select(&adIDs, adQuery, specArgs...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query ad IDs: %w", err)
+	}
+
+	return adIDs, nil
 }
 
 // GetAdsForAdIDs returns ads for the given IDs (placeholder implementation)

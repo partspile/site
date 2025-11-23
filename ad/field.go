@@ -23,9 +23,8 @@ type Field interface {
 
 	// RenderNewAdField renders the field for the new ad form
 	// selectedValues is a map of selected values (for efficient lookup)
-	// fieldValues are the available values to choose from
 	// defaultValue is the default value for single-select fields
-	RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node
+	RenderNewAdField(selectedValues map[string]bool, defaultValue string) g.Node
 
 	// RenderFilterField renders the field for the filter dialog
 	RenderFilterField(params map[string]string) g.Node
@@ -228,127 +227,12 @@ func (f adField) buildParentFieldWhereClause(pf parentFieldInfo, args *[]interfa
 	return fmt.Sprintf("%s.value = $%d", pf.parent.TableName, len(*args))
 }
 
-// RenderFilterField provides a default fallback implementation
-// Returns an empty g.Group{} if the field doesn't implement its own RenderFilterField
 func (f adField) RenderFilterField(params map[string]string) g.Node {
 	return g.Group{}
 }
 
-// RenderNewAdField provides a generic fallback implementation
-// Concrete field types should override this for field-specific rendering
-func (f adField) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
-	fieldID := f.FieldName + "Div"
-	fieldName := f.FieldName
-	nextFieldOrder := f.NextInChain
-	nextFieldTarget := ""
-	if nextFieldOrder != 0 {
-		nextFieldTarget = fmt.Sprintf("%dDiv", nextFieldOrder)
-	}
-	if f.QdrantType == "keyword_array" {
-		// Multi-select (checkboxes)
-		selected := selectedValues
-		if selected == nil {
-			selected = make(map[string]bool)
-		}
-
-		checkboxes := []g.Node{}
-		for _, value := range fieldValues {
-			attrs := []g.Node{
-				Type("checkbox"),
-				Name(fieldName),
-				Value(value),
-				ID(fieldName + "-" + value),
-			}
-			if selected[value] {
-				attrs = append(attrs, Checked())
-			}
-
-			// Add HTMX trigger if there's a next field
-			if nextFieldTarget != "" && nextFieldOrder != 0 {
-				endpoint := fmt.Sprintf("/api/%s", nextFieldOrder)
-				attrs = append(attrs,
-					hx.Trigger("change"),
-					hx.Get(endpoint),
-					hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
-					hx.Include("form"),
-					hx.Swap("innerHTML"),
-				)
-			}
-
-			checkboxNode := Div(
-				Class("flex items-center space-x-2"),
-				Input(attrs...),
-				Label(
-					For(fieldName+"-"+value),
-					g.Text(value),
-				),
-			)
-			checkboxes = append(checkboxes, checkboxNode)
-		}
-
-		gridContainer := Div(
-			Class("grid grid-cols-4 gap-2 p-4 bg-gray-50 border border-gray-200 rounded-lg"),
-			g.Group(checkboxes),
-		)
-
-		formGroup := Div(
-			Class("space-y-2"),
-			Label(For(fieldName), Class("block"), g.Text(f.DisplayName)),
-			gridContainer,
-		)
-
-		return Div(
-			ID(fieldID),
-			Class("space-y-2"),
-			formGroup,
-		)
-	} else {
-		// Single-select (dropdown)
-		options := []g.Node{
-			Option(Value(""), g.Text(fmt.Sprintf("Select a %s", f.DisplayName))),
-		}
-
-		for _, value := range fieldValues {
-			optionAttrs := []g.Node{Value(value), g.Text(value)}
-			if value == defaultValue {
-				optionAttrs = append(optionAttrs, Selected())
-			}
-			options = append(options, Option(optionAttrs...))
-		}
-
-		attrs := []g.Node{
-			ID(fieldName),
-			Name(fieldName),
-			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
-		}
-
-		if f.IsRequired {
-			attrs = append(attrs, Required())
-		}
-
-		// Add HTMX trigger if there's a next field in chain
-		if nextFieldTarget != "" && nextFieldOrder != 0 {
-			endpoint := fmt.Sprintf("/api/%d", nextFieldOrder)
-			attrs = append(attrs,
-				hx.Trigger("change"),
-				hx.Get(endpoint),
-				hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
-				hx.Include("form"),
-				hx.Swap("innerHTML"),
-			)
-		}
-
-		formGroup := Div(
-			Class("space-y-2"),
-			Label(For(fieldName), Class("block"), g.Text(f.DisplayName)),
-			Select(append(attrs, g.Group(options)...)...),
-		)
-
-		return Div(
-			ID(fieldID),
-			formGroup,
-		)
-	}
+func (f adField) RenderNewAdField(selectedValues map[string]bool, defaultValue string) g.Node {
+	return g.Group{}
 }
 
 func (f adField) BuildSpecDataSubquery() string {

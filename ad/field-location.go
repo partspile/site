@@ -46,7 +46,13 @@ func (f *FieldLocation) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 	return qdrant.NewGeoRadius("location", lat, lon, float32(rm))
 }
 
-func (f *FieldLocation) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
+func (f *FieldLocation) RenderNewAdField(selectedValues map[string]bool, defaultValue string) g.Node {
+	// If field has a parent and no default value, render empty div for HTMX
+	if f.ParentField != nil && defaultValue == "" {
+		fieldID := f.FieldName + "Div"
+		return Div(ID(fieldID))
+	}
+
 	return fieldInput(
 		f.FieldName+"Div",
 		f.FieldName,

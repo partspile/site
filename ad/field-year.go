@@ -72,18 +72,25 @@ func (f *FieldYear) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 	return nil
 }
 
-func (f *FieldYear) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
-	nextFieldName := ""
-	if f.NextInChain != 0 {
-		nextFieldName = fmt.Sprintf("%d", f.NextInChain)
+func (f *FieldYear) RenderNewAdField(selectedValues map[string]bool, defaultValue string) g.Node {
+	// If field has a parent and no selected values, render empty div for HTMX
+	if f.ParentField != nil && len(selectedValues) == 0 {
+		fieldID := f.FieldName + "Div"
+		return Div(ID(fieldID))
 	}
+
+	values, err := f.GetValues(map[string]string{})
+	if err != nil {
+		values = []string{}
+	}
+
 	return fieldCheckboxGrid(
 		f.FieldName+"Div",
 		f.FieldName,
 		f.DisplayName,
-		fieldValues,
+		values,
 		selectedValues,
-		nextFieldName,
+		f.NextFieldName,
 	)
 }
 

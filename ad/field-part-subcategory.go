@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
+	. "maragu.dev/gomponents/html"
 )
 
 // FieldPartSubcategory handles the part_subcategory field
@@ -21,12 +22,23 @@ func (f *FieldPartSubcategory) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condit
 	return qdrant.NewMatch("part_subcategory", fieldValue)
 }
 
-func (f *FieldPartSubcategory) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
+func (f *FieldPartSubcategory) RenderNewAdField(selectedValues map[string]bool, defaultValue string) g.Node {
+	// If field has a parent and no default value, render empty div for HTMX
+	if f.ParentField != nil && defaultValue == "" {
+		fieldID := f.FieldName + "Div"
+		return Div(ID(fieldID))
+	}
+
+	values, err := f.GetValues(map[string]string{})
+	if err != nil {
+		values = []string{}
+	}
+
 	return fieldSelect(
 		f.FieldName+"Div",
 		f.FieldName,
 		f.DisplayName,
-		fieldValues,
+		values,
 		defaultValue,
 		f.IsRequired,
 		f.NextFieldName,

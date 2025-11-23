@@ -51,12 +51,23 @@ func (f *FieldPartCategory) RenderFilterField(params map[string]string) g.Node {
 	)
 }
 
-func (f *FieldPartCategory) RenderNewAdField(selectedValues map[string]bool, fieldValues []string, defaultValue string) g.Node {
+func (f *FieldPartCategory) RenderNewAdField(selectedValues map[string]bool, defaultValue string) g.Node {
+	// If field has a parent and no default value, render empty div for HTMX
+	if f.ParentField != nil && defaultValue == "" {
+		fieldID := f.FieldName + "Div"
+		return Div(ID(fieldID))
+	}
+
+	values, err := f.GetValues(map[string]string{})
+	if err != nil {
+		values = []string{}
+	}
+
 	return fieldSelect(
 		f.FieldName+"Div",
 		f.FieldName,
 		f.DisplayName,
-		fieldValues,
+		values,
 		defaultValue,
 		f.IsRequired,
 		f.NextFieldName,
