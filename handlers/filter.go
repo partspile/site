@@ -27,10 +27,9 @@ func buildSearchFilter(c *fiber.Ctx) *qdrant.Filter {
 		condition := field.BuildFilterCondition(c, locationResolver)
 		if condition != nil {
 			conditions = append(conditions, condition)
-			fieldConfig := field.Config()
 			logger.Debug("Added filter condition",
-				"component", "buildSearchFilters", "field", fieldConfig.Name,
-				"qdrantType", fieldConfig.QdrantType)
+				"component", "buildSearchFilters", "field", field.Name(),
+				"qdrantType", field.GetQdrantType())
 		}
 	}
 

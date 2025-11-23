@@ -13,7 +13,6 @@ import (
 	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/metrics"
 	"github.com/parts-pile/site/sms"
-	"github.com/parts-pile/site/spec"
 	"github.com/parts-pile/site/vector"
 )
 
@@ -40,18 +39,6 @@ func main() {
 	if err := ad.InitAdCategories(); err != nil {
 		logger.Fatal("Failed to initialize ad categories", "error", err)
 	}
-
-	// Initialize spec cache
-	if err := spec.InitSpecCache(); err != nil {
-		logger.Fatal("Failed to initialize spec cache", "error", err)
-	}
-
-	// Initialize field cache (must be after spec cache)
-	if err := spec.InitFieldCache(); err != nil {
-		logger.Fatal("Failed to initialize field cache", "error", err)
-	}
-
-	// Initialize field values cache
 
 	// Initialize B2 cache
 	if err := b2util.Init(); err != nil {
@@ -178,7 +165,6 @@ func main() {
 	admin.Get("/", h.HandleAdminDashboard)
 	admin.Get("/b2-cache", h.HandleAdminB2Cache)
 	admin.Get("/embedding-cache", h.HandleAdminEmbeddingCache)
-	admin.Get("/spec-cache", h.HandleAdminSpecCache)
 	admin.Get("/metrics", h.HandleMonitor)
 
 	// Admin API group
@@ -189,8 +175,6 @@ func main() {
 	adminAPI.Post("/embedding-cache/query/clear", h.HandleClearQueryEmbeddingCache)
 	adminAPI.Post("/embedding-cache/user/clear", h.HandleClearUserEmbeddingCache)
 	adminAPI.Post("/embedding-cache/site/clear", h.HandleClearSiteEmbeddingCache)
-	adminAPI.Post("/spec-cache/clear", h.HandleClearSpecCache)
-	adminAPI.Get("/spec-cache/refresh", h.HandleRefreshSpecCache)
 	adminAPI.Get("/metrics/refresh", h.HandleMonitorRefresh)
 
 	// User registration/authentication

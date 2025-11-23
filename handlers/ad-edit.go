@@ -33,7 +33,10 @@ func HandleUpdateAdPrice(c *fiber.Ctx) error {
 	}
 
 	// Validate and parse price
-	priceField := &spec.FieldPrice{}
+	priceField, err := ad.GetCategoryField(a.AdCategoryID, "price")
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to get price field")
+	}
 	priceStr := c.FormValue("price")
 	if err := priceField.Validate(priceStr); err != nil {
 		return ValidationErrorResponse(c, err.Error())

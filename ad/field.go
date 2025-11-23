@@ -64,6 +64,15 @@ type Field interface {
 
 	// NextField returns the name of the next field in the chain, or empty string if none
 	NextField() string
+
+	// GetQdrantType returns the Qdrant type string for this field
+	// Returns: 'keyword', 'keyword_array', 'integer', 'float', or 'geo'
+	GetQdrantType() string
+
+	// EmbeddingPrompt returns a formatted prompt snippet for embedding generation
+	// fieldValues is a slice of field values (single or multiple)
+	// Returns empty string if no values or field should not be included
+	EmbeddingPrompt(fieldValues []string) string
 }
 
 type adField struct {
@@ -106,6 +115,23 @@ func (f adField) Required() bool {
 
 func (f adField) NextField() string {
 	return f.NextFieldName
+}
+
+func (f adField) GetQdrantType() string {
+	return f.QdrantType
+}
+
+func (f adField) EmbeddingPrompt(fieldValues []string) string {
+	if len(fieldValues) == 0 {
+		return ""
+	}
+
+	if len(fieldValues) == 1 {
+		return fmt.Sprintf("%s: %s", f.DisplayName, fieldValues[0])
+	}
+
+	// Multiple values - join with comma
+	return fmt.Sprintf("%s: %s", f.DisplayName, strings.Join(fieldValues, ", "))
 }
 
 func (f adField) BuildJoinClause() string {
@@ -151,6 +177,44 @@ func (f adField) getSimpleFieldValues() ([]string, error) {
 	var values []string
 	query := fmt.Sprintf("SELECT DISTINCT value FROM %s WHERE ad_category_id = $1 ORDER BY value", f.TableName)
 	err := db.Select(&values, query, f.AdCategoryID)
+	return values, err
+}
+
+// GetValuesForAdIDs returns distinct field values for the given ad IDs
+func GetValuesForAdIDs(field Field, adIDs []int) ([]string, error) {
+	if len(adIDs) == 0 {
+		return []string{}, nil
+	}
+
+	specTableName, specTableFieldName, adSpecTableName, tableName := field.GetTableNames()
+	if tableName == "" || specTableName == "" || adSpecTableName == "" {
+		return []string{}, nil
+	}
+
+	// Build placeholders for ad IDs
+	placeholders := make([]string, len(adIDs))
+	args := make([]interface{}, len(adIDs))
+	for i, id := range adIDs {
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+		args[i] = id
+	}
+
+	// Query: get distinct field values from ads
+	query := fmt.Sprintf(`
+		SELECT DISTINCT %s.value
+		FROM %s
+		JOIN %s ON %s.%s = %s.id
+		JOIN %s ON %s.spec_id = %s.id
+		WHERE %s.ad_id IN (%s)
+		ORDER BY %s.value`,
+		tableName, tableName,
+		specTableName, specTableName, specTableFieldName, tableName,
+		adSpecTableName, adSpecTableName, specTableName,
+		adSpecTableName, strings.Join(placeholders, ", "),
+		tableName)
+
+	var values []string
+	err := db.Select(&values, query, args...)
 	return values, err
 }
 

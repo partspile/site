@@ -10,21 +10,11 @@ import (
 )
 
 func filterControls(adCategory int, params map[string]string) g.Node {
-	// Get category fields to determine which filters to show
 	fields := ad.GetCategoryFields(adCategory)
 
-	// Build filter nodes dynamically based on category fields
 	var filterNodes []g.Node
 
-	// Add spec field filters based on category configuration
-	// Only show fields marked with ShowInFilters=true
 	for _, field := range fields {
-		fieldConfig := field.Config()
-		if !fieldConfig.ShowInFilters {
-			continue
-		}
-
-		// Use RenderFilterField to get the filter node(s)
 		filterNode := field.RenderFilterField(params)
 		filterNodes = append(filterNodes, filterNode)
 	}
@@ -74,7 +64,7 @@ func genericRangeFilter(field ad.Field, minValue, maxValue string) g.Node {
 	maxKey := "max_" + field.Name()
 
 	return Div(
-		Label(Class("block text-sm font-medium mb-1"), g.Text(field.DisplayName()+" Range")),
+		Label(Class("block text-sm font-medium mb-1"), g.Text(field.Name()+" Range")),
 		Div(
 			Class("flex gap-2 flex-nowrap"),
 			Input(
@@ -119,7 +109,7 @@ func genericDropdownFilter(adCategory int, field ad.Field, value string, hasChil
 	}
 
 	return Div(
-		Label(Class("block text-sm font-medium mb-1"), g.Text(field.DisplayName())),
+		Label(Class("block text-sm font-medium mb-1"), g.Text(field.Name())),
 		Select(
 			Name(field.Name()),
 			ID(field.Name()+"Filter"),

@@ -4,10 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
-	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
-	"github.com/parts-pile/site/spec"
 	"github.com/qdrant/go-client/qdrant"
 )
 
@@ -20,13 +19,8 @@ type QdrantFieldSchema struct {
 }
 
 // GetIndexedFields returns the list of fields that need indexes
-// This queries SpecField table to get ALL spec fields dynamically
+// Uses the Field interface to get all spec fields from all categories
 func GetIndexedFields() []QdrantFieldSchema {
-	// Get all field definitions from cache
-	// We need to query the database to get all fields
-	// For now, use a helper function that gets all fields from cache
-	allFields := getAllSpecFields()
-
 	// Build QdrantFieldSchema list
 	var indexedFields []QdrantFieldSchema
 
@@ -38,79 +32,57 @@ func GetIndexedFields() []QdrantFieldSchema {
 		QdrantFieldSchema{Name: "location", QdrantType: qdrant.FieldType_FieldTypeGeo, IsStruct: true},
 	)
 
-	// Add all spec fields from SpecField table
-	for _, fieldDef := range allFields {
-		var qdrantType qdrant.FieldType
-		isArray := false
+	// Get all unique spec fields from all categories using Field interface
+	// Use a map to deduplicate fields by name
+	seenFields := make(map[string]bool)
+	categoryIDs := ad.GetCategoryIDs()
 
-		switch fieldDef.QdrantType {
-		case "keyword":
-			qdrantType = qdrant.FieldType_FieldTypeKeyword
-		case "keyword_array":
-			qdrantType = qdrant.FieldType_FieldTypeKeyword
-			isArray = true
-		case "integer":
-			qdrantType = qdrant.FieldType_FieldTypeInteger
-		case "float":
-			qdrantType = qdrant.FieldType_FieldTypeFloat
-		case "geo":
-			qdrantType = qdrant.FieldType_FieldTypeGeo
-		default:
-			// Default to keyword
-			qdrantType = qdrant.FieldType_FieldTypeKeyword
+	for _, categoryID := range categoryIDs {
+		fields := ad.GetCategoryFields(categoryID)
+		for _, field := range fields {
+			// Only process spec fields
+			if !field.IsSpecField() {
+				continue
+			}
+
+			fieldName := field.Name()
+			// Skip if we've already seen this field
+			if seenFields[fieldName] {
+				continue
+			}
+			seenFields[fieldName] = true
+
+			// Get Qdrant type from field
+			qdrantTypeStr := field.GetQdrantType()
+			var qdrantType qdrant.FieldType
+			isArray := false
+
+			switch qdrantTypeStr {
+			case "keyword":
+				qdrantType = qdrant.FieldType_FieldTypeKeyword
+			case "keyword_array":
+				qdrantType = qdrant.FieldType_FieldTypeKeyword
+				isArray = true
+			case "integer":
+				qdrantType = qdrant.FieldType_FieldTypeInteger
+			case "float":
+				qdrantType = qdrant.FieldType_FieldTypeFloat
+			case "geo":
+				qdrantType = qdrant.FieldType_FieldTypeGeo
+			default:
+				// Default to keyword
+				qdrantType = qdrant.FieldType_FieldTypeKeyword
+			}
+
+			indexedFields = append(indexedFields, QdrantFieldSchema{
+				Name:       fieldName,
+				QdrantType: qdrantType,
+				IsArray:    isArray,
+			})
 		}
-
-		indexedFields = append(indexedFields, QdrantFieldSchema{
-			Name:       fieldDef.Name,
-			QdrantType: qdrantType,
-			IsArray:    isArray,
-		})
 	}
 
 	return indexedFields
-}
-
-// getAllSpecFields gets all field definitions from the database
-func getAllSpecFields() []spec.FieldConfig {
-	// Query all SpecField records
-	// Since we can't easily access the cache from here, we'll query the DB
-	// In practice, this should use the cache, but for initialization we query DB
-	query := `
-		SELECT id, name, display_name, field_type, table_name, qdrant_type
-		FROM SpecField
-		ORDER BY id
-	`
-
-	type dbField struct {
-		ID          int    `db:"id"`
-		Name        string `db:"name"`
-		DisplayName string `db:"display_name"`
-		FieldType   string `db:"field_type"`
-		TableName   string `db:"table_name"`
-		QdrantType  string `db:"qdrant_type"`
-	}
-
-	var dbFields []dbField
-	err := db.Select(&dbFields, query)
-	if err != nil {
-		logger.Warn("Failed to query SpecField for Qdrant indexes",
-			"error", err, "component", "qdrant")
-		return []spec.FieldConfig{}
-	}
-
-	var fieldConfigs []spec.FieldConfig
-	for _, f := range dbFields {
-		fieldConfigs = append(fieldConfigs, spec.FieldConfig{
-			ID:          f.ID,
-			Name:        f.Name,
-			DisplayName: f.DisplayName,
-			FieldType:   f.FieldType,
-			TableName:   f.TableName,
-			QdrantType:  f.QdrantType,
-		})
-	}
-
-	return fieldConfigs
 }
 
 // InitQdrantCollection creates the Qdrant collection if it doesn't exist

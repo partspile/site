@@ -742,15 +742,14 @@ func partTypePath(a ad.AdDetail) g.Node {
 
 	// Iterate through fields in order
 	for _, field := range fields {
-		fieldConfig := field.Config()
-		fieldName := fieldConfig.Name
+		fieldName := field.Name()
 		values, exists := a.SpecData[fieldName]
 		if !exists || len(values) == 0 {
 			continue
 		}
 
 		// Format based on field type
-		if fieldConfig.FieldMultiValue {
+		if field.IsMultiValue() {
 			// Multi-value field - join with comma
 			// Special handling for year field - format as ranges
 			if fieldName == "year" {

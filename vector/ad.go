@@ -102,12 +102,10 @@ func buildAdEmbeddingPrompt(adObj ad.AdDetail) string {
 
 	// Build prompt header
 	var promptParts []string
-	promptParts = append(promptParts, `Encode the following ad for semantic search. Focus on
-title and description, what the part is, what vehicles it fits, where
-the part is located, the price, how many rocks have been thown, and any
-relevant details for a buyer. When considering vehicle makes, consider the
-parent company and country of origin of the make, as well as sibling makes.
-For example, Ford and Mercury are related by both being under Ford Motor Company.
+	promptParts = append(promptParts, `Encode the following ad for semantic
+search. Focus on title and description, where the part is located, the
+price, how many rocks have been thown, and field values.
+
 Return only the embedding vector.
 
 Title: `+adObj.Title+`
@@ -121,14 +119,13 @@ Description: `+adObj.Description)
 			continue
 		}
 
-		snippet := field.BuildPromptSnippet(fieldValues)
-		if snippet != "" {
-			promptParts = append(promptParts, snippet)
-		}
+		snippet := field.EmbeddingPrompt(fieldValues)
+		promptParts = append(promptParts, snippet)
 	}
 
-	// Add location and quality indicator
+	// Add location, price, and quality indicator
 	promptParts = append(promptParts, fmt.Sprintf("Location: %s, %s, %s\n", adObj.City, adObj.AdminArea, adObj.Country))
+	promptParts = append(promptParts, fmt.Sprintf("Price: $%.0f\n", adObj.Price))
 	promptParts = append(promptParts, fmt.Sprintf("Quality Indicator: %s", rockContext))
 
 	return strings.Join(promptParts, "\n")
@@ -148,12 +145,11 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 	}
 
 	// Get category fields to determine which fields to include
-	fields := spec.GetCategoryFields(adObj.AdCategoryID)
+	fields := ad.GetCategoryFields(adObj.AdCategoryID)
 
 	// Add spec fields dynamically based on category configuration
 	for _, field := range fields {
-		config := field.Config()
-		fieldName := config.Name
+		fieldName := field.Name()
 		// Extract value from SpecData
 		fieldValues, exists := adObj.SpecData[fieldName]
 		if !exists || len(fieldValues) == 0 {
@@ -161,7 +157,7 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 		}
 
 		// Add to metadata based on field type - use fieldName directly
-		if config.FieldMultiValue {
+		if field.IsMultiValue() {
 			// Multi-value field - store as array
 			metadata[fieldName] = fieldValues
 		} else {

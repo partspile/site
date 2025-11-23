@@ -7,6 +7,7 @@ import (
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/logger"
 )
 
@@ -31,11 +32,11 @@ func TreeViewResults(adIDs []int, adCat int, q string, userID int, csrfToken str
 
 	if q == "" && len(adIDs) == 0 {
 		// No search query and no filtered results - show full browse tree
-		viewContent = treeBrowseMakes(adCat)
+		viewContent = treeBrowseFirstField(adCat)
 	} else {
 		// Either has search query or has filtered results - show filtered tree
 		if len(adIDs) > 0 {
-			viewContent = treeSearchMakes(adIDs)
+			viewContent = treeSearchFirstField(adIDs, adCat)
 		}
 	}
 
@@ -46,38 +47,60 @@ func TreeViewResults(adIDs []int, adCat int, q string, userID int, csrfToken str
 	)
 }
 
-// treeBrowseMakes returns the initial tree view for browsing
-func treeBrowseMakes(adCat int) g.Node {
-	makes, err := ad.GetAdMakes(adCat)
-	if err != nil {
-		logger.Error("Error getting makes",
-			"error", err, "component", "tree-view")
-		return Div(Class("text-red-500"), g.Text("Error loading makes"))
+// treeBrowseFirstField returns the initial tree view for browsing
+// Uses the first field in the first chain for the ad category
+func treeBrowseFirstField(adCat int) g.Node {
+	// Get first field from first chain
+	chains := ad.GetFieldChains(adCat)
+	if len(chains) == 0 || len(chains[0]) == 0 {
+		logger.Error("No field chains found for category",
+			"adCat", adCat, "component", "tree-view")
+		return Div(Class("text-red-500"), g.Text("Error loading tree"))
 	}
 
-	return createBrowseMakeNodes(makes)
-}
-
-// treeSearchMakes returns the initial tree view for search results
-func treeSearchMakes(adIDs []int) g.Node {
-	makes, err := ad.GetAdMakesForAdIDs(adIDs)
+	firstField := chains[0][0]
+	values, err := firstField.GetValues(map[string]string{})
 	if err != nil {
-		logger.Error("Error getting makes for ad IDs",
-			"error", err, "component", "tree-search")
-		return Div(Class("text-red-500"), g.Text("Error loading makes"))
+		logger.Error("Error getting field values",
+			"error", err, "field", firstField.Name(),
+			"component", "tree-view")
+		return Div(Class("text-red-500"), g.Text("Error loading tree"))
 	}
 
-	return createSearchMakeNodes(makes, adIDs)
+	return createBrowseFieldNodes(values, firstField.Name())
 }
 
-func createBrowseMakeNodes(makes []string) g.Node {
-	if len(makes) == 0 {
-		return Div(Class("text-gray-500"), g.Text("No makes available"))
+// treeSearchFirstField returns the initial tree view for search results
+// Uses the first field in the first chain for the ad category
+func treeSearchFirstField(adIDs []int, adCat int) g.Node {
+	// Get first field from first chain
+	chains := ad.GetFieldChains(adCat)
+	if len(chains) == 0 || len(chains[0]) == 0 {
+		logger.Error("No field chains found for category",
+			"adCat", adCat, "component", "tree-search")
+		return Div(Class("text-red-500"), g.Text("Error loading tree"))
+	}
+
+	firstField := chains[0][0]
+	values, err := ad.GetValuesForAdIDs(firstField, adIDs)
+	if err != nil {
+		logger.Error("Error getting field values for ad IDs",
+			"error", err, "field", firstField.Name(),
+			"component", "tree-search")
+		return Div(Class("text-red-500"), g.Text("Error loading tree"))
+	}
+
+	return createSearchFieldNodes(values, firstField.Name(), adIDs)
+}
+
+func createBrowseFieldNodes(values []string, fieldName string) g.Node {
+	if len(values) == 0 {
+		return Div(Class("text-gray-500"), g.Text("No values available"))
 	}
 
 	var nodes []g.Node
-	for _, make := range makes {
-		nodes = append(nodes, CollapsedTreeNodeBrowse(make, make))
+	for _, value := range values {
+		nodes = append(nodes, CollapsedTreeNodeBrowse(value, value))
 	}
 
 	return Div(
@@ -86,14 +109,14 @@ func createBrowseMakeNodes(makes []string) g.Node {
 	)
 }
 
-func createSearchMakeNodes(makes []string, adIDs []int) g.Node {
-	if len(makes) == 0 {
-		return Div(Class("text-gray-500"), g.Text("No makes available"))
+func createSearchFieldNodes(values []string, fieldName string, adIDs []int) g.Node {
+	if len(values) == 0 {
+		return Div(Class("text-gray-500"), g.Text("No values available"))
 	}
 
 	var nodes []g.Node
-	for _, make := range makes {
-		nodes = append(nodes, CollapsedTreeNodeSearch(make, make))
+	for _, value := range values {
+		nodes = append(nodes, CollapsedTreeNodeSearch(value, value))
 	}
 
 	// Convert adIDs to base64 encoded string for DOM storage
