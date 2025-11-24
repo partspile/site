@@ -680,7 +680,6 @@ func pathSegmentLink(text string, accumulatedSegments []string) g.Node {
 		hx.Get(fmt.Sprintf("/?q=%s", url.QueryEscape(searchQuery))),
 		hx.Target("body"),
 		hx.Swap("outerHTML"),
-		hx.PushURL("false"),
 		hx.Trigger("click"),
 		g.Text(text),
 	)

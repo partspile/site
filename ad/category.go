@@ -119,6 +119,17 @@ func loadCategoryFieldsFromDB() error {
 		var newChain []Field
 		var inChain bool
 		for i := range fields {
+			if fields[i].NextInChain == 0 {
+				if inChain {
+					fields[i].ParentField = &fields[i-1]
+					inChain = false
+				}
+			} else {
+				if inChain {
+					fields[i].ParentField = &fields[i-1]
+				}
+				inChain = true
+			}
 
 			// Concrete Field instance
 			newField, err := NewAdField(fields[i])
@@ -132,19 +143,13 @@ func loadCategoryFieldsFromDB() error {
 
 			// Build the chains while we're at it
 			if fields[i].NextInChain == 0 {
-				if inChain {
+				if len(newChain) > 0 {
 					newChain = append(newChain, newField)
 					newChains = append(newChains, newChain)
-					fields[i].ParentField = &fields[i-1]
-					inChain = false
+					newChain = nil
 				}
-				newChain = nil
 			} else {
-				if inChain {
-					fields[i].ParentField = &fields[i-1]
-				}
 				newChain = append(newChain, newField)
-				inChain = true
 			}
 		}
 
