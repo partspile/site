@@ -261,8 +261,6 @@ func (f adField) executeFilteredQuery(parentFields []parentFieldInfo) ([]string,
 	return values, err
 }
 
-// buildFilteredQuery constructs the SQL query with JOINs and WHERE clauses for parent filters
-// For multi-value parent fields, uses intersection (AND) logic to ensure values match ALL selected parent values
 func (f adField) buildFilteredQuery(parentFields []parentFieldInfo) (string, []interface{}) {
 	var whereClauses []string
 	var args []interface{}
@@ -279,11 +277,9 @@ func (f adField) buildFilteredQuery(parentFields []parentFieldInfo) (string, []i
 	args = append(args, f.AdCategoryID)
 	whereClauses = append(whereClauses, fmt.Sprintf("%s.ad_category_id = $%d", f.SpecTableName, len(args)))
 
-	// Track multi-value parent fields that need intersection logic
-	var multiValueParents []parentFieldInfo
+	// Separate single-value and multi-value parent fields
 	var singleValueParents []parentFieldInfo
-
-	// Separate multi-value and single-value parents
+	var multiValueParents []parentFieldInfo
 	for _, pf := range parentFields {
 		if pf.parent.IsMultiValueField {
 			multiValueParents = append(multiValueParents, pf)
@@ -292,7 +288,7 @@ func (f adField) buildFilteredQuery(parentFields []parentFieldInfo) (string, []i
 		}
 	}
 
-	// Add JOINs and WHERE clauses for single-value parent fields (simple case)
+	// Add JOINs for single-value parent fields (simple case)
 	for _, pf := range singleValueParents {
 		// JOIN parent field table through the same spec table
 		query += fmt.Sprintf(" JOIN %s ON %s.%s = %s.id",
@@ -303,51 +299,43 @@ func (f adField) buildFilteredQuery(parentFields []parentFieldInfo) (string, []i
 		whereClauses = append(whereClauses, fmt.Sprintf("%s.value = $%d", pf.parent.TableName, len(args)))
 	}
 
-	// For multi-value parent fields, use intersection logic
-	// We need to ensure that for each selected value, there exists a DIFFERENT spec with that value
-	// Each spec row has only one value for the multi-value parent field (e.g., one year per spec)
-	// So we need to check: for model X, does there exist a spec with make=AC AND year=1947 AND model=X?
-	// AND does there exist a spec with make=AC AND year=1948 AND model=X?
-	for _, pf := range multiValueParents {
+	// Handle multi-value parent fields (intersection logic)
+	for parentIdx, pf := range multiValueParents {
+		// Split comma-separated values
 		values := strings.Split(pf.value, ",")
 		if len(values) == 0 {
 			continue
 		}
 
-		// For intersection, we need to ensure the current field value appears in DIFFERENT specs
-		// that each have one of the selected parent values
-		// Each EXISTS checks: there exists a spec with the current model AND the specific year
-		subqueryParts := []string{}
+		// For intersection, we need to ensure the current field value appears
+		// in specs that match ALL selected parent values
+		// Use EXISTS subqueries for each value
+		var subqueryParts []string
 		for i, val := range values {
 			args = append(args, val)
 			argNum := len(args)
-			aliasS := fmt.Sprintf("s%d", i)
-			aliasP := fmt.Sprintf("p%d", i)
+			aliasS := fmt.Sprintf("s%d_%d", parentIdx, i)
+			aliasP := fmt.Sprintf("p%d_%d", parentIdx, i)
 
-			// Build correlation conditions: the spec must have the same model as outer query
-			// The outer query has: Model JOIN SpecVehicle ON SpecVehicle.model_id = Model.id
-			// So we correlate: s0.model_id = SpecVehicle.model_id (which equals Model.id)
-			modelCorrelation := fmt.Sprintf("%s.%s = %s.%s", aliasS, f.SpecTableFieldName, f.SpecTableName, f.SpecTableFieldName)
+			// Correlate with current field: the spec must have the same
+			// value for the current field as the outer query
+			correlationClause := fmt.Sprintf("%s.%s = %s.%s",
+				aliasS, f.SpecTableFieldName, f.SpecTableName, f.SpecTableFieldName)
 
-			// Also need to correlate with single-value parents (like make)
-			// The outer query already JOINs Make, so we correlate: s0.make_id = SpecVehicle.make_id
-			var parentCorrelations []string
+			// Also correlate with all single-value parent fields
+			// (they're already joined in the outer query)
 			for _, svp := range singleValueParents {
-				parentCorrelations = append(parentCorrelations,
-					fmt.Sprintf("%s.%s = %s.%s", aliasS, svp.parent.SpecTableFieldName, f.SpecTableName, svp.parent.SpecTableFieldName))
-			}
-
-			correlationClause := modelCorrelation
-			if len(parentCorrelations) > 0 {
-				correlationClause += " AND " + strings.Join(parentCorrelations, " AND ")
+				correlationClause += fmt.Sprintf(" AND %s.%s = %s.%s",
+					aliasS, svp.parent.SpecTableFieldName,
+					f.SpecTableName, svp.parent.SpecTableFieldName)
 			}
 
 			subqueryParts = append(subqueryParts, fmt.Sprintf(
-				`EXISTS (SELECT 1 FROM %s %s JOIN %s %s ON %s.%s = %s.id WHERE %s.ad_category_id = $1 AND %s AND %s.value = $%d)`,
+				`EXISTS (SELECT 1 FROM %s %s JOIN %s %s ON %s.%s = %s.id WHERE %s.ad_category_id = $%d AND %s AND %s.value = $%d)`,
 				f.SpecTableName, aliasS,
 				pf.parent.TableName, aliasP,
 				aliasS, pf.parent.SpecTableFieldName, aliasP,
-				aliasS,
+				aliasS, 1, // category ID is always $1
 				correlationClause,
 				aliasP, argNum))
 		}
@@ -363,24 +351,6 @@ func (f adField) buildFilteredQuery(parentFields []parentFieldInfo) (string, []i
 	query += fmt.Sprintf(" ORDER BY %s.value", f.TableName)
 
 	return query, args
-}
-
-// buildParentFieldWhereClause builds a WHERE clause for a parent field filter
-func (f adField) buildParentFieldWhereClause(pf parentFieldInfo, args *[]interface{}) string {
-	if pf.parent.IsMultiValueField {
-		// Multi-value: split comma-separated values and use IN clause
-		values := strings.Split(pf.value, ",")
-		var placeholders []string
-		for _, v := range values {
-			*args = append(*args, v)
-			placeholders = append(placeholders, fmt.Sprintf("$%d", len(*args)))
-		}
-		return fmt.Sprintf("%s.value IN (%s)", pf.parent.TableName, strings.Join(placeholders, ", "))
-	}
-
-	// Single value
-	*args = append(*args, pf.value)
-	return fmt.Sprintf("%s.value = $%d", pf.parent.TableName, len(*args))
 }
 
 func (f adField) RenderFilterField(params map[string]string) g.Node {
