@@ -1,6 +1,7 @@
 package ad
 
 import (
+	"database/sql"
 	"fmt"
 	"sort"
 	"strconv"
@@ -46,9 +47,9 @@ func loadCategoryFieldsFromDB() error {
 	adFieldChains = make(map[int][][]Field)
 
 	query := `
-		SELECT json_object_agg(
-			acf.ad_category_id::text,
-			COALESCE(
+		WITH category_fields AS (
+			SELECT
+				acf.ad_category_id,
 				json_agg(
 					json_build_object(
 						'ad_category_id', acf.ad_category_id,
@@ -65,18 +66,34 @@ func loadCategoryFieldsFromDB() error {
 						'show_in_filters', acf.show_in_filters::boolean,
 						'is_multi_value_field', (sf.qdrant_type = 'keyword_array')::boolean
 					) ORDER BY acf.priority_order
-				),
-				'[]'::json
-			)
+				) AS fields
+			FROM AdCategoryField acf
+			JOIN SpecField sf ON acf.spec_field_id = sf.id
+			GROUP BY acf.ad_category_id
 		)
-		FROM AdCategoryField acf
-		JOIN SpecField sf ON acf.spec_field_id = sf.id
-		GROUP BY acf.ad_category_id
+		SELECT COALESCE(
+			json_object_agg(
+				ad_category_id::text,
+				COALESCE(fields, '[]'::json)
+			),
+			'{}'::json
+		)
+		FROM category_fields
 	`
 
 	var result map[string][]adField
 	if err := db.QueryJSON(&result, query); err != nil {
-		return err
+		// Handle case where there are no categories yet (empty database)
+		if err == sql.ErrNoRows {
+			result = make(map[string][]adField)
+		} else {
+			return err
+		}
+	}
+
+	// Handle empty result (no categories yet)
+	if result == nil {
+		result = make(map[string][]adField)
 	}
 
 	// Populate NextFieldName for each field in all categories
