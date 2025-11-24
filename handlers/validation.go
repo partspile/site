@@ -182,26 +182,6 @@ func ValidateAdForm(form *multipart.Form, adCat int) error {
 	return nil
 }
 
-// validateAdFormMultipart validates ad form and returns the values dynamically
-func validateAdFormMultipart(form *multipart.Form, adCat int) (years, models, engines []string, err error) {
-	// Get category fields to determine which fields to validate
-	fields := ad.GetCategoryFields(adCat)
-
-	// Validate multi-value fields
-	for _, field := range fields {
-		if field.IsMultiValue() && field.Required() {
-			values := form.Value[field.Name()]
-			if len(values) == 0 {
-				return nil, nil, nil, fmt.Errorf("please select at least one %s", field.Name())
-			}
-			// Store values generically - no need for hard-coded switch
-			// The caller will extract what it needs
-		}
-	}
-
-	return years, models, engines, nil
-}
-
 // Allowed image MIME types
 var allowedImageMIMETypes = map[string]bool{
 	"image/jpeg": true,

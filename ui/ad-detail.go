@@ -677,8 +677,8 @@ func pathSegmentLink(text string, accumulatedSegments []string) g.Node {
 	return A(
 		Href("#"),
 		Class("hover:underline hover:text-blue-600"),
-		hx.Get(fmt.Sprintf("/search?q=%s", url.QueryEscape(searchQuery))),
-		hx.Target("#searchResults"),
+		hx.Get(fmt.Sprintf("/?q=%s", url.QueryEscape(searchQuery))),
+		hx.Target("body"),
 		hx.Swap("outerHTML"),
 		hx.PushURL("false"),
 		hx.Trigger("click"),
