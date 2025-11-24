@@ -260,9 +260,9 @@ func GetMostPopularAds(n int) []Ad {
 				'deleted_at', a.deleted_at AT TIME ZONE 'UTC',
 				'user_id', a.user_id,
 				'image_count', a.image_count,
-				'city', l.city,
-				'admin_area', l.admin_area,
-				'country', l.country,
+				'city', a.city,
+				'admin_area', a.admin_area,
+				'country', a.country,
 				'bookmarked', false
 			)
 		) AS ads
