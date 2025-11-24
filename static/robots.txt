@@ -17,7 +17,6 @@ Disallow: /settings/
 Disallow: /ads/
 Disallow: /user-menu/
 Disallow: /new-ad
-Disallow: /duplicate-ad/
 Disallow: /delete-ad/
 Disallow: /restore-ad/
 Disallow: /rocks

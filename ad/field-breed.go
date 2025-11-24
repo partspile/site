@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
-	. "maragu.dev/gomponents/html"
 )
 
 // FieldBreed handles the breed field
@@ -22,13 +21,7 @@ func (f *FieldBreed) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 	return qdrant.NewMatch("breed", fieldValue)
 }
 
-func (f *FieldBreed) RenderNewAdField(selectedValues map[string]bool, defaultValue string, parentValues map[string]string) g.Node {
-	// If field has a parent and no values to pre-populate, render empty div for HTMX
-	if f.ParentField != nil && len(selectedValues) == 0 && defaultValue == "" {
-		fieldID := f.FieldName + "Div"
-		return Div(ID(fieldID))
-	}
-
+func (f *FieldBreed) RenderNewAdField(parentValues map[string]string) g.Node {
 	values, err := f.GetValues(parentValues)
 	if err != nil {
 		values = []string{}
@@ -39,7 +32,6 @@ func (f *FieldBreed) RenderNewAdField(selectedValues map[string]bool, defaultVal
 		f.FieldName,
 		f.DisplayName,
 		values,
-		defaultValue,
 		f.IsRequired,
 		f.NextFieldName,
 	)

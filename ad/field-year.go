@@ -32,37 +32,31 @@ func (f *FieldYear) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 	maxVal := currentYear + 2
 
 	// Override with provided values if valid
-		if minValue != "" {
-			if val, err := strconv.Atoi(minValue); err == nil {
-				minVal = val
-			}
+	if minValue != "" {
+		if val, err := strconv.Atoi(minValue); err == nil {
+			minVal = val
 		}
-		if maxValue != "" {
-			if val, err := strconv.Atoi(maxValue); err == nil {
-				maxVal = val
-			}
+	}
+	if maxValue != "" {
+		if val, err := strconv.Atoi(maxValue); err == nil {
+			maxVal = val
 		}
+	}
 
-		// Convert range to list of values
-		var valueList []string
-			for val := minVal; val <= maxVal; val++ {
-				valueList = append(valueList, strconv.Itoa(val))
-		}
+	// Convert range to list of values
+	var valueList []string
+	for val := minVal; val <= maxVal; val++ {
+		valueList = append(valueList, strconv.Itoa(val))
+	}
 
-		if len(valueList) > 0 {
-			return qdrant.NewMatchKeywords("year", valueList...)
+	if len(valueList) > 0 {
+		return qdrant.NewMatchKeywords("year", valueList...)
 	}
 
 	return nil
 }
 
-func (f *FieldYear) RenderNewAdField(selectedValues map[string]bool, defaultValue string, parentValues map[string]string) g.Node {
-	// If field has a parent and no selected values, render empty div for HTMX
-	if f.ParentField != nil && len(selectedValues) == 0 {
-		fieldID := f.FieldName + "Div"
-		return Div(ID(fieldID))
-	}
-
+func (f *FieldYear) RenderNewAdField(parentValues map[string]string) g.Node {
 	values, err := f.GetValues(parentValues)
 	if err != nil {
 		values = []string{}
@@ -73,7 +67,6 @@ func (f *FieldYear) RenderNewAdField(selectedValues map[string]bool, defaultValu
 		f.FieldName,
 		f.DisplayName,
 		values,
-		selectedValues,
 		f.NextFieldName,
 	)
 }

@@ -49,7 +49,7 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
 func titleField() g.Node {
 	return Div(
 		Class("space-y-2"),
-		Label(For("title"), Class("block text-sm font-medium text-gray-700"), g.Text("Title")),
+		Label(For("title"), Class("block"), g.Text("Title")),
 		Input(
 			Type("text"),
 			ID("title"),
@@ -67,7 +67,7 @@ func titleField() g.Node {
 func imagesField(maxImagesPerAd int) g.Node {
 	return Div(
 		Class("space-y-2"),
-		Label(Class("block text-sm font-medium text-gray-700"), g.Text("Images")),
+		Label(Class("block"), g.Text("Images")),
 		Div(
 			Input(
 				Type("file"),
@@ -120,7 +120,7 @@ func imagesField(maxImagesPerAd int) g.Node {
 func descriptionField() g.Node {
 	return Div(
 		Class("space-y-2"),
-		Label(For("description"), Class("block text-sm font-medium text-gray-700"), g.Text("Description")),
+		Label(For("description"), Class("block"), g.Text("Description")),
 		Textarea(
 			ID("description"),
 			Name("description"),

@@ -135,9 +135,8 @@ func main() {
 	app.Get("/modal/category-select", h.HandleAdCategoryModal)
 
 	// Ad management
-	app.Get("/ad/:id", h.HandleAdPage)                                // x
-	app.Get("/new-ad", h.AuthRequired, h.HandleNewAd)                 // x
-	app.Get("/duplicate-ad/:id", h.AuthRequired, h.HandleDuplicateAd) // x
+	app.Get("/ad/:id", h.HandleAdPage)                // x
+	app.Get("/new-ad", h.AuthRequired, h.HandleNewAd) // x
 	app.Delete("/delete-ad/:id", h.AuthRequired, h.HandleDeleteAd)
 	app.Post("/restore-ad/:id", h.AuthRequired, h.HandleRestoreAd)
 

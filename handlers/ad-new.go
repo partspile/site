@@ -18,71 +18,20 @@ import (
 // HandleNewAd shows the new ad form
 func HandleNewAd(c *fiber.Ctx) error {
 	adCat := cookie.GetAdCategory(c)
-	return renderNewAdPage(c, adCat, nil)
-}
-
-// HandleDuplicateAd shows the duplicate ad form with pre-filled data
-func HandleDuplicateAd(c *fiber.Ctx) error {
-	userID := local.GetUserID(c)
-
-	adID, err := AdID(c)
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
-	}
-
-	// Fetch the original ad
-	adDetail, err := ad.GetAdDetailByID(adID, userID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
-	}
-
-	// Switch to the duplicated ad's category
-	cookie.SetAdCategory(c, adDetail.AdCategoryID)
-
-	return renderNewAdPage(c, adDetail.AdCategoryID, adDetail.SpecData)
-}
-
-// renderNewAdPage renders the new ad form page
-// adCat: the ad category ID
-// specData: pre-filled spec data (nil for new ad, map[string][]string for duplicate)
-func renderNewAdPage(c *fiber.Ctx, adCat int, specData map[string][]string) error {
 	userID := local.GetUserID(c)
 	userName := local.GetUserName(c)
 	maxImagesPerAd := config.MaxImagesPerAd
 	csrfToken := local.GetCSRFToken(c)
 	fields := ad.GetCategoryFields(adCat)
 
-	// Calculate selected values and default values from specData and render fields
-	selectedValues := make(map[string]map[string]bool)
-	defaultValues := make(map[string]string)
-
-	if specData != nil {
-		for _, field := range fields {
-			if fieldValues, exists := specData[field.Name()]; exists && len(fieldValues) > 0 {
-				if field.IsMultiValue() {
-					// For multi-value fields, populate selected map
-					selected := make(map[string]bool)
-					for _, val := range fieldValues {
-						selected[val] = true
-					}
-					selectedValues[field.Name()] = selected
-				} else {
-					// For single-value fields, set defaultValue
-					defaultValues[field.Name()] = fieldValues[0]
-				}
-			}
-		}
-	}
-
+	// Only render fields that are not in a chain or are the first field of a chain
 	fieldNodes := []g.Node{}
+	var inChain bool
 	for _, field := range fields {
-		selected := selectedValues[field.Name()]
-		if selected == nil {
-			selected = make(map[string]bool)
+		if !inChain {
+			fieldNodes = append(fieldNodes, field.RenderNewAdField(map[string]string{}))
 		}
-		defaultValue := defaultValues[field.Name()]
-
-		fieldNodes = append(fieldNodes, field.RenderNewAdField(selected, defaultValue, map[string]string{}))
+		inChain = field.NextField() != ""
 	}
 
 	return render(c, ui.NewAdPage(
@@ -165,7 +114,7 @@ func HandleFieldValues(c *fiber.Ctx) error {
 	parentValues := buildParentValuesFromQuery(q, adCat, fieldName)
 
 	// Render the field - GetValues will handle parent filtering internally
-	fieldNode := currentField.RenderNewAdField(map[string]bool{}, "", parentValues)
+	fieldNode := currentField.RenderNewAdField(parentValues)
 
 	return render(c, fieldNode)
 }

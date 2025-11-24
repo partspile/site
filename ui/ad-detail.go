@@ -70,8 +70,6 @@ func AdDetail(a ad.AdDetail, userID int, loc *time.Location, csrfToken, view str
 					g.If(a.IsArchived(), restoreButton(a, userID)),
 					// Share button (visible to everyone)
 					shareButton(a),
-					// Duplicate button (logged in users only)
-					g.If(userID != 0, duplicateButton(a)),
 				),
 			),
 			// Description with inline edit for owner
@@ -521,15 +519,6 @@ func shareButton(a ad.AdDetail) g.Node {
 		hx.Get(fmt.Sprintf("/modal/ad/share/%d", a.ID)),
 		hx.Target("body"),
 		hx.Swap("beforeend"),
-	)
-}
-
-func duplicateButton(a ad.AdDetail) g.Node {
-	return iconLink(
-		"/images/duplicate.svg",
-		"Duplicate",
-		"Duplicate ad",
-		fmt.Sprintf("/duplicate-ad/%d", a.ID),
 	)
 }
 

@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
-	. "maragu.dev/gomponents/html"
 )
 
 // FieldEngine handles the engine field
@@ -22,13 +21,7 @@ func (f *FieldEngine) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 	return qdrant.NewMatchKeywords("engine", fieldValue)
 }
 
-func (f *FieldEngine) RenderNewAdField(selectedValues map[string]bool, defaultValue string, parentValues map[string]string) g.Node {
-	// If field has a parent and no selected values, render empty div for HTMX
-	if f.ParentField != nil && len(selectedValues) == 0 {
-		fieldID := f.FieldName + "Div"
-		return Div(ID(fieldID))
-	}
-
+func (f *FieldEngine) RenderNewAdField(parentValues map[string]string) g.Node {
 	values, err := f.GetValues(parentValues)
 	if err != nil {
 		values = []string{}
@@ -39,7 +32,6 @@ func (f *FieldEngine) RenderNewAdField(selectedValues map[string]bool, defaultVa
 		f.FieldName,
 		f.DisplayName,
 		values,
-		selectedValues,
 		f.NextFieldName,
 	)
 }

@@ -22,10 +22,8 @@ type Field interface {
 	BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition
 
 	// RenderNewAdField renders the field for the new ad form
-	// selectedValues is a map of selected values (for efficient lookup)
-	// defaultValue is the default value for single-select fields
 	// parentValues maps parent field names to their values (for filtering options)
-	RenderNewAdField(selectedValues map[string]bool, defaultValue string, parentValues map[string]string) g.Node
+	RenderNewAdField(parentValues map[string]string) g.Node
 
 	// RenderFilterField renders the field for the filter dialog
 	RenderFilterField(params map[string]string) g.Node
@@ -310,7 +308,7 @@ func (f adField) RenderFilterField(params map[string]string) g.Node {
 	return g.Group{}
 }
 
-func (f adField) RenderNewAdField(selectedValues map[string]bool, defaultValue string, parentValues map[string]string) g.Node {
+func (f adField) RenderNewAdField(parentValues map[string]string) g.Node {
 	return g.Group{}
 }
 
@@ -367,20 +365,17 @@ type parentFieldInfo struct {
 // fieldName: Name attribute for select (e.g., "make")
 // displayName: Label text (e.g., "Make")
 // fieldValues: Available values to display as options
-// defaultValue: Default selected value (empty string if none)
 // isRequired: Whether the field is required
 // nextFieldName: Optional next field name for HTMX chain (empty string if none)
-func fieldSelect(fieldID, fieldName, displayName string, fieldValues []string, defaultValue string, isRequired bool, nextFieldName string) g.Node {
+func fieldSelect(fieldID, fieldName, displayName string, fieldValues []string,
+	isRequired bool, nextFieldName string) g.Node {
+
 	options := []g.Node{
 		Option(Value(""), g.Text(fmt.Sprintf("Select a %s", displayName))),
 	}
 
 	for _, value := range fieldValues {
-		optionAttrs := []g.Node{Value(value), g.Text(value)}
-		if value == defaultValue {
-			optionAttrs = append(optionAttrs, Selected())
-		}
-		options = append(options, Option(optionAttrs...))
+		options = append(options, Option(Value(value), g.Text(value)))
 	}
 
 	attrs := []g.Node{
@@ -394,14 +389,12 @@ func fieldSelect(fieldID, fieldName, displayName string, fieldValues []string, d
 	}
 
 	// Add HTMX trigger if there's a next field in chain
-	nextFieldTarget := ""
 	if nextFieldName != "" {
-		nextFieldTarget = nextFieldName + "Div"
 		endpoint := fmt.Sprintf("/api/field/%s", nextFieldName)
 		attrs = append(attrs,
 			hx.Trigger("change"),
 			hx.Get(endpoint),
-			hx.Target(fmt.Sprintf("#%s", nextFieldTarget)),
+			hx.Target(fmt.Sprintf("#%s", nextFieldName+"Div")),
 			hx.Include("form"),
 			hx.Swap("innerHTML"),
 		)
@@ -413,9 +406,17 @@ func fieldSelect(fieldID, fieldName, displayName string, fieldValues []string, d
 		Select(append(attrs, g.Group(options)...)...),
 	)
 
+	containerChildren := []g.Node{formGroup}
+	if nextFieldName != "" {
+		// Add empty placeholder div for next field in chain
+		containerChildren = append(containerChildren,
+			Div(ID(nextFieldName+"Div")))
+	}
+
 	return Div(
 		ID(fieldID),
-		formGroup,
+		Class("space-y-6"),
+		g.Group(containerChildren),
 	)
 }
 
@@ -424,20 +425,15 @@ func fieldSelect(fieldID, fieldName, displayName string, fieldValues []string, d
 // fieldName: Name attribute for input (e.g., "price")
 // displayName: Label text (e.g., "Price")
 // inputType: Input type (e.g., "text", "number")
-// defaultValue: Default value (empty string if none)
 // isRequired: Whether the field is required
 // placeholder: Placeholder text (empty string if none)
 // additionalAttrs: Additional attributes to add to the input
-func fieldInput(fieldID, fieldName, displayName, inputType, defaultValue string, isRequired bool, placeholder string, additionalAttrs ...g.Node) g.Node {
+func fieldInput(fieldID, fieldName, displayName, inputType string, isRequired bool, placeholder string, additionalAttrs ...g.Node) g.Node {
 	attrs := []g.Node{
 		Type(inputType),
 		ID(fieldName),
 		Name(fieldName),
 		Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
-	}
-
-	if defaultValue != "" {
-		attrs = append(attrs, Value(defaultValue))
 	}
 
 	if isRequired {
@@ -458,6 +454,7 @@ func fieldInput(fieldID, fieldName, displayName, inputType, defaultValue string,
 
 	return Div(
 		ID(fieldID),
+		Class("space-y-6"),
 		formGroup,
 	)
 }
@@ -468,9 +465,8 @@ func fieldInput(fieldID, fieldName, displayName, inputType, defaultValue string,
 // fieldName: Name attribute for checkboxes (e.g., "year")
 // displayName: Label text (e.g., "Year")
 // fieldValues: Available values to display as checkboxes
-// selectedValues: Map of selected values (for pre-selecting)
 // nextFieldName: Optional next field name for HTMX chain (empty string if none)
-func fieldCheckboxGrid(fieldID, fieldName, displayName string, fieldValues []string, selectedValues map[string]bool, nextFieldName string) g.Node {
+func fieldCheckboxGrid(fieldID, fieldName, displayName string, fieldValues []string, nextFieldName string) g.Node {
 	// Create checkbox grid
 	checkboxes := []g.Node{}
 	for _, value := range fieldValues {
@@ -479,11 +475,6 @@ func fieldCheckboxGrid(fieldID, fieldName, displayName string, fieldValues []str
 			Name(fieldName),
 			Value(value),
 			ID(fieldName + "-" + value),
-		}
-		if selectedValues != nil {
-			if _, ok := selectedValues[value]; ok {
-				attrs = append(attrs, Checked())
-			}
 		}
 
 		checkboxNode := Div(
@@ -524,9 +515,17 @@ func fieldCheckboxGrid(fieldID, fieldName, displayName string, fieldValues []str
 		gridContainer,
 	)
 
+	containerChildren := []g.Node{formGroup}
+	if nextFieldName != "" {
+		// Add empty placeholder div for next field in chain
+		// This allows HTMX to replace it and enables proper deletion of downstream elements
+		containerChildren = append(containerChildren,
+			Div(ID(nextFieldName+"Div")))
+	}
+
 	return Div(
 		ID(fieldID),
-		Class("space-y-2"),
-		formGroup,
+		Class("space-y-6"),
+		g.Group(containerChildren),
 	)
 }

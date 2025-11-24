@@ -45,19 +45,12 @@ func (f *FieldPrice) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 	return nil
 }
 
-func (f *FieldPrice) RenderNewAdField(selectedValues map[string]bool, defaultValue string, parentValues map[string]string) g.Node {
-	// If field has a parent and no default value, render empty div for HTMX
-	if f.ParentField != nil && defaultValue == "" {
-		fieldID := f.FieldName + "Div"
-		return Div(ID(fieldID))
-	}
-
+func (f *FieldPrice) RenderNewAdField(parentValues map[string]string) g.Node {
 	return fieldInput(
 		f.FieldName+"Div",
 		f.FieldName,
 		f.DisplayName,
 		"number",
-		defaultValue,
 		f.IsRequired,
 		"",
 		Step("1"),
