@@ -154,8 +154,24 @@ func (f adField) GetValues(params map[string]string) ([]string, error) {
 		return []string{}, nil
 	}
 
-	// If not a spec field or no params, use simple query without parent filtering
-	if f.SpecTableName == "" || len(params) == 0 {
+	// If not a spec field, use simple query without parent filtering
+	if f.SpecTableName == "" {
+		return f.getSimpleFieldValues()
+	}
+
+	// For spec fields, check if we have a parent in the chain
+	// If we have a parent and it's not in params or is empty, return empty results
+	if f.ParentField != nil {
+		parentName := f.ParentField.FieldName
+		parentValue, exists := params[parentName]
+		if !exists || parentValue == "" {
+			// Parent field is required but not provided or empty - return empty
+			return []string{}, nil
+		}
+	}
+
+	// If no params at all, use simple query
+	if len(params) == 0 {
 		return f.getSimpleFieldValues()
 	}
 
@@ -246,6 +262,7 @@ func (f adField) executeFilteredQuery(parentFields []parentFieldInfo) ([]string,
 }
 
 // buildFilteredQuery constructs the SQL query with JOINs and WHERE clauses for parent filters
+// For multi-value parent fields, uses intersection (AND) logic to ensure values match ALL selected parent values
 func (f adField) buildFilteredQuery(parentFields []parentFieldInfo) (string, []interface{}) {
 	var whereClauses []string
 	var args []interface{}
@@ -262,17 +279,79 @@ func (f adField) buildFilteredQuery(parentFields []parentFieldInfo) (string, []i
 	args = append(args, f.AdCategoryID)
 	whereClauses = append(whereClauses, fmt.Sprintf("%s.ad_category_id = $%d", f.SpecTableName, len(args)))
 
-	// Add JOINs and WHERE clauses for each parent field
+	// Track multi-value parent fields that need intersection logic
+	var multiValueParents []parentFieldInfo
+	var singleValueParents []parentFieldInfo
+
+	// Separate multi-value and single-value parents
 	for _, pf := range parentFields {
+		if pf.parent.IsMultiValueField {
+			multiValueParents = append(multiValueParents, pf)
+		} else {
+			singleValueParents = append(singleValueParents, pf)
+		}
+	}
+
+	// Add JOINs and WHERE clauses for single-value parent fields (simple case)
+	for _, pf := range singleValueParents {
 		// JOIN parent field table through the same spec table
 		query += fmt.Sprintf(" JOIN %s ON %s.%s = %s.id",
 			pf.parent.TableName, f.SpecTableName, pf.parent.SpecTableFieldName, pf.parent.TableName)
 
 		// Add WHERE clause for parent field value
-		whereClause := f.buildParentFieldWhereClause(pf, &args)
-		if whereClause != "" {
-			whereClauses = append(whereClauses, whereClause)
+		args = append(args, pf.value)
+		whereClauses = append(whereClauses, fmt.Sprintf("%s.value = $%d", pf.parent.TableName, len(args)))
+	}
+
+	// For multi-value parent fields, use intersection logic
+	// We need to ensure that for each selected value, there exists a DIFFERENT spec with that value
+	// Each spec row has only one value for the multi-value parent field (e.g., one year per spec)
+	// So we need to check: for model X, does there exist a spec with make=AC AND year=1947 AND model=X?
+	// AND does there exist a spec with make=AC AND year=1948 AND model=X?
+	for _, pf := range multiValueParents {
+		values := strings.Split(pf.value, ",")
+		if len(values) == 0 {
+			continue
 		}
+
+		// For intersection, we need to ensure the current field value appears in DIFFERENT specs
+		// that each have one of the selected parent values
+		// Each EXISTS checks: there exists a spec with the current model AND the specific year
+		subqueryParts := []string{}
+		for i, val := range values {
+			args = append(args, val)
+			argNum := len(args)
+			aliasS := fmt.Sprintf("s%d", i)
+			aliasP := fmt.Sprintf("p%d", i)
+
+			// Build correlation conditions: the spec must have the same model as outer query
+			// The outer query has: Model JOIN SpecVehicle ON SpecVehicle.model_id = Model.id
+			// So we correlate: s0.model_id = SpecVehicle.model_id (which equals Model.id)
+			modelCorrelation := fmt.Sprintf("%s.%s = %s.%s", aliasS, f.SpecTableFieldName, f.SpecTableName, f.SpecTableFieldName)
+
+			// Also need to correlate with single-value parents (like make)
+			// The outer query already JOINs Make, so we correlate: s0.make_id = SpecVehicle.make_id
+			var parentCorrelations []string
+			for _, svp := range singleValueParents {
+				parentCorrelations = append(parentCorrelations,
+					fmt.Sprintf("%s.%s = %s.%s", aliasS, svp.parent.SpecTableFieldName, f.SpecTableName, svp.parent.SpecTableFieldName))
+			}
+
+			correlationClause := modelCorrelation
+			if len(parentCorrelations) > 0 {
+				correlationClause += " AND " + strings.Join(parentCorrelations, " AND ")
+			}
+
+			subqueryParts = append(subqueryParts, fmt.Sprintf(
+				`EXISTS (SELECT 1 FROM %s %s JOIN %s %s ON %s.%s = %s.id WHERE %s.ad_category_id = $1 AND %s AND %s.value = $%d)`,
+				f.SpecTableName, aliasS,
+				pf.parent.TableName, aliasP,
+				aliasS, pf.parent.SpecTableFieldName, aliasP,
+				aliasS,
+				correlationClause,
+				aliasP, argNum))
+		}
+		whereClauses = append(whereClauses, strings.Join(subqueryParts, " AND "))
 	}
 
 	// Add WHERE clause
@@ -370,6 +449,22 @@ type parentFieldInfo struct {
 func fieldSelect(fieldID, fieldName, displayName string, fieldValues []string,
 	isRequired bool, nextFieldName string) g.Node {
 
+	// If no values available, show a message
+	if len(fieldValues) == 0 {
+		return Div(
+			ID(fieldID),
+			Class("space-y-6"),
+			Div(
+				Class("space-y-2"),
+				Label(For(fieldName), Class("block"), g.Text(displayName)),
+				Div(
+					Class("w-full p-2 border border-gray-300 rounded bg-gray-50 text-gray-500 text-sm"),
+					g.Text("No choices available"),
+				),
+			),
+		)
+	}
+
 	options := []g.Node{
 		Option(Value(""), g.Text(fmt.Sprintf("Select a %s", displayName))),
 	}
@@ -428,7 +523,9 @@ func fieldSelect(fieldID, fieldName, displayName string, fieldValues []string,
 // isRequired: Whether the field is required
 // placeholder: Placeholder text (empty string if none)
 // additionalAttrs: Additional attributes to add to the input
-func fieldInput(fieldID, fieldName, displayName, inputType string, isRequired bool, placeholder string, additionalAttrs ...g.Node) g.Node {
+func fieldInput(fieldID, fieldName, displayName, inputType string, isRequired bool,
+	placeholder string, additionalAttrs ...g.Node) g.Node {
+
 	attrs := []g.Node{
 		Type(inputType),
 		ID(fieldName),
@@ -467,6 +564,23 @@ func fieldInput(fieldID, fieldName, displayName, inputType string, isRequired bo
 // fieldValues: Available values to display as checkboxes
 // nextFieldName: Optional next field name for HTMX chain (empty string if none)
 func fieldCheckboxGrid(fieldID, fieldName, displayName string, fieldValues []string, nextFieldName string) g.Node {
+
+	// If no values available, show a message
+	if len(fieldValues) == 0 {
+		return Div(
+			ID(fieldID),
+			Class("space-y-6"),
+			Div(
+				Class("space-y-2"),
+				Label(For(fieldName), Class("block"), g.Text(displayName)),
+				Div(
+					Class("p-4 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 text-sm"),
+					g.Text("No choices available"),
+				),
+			),
+		)
+	}
+
 	// Create checkbox grid
 	checkboxes := []g.Node{}
 	for _, value := range fieldValues {
