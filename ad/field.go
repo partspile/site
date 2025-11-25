@@ -474,7 +474,7 @@ func fieldSelect(fieldID, fieldName, displayName string, fieldValues []string,
 			hx.Get(endpoint),
 			hx.Target(fmt.Sprintf("#%s", nextFieldName+"Div")),
 			hx.Include("form"),
-			hx.Swap("innerHTML"),
+			hx.Swap("outerHTML"),
 		)
 	}
 
@@ -597,7 +597,7 @@ func fieldCheckboxGrid(fieldID, fieldName, displayName string, fieldValues []str
 			hx.Get(endpoint),
 			hx.Target(fmt.Sprintf("#%s", nextFieldName+"Div")),
 			hx.Include("form"),
-			hx.Swap("innerHTML"),
+			hx.Swap("outerHTML"),
 		)
 	}
 

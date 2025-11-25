@@ -162,8 +162,14 @@ func HandleUpdateAdLocation(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, "Could not resolve location.")
 	}
 
-	// Update only the location
-	_, err = db.Exec("UPDATE Ad SET location_id = $1 WHERE id = $2", locID, adID)
+	// Update only the location - use NULL when locID is 0 (empty location)
+	var locationID interface{}
+	if locID == 0 {
+		locationID = nil
+	} else {
+		locationID = locID
+	}
+	_, err = db.Exec("UPDATE Ad SET location_id = $1 WHERE id = $2", locationID, adID)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to update location")

@@ -74,7 +74,11 @@ func populateSpecData(adDetail *AdDetail) error {
 	query := fmt.Sprintf("SELECT json_build_object(%s)", strings.Join(jsonKeys, ", "))
 
 	// Execute query directly into adDetail.SpecData
-	return db.QueryJSON(&adDetail.SpecData, query, adDetail.ID)
+	err := db.QueryJSON(&adDetail.SpecData, query, adDetail.ID)
+	logger.Debug("Populated spec data",
+		"component", "ad", "adID", adDetail.ID,
+		"specData", adDetail.SpecData)
+	return err
 }
 
 // GetAdsByIDs returns ads for a list of IDs
