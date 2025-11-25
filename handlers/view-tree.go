@@ -28,8 +28,8 @@ func (v *TreeView) GetAdIDs() ([]int, uint64, error) {
 
 	hasFieldFilters := false
 	for _, field := range fields {
-		condition := field.BuildFilterCondition(v.ctx)
-		if condition != nil {
+		whereClause, args := field.BuildFilterCondition(v.ctx)
+		if whereClause != "" && len(args) > 0 {
 			hasFieldFilters = true
 			break
 		}

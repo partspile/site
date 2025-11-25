@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
@@ -14,12 +13,12 @@ type FieldPartCategory struct {
 	adField
 }
 
-func (f *FieldPartCategory) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
+func (f *FieldPartCategory) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) {
 	fieldValue := c.FormValue("part_category")
 	if fieldValue == "" {
-		return nil
+		return "", nil
 	}
-	return qdrant.NewMatch("part_category", fieldValue)
+	return "vector_metadata->>$1 = $2", []interface{}{"part_category", fieldValue}
 }
 
 func (f *FieldPartCategory) RenderFilterField(params map[string]string) g.Node {

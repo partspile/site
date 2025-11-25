@@ -17,10 +17,6 @@ func AddAd(ad *AdDetail) error {
 	defer tx.Rollback()
 
 	var adID int
-	hasVectorInt := 0
-	if ad.HasVector {
-		hasVectorInt = 1
-	}
 	// Use NULL for location_id when LocationID is 0 (empty location)
 	var locationID interface{}
 	if ad.LocationID == 0 {
@@ -31,10 +27,10 @@ func AddAd(ad *AdDetail) error {
 	err = tx.QueryRow(`
 		INSERT INTO Ad (
 			ad_category_id, title, description, price, 
-			user_id, location_id, image_count, has_vector
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+			user_id, location_id, image_count
+		) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
 		ad.AdCategoryID, ad.Title, ad.Description, ad.Price,
-		ad.UserID, locationID, ad.ImageCount, hasVectorInt).Scan(&adID)
+		ad.UserID, locationID, ad.ImageCount).Scan(&adID)
 	if err != nil {
 		return fmt.Errorf("failed to insert ad: %w", err)
 	}

@@ -25,19 +25,13 @@ const (
 	B2AuthEndpoint         = "https://api.backblazeb2.com/b2api/v2/b2_authorize_account"
 	B2DownloadAuthEndpoint = "/b2api/v2/b2_get_download_authorization"
 
-	// Qdrant vector database configuration
-	QdrantPort       = 6334
-	QdrantMaxRetries = 10
-	QdrantRetryDelay = 1 * time.Second
-
-	// Qdrant vector search configuration
-	QdrantSearchInitialK          = 200 // Number of results to fetch from Qdrant for tree view
-	QdrantSearchPageSize          = 20  // Number of results per page for list/grid views
-	QdrantSearchThreshold         = 0.6 // Similarity threshold for filtering results (0.0 to 1.0)
-	QdrantTTL                     = 10 * time.Minute
-	QdrantProcessingQueueSize     = 100
-	QdrantProcessingSleepInterval = 100 * time.Millisecond
-	QdrantUserEmbeddingLimit      = 10
+	// Vector search configuration
+	VectorSearchInitialK          = 200 // Number of results to fetch for tree view
+	VectorSearchPageSize          = 20  // Number of results per page for list/grid views
+	VectorSearchThreshold         = 0.6 // Similarity threshold for filtering results (0.0 to 1.0)
+	VectorProcessingQueueSize     = 100
+	VectorProcessingSleepInterval = 100 * time.Millisecond
+	VectorUserEmbeddingLimit      = 10
 
 	// Grok API configuration
 	GrokAPIURL = "https://api.x.ai/v1/chat/completions"
@@ -71,11 +65,6 @@ var (
 	B2AppKey      = getEnvWithDefault("BACKBLAZE_APP_KEY", "")
 	B2BucketID    = getEnvWithDefault("B2_BUCKET_ID", "")
 	B2BucketName  = getEnvWithDefault("B2_BUCKET_NAME", "")
-
-	// Qdrant vector database configuration
-	QdrantHost       = getEnvWithDefault("QDRANT_HOST", "")
-	QdrantAPIKey     = getEnvWithDefault("QDRANT_API_KEY", "")
-	QdrantCollection = getEnvWithDefault("QDRANT_COLLECTION", "")
 
 	// AI/ML API configuration
 	GeminiAPIKey = getEnvWithDefault("GEMINI_API_KEY", "")

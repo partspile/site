@@ -31,7 +31,7 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 	const (
 		bookmarkWeight = 3
 		clickWeight    = 2
-		limit          = config.QdrantUserEmbeddingLimit
+		limit          = config.VectorUserEmbeddingLimit
 	)
 	logger.Debug("Using limit for user embedding",
 		"limit", limit, "userID", userID)
@@ -66,7 +66,7 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 				weights = append(weights, 1)
 			}
 		} else {
-			logger.Debug("Qdrant embedding missing for bookmarked ad",
+			logger.Debug("PostgreSQL embedding missing for bookmarked ad",
 				"adID", adID, "userID", userID)
 		}
 		if len(vectors) >= limit*bookmarkWeight {
@@ -106,7 +106,7 @@ func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, e
 				weights = append(weights, 1)
 			}
 		} else {
-			logger.Debug("Qdrant embedding missing for clicked ad",
+			logger.Debug("PostgreSQL embedding missing for clicked ad",
 				"adID", adID, "userID", userID)
 		}
 	}

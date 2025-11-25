@@ -12,7 +12,7 @@ import (
 )
 
 // Static queue for ad processing
-var adQueue = make(chan int, config.QdrantProcessingQueueSize)
+var adQueue = make(chan int, config.VectorProcessingQueueSize)
 
 // BuildAdEmbedding builds and stores an embedding for a single ad
 func BuildAdEmbedding(adObj ad.AdDetail) error {
@@ -55,23 +55,13 @@ func BuildAdEmbeddings(ads []ad.AdDetail) error {
 		metadatas = append(metadatas, meta)
 	}
 
-	// Batch upsert to Qdrant
+	// Batch upsert to PostgreSQL
 	err = UpsertAdEmbeddings(adIDs, embeddings, metadatas)
 	if err != nil {
 		logger.Error("Failed to batch upsert vectors",
 			"error", err, "count", len(adIDs))
 	} else {
 		logger.Debug("Successfully batch upserted vectors",
-			"count", len(adIDs))
-	}
-
-	// Mark ads as having vectors in database
-	err = ad.MarkAdsAsHavingVector(adIDs)
-	if err != nil {
-		logger.Error("Failed to mark ads as having vector",
-			"error", err, "count", len(adIDs))
-	} else {
-		logger.Debug("Successfully marked ads as having vector",
 			"count", len(adIDs))
 	}
 
@@ -173,7 +163,7 @@ func buildAdEmbeddingMetadata(adObj ad.AdDetail) map[string]interface{} {
 func StartBackgroundProcessor() {
 	go func() {
 		logger.Info("Background vector processor started",
-			"component", "vector", "queueSize", config.QdrantProcessingQueueSize)
+			"component", "vector", "queueSize", config.VectorProcessingQueueSize)
 
 		const chunkSize = 50
 
@@ -228,7 +218,7 @@ func StartBackgroundProcessor() {
 			}
 
 			// Sleep to avoid rate limits
-			time.Sleep(config.QdrantProcessingSleepInterval)
+			time.Sleep(config.VectorProcessingSleepInterval)
 		}
 	}()
 }

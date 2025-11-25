@@ -11,21 +11,20 @@ import (
 	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
-	"github.com/qdrant/go-client/qdrant"
 )
 
 // runEmbeddingSearch runs vector search with optional filters
-func runEmbeddingSearch(embedding []float32, cursor uint64, threshold float64, k int, filter *qdrant.Filter) ([]int, uint64, error) {
+func runEmbeddingSearch(embedding []float32, cursor uint64, threshold float64, k int, filter FilterClause) ([]int, uint64, error) {
 	var ids []int
 	var err error
 
-	// Get results with threshold filtering at Qdrant level
-	ids, cursor, err = vector.QuerySimilarAdIDs(embedding, filter, k, cursor, threshold)
+	// Get results with threshold filtering at PostgreSQL level
+	ids, cursor, err = vector.QuerySimilarAdIDs(embedding, filter.WhereClause, filter.Args, k, cursor, threshold)
 
 	if err != nil {
 		return nil, 0, err
 	}
-	logger.Debug("Qdrant returned results",
+	logger.Debug("PostgreSQL returned results",
 		"component", "runEmbeddingSearch", "count", len(ids),
 		"threshold", threshold, "k", k, "ids", ids)
 
@@ -33,7 +32,7 @@ func runEmbeddingSearch(embedding []float32, cursor uint64, threshold float64, k
 }
 
 // Embedding-based search with user query
-func queryEmbedding(userPrompt string, cursor uint64, threshold float64, k int, filter *qdrant.Filter) ([]int, uint64, error) {
+func queryEmbedding(userPrompt string, cursor uint64, threshold float64, k int, filter FilterClause) ([]int, uint64, error) {
 	logger.Debug("Generating embedding for user query",
 		"component", "queryEmbedding", "userPrompt", userPrompt)
 	embedding, err := vector.GetQueryEmbedding(userPrompt)
@@ -44,7 +43,7 @@ func queryEmbedding(userPrompt string, cursor uint64, threshold float64, k int, 
 }
 
 // Embedding-based search with user embedding
-func userEmbedding(userID int, cursor uint64, threshold float64, k int, filter *qdrant.Filter) ([]int, uint64, error) {
+func userEmbedding(userID int, cursor uint64, threshold float64, k int, filter FilterClause) ([]int, uint64, error) {
 	logger.Debug("userEmbedding called",
 		"component", "userEmbedding", "userID", userID,
 		"cursor", cursor, "threshold", threshold)
@@ -70,7 +69,7 @@ func userEmbedding(userID int, cursor uint64, threshold float64, k int, filter *
 }
 
 // Embedding-based search with site-level vector
-func siteEmbedding(cursor uint64, threshold float64, k int, filter *qdrant.Filter) ([]int, uint64, error) {
+func siteEmbedding(cursor uint64, threshold float64, k int, filter FilterClause) ([]int, uint64, error) {
 	logger.Debug("siteEmbedding called",
 		"component", "siteEmbedding", "cursor", cursor,
 		"threshold", threshold)
@@ -96,11 +95,11 @@ func siteEmbedding(cursor uint64, threshold float64, k int, filter *qdrant.Filte
 }
 
 // performSearch performs the search based on the user prompt and returns IDs
-func performSearch(userPrompt string, userID int, cursor uint64, threshold float64, k int, filter *qdrant.Filter) ([]int, uint64, error) {
+func performSearch(userPrompt string, userID int, cursor uint64, threshold float64, k int, filter FilterClause) ([]int, uint64, error) {
 	logger.Debug("performSearch called",
 		"component", "performSearch", "userPrompt", userPrompt,
 		"userID", userID, "cursor", cursor, "threshold", threshold,
-		"k", k, "filter", filter)
+		"k", k)
 
 	if userPrompt != "" {
 		return queryEmbedding(userPrompt, cursor, threshold, k, filter)
@@ -136,8 +135,8 @@ func getAdIDs(c *fiber.Ctx) ([]int, uint64, error) {
 	cursorStr := c.FormValue("cursor")
 	userID := local.GetUserID(c)
 	filter := buildSearchFilter(c)
-	threshold := config.QdrantSearchThreshold
-	k := config.QdrantSearchPageSize
+	threshold := config.VectorSearchThreshold
+	k := config.VectorSearchPageSize
 
 	cursor, err := parseCursor(cursorStr)
 	if err != nil {

@@ -3,10 +3,10 @@ package ad
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
@@ -16,14 +16,14 @@ type FieldYear struct {
 	adField
 }
 
-func (f *FieldYear) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
+func (f *FieldYear) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) {
 	minKey := "min_year"
 	maxKey := "max_year"
 	minValue := c.FormValue(minKey)
 	maxValue := c.FormValue(maxKey)
 
 	if minValue == "" && maxValue == "" {
-		return nil
+		return "", nil
 	}
 
 	// Preset defaults
@@ -43,17 +43,21 @@ func (f *FieldYear) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 		}
 	}
 
-	// Convert range to list of values
-	var valueList []string
-	for val := minVal; val <= maxVal; val++ {
-		valueList = append(valueList, strconv.Itoa(val))
-	}
+	var conditions []string
+	var args []interface{}
+	argIndex := 1
 
-	if len(valueList) > 0 {
-		return qdrant.NewMatchKeywords("year", valueList...)
-	}
+	// Check if any year in the JSONB array falls within the range
+	// Extract each year from the array, convert to int, and check if it's in range
+	condition := fmt.Sprintf(`EXISTS (
+		SELECT 1 
+		FROM jsonb_array_elements_text(vector_metadata->'year') AS year_val
+		WHERE year_val::int BETWEEN $%d AND $%d
+	)`, argIndex, argIndex+1)
+	conditions = append(conditions, condition)
+	args = append(args, minVal, maxVal)
 
-	return nil
+	return strings.Join(conditions, " AND "), args
 }
 
 func (f *FieldYear) RenderNewAdField(parentValues map[string]string) g.Node {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
@@ -14,15 +13,15 @@ type FieldLocation struct {
 	adField
 }
 
-func (f *FieldLocation) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
+func (f *FieldLocation) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) {
 	locationRaw := c.FormValue("location")
 	if locationRaw == "" {
-		return nil
+		return "", nil
 	}
 
 	lat, lon, err := ResolveLocationToCoords(locationRaw)
 	if err != nil {
-		return nil
+		return "", nil
 	}
 
 	rStr := c.FormValue("radius")
@@ -33,9 +32,19 @@ func (f *FieldLocation) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 		}
 	}
 
-	// Convert miles to meters and create geo radius condition
-	rm := r * 1609.34
-	return qdrant.NewGeoRadius("location", lat, lon, float32(rm))
+	// Convert miles to meters for ST_Distance calculation
+	radiusMeters := r * 1609.34
+
+	// Use ST_Distance with PostGIS for accurate geographic distance calculation
+	// ST_MakePoint(longitude, latitude) creates a point
+	// Cast to geography for accurate distance calculations in meters
+	// ST_Distance returns distance in meters for geography types
+	return `ST_Distance(
+		ST_MakePoint((vector_metadata->'location'->>'lon')::float,
+		(vector_metadata->'location'->>'lat')::float)::geography,
+		ST_MakePoint($1::float, $2::float)::geography
+	) <= $3`,
+		[]interface{}{lon, lat, radiusMeters}
 }
 
 func (f *FieldLocation) RenderNewAdField(parentValues map[string]string) g.Node {

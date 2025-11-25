@@ -7,7 +7,7 @@ import (
 	"github.com/parts-pile/site/logger"
 )
 
-// AdResult represents a search result from Qdrant
+// AdResult represents a search result from PostgreSQL vector search
 type AdResult struct {
 	ID       int
 	Score    float32

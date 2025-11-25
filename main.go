@@ -55,20 +55,6 @@ func main() {
 		logger.Fatal("Failed to initialize Gemini client", "error", err)
 	}
 
-	// Initialize Qdrant client
-	if err := vector.InitQdrantClient(); err != nil {
-		logger.Fatal("Failed to initialize Qdrant client", "error", err)
-	}
-
-	// Ensure collection exists and setup indexes
-	if err := vector.InitQdrantCollection(); err != nil {
-		logger.Fatal("Failed to ensure collection exists", "error", err)
-	}
-
-	if err := vector.InitQdrantIndexes(); err != nil {
-		logger.Fatal("Failed to setup payload indexes", "error", err)
-	}
-
 	// Initialize SMS service
 	if err := sms.InitSMS(); err != nil {
 		logger.Fatal("Failed to initialize SMS service", "error", err)

@@ -57,14 +57,14 @@ func loadCategoryFieldsFromDB() error {
 						'display_name', sf.display_name,
 						'field_type', sf.field_type,
 						'table_name', sf.table_name,
-						'qdrant_type', sf.qdrant_type,
+						'vector_type', sf.vector_type,
 						'spec_table_name', acf.spec_table_name,
 						'spec_table_field_name', acf.spec_table_field_name,
 						'ad_spec_table_name', acf.ad_spec_table_name,
 						'next_in_chain', acf.next_in_chain,
 						'is_required', acf.is_required::boolean,
 						'show_in_filters', acf.show_in_filters::boolean,
-						'is_multi_value_field', (sf.qdrant_type = 'keyword_array')::boolean
+						'is_multi_value_field', (sf.vector_type = 'keyword_array')::boolean
 					) ORDER BY acf.priority_order
 				) AS fields
 			FROM AdCategoryField acf

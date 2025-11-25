@@ -28,7 +28,7 @@ func HandleDeleteAd(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to delete ad")
 	}
 
-	// Delete from vector database (Qdrant) - this is done after DB commit
+	// Delete from vector database (PostgreSQL) - this is done after DB commit
 	if err := vector.DeleteAdEmbedding(adID); err != nil {
 		// Log the error but don't fail the entire operation since DB is already committed
 		logger.Warn("Failed to delete ad from vector database",
@@ -71,7 +71,7 @@ func HandleRestoreAd(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to restore ad")
 	}
 
-	// Queue ad for background re-addition to vector database (Qdrant)
+	// Queue ad for background re-addition to vector database (PostgreSQL)
 	vector.QueueAd(a.ID)
 
 	// Return empty response to remove the ad from the deleted ads list

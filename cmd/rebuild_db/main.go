@@ -196,6 +196,24 @@ func setupDatabase(databaseURL string) error {
 		logger.Info("No tables to drop")
 	}
 
+	// Use pgx directly to execute the schema
+	logger.Info("Executing schema.sql using pgx")
+	conn, err := pgx.Connect(context.Background(), databaseURL)
+	if err != nil {
+		return fmt.Errorf("failed to connect with pgx: %w", err)
+	}
+	defer conn.Close(context.Background())
+
+	// Enable vector indexes for CockroachDB (required for C-SPANN indexes)
+	// This must be done outside of a transaction
+	// On PostgreSQL, this will fail silently which is fine
+	logger.Info("Enabling vector indexes cluster setting (CockroachDB)")
+	_, err = conn.Exec(context.Background(), "SET CLUSTER SETTING feature.vector_index.enabled = true")
+	if err != nil {
+		logger.Debug("Failed to set cluster setting (may not be CockroachDB or setting already enabled)", "error", err)
+		// Continue anyway - might be PostgreSQL or setting already enabled
+	}
+
 	// Read and execute schema.sql
 	schemaFile := "/workspace/schema.sql"
 	if _, err := os.Stat(schemaFile); os.IsNotExist(err) {
@@ -206,15 +224,6 @@ func setupDatabase(databaseURL string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read schema.sql: %w", err)
 	}
-
-	// Use pgx directly to execute the entire schema file
-	// pgx supports executing multiple statements in a single call
-	logger.Info("Executing schema.sql using pgx")
-	conn, err := pgx.Connect(context.Background(), databaseURL)
-	if err != nil {
-		return fmt.Errorf("failed to connect with pgx: %w", err)
-	}
-	defer conn.Close(context.Background())
 
 	// Execute the entire schema file - pgx can handle multiple statements
 	if _, err := conn.Exec(context.Background(), string(schemaSQL)); err != nil {
@@ -315,7 +324,7 @@ func importSpecFields(dataBasePath string) (map[string]int, error) {
 		DisplayName string `json:"display_name"`
 		FieldType   string `json:"field_type"`
 		TableName   string `json:"table_name"`
-		QdrantType  string `json:"qdrant_type"`
+		VectorType  string `json:"vector_type"`
 	}
 	var fieldDefinitions []SpecFieldDef
 	if err := json.Unmarshal(fieldData, &fieldDefinitions); err != nil {
@@ -325,8 +334,8 @@ func importSpecFields(dataBasePath string) (map[string]int, error) {
 	fieldIDMap := make(map[string]int)
 	for _, fieldDef := range fieldDefinitions {
 		var fieldID int
-		err := db.QueryRow(`INSERT INTO SpecField (name, display_name, field_type, table_name, qdrant_type) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-			fieldDef.Name, fieldDef.DisplayName, fieldDef.FieldType, fieldDef.TableName, fieldDef.QdrantType).Scan(&fieldID)
+		err := db.QueryRow(`INSERT INTO SpecField (name, display_name, field_type, table_name, vector_type) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+			fieldDef.Name, fieldDef.DisplayName, fieldDef.FieldType, fieldDef.TableName, fieldDef.VectorType).Scan(&fieldID)
 		if err != nil {
 			logger.Warn("Failed to insert SpecField", "name", fieldDef.Name, "error", err)
 			continue
@@ -1584,22 +1593,21 @@ func importAds(jsonFile string, categoryID int, categoryMap map[string]int, user
 		}
 
 		values := make([]string, len(batch))
-		args := make([]interface{}, len(batch)*9)
+		args := make([]interface{}, len(batch)*8)
 		for j, ad := range batch {
-			argStart := j*9 + 1
-			values[j] = fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", argStart, argStart+1, argStart+2, argStart+3, argStart+4, argStart+5, argStart+6, argStart+7, argStart+8)
-			args[j*9] = ad.title
-			args[j*9+1] = ad.description
-			args[j*9+2] = ad.price
-			args[j*9+3] = ad.createdAt
-			args[j*9+4] = ad.userID
-			args[j*9+5] = ad.locationID
-			args[j*9+6] = ad.imageCount
-			args[j*9+7] = ad.categoryID
-			args[j*9+8] = 0 // has_vector
+			argStart := j*8 + 1
+			values[j] = fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", argStart, argStart+1, argStart+2, argStart+3, argStart+4, argStart+5, argStart+6, argStart+7)
+			args[j*8] = ad.title
+			args[j*8+1] = ad.description
+			args[j*8+2] = ad.price
+			args[j*8+3] = ad.createdAt
+			args[j*8+4] = ad.userID
+			args[j*8+5] = ad.locationID
+			args[j*8+6] = ad.imageCount
+			args[j*8+7] = ad.categoryID
 		}
 
-		query := fmt.Sprintf(`INSERT INTO Ad (title, description, price, created_at, user_id, location_id, image_count, ad_category_id, has_vector) VALUES %s RETURNING id`, strings.Join(values, ","))
+		query := fmt.Sprintf(`INSERT INTO Ad (title, description, price, created_at, user_id, location_id, image_count, ad_category_id) VALUES %s RETURNING id`, strings.Join(values, ","))
 		rows, err := tx.Query(query, args...)
 		if err != nil {
 			tx.Rollback()

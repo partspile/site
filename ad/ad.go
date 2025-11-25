@@ -37,7 +37,6 @@ type AdDetail struct {
 	// Additional fields for detail view
 	Description string `json:"description"`
 	LocationID  int    `json:"location_id"`
-	HasVector   bool   `json:"has_vector"`
 	RawLocation string `json:"raw_location"`
 
 	// Spec data from spec joins - map of field name to array of values
@@ -214,7 +213,6 @@ func GetAdDetailByID(adID int, userID int) (*AdDetail, error) {
 			'user_id', a.user_id,
 			'location_id', a.location_id,
 			'image_count', a.image_count,
-			'has_vector', (a.has_vector = 1)::boolean,
 			'raw_location', l.raw_text,
 			'city', l.city,
 			'admin_area', l.admin_area,

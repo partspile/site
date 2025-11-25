@@ -3,9 +3,9 @@ package ad
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
@@ -15,11 +15,11 @@ type FieldPrice struct {
 	adField
 }
 
-func (f *FieldPrice) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
+func (f *FieldPrice) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) {
 	minPriceStr := c.FormValue("min_price")
 	maxPriceStr := c.FormValue("max_price")
 	if minPriceStr == "" && maxPriceStr == "" {
-		return nil
+		return "", nil
 	}
 
 	var minPrice, maxPrice *float64
@@ -35,14 +35,29 @@ func (f *FieldPrice) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
 		}
 	}
 
-	if minPrice != nil || maxPrice != nil {
-		return qdrant.NewRange("price", &qdrant.Range{
-			Gte: minPrice,
-			Lte: maxPrice,
-		})
+	if minPrice == nil && maxPrice == nil {
+		return "", nil
 	}
 
-	return nil
+	var conditions []string
+	var args []interface{}
+	argIndex := 1
+
+	if minPrice != nil && maxPrice != nil {
+		// Both min and max - use BETWEEN
+		conditions = append(conditions, fmt.Sprintf("(vector_metadata->>$%d)::float BETWEEN $%d AND $%d", argIndex, argIndex+1, argIndex+2))
+		args = append(args, "price", *minPrice, *maxPrice)
+	} else if minPrice != nil {
+		// Only min - use >=
+		conditions = append(conditions, fmt.Sprintf("(vector_metadata->>$%d)::float >= $%d", argIndex, argIndex+1))
+		args = append(args, "price", *minPrice)
+	} else if maxPrice != nil {
+		// Only max - use <=
+		conditions = append(conditions, fmt.Sprintf("(vector_metadata->>$%d)::float <= $%d", argIndex, argIndex+1))
+		args = append(args, "price", *maxPrice)
+	}
+
+	return strings.Join(conditions, " AND "), args
 }
 
 func (f *FieldPrice) RenderNewAdField(parentValues map[string]string) g.Node {

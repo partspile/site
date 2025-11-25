@@ -372,7 +372,6 @@ func BuildAdFromForm(c *fiber.Ctx, userID int) (ad.AdDetail, []*multipart.FileHe
 		},
 		Description: description,
 		LocationID:  locationID,
-		HasVector:   false, // New ads start without vectors
 		SpecData:    specData,
 	}
 

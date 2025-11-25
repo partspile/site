@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
 )
 
@@ -13,12 +12,12 @@ type FieldBreed struct {
 	adField
 }
 
-func (f *FieldBreed) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
+func (f *FieldBreed) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) {
 	fieldValue := c.FormValue("breed")
 	if fieldValue == "" {
-		return nil
+		return "", nil
 	}
-	return qdrant.NewMatch("breed", fieldValue)
+	return "vector_metadata->>$1 = $2", []interface{}{"breed", fieldValue}
 }
 
 func (f *FieldBreed) RenderNewAdField(parentValues map[string]string) g.Node {

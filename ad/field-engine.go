@@ -1,10 +1,10 @@
 package ad
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
 )
 
@@ -13,12 +13,14 @@ type FieldEngine struct {
 	adField
 }
 
-func (f *FieldEngine) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
+func (f *FieldEngine) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) {
 	fieldValue := c.FormValue("engine")
 	if fieldValue == "" {
-		return nil
+		return "", nil
 	}
-	return qdrant.NewMatchKeywords("engine", fieldValue)
+	// For array fields, check if the value is contained in the JSONB array
+	jsonValue, _ := json.Marshal([]string{fieldValue})
+	return "vector_metadata->$1 @> $2::jsonb", []interface{}{"engine", string(jsonValue)}
 }
 
 func (f *FieldEngine) RenderNewAdField(parentValues map[string]string) g.Node {

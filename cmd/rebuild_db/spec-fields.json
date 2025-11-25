@@ -4,63 +4,63 @@
     "display_name": "Make",
     "field_type": "string",
     "table_name": "Make",
-    "qdrant_type": "keyword"
+    "vector_type": "keyword"
   },
   {
     "name": "year",
     "display_name": "Year",
     "field_type": "int",
     "table_name": "Year",
-    "qdrant_type": "keyword_array"
+    "vector_type": "keyword_array"
   },
   {
     "name": "model",
     "display_name": "Model",
     "field_type": "string",
     "table_name": "Model",
-    "qdrant_type": "keyword_array"
+    "vector_type": "keyword_array"
   },
   {
     "name": "engine",
     "display_name": "Engine",
     "field_type": "string",
     "table_name": "Engine",
-    "qdrant_type": "keyword_array"
+    "vector_type": "keyword_array"
   },
   {
     "name": "part_category",
     "display_name": "Part Category",
     "field_type": "string",
     "table_name": "PartCategory",
-    "qdrant_type": "keyword"
+    "vector_type": "keyword"
   },
   {
     "name": "part_subcategory",
     "display_name": "Part Subcategory",
     "field_type": "string",
     "table_name": "PartSubCategory",
-    "qdrant_type": "keyword"
+    "vector_type": "keyword"
   },
   {
     "name": "breed",
     "display_name": "Breed",
     "field_type": "string",
     "table_name": "Breed",
-    "qdrant_type": "keyword"
+    "vector_type": "keyword"
   },
   {
     "name": "location",
     "display_name": "Location",
     "field_type": "string",
     "table_name": "",
-    "qdrant_type": "geo"
+    "vector_type": "geo"
   },
   {
     "name": "price",
     "display_name": "Price",
     "field_type": "float64",
     "table_name": "",
-    "qdrant_type": "float"
+    "vector_type": "float"
   }
 ]
 

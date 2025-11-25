@@ -6,7 +6,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/db"
-	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
@@ -17,9 +16,10 @@ type Field interface {
 	// Name returns the name of the field
 	Name() string
 
-	// BuildFilterCondition builds a Qdrant filter condition from form values
-	// Returns nil if no filter should be applied
-	BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition
+	// BuildFilterCondition builds a SQL WHERE clause condition from form values
+	// Returns empty string and nil args if no filter should be applied
+	// The returned clause should be a SQL fragment (without WHERE keyword) and args for parameterized query
+	BuildFilterCondition(c *fiber.Ctx) (string, []interface{})
 
 	// RenderNewAdField renders the field for the new ad form
 	// parentValues maps parent field names to their values (for filtering options)
@@ -63,9 +63,9 @@ type Field interface {
 	// NextField returns the name of the next field in the chain, or empty string if none
 	NextField() string
 
-	// GetQdrantType returns the Qdrant type string for this field
+	// GetVectorType returns the vector type string for this field
 	// Returns: 'keyword', 'keyword_array', 'integer', 'float', or 'geo'
-	GetQdrantType() string
+	GetVectorType() string
 
 	// EmbeddingPrompt returns a formatted prompt snippet for embedding generation
 	// fieldValues is a slice of field values (single or multiple)
@@ -79,7 +79,7 @@ type adField struct {
 	DisplayName        string   `json:"display_name"`          // 'Make'
 	FieldType          string   `json:"field_type"`            // 'string', 'int', 'float64'
 	TableName          string   `json:"table_name"`            // 'Make'
-	QdrantType         string   `json:"qdrant_type"`           // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
+	VectorType         string   `json:"vector_type"`           // 'keyword', 'keyword_array', 'integer', 'float', 'geo'
 	NextInChain        int      `json:"next_in_chain"`         // 0-based array index of next field in chain (0 = last field in chain or standalone, > 0 = index of next field)
 	NextFieldName      string   `json:"next_field_name"`       // 'year'
 	IsRequired         bool     `json:"is_required"`           // Is required field on new ad form
@@ -115,8 +115,8 @@ func (f adField) NextField() string {
 	return f.NextFieldName
 }
 
-func (f adField) GetQdrantType() string {
-	return f.QdrantType
+func (f adField) GetVectorType() string {
+	return f.VectorType
 }
 
 func (f adField) EmbeddingPrompt(fieldValues []string) string {

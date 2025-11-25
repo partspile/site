@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/qdrant/go-client/qdrant"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )
@@ -14,12 +13,12 @@ type FieldMake struct {
 	adField
 }
 
-func (f *FieldMake) BuildFilterCondition(c *fiber.Ctx) *qdrant.Condition {
+func (f *FieldMake) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) {
 	fieldValue := c.FormValue("make")
 	if fieldValue == "" {
-		return nil
+		return "", nil
 	}
-	return qdrant.NewMatch("make", fieldValue)
+	return "vector_metadata->>$1 = $2", []interface{}{"make", fieldValue}
 }
 
 func (f *FieldMake) RenderFilterField(params map[string]string) g.Node {
