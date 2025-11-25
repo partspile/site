@@ -264,9 +264,10 @@ func (f adField) executeFilteredQuery(parentFields []parentFieldInfo) ([]string,
 func (f adField) buildFilteredQuery(parentFields []parentFieldInfo) (string, []interface{}) {
 	var whereClauses []string
 	var args []interface{}
+	var havingClauses []string
 
 	// Base query: select distinct values from current field table
-	query := fmt.Sprintf("SELECT DISTINCT %s.value", f.TableName)
+	query := fmt.Sprintf("SELECT %s.value", f.TableName)
 
 	// FROM and JOIN spec table
 	query += fmt.Sprintf(" FROM %s", f.TableName)
@@ -299,52 +300,64 @@ func (f adField) buildFilteredQuery(parentFields []parentFieldInfo) (string, []i
 		whereClauses = append(whereClauses, fmt.Sprintf("%s.value = $%d", pf.parent.TableName, len(args)))
 	}
 
-	// Handle multi-value parent fields (intersection logic)
-	for parentIdx, pf := range multiValueParents {
+	// Handle multi-value parent fields using JOINs with GROUP BY/HAVING
+	for _, pf := range multiValueParents {
 		// Split comma-separated values
 		values := strings.Split(pf.value, ",")
 		if len(values) == 0 {
 			continue
 		}
 
-		// For intersection, we need to ensure the current field value appears
-		// in specs that match ALL selected parent values
-		// Use EXISTS subqueries for each value
-		var subqueryParts []string
+		// JOIN parent field table through the same spec table
+		query += fmt.Sprintf(" JOIN %s ON %s.%s = %s.id",
+			pf.parent.TableName, f.SpecTableName, pf.parent.SpecTableFieldName, pf.parent.TableName)
+
+		// Use IN clause for multi-value parent
+		placeholders := make([]string, len(values))
 		for i, val := range values {
 			args = append(args, val)
-			argNum := len(args)
-			aliasS := fmt.Sprintf("s%d_%d", parentIdx, i)
-			aliasP := fmt.Sprintf("p%d_%d", parentIdx, i)
-
-			// Correlate with current field: the spec must have the same
-			// value for the current field as the outer query
-			correlationClause := fmt.Sprintf("%s.%s = %s.%s",
-				aliasS, f.SpecTableFieldName, f.SpecTableName, f.SpecTableFieldName)
-
-			// Also correlate with all single-value parent fields
-			// (they're already joined in the outer query)
-			for _, svp := range singleValueParents {
-				correlationClause += fmt.Sprintf(" AND %s.%s = %s.%s",
-					aliasS, svp.parent.SpecTableFieldName,
-					f.SpecTableName, svp.parent.SpecTableFieldName)
-			}
-
-			subqueryParts = append(subqueryParts, fmt.Sprintf(
-				`EXISTS (SELECT 1 FROM %s %s JOIN %s %s ON %s.%s = %s.id WHERE %s.ad_category_id = $%d AND %s AND %s.value = $%d)`,
-				f.SpecTableName, aliasS,
-				pf.parent.TableName, aliasP,
-				aliasS, pf.parent.SpecTableFieldName, aliasP,
-				aliasS, 1, // category ID is always $1
-				correlationClause,
-				aliasP, argNum))
+			placeholders[i] = fmt.Sprintf("$%d", len(args))
 		}
-		whereClauses = append(whereClauses, strings.Join(subqueryParts, " AND "))
+		whereClauses = append(whereClauses, fmt.Sprintf("%s.value IN (%s)",
+			pf.parent.TableName, strings.Join(placeholders, ", ")))
+
+		// Use HAVING to ensure all values are matched (intersection logic)
+		// COUNT(DISTINCT value) must equal the number of values we're looking for
+		havingClauses = append(havingClauses, fmt.Sprintf("COUNT(DISTINCT %s.value) = %d",
+			pf.parent.TableName, len(values)))
+	}
+
+	// If we have multiple multi-value parents, we need to ensure all combinations exist
+	// Count distinct combinations of all multi-value parent values
+	if len(multiValueParents) > 1 {
+		var comboParts []string
+		for _, pf := range multiValueParents {
+			comboParts = append(comboParts, pf.parent.TableName+".value")
+		}
+		// Expected number of combinations is the product of all multi-value parent counts
+		expectedCombos := 1
+		for _, pf := range multiValueParents {
+			values := strings.Split(pf.value, ",")
+			expectedCombos *= len(values)
+		}
+		// Use || to concatenate values for counting distinct combinations
+		// Format: value1 || '|' || value2 || '|' || ...
+		comboExpr := strings.Join(comboParts, " || '|' || ")
+		havingClauses = append(havingClauses, fmt.Sprintf("COUNT(DISTINCT (%s)) = %d",
+			comboExpr, expectedCombos))
 	}
 
 	// Add WHERE clause
 	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	// Add GROUP BY
+	query += fmt.Sprintf(" GROUP BY %s.value", f.TableName)
+
+	// Add HAVING clause for multi-value parent intersection
+	if len(havingClauses) > 0 {
+		query += " HAVING " + strings.Join(havingClauses, " AND ")
 	}
 
 	// Add ORDER BY
