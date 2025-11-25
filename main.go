@@ -76,9 +76,9 @@ func main() {
 
 	app := fiber.New(fiber.Config{
 		ErrorHandler: h.CustomErrorHandler,
-		BodyLimit:    config.ServerUploadLimit,
-		ReadTimeout:  30 * time.Second, // Prevent long-running requests
-		WriteTimeout: 30 * time.Second, // Prevent long-running responses
+		BodyLimit:    config.ServerBodyLimit, // Total request body size (for multiple files)
+		ReadTimeout:  30 * time.Second,       // Prevent long-running requests
+		WriteTimeout: 30 * time.Second,       // Prevent long-running responses
 	})
 
 	// Add security headers using Helmet (must be early in middleware chain)

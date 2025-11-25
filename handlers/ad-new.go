@@ -56,6 +56,8 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 
 	err = ad.AddAd(&newAd)
 	if err != nil {
+		logger.Error("Failed to create ad",
+			"component", "ad-new", "error", err, "userID", userID)
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create ad")
 	}
 
