@@ -20,7 +20,14 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
 	allFieldNodes = append(allFieldNodes,
 		imagesField(maxImagesPerAd),
 		descriptionField(),
-		SubmitButton(),
+		Div(
+			Class("flex items-center justify-between gap-4"),
+			Div(
+				ID("result"),
+				Class("flex-1"),
+			),
+			SubmitButton(),
+		),
 	)
 
 	categoryName := ad.GetCategoryName(adCat)
@@ -41,7 +48,6 @@ func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
 				hx.Target("#result"),
 				g.Group(allFieldNodes),
 			),
-			resultContainer(),
 		},
 	)
 }

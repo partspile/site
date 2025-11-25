@@ -593,7 +593,7 @@ func fieldCheckboxGrid(fieldID, fieldName, displayName string, fieldValues []str
 	if nextFieldName != "" {
 		endpoint := fmt.Sprintf("/api/field/%s", nextFieldName)
 		gridAttrs = append(gridAttrs,
-			hx.Trigger("change from:input"),
+			hx.Trigger("change"),
 			hx.Get(endpoint),
 			hx.Target(fmt.Sprintf("#%s", nextFieldName+"Div")),
 			hx.Include("form"),

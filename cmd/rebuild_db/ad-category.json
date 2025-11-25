@@ -36,7 +36,7 @@
         "field_name": "model",
         "next_in_chain": 4,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecVehicle",
         "spec_table_field_name": "model_id",
         "ad_spec_table": "AdSpecVehicle"
@@ -45,7 +45,7 @@
         "field_name": "engine",
         "next_in_chain": 0,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecVehicle",
         "spec_table_field_name": "engine_id",
         "ad_spec_table": "AdSpecVehicle"
@@ -98,7 +98,7 @@
         "field_name": "model",
         "next_in_chain": 4,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecVehicle",
         "spec_table_field_name": "model_id",
         "ad_spec_table": "AdSpecVehicle"
@@ -107,7 +107,7 @@
         "field_name": "engine",
         "next_in_chain": 0,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecVehicle",
         "spec_table_field_name": "engine_id",
         "ad_spec_table": "AdSpecVehicle"
@@ -125,7 +125,7 @@
         "field_name": "part_subcategory",
         "next_in_chain": 0,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecPart",
         "spec_table_field_name": "part_subcategory_id",
         "ad_spec_table": "AdSpecPart"
@@ -178,7 +178,7 @@
         "field_name": "model",
         "next_in_chain": 4,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecVehicle",
         "spec_table_field_name": "model_id",
         "ad_spec_table": "AdSpecVehicle"
@@ -187,7 +187,7 @@
         "field_name": "engine",
         "next_in_chain": 0,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecVehicle",
         "spec_table_field_name": "engine_id",
         "ad_spec_table": "AdSpecVehicle"
@@ -240,7 +240,7 @@
         "field_name": "model",
         "next_in_chain": 4,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecVehicle",
         "spec_table_field_name": "model_id",
         "ad_spec_table": "AdSpecVehicle"
@@ -249,7 +249,7 @@
         "field_name": "engine",
         "next_in_chain": 0,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecVehicle",
         "spec_table_field_name": "engine_id",
         "ad_spec_table": "AdSpecVehicle"
@@ -267,7 +267,7 @@
         "field_name": "part_subcategory",
         "next_in_chain": 0,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecPart",
         "spec_table_field_name": "part_subcategory_id",
         "ad_spec_table": "AdSpecPart"
@@ -311,7 +311,7 @@
         "field_name": "model",
         "next_in_chain": 0,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecBicycle",
         "spec_table_field_name": "model_id",
         "ad_spec_table": "AdSpecBicycle"
@@ -355,7 +355,7 @@
         "field_name": "model",
         "next_in_chain": 0,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecBicycle",
         "spec_table_field_name": "model_id",
         "ad_spec_table": "AdSpecBicycle"
@@ -373,7 +373,7 @@
         "field_name": "part_subcategory",
         "next_in_chain": 0,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecPart",
         "spec_table_field_name": "part_subcategory_id",
         "ad_spec_table": "AdSpecPart"
@@ -426,7 +426,7 @@
         "field_name": "model",
         "next_in_chain": 0,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecAgricultural",
         "spec_table_field_name": "model_id",
         "ad_spec_table": "AdSpecAgricultural"
@@ -479,7 +479,7 @@
         "field_name": "model",
         "next_in_chain": 0,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecAgricultural",
         "spec_table_field_name": "model_id",
         "ad_spec_table": "AdSpecAgricultural"
@@ -497,7 +497,7 @@
         "field_name": "part_subcategory",
         "next_in_chain": 0,
         "show_in_filter": false,
-        "is_required": false,
+        "is_required": true,
         "spec_table_name": "SpecPart",
         "spec_table_field_name": "part_subcategory_id",
         "ad_spec_table": "AdSpecPart"
