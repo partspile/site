@@ -11,6 +11,7 @@ import (
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/parts-pile/site/cache"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/logger"
 )
 
 var urlCache *cache.Cache[string]
@@ -60,6 +61,8 @@ func GetMinIOPresignedURLForPrefixCached(adID, imageIndex int, size string) (str
 
 	presignedURL, err := getMinIOPresignedURL(imagePath)
 	if err != nil {
+		logger.Error("Failed to generate MinIO presigned URL",
+			"error", err, "imagePath", imagePath, "adID", adID, "imageIndex", imageIndex, "size", size)
 		return "", err
 	}
 
@@ -120,6 +123,8 @@ func getMinIOPresignedURL(imagePath string) (string, error) {
 
 	presignedURL, err := minioClient.PresignedGetObject(ctx, config.MinIOBucketName, imagePath, expires, nil)
 	if err != nil {
+		logger.Error("MinIO PresignedGetObject failed",
+			"error", err, "bucket", config.MinIOBucketName, "imagePath", imagePath)
 		return "", fmt.Errorf("MinIO presigned URL error: %w", err)
 	}
 

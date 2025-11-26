@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/url"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
@@ -19,17 +18,12 @@ func ConfigureHelmet() fiber.Handler {
 	if config.MinIOAPIURL != "" {
 		minioURL, err := url.Parse(config.MinIOAPIURL)
 		if err == nil {
-			// Extract domain and allow it in CSP
-			domain := minioURL.Host
-			// Remove port if present for wildcard matching
-			if idx := strings.Index(domain, ":"); idx != -1 {
-				domain = domain[:idx]
-			}
-			// Allow the MinIO domain
+			// Allow the MinIO domain with port (presigned URLs may include port)
+			// Use the full host (host:port) to match presigned URLs
 			if minioURL.Scheme == "https" {
-				imgSrc += " https://" + domain
+				imgSrc += " https://" + minioURL.Host
 			} else {
-				imgSrc += " http://" + domain
+				imgSrc += " http://" + minioURL.Host
 			}
 		}
 	}
