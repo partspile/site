@@ -29,6 +29,9 @@ func HandleAdPage(c *fiber.Ctx) error {
 		return render(c, ui.AdDeletedPage(userID, userName, c.Path(), csrfToken))
 	}
 
+	// Update the ad category cookie based on the ad
+	cookie.SetAdCategory(c, a.AdCategoryID)
+
 	// Owner can see their deleted ads, or anyone can see active ads
 	csrfToken := local.GetCSRFToken(c)
 	return render(c, ui.AdPage(*a, userID, userName, csrfToken, c.Path(), cookie.GetLocation(c)))

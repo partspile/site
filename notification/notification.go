@@ -101,7 +101,7 @@ func (n *NotificationService) sendSMSNotification(phoneNumber, senderName, adTit
 
 	// Create SMS message
 	message := fmt.Sprintf("New message from %s about '%s': %s. View at: %s/messages/%d",
-		senderName, adTitle, truncatedContent, config.BaseURL, conversationID)
+		senderName, adTitle, truncatedContent, config.TwilioWebhookURL, conversationID)
 
 	// Send SMS using Twilio
 	err := sms.SendMessage(phoneNumber, message)
@@ -158,7 +158,7 @@ func (n *NotificationService) NotifyPing(conversationID int, senderID, recipient
 
 	// Ping notification message
 	message := fmt.Sprintf("%s pinged you about '%s'. View at: %s/messages/%d",
-		sender.Name, adDetails.Title, config.BaseURL, conversationID)
+		sender.Name, adDetails.Title, config.TwilioWebhookURL, conversationID)
 
 	switch recipient.NotificationMethod {
 	case user.NotificationMethodSMS:
@@ -185,7 +185,7 @@ func (n *NotificationService) NotifySummary(userID int, conversations []messagin
 	}
 
 	message := fmt.Sprintf("You have new messages in %d conversation(s). View at: %s/messages",
-		len(conversations), config.BaseURL)
+		len(conversations), config.TwilioWebhookURL)
 
 	switch recipient.NotificationMethod {
 	case user.NotificationMethodSMS:

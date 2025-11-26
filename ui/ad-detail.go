@@ -315,13 +315,13 @@ func priceEditable(a ad.AdDetail) g.Node {
 	return Div(
 		Class("flex items-center gap-3"),
 		price(a),
-		button("Edit",
-			withClass("px-4 h-10"),
-			withAttributes(
-				hx.Get(fmt.Sprintf("/modal/ad/price/%d", a.ID)),
-				hx.Target("body"),
-				hx.Swap("beforeend"),
-			),
+		A(
+			Href("#"),
+			Class("text-blue-500 hover:underline px-4 h-10 flex items-center"),
+			hx.Get(fmt.Sprintf("/modal/ad/price/%d", a.ID)),
+			hx.Target("body"),
+			hx.Swap("beforeend"),
+			g.Text("edit"),
 		),
 	)
 }
@@ -330,13 +330,13 @@ func locationEditable(a ad.AdDetail) g.Node {
 	return Div(
 		Class("flex items-center gap-2"),
 		location(a.Ad),
-		button("Edit",
-			withClass("px-4 h-10"),
-			withAttributes(
-				hx.Get(fmt.Sprintf("/modal/ad/location/%d", a.ID)),
-				hx.Target("body"),
-				hx.Swap("beforeend"),
-			),
+		A(
+			Href("#"),
+			Class("text-blue-500 hover:underline px-4 h-10 flex items-center"),
+			hx.Get(fmt.Sprintf("/modal/ad/location/%d", a.ID)),
+			hx.Target("body"),
+			hx.Swap("beforeend"),
+			g.Text("edit"),
 		),
 	)
 }
@@ -345,13 +345,13 @@ func descriptionEditable(a ad.AdDetail) g.Node {
 	return Div(
 		Class("mt-2"),
 		description(a),
-		button("Edit",
-			withClass("px-4 h-10"),
-			withAttributes(
-				hx.Get(fmt.Sprintf("/modal/ad/description/%d", a.ID)),
-				hx.Target("body"),
-				hx.Swap("beforeend"),
-			),
+		A(
+			Href("#"),
+			Class("text-blue-500 hover:underline px-4 h-10 flex items-center"),
+			hx.Get(fmt.Sprintf("/modal/ad/description/%d", a.ID)),
+			hx.Target("body"),
+			hx.Swap("beforeend"),
+			g.Text("edit"),
 		),
 	)
 }

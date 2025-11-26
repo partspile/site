@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -70,7 +71,8 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 	}
 
 	redirectDelayMs := config.ServerRedirectDelay.Milliseconds()
-	return render(c, ui.SuccessMessage("Ad created successfully", "/", redirectDelayMs))
+	redirectURL := fmt.Sprintf("/ad/%d", newAd.ID)
+	return render(c, ui.SuccessMessage("Ad created successfully", redirectURL, redirectDelayMs))
 }
 
 // HandleFieldValues handles field value requests generically for any field

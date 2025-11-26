@@ -90,10 +90,13 @@ var (
 
 	// Server configuration
 	ServerPort = getEnvWithDefault("PORT", "8000")
-	BaseURL    = getEnvWithDefault("BASE_URL", "http://localhost:8000")
+	// Twilio webhook URL - used for webhook callbacks and notification links
+	// Set to your ngrok URL or production domain (e.g., https://your-domain.com)
+	TwilioWebhookURL = getEnvWithDefault("TWILIO_WEBHOOK_URL", "")
 
-	// Cookie security - set secure flag based on environment
-	CookieSecure = baseURLIsSecure()
+	// Cookie security - set LOCAL_DEVELOPMENT=true to relax cookie security for local HTTP access
+	// When LOCAL_DEVELOPMENT is set, cookies will work over HTTP even if TWILIO_WEBHOOK_URL is HTTPS
+	CookieSecure = os.Getenv("LOCAL_DEVELOPMENT") != "true"
 
 	// Logging configuration
 	LogLevel  = getEnvWithDefault("LOG_LEVEL", "info")
@@ -107,10 +110,6 @@ func getEnvWithDefault(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
-}
-
-func baseURLIsSecure() bool {
-	return len(BaseURL) > 5 && BaseURL[:5] == "https"
 }
 
 // SecurityCheck validates security configuration and logs warnings
@@ -167,10 +166,4 @@ func SecurityCheck() {
 	}
 	UserEncryptionKey = userKey
 	logger.Info("User encryption key configured", "length", len(UserEncryptionKey))
-
-	// Warn about insecure defaults in production
-	if len(BaseURL) >= 5 && BaseURL[:5] != "https" &&
-		os.Getenv("ENVIRONMENT") != "development" {
-		logger.Warn("BaseURL is not HTTPS", "baseURL", BaseURL)
-	}
 }

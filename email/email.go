@@ -128,7 +128,7 @@ func (s *EmailService) SendNotificationEmail(to, senderName, adTitle, messageCon
         </div>
     </div>
 </body>
-</html>`, senderName, adTitle, messageContent, config.BaseURL, conversationID)
+</html>`, senderName, adTitle, messageContent, config.TwilioWebhookURL, conversationID)
 
 	return s.SendEmail(to, subject, htmlBody)
 }
@@ -209,7 +209,7 @@ func (s *EmailService) SendPingEmail(to, senderName, adTitle string, conversatio
         </div>
     </div>
 </body>
-</html>`, senderName, adTitle, config.BaseURL, conversationID)
+</html>`, senderName, adTitle, config.TwilioWebhookURL, conversationID)
 
 	return s.SendEmail(to, subject, htmlBody)
 }
@@ -248,7 +248,7 @@ func (s *EmailService) SendSummaryEmail(to string, conversationCount int) error 
         </div>
     </div>
 </body>
-</html>`, conversationCount, config.BaseURL)
+</html>`, conversationCount, config.TwilioWebhookURL)
 
 	return s.SendEmail(to, subject, htmlBody)
 }

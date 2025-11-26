@@ -47,7 +47,7 @@ var twilioClient = twilio.NewRestClientWithParams(twilio.ClientParams{
 var tracker sync.Map
 
 // smsAvailable tracks whether SMS functionality is available
-// SMS is disabled if BASE_URL is localhost (webhooks won't work)
+// SMS is disabled if TWILIO_WEBHOOK_URL is localhost (webhooks won't work)
 var smsAvailable bool
 
 // MessageTracker tracks the status and metadata of an SMS message
@@ -158,7 +158,7 @@ func IsBlockedError(err error) bool {
 func SendMessage(phoneNumber, message string) error {
 	// Check if SMS is available
 	if !smsAvailable {
-		return fmt.Errorf("SMS service not available - BASE_URL must be a public URL (not localhost)")
+		return fmt.Errorf("SMS service not available - TWILIO_WEBHOOK_URL must be a public URL (not localhost)")
 	}
 
 	// Respect user opt-out - fail silently
@@ -171,7 +171,7 @@ func SendMessage(phoneNumber, message string) error {
 	params.SetTo(phoneNumber)
 	params.SetFrom(config.TwilioFromNumber)
 	params.SetBody(message)
-	params.SetStatusCallback(fmt.Sprintf("%s/api/sms/webhook", config.BaseURL))
+	params.SetStatusCallback(fmt.Sprintf("%s/api/sms/webhook", config.TwilioWebhookURL))
 
 	result, err := twilioClient.Api.CreateMessage(params)
 	if err != nil {
@@ -334,7 +334,7 @@ func isLocalhost(hostname string) bool {
 	return false
 }
 
-// InitSMS checks SMS configuration and availability, disabling SMS if BASE_URL is localhost
+// InitSMS checks SMS configuration and availability, disabling SMS if TWILIO_WEBHOOK_URL is localhost
 // This should be called at application startup
 // Returns nil if SMS is ready, or an error if there's a configuration problem
 func InitSMS() error {
@@ -347,23 +347,23 @@ func InitSMS() error {
 		return nil // Not an error, just disabled
 	}
 
-	// Check if BASE_URL is localhost (webhooks won't work)
-	if config.BaseURL == "" {
-		logger.Info("SMS disabled - BASE_URL is empty (webhooks required)",
+	// Check if TWILIO_WEBHOOK_URL is localhost (webhooks won't work)
+	if config.TwilioWebhookURL == "" {
+		logger.Info("SMS disabled - TWILIO_WEBHOOK_URL is empty (webhooks required)",
 			"component", "SMS")
 		return nil // Not an error, just disabled
 	}
 
-	parsedURL, err := url.Parse(config.BaseURL)
+	parsedURL, err := url.Parse(config.TwilioWebhookURL)
 	if err != nil {
-		logger.Warn("SMS disabled - Failed to parse BASE_URL",
+		logger.Warn("SMS disabled - Failed to parse TWILIO_WEBHOOK_URL",
 			"error", err, "component", "SMS")
-		return fmt.Errorf("invalid BASE_URL: %w", err) // This is an actual error
+		return fmt.Errorf("invalid TWILIO_WEBHOOK_URL: %w", err) // This is an actual error
 	}
 
 	hostname := parsedURL.Hostname()
 	if isLocalhost(hostname) {
-		logger.Info("SMS disabled - BASE_URL is localhost (webhooks won't work). Use ngrok or set BASE_URL to a public URL.",
+		logger.Info("SMS disabled - TWILIO_WEBHOOK_URL is localhost (webhooks won't work). Use ngrok or set TWILIO_WEBHOOK_URL to a public URL.",
 			"component", "SMS")
 		return nil // Not an error, just disabled
 	}
@@ -371,7 +371,7 @@ func InitSMS() error {
 	// SMS is available
 	smsAvailable = true
 	logger.Info("SMS enabled",
-		"component", "SMS", "baseURL", config.BaseURL)
+		"component", "SMS", "twilioWebhookURL", config.TwilioWebhookURL)
 
 	// Update Twilio phone number webhook URL on startup
 	if err := UpdatePhoneNumberWebhook(); err != nil {
@@ -391,7 +391,7 @@ func IsSMSAvailable() bool {
 }
 
 // UpdatePhoneNumberWebhook updates the Twilio phone number's incoming message webhook URL
-// This should be called at startup to automatically configure the webhook based on BASE_URL
+// This should be called at startup to automatically configure the webhook based on TWILIO_WEBHOOK_URL
 // Note: This is only called when SMS is available (checked by InitSMS)
 func UpdatePhoneNumberWebhook() error {
 	// Defensive check - SMS should already be available, but verify
@@ -403,7 +403,7 @@ func UpdatePhoneNumberWebhook() error {
 		return fmt.Errorf("Twilio credentials not configured")
 	}
 
-	webhookURL := fmt.Sprintf("%s/api/sms/webhook", config.BaseURL)
+	webhookURL := fmt.Sprintf("%s/api/sms/webhook", config.TwilioWebhookURL)
 
 	// Get the phone number SID first
 	params := &Api.ListIncomingPhoneNumberParams{}
