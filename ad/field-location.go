@@ -43,7 +43,7 @@ func (f *FieldLocation) BuildFilterCondition(c *fiber.Ctx) (string, []interface{
 		ST_MakePoint((vector_metadata->'location'->>'lon')::float,
 		(vector_metadata->'location'->>'lat')::float)::geography,
 		ST_MakePoint($1::float, $2::float)::geography
-	) <= $3`,
+	) <= $3::float`,
 		[]interface{}{lon, lat, radiusMeters}
 }
 

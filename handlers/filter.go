@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -23,9 +25,10 @@ func buildSearchFilter(c *fiber.Ctx) FilterClause {
 	argIndex := 1
 
 	ac := cookie.GetAdCategory(c)
-	conditions = append(conditions, fmt.Sprintf("(vector_metadata->>$%d)::int = $%d", argIndex, argIndex+1))
-	args = append(args, "ad_category_id", ac)
-	argIndex += 2
+	acClause := "(vector_metadata->>'ad_category_id')::int = $1::int"
+	conditions = append(conditions, acClause)
+	args = append(args, ac)
+	argIndex += 1
 	logger.Debug("Added ad_category_id filter",
 		"component", "buildSearchFilters", "adCategoryID", ac)
 
@@ -47,8 +50,10 @@ func buildSearchFilter(c *fiber.Ctx) FilterClause {
 	}
 
 	// Rock count filter - exclude ads with too many rocks
-	conditions = append(conditions, fmt.Sprintf("(vector_metadata->>$%d)::int >= $%d AND (vector_metadata->>$%d)::int <= $%d", argIndex, argIndex+1, argIndex, argIndex+2))
-	args = append(args, "rock_count", 0, config.MaxRockCount)
+	rockClause := "(vector_metadata->>'rock_count')::int >= $1::int AND (vector_metadata->>'rock_count')::int <= $2::int"
+	rockClause = replacePlaceholders(rockClause, argIndex)
+	conditions = append(conditions, rockClause)
+	args = append(args, 0, config.MaxRockCount)
 	logger.Debug("Added rock_count filter",
 		"component", "buildSearchFilters", "maxRockCount",
 		config.MaxRockCount)
@@ -64,12 +69,12 @@ func buildSearchFilter(c *fiber.Ctx) FilterClause {
 
 // replacePlaceholders replaces $1, $2, etc. in a SQL query with $startIndex, $startIndex+1, etc.
 func replacePlaceholders(query string, startIndex int) string {
-	// Simple regex replacement for $N patterns
-	result := query
-	for i := 1; i <= 100; i++ { // Support up to $100
-		oldPlaceholder := fmt.Sprintf("$%d", i)
-		newPlaceholder := fmt.Sprintf("$%d", i+startIndex-1)
-		result = strings.ReplaceAll(result, oldPlaceholder, newPlaceholder)
-	}
-	return result
+	// Use regex to match $N patterns and replace them correctly
+	// This avoids replacing $1 inside $10, $11, etc.
+	re := regexp.MustCompile(`\$(\d+)`)
+	return re.ReplaceAllStringFunc(query, func(match string) string {
+		numStr := match[1:]
+		num, _ := strconv.Atoi(numStr)
+		return fmt.Sprintf("$%d", num+startIndex-1)
+	})
 }

@@ -45,15 +45,14 @@ func (f *FieldYear) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) {
 
 	var conditions []string
 	var args []interface{}
-	argIndex := 1
 
 	// Check if any year in the JSONB array falls within the range
 	// Extract each year from the array, convert to int, and check if it's in range
-	condition := fmt.Sprintf(`EXISTS (
+	condition := `EXISTS (
 		SELECT 1 
 		FROM jsonb_array_elements_text(vector_metadata->'year') AS year_val
-		WHERE year_val::int BETWEEN $%d AND $%d
-	)`, argIndex, argIndex+1)
+		WHERE year_val::int BETWEEN $1::int AND $2::int
+	)`
 	conditions = append(conditions, condition)
 	args = append(args, minVal, maxVal)
 

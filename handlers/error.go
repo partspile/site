@@ -27,15 +27,13 @@ func CustomErrorHandler(c *fiber.Ctx, err error) error {
 	userName := local.GetUserName(c)
 
 	// Log detailed error information server-side only
+	// Only log userID, not userName or other user info
 	fields := []any{
 		"method", c.Method(),
 		"path", c.Path(),
 		"status", code,
 		"error", err.Error(),
 		"userID", userID,
-	}
-	if userName != "" {
-		fields = append(fields, "userName", userName)
 	}
 
 	if code >= 500 {

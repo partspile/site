@@ -143,7 +143,8 @@ func QuerySimilarAdIDs(embedding []float32, whereClause string, whereArgs []inte
 	args = append(args, topK, cursor)
 
 	logger.Debug("Querying similar ads",
-		"component", "postgres", "topK", topK, "cursor", cursor, "threshold", threshold)
+		"component", "postgres", "topK", topK, "cursor", cursor, "threshold", threshold,
+		"query", query, "args", args)
 
 	rows, err := db.Query(query, args...)
 	if err != nil {

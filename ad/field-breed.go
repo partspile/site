@@ -17,7 +17,7 @@ func (f *FieldBreed) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) 
 	if fieldValue == "" {
 		return "", nil
 	}
-	return "vector_metadata->>$1 = $2", []interface{}{"breed", fieldValue}
+	return "vector_metadata->>'breed' = $1::text", []interface{}{fieldValue}
 }
 
 func (f *FieldBreed) RenderNewAdField(parentValues map[string]string) g.Node {

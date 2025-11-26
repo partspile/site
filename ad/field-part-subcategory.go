@@ -17,7 +17,7 @@ func (f *FieldPartSubcategory) BuildFilterCondition(c *fiber.Ctx) (string, []int
 	if fieldValue == "" {
 		return "", nil
 	}
-	return "vector_metadata->>$1 = $2", []interface{}{"part_subcategory", fieldValue}
+	return "vector_metadata->>'part_subcategory' = $1::text", []interface{}{fieldValue}
 }
 
 func (f *FieldPartSubcategory) RenderNewAdField(parentValues map[string]string) g.Node {

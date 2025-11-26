@@ -41,20 +41,19 @@ func (f *FieldPrice) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) 
 
 	var conditions []string
 	var args []interface{}
-	argIndex := 1
 
 	if minPrice != nil && maxPrice != nil {
 		// Both min and max - use BETWEEN
-		conditions = append(conditions, fmt.Sprintf("(vector_metadata->>$%d)::float BETWEEN $%d AND $%d", argIndex, argIndex+1, argIndex+2))
-		args = append(args, "price", *minPrice, *maxPrice)
+		conditions = append(conditions, "CAST(vector_metadata->>'price' AS float) BETWEEN $1::float AND $2::float")
+		args = append(args, *minPrice, *maxPrice)
 	} else if minPrice != nil {
 		// Only min - use >=
-		conditions = append(conditions, fmt.Sprintf("(vector_metadata->>$%d)::float >= $%d", argIndex, argIndex+1))
-		args = append(args, "price", *minPrice)
+		conditions = append(conditions, "CAST(vector_metadata->>'price' AS float) >= $1::float")
+		args = append(args, *minPrice)
 	} else if maxPrice != nil {
 		// Only max - use <=
-		conditions = append(conditions, fmt.Sprintf("(vector_metadata->>$%d)::float <= $%d", argIndex, argIndex+1))
-		args = append(args, "price", *maxPrice)
+		conditions = append(conditions, "CAST(vector_metadata->>'price' AS float) <= $1::float")
+		args = append(args, *maxPrice)
 	}
 
 	return strings.Join(conditions, " AND "), args

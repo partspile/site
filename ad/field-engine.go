@@ -1,7 +1,6 @@
 package ad
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
@@ -18,9 +17,7 @@ func (f *FieldEngine) BuildFilterCondition(c *fiber.Ctx) (string, []interface{})
 	if fieldValue == "" {
 		return "", nil
 	}
-	// For array fields, check if the value is contained in the JSONB array
-	jsonValue, _ := json.Marshal([]string{fieldValue})
-	return "vector_metadata->$1 @> $2::jsonb", []interface{}{"engine", string(jsonValue)}
+	return "vector_metadata->>'engine' = $1::text", []interface{}{fieldValue}
 }
 
 func (f *FieldEngine) RenderNewAdField(parentValues map[string]string) g.Node {

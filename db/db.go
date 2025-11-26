@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"regexp"
 	"strings"
 	"sync"
@@ -11,6 +12,7 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 	"github.com/parts-pile/site/logger"
+	"github.com/pgvector/pgvector-go"
 )
 
 var (
@@ -111,12 +113,93 @@ func prettyPrintSQL(query string) string {
 	return strings.Join(result, "\n")
 }
 
+// formatArgs formats query arguments for display, truncating slices and vectors
+func formatArgs(args []interface{}) []interface{} {
+	formatted := make([]interface{}, len(args))
+	for i, arg := range args {
+		if arg == nil {
+			formatted[i] = arg
+			continue
+		}
+
+		val := reflect.ValueOf(arg)
+		typ := reflect.TypeOf(arg)
+
+		// Check if arg is a pgvector.Vector (has Slice() method)
+		if vec, ok := arg.(pgvector.Vector); ok {
+			slice := vec.Slice()
+			formatted[i] = formatSlice(slice, len(slice))
+			continue
+		}
+
+		// Use reflection to check for pgvector.Vector type
+		if typ != nil && typ.String() == "pgvector.Vector" {
+			if val.Kind() == reflect.Struct {
+				sliceMethod := val.MethodByName("Slice")
+				if sliceMethod.IsValid() {
+					results := sliceMethod.Call(nil)
+					if len(results) > 0 {
+						slice := results[0].Interface().([]float32)
+						formatted[i] = formatSlice(slice, len(slice))
+						continue
+					}
+				}
+			}
+		}
+
+		// Check if arg is a slice or array
+		if val.Kind() == reflect.Slice || val.Kind() == reflect.Array {
+			length := val.Len()
+			if length == 0 {
+				formatted[i] = "[]"
+				continue
+			}
+
+			// Extract first few elements
+			previewCount := 2
+			if length < previewCount {
+				previewCount = length
+			}
+
+			preview := make([]interface{}, previewCount)
+			for j := 0; j < previewCount; j++ {
+				preview[j] = val.Index(j).Interface()
+			}
+
+			// Format based on element type
+			if length > previewCount {
+				formatted[i] = fmt.Sprintf("[%v, %v, ...] (%d elements)", preview[0], preview[1], length)
+			} else if length == 2 {
+				formatted[i] = fmt.Sprintf("[%v, %v]", preview[0], preview[1])
+			} else {
+				formatted[i] = fmt.Sprintf("[%v]", preview[0])
+			}
+			continue
+		}
+
+		formatted[i] = arg
+	}
+	return formatted
+}
+
+// formatSlice formats a float32 slice for display
+func formatSlice(slice []float32, length int) string {
+	if length > 2 {
+		return fmt.Sprintf("[%g, %g, ...] (%d values)", slice[0], slice[1], length)
+	} else if length == 2 {
+		return fmt.Sprintf("[%g, %g]", slice[0], slice[1])
+	} else if length == 1 {
+		return fmt.Sprintf("[%g]", slice[0])
+	}
+	return "[]"
+}
+
 // Query executes a query that returns rows
 func Query(query string, args ...interface{}) (*sql.Rows, error) {
 	fmt.Println("")
 	fmt.Println("=== SQL Query ===")
 	fmt.Println(prettyPrintSQL(query))
-	fmt.Println("Args:", args)
+	fmt.Println("Args:", formatArgs(args))
 	fmt.Println("================")
 	fmt.Println("")
 	return db.Query(query, args...)
@@ -127,7 +210,7 @@ func QueryRow(query string, args ...interface{}) *sql.Row {
 	fmt.Println("")
 	fmt.Println("=== SQL QueryRow ===")
 	fmt.Println(prettyPrintSQL(query))
-	fmt.Println("Args:", args)
+	fmt.Println("Args:", formatArgs(args))
 	fmt.Println("===================")
 	fmt.Println("")
 	return db.QueryRow(query, args...)
@@ -135,12 +218,14 @@ func QueryRow(query string, args ...interface{}) *sql.Row {
 
 // Exec executes a query that doesn't return rows
 func Exec(query string, args ...interface{}) (sql.Result, error) {
-	fmt.Println("")
-	fmt.Println("=== SQL Exec ===")
-	fmt.Println(prettyPrintSQL(query))
-	fmt.Println("Args:", args)
-	fmt.Println("===============")
-	fmt.Println("")
+	/*
+		fmt.Println("")
+		fmt.Println("=== SQL Exec ===")
+		fmt.Println(prettyPrintSQL(query))
+		fmt.Println("Args:", args)
+		fmt.Println("===============")
+		fmt.Println("")
+	*/
 	return db.Exec(query, args...)
 }
 
@@ -154,7 +239,7 @@ func Select(dest interface{}, query string, args ...interface{}) error {
 	fmt.Println("")
 	fmt.Println("=== SQL Select ===")
 	fmt.Println(prettyPrintSQL(query))
-	fmt.Println("Args:", args)
+	fmt.Println("Args:", formatArgs(args))
 	fmt.Println("=================")
 	fmt.Println("")
 	return db.Select(dest, query, args...)
@@ -171,7 +256,7 @@ func QueryJSON(dst interface{}, query string, args ...interface{}) error {
 	fmt.Println("")
 	fmt.Println("=== SQL QueryJSON ===")
 	fmt.Println(prettyPrintSQL(query))
-	fmt.Println("Args:", args)
+	fmt.Println("Args:", formatArgs(args))
 	fmt.Println("===============")
 	fmt.Println("")
 	err := db.QueryRow(query, args...).Scan(&jsonResult)

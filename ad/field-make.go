@@ -18,7 +18,7 @@ func (f *FieldMake) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) {
 	if fieldValue == "" {
 		return "", nil
 	}
-	return "vector_metadata->>$1 = $2", []interface{}{"make", fieldValue}
+	return "vector_metadata->>'make' = $1::text", []interface{}{fieldValue}
 }
 
 func (f *FieldMake) RenderFilterField(params map[string]string) g.Node {
