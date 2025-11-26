@@ -13,60 +13,41 @@ import (
 	"strconv"
 	"time"
 
+	"context"
+
 	"github.com/chai2010/webp"
 	"github.com/gofiber/fiber/v2"
+	miniosdk "github.com/minio/minio-go/v7"
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/logger"
+	"github.com/parts-pile/site/minio"
 	"github.com/parts-pile/site/ui"
 	"golang.org/x/image/draw"
-	"gopkg.in/kothar/go-backblaze.v0"
 )
 
-// uploadAdImagesToB2 uploads user-uploaded images to B2 with multiple sizes
-func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
+// uploadAdImagesToMinIO uploads user-uploaded images to MinIO with multiple sizes
+func uploadAdImagesToMinIO(adID int, files []*multipart.FileHeader) {
 	logger.Info("Starting upload",
-		"component", "B2", "adID", adID, "imageCount", len(files))
+		"component", "MinIO", "adID", adID, "imageCount", len(files))
 
-	accountID := config.B2MasterKeyID
-	keyID := config.B2KeyID
-	appKey := config.B2AppKey
-
-	logger.Debug("B2 config check",
-		"component", "B2", "adID", adID,
-		"accountIDSet", accountID != "", "keyIDSet",
-		keyID != "", "appKeySet", appKey != "")
-
-	if accountID == "" || appKey == "" || keyID == "" {
-		logger.Error("B2 credentials not set in env vars",
-			"component", "B2", "adID", adID)
+	minioClient := minio.GetMinIOClient()
+	if minioClient == nil {
+		logger.Error("MinIO client not initialized",
+			"component", "MinIO", "adID", adID)
 		return
 	}
 
-	b2, err := backblaze.NewB2(backblaze.Credentials{
-		AccountID:      accountID,
-		ApplicationKey: appKey,
-		KeyID:          keyID,
-	})
-	if err != nil {
-		logger.Error("B2 auth error",
-			"error", err, "component", "B2", "adID", adID)
+	if config.MinIOBucketName == "" {
+		logger.Error("MinIO bucket name not set in env vars",
+			"component", "MinIO", "adID", adID)
 		return
 	}
 
 	logger.Debug("Using bucket name",
-		"component", "B2", "bucketName", config.B2BucketName,
+		"component", "MinIO", "bucketName", config.MinIOBucketName,
 		"adID", adID)
-	bucket, err := b2.Bucket(config.B2BucketName)
-	if err != nil {
-		logger.Error("B2 bucket error",
-			"error", err, "component", "B2", "adID", adID)
-		return
-	}
-	logger.Debug("Successfully connected to bucket",
-		"component", "B2", "adID", adID)
 
 	sizes := []struct {
 		Width   int
@@ -81,15 +62,17 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 	successCount := 0
 	totalExpected := len(files) * len(sizes)
 
+	ctx := context.Background()
+
 	for i, fileHeader := range files {
 		logger.Debug("Processing image",
-			"component", "B2", "imageIndex", i+1,
+			"component", "MinIO", "imageIndex", i+1,
 			"totalImages", len(files), "adID", adID)
 
 		file, err := fileHeader.Open()
 		if err != nil {
 			logger.Error("Failed to open file",
-				"error", err, "component", "B2", "imageIndex",
+				"error", err, "component", "MinIO", "imageIndex",
 				i+1, "adID", adID)
 			continue
 		}
@@ -97,7 +80,7 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 		var buf bytes.Buffer
 		if _, err := buf.ReadFrom(file); err != nil {
 			logger.Error("Failed to read file",
-				"error", err, "component", "B2", "imageIndex",
+				"error", err, "component", "MinIO", "imageIndex",
 				i+1, "adID", adID)
 			file.Close()
 			continue
@@ -107,14 +90,14 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 		img, _, err := image.Decode(bytes.NewReader(buf.Bytes()))
 		if err != nil {
 			logger.Error("Failed to decode image",
-				"error", err, "component", "B2", "imageIndex",
+				"error", err, "component", "MinIO", "imageIndex",
 				i+1, "adID", adID)
 			continue
 		}
 
 		bounds := img.Bounds()
 		logger.Debug("Image dimensions",
-			"component", "B2", "imageIndex", i+1, "adID", adID,
+			"component", "MinIO", "imageIndex", i+1, "adID", adID,
 			"width", bounds.Dx(), "height", bounds.Dy())
 
 		for _, sz := range sizes {
@@ -127,54 +110,60 @@ func uploadAdImagesToB2(adID int, files []*multipart.FileHeader) {
 			opt := &webp.Options{Lossless: false, Quality: sz.Quality}
 			if err := webp.Encode(&webpBuf, dst, opt); err != nil {
 				logger.Error("WebP encode error",
-					"error", err, "component", "B2",
+					"error", err, "component", "MinIO",
 					"imageIndex", i+1, "size", sz.Suffix, "adID",
 					adID)
 				continue
 			}
 
-			b2Path := filepath.Join(
+			objectPath := filepath.Join(
 				fmt.Sprintf("%d", adID),
 				fmt.Sprintf("%d-%s.webp", i+1, sz.Suffix),
 			)
 
-			logger.Debug("Uploading to B2",
-				"component", "B2", "suffix", sz.Suffix,
-				"b2Path", b2Path, "adID", adID)
-			_, err = bucket.UploadTypedFile(b2Path, "image/webp", nil, bytes.NewReader(webpBuf.Bytes()))
+			logger.Debug("Uploading to MinIO",
+				"component", "MinIO", "suffix", sz.Suffix,
+				"objectPath", objectPath, "adID", adID)
+			_, err = minioClient.PutObject(ctx, config.MinIOBucketName, objectPath,
+				bytes.NewReader(webpBuf.Bytes()), int64(webpBuf.Len()),
+				miniosdk.PutObjectOptions{ContentType: "image/webp"})
 			if err != nil {
 				logger.Error("Upload failed",
-					"error", err, "component", "B2",
-					"suffix", sz.Suffix, "b2Path", b2Path, "adID",
+					"error", err, "component", "MinIO",
+					"suffix", sz.Suffix, "objectPath", objectPath, "adID",
 					adID)
 			} else {
 				logger.Debug("Uploaded successfully",
-					"component", "B2", "suffix", sz.Suffix,
-					"b2Path", b2Path, "adID", adID)
+					"component", "MinIO", "suffix", sz.Suffix,
+					"objectPath", objectPath, "adID", adID)
 				successCount++
 			}
 		}
 	}
 
 	logger.Info("Upload complete",
-		"component", "B2", "adID", adID, "successCount",
+		"component", "MinIO", "adID", adID, "successCount",
 		successCount, "totalExpected", totalExpected)
 }
 
-// HandleAdImageSignedURL generates a signed URL for an ad image
+// HandleAdImageSignedURL generates a presigned URL for an ad image
 func HandleAdImageSignedURL(c *fiber.Ctx) error {
-	adID := c.Params("adID")
-	if adID == "" {
+	adIDStr := c.Params("adID")
+	if adIDStr == "" {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "adID required"})
 	}
-	token, err := b2util.GetB2DownloadTokenForPrefixCached(adID + "/")
+	adID, err := strconv.Atoi(adIDStr)
+	if err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "invalid adID"})
+	}
+	// Default to first image, 1200w size
+	url, err := minio.GetMinIOPresignedURLForPrefixCached(adID, 1, "1200w")
 	if err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
 	return c.JSON(fiber.Map{
-		"prefix":  "/" + adID + "/",
-		"token":   token,
-		"expires": time.Now().Unix() + config.B2DownloadTokenExpiry,
+		"url":     url,
+		"expires": time.Now().Unix() + config.MinIOPresignedURLExpiry,
 	})
 }
 

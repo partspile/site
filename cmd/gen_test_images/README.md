@@ -1,6 +1,6 @@
 # Test Image Generator
 
-This command generates and uploads test images for all test ads (ads with `user_id = 1`) to B2 storage.
+This command generates and uploads test images for all test ads (ads with `user_id = 1`) to MinIO storage.
 
 ## Features
 
@@ -10,7 +10,7 @@ This command generates and uploads test images for all test ads (ads with `user_
   - Image dimensions
 - **Multiple Sizes**: Generates images in three sizes (160w, 480w, 1200w) for responsive display
 - **WebP Format**: Uses WebP encoding for optimal compression and faster uploads
-- **Batch Upload**: Uploads all images to B2 in parallel batches for efficiency
+- **Batch Upload**: Uploads all images to MinIO in parallel batches for efficiency
 - **Progress Tracking**: Shows upload progress every 50 successful uploads
 
 ## Usage
@@ -22,15 +22,15 @@ go run main.go
 
 ## Requirements
 
-- B2 credentials must be set in environment variables:
-  - `B2_MASTER_KEY_ID`
-  - `B2_KEY_ID` 
-  - `B2_APP_KEY`
-  - `B2_BUCKET_NAME`
+- MinIO credentials must be set in environment variables:
+  - `MINIO_API_URL` - MinIO API endpoint URL (e.g., `http://localhost:9000`)
+  - `MINIO_USERNAME` - MinIO username
+  - `MINIO_PASSWORD` - MinIO password
+  - `MINIO_BUCKET_NAME` - MinIO bucket name
 
 ## Image Structure
 
-Images are organized in B2 as:
+Images are organized in MinIO as:
 ```
 {ad_id}/{image_number}-{size}.webp
 ```

@@ -9,11 +9,11 @@ A Go-based auto parts marketplace built with Fiber, HTMX, and Gomponents.
   - SQLite: `project.db` or `file:project.db`
   - PostgreSQL: `postgresql://username:password@localhost:5432/dbname`
 
-### Backblaze B2 Configuration
-- `BACKBLAZE_MASTER_KEY_ID` - Backblaze B2 master key ID
-- `BACKBLAZE_KEY_ID` - Backblaze B2 key ID  
-- `BACKBLAZE_APP_KEY` - Backblaze B2 application key
-- `B2_BUCKET_ID` - Backblaze B2 bucket ID for image storage
+### MinIO Configuration
+- `MINIO_API_URL` - MinIO API endpoint URL (e.g., `http://localhost:9000` or `https://<server>:<port>`)
+- `MINIO_USERNAME` - MinIO username
+- `MINIO_PASSWORD` - MinIO password
+- `MINIO_BUCKET_NAME` - MinIO bucket name for image storage
 
 ### Vector Database Configuration
 - Vector embeddings are stored in PostgreSQL/CockroachDB using the pgvector extension

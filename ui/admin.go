@@ -32,7 +32,7 @@ func adminNavigation(activeSection string) g.Node {
 		label string
 		href  string
 	}{
-		{"b2-cache", "B2 Cache", "/admin/b2-cache"},
+		{"minio-cache", "MinIO Cache", "/admin/minio-cache"},
 		{"embedding-cache", "Embedding Cache", "/admin/embedding-cache"},
 		{"spec-cache", "Spec Cache", "/admin/spec-cache"},
 		{"monitor", "Monitor", "/admin/metrics"},
@@ -114,12 +114,12 @@ func statCard(label, format string, value interface{}) g.Node {
 	)
 }
 
-func AdminB2CacheSection(stats map[string]interface{}) g.Node {
+func AdminMinIOCacheSection(stats map[string]interface{}) g.Node {
 	return Div(
 		Class("space-y-4"),
-		Div(Class("text-lg font-medium text-gray-900"), g.Text("B2 Cache Management")),
-		Div(Class("text-gray-600 text-sm"), g.Text("Manage B2 file storage cache performance and statistics.")),
-		CacheStatsPanel("Cache Statistics", stats, "/api/admin/b2-cache/clear", "/api/admin/b2-cache/refresh"),
+		Div(Class("text-lg font-medium text-gray-900"), g.Text("MinIO Cache Management")),
+		Div(Class("text-gray-600 text-sm"), g.Text("Manage MinIO file storage cache performance and statistics.")),
+		CacheStatsPanel("Cache Statistics", stats, "/api/admin/minio-cache/clear", "/api/admin/minio-cache/refresh"),
 	)
 }
 

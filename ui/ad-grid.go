@@ -9,7 +9,7 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/b2util"
+	"github.com/parts-pile/site/minio"
 )
 
 // AdGridNode renders a grid view of ad
@@ -55,16 +55,15 @@ func AdGridNode(a ad.Ad, userID int, loc *time.Location, csrfToken string) g.Nod
 	)
 }
 
-// adGridImageSrc generates a single signed B2 image URL for grid context
+// adGridImageSrc generates a single presigned MinIO image URL for grid context
 func adGridImageSrc(adID int, idx int) string {
-	prefix := fmt.Sprintf("%d/", adID)
-	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
-	if err != nil || token == "" {
-		// Return empty string when B2 images aren't available - browser will show broken image
+	url, err := minio.GetMinIOPresignedURLForPrefixCached(adID, idx, "480w")
+	if err != nil || url == "" {
+		// Return empty string when MinIO images aren't available - browser will show broken image
 		return ""
 	}
 
-	return b2util.GetB2ImageURL(adID, idx, "480w", token)
+	return url
 }
 
 func gridImageWithIndex(adID int, idx int, alt string) g.Node {

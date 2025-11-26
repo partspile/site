@@ -6,12 +6,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 	fiberlogger "github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
 	h "github.com/parts-pile/site/handlers"
 	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/metrics"
+	"github.com/parts-pile/site/minio"
 	"github.com/parts-pile/site/sms"
 	"github.com/parts-pile/site/vector"
 )
@@ -40,9 +40,9 @@ func main() {
 		logger.Fatal("Failed to initialize ad categories", "error", err)
 	}
 
-	// Initialize B2 cache
-	if err := b2util.Init(); err != nil {
-		logger.Fatal("Failed to initialize B2 cache", "error", err)
+	// Initialize MinIO cache
+	if err := minio.Init(); err != nil {
+		logger.Fatal("Failed to initialize MinIO cache", "error", err)
 	}
 
 	// Initialize embedding caches
@@ -148,14 +148,14 @@ func main() {
 	// Admin dashboard and management
 	admin := app.Group("/admin", h.AdminRequired)
 	admin.Get("/", h.HandleAdminDashboard)
-	admin.Get("/b2-cache", h.HandleAdminB2Cache)
+	admin.Get("/minio-cache", h.HandleAdminMinIOCache)
 	admin.Get("/embedding-cache", h.HandleAdminEmbeddingCache)
 	admin.Get("/metrics", h.HandleMonitor)
 
 	// Admin API group
 	adminAPI := api.Group("/admin", h.AdminRequired)
-	adminAPI.Post("/b2-cache/clear", h.HandleClearB2Cache)
-	adminAPI.Get("/b2-cache/refresh", h.HandleRefreshB2Cache)
+	adminAPI.Post("/minio-cache/clear", h.HandleClearMinIOCache)
+	adminAPI.Get("/minio-cache/refresh", h.HandleRefreshMinIOCache)
 	adminAPI.Get("/embedding-cache/refresh", h.HandleRefreshEmbeddingCache)
 	adminAPI.Post("/embedding-cache/query/clear", h.HandleClearQueryEmbeddingCache)
 	adminAPI.Post("/embedding-cache/user/clear", h.HandleClearUserEmbeddingCache)

@@ -196,23 +196,27 @@ func formatSlice(slice []float32, length int) string {
 
 // Query executes a query that returns rows
 func Query(query string, args ...interface{}) (*sql.Rows, error) {
-	fmt.Println("")
-	fmt.Println("=== SQL Query ===")
-	fmt.Println(prettyPrintSQL(query))
-	fmt.Println("Args:", formatArgs(args))
-	fmt.Println("================")
-	fmt.Println("")
+	/*
+		fmt.Println("")
+		fmt.Println("=== SQL Query ===")
+		fmt.Println(prettyPrintSQL(query))
+		fmt.Println("Args:", formatArgs(args))
+		fmt.Println("================")
+		fmt.Println("")
+	*/
 	return db.Query(query, args...)
 }
 
 // QueryRow executes a query that returns a single row
 func QueryRow(query string, args ...interface{}) *sql.Row {
-	fmt.Println("")
-	fmt.Println("=== SQL QueryRow ===")
-	fmt.Println(prettyPrintSQL(query))
-	fmt.Println("Args:", formatArgs(args))
-	fmt.Println("===================")
-	fmt.Println("")
+	/*
+		fmt.Println("")
+		fmt.Println("=== SQL QueryRow ===")
+		fmt.Println(prettyPrintSQL(query))
+		fmt.Println("Args:", formatArgs(args))
+		fmt.Println("===================")
+		fmt.Println("")
+	*/
 	return db.QueryRow(query, args...)
 }
 
@@ -236,12 +240,14 @@ func Begin() (*sql.Tx, error) {
 
 // Select executes a query and scans the results into dest (slice)
 func Select(dest interface{}, query string, args ...interface{}) error {
-	fmt.Println("")
-	fmt.Println("=== SQL Select ===")
-	fmt.Println(prettyPrintSQL(query))
-	fmt.Println("Args:", formatArgs(args))
-	fmt.Println("=================")
-	fmt.Println("")
+	/*
+		fmt.Println("")
+		fmt.Println("=== SQL Select ===")
+		fmt.Println(prettyPrintSQL(query))
+		fmt.Println("Args:", formatArgs(args))
+		fmt.Println("=================")
+		fmt.Println("")
+	*/
 	return db.Select(dest, query, args...)
 }
 
@@ -253,12 +259,14 @@ func Ping() error {
 // QueryJSON executes a query that returns a single JSON result and unmarshals it into dst
 func QueryJSON(dst interface{}, query string, args ...interface{}) error {
 	var jsonResult []byte
-	fmt.Println("")
-	fmt.Println("=== SQL QueryJSON ===")
-	fmt.Println(prettyPrintSQL(query))
-	fmt.Println("Args:", formatArgs(args))
-	fmt.Println("===============")
-	fmt.Println("")
+	/*
+		fmt.Println("")
+		fmt.Println("=== SQL QueryJSON ===")
+		fmt.Println(prettyPrintSQL(query))
+		fmt.Println("Args:", formatArgs(args))
+		fmt.Println("===============")
+		fmt.Println("")
+	*/
 	err := db.QueryRow(query, args...).Scan(&jsonResult)
 	if err != nil {
 		return err

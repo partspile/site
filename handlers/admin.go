@@ -2,9 +2,9 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/parts-pile/site/b2util"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/metrics"
+	"github.com/parts-pile/site/minio"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 	g "maragu.dev/gomponents"
@@ -30,25 +30,25 @@ func renderAdminSection(c *fiber.Ctx, sectionID string, sectionContent g.Node) e
 }
 
 func HandleAdminDashboard(c *fiber.Ctx) error {
-	stats := b2util.GetCacheStats()
-	return renderAdminSection(c, "b2-cache", ui.AdminB2CacheSection(stats))
+	stats := minio.GetCacheStats()
+	return renderAdminSection(c, "minio-cache", ui.AdminMinIOCacheSection(stats))
 }
 
-// B2 Cache
+// MinIO Cache
 
-func HandleAdminB2Cache(c *fiber.Ctx) error {
-	stats := b2util.GetCacheStats()
-	return renderAdminSection(c, "b2-cache", ui.AdminB2CacheSection(stats))
+func HandleAdminMinIOCache(c *fiber.Ctx) error {
+	stats := minio.GetCacheStats()
+	return renderAdminSection(c, "minio-cache", ui.AdminMinIOCacheSection(stats))
 }
 
-func HandleClearB2Cache(c *fiber.Ctx) error {
-	stats := b2util.ClearCache()
-	return render(c, ui.AdminB2CacheSection(stats))
+func HandleClearMinIOCache(c *fiber.Ctx) error {
+	stats := minio.ClearCache()
+	return render(c, ui.AdminMinIOCacheSection(stats))
 }
 
-func HandleRefreshB2Cache(c *fiber.Ctx) error {
-	stats := b2util.GetCacheStats()
-	return render(c, ui.AdminB2CacheSection(stats))
+func HandleRefreshMinIOCache(c *fiber.Ctx) error {
+	stats := minio.GetCacheStats()
+	return render(c, ui.AdminMinIOCacheSection(stats))
 }
 
 // Embedding Cache

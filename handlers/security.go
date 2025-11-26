@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"net/url"
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
@@ -11,12 +14,32 @@ import (
 // DENY for X-Frame-Options, and strict-origin-when-cross-origin for
 // Referrer-Policy.
 func ConfigureHelmet() fiber.Handler {
+	// Build img-src directive with MinIO domain
+	imgSrc := "'self' data:"
+	if config.MinIOAPIURL != "" {
+		minioURL, err := url.Parse(config.MinIOAPIURL)
+		if err == nil {
+			// Extract domain and allow it in CSP
+			domain := minioURL.Host
+			// Remove port if present for wildcard matching
+			if idx := strings.Index(domain, ":"); idx != -1 {
+				domain = domain[:idx]
+			}
+			// Allow the MinIO domain
+			if minioURL.Scheme == "https" {
+				imgSrc += " https://" + domain
+			} else {
+				imgSrc += " http://" + domain
+			}
+		}
+	}
+
 	// Custom Content-Security-Policy
 	// This policy restricts which resources can be loaded
 	csp := "default-src 'self'; " +
 		"script-src 'self' https://unpkg.com 'unsafe-inline'; " + // unpkg.com for HTMX library, 'unsafe-inline' for inline scripts (redirect scripts, category modal removal, MAX_IMAGES_PER_AD constant)
 		"style-src 'self' 'unsafe-inline'; " + // 'unsafe-inline' needed for Tailwind CSS
-		"img-src 'self' https://*.backblazeb2.com data:; " +
+		"img-src " + imgSrc + "; " +
 		"font-src 'self' data:; " +
 		"connect-src 'self'; " +
 		"frame-ancestors 'none';" +
@@ -29,11 +52,9 @@ func ConfigureHelmet() fiber.Handler {
 		ReferrerPolicy:        "strict-origin-when-cross-origin",
 		ContentTypeNosniff:    "nosniff",
 		PermissionPolicy:      "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
-		// NOTE: CrossOriginEmbedderPolicy and CrossOriginResourcePolicy are relaxed due to
-		// Backblaze B2 limitations. B2 does not support setting Cross-Origin-Resource-Policy
-		// headers on stored files, which causes COEP "require-corp" to block B2 images.
-		// If B2 is replaced with a storage service that supports CORP headers (e.g., AWS S3,
-		// Google Cloud Storage, Cloudflare R2), these can be tightened to:
+		// NOTE: CrossOriginEmbedderPolicy and CrossOriginResourcePolicy are relaxed.
+		// MinIO can support CORP headers if configured, but we keep relaxed settings for compatibility.
+		// If MinIO is configured with CORP headers, these can be tightened to:
 		//   CrossOriginEmbedderPolicy: "require-corp"
 		//   CrossOriginResourcePolicy: "same-origin"
 		CrossOriginEmbedderPolicy: "unsafe-none",

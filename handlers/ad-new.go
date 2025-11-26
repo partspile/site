@@ -62,7 +62,7 @@ func HandleNewAdSubmission(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to create ad")
 	}
 
-	uploadAdImagesToB2(newAd.ID, imageFiles)
+	uploadAdImagesToMinIO(newAd.ID, imageFiles)
 
 	// Attempt inline vector processing, fallback to queue if it fails
 	err = vector.BuildAdEmbedding(newAd)

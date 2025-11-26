@@ -12,7 +12,7 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/b2util"
+	"github.com/parts-pile/site/minio"
 )
 
 func AdDetail(a ad.AdDetail, userID int, loc *time.Location, csrfToken, view string) g.Node {
@@ -107,16 +107,15 @@ func closeButton(a ad.AdDetail, view string) g.Node {
 	)
 }
 
-// adCarouselImageSrc generates a single signed B2 image URL for carousel context
+// adCarouselImageSrc generates a single presigned MinIO image URL for carousel context
 func AdCarouselImageSrc(adID int, idx int) string {
-	prefix := fmt.Sprintf("%d/", adID)
-	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
-	if err != nil || token == "" {
-		// Return empty string when B2 images aren't available - browser will show broken image
+	url, err := minio.GetMinIOPresignedURLForPrefixCached(adID, idx, "1200w")
+	if err != nil || url == "" {
+		// Return empty string when MinIO images aren't available - browser will show broken image
 		return ""
 	}
 
-	return b2util.GetB2ImageURL(adID, idx, "1200w", token)
+	return url
 }
 
 func AdCarouselImage(adID int, idx int) g.Node {
@@ -192,16 +191,15 @@ func CarouselImageContainer(a ad.AdDetail, currentIdx int) g.Node {
 	return carouselImageContainer(a, currentIdx)
 }
 
-// adThumbnailImageSrc generates a single signed B2 image URL for thumbnail context
+// adThumbnailImageSrc generates a single presigned MinIO image URL for thumbnail context
 func adThumbnailImageSrc(adID int, idx int) string {
-	prefix := fmt.Sprintf("%d/", adID)
-	token, err := b2util.GetB2DownloadTokenForPrefixCached(prefix)
-	if err != nil || token == "" {
-		// Return empty string when B2 images aren't available - browser will show broken image
+	url, err := minio.GetMinIOPresignedURLForPrefixCached(adID, idx, "160w")
+	if err != nil || url == "" {
+		// Return empty string when MinIO images aren't available - browser will show broken image
 		return ""
 	}
 
-	return b2util.GetB2ImageURL(adID, idx, "160w", token)
+	return url
 }
 
 func adThumbnailImage(adID int, idx int, alt string) g.Node {

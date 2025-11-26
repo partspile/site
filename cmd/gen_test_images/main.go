@@ -13,8 +13,13 @@ import (
 	"sync"
 	"time"
 
+	"context"
+	"net/url"
+
 	"github.com/chai2010/webp"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
@@ -23,7 +28,6 @@ import (
 	"golang.org/x/image/font/gofont/gomono"
 	"golang.org/x/image/font/opentype"
 	"golang.org/x/image/math/fixed"
-	"gopkg.in/kothar/go-backblaze.v0"
 )
 
 type TestAd struct {
@@ -85,9 +89,9 @@ func main() {
 
 	fmt.Printf("Generated %d images to upload\n", len(imagesToUpload))
 
-	// Batch upload to B2
-	if err := batchUploadToB2(imagesToUpload); err != nil {
-		logger.Fatal("Failed to upload images to B2", "error", err)
+	// Batch upload to MinIO
+	if err := batchUploadToMinIO(imagesToUpload); err != nil {
+		logger.Fatal("Failed to upload images to MinIO", "error", err)
 	}
 
 	logger.Info("Test image generation and upload complete")
@@ -176,8 +180,8 @@ func generateImagesForAds(testAds []TestAd) []ImageToUpload {
 					continue
 				}
 
-				// Create B2 path
-				b2Path := filepath.Join(
+				// Create MinIO object path
+				objectPath := filepath.Join(
 					fmt.Sprintf("%d", ad.ID),
 					fmt.Sprintf("%d-%s.webp", i+1, sz.Suffix),
 				)
@@ -187,7 +191,7 @@ func generateImagesForAds(testAds []TestAd) []ImageToUpload {
 					ImageNum: i + 1,
 					Size:     sz.Suffix,
 					Data:     webpBuf.Bytes(),
-					Path:     b2Path,
+					Path:     objectPath,
 				})
 			}
 		}
@@ -310,27 +314,28 @@ func addText(img *image.RGBA, text string, textColor color.Color, imgWidth, imgH
 	d.DrawString(text)
 }
 
-// batchUploadToB2 uploads all images to B2 in batches
-func batchUploadToB2(imagesToUpload []ImageToUpload) error {
-	accountID := config.B2MasterKeyID
-	keyID := config.B2KeyID
-	appKey := config.B2AppKey
-	if accountID == "" || appKey == "" || keyID == "" {
-		return fmt.Errorf("B2 credentials not set in env vars")
+// batchUploadToMinIO uploads all images to MinIO in batches
+func batchUploadToMinIO(imagesToUpload []ImageToUpload) error {
+	if config.MinIOAPIURL == "" || config.MinIOUsername == "" || config.MinIOPassword == "" {
+		return fmt.Errorf("MinIO credentials not set in env vars")
 	}
 
-	b2, err := backblaze.NewB2(backblaze.Credentials{
-		AccountID:      accountID,
-		ApplicationKey: appKey,
-		KeyID:          keyID,
+	if config.MinIOBucketName == "" {
+		return fmt.Errorf("MinIO bucket name not set in env vars")
+	}
+
+	// Parse the API URL to extract endpoint
+	endpointURL, err := url.Parse(config.MinIOAPIURL)
+	if err != nil {
+		return fmt.Errorf("invalid MinIO API URL: %w", err)
+	}
+
+	minioClient, err := minio.New(endpointURL.Host, &minio.Options{
+		Creds:  credentials.NewStaticV4(config.MinIOUsername, config.MinIOPassword, ""),
+		Secure: endpointURL.Scheme == "https",
 	})
 	if err != nil {
-		return fmt.Errorf("B2 auth error: %v", err)
-	}
-
-	bucket, err := b2.Bucket(config.B2BucketName)
-	if err != nil {
-		return fmt.Errorf("B2 bucket error: %v", err)
+		return fmt.Errorf("MinIO client error: %v", err)
 	}
 
 	// Upload in batches with concurrency control
@@ -353,13 +358,11 @@ func batchUploadToB2(imagesToUpload []ImageToUpload) error {
 			// Retry upload up to 3 times
 			maxRetries := 3
 			var err error
+			ctx := context.Background()
 			for attempt := 0; attempt < maxRetries; attempt++ {
-				_, err = bucket.UploadTypedFile(
-					imageToUpload.Path,
-					"image/webp",
-					nil,
-					bytes.NewReader(imageToUpload.Data),
-				)
+				_, err = minioClient.PutObject(ctx, config.MinIOBucketName, imageToUpload.Path,
+					bytes.NewReader(imageToUpload.Data), int64(len(imageToUpload.Data)),
+					minio.PutObjectOptions{ContentType: "image/webp"})
 
 				if err == nil {
 					// Success
@@ -374,7 +377,7 @@ func batchUploadToB2(imagesToUpload []ImageToUpload) error {
 
 				// Log retry attempt
 				if attempt < maxRetries-1 {
-					logger.Warn("B2 upload attempt failed, retrying",
+					logger.Warn("MinIO upload attempt failed, retrying",
 						"attempt", attempt+1, "path", imageToUpload.Path,
 						"error", err)
 					// Wait a bit before retry (exponential backoff)
@@ -384,7 +387,7 @@ func batchUploadToB2(imagesToUpload []ImageToUpload) error {
 
 			// All retries failed
 			mu.Lock()
-			logger.Error("B2 upload failed after all retries",
+			logger.Error("MinIO upload failed after all retries",
 				"attempts", maxRetries, "path", imageToUpload.Path, "error", err)
 			errorCount++
 			mu.Unlock()

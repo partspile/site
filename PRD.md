@@ -98,7 +98,7 @@ The platform supports multiple ad categories, each with appropriate vehicle/part
 - **Default Category**: Car Parts is the default category for new users.
 
 ### 3.6 Caching System
-- **B2 Token Cache:** Caches Backblaze B2 download authorization tokens to reduce API calls and improve performance when serving ad images. Tokens are cached by directory prefix (e.g., "22/") and automatically expire based on B2's token expiry settings.
+- **MinIO Presigned URL Cache:** Caches MinIO presigned URLs to reduce API calls and improve performance when serving ad images. URLs are cached per image path and automatically expire based on MinIO's presigned URL expiry settings (default 1 hour).
 - **Specialized Embedding Caches:** The system now uses three specialized caches for different embedding types:
   - **Query Cache (1 hour TTL):** Caches vector embeddings for user search queries to improve search performance and reduce API calls to Google Gemini. This cache stores the embedding vectors themselves and uses memory-based cost calculation (4 bytes per float32).
   - **User Cache (24 hour TTL):** Caches personalized user embeddings generated from their search history, clicked ads, and bookmarks. This eliminates the need for database storage and provides fast access to user preferences.
@@ -494,9 +494,9 @@ See `schema.sql` for full schema and indexes.
 - `POST /api/resolve-rock/:id` — Resolve a rock dispute and return the rock
 
 ### Admin Endpoints
-- `GET /admin/b2-cache` — View B2 cache statistics and management
-- `POST /api/admin/b2-cache/clear` — Clear B2 cache
-- `POST /api/admin/b2-cache/refresh` — Refresh B2 download token for specific prefix
+- `GET /admin/minio-cache` — View MinIO cache statistics and management
+- `POST /api/admin/minio-cache/clear` — Clear MinIO cache
+- `GET /api/admin/minio-cache/refresh` — Refresh MinIO presigned URL cache statistics
 - `GET /admin/embedding-cache` — View embedding cache statistics and management
 - `POST /api/admin/embedding-cache/clear` — Clear embedding cache
 

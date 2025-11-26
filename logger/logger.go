@@ -104,7 +104,7 @@ func replaceAttr(groups []string, a slog.Attr) slog.Attr {
 			case slog.LevelWarn:
 				levelStr = "WARN"
 			case slog.LevelError:
-				levelStr = "ERRO"
+				levelStr = "ERROR"
 			default:
 				if len(levelStr) > 4 {
 					levelStr = levelStr[:4] // Truncate to 4 chars if needed
@@ -228,7 +228,7 @@ type colorWriter struct {
 var (
 	// Regex patterns to match log level indicators
 	levelPatterns = map[string]*regexp.Regexp{
-		"ERRO":  regexp.MustCompile(`\bl="\[ERRO\]"`),
+		"ERROR": regexp.MustCompile(`\bl="\[ERROR\]"`),
 		"WARN":  regexp.MustCompile(`\bl="\[WARN\]"`),
 		"INFO":  regexp.MustCompile(`\bl="\[INFO\]"`),
 		"DEBUG": regexp.MustCompile(`\bl="\[DEBUG\]"`),
@@ -240,13 +240,13 @@ func (w *colorWriter) Write(p []byte) (n int, err error) {
 
 	// Colorize each level pattern - replace quoted versions with colored unquoted versions
 	// This works because we're post-processing after the handler has formatted everything
-	output = levelPatterns["ERRO"].ReplaceAllString(output, `l=`+colorRed+`[ERRO]`+colorReset)
+	output = levelPatterns["ERROR"].ReplaceAllString(output, `l=`+colorRed+`[ERROR]`+colorReset)
 	output = levelPatterns["WARN"].ReplaceAllString(output, `l=`+colorYellow+`[WARN]`+colorReset)
 	output = levelPatterns["INFO"].ReplaceAllString(output, `l=`+colorBlue+`[INFO]`+colorReset)
 	output = levelPatterns["DEBUG"].ReplaceAllString(output, `l=`+colorGreen+`[DEBUG]`+colorReset)
 
 	// Also handle unquoted versions (in case handler doesn't quote)
-	output = strings.ReplaceAll(output, ` l=[ERRO] `, ` l=`+colorRed+`[ERRO]`+colorReset+` `)
+	output = strings.ReplaceAll(output, ` l=[ERROR] `, ` l=`+colorRed+`[ERROR]`+colorReset+` `)
 	output = strings.ReplaceAll(output, ` l=[WARN] `, ` l=`+colorYellow+`[WARN]`+colorReset+` `)
 	output = strings.ReplaceAll(output, ` l=[INFO] `, ` l=`+colorBlue+`[INFO]`+colorReset+` `)
 	output = strings.ReplaceAll(output, ` l=[DEBUG] `, ` l=`+colorGreen+`[DEBUG]`+colorReset+` `)

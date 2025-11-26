@@ -18,12 +18,8 @@ const (
 	RegistrationRateLimitMax = 3                // Allow 3 registration attempts per IP
 	RegistrationRateLimitExp = 15 * time.Minute // Within 15 minutes
 
-	// Backblaze B2 configuration
-	B2TokenCacheDuration   = 55 * time.Minute
-	B2TokenCacheCleanup    = 10 * time.Minute
-	B2DownloadTokenExpiry  = 3600 // seconds (1 hour)
-	B2AuthEndpoint         = "https://api.backblazeb2.com/b2api/v2/b2_authorize_account"
-	B2DownloadAuthEndpoint = "/b2api/v2/b2_get_download_authorization"
+	// MinIO configuration
+	MinIOPresignedURLExpiry = 3600 // seconds (1 hour)
 
 	// Vector search configuration
 	VectorSearchInitialK          = 200 // Number of results to fetch for tree view
@@ -59,12 +55,11 @@ var (
 	// Database configuration
 	DatabaseURL = getEnvWithDefault("DATABASE_URL", "project.db")
 
-	// Backblaze B2 configuration
-	B2MasterKeyID = getEnvWithDefault("BACKBLAZE_MASTER_KEY_ID", "")
-	B2KeyID       = getEnvWithDefault("BACKBLAZE_KEY_ID", "")
-	B2AppKey      = getEnvWithDefault("BACKBLAZE_APP_KEY", "")
-	B2BucketID    = getEnvWithDefault("B2_BUCKET_ID", "")
-	B2BucketName  = getEnvWithDefault("B2_BUCKET_NAME", "")
+	// MinIO configuration
+	MinIOAPIURL     = getEnvWithDefault("MINIO_API_URL", "")
+	MinIOUsername   = getEnvWithDefault("MINIO_USERNAME", "")
+	MinIOPassword   = getEnvWithDefault("MINIO_PASSWORD", "")
+	MinIOBucketName = getEnvWithDefault("MINIO_BUCKET_NAME", "")
 
 	// AI/ML API configuration
 	GeminiAPIKey = getEnvWithDefault("GEMINI_API_KEY", "")
