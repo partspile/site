@@ -258,17 +258,11 @@
   .top-2 {
     top: calc(var(--spacing) * 2);
   }
-  .top-16 {
-    top: calc(var(--spacing) * 16);
-  }
   .right-0 {
     right: calc(var(--spacing) * 0);
   }
   .right-2 {
     right: calc(var(--spacing) * 2);
-  }
-  .right-4 {
-    right: calc(var(--spacing) * 4);
   }
   .bottom-0 {
     bottom: calc(var(--spacing) * 0);
@@ -1245,6 +1239,18 @@
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+.max-w-content {
+  max-width: 860px;
+}
+.user-menu-position {
+  top: calc(2rem + 1rem + 0.5rem);
+  right: 1rem;
+}
+@media (min-width: 892px) {
+  .user-menu-position {
+    right: calc((100% - 860px) / 2 + 1rem);
+  }
 }
 @property --tw-translate-x {
   syntax: "*";

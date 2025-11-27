@@ -8,3 +8,22 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
 }
+
+/* Max width for page content */
+.max-w-content {
+  max-width: 860px;
+}
+
+/* User menu positioning - aligns with avatar in content container */
+.user-menu-position {
+  top: calc(2rem + 1rem + 0.5rem); /* py-8 (2rem) + nav height + spacing */
+  right: 1rem; /* Default for narrow screens */
+}
+
+@media (min-width: 892px) {
+  /* On wide screens, position relative to centered content container */
+  /* 860px content + 2rem (1rem padding each side) = 892px */
+  .user-menu-position {
+    right: calc((100% - 860px) / 2 + 1rem);
+  }
+}

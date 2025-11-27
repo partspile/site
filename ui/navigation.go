@@ -28,7 +28,8 @@ func indicator() g.Node {
 func navLoggedIn(userName string) g.Node {
 	return Div(
 		Span(
-			Class("bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-semibold text-sm cursor-pointer hover:bg-red-600"),
+			ID("user-avatar"),
+			Class("bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-semibold text-sm cursor-pointer hover:bg-red-600 relative"),
 			hx.Get("/user-menu"),
 			hx.Target("body"),
 			hx.Swap("beforeend"),
@@ -159,7 +160,7 @@ func UserMenuPopup(currentUser *user.User, currentPath string, csrfToken string)
 		Class("fixed inset-0 bg-black/30 z-50"),
 		g.Attr("onclick", "this.remove()"),
 		Div(
-			Class("fixed top-16 right-4 pointer-events-none"),
+			Class("fixed user-menu-position pointer-events-none"),
 			Div(
 				Class("bg-white rounded-lg shadow-lg border border-gray-200 w-40 pointer-events-auto"),
 				menuHeader(currentUser),
