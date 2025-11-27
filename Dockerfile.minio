@@ -1,0 +1,30 @@
+# Dockerfile for MinIO server
+# Uses official MinIO image and configures via environment variables
+
+FROM minio/minio:latest
+
+# Expose MinIO API port (default: 9000)
+EXPOSE 9000
+
+# Expose MinIO Console port (default: 9001)
+EXPOSE 9001
+
+# MinIO will use the following environment variables:
+# See https://min.io/docs/minio/linux/reference/minio-server/settings.html for full documentation
+#
+# Common environment variables:
+# MINIO_ROOT_USER - Root user access key (default: minioadmin)
+# MINIO_ROOT_PASSWORD - Root user secret key (default: minioadmin)
+# MINIO_BROWSER_REDIRECT_URL - Redirect URL for console
+# MINIO_SERVER_URL - Server URL
+# MINIO_DOMAIN - DNS-style bucket access
+# MINIO_STORAGE_CLASS_STANDARD - Data/parity ratio for standard storage class
+# MINIO_STORAGE_CLASS_RRS - Data/parity ratio for reduced redundancy storage
+#
+# Note: Console and API addresses are set via command line flags (--console-address, --address)
+# See: https://min.io/docs/minio/linux/reference/minio-server/minio-server.html
+
+# Run MinIO server
+# Data directory will be mounted at /data
+CMD ["server", "/data", "--console-address", ":9001"]
+
