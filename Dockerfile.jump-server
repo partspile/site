@@ -5,6 +5,12 @@
 FROM golang:1.25.3 AS go-builder
 WORKDIR /build
 
+# Install WebP development libraries for gen_test_images (requires CGO)
+RUN apt-get update && \
+    apt-get install -y \
+    libwebp-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Copy go mod files
 COPY go.mod go.sum ./
 RUN go mod download
@@ -22,15 +28,15 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -o /build/rebuild_db \
     ./cmd/rebuild_db
 
-# Build gen_test_images binary (statically linked)
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+# Build gen_test_images binary (requires CGO for WebP support)
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
     -o /build/gen_test_images \
     ./cmd/gen_test_images
 
 # Stage 2: Final image with SSH server
 FROM ubuntu:22.04
 
-# Install SSH server, basic tools, and monitoring tools
+# Install SSH server, basic tools, monitoring tools, and WebP runtime library
 RUN apt-get update && \
     apt-get install -y \
     openssh-server \
@@ -48,8 +54,9 @@ RUN apt-get update && \
     ca-certificates \
     ufw \
     rsyslog \
-    sudo && \
-    rm -rf /var/lib/apt/lists/*
+    sudo \
+    libwebp6 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install MinIO Client (mc)
 RUN wget -q https://dl.min.io/client/mc/release/linux-amd64/mc -O /tmp/mc && \
