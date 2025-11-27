@@ -98,6 +98,35 @@ rebuild_db
 
 The binary is available in `/usr/local/bin/rebuild_db` and should be in your PATH.
 
+## Using gen_test_images
+
+Generate and upload test images for all test ads (ads with `user_id = 1`) to MinIO:
+
+```bash
+# Set required environment variables
+export DATABASE_URL="postgresql://user:pass@host:port/dbname"
+export MINIO_API_URL="http://localhost:9000"
+export MINIO_USERNAME="minioadmin"
+export MINIO_PASSWORD="minioadmin"
+export MINIO_BUCKET_NAME="your-bucket-name"
+
+# Run the generator
+gen_test_images
+```
+
+**What it does:**
+- Generates test images for all ads with `user_id = 1`
+- Creates 1-5 images per ad (based on `image_count` field)
+- Generates three sizes per image: 160w, 480w, 1200w
+- Uploads images to MinIO in batches of 10 concurrent uploads
+- Uses WebP format for optimal compression
+
+**Requirements:**
+- Database connection (via `DATABASE_URL` environment variable)
+- MinIO credentials (via `MINIO_API_URL`, `MINIO_USERNAME`, `MINIO_PASSWORD`, `MINIO_BUCKET_NAME`)
+
+The binary is available in `/usr/local/bin/gen_test_images` and should be in your PATH.
+
 ## Using mc (MinIO Client)
 
 The MinIO Client (`mc`) is pre-installed and available in your PATH:
@@ -131,6 +160,7 @@ For more information, see the [MinIO Client documentation](https://docs.min.io/d
 
 - ✅ Pre-built `test_db_perf` binary ready to use
 - ✅ Pre-built `rebuild_db` binary ready to use
+- ✅ Pre-built `gen_test_images` binary ready to use
 - ✅ MinIO Client (`mc`) pre-installed
 - ✅ Key-only SSH authentication (no passwords)
 - ✅ Non-root `jump` user with sudo access (recommended)
