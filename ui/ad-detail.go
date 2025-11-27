@@ -119,18 +119,126 @@ func AdCarouselImageSrc(adID int, idx int) string {
 }
 
 func AdCarouselImage(adID int, idx int) g.Node {
-	return Img(
-		Class("object-cover w-full aspect-[4/3]"),
-		ID(fmt.Sprintf("ad-carousel-img-%d", adID)),
-		Src(AdCarouselImageSrc(adID, idx)),
-		Alt(fmt.Sprintf("Image %d", idx)),
-	)
+	imageID := fmt.Sprintf("ad-carousel-img-%d", adID)
+	fullscreenID := fmt.Sprintf("fullscreen-viewer-%d-%d", adID, idx)
+
+	return g.Group([]g.Node{
+		Button(
+			Type("button"),
+			Class("w-full cursor-pointer focus:outline-none"),
+			g.Attr("onclick", fmt.Sprintf(`
+				(function() {
+					const viewer = document.getElementById(%q);
+					if (viewer) {
+						viewer.classList.remove('hidden');
+						document.body.style.overflow = 'hidden';
+						history.pushState({fullscreenImage: true}, '', window.location.href);
+					}
+				})();
+			`, fullscreenID)),
+			Img(
+				Class("object-cover w-full aspect-[4/3]"),
+				ID(imageID),
+				Src(AdCarouselImageSrc(adID, idx)),
+				Alt(fmt.Sprintf("Image %d", idx)),
+			),
+		),
+		fullscreenImageViewer(adID, idx, fullscreenID),
+	})
 }
 
 func AdNoImage() g.Node {
 	return Div(
 		Class("flex items-center justify-center h-24 bg-gray-100 text-gray-400 text-sm"),
 		g.Text("No Image"),
+	)
+}
+
+func fullscreenImageViewer(adID int, idx int, fullscreenID string) g.Node {
+	imageSrc := AdCarouselImageSrc(adID, idx)
+
+	return Div(
+		ID(fullscreenID),
+		Class("fixed inset-0 bg-black/95 z-[100] hidden flex items-center justify-center"),
+		g.Attr("onclick", `
+			if (event.target === this) {
+				this.classList.add('hidden');
+				document.body.style.overflow = '';
+				if (history.state && history.state.fullscreenImage) {
+					history.back();
+				}
+			}
+		`),
+		Button(
+			Type("button"),
+			Class("absolute top-4 right-4 bg-white/20 hover:bg-white/30 rounded-full w-12 h-12 flex items-center justify-center focus:outline-none cursor-pointer z-10"),
+			g.Attr("onclick", fmt.Sprintf(`
+				(function() {
+					const viewer = document.getElementById(%q);
+					viewer.classList.add('hidden');
+					document.body.style.overflow = '';
+					if (history.state && history.state.fullscreenImage) {
+						history.back();
+					}
+				})();
+			`, fullscreenID)),
+			Img(
+				Src("/images/close.svg"),
+				Alt("Close"),
+				Class("w-6 h-6"),
+				Style("filter: invert(1);"),
+			),
+		),
+		Img(
+			Class("max-w-full max-h-full object-contain"),
+			Src(imageSrc),
+			Alt(fmt.Sprintf("Image %d", idx)),
+			g.Attr("onclick", "event.stopPropagation()"),
+		),
+		Script(
+			g.Raw(fmt.Sprintf(`
+				(function() {
+					const viewer = document.getElementById(%q);
+					if (!viewer) return;
+					
+					// Handle ESC key
+					function handleKeyDown(e) {
+						if (e.key === 'Escape' && !viewer.classList.contains('hidden')) {
+							viewer.classList.add('hidden');
+							document.body.style.overflow = '';
+							if (history.state && history.state.fullscreenImage) {
+								history.back();
+							}
+						}
+					}
+					
+					// Handle browser back button
+					function handlePopState(e) {
+						if (viewer && !viewer.classList.contains('hidden')) {
+							viewer.classList.add('hidden');
+							document.body.style.overflow = '';
+						}
+					}
+					
+					// Add event listeners when viewer is shown
+					const observer = new MutationObserver(function(mutations) {
+						mutations.forEach(function(mutation) {
+							if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+								if (!viewer.classList.contains('hidden')) {
+									document.addEventListener('keydown', handleKeyDown);
+									window.addEventListener('popstate', handlePopState);
+								} else {
+									document.removeEventListener('keydown', handleKeyDown);
+									window.removeEventListener('popstate', handlePopState);
+								}
+							}
+						});
+					});
+					
+					observer.observe(viewer, { attributes: true, attributeFilter: ['class'] });
+				})();
+			`, fullscreenID)),
+		),
 	)
 }
 
