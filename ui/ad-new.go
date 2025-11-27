@@ -8,6 +8,7 @@ import (
 	. "maragu.dev/gomponents/html"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/config"
 )
 
 func NewAdPage(adCat int, userID int, userName, csrfToken string, path string,
@@ -132,9 +133,9 @@ func descriptionField() g.Node {
 			Name("description"),
 			Class("w-full p-2 border rounded invalid:border-red-500 valid:border-emerald-500"),
 			Required(),
-			MaxLength("500"),
+			MaxLength(fmt.Sprintf("%d", config.MaxAdDescriptionLength)),
 			Rows("4"),
-			Pattern("[\\x20-\\x7E]+"),
+			Pattern("[\\x20-\\x7E\\n\\r]+"),
 			Title("Description must contain printable ASCII characters only"),
 			g.Attr("oninput", "this.checkValidity()"),
 		),

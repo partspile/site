@@ -52,6 +52,36 @@ func ValidateCleanText(c *fiber.Ctx, fieldName, displayName string, maxLength in
 	return value, nil
 }
 
+// ValidateCleanTextMultiline validates that text contains only clean characters
+// and is within length limits, allowing newlines and carriage returns
+func ValidateCleanTextMultiline(c *fiber.Ctx, fieldName, displayName string, maxLength int) (string, error) {
+	value := c.FormValue(fieldName)
+	if value == "" {
+		return "", fmt.Errorf("%s is required", displayName)
+	}
+
+	// Trim whitespace
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return "", fmt.Errorf("%s cannot be empty", displayName)
+	}
+
+	// Check length
+	if len(value) > maxLength {
+		return "", fmt.Errorf("%s must be %d characters or less", displayName, maxLength)
+	}
+
+	// Check for printable ASCII characters only (0x20-0x7E),
+	// plus newline (0x0A) and carriage return (0x0D)
+	for _, char := range value {
+		if char != 0x0A && char != 0x0D && (char < 0x20 || char > 0x7E) {
+			return "", fmt.Errorf("%s contains invalid characters. Only printable ASCII characters are allowed", displayName)
+		}
+	}
+
+	return value, nil
+}
+
 // ValidateUsername validates that a username follows conventions
 // Rules:
 // - 3 to 20 characters
@@ -338,7 +368,7 @@ func BuildAdFromForm(c *fiber.Ctx, userID int) (ad.AdDetail, []*multipart.FileHe
 		}
 	}
 
-	description, err := ValidateCleanText(c, "description", "Description", 500)
+	description, err := ValidateCleanTextMultiline(c, "description", "Description", config.MaxAdDescriptionLength)
 	if err != nil {
 		return ad.AdDetail{}, nil, nil, err
 	}
