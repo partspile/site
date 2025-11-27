@@ -46,6 +46,12 @@ RUN apt-get update && \
     sudo && \
     rm -rf /var/lib/apt/lists/*
 
+# Install MinIO Client (mc)
+RUN wget -q https://dl.min.io/client/mc/release/linux-amd64/mc -O /tmp/mc && \
+    chmod +x /tmp/mc && \
+    mv /tmp/mc /usr/local/bin/mc && \
+    mc --version
+
 # Configure SSH (key-only authentication)
 RUN mkdir /var/run/sshd && \
     sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config && \

@@ -98,10 +98,40 @@ rebuild_db
 
 The binary is available in `/usr/local/bin/rebuild_db` and should be in your PATH.
 
+## Using mc (MinIO Client)
+
+The MinIO Client (`mc`) is pre-installed and available in your PATH:
+
+```bash
+# Check version
+mc --version
+
+# Configure alias for MinIO server
+mc alias set myminio https://your-minio-server.com ACCESS_KEY SECRET_KEY
+
+# List buckets
+mc ls myminio
+
+# List objects in a bucket
+mc ls myminio/bucket-name
+
+# Copy file to MinIO
+mc cp local-file.txt myminio/bucket-name/
+
+# Copy file from MinIO
+mc cp myminio/bucket-name/file.txt ./
+
+# Mirror a directory
+mc mirror /local/dir myminio/bucket-name/path
+```
+
+For more information, see the [MinIO Client documentation](https://docs.min.io/docs/minio-client-quickstart-guide.html).
+
 ## Features
 
 - ✅ Pre-built `test_db_perf` binary ready to use
 - ✅ Pre-built `rebuild_db` binary ready to use
+- ✅ MinIO Client (`mc`) pre-installed
 - ✅ Key-only SSH authentication (no passwords)
 - ✅ Non-root `jump` user with sudo access (recommended)
 - ✅ Command logging and auditing (`/var/log/jump-server.log`)
