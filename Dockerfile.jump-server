@@ -33,6 +33,11 @@ RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
     -o /build/gen_test_images \
     ./cmd/gen_test_images
 
+# Build quote_server binary (statically linked)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -o /build/quote_server \
+    ./cmd/quote_server
+
 # Stage 2: Final image with SSH server
 FROM ubuntu:22.04
 
@@ -76,11 +81,13 @@ RUN mkdir /var/run/sshd && \
 COPY --from=go-builder /build/test_db_perf /usr/local/bin/test_db_perf
 COPY --from=go-builder /build/rebuild_db /usr/local/bin/rebuild_db
 COPY --from=go-builder /build/gen_test_images /usr/local/bin/gen_test_images
+COPY --from=go-builder /build/quote_server /usr/local/bin/quote_server
 
 # Make them executable
 RUN chmod +x /usr/local/bin/test_db_perf && \
     chmod +x /usr/local/bin/rebuild_db && \
-    chmod +x /usr/local/bin/gen_test_images
+    chmod +x /usr/local/bin/gen_test_images && \
+    chmod +x /usr/local/bin/quote_server
 
 # Create workspace directory
 RUN mkdir -p /workspace && chmod 777 /workspace
@@ -103,10 +110,11 @@ RUN useradd -m -s /bin/bash jump && \
 # Create SSH directory for root
 RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
 
-# Configure firewall (allow SSH only)
+# Configure firewall (allow SSH and web server)
 RUN ufw default deny incoming && \
     ufw default allow outgoing && \
     ufw allow 22/tcp && \
+    ufw allow 10000/tcp && \
     echo "y" | ufw enable || true
 
 # Set up command logging/auditing
@@ -180,12 +188,17 @@ fi\n\
 logger -p local0.info "Starting SSH server"\n\
 echo "$(date): Starting SSH server" >> /var/log/jump-server.log\n\
 \n\
+# Start quote server in background\n\
+/usr/local/bin/quote_server &\n\
+logger -p local0.info "Quote server started on port 10000"\n\
+echo "$(date): Quote server started on port 10000" >> /var/log/jump-server.log\n\
+\n\
 # Start SSH server\n\
 exec /usr/sbin/sshd -D' > /entrypoint.sh && \
     chmod +x /entrypoint.sh
 
-# Expose SSH port
-EXPOSE 22
+# Expose SSH port and web server port
+EXPOSE 22 10000
 
 # Use entrypoint script
 ENTRYPOINT ["/entrypoint.sh"]

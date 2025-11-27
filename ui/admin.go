@@ -34,7 +34,6 @@ func adminNavigation(activeSection string) g.Node {
 	}{
 		{"minio-cache", "MinIO Cache", "/admin/minio-cache"},
 		{"embedding-cache", "Embedding Cache", "/admin/embedding-cache"},
-		{"spec-cache", "Spec Cache", "/admin/spec-cache"},
 		{"monitor", "Monitor", "/admin/metrics"},
 	}
 
@@ -149,15 +148,6 @@ func getCacheStats(allStats map[string]interface{}, cacheType, cacheName string)
 		"cache_type": cacheName,
 		"error":      "Cache not initialized",
 	}
-}
-
-func AdminSpecCacheSection(stats map[string]interface{}) g.Node {
-	return Div(
-		Class("space-y-4"),
-		Div(Class("text-lg font-medium text-gray-900"), g.Text("Spec Cache Management")),
-		Div(Class("text-gray-600 text-sm"), g.Text("Manage spec data cache performance and statistics.")),
-		CacheStatsPanel("Cache Statistics", stats, "/api/admin/spec-cache/clear", "/api/admin/spec-cache/refresh"),
-	)
 }
 
 // Monitor
