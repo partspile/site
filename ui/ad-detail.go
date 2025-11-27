@@ -214,13 +214,13 @@ func adThumbnailImage(adID int, idx int, alt string) g.Node {
 
 func thumbnails(a ad.AdDetail) g.Node {
 	return Div(
-		Class("flex flex-row gap-2 mt-2 px-4 justify-center"),
+		Class("flex flex-row flex-wrap gap-2 mt-2 px-4 justify-center"),
 		g.Group(func() []g.Node {
 			nodes := []g.Node{}
 			for i := 1; i <= a.ImageCount; i++ {
 				nodes = append(nodes, Button(
 					Type("button"),
-					Class("rounded w-16 h-16 overflow-hidden"),
+					Class("rounded w-16 h-16 overflow-hidden flex-shrink-0"),
 					hx.Get(fmt.Sprintf("/ad/image/%d/%d", a.ID, i)),
 					hx.Target(fmt.Sprintf("#carousel-image-container-%d", a.ID)),
 					hx.Swap("outerHTML"),
