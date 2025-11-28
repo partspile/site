@@ -107,9 +107,9 @@ func closeButton(a ad.AdDetail, view string) g.Node {
 	)
 }
 
-// adCarouselImageSrc generates a single presigned MinIO image URL for carousel context
+// adCarouselImageSrc generates a single MinIO image URL for carousel context
 func AdCarouselImageSrc(adID int, idx int) string {
-	url, err := minio.GetMinIOPresignedURLForPrefixCached(adID, idx, "1200w")
+	url, err := minio.GetImageURL(adID, idx, "1200w")
 	if err != nil || url == "" {
 		// Return empty string when MinIO images aren't available - browser will show broken image
 		return ""
@@ -245,40 +245,40 @@ func fullscreenImageViewer(adID int, idx int, fullscreenID string) g.Node {
 func imageNode(a ad.AdDetail) g.Node {
 	return Div(
 		Class("w-full h-full flex flex-col overflow-hidden rounded-t-lg"),
-		carouselImageContainer(a, 1),
+		carouselImageContainer(a.ID, a.ImageCount, 1),
 		g.If(a.ImageCount > 0, Div(
 			thumbnails(a),
 		)),
 	)
 }
 
-func carouselImageContainer(a ad.AdDetail, currentIdx int) g.Node {
-	containerID := fmt.Sprintf("carousel-image-container-%d", a.ID)
+func carouselImageContainer(adID, imageCount, currentIdx int) g.Node {
+	containerID := fmt.Sprintf("carousel-image-container-%d", adID)
 
 	return Div(
 		ID(containerID),
 		Class("relative group"),
-		g.If(a.ImageCount > 0, AdCarouselImage(a.ID, currentIdx)),
-		g.If(a.ImageCount == 0, AdNoImage()),
-		g.If(a.ImageCount > 1, carouselNavButtons(a, currentIdx)),
+		g.If(imageCount > 0, AdCarouselImage(adID, currentIdx)),
+		g.If(imageCount == 0, AdNoImage()),
+		g.If(imageCount > 1, carouselNavButtons(adID, imageCount, currentIdx)),
 	)
 }
 
-func carouselNavButtons(a ad.AdDetail, currentIdx int) g.Node {
-	if a.ImageCount == 0 {
+func carouselNavButtons(adID, imageCount, currentIdx int) g.Node {
+	if imageCount == 0 {
 		return g.Node(nil)
 	}
 
-	prevIdx := (currentIdx-2+a.ImageCount)%a.ImageCount + 1
-	nextIdx := currentIdx%a.ImageCount + 1
+	prevIdx := (currentIdx-2+imageCount)%imageCount + 1
+	nextIdx := currentIdx%imageCount + 1
 
 	return g.Group([]g.Node{
 		// Left button
 		Button(
 			Type("button"),
 			Class("absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"),
-			hx.Get(fmt.Sprintf("/ad/image/%d/%d", a.ID, prevIdx)),
-			hx.Target(fmt.Sprintf("#carousel-image-container-%d", a.ID)),
+			hx.Get(fmt.Sprintf("/ad/image/%d/%d?count=%d", adID, prevIdx, imageCount)),
+			hx.Target(fmt.Sprintf("#carousel-image-container-%d", adID)),
 			hx.Swap("outerHTML"),
 			icon("/images/left.svg", "Previous", "w-6 h-6"),
 		),
@@ -286,8 +286,8 @@ func carouselNavButtons(a ad.AdDetail, currentIdx int) g.Node {
 		Button(
 			Type("button"),
 			Class("absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"),
-			hx.Get(fmt.Sprintf("/ad/image/%d/%d", a.ID, nextIdx)),
-			hx.Target(fmt.Sprintf("#carousel-image-container-%d", a.ID)),
+			hx.Get(fmt.Sprintf("/ad/image/%d/%d?count=%d", adID, nextIdx, imageCount)),
+			hx.Target(fmt.Sprintf("#carousel-image-container-%d", adID)),
 			hx.Swap("outerHTML"),
 			icon("/images/right.svg", "Next", "w-6 h-6"),
 		),
@@ -295,13 +295,14 @@ func carouselNavButtons(a ad.AdDetail, currentIdx int) g.Node {
 }
 
 // CarouselImageContainer creates the carousel image container for HTMX swapping
-func CarouselImageContainer(a ad.AdDetail, currentIdx int) g.Node {
-	return carouselImageContainer(a, currentIdx)
+// Can be called with either full ad detail or just adID/imageCount/currentIdx
+func CarouselImageContainer(adID, imageCount, currentIdx int) g.Node {
+	return carouselImageContainer(adID, imageCount, currentIdx)
 }
 
-// adThumbnailImageSrc generates a single presigned MinIO image URL for thumbnail context
+// adThumbnailImageSrc generates a single MinIO image URL for thumbnail context
 func adThumbnailImageSrc(adID int, idx int) string {
-	url, err := minio.GetMinIOPresignedURLForPrefixCached(adID, idx, "160w")
+	url, err := minio.GetImageURL(adID, idx, "160w")
 	if err != nil || url == "" {
 		// Return empty string when MinIO images aren't available - browser will show broken image
 		return ""
@@ -329,7 +330,7 @@ func thumbnails(a ad.AdDetail) g.Node {
 				nodes = append(nodes, Button(
 					Type("button"),
 					Class("rounded w-16 h-16 overflow-hidden flex-shrink-0"),
-					hx.Get(fmt.Sprintf("/ad/image/%d/%d", a.ID, i)),
+					hx.Get(fmt.Sprintf("/ad/image/%d/%d?count=%d", a.ID, i, a.ImageCount)),
 					hx.Target(fmt.Sprintf("#carousel-image-container-%d", a.ID)),
 					hx.Swap("outerHTML"),
 					adThumbnailImage(a.ID, i, fmt.Sprintf("Image %d", i)),

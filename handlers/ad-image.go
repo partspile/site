@@ -8,19 +8,10 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 	"mime/multipart"
-	"net/http"
-	"path/filepath"
 	"strconv"
-	"time"
-
-	"context"
 
 	"github.com/chai2010/webp"
 	"github.com/gofiber/fiber/v2"
-	miniosdk "github.com/minio/minio-go/v7"
-	"github.com/parts-pile/site/ad"
-	"github.com/parts-pile/site/config"
-	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/minio"
 	"github.com/parts-pile/site/ui"
@@ -31,23 +22,6 @@ import (
 func uploadAdImagesToMinIO(adID int, files []*multipart.FileHeader) {
 	logger.Info("Starting upload",
 		"component", "MinIO", "adID", adID, "imageCount", len(files))
-
-	minioClient := minio.GetMinIOClient()
-	if minioClient == nil {
-		logger.Error("MinIO client not initialized",
-			"component", "MinIO", "adID", adID)
-		return
-	}
-
-	if config.MinIOBucketName == "" {
-		logger.Error("MinIO bucket name not set in env vars",
-			"component", "MinIO", "adID", adID)
-		return
-	}
-
-	logger.Debug("Using bucket name",
-		"component", "MinIO", "bucketName", config.MinIOBucketName,
-		"adID", adID)
 
 	sizes := []struct {
 		Width   int
@@ -61,8 +35,6 @@ func uploadAdImagesToMinIO(adID int, files []*multipart.FileHeader) {
 
 	successCount := 0
 	totalExpected := len(files) * len(sizes)
-
-	ctx := context.Background()
 
 	for i, fileHeader := range files {
 		logger.Debug("Processing image",
@@ -116,26 +88,18 @@ func uploadAdImagesToMinIO(adID int, files []*multipart.FileHeader) {
 				continue
 			}
 
-			objectPath := filepath.Join(
-				fmt.Sprintf("%d", adID),
-				fmt.Sprintf("%d-%s.webp", i+1, sz.Suffix),
-			)
-
 			logger.Debug("Uploading to MinIO",
 				"component", "MinIO", "suffix", sz.Suffix,
-				"objectPath", objectPath, "adID", adID)
-			_, err = minioClient.PutObject(ctx, config.MinIOBucketName, objectPath,
-				bytes.NewReader(webpBuf.Bytes()), int64(webpBuf.Len()),
-				miniosdk.PutObjectOptions{ContentType: "image/webp"})
+				"adID", adID, "imageIndex", i+1)
+			err = minio.PutImageObject(adID, i+1, sz.Suffix, webpBuf.Bytes())
 			if err != nil {
 				logger.Error("Upload failed",
 					"error", err, "component", "MinIO",
-					"suffix", sz.Suffix, "objectPath", objectPath, "adID",
-					adID)
+					"suffix", sz.Suffix, "adID", adID, "imageIndex", i+1)
 			} else {
 				logger.Debug("Uploaded successfully",
 					"component", "MinIO", "suffix", sz.Suffix,
-					"objectPath", objectPath, "adID", adID)
+					"adID", adID, "imageIndex", i+1)
 				successCount++
 			}
 		}
@@ -146,30 +110,8 @@ func uploadAdImagesToMinIO(adID int, files []*multipart.FileHeader) {
 		successCount, "totalExpected", totalExpected)
 }
 
-// HandleAdImageSignedURL generates a presigned URL for an ad image
-func HandleAdImageSignedURL(c *fiber.Ctx) error {
-	adIDStr := c.Params("adID")
-	if adIDStr == "" {
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "adID required"})
-	}
-	adID, err := strconv.Atoi(adIDStr)
-	if err != nil {
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "invalid adID"})
-	}
-	// Default to first image, 1200w size
-	url, err := minio.GetMinIOPresignedURLForPrefixCached(adID, 1, "1200w")
-	if err != nil {
-		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
-	}
-	return c.JSON(fiber.Map{
-		"url":     url,
-		"expires": time.Now().Unix() + config.MinIOPresignedURLExpiry,
-	})
-}
-
 // HandleAdImage serves ad detail carousel images with navigation
 func HandleAdImage(c *fiber.Ctx) error {
-	userID := local.GetUserID(c)
 	adID, err := strconv.Atoi(c.Params("adID"))
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -180,17 +122,18 @@ func HandleAdImage(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid image index")
 	}
 
-	adDetail, err := ad.GetAdDetailByID(adID, userID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	// Get image count from query parameter (passed by thumbnails/nav buttons)
+	imageCountStr := c.Query("count", "1")
+	imageCount, err := strconv.Atoi(imageCountStr)
+	if err != nil || imageCount < 0 {
+		imageCount = 1 // Default to 1 if invalid
 	}
 
-	return render(c, ui.CarouselImageContainer(*adDetail, idx))
+	return render(c, ui.CarouselImageContainer(adID, imageCount, idx))
 }
 
 // HandleAdGridImage serves grid view images with navigation
 func HandleAdGridImage(c *fiber.Ctx) error {
-	userID := local.GetUserID(c)
 	adID, err := strconv.Atoi(c.Params("adID"))
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -201,10 +144,49 @@ func HandleAdGridImage(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid image index")
 	}
 
-	adObj, err := ad.GetAdByID(adID, userID)
-	if err != nil {
-		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
+	// Get image count and title from query parameters (passed by nav buttons)
+	imageCountStr := c.Query("count", "1")
+	imageCount, err := strconv.Atoi(imageCountStr)
+	if err != nil || imageCount < 0 {
+		imageCount = 1 // Default to 1 if invalid
 	}
 
-	return render(c, ui.GridImageWithNav(*adObj, idx))
+	title := c.Query("title", "")
+
+	return render(c, ui.GridImageWithNav(adID, imageCount, title, idx))
+}
+
+// HandleImageProxy proxies images from MinIO
+func HandleImageProxy(c *fiber.Ctx) error {
+	adID, err := strconv.Atoi(c.Params("adID"))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
+	}
+
+	idx, err := strconv.Atoi(c.Params("idx"))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid image index")
+	}
+
+	size := c.Params("size", "1200w") // Default to 1200w if not specified
+
+	// Get image from MinIO
+	imageData, err := minio.GetImageObject(adID, idx, size)
+	if err != nil {
+		logger.Error("Failed to get image from MinIO",
+			"error", err, "adID", adID, "idx", idx, "size", size)
+		return fiber.NewError(fiber.StatusNotFound, "Image not found")
+	}
+
+	// Set appropriate headers for caching and content type
+	c.Set("Content-Type", "image/webp")
+	c.Set("Cache-Control", "public, max-age=2592000, immutable") // Cache for 30 days
+	c.Set("ETag", fmt.Sprintf(`"%d-%d-%s"`, adID, idx, size))
+
+	// Handle If-None-Match for 304 Not Modified
+	if match := c.Get("If-None-Match"); match != "" && match == fmt.Sprintf(`"%d-%d-%s"`, adID, idx, size) {
+		return c.SendStatus(fiber.StatusNotModified)
+	}
+
+	return c.Send(imageData)
 }

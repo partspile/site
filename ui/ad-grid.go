@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"net/url"
 	"time"
 
 	g "maragu.dev/gomponents"
@@ -55,9 +56,9 @@ func AdGridNode(a ad.Ad, userID int, loc *time.Location, csrfToken string) g.Nod
 	)
 }
 
-// adGridImageSrc generates a single presigned MinIO image URL for grid context
+// adGridImageSrc generates a single MinIO image URL for grid context
 func adGridImageSrc(adID int, idx int) string {
-	url, err := minio.GetMinIOPresignedURLForPrefixCached(adID, idx, "480w")
+	url, err := minio.GetImageURL(adID, idx, "480w")
 	if err != nil || url == "" {
 		// Return empty string when MinIO images aren't available - browser will show broken image
 		return ""
@@ -89,31 +90,37 @@ func gridImageNode(a ad.Ad) g.Node {
 	if a.ImageCount == 0 {
 		return gridNoImage()
 	}
-	return gridImageWithNav(a, 1)
+	return gridImageWithNav(a.ID, a.ImageCount, a.Title, 1)
 }
 
-func gridImageWithNav(a ad.Ad, currentIdx int) g.Node {
-	containerID := fmt.Sprintf("grid-image-container-%d", a.ID)
+func gridImageWithNav(adID, imageCount int, title string, currentIdx int) g.Node {
+	containerID := fmt.Sprintf("grid-image-container-%d", adID)
 
 	return Div(
 		ID(containerID),
 		Class("relative group"),
-		gridImageWithIndex(a.ID, currentIdx, a.Title),
-		g.If(a.ImageCount > 1, gridNavButtons(a, currentIdx)),
+		gridImageWithIndex(adID, currentIdx, title),
+		g.If(imageCount > 1, gridNavButtons(adID, imageCount, title, currentIdx)),
 	)
 }
 
-func gridNavButtons(a ad.Ad, currentIdx int) g.Node {
-	prevIdx := (currentIdx-2+a.ImageCount)%a.ImageCount + 1
-	nextIdx := currentIdx%a.ImageCount + 1
+func gridNavButtons(adID, imageCount int, title string, currentIdx int) g.Node {
+	prevIdx := (currentIdx-2+imageCount)%imageCount + 1
+	nextIdx := currentIdx%imageCount + 1
+
+	// URL encode title for query parameter
+	titleParam := ""
+	if title != "" {
+		titleParam = fmt.Sprintf("&title=%s", url.QueryEscape(title))
+	}
 
 	return g.Group([]g.Node{
 		// Left button
 		Button(
 			Type("button"),
 			Class("absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"),
-			hx.Get(fmt.Sprintf("/ad/grid-image/%d/%d", a.ID, prevIdx)),
-			hx.Target(fmt.Sprintf("#grid-image-container-%d", a.ID)),
+			hx.Get(fmt.Sprintf("/ad/grid-image/%d/%d?count=%d%s", adID, prevIdx, imageCount, titleParam)),
+			hx.Target(fmt.Sprintf("#grid-image-container-%d", adID)),
 			hx.Swap("outerHTML"),
 			g.Attr("onclick", "event.stopPropagation()"),
 			icon("/images/left.svg", "Previous", "w-6 h-6"),
@@ -122,8 +129,8 @@ func gridNavButtons(a ad.Ad, currentIdx int) g.Node {
 		Button(
 			Type("button"),
 			Class("absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/50 rounded-full w-10 h-10 flex items-center justify-center shadow-lg hover:bg-white/60 focus:outline-none cursor-pointer z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity"),
-			hx.Get(fmt.Sprintf("/ad/grid-image/%d/%d", a.ID, nextIdx)),
-			hx.Target(fmt.Sprintf("#grid-image-container-%d", a.ID)),
+			hx.Get(fmt.Sprintf("/ad/grid-image/%d/%d?count=%d%s", adID, nextIdx, imageCount, titleParam)),
+			hx.Target(fmt.Sprintf("#grid-image-container-%d", adID)),
 			hx.Swap("outerHTML"),
 			g.Attr("onclick", "event.stopPropagation()"),
 			icon("/images/right.svg", "Next", "w-6 h-6"),
@@ -132,6 +139,7 @@ func gridNavButtons(a ad.Ad, currentIdx int) g.Node {
 }
 
 // GridImageWithNav creates the grid image container for HTMX swapping
-func GridImageWithNav(a ad.Ad, currentIdx int) g.Node {
-	return gridImageWithNav(a, currentIdx)
+// Can be called with either full ad object or just adID/imageCount/title/currentIdx
+func GridImageWithNav(adID, imageCount int, title string, currentIdx int) g.Node {
+	return gridImageWithNav(adID, imageCount, title, currentIdx)
 }

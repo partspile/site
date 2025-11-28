@@ -4,7 +4,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/metrics"
-	"github.com/parts-pile/site/minio"
 	"github.com/parts-pile/site/ui"
 	"github.com/parts-pile/site/vector"
 	g "maragu.dev/gomponents"
@@ -30,25 +29,8 @@ func renderAdminSection(c *fiber.Ctx, sectionID string, sectionContent g.Node) e
 }
 
 func HandleAdminDashboard(c *fiber.Ctx) error {
-	stats := minio.GetCacheStats()
-	return renderAdminSection(c, "minio-cache", ui.AdminMinIOCacheSection(stats))
-}
-
-// MinIO Cache
-
-func HandleAdminMinIOCache(c *fiber.Ctx) error {
-	stats := minio.GetCacheStats()
-	return renderAdminSection(c, "minio-cache", ui.AdminMinIOCacheSection(stats))
-}
-
-func HandleClearMinIOCache(c *fiber.Ctx) error {
-	stats := minio.ClearCache()
-	return render(c, ui.AdminMinIOCacheSection(stats))
-}
-
-func HandleRefreshMinIOCache(c *fiber.Ctx) error {
-	stats := minio.GetCacheStats()
-	return render(c, ui.AdminMinIOCacheSection(stats))
+	stats := vector.GetEmbeddingCacheStats()
+	return renderAdminSection(c, "embedding-cache", ui.AdminEmbeddingCacheSection(stats))
 }
 
 // Embedding Cache

@@ -93,6 +93,9 @@ func main() {
 		return c.SendStatus(fiber.StatusNoContent)
 	})
 
+	// Image proxy route - serves images from MinIO
+	app.Get("/image/:adID/:idx/:size", h.HandleImageProxy)
+
 	// Main search page
 	app.Get("/", h.HandleHome)                      // x
 	app.Get("/search", h.HandleSearch)              // x
@@ -137,7 +140,6 @@ func main() {
 	api.Post("/bookmark-ad/:id", h.AuthRequired, h.HandleBookmarkAd)
 	api.Delete("/bookmark-ad/:id", h.AuthRequired, h.HandleUnbookmarkAd)
 	api.Get("/field/:fieldName", h.HandleFieldValues)
-	api.Get("/ad-image-url/:adID", h.HandleAdImageSignedURL)
 
 	// Rock system (API)
 	api.Get("/ad-rocks/:id", h.HandleAdRocks)
@@ -148,14 +150,11 @@ func main() {
 	// Admin dashboard and management
 	admin := app.Group("/admin", h.AdminRequired)
 	admin.Get("/", h.HandleAdminDashboard)
-	admin.Get("/minio-cache", h.HandleAdminMinIOCache)
 	admin.Get("/embedding-cache", h.HandleAdminEmbeddingCache)
 	admin.Get("/metrics", h.HandleMonitor)
 
 	// Admin API group
 	adminAPI := api.Group("/admin", h.AdminRequired)
-	adminAPI.Post("/minio-cache/clear", h.HandleClearMinIOCache)
-	adminAPI.Get("/minio-cache/refresh", h.HandleRefreshMinIOCache)
 	adminAPI.Get("/embedding-cache/refresh", h.HandleRefreshEmbeddingCache)
 	adminAPI.Post("/embedding-cache/query/clear", h.HandleClearQueryEmbeddingCache)
 	adminAPI.Post("/embedding-cache/user/clear", h.HandleClearUserEmbeddingCache)

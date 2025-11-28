@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"database/sql"
 	"fmt"
 	"image"
@@ -10,19 +9,16 @@ import (
 	"image/draw"
 	"image/png"
 	"math/rand"
-	"net/url"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
 	"github.com/chai2010/webp"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/minio/minio-go/v7"
-	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
+	"github.com/parts-pile/site/minio"
 	"github.com/parts-pile/site/user"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/gofont/gomono"
@@ -59,6 +55,11 @@ func main() {
 	// Initialize database
 	if err := db.Init(config.DatabaseURL); err != nil {
 		logger.Fatal("Failed to initialize database", "error", err, "databaseURL", config.DatabaseURL)
+	}
+
+	// Initialize MinIO
+	if err := minio.Init(); err != nil {
+		logger.Fatal("Failed to initialize MinIO", "error", err)
 	}
 
 	// Open DB for direct access
@@ -316,64 +317,6 @@ func addText(img *image.RGBA, text string, textColor color.Color, imgWidth, imgH
 
 // batchUploadToMinIO uploads all images to MinIO in batches
 func batchUploadToMinIO(imagesToUpload []ImageToUpload) error {
-	if config.MinIOAPIURL == "" {
-		return fmt.Errorf("MINIO_API_URL environment variable not set")
-	}
-	if config.MinIOUsername == "" {
-		return fmt.Errorf("MINIO_USERNAME environment variable not set")
-	}
-	if config.MinIOPassword == "" {
-		return fmt.Errorf("MINIO_PASSWORD environment variable not set")
-	}
-
-	if config.MinIOBucketName == "" {
-		return fmt.Errorf("MINIO_BUCKET_NAME environment variable not set")
-	}
-
-	// Parse the API URL to extract endpoint
-	// If URL doesn't have a scheme, add http:// as default
-	apiURL := config.MinIOAPIURL
-	if !strings.Contains(apiURL, "://") {
-		apiURL = "http://" + apiURL
-	}
-
-	endpointURL, err := url.Parse(apiURL)
-	if err != nil {
-		return fmt.Errorf("invalid MinIO API URL %q: %w", config.MinIOAPIURL, err)
-	}
-
-	// Validate that we have a host
-	endpoint := endpointURL.Host
-	if endpoint == "" {
-		// If Host is still empty after parsing, the URL format is invalid
-		return fmt.Errorf("MinIO API URL missing host: %q (expected format: http://host:port or https://host:port, got: %q)", config.MinIOAPIURL, apiURL)
-	}
-
-	minioClient, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(config.MinIOUsername, config.MinIOPassword, ""),
-		Secure: endpointURL.Scheme == "https",
-	})
-	if err != nil {
-		return fmt.Errorf("MinIO client error: %v", err)
-	}
-
-	// Check if bucket exists, create if it doesn't
-	ctx := context.Background()
-	bucketExists, err := minioClient.BucketExists(ctx, config.MinIOBucketName)
-	if err != nil {
-		return fmt.Errorf("failed to check if bucket exists: %w", err)
-	}
-
-	if !bucketExists {
-		fmt.Printf("Bucket %q does not exist, creating it...\n", config.MinIOBucketName)
-		err = minioClient.MakeBucket(ctx, config.MinIOBucketName, minio.MakeBucketOptions{})
-		if err != nil {
-			return fmt.Errorf("failed to create bucket %q: %w", config.MinIOBucketName, err)
-		}
-		fmt.Printf("Bucket %q created successfully\n", config.MinIOBucketName)
-	} else {
-		fmt.Printf("Bucket %q already exists\n", config.MinIOBucketName)
-	}
 
 	// Upload in batches with concurrency control
 	batchSize := 10 // Upload 10 images concurrently
@@ -395,11 +338,17 @@ func batchUploadToMinIO(imagesToUpload []ImageToUpload) error {
 			// Retry upload up to 3 times
 			maxRetries := 3
 			var err error
-			ctx := context.Background()
 			for attempt := 0; attempt < maxRetries; attempt++ {
-				_, err = minioClient.PutObject(ctx, config.MinIOBucketName, imageToUpload.Path,
-					bytes.NewReader(imageToUpload.Data), int64(len(imageToUpload.Data)),
-					minio.PutObjectOptions{ContentType: "image/webp"})
+				// Extract adID, imageIndex, and size from path (format: "adID/imageIndex-size.webp")
+				var adID, imageIndex int
+				var size string
+				_, err = fmt.Sscanf(imageToUpload.Path, "%d/%d-%s.webp", &adID, &imageIndex, &size)
+				if err != nil {
+					err = fmt.Errorf("failed to parse image path %q: %w", imageToUpload.Path, err)
+					break
+				}
+
+				err = minio.PutImageObject(adID, imageIndex, size, imageToUpload.Data)
 
 				if err == nil {
 					// Success
