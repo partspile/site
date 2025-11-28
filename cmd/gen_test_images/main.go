@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"fmt"
 	"image"
@@ -9,12 +10,11 @@ import (
 	"image/draw"
 	"image/png"
 	"math/rand"
+	"net/url"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
-
-	"context"
-	"net/url"
 
 	"github.com/chai2010/webp"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -316,21 +316,40 @@ func addText(img *image.RGBA, text string, textColor color.Color, imgWidth, imgH
 
 // batchUploadToMinIO uploads all images to MinIO in batches
 func batchUploadToMinIO(imagesToUpload []ImageToUpload) error {
-	if config.MinIOAPIURL == "" || config.MinIOUsername == "" || config.MinIOPassword == "" {
-		return fmt.Errorf("MinIO credentials not set in env vars")
+	if config.MinIOAPIURL == "" {
+		return fmt.Errorf("MINIO_API_URL environment variable not set")
+	}
+	if config.MinIOUsername == "" {
+		return fmt.Errorf("MINIO_USERNAME environment variable not set")
+	}
+	if config.MinIOPassword == "" {
+		return fmt.Errorf("MINIO_PASSWORD environment variable not set")
 	}
 
 	if config.MinIOBucketName == "" {
-		return fmt.Errorf("MinIO bucket name not set in env vars")
+		return fmt.Errorf("MINIO_BUCKET_NAME environment variable not set")
 	}
 
 	// Parse the API URL to extract endpoint
-	endpointURL, err := url.Parse(config.MinIOAPIURL)
-	if err != nil {
-		return fmt.Errorf("invalid MinIO API URL: %w", err)
+	// If URL doesn't have a scheme, add http:// as default
+	apiURL := config.MinIOAPIURL
+	if !strings.Contains(apiURL, "://") {
+		apiURL = "http://" + apiURL
 	}
 
-	minioClient, err := minio.New(endpointURL.Host, &minio.Options{
+	endpointURL, err := url.Parse(apiURL)
+	if err != nil {
+		return fmt.Errorf("invalid MinIO API URL %q: %w", config.MinIOAPIURL, err)
+	}
+
+	// Validate that we have a host
+	endpoint := endpointURL.Host
+	if endpoint == "" {
+		// If Host is still empty after parsing, the URL format is invalid
+		return fmt.Errorf("MinIO API URL missing host: %q (expected format: http://host:port or https://host:port, got: %q)", config.MinIOAPIURL, apiURL)
+	}
+
+	minioClient, err := minio.New(endpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(config.MinIOUsername, config.MinIOPassword, ""),
 		Secure: endpointURL.Scheme == "https",
 	})
