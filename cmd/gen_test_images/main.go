@@ -357,6 +357,24 @@ func batchUploadToMinIO(imagesToUpload []ImageToUpload) error {
 		return fmt.Errorf("MinIO client error: %v", err)
 	}
 
+	// Check if bucket exists, create if it doesn't
+	ctx := context.Background()
+	bucketExists, err := minioClient.BucketExists(ctx, config.MinIOBucketName)
+	if err != nil {
+		return fmt.Errorf("failed to check if bucket exists: %w", err)
+	}
+
+	if !bucketExists {
+		fmt.Printf("Bucket %q does not exist, creating it...\n", config.MinIOBucketName)
+		err = minioClient.MakeBucket(ctx, config.MinIOBucketName, minio.MakeBucketOptions{})
+		if err != nil {
+			return fmt.Errorf("failed to create bucket %q: %w", config.MinIOBucketName, err)
+		}
+		fmt.Printf("Bucket %q created successfully\n", config.MinIOBucketName)
+	} else {
+		fmt.Printf("Bucket %q already exists\n", config.MinIOBucketName)
+	}
+
 	// Upload in batches with concurrency control
 	batchSize := 10 // Upload 10 images concurrently
 	semaphore := make(chan struct{}, batchSize)
