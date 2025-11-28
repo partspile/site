@@ -1,5 +1,5 @@
 # Dockerfile for Koyeb Jump Server with test_db_perf
-# Creates an SSH server with pre-built test_db_perf binary
+# Creates a server with pre-built test_db_perf binary and quote server
 
 # Stage 1: Build Go binary
 FROM golang:1.25.3 AS go-builder
@@ -38,13 +38,12 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -o /build/quote_server \
     ./cmd/quote_server
 
-# Stage 2: Final image with SSH server
+# Stage 2: Final image
 FROM ubuntu:22.04
 
-# Install SSH server, basic tools, monitoring tools, and WebP library
+# Install basic tools, monitoring tools, and WebP library
 RUN apt-get update && \
     apt-get install -y \
-    openssh-server \
     curl \
     wget \
     git \
@@ -68,14 +67,6 @@ RUN wget -q https://dl.min.io/client/mc/release/linux-amd64/mc -O /tmp/mc && \
     chmod +x /tmp/mc && \
     mv /tmp/mc /usr/local/bin/mc && \
     mc --version
-
-# Configure SSH (key-only authentication)
-RUN mkdir /var/run/sshd && \
-    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config && \
-    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
-    sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \
-    echo "AuthorizedKeysFile .ssh/authorized_keys" >> /etc/ssh/sshd_config && \
-    echo "AllowUsers root jump" >> /etc/ssh/sshd_config
 
 # Copy the pre-built binaries
 COPY --from=go-builder /build/test_db_perf /usr/local/bin/test_db_perf
@@ -102,18 +93,11 @@ ENV REBUILD_DB_DATA_DIR=/workspace/rebuild_db
 
 # Create non-root jump user with sudo
 RUN useradd -m -s /bin/bash jump && \
-    echo "jump ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
-    mkdir -p /home/jump/.ssh && \
-    chmod 700 /home/jump/.ssh && \
-    chown jump:jump /home/jump/.ssh
+    echo "jump ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Create SSH directory for root
-RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh
-
-# Configure firewall (allow SSH and web server)
+# Configure firewall (allow web server)
 RUN ufw default deny incoming && \
     ufw default allow outgoing && \
-    ufw allow 22/tcp && \
     ufw allow 10000/tcp && \
     echo "y" | ufw enable || true
 
@@ -164,41 +148,17 @@ sleep 1\n\
 logger -p local0.info "Jump server starting at $(date)"\n\
 echo "$(date): Jump server starting" >> /var/log/jump-server.log\n\
 \n\
-# If SSH_PUBLIC_KEY is set, add it to authorized_keys for root\n\
-if [ -n "$SSH_PUBLIC_KEY" ]; then\n\
-    echo "$SSH_PUBLIC_KEY" > /root/.ssh/authorized_keys\n\
-    chmod 600 /root/.ssh/authorized_keys\n\
-    echo "$SSH_PUBLIC_KEY" > /home/jump/.ssh/authorized_keys\n\
-    chmod 600 /home/jump/.ssh/authorized_keys\n\
-    chown jump:jump /home/jump/.ssh/authorized_keys\n\
-    logger -p local0.info "SSH public key configured from environment variable"\n\
-    echo "$(date): SSH public key configured" >> /var/log/jump-server.log\n\
-fi\n\
-\n\
-# If JUMP_USER_KEY is set, add it to jump user (alternative to root)\n\
-if [ -n "$JUMP_USER_KEY" ]; then\n\
-    echo "$JUMP_USER_KEY" > /home/jump/.ssh/authorized_keys\n\
-    chmod 600 /home/jump/.ssh/authorized_keys\n\
-    chown jump:jump /home/jump/.ssh/authorized_keys\n\
-    logger -p local0.info "SSH public key configured for jump user"\n\
-    echo "$(date): SSH public key configured for jump user" >> /var/log/jump-server.log\n\
-fi\n\
-\n\
-# Log SSH server startup\n\
-logger -p local0.info "Starting SSH server"\n\
-echo "$(date): Starting SSH server" >> /var/log/jump-server.log\n\
-\n\
 # Start quote server in background\n\
 /usr/local/bin/quote_server &\n\
 logger -p local0.info "Quote server started on port 10000"\n\
 echo "$(date): Quote server started on port 10000" >> /var/log/jump-server.log\n\
 \n\
-# Start SSH server\n\
-exec /usr/sbin/sshd -D' > /entrypoint.sh && \
+# Keep container running\n\
+tail -f /dev/null' > /entrypoint.sh && \
     chmod +x /entrypoint.sh
 
-# Expose SSH port and web server port
-EXPOSE 22 10000
+# Expose web server port
+EXPOSE 10000
 
 # Use entrypoint script
 ENTRYPOINT ["/entrypoint.sh"]

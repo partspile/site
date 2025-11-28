@@ -1,6 +1,6 @@
 # Jump Server with test_db_perf and rebuild_db
 
-This Dockerfile creates a jump server based on Ubuntu 22.04 with SSH server configured, and includes pre-built `test_db_perf` and `rebuild_db` binaries ready to use.
+This Dockerfile creates a server based on Ubuntu 22.04 that includes pre-built `test_db_perf` and `rebuild_db` binaries, along with a quote server web service.
 
 ## Building the Image
 
@@ -8,55 +8,12 @@ This Dockerfile creates a jump server based on Ubuntu 22.04 with SSH server conf
 docker build -f Dockerfile.jump-server -t jump-server:latest .
 ```
 
-## Creating SSH Keys
-
-The jump server uses SSH key authentication only (no passwords). You'll need to generate a public/private key pair before deploying.
-
-### Generate Ed25519 Key (Recommended)
-
-Ed25519 keys are modern, secure, and recommended for new deployments:
-
-```bash
-# Generate a new Ed25519 key pair
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_jump -C "jump-server-key"
-
-# View your public key (you'll need this for deployment)
-cat ~/.ssh/id_ed25519_jump.pub
-```
-
-### Generate RSA Key (Alternative)
-
-If your system doesn't support Ed25519, you can use RSA:
-
-```bash
-# Generate a new RSA key pair (4096-bit recommended)
-ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa_jump -C "jump-server-key"
-
-# View your public key
-cat ~/.ssh/id_rsa_jump.pub
-```
-
-### Key Files
-
-After generation, you'll have:
-- **Private key**: `~/.ssh/id_ed25519_jump` (or `~/.ssh/id_rsa_jump`) - Keep this secure and never share it
-- **Public key**: `~/.ssh/id_ed25519_jump.pub` (or `~/.ssh/id_rsa_jump.pub`) - This is what you provide to the jump server
-
-**Security Note**: Never share your private key. Only the public key (`.pub` file) should be provided to the jump server via the `SSH_PUBLIC_KEY` or `JUMP_USER_KEY` environment variable.
-
 ## Running Locally
 
 ```bash
 docker run -d \
-  -p 2222:22 \
   -p 10000:10000 \
-  -e SSH_PUBLIC_KEY="$(cat ~/.ssh/id_ed25519_jump.pub)" \
   jump-server:latest
-```
-
-Then SSH in:
-```bash
-ssh -i ~/.ssh/id_ed25519_jump -p 2222 root@localhost
 ```
 
 ## CI/CD
@@ -77,9 +34,7 @@ The image is built on:
 
 1. **In Koyeb service settings:**
    - **Image**: `ghcr.io/your-org/your-repo-jump-server:dev` (or specific tag)
-   - **SSH Public Key**: Your public key
    - **Ports**: 
-     - Port 22 (SSH)
      - Port 10000 (Quote of the Day web server)
 
 ### Option 2: Build and Push Manually
@@ -97,7 +52,13 @@ docker push your-registry/jump-server:latest
 
 ## Using test_db_perf
 
-Once SSH'd into the server:
+You can run the binaries by executing commands in the container:
+
+```bash
+docker exec -it <container-name> test_db_perf
+```
+
+Or if you need to run it interactively:
 
 ```bash
 # Run the performance test
@@ -222,7 +183,7 @@ curl http://localhost:10000/
 open http://localhost:10000/
 ```
 
-The quote server starts automatically when the jump server container starts and runs in the background alongside the SSH server.
+The quote server starts automatically when the jump server container starts and runs in the background.
 
 ## Features
 
@@ -231,37 +192,35 @@ The quote server starts automatically when the jump server container starts and 
 - ✅ Pre-built `gen_test_images` binary ready to use
 - ✅ Quote of the day web server on port 10000
 - ✅ MinIO Client (`mc`) pre-installed
-- ✅ Key-only SSH authentication (no passwords)
-- ✅ Non-root `jump` user with sudo access (recommended)
+- ✅ Non-root `jump` user with sudo access
 - ✅ Command logging and auditing (`/var/log/jump-server.log`)
-- ✅ Firewall configured (UFW, SSH and web server)
+- ✅ Firewall configured (UFW, web server only)
 - ✅ Monitoring tools installed (htop, iotop, tcpdump, strace)
 - ✅ Workspace directory at `/workspace`
 - ✅ Comprehensive logging via rsyslog
 
 ## Security Features
 
-- **Key-only authentication**: No password login allowed
-- **Firewall**: UFW configured to allow SSH (port 22) and web server (port 10000)
+- **Firewall**: UFW configured to allow web server (port 10000) only
 - **Command auditing**: All commands logged to `/var/log/jump-server.log`
-- **Non-root user**: `jump` user with sudo (use instead of root when possible)
-- **Access control**: Only `root` and `jump` users can SSH in
+- **Non-root user**: `jump` user with sudo available
 
 ## Usage
 
-### SSH Access
+### Running Commands in the Container
 
-You can SSH as either `root` or `jump` user:
+You can execute commands in the running container:
 
 ```bash
-# As root
-ssh -i ~/.ssh/id_ed25519_jump root@your-server
+# Run test_db_perf
+docker exec -it <container-name> test_db_perf -db "postgresql://..." -duration 30s
 
-# As jump user (recommended)
-ssh -i ~/.ssh/id_ed25519_jump jump@your-server
+# Run rebuild_db
+docker exec -it <container-name> rebuild_db -db "postgresql://..."
+
+# Access shell
+docker exec -it <container-name> /bin/bash
 ```
-
-Replace `id_ed25519_jump` with your actual key filename if you used a different name or RSA keys.
 
 ### Viewing Logs
 
