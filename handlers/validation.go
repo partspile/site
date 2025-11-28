@@ -218,6 +218,7 @@ var allowedImageMIMETypes = map[string]bool{
 	"image/jpg":  true,
 	"image/png":  true,
 	"image/gif":  true,
+	"image/webp": true,
 }
 
 // Allowed image file extensions
@@ -226,6 +227,7 @@ var allowedImageExtensions = map[string]bool{
 	".jpeg": true,
 	".png":  true,
 	".gif":  true,
+	".webp": true,
 }
 
 // ValidateImageFile validates a single image file
@@ -234,7 +236,7 @@ func ValidateImageFile(fileHeader *multipart.FileHeader) error {
 	// Check file extension
 	ext := strings.ToLower(filepath.Ext(fileHeader.Filename))
 	if !allowedImageExtensions[ext] {
-		return fmt.Errorf("file %s has invalid extension. Only .jpg, .jpeg, .png, and .gif are allowed", fileHeader.Filename)
+		return fmt.Errorf("file %s has invalid extension. Only .jpg, .jpeg, .png, .gif, and .webp are allowed", fileHeader.Filename)
 	}
 
 	// Check MIME type
@@ -248,12 +250,14 @@ func ValidateImageFile(fileHeader *multipart.FileHeader) error {
 			mimeType = "image/png"
 		case ".gif":
 			mimeType = "image/gif"
+		case ".webp":
+			mimeType = "image/webp"
 		default:
 			return fmt.Errorf("unable to determine MIME type for file %s", fileHeader.Filename)
 		}
 	}
 	if !allowedImageMIMETypes[mimeType] {
-		return fmt.Errorf("file %s has invalid MIME type %s. Only image/jpeg, image/png, and image/gif are allowed", fileHeader.Filename, mimeType)
+		return fmt.Errorf("file %s has invalid MIME type %s. Only image/jpeg, image/png, image/gif, and image/webp are allowed", fileHeader.Filename, mimeType)
 	}
 
 	// Check file size
