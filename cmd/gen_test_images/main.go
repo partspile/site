@@ -84,6 +84,12 @@ func main() {
 	logger.Info("Found test ads to process", "count", len(testAds))
 	fmt.Printf("Found %d test ads to process\n", len(testAds))
 
+	// Clean up old images for all test ads
+	fmt.Println("Cleaning up old images...")
+	if err := cleanupOldImages(testAds); err != nil {
+		logger.Fatal("Failed to cleanup old images", "error", err)
+	}
+
 	// Generate images for all test ads
 	fmt.Println("Starting image generation...")
 	imagesToUpload := generateImagesForAds(testAds)
@@ -124,6 +130,32 @@ func getTestAds(database *sql.DB, userID int) ([]TestAd, error) {
 	}
 
 	return testAds, nil
+}
+
+// cleanupOldImages deletes all existing images for each ad before regenerating
+func cleanupOldImages(testAds []TestAd) error {
+	cleanedAds := 0
+	errorCount := 0
+
+	for _, ad := range testAds {
+		err := minio.DeleteAdImages(ad.ID)
+		if err != nil {
+			logger.Warn("Failed to delete images for ad, continuing anyway",
+				"adID", ad.ID, "error", err)
+			errorCount++
+			continue
+		}
+		cleanedAds++
+	}
+
+	fmt.Printf("Cleanup complete: deleted images for %d ads, %d errors\n",
+		cleanedAds, errorCount)
+	if errorCount > 0 {
+		logger.Warn("Some ads had errors during cleanup, continuing anyway",
+			"errorCount", errorCount)
+	}
+
+	return nil
 }
 
 // generateImagesForAds generates images for all test ads

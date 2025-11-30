@@ -119,3 +119,76 @@ func GetImageObject(adID, imageIndex int, size string) ([]byte, error) {
 
 	return data, nil
 }
+
+// ListAdImages lists all image objects for a given ad in MinIO
+func ListAdImages(adID int) ([]string, error) {
+	prefix := fmt.Sprintf("%d/", adID)
+	ctx := context.Background()
+
+	var imagePaths []string
+	objectCh := minioClient.ListObjects(ctx, config.MinIOBucketName,
+		minio.ListObjectsOptions{
+			Prefix:    prefix,
+			Recursive: true,
+		})
+
+	for obj := range objectCh {
+		if obj.Err != nil {
+			return nil, fmt.Errorf("failed to list objects: %w", obj.Err)
+		}
+		imagePaths = append(imagePaths, obj.Key)
+	}
+
+	return imagePaths, nil
+}
+
+// DeleteImageObject deletes an image object from MinIO
+func DeleteImageObject(adID, imageIndex int, size string) error {
+	imagePath := filepath.Join(
+		fmt.Sprintf("%d", adID),
+		fmt.Sprintf("%d-%s.webp", imageIndex, size),
+	)
+
+	ctx := context.Background()
+	err := minioClient.RemoveObject(ctx, config.MinIOBucketName, imagePath,
+		minio.RemoveObjectOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to delete object from MinIO: %w", err)
+	}
+
+	return nil
+}
+
+// DeleteAdImages deletes all images for a given ad from MinIO
+func DeleteAdImages(adID int) error {
+	imagePaths, err := ListAdImages(adID)
+	if err != nil {
+		return fmt.Errorf("failed to list images for ad %d: %w", adID, err)
+	}
+
+	ctx := context.Background()
+	errorCh := minioClient.RemoveObjects(ctx, config.MinIOBucketName,
+		func() <-chan minio.ObjectInfo {
+			objectCh := make(chan minio.ObjectInfo, 1)
+			go func() {
+				defer close(objectCh)
+				for _, path := range imagePaths {
+					objectCh <- minio.ObjectInfo{Key: path}
+				}
+			}()
+			return objectCh
+		}(),
+		minio.RemoveObjectsOptions{})
+
+	var deleteErrors []error
+	for err := range errorCh {
+		deleteErrors = append(deleteErrors, err.Err)
+	}
+
+	if len(deleteErrors) > 0 {
+		return fmt.Errorf("failed to delete %d images: %v",
+			len(deleteErrors), deleteErrors[0])
+	}
+
+	return nil
+}
