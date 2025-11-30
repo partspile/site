@@ -211,9 +211,6 @@ func main() {
 	app.Post("/view/tree", h.HandleTreeView) // x
 	app.Post("/view/grid", h.HandleGridView) // x
 
-	// Start background user embedding processor
-	vector.StartUserBackgroundProcessor()
-
 	// Start background vector processor for ads
 	vector.StartBackgroundProcessor()
 

@@ -2,134 +2,123 @@ package vector
 
 import (
 	"fmt"
+	"time"
 
-	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
+	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
 )
 
+// AdActivity represents a user's interaction with an ad (bookmark or click)
+type AdActivity struct {
+	AdID      int       `json:"ad_id"`
+	Timestamp time.Time `json:"timestamp"`
+	Embedding []float32 `json:"embedding"` // nil if embedding is missing
+}
+
 // GetUserPersonalizedEmbedding loads from cache first, then generates new embedding if not found.
-func GetUserPersonalizedEmbedding(userID int, forceRecompute bool) ([]float32, error) {
+// categoryID must be a valid category ID (greater than 0)
+func GetUserPersonalizedEmbedding(userID int, categoryID int, forceRecompute bool) ([]float32, error) {
+
 	logger.Debug("GetUserPersonalizedEmbedding called",
-		"userID", userID, "forceRecompute", forceRecompute)
+		"userID", userID, "categoryID", categoryID, "forceRecompute", forceRecompute)
 
 	if !forceRecompute {
 		// Try cache first
-		cached, err := GetUserEmbedding(userID)
+		cached, err := GetUserEmbedding(userID, categoryID)
 		if err == nil && cached != nil {
-			logger.Debug("Cache hit for user embedding",
-				"userID", userID)
+			logger.Debug("Cache hit for user category embedding",
+				"userID", userID, "categoryID", categoryID)
 			return cached, nil
 		}
 
 		// Cache miss, will generate new embedding below
-		logger.Debug("Cache miss for user embedding, will generate new",
-			"userID", userID)
+		logger.Debug("Cache miss for user category embedding, will generate new",
+			"userID", userID, "categoryID", categoryID)
 	}
+
 	logger.Debug("Calculating personalized user embedding",
-		"userID", userID)
-	const (
-		bookmarkWeight = 3
-		clickWeight    = 2
-		limit          = config.VectorUserEmbeddingLimit
-	)
-	logger.Debug("Using limit for user embedding",
-		"limit", limit, "userID", userID)
+		"userID", userID, "categoryID", categoryID)
 
-	var vectors [][]float32
-	var weights []float32
-	bookmarkIDs, err := ad.GetBookmarkedAdIDs(userID)
+	// Fetch combined bookmarks and clicks, sorted by timestamp (newest first), limited
+	limit := config.VectorUserEmbeddingLimit
+	activities, err := getUserActivities(userID, categoryID, limit)
 	if err != nil {
-		return nil, fmt.Errorf("fetch bookmarks: %w", err)
-	}
-	logger.Debug("User bookmarks",
-		"userID", userID, "bookmarkIDs", bookmarkIDs, "count",
-		len(bookmarkIDs))
-
-	// Batch fetch bookmark embeddings
-	var bookmarkEmbeddings [][]float32
-	if len(bookmarkIDs) > 0 {
-		embeddings, err := GetAdEmbeddings(bookmarkIDs)
-		if err != nil {
-			logger.Debug("Batch bookmark embedding error",
-				"error", err, "userID", userID)
-		} else {
-			bookmarkEmbeddings = embeddings
-		}
+		return nil, fmt.Errorf("fetch user activities: %w", err)
 	}
 
-	for i, adID := range bookmarkIDs {
-		if i < len(bookmarkEmbeddings) && bookmarkEmbeddings[i] != nil {
-			emb := bookmarkEmbeddings[i]
-			for j := 0; j < bookmarkWeight; j++ {
-				vectors = append(vectors, emb)
-				weights = append(weights, 1)
-			}
-		} else {
-			logger.Debug("PostgreSQL embedding missing for bookmarked ad",
-				"adID", adID, "userID", userID)
-		}
-		if len(vectors) >= limit*bookmarkWeight {
-			break
-		}
+	if len(activities) == 0 {
+		return nil, fmt.Errorf("no user activity to aggregate")
 	}
 
-	logger.Debug("About to call GetRecentlyClickedAdIDsByUser",
-		"userID", userID, "limit", limit)
-	clickedIDs, err := ad.GetRecentlyClickedAdIDsByUser(userID, limit)
-	if err != nil {
-		logger.Error("GetRecentlyClickedAdIDsByUser error",
-			"error", err, "userID", userID)
-		return nil, fmt.Errorf("fetch clicks: %w", err)
-	}
-	logger.Debug("User clicked ads",
-		"userID", userID, "clickedIDs", clickedIDs, "count",
-		len(clickedIDs))
+	logger.Debug("User activities",
+		"userID", userID, "categoryID", categoryID, "count", len(activities))
 
-	// Batch fetch click embeddings
-	var clickEmbeddings [][]float32
-	if len(clickedIDs) > 0 {
-		embeddings, err := GetAdEmbeddings(clickedIDs)
-		if err != nil {
-			logger.Debug("Batch click embedding error",
-				"error", err, "userID", userID)
-		} else {
-			clickEmbeddings = embeddings
-		}
-	}
-
-	for i, adID := range clickedIDs {
-		if i < len(clickEmbeddings) && clickEmbeddings[i] != nil {
-			emb := clickEmbeddings[i]
-			for j := 0; j < clickWeight; j++ {
-				vectors = append(vectors, emb)
-				weights = append(weights, 1)
-			}
-		} else {
-			logger.Debug("PostgreSQL embedding missing for clicked ad",
-				"adID", adID, "userID", userID)
-		}
-	}
+	vectors, weights := calculateWeightedVectors(activities)
 
 	logger.Debug("Vectors aggregated",
-		"userID", userID, "vectors", len(vectors), "weights",
-		len(weights))
+		"userID", userID, "categoryID", categoryID, "vectors", len(vectors),
+		"weights", len(weights))
+
 	if len(vectors) == 0 {
 		logger.Debug("No vectors could be aggregated from user activity",
-			"userID", userID)
+			"userID", userID, "categoryID", categoryID)
 		return nil, fmt.Errorf("no user activity to aggregate")
 	}
 
 	emb := AggregateEmbeddings(vectors, weights)
 
 	// Cache the result for future use
-	if err := SetUserEmbedding(userID, emb); err != nil {
-		logger.Warn("Failed to cache user embedding",
-			"error", err, "userID", userID)
+	if err := SetUserEmbedding(userID, categoryID, emb); err != nil {
+		logger.Warn("Failed to cache user category embedding",
+			"error", err, "userID", userID, "categoryID", categoryID)
 	}
 
-	logger.Info("Successfully created user embedding",
-		"userID", userID, "vectors", len(vectors), "bookmarks",
-		len(bookmarkIDs), "clicks", len(clickedIDs))
+	logger.Info("Successfully created user category embedding",
+		"userID", userID, "categoryID", categoryID, "vectors", len(vectors),
+		"activities", len(activities))
 	return emb, nil
+}
+
+// getUserActivities fetches combined bookmarks and clicks for a user in a specific category,
+// sorted by timestamp (newest first) and limited to the most recent N items
+// Also fetches embeddings directly in the same query using JSON SQL
+func getUserActivities(userID int, categoryID int, limit int) ([]AdActivity, error) {
+	query := `
+		SELECT COALESCE(
+			json_agg(
+				json_build_object(
+					'ad_id', ad_id,
+					'timestamp', timestamp AT TIME ZONE 'UTC',
+					'embedding', array_to_json((embedding::vector)::real[])
+				)
+			),
+			'[]'::json
+		) AS activities
+		FROM (
+			SELECT ad_id, timestamp, embedding
+			FROM (
+				SELECT ba.ad_id, ba.bookmarked_at AS timestamp, a.embedding
+				FROM BookmarkedAd ba
+				JOIN Ad a ON ba.ad_id = a.id
+				WHERE ba.user_id = $1 AND a.deleted_at IS NULL AND a.ad_category_id = $2 AND a.embedding IS NOT NULL
+				
+				UNION ALL
+				
+				SELECT uac.ad_id, uac.last_clicked_at AS timestamp, a.embedding
+				FROM UserAdClick uac
+				JOIN Ad a ON uac.ad_id = a.id
+				WHERE uac.user_id = $1 AND a.deleted_at IS NULL AND a.ad_category_id = $2 AND a.embedding IS NOT NULL
+			) combined
+			ORDER BY timestamp DESC
+			LIMIT $3
+		) limited
+	`
+
+	var activities []AdActivity
+	if err := db.QueryJSON(&activities, query, userID, categoryID, limit); err != nil {
+		return nil, err
+	}
+
+	return activities, nil
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/parts-pile/site/db"
 	"github.com/parts-pile/site/logger"
@@ -15,6 +16,7 @@ var (
 	adCategoryIDs   map[string]int    // name -> id
 	adFields        map[int][]Field   // id -> []Field
 	adFieldChains   map[int][][]Field // id -> [][]Field (array of field chains per category)
+	prompts         map[int]string    // id -> precalculated query prompt template
 )
 
 // loadCategoriesFromDB loads category data from the database and populates the maps
@@ -176,7 +178,50 @@ func InitAdCategories() error {
 		return err
 	}
 
+	// Precalculate query prompt templates for each category
+	precalculateQueryPrompts()
+
 	return nil
+}
+
+// precalculateQueryPrompts builds and caches query prompt templates for all categories
+func precalculateQueryPrompts() {
+	prompts = make(map[int]string)
+	// Iterate over all category names to ensure we generate prompts for all categories
+	for categoryID, categoryName := range adCategoryNames {
+		// Get fields for this category (may be empty)
+		fields := adFields[categoryID]
+		var specFieldNames []string
+		for _, field := range fields {
+			if field.IsSpecField() {
+				// Format field name nicely (e.g., "part_category" -> "Part category")
+				fieldName := field.Name()
+				formatted := strings.ReplaceAll(fieldName, "_", " ")
+				// Capitalize first letter
+				if len(formatted) > 0 {
+					formatted = strings.ToUpper(formatted[:1]) + formatted[1:]
+				}
+				specFieldNames = append(specFieldNames, formatted)
+			}
+		}
+		specFieldNamesStr := strings.Join(specFieldNames, ", ")
+
+		// Build query prompt template
+		var p []string
+		p = append(p, fmt.Sprintf("Search query for ads in the %s category.", categoryName))
+		p = append(p, "Find ads that match the user's search intent. Focus on matching:")
+		p = append(p, "- Title and description content")
+		if specFieldNamesStr != "" {
+			p = append(p, fmt.Sprintf("- Specifications (%s)", specFieldNamesStr))
+		}
+		p = append(p, "- Location")
+		p = append(p, "- Price range")
+		p = append(p, "- Quality indicators")
+		p = append(p, "")
+		p = append(p, "User search query: %s")
+
+		prompts[categoryID] = strings.Join(p, "\n")
+	}
 }
 
 // GetCategoryIDs returns all category IDs in order
@@ -237,6 +282,22 @@ func GetSpecFields(adCat int) []Field {
 // GetFieldChains returns the field chains for a category
 func GetFieldChains(adCat int) [][]Field {
 	return adFieldChains[adCat]
+}
+
+// GetCategoryQueryPromptTemplate returns the precalculated query prompt template for a category (without user query)
+func GetCategoryQueryPromptTemplate(adCat int) string {
+	if template, exists := prompts[adCat]; exists {
+		return template
+	}
+	// Fallback to generic template if category not found
+	return `Search query for ads.
+Find ads that match the user's search intent. Focus on matching:
+- Title and description content
+- Location
+- Price range
+- Quality indicators
+
+User search query: %s`
 }
 
 // FieldsInSameChain checks if two fields are in the same chain

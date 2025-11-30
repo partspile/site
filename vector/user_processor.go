@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/logger"
 )
 
@@ -55,13 +56,21 @@ func processAllQueuedUsers() {
 		logger.Debug("Processing user",
 			"component", "queue", "userID", userID)
 
-		_, err := GetUserPersonalizedEmbedding(userID, true)
-		if err != nil {
-			logger.Error("Error updating embedding for user",
-				"error", err, "component", "queue", "userID", userID)
-		} else {
-			logger.Debug("Successfully updated embedding for user",
-				"component", "queue", "userID", userID)
+		// Process all categories for this user
+		categoryIDs := ad.GetCategoryIDs()
+		for _, categoryID := range categoryIDs {
+			_, err := GetUserPersonalizedEmbedding(userID, categoryID, true)
+			if err != nil {
+				// If user has no activity for this category, that's expected, skip logging
+				if err.Error() != "no user activity to aggregate" {
+					// Log actual errors but continue processing other categories
+					logger.Error("Error updating embedding for user category",
+						"error", err, "component", "queue", "userID", userID, "categoryID", categoryID)
+				}
+			} else {
+				logger.Debug("Successfully updated embedding for user category",
+					"component", "queue", "userID", userID, "categoryID", categoryID)
+			}
 		}
 	}
 }

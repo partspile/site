@@ -27,7 +27,13 @@ const (
 	VectorSearchThreshold         = 0.6 // Similarity threshold for filtering results (0.0 to 1.0)
 	VectorProcessingQueueSize     = 100
 	VectorProcessingSleepInterval = 100 * time.Millisecond
-	VectorUserEmbeddingLimit      = 10
+	VectorUserEmbeddingLimit      = 30
+	VectorSystemEmbeddingLimit    = 100
+
+	// Embedding cache TTL configuration
+	VectorQueryEmbeddingCacheTTL = 1 * time.Hour   // TTL for query embedding cache
+	VectorUserEmbeddingCacheTTL  = 1 * time.Minute // TTL for user embedding cache
+	VectorSiteEmbeddingCacheTTL  = 1 * time.Hour   // TTL for site embedding cache
 
 	// Grok API configuration
 	GrokAPIURL = "https://api.x.ai/v1/chat/completions"
@@ -85,7 +91,8 @@ var (
 	UserEncryptionKey []byte
 
 	// Server configuration
-	ServerPort = getEnvWithDefault("PORT", "8000")
+	ServerPort = getEnvWithDefault("PORT", "10000")
+
 	// Twilio webhook URL - used for webhook callbacks and notification links
 	// Set to your ngrok URL or production domain (e.g., https://your-domain.com)
 	TwilioWebhookURL = getEnvWithDefault("TWILIO_WEBHOOK_URL", "")

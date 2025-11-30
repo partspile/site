@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -32,10 +33,10 @@ func runEmbeddingSearch(embedding []float32, cursor uint64, threshold float64, k
 }
 
 // Embedding-based search with user query
-func queryEmbedding(userPrompt string, cursor uint64, threshold float64, k int, filter FilterClause) ([]int, uint64, error) {
+func queryEmbedding(userPrompt string, categoryID int, cursor uint64, threshold float64, k int, filter FilterClause) ([]int, uint64, error) {
 	logger.Debug("Generating embedding for user query",
-		"component", "queryEmbedding", "userPrompt", userPrompt)
-	embedding, err := vector.GetQueryEmbedding(userPrompt)
+		"component", "queryEmbedding", "userPrompt", userPrompt, "categoryID", categoryID)
+	embedding, err := vector.GetQueryEmbedding(userPrompt, categoryID)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -43,74 +44,68 @@ func queryEmbedding(userPrompt string, cursor uint64, threshold float64, k int, 
 }
 
 // Embedding-based search with user embedding
-func userEmbedding(userID int, cursor uint64, threshold float64, k int, filter FilterClause) ([]int, uint64, error) {
+func userEmbedding(userID int, categoryID int, cursor uint64, threshold float64, k int, filter FilterClause) ([]int, uint64, error) {
 	logger.Debug("userEmbedding called",
-		"component", "userEmbedding", "userID", userID,
+		"component", "userEmbedding", "userID", userID, "categoryID", categoryID,
 		"cursor", cursor, "threshold", threshold)
-	embedding, err := vector.GetUserPersonalizedEmbedding(userID, false)
+
+	embedding, err := vector.GetUserPersonalizedEmbedding(userID, categoryID, false)
 	if err != nil {
 		logger.Debug("GetUserPersonalizedEmbedding error",
 			"error", err, "component", "userEmbedding",
-			"userID", userID)
+			"userID", userID, "categoryID", categoryID)
 		// If user has no activity, fall back to site-level embedding
 		if err.Error() == "no user activity to aggregate" {
 			logger.Debug("User has no activity, falling back to site-level embedding",
-				"component", "userEmbedding", "userID", userID)
-			return siteEmbedding(cursor, threshold, k, filter)
+				"component", "userEmbedding", "userID", userID, "categoryID", categoryID)
+			return siteEmbedding(categoryID, cursor, threshold, k, filter)
 		}
 		return nil, 0, err
 	}
 	if embedding == nil {
 		logger.Debug("GetUserPersonalizedEmbedding returned nil embedding, falling back to site-level embedding",
-			"component", "userEmbedding", "userID", userID)
-		return siteEmbedding(cursor, threshold, k, filter)
+			"component", "userEmbedding", "userID", userID, "categoryID", categoryID)
+		return siteEmbedding(categoryID, cursor, threshold, k, filter)
 	}
 	return runEmbeddingSearch(embedding, cursor, threshold, k, filter)
 }
 
 // Embedding-based search with site-level vector
-func siteEmbedding(cursor uint64, threshold float64, k int, filter FilterClause) ([]int, uint64, error) {
+func siteEmbedding(categoryID int, cursor uint64, threshold float64, k int, filter FilterClause) ([]int, uint64, error) {
 	logger.Debug("siteEmbedding called",
-		"component", "siteEmbedding", "cursor", cursor,
+		"component", "siteEmbedding", "categoryID", categoryID, "cursor", cursor,
 		"threshold", threshold)
-	embedding, err := vector.GetSiteEmbedding("default")
+	embedding, err := vector.GetSiteEmbedding(categoryID, "default")
 	if err != nil {
-		// If embeddings aren't ready yet (e.g., after database rebuild),
-		// return empty results instead of an error
-		if err.Error() == "no embeddings found for popular ads" {
-			logger.Info("Site embeddings not ready yet, returning empty results",
-				"component", "siteEmbedding", "error", err)
-			return []int{}, 0, nil
-		}
 		logger.Error("GetSiteEmbedding error",
-			"error", err, "component", "siteEmbedding")
+			"error", err, "component", "siteEmbedding", "categoryID", categoryID)
 		return nil, 0, err
 	}
 	if embedding == nil {
-		logger.Warn("GetSiteEmbedding returned nil embedding, returning empty results",
-			"component", "siteEmbedding")
-		return []int{}, 0, nil
+		logger.Error("GetSiteEmbedding returned nil embedding",
+			"component", "siteEmbedding", "categoryID", categoryID)
+		return nil, 0, fmt.Errorf("site embedding is nil")
 	}
 	return runEmbeddingSearch(embedding, cursor, threshold, k, filter)
 }
 
 // performSearch performs the search based on the user prompt and returns IDs
-func performSearch(userPrompt string, userID int, cursor uint64, threshold float64, k int, filter FilterClause) ([]int, uint64, error) {
+func performSearch(userPrompt string, userID int, categoryID int, cursor uint64, threshold float64, k int, filter FilterClause) ([]int, uint64, error) {
 	logger.Debug("performSearch called",
 		"component", "performSearch", "userPrompt", userPrompt,
-		"userID", userID, "cursor", cursor, "threshold", threshold,
+		"userID", userID, "categoryID", categoryID, "cursor", cursor, "threshold", threshold,
 		"k", k)
 
 	if userPrompt != "" {
-		return queryEmbedding(userPrompt, cursor, threshold, k, filter)
+		return queryEmbedding(userPrompt, categoryID, cursor, threshold, k, filter)
 	}
 
 	if userPrompt == "" && userID != 0 {
-		return userEmbedding(userID, cursor, threshold, k, filter)
+		return userEmbedding(userID, categoryID, cursor, threshold, k, filter)
 	}
 
 	if userPrompt == "" && userID == 0 {
-		return siteEmbedding(cursor, threshold, k, filter)
+		return siteEmbedding(categoryID, cursor, threshold, k, filter)
 	}
 
 	// This should never be reached, but provide a default return
@@ -134,6 +129,7 @@ func getAdIDs(c *fiber.Ctx) ([]int, uint64, error) {
 	q := c.FormValue("q")
 	cursorStr := c.FormValue("cursor")
 	userID := local.GetUserID(c)
+	categoryID := cookie.GetAdCategory(c)
 	filter := buildSearchFilter(c)
 	threshold := config.VectorSearchThreshold
 	k := config.VectorSearchPageSize
@@ -143,7 +139,7 @@ func getAdIDs(c *fiber.Ctx) ([]int, uint64, error) {
 		return nil, 0, err
 	}
 
-	adIDs, cursor, err := performSearch(q, userID, cursor, threshold, k, filter)
+	adIDs, cursor, err := performSearch(q, userID, categoryID, cursor, threshold, k, filter)
 
 	if err == nil {
 		logger.Debug("ad IDs returned",

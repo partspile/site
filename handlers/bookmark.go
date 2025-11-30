@@ -5,7 +5,6 @@ import (
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
-	"github.com/parts-pile/site/vector"
 )
 
 // Handler to bookmark an ad
@@ -18,8 +17,6 @@ func HandleBookmarkAd(c *fiber.Ctx) error {
 	if err := ad.BookmarkAd(userID, adID); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to bookmark ad")
 	}
-	// Queue user for background embedding update
-	vector.QueueUserForUpdate(userID)
 	// Get the updated ad with bookmark status
 	a, err := ad.GetAdByID(adID, userID)
 	if err != nil {
@@ -40,8 +37,6 @@ func HandleUnbookmarkAd(c *fiber.Ctx) error {
 	if err := ad.UnbookmarkAd(userID, adID); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to unbookmark ad")
 	}
-	// Queue user for background embedding update
-	vector.QueueUserForUpdate(userID)
 	// Get the updated ad with bookmark status
 	a, err := ad.GetAdByID(adID, userID)
 	if err != nil {

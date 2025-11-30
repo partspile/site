@@ -2,8 +2,10 @@ package vector
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/config"
 	"github.com/parts-pile/site/logger"
 )
 
@@ -42,66 +44,80 @@ func AggregateEmbeddings(vectors [][]float32, weights []float32) []float32 {
 	return result
 }
 
-// calculateSiteLevelVector averages the embeddings of the most popular ads
-func calculateSiteLevelVector() ([]float32, error) {
-	ads := ad.GetMostPopularAds(50)
-	logger.Debug("Calculating site-level vector from popular ads",
-		"component", "site-level", "count", len(ads))
-
-	// Extract ad IDs for batch retrieval
-	var adIDs []int
-	for _, adObj := range ads {
-		adIDs = append(adIDs, adObj.ID)
-	}
-
-	// Fetch all embeddings in batch
-	logger.Debug("Fetching embeddings for ads in batch",
-		"component", "site-level", "count", len(adIDs))
-	embeddings, err := GetAdEmbeddings(adIDs)
-	if err != nil {
-		logger.Error("Batch fetch error",
-			"error", err, "component", "site-level")
-		return nil, err
-	}
-
-	// Process results
+// calculateWeightedVectors processes activities and returns vectors with age-based weights
+// Uses hyperbolic decay with 30-day half-life: newer activities get higher weights
+func calculateWeightedVectors(activities []AdActivity) ([][]float32, []float32) {
+	now := time.Now()
 	var vectors [][]float32
-	var missingIDs []int
-	for i, embedding := range embeddings {
-		adID := adIDs[i]
-		if embedding == nil {
-			missingIDs = append(missingIDs, adID)
-			logger.Debug("Missing embedding for ad",
-				"component", "site-level", "adID", adID)
-			continue
+	var weights []float32
+
+	const halfLifeDays = 30.0
+
+	for _, act := range activities {
+		// Calculate age in days
+		ageDays := now.Sub(act.Timestamp).Hours() / 24.0
+
+		// Weight calculation: hyperbolic decay with half-life of 30 days
+		// Newer items get higher weights, weight decreases as age increases
+		// Weight = 1 / (1 + ageDays / halfLifeDays)
+		// This gives: ageDays=0 -> weight=1, ageDays=30 -> weight=0.5
+		// The absolute value doesn't matter since weights are normalized in aggregation
+		weight := float32(1.0 / (1.0 + ageDays/halfLifeDays))
+
+		vectors = append(vectors, act.Embedding)
+		weights = append(weights, weight)
+	}
+
+	return vectors, weights
+}
+
+// calculateSiteLevelVector calculates site-level embedding for a category and optional campaign using the same algorithm as user embeddings
+// Gets embeddings for top N most recent ads with bookmarks or clicks (across all users) and weights by age
+func calculateSiteLevelVector(categoryID int, campaignKey string) ([]float32, error) {
+	if categoryID <= 0 {
+		return nil, fmt.Errorf("categoryID must be greater than 0")
+	}
+
+	logger.Debug("Calculating site-level vector",
+		"component", "site-level", "categoryID", categoryID, "campaignKey", campaignKey)
+
+	// Fetch combined bookmarks and clicks for all users in this category, sorted by timestamp (newest first), limited
+	limit := config.VectorSystemEmbeddingLimit
+	activities, err := getSiteActivities(categoryID, campaignKey, limit)
+	if err != nil {
+		return nil, fmt.Errorf("fetch site activities: %w", err)
+	}
+
+	if len(activities) == 0 {
+		// No activities found, generate embedding from a simple prompt
+		categoryName := ad.GetCategoryName(categoryID)
+		prompt := fmt.Sprintf("any ad in the %s category", categoryName)
+		embedding, err := EmbedText(prompt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate fallback embedding: %w", err)
 		}
-		logger.Debug("Found embedding for ad",
-			"component", "site-level", "adID", adID,
-			"length", len(embedding))
-		vectors = append(vectors, embedding)
+		logger.Info("Generated site-level embedding from fallback prompt",
+			"component", "site-level", "categoryID", categoryID, "campaignKey", campaignKey, "prompt", prompt)
+		return embedding, nil
 	}
 
-	logger.Debug("Found embeddings",
-		"component", "site-level", "found", len(vectors),
-		"missing", len(missingIDs), "missingIDs", missingIDs)
-	if len(vectors) == 0 {
-		return nil, fmt.Errorf("no embeddings found for popular ads")
-	}
+	logger.Debug("Site activities",
+		"component", "site-level", "categoryID", categoryID, "campaignKey", campaignKey, "count", len(activities))
 
-	// Use unweighted mean for now
-	weights := make([]float32, len(vectors))
-	for i := range weights {
-		weights[i] = 1.0
-	}
-	logger.Debug("Aggregating embeddings",
-		"component", "site-level", "count", len(vectors))
-	result := AggregateEmbeddings(vectors, weights)
-	logger.Debug("AggregateEmbeddings returned",
-		"component", "site-level", "resultNonNil", result != nil,
-		"length", len(result))
-	if result == nil {
+	vectors, weights := calculateWeightedVectors(activities)
+
+	logger.Debug("Vectors aggregated",
+		"component", "site-level", "categoryID", categoryID, "vectors", len(vectors),
+		"weights", len(weights))
+
+	emb := AggregateEmbeddings(vectors, weights)
+	if emb == nil {
 		return nil, fmt.Errorf("AggregateEmbeddings returned nil")
 	}
 
-	return result, nil
+	logger.Info("Successfully created site-level embedding",
+		"component", "site-level", "categoryID", categoryID, "campaignKey", campaignKey, "vectors", len(vectors),
+		"activities", len(activities))
+
+	return emb, nil
 }

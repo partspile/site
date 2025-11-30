@@ -6,7 +6,6 @@ import (
 	"github.com/parts-pile/site/cookie"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/ui"
-	"github.com/parts-pile/site/vector"
 )
 
 // HandleAdDetail handles ad detail (expanded view)
@@ -28,8 +27,6 @@ func HandleAdDetail(c *fiber.Ctx) error {
 		if userID != 0 {
 			// Record the click for the user
 			_ = ad.IncrementAdClickForUser(adID, userID)
-			// Queue user for background embedding update
-			vector.QueueUserForUpdate(userID)
 		}
 	}
 
