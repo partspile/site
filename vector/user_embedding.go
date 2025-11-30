@@ -109,6 +109,12 @@ func getUserActivities(userID int, categoryID int, limit int) ([]AdActivity, err
 				FROM UserAdClick uac
 				JOIN Ad a ON uac.ad_id = a.id
 				WHERE uac.user_id = $1 AND a.deleted_at IS NULL AND a.ad_category_id = $2 AND a.embedding IS NOT NULL
+				
+				UNION ALL
+				
+				SELECT a.id AS ad_id, a.created_at AS timestamp, a.embedding
+				FROM Ad a
+				WHERE a.user_id = $1 AND a.deleted_at IS NULL AND a.ad_category_id = $2 AND a.embedding IS NOT NULL
 			) combined
 			ORDER BY timestamp DESC
 			LIMIT $3
