@@ -371,16 +371,8 @@ func batchUploadToMinIO(imagesToUpload []ImageToUpload) error {
 			maxRetries := 3
 			var err error
 			for attempt := 0; attempt < maxRetries; attempt++ {
-				// Extract adID, imageIndex, and size from path (format: "adID/imageIndex-size.webp")
-				var adID, imageIndex int
-				var size string
-				_, err = fmt.Sscanf(imageToUpload.Path, "%d/%d-%s.webp", &adID, &imageIndex, &size)
-				if err != nil {
-					err = fmt.Errorf("failed to parse image path %q: %w", imageToUpload.Path, err)
-					break
-				}
-
-				err = minio.PutImageObject(adID, imageIndex, size, imageToUpload.Data)
+				// Use the fields directly from ImageToUpload struct
+				err = minio.PutImageObject(imageToUpload.AdID, imageToUpload.ImageNum, imageToUpload.Size, imageToUpload.Data)
 
 				if err == nil {
 					// Success
