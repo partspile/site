@@ -29,6 +29,11 @@ func main() {
 	// Start metrics collector early to track startup stats
 	metrics.StartCollector()
 
+	// Initialize SMS service
+	if err := sms.Init(); err != nil {
+		logger.Fatal("Failed to initialize SMS service", "error", err)
+	}
+
 	// Initialize database
 	if err := db.Init(config.DatabaseURL); err != nil {
 		logger.Fatal("Failed to initialize database",
@@ -53,11 +58,6 @@ func main() {
 	// Initialize Gemini client
 	if err := vector.InitGeminiClient(); err != nil {
 		logger.Fatal("Failed to initialize Gemini client", "error", err)
-	}
-
-	// Initialize SMS service
-	if err := sms.InitSMS(); err != nil {
-		logger.Fatal("Failed to initialize SMS service", "error", err)
 	}
 
 	app := fiber.New(fiber.Config{

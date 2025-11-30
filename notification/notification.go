@@ -20,8 +20,6 @@ type NotificationService struct {
 
 // NewNotificationService creates a new notification service
 func NewNotificationService() (*NotificationService, error) {
-	hasSMS := sms.IsSMSAvailable()
-
 	emailService, err := email.NewEmailService()
 	if err != nil {
 		// Log error but don't fail - SMS notifications can still work
@@ -29,14 +27,10 @@ func NewNotificationService() (*NotificationService, error) {
 			"error", err)
 	}
 
-	// At least one service should be available
-	if !hasSMS && emailService == nil {
-		return nil, fmt.Errorf("no notification services available - check configuration")
-	}
-
+	// SMS is always available since Init() must succeed for the app to run
 	return &NotificationService{
 		emailService: emailService,
-		hasSMS:       hasSMS,
+		hasSMS:       true,
 	}, nil
 }
 
@@ -84,9 +78,6 @@ func (n *NotificationService) NotifyNewMessage(conversationID int, senderID, rec
 
 // sendSMSNotification sends an SMS notification about a new message
 func (n *NotificationService) sendSMSNotification(phoneNumber, senderName, adTitle, messageContent string, conversationID int) error {
-	if !n.hasSMS {
-		return fmt.Errorf("SMS service not available")
-	}
 
 	// Validate phone number format (basic check)
 	if len(phoneNumber) < 10 {

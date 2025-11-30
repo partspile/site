@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -45,10 +46,6 @@ var twilioClient = twilio.NewRestClientWithParams(twilio.ClientParams{
 })
 
 var tracker sync.Map
-
-// smsAvailable tracks whether SMS functionality is available
-// SMS is disabled if TWILIO_WEBHOOK_URL is localhost (webhooks won't work)
-var smsAvailable bool
 
 // MessageTracker tracks the status and metadata of an SMS message
 type MessageTracker struct {
@@ -156,10 +153,6 @@ func IsBlockedError(err error) bool {
 
 // SendMessage sends an SMS message and tracks delivery
 func SendMessage(phoneNumber, message string) error {
-	// Check if SMS is available
-	if !smsAvailable {
-		return fmt.Errorf("SMS service not available - TWILIO_WEBHOOK_URL must be a public URL (not localhost)")
-	}
 
 	// Respect user opt-out - fail silently
 	if IsOptedOut(phoneNumber) {
@@ -334,42 +327,61 @@ func isLocalhost(hostname string) bool {
 	return false
 }
 
-// InitSMS checks SMS configuration and availability, disabling SMS if TWILIO_WEBHOOK_URL is localhost
+// Init validates Twilio configuration and initializes SMS service
+// Validates format and completeness of Twilio environment variables
 // This should be called at application startup
-// Returns nil if SMS is ready, or an error if there's a configuration problem
-func InitSMS() error {
-	smsAvailable = false
+// Returns an error if configuration is invalid, nil if SMS is ready or disabled
+func Init() error {
 
-	// Check if Twilio credentials are configured
-	if config.TwilioAccountSID == "" || config.TwilioAuthToken == "" || config.TwilioFromNumber == "" {
-		logger.Info("SMS disabled - Twilio credentials not configured",
-			"component", "SMS")
-		return nil // Not an error, just disabled
+	// Validate Twilio SMS configuration
+	// All SMS variables are required to be non-empty
+	if config.TwilioAccountSID == "" {
+		return fmt.Errorf("TWILIO_ACCOUNT_SID is required")
+	}
+	if config.TwilioAuthToken == "" {
+		return fmt.Errorf("TWILIO_AUTH_TOKEN is required")
+	}
+	if config.TwilioFromNumber == "" {
+		return fmt.Errorf("TWILIO_FROM_NUMBER is required")
+	}
+	if config.TwilioWebhookURL == "" {
+		return fmt.Errorf("TWILIO_WEBHOOK_URL is required")
+	}
+
+	// Validate Account SID format (should start with "AC" for Twilio)
+	if !strings.HasPrefix(config.TwilioAccountSID, "AC") {
+		return fmt.Errorf("TWILIO_ACCOUNT_SID must start with 'AC'")
+	}
+
+	// Validate Auth Token is not empty (basic check)
+	if len(config.TwilioAuthToken) < 32 {
+		return fmt.Errorf("TWILIO_AUTH_TOKEN appears to be invalid (too short)")
+	}
+
+	// Validate FromNumber format (should be E.164 format: +1234567890)
+	phoneRegex := regexp.MustCompile(`^\+[1-9][0-9]{7,14}$`)
+	if !phoneRegex.MatchString(config.TwilioFromNumber) {
+		return fmt.Errorf("TWILIO_FROM_NUMBER must be in E.164 format (e.g., +12025550123)")
+	}
+
+	// Validate WebhookURL is a valid URL
+	parsedURL, err := url.Parse(config.TwilioWebhookURL)
+	if err != nil {
+		return fmt.Errorf("TWILIO_WEBHOOK_URL must be a valid URL: %w", err)
+	}
+	if parsedURL.Scheme != "http" && parsedURL.Scheme != "https" {
+		return fmt.Errorf("TWILIO_WEBHOOK_URL must use http or https scheme")
+	}
+	if parsedURL.Host == "" {
+		return fmt.Errorf("TWILIO_WEBHOOK_URL must include a host")
 	}
 
 	// Check if TWILIO_WEBHOOK_URL is localhost (webhooks won't work)
-	if config.TwilioWebhookURL == "" {
-		logger.Info("SMS disabled - TWILIO_WEBHOOK_URL is empty (webhooks required)",
-			"component", "SMS")
-		return nil // Not an error, just disabled
-	}
-
-	parsedURL, err := url.Parse(config.TwilioWebhookURL)
-	if err != nil {
-		logger.Warn("SMS disabled - Failed to parse TWILIO_WEBHOOK_URL",
-			"error", err, "component", "SMS")
-		return fmt.Errorf("invalid TWILIO_WEBHOOK_URL: %w", err) // This is an actual error
-	}
-
 	hostname := parsedURL.Hostname()
 	if isLocalhost(hostname) {
-		logger.Info("SMS disabled - TWILIO_WEBHOOK_URL is localhost (webhooks won't work). Use ngrok or set TWILIO_WEBHOOK_URL to a public URL.",
-			"component", "SMS")
-		return nil // Not an error, just disabled
+		return fmt.Errorf("TWILIO_WEBHOOK_URL cannot be localhost (webhooks won't work). Use ngrok or set TWILIO_WEBHOOK_URL to a public URL")
 	}
 
-	// SMS is available
-	smsAvailable = true
 	logger.Info("SMS enabled",
 		"component", "SMS", "twilioWebhookURL", config.TwilioWebhookURL)
 
@@ -384,24 +396,10 @@ func InitSMS() error {
 	return nil
 }
 
-// IsSMSAvailable returns whether SMS functionality is available
-// This is primarily used internally by the notification service
-func IsSMSAvailable() bool {
-	return smsAvailable
-}
-
 // UpdatePhoneNumberWebhook updates the Twilio phone number's incoming message webhook URL
 // This should be called at startup to automatically configure the webhook based on TWILIO_WEBHOOK_URL
-// Note: This is only called when SMS is available (checked by InitSMS)
+// Only called from Init() after validation passes, so no need for defensive checks
 func UpdatePhoneNumberWebhook() error {
-	// Defensive check - SMS should already be available, but verify
-	if !smsAvailable {
-		return fmt.Errorf("SMS not available - cannot update webhook")
-	}
-
-	if config.TwilioAccountSID == "" || config.TwilioAuthToken == "" || config.TwilioFromNumber == "" {
-		return fmt.Errorf("Twilio credentials not configured")
-	}
 
 	webhookURL := fmt.Sprintf("%s/api/sms/webhook", config.TwilioWebhookURL)
 
