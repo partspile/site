@@ -116,15 +116,15 @@ func getEnvWithDefault(key, defaultValue string) string {
 
 // getTwilioWebhookURL returns the Twilio webhook URL using the following logic:
 // 1. Use key if not empty
-// 2. Otherwise, if RENDER is set, use RENDER_EXTERNAL_HOSTNAME
+// 2. Otherwise, if RENDER is set, use RENDER_EXTERNAL_URL
 // 3. Otherwise, return empty string
 func getTwilioWebhookURL(key string) string {
 	if url := os.Getenv(key); url != "" {
 		return url
 	}
 	if os.Getenv("RENDER") != "" {
-		if hostname := os.Getenv("RENDER_EXTERNAL_HOSTNAME"); hostname != "" {
-			return hostname
+		if url := os.Getenv("RENDER_EXTERNAL_URL"); url != "" {
+			return url
 		}
 	}
 	return ""
