@@ -44,7 +44,7 @@ func AdDetail(a ad.AdDetail, userID int, loc *time.Location, csrfToken, view str
 			// Age and location row with inline edit for owner
 			Div(
 				Class("flex flex-row items-center justify-between text-xs text-gray-500 mb-4"),
-				Div(Class("text-gray-400"), ageNode(a.Ad, loc)),
+				Div(Class("text-gray-400"), ageNode(a.Ad, loc, true)),
 				g.If(isOwner && !a.IsArchived(),
 					locationEditable(a),
 				),

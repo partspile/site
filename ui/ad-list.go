@@ -16,9 +16,9 @@ func AdListNode(adObj ad.Ad, userID int, loc *time.Location, csrfToken string) g
 	// Determine styling based on deleted status
 	var classes string
 	if adObj.IsArchived() {
-		classes = "flex items-center py-2 px-3 bg-red-100 cursor-pointer border border-red-300 rounded-lg my-2 mx-2"
+		classes = "flex flex-wrap items-center justify-between py-2 px-3 bg-red-100 cursor-pointer border border-red-300 rounded-lg my-2 mx-2"
 	} else {
-		classes = "flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer"
+		classes = "flex flex-wrap items-center justify-between py-2 px-3 hover:bg-gray-50 cursor-pointer"
 	}
 
 	return Div(
@@ -29,23 +29,23 @@ func AdListNode(adObj ad.Ad, userID int, loc *time.Location, csrfToken string) g
 		hx.Target(adTarget(adObj)),
 		hx.Swap("outerHTML show:bottom"),
 
-		g.If(userID != 0, BookmarkButton(adObj, csrfToken)),
-
 		Div(
-			Class("flex-1 text-blue-600 hover:text-blue-800"),
+			Class("text-blue-600 hover:text-blue-800"),
+			//Class("flex-1 min-w-0 text-blue-600 hover:text-blue-800"),
+			g.If(userID != 0, BookmarkButton(adObj, csrfToken)),
 			titleNode(adObj),
 		),
 		Div(
-			Class("mr-4 text-xs text-gray-500"),
-			location(adObj),
-		),
-		Div(
-			Class("mr-4 text-xs text-gray-400"),
-			ageNode(adObj, loc),
-		),
-		Div(
-			Class("text-green-600 font-semibold mr-4"),
-			priceNode(adObj),
+			Class("flex items-center gap-2"),
+			Div(
+				Class("flex items-center gap-2 text-xs text-gray-500"),
+				ageNode(adObj, loc, false),
+				location(adObj),
+			),
+			Div(
+				Class("text-green-600 font-semibold"),
+				priceNode(adObj),
+			),
 		),
 	)
 }

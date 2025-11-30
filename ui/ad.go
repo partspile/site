@@ -105,9 +105,37 @@ func formatAdAge(t time.Time) string {
 	return fmt.Sprintf("%dmo", months)
 }
 
-// ageNode returns age text
-func ageNode(ad ad.Ad, loc *time.Location) g.Node {
-	agoStr := formatAdAge(ad.CreatedAt.In(loc))
+// isNewAd checks if an ad is less than 4 hours old
+func isNewAd(ad ad.Ad, loc *time.Location) bool {
+	createdAt := ad.CreatedAt.In(loc)
+	d := time.Since(createdAt)
+	return d < 4*time.Hour
+}
+
+// newBadge returns the "New!" badge with orange pill styling
+func newBadge() g.Node {
+	return Span(
+		Class("px-2 py-0.5 rounded-full border border-orange-500 text-orange-500 text-xs font-medium"),
+		g.Text("New!"),
+	)
+}
+
+// ageNode returns age text, optionally showing both "New!" badge and age when ad is new
+func ageNode(ad ad.Ad, loc *time.Location, showBoth bool) g.Node {
+	createdAt := ad.CreatedAt.In(loc)
+	agoStr := formatAdAge(createdAt)
+
+	if isNewAd(ad, loc) {
+		if showBoth {
+			return Div(
+				Class("flex items-center gap-2"),
+				newBadge(),
+				g.Text(agoStr),
+			)
+		}
+		return newBadge()
+	}
+
 	return g.Text(agoStr)
 }
 

@@ -49,7 +49,7 @@ func AdGridNode(a ad.Ad, userID int, loc *time.Location, csrfToken string) g.Nod
 			// Age and location row
 			Div(
 				Class("flex flex-row items-center justify-between text-xs text-gray-500"),
-				ageNode(a, loc),
+				ageNode(a, loc, false),
 				location(a),
 			),
 		),

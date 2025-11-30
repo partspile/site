@@ -15,7 +15,7 @@ import (
 func iconButton(iconSrc, alt, title string, attrs ...g.Node) g.Node {
 	return Button(
 		Type("button"),
-		Class("ml-2 focus:outline-none cursor-pointer"),
+		Class("focus:outline-none cursor-pointer"),
 		Title(title),
 		g.Group(attrs),
 		Img(
