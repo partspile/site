@@ -94,13 +94,13 @@ func HandleMonitorRefresh(c *fiber.Ctx) error {
 
 // HandleAdminClicks displays click statistics for ads and images
 func HandleAdminClicks(c *fiber.Ctx) error {
-	adStats, err := ad.GetTopAdClickStats(50)
+	adStats, err := ad.GetTopAdClickStats(20)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).
 			SendString("Error fetching ad click stats: " + err.Error())
 	}
 
-	imageStats, err := ad.GetTopImageClickStats(50)
+	imageStats, err := ad.GetTopImageClickStats(20)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).
 			SendString("Error fetching image click stats: " + err.Error())
@@ -111,13 +111,13 @@ func HandleAdminClicks(c *fiber.Ctx) error {
 
 // HandleAdminClicksRefresh returns updated click statistics for HTMX polling
 func HandleAdminClicksRefresh(c *fiber.Ctx) error {
-	adStats, err := ad.GetTopAdClickStats(50)
+	adStats, err := ad.GetTopAdClickStats(20)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).
 			SendString("Error fetching ad click stats: " + err.Error())
 	}
 
-	imageStats, err := ad.GetTopImageClickStats(50)
+	imageStats, err := ad.GetTopImageClickStats(20)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).
 			SendString("Error fetching image click stats: " + err.Error())

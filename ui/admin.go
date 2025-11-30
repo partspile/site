@@ -376,7 +376,14 @@ func adminAdClickStats(stats []ad.AdClickStats) g.Node {
 				}
 				return "bg-white"
 			}()),
-			Td(Class("px-4 py-2 text-sm"), g.Textf("%d", s.AdID)),
+			Td(
+				Class("px-4 py-2 text-sm"),
+				A(
+					Href(fmt.Sprintf("/ad/%d", s.AdID)),
+					Class("text-blue-600 hover:text-blue-800 hover:underline"),
+					g.Textf("%d", s.AdID),
+				),
+			),
 			Td(Class("px-4 py-2 text-sm"), g.Text(s.Title)),
 			Td(Class("px-4 py-2 text-sm text-right"), g.Textf("%d", s.ClickCount)),
 			Td(Class("px-4 py-2 text-sm text-right"), g.Textf("%d", s.ImageClickCount)),
@@ -433,8 +440,23 @@ func adminImageClickStats(stats []ad.ImageClickStats) g.Node {
 				}
 				return "bg-white"
 			}()),
-			Td(Class("px-4 py-2 text-sm"), g.Textf("%d", s.AdID)),
-			Td(Class("px-4 py-2 text-sm"), g.Textf("%d", s.ImageIdx)),
+			Td(
+				Class("px-4 py-2 text-sm"),
+				A(
+					Href(fmt.Sprintf("/ad/%d", s.AdID)),
+					Class("text-blue-600 hover:text-blue-800 hover:underline"),
+					g.Textf("%d", s.AdID),
+				),
+			),
+			Td(Class("px-4 py-2 text-sm"), g.Text(s.Title)),
+			Td(
+				Class("px-4 py-2 text-sm"),
+				A(
+					Href(fmt.Sprintf("/image/%d/%d/1200w", s.AdID, s.ImageIdx)),
+					Class("text-blue-600 hover:text-blue-800 hover:underline"),
+					g.Textf("%d", s.ImageIdx),
+				),
+			),
 			Td(Class("px-4 py-2 text-sm text-right"), g.Textf("%d", s.ClickCount)),
 			Td(Class("px-4 py-2 text-sm text-gray-600"), g.Text(lastClicked)),
 		))
@@ -451,6 +473,7 @@ func adminImageClickStats(stats []ad.ImageClickStats) g.Node {
 					Class("bg-gray-100"),
 					Tr(
 						Th(Class("px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"), g.Text("Ad ID")),
+						Th(Class("px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"), g.Text("Ad Title")),
 						Th(Class("px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"), g.Text("Image Index")),
 						Th(Class("px-4 py-2 text-right text-xs font-medium text-gray-700 uppercase"), g.Text("Clicks")),
 						Th(Class("px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"), g.Text("Last Clicked")),

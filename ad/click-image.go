@@ -37,6 +37,7 @@ func IncrementAdImageClickForUser(adID int, imageIdx int, userID int) error {
 // ImageClickStats represents click statistics for an ad image
 type ImageClickStats struct {
 	AdID          int        `db:"ad_id"`
+	Title         string     `db:"title"`
 	ImageIdx      int        `db:"image_idx"`
 	ClickCount    int        `db:"click_count"`
 	LastClickedAt *time.Time `db:"last_clicked_at"`
@@ -77,12 +78,15 @@ func GetTopAdClickStats(limit int) ([]AdClickStats, error) {
 func GetTopImageClickStats(limit int) ([]ImageClickStats, error) {
 	query := `
 		SELECT 
-			ad_id,
-			image_idx,
-			click_count,
-			last_clicked_at
-		FROM AdImageClick
-		ORDER BY click_count DESC, last_clicked_at DESC
+			aic.ad_id,
+			COALESCE(a.title, '') AS title,
+			aic.image_idx,
+			aic.click_count,
+			aic.last_clicked_at
+		FROM AdImageClick aic
+		LEFT JOIN Ad a ON aic.ad_id = a.id
+		WHERE a.deleted_at IS NULL
+		ORDER BY aic.click_count DESC, aic.last_clicked_at DESC
 		LIMIT $1
 	`
 	var stats []ImageClickStats
