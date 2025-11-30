@@ -81,21 +81,20 @@ var (
 	TwilioSendGridAPIKey = getEnvWithDefault("TWILIO_SENDGRID_API_KEY", "")
 	TwilioFromEmail      = getEnvWithDefault("TWILIO_FROM_EMAIL", "")
 
+	// Twilio webhook URL - used for webhook callbacks and notification links
+	TwilioWebhookURL = getTwilioWebhookURL("TWILIO_WEBHOOK_URL")
+
 	// JWT configuration
 	JWTSecret = []byte(getEnvWithDefault("JWT_SECRET", ""))
 
 	// Message encryption configuration
-	MessageEncryptionKey []byte
+	MessageEncryptionKey = getEncryptionKey("MESSAGE_ENCRYPTION_KEY")
 
 	// User data encryption configuration
-	UserEncryptionKey []byte
+	UserEncryptionKey = getEncryptionKey("USER_ENCRYPTION_KEY")
 
 	// Server configuration
 	ServerPort = getEnvWithDefault("PORT", "10000")
-
-	// Twilio webhook URL - used for webhook callbacks and notification links
-	// Set to your ngrok URL or production domain (e.g., https://your-domain.com)
-	TwilioWebhookURL = getEnvWithDefault("TWILIO_WEBHOOK_URL", "")
 
 	// Cookie security - set LOCAL_DEVELOPMENT=true to relax cookie security for local HTTP access
 	// When LOCAL_DEVELOPMENT is set, cookies will work over HTTP even if TWILIO_WEBHOOK_URL is HTTPS
@@ -113,6 +112,36 @@ func getEnvWithDefault(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// getTwilioWebhookURL returns the Twilio webhook URL using the following logic:
+// 1. Use key if not empty
+// 2. Otherwise, if RENDER is set, use RENDER_EXTERNAL_HOSTNAME
+// 3. Otherwise, return empty string
+func getTwilioWebhookURL(key string) string {
+	if url := os.Getenv(key); url != "" {
+		return url
+	}
+	if os.Getenv("RENDER") != "" {
+		if hostname := os.Getenv("RENDER_EXTERNAL_HOSTNAME"); hostname != "" {
+			return hostname
+		}
+	}
+	return ""
+}
+
+// getEncryptionKey loads and decodes a base64-encoded encryption key from environment
+// Returns empty slice if not set (validation happens in SecurityCheck)
+func getEncryptionKey(envKey string) []byte {
+	keyStr := os.Getenv(envKey)
+	if keyStr == "" {
+		return nil
+	}
+	key, err := base64.StdEncoding.DecodeString(keyStr)
+	if err != nil {
+		return nil // Validation will catch this in SecurityCheck
+	}
+	return key
 }
 
 // SecurityCheck validates security configuration and logs warnings
@@ -134,39 +163,33 @@ func SecurityCheck() {
 	// Log security status
 	logger.Info("JWT secret configured", "length", len(JWTSecret))
 
-	// Load message encryption key from environment variable
-	keyStr := os.Getenv("MESSAGE_ENCRYPTION_KEY")
-	if keyStr == "" {
+	// Validate message encryption key
+	messageKeyStr := os.Getenv("MESSAGE_ENCRYPTION_KEY")
+	if messageKeyStr == "" {
 		logger.Fatal("Security configuration error",
 			"error", "MESSAGE_ENCRYPTION_KEY environment variable is required but not set")
 	}
-
-	// Decode base64 key from environment
-	key, err := base64.StdEncoding.DecodeString(keyStr)
-	if err != nil {
-		logger.Fatal("Invalid MESSAGE_ENCRYPTION_KEY format", "error", err)
+	if len(MessageEncryptionKey) == 0 {
+		logger.Fatal("Security configuration error",
+			"error", "MESSAGE_ENCRYPTION_KEY is invalid base64 format")
 	}
-	if len(key) != 32 {
+	if len(MessageEncryptionKey) != 32 {
 		logger.Fatal("MESSAGE_ENCRYPTION_KEY must be 32 bytes (256 bits)")
 	}
-	MessageEncryptionKey = key
 	logger.Info("Message encryption key configured", "length", len(MessageEncryptionKey))
 
-	// Load user data encryption key from environment variable
+	// Validate user data encryption key
 	userKeyStr := os.Getenv("USER_ENCRYPTION_KEY")
 	if userKeyStr == "" {
 		logger.Fatal("Security configuration error",
 			"error", "USER_ENCRYPTION_KEY environment variable is required but not set")
 	}
-
-	// Decode base64 key from environment
-	userKey, err := base64.StdEncoding.DecodeString(userKeyStr)
-	if err != nil {
-		logger.Fatal("Invalid USER_ENCRYPTION_KEY format", "error", err)
+	if len(UserEncryptionKey) == 0 {
+		logger.Fatal("Security configuration error",
+			"error", "USER_ENCRYPTION_KEY is invalid base64 format")
 	}
-	if len(userKey) != 32 {
+	if len(UserEncryptionKey) != 32 {
 		logger.Fatal("USER_ENCRYPTION_KEY must be 32 bytes (256 bits)")
 	}
-	UserEncryptionKey = userKey
 	logger.Info("User encryption key configured", "length", len(UserEncryptionKey))
 }
