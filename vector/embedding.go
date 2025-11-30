@@ -2,7 +2,6 @@ package vector
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/config"
@@ -44,28 +43,22 @@ func AggregateEmbeddings(vectors [][]float32, weights []float32) []float32 {
 	return result
 }
 
-// calculateWeightedVectors processes activities and returns vectors with age-based weights
-// Uses hyperbolic decay with 30-day half-life: newer activities get higher weights
+// calculateWeightedVectors processes activities and returns vectors with pre-calculated weights
+// Weights are calculated in SQL using exponential decay with activity-type-specific
+// base weights and half-lives, so we just use the pre-calculated weight here
 func calculateWeightedVectors(activities []AdActivity) ([][]float32, []float32) {
-	now := time.Now()
 	var vectors [][]float32
 	var weights []float32
 
-	const halfLifeDays = 30.0
-
 	for _, act := range activities {
-		// Calculate age in days
-		ageDays := now.Sub(act.Timestamp).Hours() / 24.0
+		if act.Embedding == nil || len(act.Embedding) == 0 {
+			continue
+		}
 
-		// Weight calculation: hyperbolic decay with half-life of 30 days
-		// Newer items get higher weights, weight decreases as age increases
-		// Weight = 1 / (1 + ageDays / halfLifeDays)
-		// This gives: ageDays=0 -> weight=1, ageDays=30 -> weight=0.5
-		// The absolute value doesn't matter since weights are normalized in aggregation
-		weight := float32(1.0 / (1.0 + ageDays/halfLifeDays))
-
+		// Use pre-calculated weight from SQL query
+		// Weight already accounts for activity type and time decay
 		vectors = append(vectors, act.Embedding)
-		weights = append(weights, weight)
+		weights = append(weights, act.Weight)
 	}
 
 	return vectors, weights

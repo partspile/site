@@ -31,9 +31,9 @@ const (
 	VectorSystemEmbeddingLimit    = 100
 
 	// Embedding cache TTL configuration
-	VectorQueryEmbeddingCacheTTL = 1 * time.Hour   // TTL for query embedding cache
-	VectorUserEmbeddingCacheTTL  = 1 * time.Minute // TTL for user embedding cache
-	VectorSiteEmbeddingCacheTTL  = 1 * time.Hour   // TTL for site embedding cache
+	VectorQueryEmbeddingCacheTTL = 1 * time.Hour // TTL for query embedding cache
+	VectorUserEmbeddingCacheTTL  = 1 * time.Hour // TTL for user embedding cache
+	VectorSiteEmbeddingCacheTTL  = 1 * time.Hour // TTL for site embedding cache
 
 	// Grok API configuration
 	GrokAPIURL = "https://api.x.ai/v1/chat/completions"
