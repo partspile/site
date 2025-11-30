@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/metrics"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -34,6 +35,7 @@ func adminNavigation(activeSection string) g.Node {
 	}{
 		{"embedding-cache", "Embedding Cache", "/admin/embedding-cache"},
 		{"monitor", "Monitor", "/admin/metrics"},
+		{"clicks", "Clicks", "/admin/clicks"},
 	}
 
 	var tabNodes []g.Node
@@ -317,6 +319,148 @@ func renderMetricChart(title string, metricsData []metrics.Metric, valueFn func(
 				<path d="%s" fill="none" stroke="%s" stroke-width="2" />
 				%s
 			</svg>`, width, height, width, height, gridLinesHTML, pathData, strokeColor, labelsHTML)),
+		),
+	)
+}
+
+// Clicks
+
+func AdminClicksSection(adStats []ad.AdClickStats, imageStats []ad.ImageClickStats) g.Node {
+	return Div(
+		Class("space-y-6"),
+		Div(
+			Class("flex justify-between items-center"),
+			Div(
+				Div(Class("text-lg font-medium text-gray-900"), g.Text("Click Statistics")),
+				Div(Class("text-gray-600 text-sm"), g.Text("Ad and image click statistics (updates every 10 seconds).")),
+			),
+		),
+		Div(
+			ID("clicks-content"),
+			hx.Get("/api/admin/clicks/refresh"),
+			hx.Trigger("every 10s"),
+			hx.Swap("innerHTML"),
+			AdminClicksContent(adStats, imageStats),
+		),
+	)
+}
+
+func AdminClicksContent(adStats []ad.AdClickStats, imageStats []ad.ImageClickStats) g.Node {
+	return Div(
+		Class("space-y-6"),
+		adminAdClickStats(adStats),
+		adminImageClickStats(imageStats),
+	)
+}
+
+func adminAdClickStats(stats []ad.AdClickStats) g.Node {
+	if len(stats) == 0 {
+		return Div(
+			Class("bg-white p-4 rounded-lg border"),
+			H3(Class("text-md font-semibold mb-2"), g.Text("Top Ads by Clicks")),
+			Div(Class("text-gray-500"), g.Text("No ad click data available yet.")),
+		)
+	}
+
+	var rows []g.Node
+	for i, s := range stats {
+		lastClicked := "Never"
+		if s.LastClickedAt != nil {
+			lastClicked = s.LastClickedAt.Format("2006-01-02 15:04:05")
+		}
+
+		rows = append(rows, Tr(
+			Class(func() string {
+				if i%2 == 0 {
+					return "bg-gray-50"
+				}
+				return "bg-white"
+			}()),
+			Td(Class("px-4 py-2 text-sm"), g.Textf("%d", s.AdID)),
+			Td(Class("px-4 py-2 text-sm"), g.Text(s.Title)),
+			Td(Class("px-4 py-2 text-sm text-right"), g.Textf("%d", s.ClickCount)),
+			Td(Class("px-4 py-2 text-sm text-right"), g.Textf("%d", s.ImageClickCount)),
+			Td(Class("px-4 py-2 text-sm text-gray-600"), g.Text(lastClicked)),
+		))
+	}
+
+	return Div(
+		Class("bg-white p-4 rounded-lg border"),
+		H3(Class("text-md font-semibold mb-4"), g.Text("Top Ads by Clicks")),
+		Div(
+			Class("overflow-x-auto"),
+			Table(
+				Class("min-w-full divide-y divide-gray-200"),
+				THead(
+					Class("bg-gray-100"),
+					Tr(
+						Th(Class("px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"), g.Text("Ad ID")),
+						Th(Class("px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"), g.Text("Title")),
+						Th(Class("px-4 py-2 text-right text-xs font-medium text-gray-700 uppercase"), g.Text("Ad Clicks")),
+						Th(Class("px-4 py-2 text-right text-xs font-medium text-gray-700 uppercase"), g.Text("Image Clicks")),
+						Th(Class("px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"), g.Text("Last Clicked")),
+					),
+				),
+				TBody(
+					Class("divide-y divide-gray-200"),
+					g.Group(rows),
+				),
+			),
+		),
+	)
+}
+
+func adminImageClickStats(stats []ad.ImageClickStats) g.Node {
+	if len(stats) == 0 {
+		return Div(
+			Class("bg-white p-4 rounded-lg border"),
+			H3(Class("text-md font-semibold mb-2"), g.Text("Top Images by Clicks")),
+			Div(Class("text-gray-500"), g.Text("No image click data available yet.")),
+		)
+	}
+
+	var rows []g.Node
+	for i, s := range stats {
+		lastClicked := "Never"
+		if s.LastClickedAt != nil {
+			lastClicked = s.LastClickedAt.Format("2006-01-02 15:04:05")
+		}
+
+		rows = append(rows, Tr(
+			Class(func() string {
+				if i%2 == 0 {
+					return "bg-gray-50"
+				}
+				return "bg-white"
+			}()),
+			Td(Class("px-4 py-2 text-sm"), g.Textf("%d", s.AdID)),
+			Td(Class("px-4 py-2 text-sm"), g.Textf("%d", s.ImageIdx)),
+			Td(Class("px-4 py-2 text-sm text-right"), g.Textf("%d", s.ClickCount)),
+			Td(Class("px-4 py-2 text-sm text-gray-600"), g.Text(lastClicked)),
+		))
+	}
+
+	return Div(
+		Class("bg-white p-4 rounded-lg border"),
+		H3(Class("text-md font-semibold mb-4"), g.Text("Top Images by Clicks")),
+		Div(
+			Class("overflow-x-auto"),
+			Table(
+				Class("min-w-full divide-y divide-gray-200"),
+				THead(
+					Class("bg-gray-100"),
+					Tr(
+						Th(Class("px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"), g.Text("Ad ID")),
+						Th(Class("px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"), g.Text("Image Index")),
+						Th(Class("px-4 py-2 text-right text-xs font-medium text-gray-700 uppercase"), g.Text("Clicks")),
+						Th(Class("px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase"), g.Text("Last Clicked")),
+					),
+				),
+				TBody(
+					Class("divide-y divide-gray-200"),
+					g.Group(rows),
+				),
+			),
 		),
 	)
 }

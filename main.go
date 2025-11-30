@@ -152,6 +152,7 @@ func main() {
 	admin.Get("/", h.HandleAdminDashboard)
 	admin.Get("/embedding-cache", h.HandleAdminEmbeddingCache)
 	admin.Get("/metrics", h.HandleMonitor)
+	admin.Get("/clicks", h.HandleAdminClicks)
 
 	// Admin API group
 	adminAPI := api.Group("/admin", h.AdminRequired)
@@ -160,6 +161,7 @@ func main() {
 	adminAPI.Post("/embedding-cache/user/clear", h.HandleClearUserEmbeddingCache)
 	adminAPI.Post("/embedding-cache/site/clear", h.HandleClearSiteEmbeddingCache)
 	adminAPI.Get("/metrics/refresh", h.HandleMonitorRefresh)
+	adminAPI.Get("/clicks/refresh", h.HandleAdminClicksRefresh)
 
 	// User registration/authentication
 	app.Get("/register", h.HandleRegistration)

@@ -12,6 +12,8 @@ import (
 
 	"github.com/chai2010/webp"
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/ad"
+	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/logger"
 	"github.com/parts-pile/site/minio"
 	"github.com/parts-pile/site/ui"
@@ -122,6 +124,13 @@ func HandleAdImage(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid image index")
 	}
 
+	// Record image click
+	_ = ad.IncrementAdImageClick(adID, idx)
+	userID := local.GetUserID(c)
+	if userID != 0 {
+		_ = ad.IncrementAdImageClickForUser(adID, idx, userID)
+	}
+
 	// Get image count from query parameter (passed by thumbnails/nav buttons)
 	imageCountStr := c.Query("count", "1")
 	imageCount, err := strconv.Atoi(imageCountStr)
@@ -142,6 +151,13 @@ func HandleAdGridImage(c *fiber.Ctx) error {
 	idx, err := strconv.Atoi(c.Params("idx"))
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid image index")
+	}
+
+	// Record image click
+	_ = ad.IncrementAdImageClick(adID, idx)
+	userID := local.GetUserID(c)
+	if userID != 0 {
+		_ = ad.IncrementAdImageClickForUser(adID, idx, userID)
 	}
 
 	// Get image count and title from query parameters (passed by nav buttons)

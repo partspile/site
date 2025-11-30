@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/parts-pile/site/ad"
 	"github.com/parts-pile/site/local"
 	"github.com/parts-pile/site/metrics"
 	"github.com/parts-pile/site/ui"
@@ -87,4 +88,40 @@ func HandleMonitorRefresh(c *fiber.Ctx) error {
 	}
 
 	return render(c, ui.AdminMonitorCharts(metricsData))
+}
+
+// Clicks
+
+// HandleAdminClicks displays click statistics for ads and images
+func HandleAdminClicks(c *fiber.Ctx) error {
+	adStats, err := ad.GetTopAdClickStats(50)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).
+			SendString("Error fetching ad click stats: " + err.Error())
+	}
+
+	imageStats, err := ad.GetTopImageClickStats(50)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).
+			SendString("Error fetching image click stats: " + err.Error())
+	}
+
+	return renderAdminSection(c, "clicks", ui.AdminClicksSection(adStats, imageStats))
+}
+
+// HandleAdminClicksRefresh returns updated click statistics for HTMX polling
+func HandleAdminClicksRefresh(c *fiber.Ctx) error {
+	adStats, err := ad.GetTopAdClickStats(50)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).
+			SendString("Error fetching ad click stats: " + err.Error())
+	}
+
+	imageStats, err := ad.GetTopImageClickStats(50)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).
+			SendString("Error fetching image click stats: " + err.Error())
+	}
+
+	return render(c, ui.AdminClicksContent(adStats, imageStats))
 }

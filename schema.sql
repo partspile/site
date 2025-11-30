@@ -197,8 +197,6 @@ CREATE TABLE Ad (
     user_id INTEGER NOT NULL REFERENCES Users(id),
     image_count INTEGER DEFAULT 0,
     location_id INTEGER REFERENCES Location(id),
-    click_count INTEGER DEFAULT 0,
-    last_clicked_at TIMESTAMP,
     embedding vector(3072),
     vector_metadata JSONB
 );
@@ -258,6 +256,34 @@ CREATE TABLE UserAdClick (
     last_clicked_at TIMESTAMP,
     PRIMARY KEY (ad_id, user_id)
 );
+
+CREATE TABLE AdClick (
+    ad_id INTEGER NOT NULL REFERENCES Ad(id),
+    click_count INTEGER DEFAULT 0,
+    last_clicked_at TIMESTAMP,
+    PRIMARY KEY (ad_id)
+);
+CREATE INDEX idx_adclick_ad_id ON AdClick(ad_id);
+
+CREATE TABLE AdImageClick (
+    ad_id INTEGER NOT NULL REFERENCES Ad(id),
+    image_idx INTEGER NOT NULL CHECK (image_idx > 0),
+    click_count INTEGER DEFAULT 0,
+    last_clicked_at TIMESTAMP,
+    PRIMARY KEY (ad_id, image_idx)
+);
+CREATE INDEX idx_adimageclick_ad_id ON AdImageClick(ad_id);
+
+CREATE TABLE UserAdImageClick (
+    ad_id INTEGER NOT NULL REFERENCES Ad(id),
+    image_idx INTEGER NOT NULL CHECK (image_idx > 0),
+    user_id INTEGER NOT NULL REFERENCES Users(id),
+    click_count INTEGER DEFAULT 0,
+    last_clicked_at TIMESTAMP,
+    PRIMARY KEY (ad_id, image_idx, user_id)
+);
+CREATE INDEX idx_useradimageclick_user_id ON UserAdImageClick(user_id);
+CREATE INDEX idx_useradimageclick_ad_id ON UserAdImageClick(ad_id);
 
 
 -- Messaging system tables

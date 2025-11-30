@@ -273,9 +273,10 @@ func GetMostPopularAds(n int) []Ad {
 			       l.city, l.admin_area, l.country
 			FROM Ad a
 			LEFT JOIN Location l ON a.location_id = l.id
+			LEFT JOIN AdClick ac ON a.id = ac.ad_id
 			WHERE a.deleted_at IS NULL
 			ORDER BY (
-				CAST(a.click_count AS DOUBLE PRECISION) * 2.0 + 
+				CAST(COALESCE(ac.click_count, 0) AS DOUBLE PRECISION) * 2.0 + 
 				CAST(COALESCE((SELECT COUNT(*) FROM BookmarkedAd ba WHERE ba.ad_id = a.id), 0) AS DOUBLE PRECISION) * 3.0 + 
 				100.0 / GREATEST(EXTRACT(EPOCH FROM (NOW() - a.created_at)) / 86400.0, 0.1)
 			) DESC
