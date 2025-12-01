@@ -70,7 +70,7 @@ func Page(title string, userID int, userName string, currentPath string, csrfTok
 		Head:     headNodes,
 		Body: []g.Node{
 			Div(
-				Class("max-w-content mx-auto px-4 py-8"),
+				Class("max-w-content mx-auto px-4 md:px-12 py-8"),
 				hxHeadersCSRFToken(csrfToken),
 				hx.Indicator("#indicator"),
 				navigation(userID, userName, currentPath),

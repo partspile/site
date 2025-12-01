@@ -1269,6 +1269,11 @@
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
+  .md\:px-12 {
+    @media (width >= 48rem) {
+      padding-inline: calc(var(--spacing) * 12);
+    }
+  }
   .md\:opacity-0 {
     @media (width >= 48rem) {
       opacity: 0%;
