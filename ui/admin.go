@@ -364,9 +364,9 @@ func adminAdClickStats(stats []ad.AdClickStats) g.Node {
 
 	var rows []g.Node
 	for i, s := range stats {
-		lastClicked := "Never"
+		lastClicked := "never"
 		if s.LastClickedAt != nil {
-			lastClicked = s.LastClickedAt.Format("2006-01-02 15:04:05")
+			lastClicked = formatAdAge(*s.LastClickedAt)
 		}
 
 		rows = append(rows, Tr(
@@ -428,9 +428,9 @@ func adminImageClickStats(stats []ad.ImageClickStats) g.Node {
 
 	var rows []g.Node
 	for i, s := range stats {
-		lastClicked := "Never"
+		lastClicked := "never"
 		if s.LastClickedAt != nil {
-			lastClicked = s.LastClickedAt.Format("2006-01-02 15:04:05")
+			lastClicked = formatAdAge(*s.LastClickedAt)
 		}
 
 		rows = append(rows, Tr(

@@ -65,13 +65,18 @@ func location(a ad.Ad) g.Node {
 	)
 }
 
-// Helper to format ad age as Xm, Xh, Xd, Xmo, or Xy Xmo
+// Helper to format ad age as Xm, XhYm, Xd, Xmo, or Xy Xmo
 func formatAdAge(t time.Time) string {
 	d := time.Since(t)
 	if d < time.Hour {
 		return fmt.Sprintf("%dm", int(d.Minutes()))
 	} else if d < 24*time.Hour {
-		return fmt.Sprintf("%dh", int(d.Hours()))
+		hours := int(d.Hours())
+		minutes := int(d.Minutes()) % 60
+		if minutes > 0 {
+			return fmt.Sprintf("%dh%dm", hours, minutes)
+		}
+		return fmt.Sprintf("%dh", hours)
 	}
 
 	days := int(d.Hours() / 24)
