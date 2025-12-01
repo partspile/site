@@ -1,9 +1,13 @@
 package ui
 
 import (
+	"fmt"
+
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
+
+	"github.com/parts-pile/site/config"
 )
 
 func HomePage(userID int, userName, csrfToken string, view, adCategory int, path string, params map[string]string) g.Node {
@@ -143,6 +147,14 @@ func LoginPage(userID int, userName, path, csrfToken string) g.Node {
 					formGroup("Password", "password",
 						passwordInput("password", "password"),
 					),
+					Div(
+						Class("text-right mb-4"),
+						A(
+							Href("/password-recovery"),
+							Class("text-blue-500 hover:underline text-sm"),
+							g.Text("Forgot password?"),
+						),
+					),
 					actionButtons(
 						button("Login",
 							withAttributes(
@@ -159,8 +171,188 @@ func LoginPage(userID int, userName, path, csrfToken string) g.Node {
 	)
 }
 
+func PasswordRecoveryPage(userID int, userName, path, csrfToken string) g.Node {
+	return Page(
+		"Password Recovery",
+		userID,
+		userName,
+		path,
+		csrfToken,
+		[]g.Node{
+			pageHeader("Password Recovery"),
+			contentContainer(
+				Div(
+					ID("password-recovery-content"),
+					Div(
+						Class("text-center mb-6"),
+						P(
+							Class("text-gray-600"),
+							g.Text("Enter your username to recover your password. "+
+								"We'll send a verification code to your registered phone number."),
+						),
+					),
+					formContainer("passwordRecoveryForm",
+						formGroup("Username", "username",
+							TextInput("username", "username", ""),
+						),
+						actionButtons(
+							button("Send verification code",
+								withAttributes(
+									hx.Post("/api/password-recovery/step1"),
+									hx.Target("#result"),
+									hx.Indicator("#passwordRecoveryForm"),
+								),
+							),
+						),
+						resultContainer(),
+					),
+				),
+			),
+		},
+	)
+}
+
+// PasswordRecoveryVerifyPage returns the step 2 content (verification code + password form)
+func PasswordRecoveryVerifyPage(username string, phone string) g.Node {
+	return Div(
+		ID("password-recovery-content"),
+		Div(
+			Class("text-center mb-6"),
+			P(
+				Class("text-gray-600"),
+				g.Text("We've sent a verification code to your phone number. "+
+					"Please enter the code below along with your new password."),
+			),
+		),
+		formContainer("verifyForm",
+			// Hidden fields
+			Input(
+				Type("hidden"),
+				Name("username"),
+				Value(username),
+			),
+			Input(
+				Type("hidden"),
+				Name("recovery_phone"),
+				Value(phone),
+			),
+			formGroup("Verification Code", "verification_code",
+				TextInput("verification_code", "verification_code", ""),
+			),
+			formGroup("New Password", "password",
+				passwordInput("password", "password"),
+			),
+			formGroup("Confirm Password", "password2",
+				passwordInput("password2", "password2"),
+			),
+			actionButtons(
+				button("Reset Password",
+					withAttributes(
+						hx.Post("/api/password-recovery/step2"),
+						hx.Target("#result"),
+						hx.Indicator("#verifyForm"),
+					),
+				),
+			),
+			resultContainer(),
+		),
+	)
+}
+
+// PasswordRecoveryVerifyPageWithSwapOob returns the verification form with out-of-band swap wrapper
+// This includes an empty result div to clear errors and the verification form with hx-swap-oob
+func PasswordRecoveryVerifyPageWithSwapOob(username string, smsOptedOut bool) g.Node {
+	return Div(
+		Div(ID("result")), // Empty result div to clear errors
+		Div(
+			g.Attr("hx-swap-oob", "true"),
+			ID("password-recovery-content"),
+			Div(
+				Class("text-center mb-6"),
+				P(
+					Class("text-gray-600"),
+					g.Text("We've sent a verification code to your phone number. "+
+						"Please enter the code below along with your new password."),
+				),
+			),
+			formContainer("verifyForm",
+				Input(Type("hidden"), Name("username"), Value(username)),
+				formGroup("Verification Code", "verification_code",
+					TextInput("verification_code", "verification_code", ""),
+				),
+				formGroup("New Password", "password",
+					passwordInput("password", "password"),
+				),
+				formGroup("Confirm Password", "password2",
+					passwordInput("password2", "password2"),
+				),
+				Div(
+					Class("text-center mb-4"),
+					Button(
+						Type("button"),
+						Class("text-blue-500 hover:underline text-sm"),
+						g.Attr("onclick", "document.getElementById('troubleshoot-section').classList.toggle('hidden')"),
+						g.Text("Didn't receive code?"),
+					),
+				),
+				Div(
+					ID("troubleshoot-section"),
+					Class(func() string {
+						if smsOptedOut {
+							return "bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6"
+						}
+						return "bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 hidden"
+					}()),
+					Div(
+						Class("space-y-4"),
+						H4(
+							Class("text-sm font-semibold text-blue-900 mb-2"),
+							g.Text("Troubleshooting"),
+						),
+						Div(
+							Class("text-sm text-blue-800 mb-3"),
+							P(g.Text("If you didn't receive the code, try:")),
+							Ul(
+								Class("list-disc list-outside ml-5 mt-2 space-y-2"),
+								Li(Class("break-words pl-1"), g.Text("Check your phone's messages")),
+								Li(Class("break-words pl-1"), g.Text("Wait a few moments - messages can be delayed")),
+								Li(
+									Class("break-words pl-1"),
+									g.Text(fmt.Sprintf("SMS may be disabled on your phone number. To enable receiving SMS messages, send UNSTOP to %s from your phone", config.TwilioFromNumber)),
+								),
+								Li(Class("break-words pl-1"), g.Text("Click 'Resend Code' below to request a new code")),
+							),
+						),
+						Div(
+							Class("flex justify-center"),
+							button("Resend Code",
+								withAttributes(
+									hx.Post("/api/password-recovery/resend"),
+									hx.Target("#result"),
+									hx.Include("#verifyForm"),
+									hx.Indicator("#verifyForm"),
+								),
+							),
+						),
+					),
+				),
+				actionButtons(
+					button("Reset Password",
+						withAttributes(
+							hx.Post("/api/password-recovery/step2"),
+							hx.Target("#result"),
+							hx.Indicator("#verifyForm"),
+						),
+					),
+				),
+				resultContainer(),
+			),
+		),
+	)
+}
+
 // VerificationPageContent returns just the verification form content without the Page wrapper
-func VerificationPageContent(username string, phone string) g.Node {
+func VerificationPageContent(username string) g.Node {
 	return Div(
 		ID("register-content"),
 		Div(
@@ -172,12 +364,6 @@ func VerificationPageContent(username string, phone string) g.Node {
 			),
 		),
 		formContainer("verificationForm",
-			// Hidden reg_phone field
-			Input(
-				Type("hidden"),
-				Name("reg_phone"),
-				Value(phone),
-			),
 			// Hidden username field for password managers
 			Input(
 				Type("hidden"),

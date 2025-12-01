@@ -3,6 +3,7 @@ package verification
 import (
 	"crypto/rand"
 	"crypto/subtle"
+	"database/sql"
 	"fmt"
 	"math/big"
 	"time"
@@ -90,11 +91,59 @@ func GetVerificationCode(phone string) (*VerificationCode, error) {
 	`, phone)
 
 	var vc VerificationCode
+	var registrationName sql.NullString
 
 	err := row.Scan(&vc.ID, &vc.Phone, &vc.Code,
-		&vc.Attempts, &vc.RegistrationName, &vc.CreatedAt)
+		&vc.Attempts, &registrationName, &vc.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("verification code not found: %w", err)
+	}
+
+	// Handle NULL registration_name (password recovery codes don't have it)
+	if registrationName.Valid {
+		vc.RegistrationName = registrationName.String
+	} else {
+		vc.RegistrationName = ""
+	}
+
+	// Ensure timestamp is in UTC
+	vc.CreatedAt = vc.CreatedAt.UTC()
+
+	return &vc, nil
+}
+
+// GetVerificationCodeByCode retrieves a verification code by code value and registration name
+// Only returns codes that are not expired and haven't exceeded max attempts
+// This ensures we get the correct code even if multiple phones have the same code
+func GetVerificationCodeByCode(code, registrationName string) (*VerificationCode, error) {
+	// Calculate expiry cutoff time
+	expiryCutoff := time.Now().UTC().Add(-CodeExpiry)
+
+	row := db.QueryRow(`
+		SELECT id, phone, verification_code, attempts, registration_name, created_at
+		FROM PhoneVerification 
+		WHERE verification_code = $1 
+			AND registration_name = $2
+			AND created_at > $3
+			AND attempts < $4
+		ORDER BY created_at DESC 
+		LIMIT 1
+	`, code, registrationName, expiryCutoff, MaxAttempts)
+
+	var vc VerificationCode
+	var regName sql.NullString
+
+	err := row.Scan(&vc.ID, &vc.Phone, &vc.Code,
+		&vc.Attempts, &regName, &vc.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("verification code not found: %w", err)
+	}
+
+	// Handle NULL registration_name
+	if regName.Valid {
+		vc.RegistrationName = regName.String
+	} else {
+		vc.RegistrationName = ""
 	}
 
 	// Ensure timestamp is in UTC

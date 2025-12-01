@@ -36,7 +36,7 @@ func AdListNode(adObj ad.Ad, userID int, loc *time.Location, csrfToken string) g
 			titleNode(adObj),
 		),
 		Div(
-			Class("flex items-center gap-2"),
+			Class("flex items-center gap-2 ml-auto"),
 			Div(
 				Class("flex items-center gap-2 text-xs text-gray-500"),
 				ageNode(adObj, loc, false),

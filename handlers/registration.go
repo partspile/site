@@ -145,48 +145,33 @@ Only reject names that are truly offensive to a general audience.`
 	}
 
 	// Render verification form content (content only, no Page wrapper)
-	return render(c, ui.VerificationPageContent(name, phone))
+	return render(c, ui.VerificationPageContent(name))
 }
 
 // HandleRegistrationStep2 handles verification code submission and completes registration
 func HandleRegistrationStep2(c *fiber.Ctx) error {
-	// Get phone from form (stored in hidden field)
-	phone := c.FormValue("reg_phone")
-	if phone == "" {
-		return c.Redirect("/register")
-	}
-
 	code := c.FormValue("verification_code")
 	if code == "" {
 		return ValidationErrorResponse(c, "Please enter the verification code.")
 	}
 
-	// Get the registration name from the verification record
-	vc, err := verification.GetVerificationCode(phone)
-	if err != nil {
-		logger.Error("Failed to get verification code",
-			"error", err, "phone", phone)
+	// Get username from form (stored in hidden field)
+	name := c.FormValue("username")
+	if name == "" {
 		return c.Redirect("/register")
 	}
 
-	name := vc.RegistrationName
-
-	// Validate the code
-	valid, err := verification.ValidateCode(phone, code)
-	if err != nil {
-		logger.Error("Code validation error",
-			"error", err, "phone", phone)
-		return ValidationErrorResponse(c, "Verification code validation failed. Please try again.")
-	}
-
-	if !valid {
-		return ValidationErrorResponse(c, "Invalid or expired verification code. Please check your code and try again.")
+	// Validate terms acceptance first (fail fast on simple validation)
+	terms := c.FormValue("terms")
+	if terms != "accepted" {
+		return ValidationErrorResponse(c, "You must accept the Terms of Service and Privacy Policy to continue.")
 	}
 
 	// Get password from form
 	userPassword := c.FormValue("password")
 	password2 := c.FormValue("password2")
 
+	// Validate password confirmation
 	if err := password.ValidatePasswordConfirmation(userPassword, password2); err != nil {
 		return ValidationErrorResponse(c, err.Error())
 	}
@@ -196,10 +181,27 @@ func HandleRegistrationStep2(c *fiber.Ctx) error {
 		return ValidationErrorResponse(c, err.Error())
 	}
 
-	// Validate terms acceptance
-	terms := c.FormValue("terms")
-	if terms != "accepted" {
-		return ValidationErrorResponse(c, "You must accept the Terms of Service and Privacy Policy to continue.")
+	// Get verification code record by code value AND registration name
+	// This ensures we get the correct code even if multiple phones have the same code
+	vc, err := verification.GetVerificationCodeByCode(code, name)
+	if err != nil {
+		logger.Error("Failed to get verification code",
+			"error", err, "code", code, "name", name)
+		return ValidationErrorResponse(c, "Invalid or expired verification code. Please check your code and try again.")
+	}
+
+	phone := vc.Phone
+
+	// Validate the code (this also checks expiration and attempts)
+	valid, err := verification.ValidateCode(phone, code)
+	if err != nil {
+		logger.Error("Code validation error",
+			"error", err, "phone", phone)
+		return ValidationErrorResponse(c, "Verification code validation failed. Please try again.")
+	}
+
+	if !valid {
+		return ValidationErrorResponse(c, "Invalid or expired verification code. Please check your code and try again.")
 	}
 
 	// Double-check for existing users (including archived) before creating

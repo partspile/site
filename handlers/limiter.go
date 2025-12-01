@@ -26,3 +26,18 @@ var RegistrationRateLimiter = limiter.New(limiter.Config{
 				"Please try again later.")
 	},
 })
+
+// PasswordRecoveryRateLimiter is a strict rate limiter for password recovery (per IP)
+var PasswordRecoveryRateLimiter = limiter.New(limiter.Config{
+	Max:        config.RegistrationRateLimitMax,
+	Expiration: config.RegistrationRateLimitExp,
+	KeyGenerator: func(c *fiber.Ctx) string {
+		// Rate limit per IP address
+		return c.IP()
+	},
+	LimitReached: func(c *fiber.Ctx) error {
+		return c.Status(429).
+			SendString("Too many password recovery attempts. " +
+				"Please try again later.")
+	},
+})

@@ -172,6 +172,10 @@ func main() {
 	app.Get("/login", h.HandleLogin)
 	api.Post("/login", h.HandleLoginSubmission)
 	app.Post("/logout", h.HandleLogout)
+	app.Get("/password-recovery", h.HandlePasswordRecovery)
+	api.Post("/password-recovery/step1", h.PasswordRecoveryRateLimiter, h.HandlePasswordRecoveryStep1)
+	api.Post("/password-recovery/step2", h.HandlePasswordRecoveryStep2)
+	api.Post("/password-recovery/resend", h.PasswordRecoveryRateLimiter, h.HandlePasswordRecoveryResend)
 
 	// Legal pages
 	app.Get("/terms", h.HandleTermsOfService)
