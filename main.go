@@ -104,10 +104,10 @@ func main() {
 	app.Get("/switch-ad-category/:adCategory", h.HandleSwitchAdCategory)
 
 	// Tree view routes - split by browse vs search mode
-	app.Get("/tree-browse-expand/*", h.HandleTreeExpandBrowse)     // x
-	app.Get("/tree-browse-collapse/*", h.HandleTreeCollapseBrowse) // x
-	app.Get("/tree-search-expand/*", h.HandleTreeExpandSearch)     // x
-	app.Get("/tree-search-collapse/*", h.HandleTreeCollapseSearch) // x
+	app.Get("/tree-browse-expand", h.HandleTreeExpandBrowse)     // x
+	app.Get("/tree-browse-collapse", h.HandleTreeCollapseBrowse) // x
+	app.Get("/tree-search-expand", h.HandleTreeExpandSearch)     // x
+	app.Get("/tree-search-collapse", h.HandleTreeCollapseSearch) // x
 
 	// Ad in-place expand/collapse partials for htmx
 	app.Get("/ad/collapse/:id", h.HandleAdCollapse)           // x
@@ -213,9 +213,9 @@ func main() {
 	api.Get("/messages/:action", h.AuthRequired, h.HandleMessagesAPI)
 
 	// Views for HTMX view switching
-	app.Post("/view/list", h.HandleListView) // x
-	app.Post("/view/tree", h.HandleTreeView) // x
-	app.Post("/view/grid", h.HandleGridView) // x
+	app.Get("/view/list", h.HandleListView) // x
+	app.Get("/view/tree", h.HandleTreeView) // x
+	app.Get("/view/grid", h.HandleGridView) // x
 
 	// Start background vector processor for ads
 	vector.StartBackgroundProcessor()

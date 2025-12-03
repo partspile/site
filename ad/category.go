@@ -120,26 +120,14 @@ func loadCategoryFieldsFromDB() error {
 		var newChains [][]Field
 		var newChain []Field
 		var inChain bool
-		for i := range fields {
-			if fields[i].NextInChain == 0 {
-				if inChain {
-					fields[i].ParentField = &fields[i-1]
-					inChain = false
-				}
-			} else {
-				if inChain {
-					fields[i].ParentField = &fields[i-1]
-				}
-				inChain = true
-			}
 
+		// First loop: Create all Field instances
+		for i := range fields {
 			// Concrete Field instance
 			newField, err := NewAdField(fields[i])
 			if err != nil {
-				logger.Error("Failed to create field instance",
-					"error", err, "category_id", id,
-					"field_name", fields[i].FieldName, "component", "ad-category")
-				continue
+				return fmt.Errorf("failed to create field instance for category %d, field %s: %w",
+					id, fields[i].FieldName, err)
 			}
 			newFields = append(newFields, newField)
 
@@ -152,6 +140,23 @@ func loadCategoryFieldsFromDB() error {
 				}
 			} else {
 				newChain = append(newChain, newField)
+			}
+		}
+
+		// Second loop: Set ParentField references using fields and newFields
+		for i := range fields {
+			if fields[i].NextInChain == 0 {
+				if inChain && i > 0 {
+					// This field ends a chain, so previous field is its parent
+					newFields[i].SetParent(newFields[i-1])
+					inChain = false
+				}
+			} else {
+				if inChain && i > 0 {
+					// This field is in a chain, so previous field is its parent
+					newFields[i].SetParent(newFields[i-1])
+				}
+				inChain = true
 			}
 		}
 

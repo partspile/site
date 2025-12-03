@@ -1557,8 +1557,13 @@ func importAds(jsonFile string, categoryID int, categoryMap map[string]int, user
 			}
 		}
 
-		// Generate between 0 and 5 images per ad
-		numImages := rand.Intn(6)
+		// Generate between 0 and 5 images per ad, or use provided count
+		var numImages int
+		if count, ok := ad["image_count"].(float64); ok {
+			numImages = int(count)
+		} else {
+			numImages = rand.Intn(6)
+		}
 
 		adBatch = append(adBatch, adBatchEntry{
 			title:          title,

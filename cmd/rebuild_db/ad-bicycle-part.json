@@ -17,7 +17,8 @@
       "country": "US",
       "latitude": 43.4698,
       "longitude": -88.4995
-    }
+    },
+    "image_count": 3
   },
   {
     "make": "SPECIALIZED",
@@ -37,7 +38,8 @@
       "country": "US",
       "latitude": 37.1305,
       "longitude": -121.6547
-    }
+    },
+    "image_count": 0
   },
   {
     "make": "GIANT",
@@ -57,6 +59,7 @@
       "country": "US",
       "latitude": 34.1802,
       "longitude": -118.9668
-    }
+    },
+    "image_count": 5
   }
 ]

@@ -24,7 +24,7 @@ func (f *FieldMake) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) {
 func (f *FieldMake) RenderFilterField(params map[string]string) g.Node {
 	value := params[f.FieldName]
 
-	values, err := f.GetValues(params)
+	values, err := GetValues(f, params)
 	if err != nil {
 		values = []string{}
 	}
@@ -51,7 +51,7 @@ func (f *FieldMake) RenderFilterField(params map[string]string) g.Node {
 }
 
 func (f *FieldMake) RenderNewAdField(parentValues map[string]string) g.Node {
-	values, err := f.GetValues(parentValues)
+	values, err := GetValues(f, parentValues)
 	if err != nil {
 		values = []string{}
 	}

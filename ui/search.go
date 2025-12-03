@@ -76,7 +76,7 @@ func AdCategoryModal(activeCat int) g.Node {
 	)
 }
 
-func ViewToggleButtons(activeView string, userID int, csrfToken string) g.Node {
+func ViewToggleButtons(activeView string, userID int) g.Node {
 	icon := func(name, alt string) g.Node {
 		return Img(
 			Src("/images/"+name+".svg"),
@@ -94,12 +94,11 @@ func ViewToggleButtons(activeView string, userID int, csrfToken string) g.Node {
 		}
 		return Button(
 			Class(cls),
-			hx.Post("/view/"+view),
+			hx.Get("/view/"+view),
 			hx.Target("#searchResults"),
 			hx.Swap("outerHTML"),
 			hx.Include("#searchWidget"),
 			hx.Trigger("click"),
-			hxHeadersCSRFToken(csrfToken),
 			icon(view, alt),
 		)
 	}
