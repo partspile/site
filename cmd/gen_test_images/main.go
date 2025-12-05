@@ -186,7 +186,8 @@ func generateImagesForAds(testAds []TestAd) []ImageToUpload {
 			// Generate different sizes directly (no base image)
 			for _, sz := range sizes {
 				w := sz.Width
-				h := w * 800 / 1200 // Maintain 1200:800 aspect ratio
+				// Use 4:3 aspect ratio (1200:900, 480:360, 160:120)
+				h := w * 3 / 4
 
 				// Generate image with correct dimensions
 				pngBuf, err := generateTestAdImage(ad.ID, i+1, w, h)

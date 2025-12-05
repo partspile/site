@@ -539,6 +539,9 @@
   .cursor-pointer {
     cursor: pointer;
   }
+  .resize {
+    resize: both;
+  }
   .list-outside {
     list-style-position: outside;
   }

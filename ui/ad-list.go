@@ -27,11 +27,11 @@ func AdListNode(adObj ad.Ad, userID int, loc *time.Location, csrfToken string) g
 
 		hx.Get(fmt.Sprintf("/ad/detail/%d?view=list", adObj.ID)),
 		hx.Target(adTarget(adObj)),
-		hx.Swap("outerHTML show:bottom"),
+		hx.Swap("outerHTML show:top"),
+		//hx.Swap("outerHTML show:bottom"),
 
 		Div(
 			Class("text-blue-600 hover:text-blue-800"),
-			//Class("flex-1 min-w-0 text-blue-600 hover:text-blue-800"),
 			g.If(userID != 0, BookmarkButton(adObj, csrfToken)),
 			titleNode(adObj),
 		),
