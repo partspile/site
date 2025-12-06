@@ -27,29 +27,17 @@ func encodeAdIDs(adIDs []int) string {
 	return base64.URLEncoding.EncodeToString(buf)
 }
 
-func TreeViewResults(adIDs []int, adCat int, q string, userID int, csrfToken string) g.Node {
-	var viewContent = NoSearchResultsMessage()
-
-	if q == "" && len(adIDs) == 0 {
-		// No search query and no filtered results - show full browse tree
-		viewContent = treeBrowseFirstField(adCat)
-	} else {
-		// Either has search query or has filtered results - show filtered tree
-		if len(adIDs) > 0 {
-			viewContent = treeSearchFirstField(adIDs, adCat)
-		}
-	}
-
+func TreeViewResults(viewContent g.Node, userID int, csrfToken string) g.Node {
 	return Div(
 		ID("searchResults"),
-		ViewToggleButtons("tree", userID, csrfToken),
+		ViewToggleButtons("tree", userID),
 		viewContent,
 	)
 }
 
-// treeBrowseFirstField returns the initial tree view for browsing
+// TreeBrowseFirstField returns the initial tree view for browsing
 // Uses the first field in the first chain for the ad category
-func treeBrowseFirstField(adCat int) g.Node {
+func TreeBrowseFirstField(adCat int) g.Node {
 	// Get first field from first chain
 	chains := ad.GetFieldChains(adCat)
 	if len(chains) == 0 || len(chains[0]) == 0 {
@@ -59,7 +47,7 @@ func treeBrowseFirstField(adCat int) g.Node {
 	}
 
 	firstField := chains[0][0]
-	values, err := firstField.GetValues(map[string]string{})
+	values, err := ad.GetValuesForActiveAds(firstField, map[string]string{})
 	if err != nil {
 		logger.Error("Error getting field values",
 			"error", err, "field", firstField.Name(),
@@ -70,9 +58,9 @@ func treeBrowseFirstField(adCat int) g.Node {
 	return createBrowseFieldNodes(values, firstField.Name())
 }
 
-// treeSearchFirstField returns the initial tree view for search results
+// TreeSearchFirstField returns the initial tree view for search results
 // Uses the first field in the first chain for the ad category
-func treeSearchFirstField(adIDs []int, adCat int) g.Node {
+func TreeSearchFirstField(adIDs []int, adCat int) g.Node {
 	// Get first field from first chain
 	chains := ad.GetFieldChains(adCat)
 	if len(chains) == 0 || len(chains[0]) == 0 {
@@ -95,12 +83,13 @@ func treeSearchFirstField(adIDs []int, adCat int) g.Node {
 
 func createBrowseFieldNodes(values []string, fieldName string) g.Node {
 	if len(values) == 0 {
-		return Div(Class("text-gray-500"), g.Text("No values available"))
+		return NoSearchResultsMessage()
 	}
 
 	var nodes []g.Node
+	parentValues := make(map[string]string) // Empty for root level
 	for _, value := range values {
-		nodes = append(nodes, CollapsedTreeNodeBrowse(value, value))
+		nodes = append(nodes, CollapsedTreeNodeBrowse(value, fieldName, parentValues))
 	}
 
 	return Div(
@@ -111,12 +100,13 @@ func createBrowseFieldNodes(values []string, fieldName string) g.Node {
 
 func createSearchFieldNodes(values []string, fieldName string, adIDs []int) g.Node {
 	if len(values) == 0 {
-		return Div(Class("text-gray-500"), g.Text("No values available"))
+		return NoSearchResultsMessage()
 	}
 
 	var nodes []g.Node
+	parentValues := make(map[string]string) // Empty for root level
 	for _, value := range values {
-		nodes = append(nodes, CollapsedTreeNodeSearch(value, value))
+		nodes = append(nodes, CollapsedTreeNodeSearch(value, fieldName, parentValues))
 	}
 
 	// Convert adIDs to base64 encoded string for DOM storage

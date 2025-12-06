@@ -22,8 +22,9 @@
       "admin_area": "IL",
       "country": "US",
       "latitude": 41.5067,
-      "longitude": -90.5150
-    }
+      "longitude": -90.515
+    },
+    "image_count": 4
   },
   {
     "make": "CASE IH",
@@ -49,6 +50,7 @@
       "country": "US",
       "latitude": 42.7261,
       "longitude": -87.7829
-    }
+    },
+    "image_count": 0
   }
 ]

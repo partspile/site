@@ -21,7 +21,7 @@ func (f *FieldBreed) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) 
 }
 
 func (f *FieldBreed) RenderNewAdField(parentValues map[string]string) g.Node {
-	values, err := f.GetValues(parentValues)
+	values, err := GetValues(f, parentValues)
 	if err != nil {
 		values = []string{}
 	}

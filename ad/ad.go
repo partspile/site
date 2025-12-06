@@ -330,7 +330,7 @@ func ArchiveAdsByUserID(userID int) error {
 }
 
 // GetAdsForAll returns all ads filtered by field values
-func GetAdsForAll(fieldValues map[string]string, adCategoryID int, fields []Field) ([]Ad, error) {
+func GetAdsForAll(fieldValues map[string]string, adCategoryID int) ([]Ad, error) {
 	if len(fieldValues) == 0 {
 		// No filters, return empty
 		return []Ad{}, nil

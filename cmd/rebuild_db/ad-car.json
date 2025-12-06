@@ -23,7 +23,8 @@
       "country": "US",
       "latitude": 34.0522,
       "longitude": -118.2437
-    }
+    },
+    "image_count": 3
   },
   {
     "make": "FORD",
@@ -49,6 +50,7 @@
       "country": "US",
       "latitude": 32.7767,
       "longitude": -96.797
-    }
+    },
+    "image_count": 0
   }
 ]

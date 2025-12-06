@@ -22,8 +22,9 @@
       "admin_area": "IL",
       "country": "US",
       "latitude": 41.5067,
-      "longitude": -90.5150
-    }
+      "longitude": -90.515
+    },
+    "image_count": 2
   },
   {
     "make": "CASE IH",
@@ -49,7 +50,8 @@
       "country": "US",
       "latitude": 42.7261,
       "longitude": -87.7829
-    }
+    },
+    "image_count": 4
   },
   {
     "make": "NEW HOLLAND",
@@ -75,6 +77,7 @@
       "country": "US",
       "latitude": 40.0612,
       "longitude": -76.0857
-    }
+    },
+    "image_count": 5
   }
 ]

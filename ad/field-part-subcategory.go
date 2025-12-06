@@ -21,7 +21,7 @@ func (f *FieldPartSubcategory) BuildFilterCondition(c *fiber.Ctx) (string, []int
 }
 
 func (f *FieldPartSubcategory) RenderNewAdField(parentValues map[string]string) g.Node {
-	values, err := f.GetValues(parentValues)
+	values, err := GetValues(f, parentValues)
 	if err != nil {
 		values = []string{}
 	}

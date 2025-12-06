@@ -60,7 +60,7 @@ func (f *FieldYear) BuildFilterCondition(c *fiber.Ctx) (string, []interface{}) {
 }
 
 func (f *FieldYear) RenderNewAdField(parentValues map[string]string) g.Node {
-	values, err := f.GetValues(parentValues)
+	values, err := GetValues(f, parentValues)
 	if err != nil {
 		values = []string{}
 	}

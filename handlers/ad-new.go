@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"net/url"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/parts-pile/site/ad"
@@ -84,11 +82,15 @@ func HandleFieldValues(c *fiber.Ctx) error {
 	}
 	adCat := cookie.GetAdCategory(c)
 
-	// Get parent field values from query parameters
-	q, err := url.ParseQuery(string(c.Request().URI().QueryString()))
-	if err != nil {
-		return err
-	}
+	// Debug: Log all query parameters
+	allQueries := c.Queries()
+	logger.Debug("HandleFieldValues request",
+		"component", "ad-new",
+		"fieldName", fieldName,
+		"adCat", adCat,
+		"allQueryParams", allQueries,
+		"queryString", c.OriginalURL(),
+	)
 
 	// Get the current field
 	currentField, err := ad.GetCategoryField(adCat, fieldName)
@@ -97,34 +99,17 @@ func HandleFieldValues(c *fiber.Ctx) error {
 	}
 
 	// Build parentValues map from query parameters
-	parentValues := buildParentValuesFromQuery(q, adCat, fieldName)
+	parentValues := ad.BuildParentValues(c, adCat, []string{fieldName})
+
+	// Debug: Log parentValues
+	logger.Debug("HandleFieldValues parentValues",
+		"component", "ad-new",
+		"fieldName", fieldName,
+		"parentValues", parentValues,
+	)
 
 	// Render the field - GetValues will handle parent filtering internally
 	fieldNode := currentField.RenderNewAdField(parentValues)
 
 	return render(c, fieldNode)
-}
-
-// buildParentValuesFromQuery builds a parentValues map from query parameters
-// It converts query parameter values to the format expected by Field.GetValues
-func buildParentValuesFromQuery(q url.Values, adCat int, excludeFieldName string) map[string]string {
-	parentValues := make(map[string]string)
-	fields := ad.GetCategoryFields(adCat)
-
-	for _, field := range fields {
-		if field.Name() == excludeFieldName {
-			// Skip the excluded field itself
-			continue
-		}
-		if values, exists := q[field.Name()]; exists && len(values) > 0 {
-			// For multi-value fields, join with comma; for single-value, use first value
-			if field.IsMultiValue() {
-				parentValues[field.Name()] = strings.Join(values, ",")
-			} else {
-				parentValues[field.Name()] = values[0]
-			}
-		}
-	}
-
-	return parentValues
 }
