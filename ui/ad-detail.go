@@ -102,7 +102,7 @@ func closeButton(a ad.AdDetail, view string) g.Node {
 		Class("absolute top-2 right-2 bg-white border-2 border-gray-800 rounded-full w-10 h-10 flex items-center justify-center shadow-lg z-30 hover:bg-gray-100 focus:outline-none cursor-pointer"),
 		hx.Get(fmt.Sprintf("/ad/collapse/%d?view=%s", a.ID, view)),
 		hx.Target(adTarget(a.Ad)),
-		hx.Swap("outerHTML"),
+		hx.Swap("outerHTML transition:true"),
 		icon("/images/close.svg", "Close", "w-6 h-6"),
 	)
 }

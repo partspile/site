@@ -27,3 +27,8 @@
     right: calc((100% - 860px) / 2 + 1rem);
   }
 }
+
+/* View transition animation */
+::view-transition-group(root) {
+  animation-duration: 0.5s;
+}

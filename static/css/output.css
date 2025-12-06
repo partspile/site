@@ -1328,6 +1328,9 @@
     right: calc((100% - 860px) / 2 + 1rem);
   }
 }
+::view-transition-group(root) {
+  animation-duration: 1s;
+}
 @property --tw-translate-x {
   syntax: "*";
   inherits: false;
