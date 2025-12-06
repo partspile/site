@@ -251,354 +251,409 @@ func collectParentFields(field Field, params map[string]string, allowCrossSpecTa
 	return parentFields
 }
 
-// getValuesInternal is the unified implementation for getting field values
-// It handles all cases: simple queries, parent filtering, active ads filtering, and ad ID filtering
-func getValuesInternal(field Field, params map[string]string, opts filterOptions) ([]string, error) {
-	// Use Field interface methods
-	_, _, _, tableName := field.GetTableNames()
-	if tableName == "" {
-		// For fields without a table, return empty
-		return []string{}, nil
-	}
-
-	// For spec fields, check if we have a parent in the chain
-	// If we have a parent and it's not in params or is empty, return empty results
-	parentField := field.GetParentField()
-	if parentField != nil {
-		parentValue, exists := params[parentField.Name()]
-		if !exists || parentValue == "" {
-			// Parent field is required but not provided or empty - return empty
-			return []string{}, nil
-		}
-	}
-
-	// Collect parent fields from params by walking backwards through the chain
-	// Allow cross-spec-table filtering when filtering by active ads (tree browse view)
-	// Disallow it otherwise (new ad page - part_category/subcategory independent)
-	parentFields := collectParentFields(field, params, opts.filterByActiveAds)
-
-	// Build and execute query (handles both simple and filtered cases)
-	return executeFilteredQuery(field, parentFields, opts)
-}
-
 // GetValues returns the available values for a field given parent filters
 func GetValues(field Field, params map[string]string) ([]string, error) {
-	return getValuesInternal(field, params, filterOptions{
-		filterByActiveAds: false,
-		filterByAdIDs:     []int{},
-	})
+
+	parentFields := collectParentFields(field, params, false)
+
+	query, args, err := buildFilteredQuery(field, parentFields)
+
+	if err != nil {
+		return []string{}, err
+	}
+
+	return executeQuery(field, query, args)
 }
 
 // GetValuesForActiveAds returns the available values for a field given parent filters,
 // but only includes values that exist in active (non-deleted) ads.
 // This is used for tree view browsing, where we only want to show makes/years/etc that have ads.
 func GetValuesForActiveAds(field Field, params map[string]string) ([]string, error) {
-	return getValuesInternal(field, params, filterOptions{
-		filterByActiveAds: true,
-		filterByAdIDs:     []int{},
-	})
+
+	parentFields := collectParentFields(field, params, true)
+
+	query, args, err := buildActiveAdsFilteredQuery(field, parentFields)
+	if err != nil {
+		return []string{}, err
+	}
+
+	return executeQuery(field, query, args)
 }
 
-// buildFilteredQuery builds a SQL query with parent field filters and optional ad filtering
-// It handles all cases: simple queries (no parent fields), parent filtering, active ads filtering, and ad ID filtering
-func buildFilteredQuery(field Field, parentFields []parentFieldInfo, opts filterOptions) (string, []interface{}, error) {
-	var whereClauses []string
-	var args []interface{}
-	var havingClauses []string
-
-	// Get field table names using Field interface
+// buildFilteredQuery builds a query with parent field filters but no ad filtering
+// Handles both simple queries (no parent fields) and filtered queries (with parent fields)
+func buildFilteredQuery(field Field, parentFields []parentFieldInfo) (string, []interface{}, error) {
 	specTableName, specTableFieldName, adSpecTableName, tableName := field.GetTableNames()
-
-	// Get category ID
 	catID := field.GetCategoryID()
 
-	// Determine if we need to join with Ad table
-	needsAdJoin := opts.filterByActiveAds || len(opts.filterByAdIDs) > 0
-
-	// Determine if we need to join with spec table
-	// Only needed if we have parent fields or need ad filtering
-	needsSpecJoin := len(parentFields) > 0 || needsAdJoin
-
-	// Base query: select distinct values from current field table
 	query := fmt.Sprintf("SELECT DISTINCT %s.value", tableName)
+	var args []interface{}
+	var whereClauses []string
+	var havingClauses []string
 
-	// FROM clause
-	if specTableName == "" || !needsSpecJoin {
-		// Non-spec field OR simple case (no parent fields, no ad filtering) - query field table directly
+	// Build FROM clause
+	needsSpecJoin := specTableName != "" && len(parentFields) > 0
+	if !needsSpecJoin {
 		query += fmt.Sprintf(" FROM %s", tableName)
 	} else {
-		// Spec field with parent fields or ad filtering - join with spec table
 		query += fmt.Sprintf(" FROM %s", tableName)
 		query += fmt.Sprintf(" JOIN %s ON %s.%s = %s.id",
 			specTableName, specTableName, specTableFieldName, tableName)
+	}
 
-		// Join with AdSpec table and Ad table if filtering needed
-		if needsAdJoin && adSpecTableName != "" {
+	// Add category WHERE clause
+	args = append(args, catID)
+	if needsSpecJoin {
+		whereClauses = append(whereClauses, fmt.Sprintf("%s.ad_category_id = $%d", specTableName, len(args)))
+	} else {
+		whereClauses = append(whereClauses, fmt.Sprintf("%s.ad_category_id = $%d", tableName, len(args)))
+	}
+
+	// Handle parent fields
+	multiValueParentsSameSpec, multiValueParentsDiffSpec := addParentFieldJoins(
+		&query, &args, &whereClauses, &havingClauses,
+		field, parentFields, specTableName, adSpecTableName, false)
+
+	// Add final clauses
+	query = addFinalClauses(query, whereClauses, havingClauses, tableName, multiValueParentsSameSpec, multiValueParentsDiffSpec)
+
+	return query, args, nil
+}
+
+// buildActiveAdsFilteredQuery builds a query with active ads filtering (may have parent fields)
+func buildActiveAdsFilteredQuery(field Field, parentFields []parentFieldInfo) (string, []interface{}, error) {
+	specTableName, specTableFieldName, adSpecTableName, tableName := field.GetTableNames()
+	catID := field.GetCategoryID()
+
+	query := fmt.Sprintf("SELECT DISTINCT %s.value", tableName)
+	var args []interface{}
+	var whereClauses []string
+	var havingClauses []string
+
+	// Build FROM clause with Ad joins
+	if specTableName == "" {
+		query += fmt.Sprintf(" FROM %s", tableName)
+	} else {
+		query += fmt.Sprintf(" FROM %s", tableName)
+		query += fmt.Sprintf(" JOIN %s ON %s.%s = %s.id",
+			specTableName, specTableName, specTableFieldName, tableName)
+		if adSpecTableName != "" {
 			query += fmt.Sprintf(" JOIN %s ON %s.spec_id = %s.id",
 				adSpecTableName, adSpecTableName, specTableName)
 			query += " JOIN Ad ON Ad.id = " + adSpecTableName + ".ad_id"
 		}
 	}
 
-	// Add WHERE clause for category
-	if needsSpecJoin && specTableName != "" {
-		args = append(args, catID)
+	// Add category WHERE clause
+	args = append(args, catID)
+	if specTableName != "" {
 		whereClauses = append(whereClauses, fmt.Sprintf("%s.ad_category_id = $%d", specTableName, len(args)))
 	} else {
-		args = append(args, catID)
 		whereClauses = append(whereClauses, fmt.Sprintf("%s.ad_category_id = $%d", tableName, len(args)))
 	}
 
-	// Filter by active ads only (deleted_at IS NULL)
-	if opts.filterByActiveAds && needsAdJoin {
-		whereClauses = append(whereClauses, "Ad.deleted_at IS NULL")
+	// Filter by active ads
+	whereClauses = append(whereClauses, "Ad.deleted_at IS NULL")
+
+	// Handle parent fields
+	multiValueParentsSameSpec, multiValueParentsDiffSpec := addParentFieldJoins(
+		&query, &args, &whereClauses, &havingClauses,
+		field, parentFields, specTableName, adSpecTableName, true)
+
+	// Add final clauses
+	query = addFinalClauses(query, whereClauses, havingClauses, tableName, multiValueParentsSameSpec, multiValueParentsDiffSpec)
+
+	return query, args, nil
+}
+
+// buildAdIDFilteredQuery builds a query with ad ID filtering (may have parent fields)
+func buildAdIDFilteredQuery(field Field, parentFields []parentFieldInfo, adIDs []int) (string, []interface{}, error) {
+	specTableName, specTableFieldName, adSpecTableName, tableName := field.GetTableNames()
+	catID := field.GetCategoryID()
+
+	query := fmt.Sprintf("SELECT DISTINCT %s.value", tableName)
+	var args []interface{}
+	var whereClauses []string
+	var havingClauses []string
+
+	// Build FROM clause with Ad joins
+	if specTableName == "" {
+		query += fmt.Sprintf(" FROM %s", tableName)
+	} else {
+		query += fmt.Sprintf(" FROM %s", tableName)
+		query += fmt.Sprintf(" JOIN %s ON %s.%s = %s.id",
+			specTableName, specTableName, specTableFieldName, tableName)
+		if adSpecTableName != "" {
+			query += fmt.Sprintf(" JOIN %s ON %s.spec_id = %s.id",
+				adSpecTableName, adSpecTableName, specTableName)
+			query += " JOIN Ad ON Ad.id = " + adSpecTableName + ".ad_id"
+		}
+	}
+
+	// Add category WHERE clause
+	args = append(args, catID)
+	if specTableName != "" {
+		whereClauses = append(whereClauses, fmt.Sprintf("%s.ad_category_id = $%d", specTableName, len(args)))
+	} else {
+		whereClauses = append(whereClauses, fmt.Sprintf("%s.ad_category_id = $%d", tableName, len(args)))
 	}
 
 	// Filter by ad IDs
-	if len(opts.filterByAdIDs) > 0 && needsAdJoin {
-		placeholders := make([]string, len(opts.filterByAdIDs))
-		for i, id := range opts.filterByAdIDs {
-			args = append(args, id)
-			placeholders[i] = fmt.Sprintf("$%d", len(args))
-		}
-		whereClauses = append(whereClauses, fmt.Sprintf("Ad.id IN (%s)", strings.Join(placeholders, ", ")))
+	placeholders := make([]string, len(adIDs))
+	for i, id := range adIDs {
+		args = append(args, id)
+		placeholders[i] = fmt.Sprintf("$%d", len(args))
+	}
+	whereClauses = append(whereClauses, fmt.Sprintf("Ad.id IN (%s)", strings.Join(placeholders, ", ")))
+
+	// Handle parent fields
+	multiValueParentsSameSpec, multiValueParentsDiffSpec := addParentFieldJoins(
+		&query, &args, &whereClauses, &havingClauses,
+		field, parentFields, specTableName, adSpecTableName, true)
+
+	// Add final clauses
+	query = addFinalClauses(query, whereClauses, havingClauses, tableName, multiValueParentsSameSpec, multiValueParentsDiffSpec)
+
+	return query, args, nil
+}
+
+// addParentFieldJoins adds JOINs and WHERE/HAVING clauses for parent fields
+// Returns counts of multi-value parents for GROUP BY/HAVING logic
+func addParentFieldJoins(query *string, args *[]interface{}, whereClauses *[]string, havingClauses *[]string,
+	field Field, parentFields []parentFieldInfo, specTableName, adSpecTableName string, hasAdJoin bool) ([]parentFieldInfo, []parentFieldInfo) {
+
+	if len(parentFields) == 0 {
+		return nil, nil
 	}
 
-	// Handle parent fields if any
-	// Separate single-value and multi-value parent fields
-	// Also separate by spec table - parents in same spec table vs different spec table
 	var singleValueParentsSameSpec []parentFieldInfo
 	var singleValueParentsDiffSpec []parentFieldInfo
 	var multiValueParentsSameSpec []parentFieldInfo
 	var multiValueParentsDiffSpec []parentFieldInfo
 
-	if len(parentFields) > 0 {
-		for _, pf := range parentFields {
-			pfSpecTableName, _, _, _ := pf.parent.GetTableNames()
-			if pf.parent.IsMultiValue() {
-				if pfSpecTableName == specTableName {
-					// Multi-value parent is in same spec table - can join directly
-					multiValueParentsSameSpec = append(multiValueParentsSameSpec, pf)
-				} else {
-					// Multi-value parent is in different spec table - need to join through Ad table
-					multiValueParentsDiffSpec = append(multiValueParentsDiffSpec, pf)
-				}
-			} else if pfSpecTableName == specTableName {
-				// Parent is in same spec table - can join directly
-				singleValueParentsSameSpec = append(singleValueParentsSameSpec, pf)
+	// Separate parent fields by type and spec table
+	for _, pf := range parentFields {
+		pfSpecTableName, _, _, _ := pf.parent.GetTableNames()
+		if pf.parent.IsMultiValue() {
+			if pfSpecTableName == specTableName {
+				multiValueParentsSameSpec = append(multiValueParentsSameSpec, pf)
 			} else {
-				// Parent is in different spec table - need to join through Ad table
-				singleValueParentsDiffSpec = append(singleValueParentsDiffSpec, pf)
+				multiValueParentsDiffSpec = append(multiValueParentsDiffSpec, pf)
 			}
+		} else if pfSpecTableName == specTableName {
+			singleValueParentsSameSpec = append(singleValueParentsSameSpec, pf)
+		} else {
+			singleValueParentsDiffSpec = append(singleValueParentsDiffSpec, pf)
+		}
+	}
+
+	// Ensure Ad table is joined if we have parents in different spec tables
+	if (len(singleValueParentsDiffSpec) > 0 || len(multiValueParentsDiffSpec) > 0) &&
+		specTableName != "" && adSpecTableName != "" && !hasAdJoin {
+		*query += fmt.Sprintf(" JOIN %s ON %s.spec_id = %s.id",
+			adSpecTableName, adSpecTableName, specTableName)
+		*query += " JOIN Ad ON Ad.id = " + adSpecTableName + ".ad_id"
+		hasAdJoin = true
+	}
+
+	// Add JOINs for single-value parent fields in the same spec table
+	for _, pf := range singleValueParentsSameSpec {
+		_, pfSpecTableFieldName, _, pfTableName := pf.parent.GetTableNames()
+		*query += fmt.Sprintf(" JOIN %s ON %s.%s = %s.id",
+			pfTableName, specTableName, pfSpecTableFieldName, pfTableName)
+		*args = append(*args, pf.value)
+		*whereClauses = append(*whereClauses, fmt.Sprintf("%s.value = $%d", pfTableName, len(*args)))
+	}
+
+	// Add JOINs for single-value parent fields in different spec tables
+	addDiffSpecSingleValueJoins(query, args, whereClauses, singleValueParentsDiffSpec, hasAdJoin)
+
+	// Handle multi-value parent fields in the same spec table
+	for _, pf := range multiValueParentsSameSpec {
+		_, pfSpecTableFieldName, _, pfTableName := pf.parent.GetTableNames()
+		values := strings.Split(pf.value, ",")
+		if len(values) == 0 {
+			continue
 		}
 
-		// Ensure Ad table is joined if we have parents in different spec tables
-		if (len(singleValueParentsDiffSpec) > 0 || len(multiValueParentsDiffSpec) > 0) && specTableName != "" && adSpecTableName != "" && !needsAdJoin {
-			query += fmt.Sprintf(" JOIN %s ON %s.spec_id = %s.id",
-				adSpecTableName, adSpecTableName, specTableName)
-			query += " JOIN Ad ON Ad.id = " + adSpecTableName + ".ad_id"
-			needsAdJoin = true
+		*query += fmt.Sprintf(" JOIN %s ON %s.%s = %s.id",
+			pfTableName, specTableName, pfSpecTableFieldName, pfTableName)
+
+		placeholders := make([]string, len(values))
+		for i, val := range values {
+			*args = append(*args, val)
+			placeholders[i] = fmt.Sprintf("$%d", len(*args))
+		}
+		*whereClauses = append(*whereClauses, fmt.Sprintf("%s.value IN (%s)",
+			pfTableName, strings.Join(placeholders, ", ")))
+		*havingClauses = append(*havingClauses, fmt.Sprintf("COUNT(DISTINCT %s.value) = %d",
+			pfTableName, len(values)))
+	}
+
+	// Handle multi-value parent fields in different spec tables
+	addDiffSpecMultiValueJoins(query, args, whereClauses, havingClauses, multiValueParentsDiffSpec, hasAdJoin)
+
+	// Add combination HAVING clauses for multiple multi-value parents
+	addMultiValueCombinationHavings(havingClauses, multiValueParentsSameSpec, multiValueParentsDiffSpec)
+
+	return multiValueParentsSameSpec, multiValueParentsDiffSpec
+}
+
+// addDiffSpecSingleValueJoins adds JOINs for single-value parent fields in different spec tables
+func addDiffSpecSingleValueJoins(query *string, args *[]interface{}, whereClauses *[]string,
+	singleValueParentsDiffSpec []parentFieldInfo, hasAdJoin bool) {
+
+	if len(singleValueParentsDiffSpec) == 0 {
+		return
+	}
+
+	// Group by spec table
+	specTableGroups := make(map[string][]parentFieldInfo)
+	for _, pf := range singleValueParentsDiffSpec {
+		pfSpecTableName, _, _, _ := pf.parent.GetTableNames()
+		specTableGroups[pfSpecTableName] = append(specTableGroups[pfSpecTableName], pf)
+	}
+
+	// For each spec table group, join once through Ad, then join all fields
+	for parentSpecTableName, groupFields := range specTableGroups {
+		if len(groupFields) == 0 {
+			continue
 		}
 
-		// Add JOINs for single-value parent fields in the same spec table (simple case)
-		for _, pf := range singleValueParentsSameSpec {
+		firstField := groupFields[0]
+		_, _, parentAdSpecTableName, _ := firstField.parent.GetTableNames()
+		parentAdSpecAlias := parentAdSpecTableName + "_parent"
+		parentSpecAlias := parentSpecTableName + "_parent"
+
+		*query += fmt.Sprintf(" JOIN %s %s ON %s.ad_id = Ad.id",
+			parentAdSpecTableName, parentAdSpecAlias, parentAdSpecAlias)
+		*query += fmt.Sprintf(" JOIN %s %s ON %s.spec_id = %s.id",
+			parentSpecTableName, parentSpecAlias, parentAdSpecAlias, parentSpecAlias)
+
+		for _, pf := range groupFields {
 			_, pfSpecTableFieldName, _, pfTableName := pf.parent.GetTableNames()
-			// JOIN parent field table through the same spec table
-			query += fmt.Sprintf(" JOIN %s ON %s.%s = %s.id",
-				pfTableName, specTableName, pfSpecTableFieldName, pfTableName)
+			parentFieldAlias := pfTableName + "_parent"
+			*query += fmt.Sprintf(" JOIN %s %s ON %s.%s = %s.id",
+				pfTableName, parentFieldAlias, parentSpecAlias, pfSpecTableFieldName, parentFieldAlias)
+			*args = append(*args, pf.value)
+			*whereClauses = append(*whereClauses, fmt.Sprintf("%s.value = $%d", parentFieldAlias, len(*args)))
+		}
+	}
+}
 
-			// Add WHERE clause for parent field value
-			args = append(args, pf.value)
-			whereClauses = append(whereClauses, fmt.Sprintf("%s.value = $%d", pfTableName, len(args)))
+// addDiffSpecMultiValueJoins adds JOINs for multi-value parent fields in different spec tables
+func addDiffSpecMultiValueJoins(query *string, args *[]interface{}, whereClauses *[]string, havingClauses *[]string,
+	multiValueParentsDiffSpec []parentFieldInfo, hasAdJoin bool) {
+
+	if len(multiValueParentsDiffSpec) == 0 {
+		return
+	}
+
+	// Group by spec table
+	multiValueSpecTableGroups := make(map[string][]parentFieldInfo)
+	for _, pf := range multiValueParentsDiffSpec {
+		pfSpecTableName, _, _, _ := pf.parent.GetTableNames()
+		multiValueSpecTableGroups[pfSpecTableName] = append(multiValueSpecTableGroups[pfSpecTableName], pf)
+	}
+
+	// For each spec table group, join once through Ad, then join all fields
+	for parentSpecTableName, groupFields := range multiValueSpecTableGroups {
+		if len(groupFields) == 0 {
+			continue
 		}
 
-		// Add JOINs for single-value parent fields in different spec tables
-		// Group by spec table to ensure all fields from same spec table come from same spec record
-		specTableGroups := make(map[string][]parentFieldInfo)
-		for _, pf := range singleValueParentsDiffSpec {
-			pfSpecTableName, _, _, _ := pf.parent.GetTableNames()
-			specTableGroups[pfSpecTableName] = append(specTableGroups[pfSpecTableName], pf)
-		}
+		firstField := groupFields[0]
+		_, _, parentAdSpecTableName, _ := firstField.parent.GetTableNames()
+		parentAdSpecAlias := parentAdSpecTableName + "_mv_parent"
+		parentSpecAlias := parentSpecTableName + "_mv_parent"
 
-		// For each spec table group, join once through Ad, then join all fields from that spec table
-		for parentSpecTableName, groupFields := range specTableGroups {
-			if len(groupFields) == 0 {
-				continue
-			}
+		*query += fmt.Sprintf(" JOIN %s %s ON %s.ad_id = Ad.id",
+			parentAdSpecTableName, parentAdSpecAlias, parentAdSpecAlias)
+		*query += fmt.Sprintf(" JOIN %s %s ON %s.spec_id = %s.id",
+			parentSpecTableName, parentSpecAlias, parentAdSpecAlias, parentSpecAlias)
 
-			// Use the first field to get AdSpec table name (all fields in group share same spec table)
-			firstField := groupFields[0]
-			_, _, parentAdSpecTableName, _ := firstField.parent.GetTableNames()
-			parentAdSpecAlias := parentAdSpecTableName + "_parent"
-			parentSpecAlias := parentSpecTableName + "_parent"
-
-			// Join parent AdSpec table to the same Ad we already joined (once per spec table)
-			query += fmt.Sprintf(" JOIN %s %s ON %s.ad_id = Ad.id",
-				parentAdSpecTableName, parentAdSpecAlias, parentAdSpecAlias)
-			// Join parent spec table through parent AdSpec (once per spec table)
-			query += fmt.Sprintf(" JOIN %s %s ON %s.spec_id = %s.id",
-				parentSpecTableName, parentSpecAlias, parentAdSpecAlias, parentSpecAlias)
-
-			// Join all parent field tables from this spec table through the same spec record
-			for _, pf := range groupFields {
-				_, pfSpecTableFieldName, _, pfTableName := pf.parent.GetTableNames()
-				parentFieldAlias := pfTableName + "_parent"
-				// Join parent field table through parent spec (same spec record for all fields)
-				query += fmt.Sprintf(" JOIN %s %s ON %s.%s = %s.id",
-					pfTableName, parentFieldAlias, parentSpecAlias, pfSpecTableFieldName, parentFieldAlias)
-
-				// Add WHERE clause for parent field value
-				args = append(args, pf.value)
-				whereClauses = append(whereClauses, fmt.Sprintf("%s.value = $%d", parentFieldAlias, len(args)))
-			}
-		}
-
-		// Handle multi-value parent fields in the same spec table
-		for _, pf := range multiValueParentsSameSpec {
+		for _, pf := range groupFields {
 			_, pfSpecTableFieldName, _, pfTableName := pf.parent.GetTableNames()
-			// Split comma-separated values
+			parentFieldAlias := pfTableName + "_mv_parent"
+			*query += fmt.Sprintf(" JOIN %s %s ON %s.%s = %s.id",
+				pfTableName, parentFieldAlias, parentSpecAlias, pfSpecTableFieldName, parentFieldAlias)
+
 			values := strings.Split(pf.value, ",")
 			if len(values) == 0 {
 				continue
 			}
 
-			// JOIN parent field table through the same spec table
-			query += fmt.Sprintf(" JOIN %s ON %s.%s = %s.id",
-				pfTableName, specTableName, pfSpecTableFieldName, pfTableName)
-
-			// Use IN clause for multi-value parent
 			placeholders := make([]string, len(values))
 			for i, val := range values {
-				args = append(args, val)
-				placeholders[i] = fmt.Sprintf("$%d", len(args))
+				*args = append(*args, val)
+				placeholders[i] = fmt.Sprintf("$%d", len(*args))
 			}
-			whereClauses = append(whereClauses, fmt.Sprintf("%s.value IN (%s)",
-				pfTableName, strings.Join(placeholders, ", ")))
-
-			// Use HAVING to ensure all values are matched (intersection logic)
-			// COUNT(DISTINCT value) must equal the number of values we're looking for
-			havingClauses = append(havingClauses, fmt.Sprintf("COUNT(DISTINCT %s.value) = %d",
-				pfTableName, len(values)))
-		}
-
-		// Handle multi-value parent fields in different spec tables
-		// Group by spec table to ensure all fields from same spec table come from same spec record
-		multiValueSpecTableGroups := make(map[string][]parentFieldInfo)
-		for _, pf := range multiValueParentsDiffSpec {
-			pfSpecTableName, _, _, _ := pf.parent.GetTableNames()
-			multiValueSpecTableGroups[pfSpecTableName] = append(multiValueSpecTableGroups[pfSpecTableName], pf)
-		}
-
-		// For each spec table group, join once through Ad, then join all fields from that spec table
-		for parentSpecTableName, groupFields := range multiValueSpecTableGroups {
-			if len(groupFields) == 0 {
-				continue
-			}
-
-			// Use the first field to get AdSpec table name (all fields in group share same spec table)
-			firstField := groupFields[0]
-			_, _, parentAdSpecTableName, _ := firstField.parent.GetTableNames()
-			parentAdSpecAlias := parentAdSpecTableName + "_mv_parent"
-			parentSpecAlias := parentSpecTableName + "_mv_parent"
-
-			// Join parent AdSpec table to the same Ad we already joined (once per spec table)
-			query += fmt.Sprintf(" JOIN %s %s ON %s.ad_id = Ad.id",
-				parentAdSpecTableName, parentAdSpecAlias, parentAdSpecAlias)
-			// Join parent spec table through parent AdSpec (once per spec table)
-			query += fmt.Sprintf(" JOIN %s %s ON %s.spec_id = %s.id",
-				parentSpecTableName, parentSpecAlias, parentAdSpecAlias, parentSpecAlias)
-
-			// Join all parent field tables from this spec table through the same spec record
-			for _, pf := range groupFields {
-				_, pfSpecTableFieldName, _, pfTableName := pf.parent.GetTableNames()
-				parentFieldAlias := pfTableName + "_mv_parent"
-				// Join parent field table through parent spec (same spec record for all fields)
-				query += fmt.Sprintf(" JOIN %s %s ON %s.%s = %s.id",
-					pfTableName, parentFieldAlias, parentSpecAlias, pfSpecTableFieldName, parentFieldAlias)
-
-				// Split comma-separated values
-				values := strings.Split(pf.value, ",")
-				if len(values) == 0 {
-					continue
-				}
-
-				// Use IN clause for multi-value parent
-				placeholders := make([]string, len(values))
-				for i, val := range values {
-					args = append(args, val)
-					placeholders[i] = fmt.Sprintf("$%d", len(args))
-				}
-				whereClauses = append(whereClauses, fmt.Sprintf("%s.value IN (%s)",
-					parentFieldAlias, strings.Join(placeholders, ", ")))
-
-				// Use HAVING to ensure all values are matched (intersection logic)
-				havingClauses = append(havingClauses, fmt.Sprintf("COUNT(DISTINCT %s.value) = %d",
-					parentFieldAlias, len(values)))
-			}
-		}
-
-		// If we have multiple multi-value parents in the same spec table, we need to ensure all combinations exist
-		// Count distinct combinations of all multi-value parent values
-		if len(multiValueParentsSameSpec) > 1 {
-			var comboParts []string
-			for _, pf := range multiValueParentsSameSpec {
-				_, _, _, pfTableName := pf.parent.GetTableNames()
-				comboParts = append(comboParts, pfTableName+".value")
-			}
-			// Expected number of combinations is the product of all multi-value parent counts
-			expectedCombos := 1
-			for _, pf := range multiValueParentsSameSpec {
-				values := strings.Split(pf.value, ",")
-				expectedCombos *= len(values)
-			}
-			// Use || to concatenate values for counting distinct combinations
-			// Format: value1 || '|' || value2 || '|' || ...
-			comboExpr := strings.Join(comboParts, " || '|' || ")
-			havingClauses = append(havingClauses, fmt.Sprintf("COUNT(DISTINCT (%s)) = %d",
-				comboExpr, expectedCombos))
-		}
-
-		// If we have multiple multi-value parents in different spec tables, we need to ensure all combinations exist
-		// Count distinct combinations of all multi-value parent values from different spec tables
-		if len(multiValueParentsDiffSpec) > 1 {
-			var comboParts []string
-			for _, pf := range multiValueParentsDiffSpec {
-				_, _, _, pfTableName := pf.parent.GetTableNames()
-				// Use the alias we created for this field
-				comboParts = append(comboParts, pfTableName+"_mv_parent.value")
-			}
-			// Expected number of combinations is the product of all multi-value parent counts
-			expectedCombos := 1
-			for _, pf := range multiValueParentsDiffSpec {
-				values := strings.Split(pf.value, ",")
-				expectedCombos *= len(values)
-			}
-			// Use || to concatenate values for counting distinct combinations
-			comboExpr := strings.Join(comboParts, " || '|' || ")
-			havingClauses = append(havingClauses, fmt.Sprintf("COUNT(DISTINCT (%s)) = %d",
-				comboExpr, expectedCombos))
+			*whereClauses = append(*whereClauses, fmt.Sprintf("%s.value IN (%s)",
+				parentFieldAlias, strings.Join(placeholders, ", ")))
+			*havingClauses = append(*havingClauses, fmt.Sprintf("COUNT(DISTINCT %s.value) = %d",
+				parentFieldAlias, len(values)))
 		}
 	}
+}
 
-	// Add WHERE clause
+// addMultiValueCombinationHavings adds HAVING clauses for multiple multi-value parent combinations
+func addMultiValueCombinationHavings(havingClauses *[]string,
+	multiValueParentsSameSpec, multiValueParentsDiffSpec []parentFieldInfo) {
+
+	// Multiple multi-value parents in same spec table
+	if len(multiValueParentsSameSpec) > 1 {
+		var comboParts []string
+		for _, pf := range multiValueParentsSameSpec {
+			_, _, _, pfTableName := pf.parent.GetTableNames()
+			comboParts = append(comboParts, pfTableName+".value")
+		}
+		expectedCombos := 1
+		for _, pf := range multiValueParentsSameSpec {
+			values := strings.Split(pf.value, ",")
+			expectedCombos *= len(values)
+		}
+		comboExpr := strings.Join(comboParts, " || '|' || ")
+		*havingClauses = append(*havingClauses, fmt.Sprintf("COUNT(DISTINCT (%s)) = %d",
+			comboExpr, expectedCombos))
+	}
+
+	// Multiple multi-value parents in different spec tables
+	if len(multiValueParentsDiffSpec) > 1 {
+		var comboParts []string
+		for _, pf := range multiValueParentsDiffSpec {
+			_, _, _, pfTableName := pf.parent.GetTableNames()
+			comboParts = append(comboParts, pfTableName+"_mv_parent.value")
+		}
+		expectedCombos := 1
+		for _, pf := range multiValueParentsDiffSpec {
+			values := strings.Split(pf.value, ",")
+			expectedCombos *= len(values)
+		}
+		comboExpr := strings.Join(comboParts, " || '|' || ")
+		*havingClauses = append(*havingClauses, fmt.Sprintf("COUNT(DISTINCT (%s)) = %d",
+			comboExpr, expectedCombos))
+	}
+}
+
+// addFinalClauses adds WHERE, GROUP BY, HAVING, and ORDER BY clauses to the query
+func addFinalClauses(query string, whereClauses []string, havingClauses []string,
+	tableName string, multiValueParentsSameSpec, multiValueParentsDiffSpec []parentFieldInfo) string {
+
 	if len(whereClauses) > 0 {
 		query += " WHERE " + strings.Join(whereClauses, " AND ")
 	}
 
-	// Add GROUP BY if we have multi-value parents
 	if len(multiValueParentsSameSpec) > 0 || len(multiValueParentsDiffSpec) > 0 {
 		query += fmt.Sprintf(" GROUP BY %s.value", tableName)
 	}
 
-	// Add HAVING clause for multi-value parent intersection
 	if len(havingClauses) > 0 {
 		query += " HAVING " + strings.Join(havingClauses, " AND ")
 	}
 
-	// Add ORDER BY
 	query += fmt.Sprintf(" ORDER BY %s.value", tableName)
 
-	return query, args, nil
+	return query
 }
 
 // GetValuesForAdIDs returns distinct field values for the given ad IDs
@@ -639,25 +694,13 @@ func GetValuesForAdIDs(field Field, adIDs []int) ([]string, error) {
 	return values, err
 }
 
-// executeFilteredQuery builds and executes a SQL query with parent field filters and optional ad filtering
-func executeFilteredQuery(field Field, parentFields []parentFieldInfo, opts filterOptions) ([]string, error) {
-	query, args, err := buildFilteredQuery(field, parentFields, opts)
-	if err != nil {
-		return []string{}, err
-	}
-
-	logger.Debug("executeFilteredQuery",
-		"component", "ad-field",
-		"field", field.Name(),
-		"query", query,
-		"args", args,
-		"parentFields", len(parentFields),
-	)
+// executeQuery executes a SQL query and logs the results
+func executeQuery(field Field, query string, args []interface{}) ([]string, error) {
 
 	var values []string
-	err = db.Select(&values, query, args...)
+	err := db.Select(&values, query, args...)
 	if err != nil {
-		logger.Error("executeFilteredQuery failed",
+		logger.Error("executeQuery failed",
 			"component", "ad-field",
 			"field", field.Name(),
 			"error", err,
@@ -665,12 +708,6 @@ func executeFilteredQuery(field Field, parentFields []parentFieldInfo, opts filt
 		)
 		return []string{}, err
 	}
-
-	logger.Debug("executeFilteredQuery result",
-		"component", "ad-field",
-		"field", field.Name(),
-		"values", values,
-	)
 
 	return values, err
 }
@@ -727,12 +764,6 @@ func NewAdField(adField adField) (Field, error) {
 type parentFieldInfo struct {
 	parent Field
 	value  string
-}
-
-// filterOptions specifies how to filter field values
-type filterOptions struct {
-	filterByActiveAds bool
-	filterByAdIDs     []int // Empty slice means no ad ID filtering
 }
 
 // BuildParentValues builds a parentValues map from fiber context query parameters
