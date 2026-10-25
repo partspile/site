@@ -52,7 +52,7 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: |
-            rockyads/site
+            partspile/site
             ghcr.io/${{ github.repository }}
           tags: |
             type=ref,event=branch
@@ -61,8 +61,8 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-,enable=${{ github.ref_type == 'branch' }}
           labels: |
-            org.opencontainers.image.title=Rocky Ads Site
-            org.opencontainers.image.description=Rocky Ads Site
+            org.opencontainers.image.title=Parts Pile Site
+            org.opencontainers.image.description=Parts Pile Site
 
       - name: Build and push Docker images
         uses: docker/build-push-action@v7
@@ -106,7 +106,7 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: |
-            rockyads/jump-server
+            partspile/jump-server
             ghcr.io/${{ github.repository }}-jump-server
           tags: |
             type=ref,event=branch
@@ -115,7 +115,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-,enable=${{ github.ref_type == 'branch' }}
           labels: |
-            org.opencontainers.image.title=Rocky Ads Jump Server
+            org.opencontainers.image.title=Parts Pile Jump Server
             org.opencontainers.image.description=Ops jump server with admin TUI and MinIO client
 
       - name: Build and push jump server image
@@ -160,7 +160,7 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: |
-            rockyads/minio
+            partspile/minio
             ghcr.io/${{ github.repository }}-minio
           tags: |
             type=ref,event=branch
@@ -169,8 +169,8 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-,enable=${{ github.ref_type == 'branch' }}
           labels: |
-            org.opencontainers.image.title=Rocky Ads MinIO Server
-            org.opencontainers.image.description=MinIO object storage server for Rocky Ads
+            org.opencontainers.image.title=Parts Pile MinIO Server
+            org.opencontainers.image.description=MinIO object storage server for Parts Pile
 
       - name: Build and push MinIO image
         uses: docker/build-push-action@v7
@@ -214,7 +214,7 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: |
-            rockyads/ollama
+            partspile/ollama
             ghcr.io/${{ github.repository }}-ollama
           tags: |
             type=ref,event=branch
@@ -223,7 +223,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix={{branch}}-,enable=${{ github.ref_type == 'branch' }}
           labels: |
-            org.opencontainers.image.title=Rocky Ads Ollama
+            org.opencontainers.image.title=Parts Pile Ollama
             org.opencontainers.image.description=Ollama embedding server with nomic-embed-text
 
       - name: Build and push Ollama image

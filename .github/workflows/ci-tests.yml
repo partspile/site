@@ -16,7 +16,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: rockyads
+          POSTGRES_DB: partspile
         ports:
           - 5432:5432
         options: >-
@@ -39,7 +39,7 @@ jobs:
     - name: Run tests
       run: go test ./...
       env:
-        DATABASE_URL: postgres://postgres:postgres@localhost:5432/rockyads?sslmode=disable
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/partspile?sslmode=disable
         JWT_SECRET: 'test-jwt-secret-key-for-ci-minimum-32-chars-long'
         DB_ENCRYPTION_KEY: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
         DB_HASH_PEPPER: 'AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE='
