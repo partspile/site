@@ -1,7 +1,7 @@
 services:
   redis:
     image: redis:7-alpine
-    container_name: rockyads-redis
+    container_name: partspile-redis
     ports:
       - "6379:6379"
     healthcheck:
@@ -12,15 +12,15 @@ services:
 
   postgres:
     image: pgvector/pgvector:pg18
-    container_name: rockyads-postgres
+    container_name: partspile-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: rockyads
+      POSTGRES_DB: partspile
     ports:
       - "5432:5432"
     volumes:
-      - rockyads_pgdata:/var/lib/postgresql
+      - partspile_pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
@@ -31,8 +31,8 @@ services:
     build:
       context: .
       dockerfile: dockerfiles/Dockerfile.minio
-    image: rockyads-minio:dev
-    container_name: rockyads-minio
+    image: partspile-minio:dev
+    container_name: partspile-minio
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin
@@ -43,7 +43,7 @@ services:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - rockyads_minio_data:/data
+      - partspile_minio_data:/data
     healthcheck:
       test: ["CMD", "bash", "-c", "echo >/dev/tcp/127.0.0.1/9000"]
       interval: 5s
@@ -54,19 +54,19 @@ services:
     build:
       context: .
       dockerfile: dockerfiles/Dockerfile.jump-server
-    image: rockyads-jump-server:dev
-    container_name: rockyads-jump-server
+    image: partspile-jump-server:dev
+    container_name: partspile-jump-server
     ports:
       - "8000:10000"
     environment:
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/rockyads?sslmode=disable
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/partspile?sslmode=disable
       REDIS_URL: redis://redis:6379
       DB_ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
       DB_HASH_PEPPER: AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
       MINIO_API_URL: http://minio:9000
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
-      MINIO_BUCKET_NAME: rockyads
+      MINIO_BUCKET_NAME: partspile
     depends_on:
       postgres:
         condition: service_healthy
@@ -79,11 +79,11 @@ services:
 
   ollama:
     image: ollama/ollama:latest
-    container_name: rockyads-ollama
+    container_name: partspile-ollama
     ports:
       - "11434:11434"
     volumes:
-      - rockyads_ollama:/root/.ollama
+      - partspile_ollama:/root/.ollama
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 10s
@@ -101,6 +101,6 @@ services:
     restart: "no"
 
 volumes:
-  rockyads_pgdata:
-  rockyads_minio_data:
-  rockyads_ollama:
+  partspile_pgdata:
+  partspile_minio_data:
+  partspile_ollama:
