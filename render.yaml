@@ -5,6 +5,59 @@ projects:
   - name: Production
     networking:
       isolation: enabled
+    # Groups cannot use fromDatabase, fromService, or sync: false.
+    # Connection URLs are set on the services that need them.
+    envVarGroups:
+    - name: BASE
+      envVars:
+      - key: APP_NAME
+        value: "Parts Pile"
+      - key: CONTACT_EMAIL
+        value: contact@parts-pile.com
+      - key: PUBLIC_SITE_URL
+        value: https://parts-pile.com
+      - key: DB_ENCRYPTION_KEY
+        generateValue: true
+      - key: DB_HASH_PEPPER
+        generateValue: true
+      - key: SHARE_SECRET
+        generateValue: true
+    - name: JWT
+      envVars:
+      - key: JWT_SECRET
+        generateValue: true
+    - name: TWILIO
+      envVars:
+      # Replace these in the dashboard before site can boot.
+      # SID must start with AC, Verify SID with VA, From number E.164.
+      - key: TWILIO_ACCOUNT_SID
+        generateValue: true
+      - key: TWILIO_AUTH_TOKEN
+        generateValue: true
+      - key: TWILIO_FROM_NUMBER
+        generateValue: true
+      - key: TWILIO_VERIFY_SERVICE_SID
+        generateValue: true
+    - name: MINIO
+      envVars:
+      - key: MINIO_ROOT_USER
+        generateValue: true
+      - key: MINIO_ROOT_PASSWORD
+        generateValue: true
+    - name: LLMs
+      envVars:
+      # Replace in the dashboard. Startup does not check these.
+      - key: GROK_API_KEY
+        generateValue: true
+      - key: GEOAPIFY_API_KEY
+        generateValue: true
+    - name: TURNSTILE
+      envVars:
+      # Replace in the dashboard before site can serve the bot gate.
+      - key: TURNSTILE_SITE_KEY
+        generateValue: true
+      - key: TURNSTILE_SECRET_KEY
+        generateValue: true
     services:
     - type: web
       name: site
@@ -19,6 +72,32 @@ projects:
       - fromGroup: MINIO
       - fromGroup: LLMs
       - fromGroup: TURNSTILE
+      - key: DATABASE_URL
+        fromDatabase:
+          name: partspile-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: redis
+          type: keyvalue
+          property: connectionString
+      - key: MINIO_API_URL
+        fromService:
+          name: minio
+          type: web
+          property: hostport
+      - key: MINIO_PUBLIC_URL
+        fromService:
+          name: minio
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: MINIO_BUCKET_NAME
+        value: partspile
+      - key: OLLAMA_URL
+        fromService:
+          name: ollama
+          type: pserv
+          property: hostport
       region: oregon
       healthCheckPath: /health
       domains:
@@ -63,6 +142,8 @@ projects:
       envVars:
       - key: OLLAMA_HOST
         value: 0.0.0.0:11434
+      - key: PORT
+        value: "11434"
       - key: OLLAMA_KEEP_ALIVE
         value: "-1"
       region: oregon
@@ -76,6 +157,22 @@ projects:
       envVars:
       - fromGroup: BASE
       - fromGroup: MINIO
+      - key: DATABASE_URL
+        fromDatabase:
+          name: partspile-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: redis
+          type: keyvalue
+          property: connectionString
+      - key: MINIO_API_URL
+        fromService:
+          name: minio
+          type: web
+          property: hostport
+      - key: MINIO_BUCKET_NAME
+        value: partspile
       region: oregon
       disk:
         name: disk

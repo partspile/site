@@ -106,6 +106,9 @@ func TestMain(m *testing.M) {
 	configValue.Set(reflect.ValueOf([]byte(testJWTSecret)))
 
 	reflect.ValueOf(&config.CookieSecure).Elem().SetBool(false)
+	reflect.ValueOf(&config.ServerName).Elem().SetString("Rocky Ads")
+	reflect.ValueOf(&config.ContactEmail).Elem().SetString(
+		"contact@rockyads.com")
 
 	if config.TwilioFromNumber == "" {
 		reflect.ValueOf(&config.TwilioFromNumber).Elem().SetString("+15555550100")

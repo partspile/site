@@ -120,8 +120,8 @@ redis-cli -u "$REDIS_URL"
 
 - `PORT` — HTTP listen port. Default: `10000`.
 - `PORT_TEST` — port used by integration tests. Default: `10001`.
-- `APP_NAME` — display name. Default: `Rocky Ads`.
-- `CONTACT_EMAIL` — contact address shown in the UI. Default: `contact@rockyads.com`.
+- `APP_NAME` — required. Display name shown in the UI.
+- `CONTACT_EMAIL` — required. Contact address shown in the UI.
 - `LOCAL_DEVELOPMENT` — set to `true` so auth cookies work over plain HTTP (otherwise cookies are Secure-only).
 - `ALLOW_TEST_REGISTRATION` — set to `true` to skip SMS verification for `+1555010xxxx` phones and relax Twilio startup checks (dev/test only).
 - `LOG_LEVEL` — `debug` / `info` / … Default: `info`.
@@ -144,6 +144,8 @@ DB_HASH_PEPPER=AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
 SHARE_SECRET=AgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgI=
 JWT_SECRET=local-dev-jwt-secret-key-min-32-chars
 PUBLIC_SITE_URL=http://localhost:10000
+APP_NAME=Parts Pile
+CONTACT_EMAIL=contact@parts-pile.com
 LOCAL_DEVELOPMENT=true
 ALLOW_TEST_REGISTRATION=true
 MINIO_API_URL=http://127.0.0.1:9000

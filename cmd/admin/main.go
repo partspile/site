@@ -762,6 +762,14 @@ func mustInit(quiet bool) {
 				"distinct from DB_ENCRYPTION_KEY)")
 		os.Exit(1)
 	}
+	if config.ServerName == "" {
+		fmt.Fprintln(os.Stderr, "APP_NAME must be set")
+		os.Exit(1)
+	}
+	if config.ContactEmail == "" {
+		fmt.Fprintln(os.Stderr, "CONTACT_EMAIL must be set")
+		os.Exit(1)
+	}
 	db.SetHashPepper(config.DBHashPepper)
 	if err := db.Init(config.DatabaseURL); err != nil {
 		fmt.Fprintf(os.Stderr, "database: %v\n", err)

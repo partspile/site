@@ -43,23 +43,3 @@ func TestPublicHost(t *testing.T) {
 		t.Errorf("PublicHost() = %q, want empty", got)
 	}
 }
-
-func TestDefaultContactEmail(t *testing.T) {
-	prev := PublicSiteURL
-	t.Cleanup(func() { PublicSiteURL = prev })
-
-	PublicSiteURL = "https://rockyads.com"
-	if got := defaultContactEmail(); got != "contact@rockyads.com" {
-		t.Errorf("defaultContactEmail() = %q", got)
-	}
-
-	PublicSiteURL = "https://www.example.com:8443/path"
-	if got := defaultContactEmail(); got != "contact@www.example.com" {
-		t.Errorf("defaultContactEmail() = %q", got)
-	}
-
-	PublicSiteURL = ""
-	if got := defaultContactEmail(); got != "" {
-		t.Errorf("defaultContactEmail() = %q, want empty", got)
-	}
-}

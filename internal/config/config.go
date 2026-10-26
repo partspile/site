@@ -141,8 +141,8 @@ var (
 
 	// Server configuration
 	ServerPort   = getEnvWithDefault("PORT", "10000")
-	ServerName   = getEnvWithDefault("APP_NAME", "Rocky Ads")
-	ContactEmail = getEnvWithDefault("CONTACT_EMAIL", defaultContactEmail())
+	ServerName   = os.Getenv("APP_NAME")
+	ContactEmail = os.Getenv("CONTACT_EMAIL")
 
 	// Public Bitcoin address for /donate (on-chain receive address).
 	BitcoinDonateAddress = getEnvWithDefault("BITCOIN_DONATE_ADDRESS", "")
@@ -228,13 +228,6 @@ func PublicHost() string {
 		return ""
 	}
 	return u.Hostname()
-}
-
-func defaultContactEmail() string {
-	if host := PublicHost(); host != "" {
-		return "contact@" + host
-	}
-	return ""
 }
 
 // getEncryptionKey loads and decodes a base64-encoded encryption key from environment
@@ -339,4 +332,16 @@ func SecurityCheck() {
 			"error", "PUBLIC_SITE_URL environment variable is required but not set")
 	}
 	logger.Info("Public site URL configured", "url", PublicSiteURL)
+
+	if ServerName == "" {
+		logger.Fatal("Security configuration error",
+			"error", "APP_NAME environment variable is required but not set")
+	}
+	logger.Info("App name configured", "name", ServerName)
+
+	if ContactEmail == "" {
+		logger.Fatal("Security configuration error",
+			"error", "CONTACT_EMAIL environment variable is required but not set")
+	}
+	logger.Info("Contact email configured", "email", ContactEmail)
 }
