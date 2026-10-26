@@ -1,7 +1,6 @@
-# Exported from Render on 2026-07-04T19:07:20Z
 version: "1"
 projects:
-- name: Rocky Ads
+- name: Parts Pile
   environments:
   - name: Production
     networking:
@@ -11,7 +10,7 @@ projects:
       name: site
       runtime: image
       image:
-        url: docker.io/rockyads/site:latest
+        url: docker.io/partspile/site:latest
       plan: starter
       envVars:
       - fromGroup: BASE
@@ -23,8 +22,8 @@ projects:
       region: oregon
       healthCheckPath: /health
       domains:
-      - rockyads.com
-      - www.rockyads.com
+      - parts-pile.com
+      - www.parts-pile.com
       autoDeployTrigger: commit
     - type: keyvalue
       name: redis
@@ -59,7 +58,7 @@ projects:
       name: ollama
       runtime: image
       image:
-        url: docker.io/rockyads/ollama:latest
+        url: docker.io/partspile/ollama:latest
       plan: starter
       envVars:
       - key: OLLAMA_HOST
@@ -72,7 +71,7 @@ projects:
       name: jump-server
       runtime: image
       image:
-        url: docker.io/rockyads/jump-server:latest
+        url: docker.io/partspile/jump-server:latest
       plan: starter
       envVars:
       - fromGroup: BASE
@@ -84,9 +83,9 @@ projects:
         sizeGB: 2
       autoDeployTrigger: commit
     databases:
-    - name: rockyads-db
-      databaseName: rockyads_db
-      user: rockyads_db_user
+    - name: partspile-db
+      databaseName: partspile_db
+      user: partspile_db_user
       plan: basic-1gb
       region: oregon
       ipAllowList:
