@@ -126,8 +126,7 @@ projects:
         value: "off"
       region: oregon
       healthCheckPath: /minio/health/live
-      # ENTRYPOINT is /usr/bin/minio; this overrides CMD only.
-      dockerCommand: server /data --address $HOST:$PORT
+      dockerCommand: '/bin/sh -c "mkdir -p /data && exec minio server --address $HOST:$PORT /data"'
       disk:
         name: disk
         mountPath: /data
