@@ -31,7 +31,7 @@ Without a TTY, `admin` exits immediately (stdin EOF). Use `ssh -t` or an equival
 Menu:
 
 - **Backup** — writes `backups/backup-YYYYMMDD-HHMMSS.tar.gz`
-- **Restore** — pick a file from `backups/`, optionally enter source `BACKUP_DB_ENCRYPTION_KEY`, confirm wipe, restore
+- **Restore** — pick a file from `backups/`, optionally enter source `BACKUP_DB_ENCRYPTION_KEY`, confirm wipe, restore. Leave the key blank and put `users.csv` in `backups/` to fill names and phones from that file instead.
 - **Init database** — wipe and reload schema + categories (or with seed users/ads)
 - **Promote / Demote admin** — by username
 
@@ -43,7 +43,7 @@ Menu:
 |---------|-----|
 | `DB_ENCRYPTION_KEY` | Live DB crypto (name/phone; journals sealed on write/restore) |
 | `DB_HASH_PEPPER` | HMAC pepper for `name_hash` / `phone_hash` (must differ from encryption key) |
-| `BACKUP_DB_ENCRYPTION_KEY` | Decrypt archive user fields when restoring from another env (prompted in TUI; empty uses `DB_ENCRYPTION_KEY`) |
+| `BACKUP_DB_ENCRYPTION_KEY` | Decrypt archive user fields when restoring from another env (prompted in TUI; empty uses `backups/users.csv` if present, otherwise `DB_ENCRYPTION_KEY`) |
 
 Backup verify-decrypts users with `DB_ENCRYPTION_KEY` and stores ciphertext in the archive. Restore re-keys users to the target `DB_ENCRYPTION_KEY`, recomputes peppered lookup hashes with `DB_HASH_PEPPER`, and seals conversation journals. Restore resets the DB like init (schema + categories) before import. Ad embeddings and `vector_metadata` are included in the archive (base64 pgvector binary on each ad) so search works without recomputing after restore. Older archives without embeddings still restore; those ads get vectors from the server backfill on startup. Account pictures (`users/{id}/account.jpg`) are stored under `user_accounts/{name_hash}/` and re-uploaded to the restored user IDs. Older archives without that directory still restore; users keep `has_account_picture` and restore logs a warning for each missing file.
 
@@ -120,6 +120,7 @@ See the [MinIO Client documentation](https://docs.min.io/docs/minio-client-quick
 | Binary | Purpose |
 |--------|---------|
 | `admin` | Interactive TUI: backup/restore, init DB, promote/demote |
+| `dumpusers` | CSV of decrypted names, phones, and password hashes |
 | `migrate_images` | One-time upload of local ad image files to MinIO |
 | `convert_images` | One-time MinIO WebP/PNG → JPEG rewrite |
 | `migrate_desc_additions` | One-time fold of appended description history into the listing body |

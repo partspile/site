@@ -29,7 +29,8 @@ func verifyUserDecrypt(u UserRow) error {
 	return nil
 }
 
-func resolveUserID(u UserRow, backupKey []byte) (int, error) {
+func resolveUserID(u UserRow, backupKey []byte,
+	fromCSV map[string]csvUser) (int, error) {
 	var id int
 	err := db.QueryRow(
 		`SELECT id FROM users WHERE name_hash = $1`, u.NameHash,
@@ -85,22 +86,9 @@ func resolveUserID(u UserRow, backupKey []byte) (int, error) {
 		return 0, fmt.Errorf("insert user %s: %w", u.NameHash, err)
 	}
 
-	decryptKey := backupKey
-	if len(decryptKey) != 32 {
-		decryptKey = config.DBEncryptionKey
-	}
-
-	name, err := decryptField(
-		decryptKey, u.EncryptUserID, []byte(u.EncryptedName), []byte(u.NameNonce),
-	)
+	name, phone, err := userPlaintext(u, backupKey, fromCSV)
 	if err != nil {
-		return 0, fmt.Errorf("decrypt name for user %s: %w", u.NameHash, err)
-	}
-	phone, err := decryptField(
-		decryptKey, u.EncryptUserID, []byte(u.EncryptedPhone), []byte(u.PhoneNonce),
-	)
-	if err != nil {
-		return 0, fmt.Errorf("decrypt phone for user %s: %w", u.NameHash, err)
+		return 0, err
 	}
 
 	encName, nameNonce, err := encryption.Encrypt(
@@ -137,6 +125,41 @@ func resolveUserID(u UserRow, backupKey []byte) (int, error) {
 		return 0, fmt.Errorf("update encrypted user %s: %w", u.NameHash, err)
 	}
 	return id, nil
+}
+
+func userPlaintext(u UserRow, backupKey []byte,
+	fromCSV map[string]csvUser) (string, string, error) {
+	if fromCSV != nil {
+		p, ok := fromCSV[csvUserKey(u.PasswordHash, u.PasswordSalt)]
+		if !ok {
+			return "", "", fmt.Errorf(
+				"users.csv has no password_hash match for user %s",
+				u.NameHash)
+		}
+		return p.name, p.phone, nil
+	}
+
+	decryptKey := backupKey
+	if len(decryptKey) != 32 {
+		decryptKey = config.DBEncryptionKey
+	}
+	name, err := decryptField(
+		decryptKey, u.EncryptUserID,
+		[]byte(u.EncryptedName), []byte(u.NameNonce),
+	)
+	if err != nil {
+		return "", "", fmt.Errorf(
+			"decrypt name for user %s: %w", u.NameHash, err)
+	}
+	phone, err := decryptField(
+		decryptKey, u.EncryptUserID,
+		[]byte(u.EncryptedPhone), []byte(u.PhoneNonce),
+	)
+	if err != nil {
+		return "", "", fmt.Errorf(
+			"decrypt phone for user %s: %w", u.NameHash, err)
+	}
+	return name, phone, nil
 }
 
 func decryptField(key []byte, encryptID int, ciphertext, nonce []byte) (string, error) {
