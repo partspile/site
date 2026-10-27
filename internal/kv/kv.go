@@ -7,9 +7,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	fiberredis "github.com/gofiber/storage/redis/v3"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/logger"
 	"github.com/redis/go-redis/v9"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/logger"
 )
 
 var (

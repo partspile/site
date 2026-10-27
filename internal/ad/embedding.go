@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/facet"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/facet"
 )
 
 type EmbeddingInput struct {

@@ -3,7 +3,7 @@ package vector_test
 import (
 	"testing"
 
-	"github.com/rocky-ads/site/internal/vector"
+	"github.com/partspile/site/internal/vector"
 )
 
 func TestAggregateEmbeddings(t *testing.T) {

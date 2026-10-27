@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rocky-ads/site/internal/journal"
+	"github.com/partspile/site/internal/journal"
 )
 
 func TestMessagesAndRockEventsFromJournal(t *testing.T) {

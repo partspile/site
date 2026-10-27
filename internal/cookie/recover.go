@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/config"
+	"github.com/partspile/site/internal/config"
 )
 
 const recoverSessionCookie = "recover_session"

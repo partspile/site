@@ -2,10 +2,10 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/local"
-	"github.com/rocky-ads/site/internal/ui"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/local"
+	"github.com/partspile/site/internal/ui"
 )
 
 func HomeHandler(c *fiber.Ctx) error {

@@ -2,9 +2,9 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/imagestore"
-	"github.com/rocky-ads/site/internal/param"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/imagestore"
+	"github.com/partspile/site/internal/param"
 )
 
 func validImageSize(size string) bool {

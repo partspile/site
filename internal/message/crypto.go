@@ -1,8 +1,8 @@
 package message
 
 import (
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/encryption"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/encryption"
 )
 
 func openJournal(id int, stored string) (string, error) {

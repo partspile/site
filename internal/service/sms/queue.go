@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rocky-ads/site/internal/db"
+	"github.com/partspile/site/internal/db"
 )
 
 // Notification represents a queued SMS notification

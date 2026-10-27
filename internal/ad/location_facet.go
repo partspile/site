@@ -3,9 +3,9 @@ package ad
 import (
 	"strings"
 
-	"github.com/rocky-ads/site/internal/facet"
-	"github.com/rocky-ads/site/internal/local"
-	"github.com/rocky-ads/site/internal/location"
+	"github.com/partspile/site/internal/facet"
+	"github.com/partspile/site/internal/local"
+	"github.com/partspile/site/internal/location"
 )
 
 const addressLoginPrompt = "(log in to see address)"

@@ -10,7 +10,7 @@ import (
 	"unicode"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/rocky-ads/site/internal/db"
+	"github.com/partspile/site/internal/db"
 )
 
 // DatabaseURL returns the test database connection string.
@@ -18,11 +18,11 @@ func DatabaseURL() string {
 	if url := os.Getenv("DATABASE_URL"); url != "" {
 		return url
 	}
-	return "postgres://postgres:postgres@localhost:5432/rockyads?sslmode=disable"
+	return "postgres://postgres:postgres@localhost:5432/partspile?sslmode=disable"
 }
 
 // PackageDatabaseURL returns a DATABASE_URL with an isolated database name
-// for the given package suffix (e.g. rockyads -> rockyads_backup_db).
+// for the given package suffix (e.g. partspile -> partspile_backup_db).
 func PackageDatabaseURL(suffix string) string {
 	base := DatabaseURL()
 	u, err := url.Parse(base)
@@ -34,7 +34,7 @@ func PackageDatabaseURL(suffix string) string {
 		dbName = dbName[:i]
 	}
 	if dbName == "" {
-		dbName = "rockyads"
+		dbName = "partspile"
 	}
 	u.Path = "/" + dbName + "_" + suffix
 	return u.String()

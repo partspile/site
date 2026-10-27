@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/ad"
+	"github.com/partspile/site/internal/ad"
 )
 
 func GetCategoryID(c *fiber.Ctx) int {

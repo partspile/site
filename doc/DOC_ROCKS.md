@@ -1,18 +1,18 @@
-# Rocks at Rocky Ads
+# Rocks at Parts Pile
 
 ## Scarce Peer Disputes, Visible Consequences, Provisional Assessment
 
 **Document type:** Product design, threat, and legal analysis  
 **Audience:** Product, engineering, trust & safety, and legal reviewers  
-**Scope:** How Rocky Ads rocks work end-to-end after the throw-confirm UX; the philosophy behind scarcity-based, peer-visible disputes; dispute assessment (optional preview, on-demand store); known flaws; abuse paths; and legal tensions of self-policing with public rock signals and AI paraphrase.  
-**Based on:** Rocky Ads site implementation (Go / Fiber / Postgres / Grok rock opinions / encrypted conversation journals), August 2026.  
+**Scope:** How Parts Pile rocks work end-to-end after the throw-confirm UX; the philosophy behind scarcity-based, peer-visible disputes; dispute assessment (optional preview, on-demand store); known flaws; abuse paths; and legal tensions of self-policing with public rock signals and AI paraphrase.  
+**Based on:** Parts Pile site implementation (Go / Fiber / Postgres / Grok rock opinions / encrypted conversation journals), August 2026.  
 **Companions:** [DOC_PHONE_ONLY_IDENTITY_AND_SECURITY.md](DOC_PHONE_ONLY_IDENTITY_AND_SECURITY.md) (identity / SMS); [DOC_LOCAL_LAUNCH_CAR_TRUCK_PARTS.md](DOC_LOCAL_LAUNCH_CAR_TRUCK_PARTS.md) (go-to-market: rocks as trust signal, not a substitute for liquidity).
 
 ---
 
 ## Abstract
 
-Rocky Ads treats classifieds trust as a **scarce, peer-enforced signal**, not a staffed ticket queue. Every member may keep at most **three outstanding rocks**. Throwing one on a conversation marks a dispute, journals a canned reason, and increments a visible rock count on either the **ad** (inquirer threw) or the **inquirer’s profile** (owner threw). Rock icons on ads (and the **dispute assessment** behind them) are **public**—no login required. The assessment names parties only as **Owner** and **Inquirer**, never by username. Enough **ad-bound** rocks remove the listing from search.
+Parts Pile treats classifieds trust as a **scarce, peer-enforced signal**, not a staffed ticket queue. Every member may keep at most **three outstanding rocks**. Throwing one on a conversation marks a dispute, journals a canned reason, and increments a visible rock count on either the **ad** (inquirer threw) or the **inquirer’s profile** (owner threw). Rock icons on ads (and the **dispute assessment** behind them) are **public**—no login required. The assessment names parties only as **Owner** and **Inquirer**, never by username. Enough **ad-bound** rocks remove the listing from search.
 
 The throw path is deliberate, not a one-click flag: a confirm modal shows remaining rocks, direction-specific caution, required reason radios (with examples; policy links to Terms), and an optional **Review assessment** that opens a stacked preview modal. Throw itself is fast—it does **not** call Grok. A stored dispute assessment is generated **on demand** when someone opens the opinion from the conversation or a rock icon. Pre-throw review is ephemeral and never written to `rock_opinions`.
 
@@ -24,9 +24,9 @@ The design is anti-bureaucratic. Terms and FAQ push ordinary listing problems in
 
 Classic newspaper classifieds had almost no platform moderation: the paper printed the ad; parties sorted risk in the real world. Modern marketplaces inverted that into report queues, classifiers, and opaque enforcement. Users learn that “Report” is slow, inconsistent, or captured by whoever can spam the button.
 
-Rocky Ads starts from a different thesis (also in the local-launch notes):
+Parts Pile starts from a different thesis (also in the local-launch notes):
 
-| Pain on FB / CL | Rocky Ads angle |
+| Pain on FB / CL | Parts Pile angle |
 |-----------------|-----------------|
 | No shared trust signal | Rocks mark disputed ads / actors; ads assumed good until rocked |
 | Fake / throwaway reporters | Phone-gated accounts raise sockpuppet cost; rocks themselves are scarce |
@@ -53,7 +53,7 @@ The brand metaphor is intentional: a rock is heavier than a flag emoji. You only
 
 5. **Publicity is the enforcement.** A rock is not a private DM to staff. Rock icons on the ad are a public signal; clicking them opens the **assessment** for anyone (including guests). The **message thread stays private** to the owner and inquirer (both logged in). Assessments do not disclose participant usernames—only Owner/Inquirer roles. Shame and search demotion do work a moderator queue would otherwise do.
 
-6. **Intentional throw, optional AI.** Reasons are required. Assessment is optional before throw (preview) and lazy after throw (first opinion view). AI is provisional community guidance, not a Rocky Ads ruling or legal advice.
+6. **Intentional throw, optional AI.** Reasons are required. Assessment is optional before throw (preview) and lazy after throw (first opinion view). AI is provisional community guidance, not a Parts Pile ruling or legal advice.
 
 7. **Operator reserve powers remain.** Terms still allow removal or account restriction for law or service protection. Rocks are the *default* path for ordinary listing problems, not a waiver of emergency duties.
 
@@ -181,7 +181,7 @@ Embeddings include natural-language rock context so similarity search is not bli
 
 **Image attach** (`shouldAttachImages`): only if the image store is configured and the ad has images, **and** either (a) messages mention image-ish words, or (b) reason is `policy` and there are **no** messages yet. Otherwise text-only. When attaching: indices `1..min(imageCount, MaxImagesPerAd)` at `480w`, base64 data-URI, `detail: "low"`. Cap is **20** (same as ad upload max)—not a separate opinion quota.
 
-**Scale:** **1** = inquirer clearly in the right … **5** = balanced … **10** = owner clearly in the right. UI tilts a beam from the score. Copy: provisional community guidance, not a Rocky Ads ruling.
+**Scale:** **1** = inquirer clearly in the right … **5** = balanced … **10** = owner clearly in the right. UI tilts a beam from the score. Copy: provisional community guidance, not a Parts Pile ruling.
 
 **Invalidation → regenerate on next view** keeps opinions aligned with new messages, edits, and images—at the cost of possible score flips and repeat model spend.
 

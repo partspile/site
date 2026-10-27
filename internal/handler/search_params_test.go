@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/facet"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/facet"
 )
 
 func TestSearchVisibleToggle(t *testing.T) {

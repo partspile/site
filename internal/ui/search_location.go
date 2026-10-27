@@ -3,7 +3,7 @@ package ui
 import (
 	"strconv"
 
-	uiads "github.com/rocky-ads/site/internal/ui/ads"
+	uiads "github.com/partspile/site/internal/ui/ads"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"

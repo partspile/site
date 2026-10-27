@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/db"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/db"
 )
 
 func TestCreateAdWithMileage(t *testing.T) {

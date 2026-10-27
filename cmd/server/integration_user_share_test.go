@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/user"
 )
 
 func TestSharedUserProfile(t *testing.T) {

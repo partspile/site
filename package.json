@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rocky-ads/site.git"
+    "url": "git+https://github.com/partspile/site.git"
   },
   "keywords": [],
   "author": "",
@@ -21,7 +21,7 @@
     "tailwindcss": "^4.3.3"
   },
   "bugs": {
-    "url": "https://github.com/rocky-ads/site/issues"
+    "url": "https://github.com/partspile/site/issues"
   },
-  "homepage": "https://github.com/rocky-ads/site#readme"
+  "homepage": "https://github.com/partspile/site#readme"
 }

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rocky-ads/site/internal/config"
+	"github.com/partspile/site/internal/config"
 )
 
 const (

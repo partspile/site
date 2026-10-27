@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/facet"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/facet"
 )
 
 func TestHealthCheck(t *testing.T) {
@@ -119,9 +119,9 @@ func TestHomePageSEO(t *testing.T) {
 		t.Fatal(err)
 	}
 	html := string(body)
-	if !strings.Contains(html, "Rocky Ads - Car") ||
+	if !strings.Contains(html, "Parts Pile - Car") ||
 		!strings.Contains(html, "Truck Parts") {
-		t.Error("expected homepage title Rocky Ads - Car & Truck Parts")
+		t.Error("expected homepage title Parts Pile - Car & Truck Parts")
 	}
 	if !strings.Contains(html, `rel="canonical"`) {
 		t.Error("expected canonical link")

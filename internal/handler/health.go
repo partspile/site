@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/db"
+	"github.com/partspile/site/internal/db"
 )
 
 // HandleHealth returns the health status of the application

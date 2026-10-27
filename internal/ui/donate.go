@@ -3,7 +3,7 @@ package ui
 import (
 	"fmt"
 
-	"github.com/rocky-ads/site/internal/config"
+	"github.com/partspile/site/internal/config"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rocky-ads/site/internal/entrylog"
+	"github.com/partspile/site/internal/entrylog"
 )
 
 func TestAppendAndParseMessage(t *testing.T) {

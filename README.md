@@ -1,19 +1,19 @@
-# Rocky Ads Web Site
+# Parts Pile Web Site
 
-[Rocky Ads](https://rockyads.com) is classified ads for the Internet.
+[Parts Pile](https://parts-pile.com) is classified ads for the Internet.
 
 <p align="center">
   <img src="static/images/classifieds.jpg" alt="Newspaper classifieds" height="500">
 </p>
 
-Remember classified ads? Easy, simple. Post an ad with your phone number and folks contact you. Rocky Ads works the same way, except your phone number stays hidden.
+Remember classified ads? Easy, simple. Post an ad with your phone number and folks contact you. Parts Pile works the same way, except your phone number stays hidden.
 
 &emsp;🚫 No email  
 &emsp;🚫 No Facebook friends  
 &emsp;🚫 No posting fees  
 &emsp;🚫 No credit cards
 
-All you need is your phone number to [get started](https://rockyads.com/register).
+All you need is your phone number to [get started](https://parts-pile.com/register).
 
 ## Development
 
@@ -54,7 +54,7 @@ Input: `input.css` → output: `static/css/output.css`.
 Ad images are stored in MinIO (`cgr.dev/chainguard/minio:latest`). The server requires `MINIO_API_URL` (and related credentials) to start.
 
 - `MINIO_API_URL` — S3 API endpoint used by the server (private-network host in production).
-- `MINIO_PUBLIC_URL` — browser-facing host used when minting presigned PUT/GET URLs (e.g. `https://minio.rockyads.com` or `http://127.0.0.1:9000` locally). Defaults to `MINIO_API_URL` if unset.
+- `MINIO_PUBLIC_URL` — browser-facing host used when minting presigned PUT/GET URLs (e.g. `https://minio.parts-pile.com` or `http://127.0.0.1:9000` locally). Defaults to `MINIO_API_URL` if unset.
 
 Browsers upload JPEG derivatives via short-lived **presigned PUT** URLs. Listing/detail pages embed **reused long-lived presigned GET** URLs so image bytes come from MinIO and remain browser-cacheable.
 
@@ -84,7 +84,7 @@ Bot gate before OTP start (register / change-phone). Required at server start un
 
 ### DB (Postgres)
 
-- `DATABASE_URL` — PostgreSQL DSN. Default: `postgres://localhost:5432/rockyads?sslmode=disable`. With docker-compose Postgres: `postgres://postgres:postgres@localhost:5432/rockyads?sslmode=disable`.
+- `DATABASE_URL` — PostgreSQL DSN. Default: `postgres://localhost:5432/partspile?sslmode=disable`. With docker-compose Postgres: `postgres://postgres:postgres@localhost:5432/partspile?sslmode=disable`.
 - `DB_ENCRYPTION_KEY` — required. Base64-encoded 32-byte (256-bit) key for encrypting user name/phone.
 - `DB_HASH_PEPPER` — required. Base64-encoded 32-byte (256-bit) HMAC pepper for `name_hash` / `phone_hash` lookups. Must differ from `DB_ENCRYPTION_KEY`.
 - `SHARE_SECRET` — required. Base64-encoded 32-byte (256-bit) key for opaque `/u/…` profile share links. Must differ from `DB_ENCRYPTION_KEY` and `DB_HASH_PEPPER`.
@@ -137,7 +137,7 @@ docker compose up -d   # starts postgres, redis, minio, jump-server, ollama
 Set in `.env`:
 
 ```
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/rockyads?sslmode=disable
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/partspile?sslmode=disable
 REDIS_URL=redis://localhost:6379
 DB_ENCRYPTION_KEY=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 DB_HASH_PEPPER=AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=
@@ -152,7 +152,7 @@ MINIO_API_URL=http://127.0.0.1:9000
 MINIO_PUBLIC_URL=http://127.0.0.1:9000
 MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=minioadmin
-MINIO_BUCKET_NAME=rockyads
+MINIO_BUCKET_NAME=partspile
 OLLAMA_URL=http://localhost:11434
 ```
 

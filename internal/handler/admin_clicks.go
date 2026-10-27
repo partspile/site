@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/ui"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/ui"
 )
 
 func AdminClicksHandler(c *fiber.Ctx) error {

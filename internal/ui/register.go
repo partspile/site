@@ -1,8 +1,8 @@
 package ui
 
 import (
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/password"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/password"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"

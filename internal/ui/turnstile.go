@@ -1,8 +1,8 @@
 package ui
 
 import (
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/service/turnstile"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/service/turnstile"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )

@@ -8,9 +8,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/logger"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/logger"
 )
 
 var ErrInvalid = errors.New("invalid or expired registration ticket")

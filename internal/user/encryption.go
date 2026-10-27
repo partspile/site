@@ -1,8 +1,8 @@
 package user
 
 import (
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/encryption"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/encryption"
 )
 
 func EncryptName(userID int,

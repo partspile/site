@@ -2,9 +2,9 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/service/sms"
-	"github.com/rocky-ads/site/internal/ui"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/service/sms"
+	"github.com/partspile/site/internal/ui"
 )
 
 func AdminDashboardHandler(c *fiber.Ctx) error {

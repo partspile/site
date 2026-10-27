@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/db/testdb"
-	"github.com/rocky-ads/site/internal/facet"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/seed"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/db/testdb"
+	"github.com/partspile/site/internal/facet"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/seed"
+	"github.com/partspile/site/internal/user"
 )
 
 const testDBEncryptionKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="

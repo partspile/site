@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/db"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/db"
 )
 
 // ActivityInspect holds one weighted activity row for admin display.

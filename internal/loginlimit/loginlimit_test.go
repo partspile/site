@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/kv"
 	"github.com/redis/go-redis/v9"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/kv"
 )
 
 func setupTestRedis(t *testing.T) *miniredis.Miniredis {

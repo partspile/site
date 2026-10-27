@@ -12,7 +12,7 @@ func TestQRModuleCounts(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, c := range cats {
-		url := CategoryURL("rockyads.com", c.ID)
+		url := CategoryURL("parts-pile.com", c.ID)
 		for _, level := range []qrcode.RecoveryLevel{qrcode.Low, qrcode.Medium} {
 			code, err := qrcode.New(url, level)
 			if err != nil {

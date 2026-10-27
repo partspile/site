@@ -3,7 +3,7 @@ package rockopinion
 import (
 	"fmt"
 
-	"github.com/rocky-ads/site/internal/config"
+	"github.com/partspile/site/internal/config"
 )
 
 const rockOpinionConvID = "rock-opinion"

@@ -4,7 +4,7 @@ import (
 	"slices"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/ui"
+	"github.com/partspile/site/internal/ui"
 )
 
 var passwordFieldNames = []string{

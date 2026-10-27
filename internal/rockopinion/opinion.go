@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/message"
-	"github.com/rocky-ads/site/internal/rock"
-	"github.com/rocky-ads/site/internal/service/grok"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/message"
+	"github.com/partspile/site/internal/rock"
+	"github.com/partspile/site/internal/service/grok"
+	"github.com/partspile/site/internal/user"
 )
 
 var ErrUnavailable = errors.New("rock opinion unavailable")

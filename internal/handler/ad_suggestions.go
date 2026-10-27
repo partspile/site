@@ -5,13 +5,13 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/currency"
-	"github.com/rocky-ads/site/internal/facet"
-	"github.com/rocky-ads/site/internal/local"
-	"github.com/rocky-ads/site/internal/param"
-	uiads "github.com/rocky-ads/site/internal/ui/ads"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/currency"
+	"github.com/partspile/site/internal/facet"
+	"github.com/partspile/site/internal/local"
+	"github.com/partspile/site/internal/param"
+	uiads "github.com/partspile/site/internal/ui/ads"
 )
 
 func SuggestionsHandler(c *fiber.Ctx) error {

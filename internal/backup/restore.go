@@ -11,15 +11,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/dbinit"
+	"github.com/partspile/site/internal/encryption"
+	"github.com/partspile/site/internal/imagestore"
+	"github.com/partspile/site/internal/imgconv"
+	"github.com/partspile/site/internal/journal"
+	"github.com/partspile/site/internal/logger"
 	"github.com/pgvector/pgvector-go"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/dbinit"
-	"github.com/rocky-ads/site/internal/encryption"
-	"github.com/rocky-ads/site/internal/imagestore"
-	"github.com/rocky-ads/site/internal/imgconv"
-	"github.com/rocky-ads/site/internal/journal"
-	"github.com/rocky-ads/site/internal/logger"
 )
 
 var restoreImagePattern = regexp.MustCompile(

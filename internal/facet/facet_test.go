@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rocky-ads/site/internal/currency"
+	"github.com/partspile/site/internal/currency"
 )
 
 func intPtr(n int) *int       { return &n }

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rocky-ads/site/internal/ui"
+	"github.com/partspile/site/internal/ui"
 )
 
 func TestConversationMessagesAppendSwap(t *testing.T) {

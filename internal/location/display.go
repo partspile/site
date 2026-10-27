@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rocky-ads/site/internal/db"
+	"github.com/partspile/site/internal/db"
 )
 
 // DisplayText formats city/admin area with a country flag for UI display.

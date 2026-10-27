@@ -3,9 +3,9 @@ package search
 import (
 	"fmt"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/vector"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/vector"
 )
 
 func Search(p Params) (Results, error) {

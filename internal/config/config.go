@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rocky-ads/site/internal/logger"
+	"github.com/partspile/site/internal/logger"
 )
 
 const (
@@ -81,7 +81,7 @@ const (
 	HTMXSSEURL = "/js/htmx-ext-sse.min.js"
 
 	// Public links
-	GitHubRepoURL = "https://github.com/rocky-ads/site"
+	GitHubRepoURL = "https://github.com/partspile/site"
 
 	// SSE configuration
 	SSEChannelBufferSize = 100 // Buffer size for user event channels
@@ -99,7 +99,7 @@ var (
 	PublicSiteURL = trimURLBase(os.Getenv("PUBLIC_SITE_URL"))
 
 	// Database configuration
-	DatabaseURL = getEnvWithDefault("DATABASE_URL", "postgres://localhost:5432/rockyads?sslmode=disable")
+	DatabaseURL = getEnvWithDefault("DATABASE_URL", "postgres://localhost:5432/partspile?sslmode=disable")
 
 	// Redis (shared rate limits). Required.
 	// Example: redis://localhost:6379 or redis://red-xxx:6379

@@ -3,7 +3,7 @@ package ad
 import (
 	"strings"
 
-	"github.com/rocky-ads/site/internal/location"
+	"github.com/partspile/site/internal/location"
 )
 
 func resolveLocationFields(locText string) (

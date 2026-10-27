@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rocky-ads/site/internal/config"
+	"github.com/partspile/site/internal/config"
 )
 
 func TestAdShareCanonicalURLAndFlyer(t *testing.T) {

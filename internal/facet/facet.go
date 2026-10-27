@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rocky-ads/site/internal/currency"
-	"github.com/rocky-ads/site/internal/location"
+	"github.com/partspile/site/internal/currency"
+	"github.com/partspile/site/internal/location"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"golang.org/x/text/number"

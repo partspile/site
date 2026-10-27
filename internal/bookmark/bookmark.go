@@ -1,6 +1,6 @@
 package bookmark
 
-import "github.com/rocky-ads/site/internal/db"
+import "github.com/partspile/site/internal/db"
 
 func Add(userID, adID int) error {
 	_, err := db.Exec(

@@ -2,8 +2,8 @@ package cookie
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/location"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/location"
 )
 
 func GetDistanceUnit(c *fiber.Ctx) string {

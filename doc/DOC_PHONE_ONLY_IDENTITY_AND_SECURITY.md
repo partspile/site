@@ -1,18 +1,18 @@
-# Phone-Only Identity at Rocky Ads
+# Phone-Only Identity at Parts Pile
 
 ## Privacy by Minimal Collection, and the Security Questions That Remain
 
 **Document type:** Design and security analysis  
 **Audience:** Product, engineering, and security reviewers  
-**Scope:** How Rocky Ads uses a phone number as the sole contact identifier for registration, account management, and communications; why other personal data is intentionally omitted; and how the system can still be attacked despite a small PII footprint.  
-**Based on:** Rocky Ads site implementation (Go / Fiber / Postgres / Redis / Twilio Verify + Messaging / Turnstile / JWT / Geoapify), August 2026.  
+**Scope:** How Parts Pile uses a phone number as the sole contact identifier for registration, account management, and communications; why other personal data is intentionally omitted; and how the system can still be attacked despite a small PII footprint.  
+**Based on:** Parts Pile site implementation (Go / Fiber / Postgres / Redis / Twilio Verify + Messaging / Turnstile / JWT / Geoapify), August 2026.  
 **Companion runbook:** [DOC_SMS_OTP_AND_PUMPING_DEFENSES.md](DOC_SMS_OTP_AND_PUMPING_DEFENSES.md) (OTP pumping, Console geo, spend alerts).
 
 ---
 
 ## Abstract
 
-Rocky Ads is classified advertising rebuilt for the web: post an ad, get contacted through in-app messaging, and keep your phone number hidden from other users. The product thesis is deliberately austere: **no email, no social graph, no payment card on file for posting, and no profile dossier.** The one piece of personal contact information the system requires is a text-capable phone number in E.164 form.
+Parts Pile is classified advertising rebuilt for the web: post an ad, get contacted through in-app messaging, and keep your phone number hidden from other users. The product thesis is deliberately austere: **no email, no social graph, no payment card on file for posting, and no profile dossier.** The one piece of personal contact information the system requires is a text-capable phone number in E.164 form.
 
 That choice is not a gimmick. It is a privacy architecture. Collecting less personal data reduces the blast radius of a breach, simplifies compliance narratives, and matches the mental model of classic newspaper classifieds—where a phone number was enough to complete a transaction. At the same time, **low PII is not the same as low risk.** Phone numbers are high-value identifiers. SMS channels can be abused. Sessions, passwords, message content, uploaded media, and operational secrets remain attractive targets. This paper explains the product rationale, maps how phone numbers are used in the running system, and explores realistic exploit paths that survive even when the user record is intentionally thin.
 
@@ -24,7 +24,7 @@ Recent hardening (Twilio Verify, registration tickets, Turnstile, Redis OTP/IP l
 
 Traditional consumer marketplaces accumulate identity over time: email for login and receipts, phone for two-factor auth, address for shipping, payment methods for fees, and often a social login for convenience. Each field expands the attack surface and the privacy liability.
 
-Rocky Ads reverses that default. The FAQ states the ideal plainly: the service would prefer to collect no personal information at all, but still needs a reliable way to reach a real person. A text-capable phone number fills three roles at once:
+Parts Pile reverses that default. The FAQ states the ideal plainly: the service would prefer to collect no personal information at all, but still needs a reliable way to reach a real person. A text-capable phone number fills three roles at once:
 
 1. **Proof of a reachable human** during registration (one-time SMS verification via Twilio Verify).
 2. **Account recovery channel** when a user loses password access (inbound SMS proof of possession on Programmable Messaging).
@@ -36,9 +36,9 @@ The economic and UX claims in the product README reinforce the same boundary: no
 
 ---
 
-## 2. What counts as PII here—and what Rocky Ads refuses to collect
+## 2. What counts as PII here—and what Parts Pile refuses to collect
 
-For this paper, **PII** means data that identifies or can reasonably identify a natural person. Phone numbers clearly qualify. Usernames may or may not, depending on whether they encode a real name; Rocky Ads encrypts them at rest anyway. Content users voluntarily type into ads or messages can contain arbitrary sensitive data; that is user-generated content, not a registration requirement.
+For this paper, **PII** means data that identifies or can reasonably identify a natural person. Phone numbers clearly qualify. Usernames may or may not, depending on whether they encode a real name; Parts Pile encrypts them at rest anyway. Content users voluntarily type into ads or messages can contain arbitrary sensitive data; that is user-generated content, not a registration requirement.
 
 ### Intentionally not collected as account fields
 
@@ -71,7 +71,7 @@ Ephemeral or operational stores also touch identity briefly:
 
 There is **no** application `phone_verification` table storing plaintext OTPs (removed when OTP moved to Twilio Verify).
 
-The privacy claim is therefore precise: **Rocky Ads does not need other contact PII to operate the product**, not that the system stores zero information about people. Ads, images, message journals, click history, and geo facets still create a behavioral and content footprint. Minimizing *required contact PII* is the design win; it does not erase all privacy risk.
+The privacy claim is therefore precise: **Parts Pile does not need other contact PII to operate the product**, not that the system stores zero information about people. Ads, images, message journals, click history, and geo facets still create a behavioral and content footprint. Minimizing *required contact PII* is the design win; it does not erase all privacy risk.
 
 ---
 
@@ -114,7 +114,7 @@ Account recovery is possession-based rather than email-based: the browser starts
 
 ### 3.4 What other users see
 
-Other members interact through usernames, ads, and the messaging product. The phone stays server-side. That preserves the classifieds metaphor—people call *the system’s messaging layer*, not a publicly printed mobile number—while still letting Rocky Ads nudge the seller when activity happens.
+Other members interact through usernames, ads, and the messaging product. The phone stays server-side. That preserves the classifieds metaphor—people call *the system’s messaging layer*, not a publicly printed mobile number—while still letting Parts Pile nudge the seller when activity happens.
 
 ### 3.5 Location (related contact-adjacent data)
 
@@ -130,7 +130,7 @@ If an attacker obtains a user table, the absence of emails, payment instruments,
 
 ### 4.2 Smaller third-party fan-out
 
-Email-centric products often share addresses with ESP vendors, support desks, analytics, and CRM tools. Rocky Ads’ contact channel is SMS via Twilio (Verify + Messaging), plus Turnstile for bots and Geoapify for geocoding. That is still a concentrated set of third parties—but it avoids the sprawling email marketing stack that usually accumulates shadow copies of identity.
+Email-centric products often share addresses with ESP vendors, support desks, analytics, and CRM tools. Parts Pile’s contact channel is SMS via Twilio (Verify + Messaging), plus Turnstile for bots and Geoapify for geocoding. That is still a concentrated set of third parties—but it avoids the sprawling email marketing stack that usually accumulates shadow copies of identity.
 
 ### 4.3 Better match to threat of over-collection
 
@@ -144,7 +144,7 @@ Classifieds users often want transactional anonymity relative to strangers. Hidi
 
 ## 5. Security properties that already support the model
 
-Rocky Ads is not relying on obscurity alone. Relevant controls in the current stack include:
+Parts Pile is not relying on obscurity alone. Relevant controls in the current stack include:
 
 - **Password hashing** with Argon2id.
 - **Field encryption** for username and phone (AES-GCM with per-user key derivation from `DB_ENCRYPTION_KEY`).
@@ -173,23 +173,23 @@ A useful mental model: **privacy minimization shrinks the value of some data dum
 
 ### 6.1 The phone number is a high-value singleton
 
-On the **carrier / SMS-possession** axis, Rocky Ads is in the same club as WhatsApp (and Signal, iMessage registration, and many “phone-only” messengers): whoever can receive SMS for the number can prove possession to the service. Rocky Ads does not escape SIM swap, SS7 abuse, malicious MVNO apps, shared family plans, stolen handsets, or social-engineered ports. That weakness lives at the phone network, not in how little other PII is stored.
+On the **carrier / SMS-possession** axis, Parts Pile is in the same club as WhatsApp (and Signal, iMessage registration, and many “phone-only” messengers): whoever can receive SMS for the number can prove possession to the service. Parts Pile does not escape SIM swap, SS7 abuse, malicious MVNO apps, shared family plans, stolen handsets, or social-engineered ports. That weakness lives at the phone network, not in how little other PII is stored.
 
-Where Rocky Ads **differs** from WhatsApp is how the number is *used* after proof:
+Where Parts Pile **differs** from WhatsApp is how the number is *used* after proof:
 
-| | WhatsApp-style messenger | Rocky Ads |
+| | WhatsApp-style messenger | Parts Pile |
 |--|--------------------------|-----------|
 | Daily auth | Phone (re)registration / device link | Username + password |
 | Public / peer identity | Number is the account handle; contacts can discover you | Number is hidden; peers see a username |
 | How strangers reach you | Message the number (or a linked identity) | In-app messaging to the username / ad |
 | Phone’s jobs here | Identity + delivery address | Verify, recover, and notify only |
 
-So “phone only” means different things. WhatsApp makes the number the *social* identity. Rocky Ads makes it a *platform-side contact key* and deliberately keeps a second channel (password) for day-to-day login. That split helps in one direction and hurts in another:
+So “phone only” means different things. WhatsApp makes the number the *social* identity. Parts Pile makes it a *platform-side contact key* and deliberately keeps a second channel (password) for day-to-day login. That split helps in one direction and hurts in another:
 
 - **Helps:** a SIM swap alone does not equal an already-logged-in browser session the way a fresh WhatsApp registration on a stolen number can. The attacker still needs recovery (SMS) *or* the password (stuffing / phishing).
 - **Hurts:** password stuffing and weak passwords become first-class risks WhatsApp largely sidesteps by not using passwords. And for **registration, change-phone, and recovery**, SMS possession remains the lifeline—closer to WhatsApp’s model than to “email + SMS 2FA,” where those are separate channels.
 
-**Implication:** privacy minimization does not buy Rocky Ads a stronger phone channel than WhatsApp’s. It buys a thinner account dossier and a hidden number. Carrier-layer SMS identity risk still applies wherever the product gates on SMS.
+**Implication:** privacy minimization does not buy Parts Pile a stronger phone channel than WhatsApp’s. It buys a thinner account dossier and a hidden number. Carrier-layer SMS identity risk still applies wherever the product gates on SMS.
 
 ### 6.2 Registration and OTP economics
 
@@ -241,7 +241,7 @@ Web admin is insights-only (SMS queue, embeddings, clicks aggregates)—no usern
 
 | Dependency | Failure mode |
 |------------|----------------|
-| Twilio (Verify + Messaging) | Account takeover → SMS redirect, outbound spam as Rocky Ads, inbound webhook forgery if signatures fail; Verify Console misconfig reopens pumping |
+| Twilio (Verify + Messaging) | Account takeover → SMS redirect, outbound spam as Parts Pile, inbound webhook forgery if signatures fail; Verify Console misconfig reopens pumping |
 | `PUBLIC_SITE_URL` misconfig | Webhooks and SMS deep links both use this base; wrong host breaks Twilio and/or phishes users |
 | Cloudflare Turnstile | Misconfig / downtime can block registration or (if bypassed in code paths) weaken bot friction |
 | Redis | Compromise exposes rate-limit keys (including recent E.164s) and can disable OTP/IP throttles |
@@ -270,11 +270,11 @@ The following scenarios are illustrative threat stories grounded in how the syst
 
 ### Narrative A — SIM swap recovery takeover
 
-An attacker social-engineers the victim’s carrier, ports the number, starts recovery on Rocky Ads, texts `RECOVER <code>` from the newly controlled line, resets the password, and reads message history about local meetups. No email inbox was needed. The “low PII” database still yielded conversation content and ad activity once the account was owned.
+An attacker social-engineers the victim’s carrier, ports the number, starts recovery on Parts Pile, texts `RECOVER <code>` from the newly controlled line, resets the password, and reads message history about local meetups. No email inbox was needed. The “low PII” database still yielded conversation content and ad activity once the account was owned.
 
 ### Narrative B — Database / Redis backup without the encryption key
 
-An attacker steals a logical Postgres backup. AES-GCM phone ciphertext resists direct read. Register/change-phone OTPs are not in the app database (Twilio Verify). Peppered phone hashes resist offline E.164 dictionaries without `DB_HASH_PEPPER`. A separate Redis dump may list E.164s that recently hit OTP start limits. The attacker may then phishing-SMS those numbers with a lookalike “verify your Rocky Ads phone” link.
+An attacker steals a logical Postgres backup. AES-GCM phone ciphertext resists direct read. Register/change-phone OTPs are not in the app database (Twilio Verify). Peppered phone hashes resist offline E.164 dictionaries without `DB_HASH_PEPPER`. A separate Redis dump may list E.164s that recently hit OTP start limits. The attacker may then phishing-SMS those numbers with a lookalike “verify your Parts Pile phone” link.
 
 ### Narrative C — Registration step confusion / race *(mitigated)*
 
@@ -284,7 +284,7 @@ An attacker steals a logical Postgres backup. AES-GCM phone ciphertext resists d
 
 ### Narrative D — SMS brand phishing via config foot-gun
 
-A deployment sets `PUBLIC_SITE_URL` to a wrong host. Legitimate unread-message texts and Twilio webhooks both use that host. Users, trained by Rocky Ads to trust SMS links into `/auth/user/messages`, may land on an attacker site. The application’s cryptography never failed; the operational URL did. Mitigation is ops discipline (set `PUBLIC_SITE_URL` to the real public site), not a second base URL.
+A deployment sets `PUBLIC_SITE_URL` to a wrong host. Legitimate unread-message texts and Twilio webhooks both use that host. Users, trained by Parts Pile to trust SMS links into `/auth/user/messages`, may land on an attacker site. The application’s cryptography never failed; the operational URL did. Mitigation is ops discipline (set `PUBLIC_SITE_URL` to the real public site), not a second base URL.
 
 ### Narrative E — Credential stuffing without any phone involvement *(mitigated)*
 
@@ -318,7 +318,7 @@ Bots drive Verify creates toward premium destinations. Current stack raises cost
 | Offline phone-hash correlation | No | Re-identification of members | ~~Medium~~ Mitigated | Needs `DB_HASH_PEPPER` + DB |
 | Geoapify / Grok third-party leak | No | Location text / usernames leave boundary | Low–Medium | By design for those features |
 
-The pattern is consistent: **almost none of the serious threats require Rocky Ads to have collected email or credit cards.**
+The pattern is consistent: **almost none of the serious threats require Parts Pile to have collected email or credit cards.**
 
 ---
 
@@ -344,11 +344,11 @@ Status relative to the current codebase:
 
 ## 10. Conclusion
 
-Rocky Ads’ phone-only approach is a coherent privacy strategy: one practical contact channel, hidden from other users, reused for verification, recovery, and message notifications, with a deliberate refusal to assemble an email-and-profile dossier. That stance reduces certain breach harms and keeps the product honest about classifieds-scale identity.
+Parts Pile’s phone-only approach is a coherent privacy strategy: one practical contact channel, hidden from other users, reused for verification, recovery, and message notifications, with a deliberate refusal to assemble an email-and-profile dossier. That stance reduces certain breach harms and keeps the product honest about classifieds-scale identity.
 
 Recent work moved OTP ownership to Twilio Verify, bound registration completion to a signed `reg_ticket`, added Turnstile and Redis-backed OTP/IP/login limits, and documented pumping defenses. Those changes shrink several of the highest-leverage *application* bugs and cost attacks. They do not shrink carrier-layer SIM risk, weak passwords under the login caps, JWT/key compromise, or content scams.
 
-The correct reading of the architecture remains: not “little PII, therefore safe,” but **“little PII, therefore the remaining controls on phone proof, sessions, secrets, and content access must be excellent.”** Privacy minimization is necessary and valuable. For Rocky Ads, it is also a bet that engineering discipline around a single contact identifier can outperform the false comfort of collecting more personal data “for security.” That bet only pays off if the phone channel, the password channel, and the operational envelope keep hardening with the same seriousness that motivated collecting so little in the first place.
+The correct reading of the architecture remains: not “little PII, therefore safe,” but **“little PII, therefore the remaining controls on phone proof, sessions, secrets, and content access must be excellent.”** Privacy minimization is necessary and valuable. For Parts Pile, it is also a bet that engineering discipline around a single contact identifier can outperform the false comfort of collecting more personal data “for security.” That bet only pays off if the phone channel, the password channel, and the operational envelope keep hardening with the same seriousness that motivated collecting so little in the first place.
 
 ---
 

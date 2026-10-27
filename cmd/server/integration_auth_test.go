@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/user"
 )
 
 func TestLoginHandler(t *testing.T) {

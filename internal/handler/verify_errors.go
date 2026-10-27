@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/service/sms"
-	"github.com/rocky-ads/site/internal/service/verify"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/service/sms"
+	"github.com/partspile/site/internal/service/verify"
 )
 
 func verifyStartErrorMessage(err error) string {

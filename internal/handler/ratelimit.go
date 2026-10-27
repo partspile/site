@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
-	"github.com/rocky-ads/site/internal/config"
+	"github.com/partspile/site/internal/config"
 )
 
 // Registration, recovery, and login limiters are built in InitRateLimiters

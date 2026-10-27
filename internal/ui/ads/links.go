@@ -1,7 +1,7 @@
 package ads
 
 import (
-	"github.com/rocky-ads/site/internal/ad"
+	"github.com/partspile/site/internal/ad"
 	g "maragu.dev/gomponents"
 	. "maragu.dev/gomponents/html"
 )

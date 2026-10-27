@@ -4,8 +4,8 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/param"
-	"github.com/rocky-ads/site/internal/ui"
+	"github.com/partspile/site/internal/param"
+	"github.com/partspile/site/internal/ui"
 )
 
 func ImageNavigationHandler(c *fiber.Ctx) error {

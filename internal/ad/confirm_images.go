@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/db"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/db"
 )
 
 // ConfirmImages sets image_count after client uploads succeed.

@@ -2,8 +2,8 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/ui"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/ui"
 )
 
 func IntroBannerDismissHandler(c *fiber.Ctx) error {

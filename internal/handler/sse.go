@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/local"
-	"github.com/rocky-ads/site/internal/logger"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/local"
+	"github.com/partspile/site/internal/logger"
 	"github.com/sasha-s/go-deadlock"
 	"github.com/valyala/fasthttp"
 )

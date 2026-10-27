@@ -5,7 +5,7 @@ import (
 	"net/url"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/ui"
+	"github.com/partspile/site/internal/ui"
 )
 
 func showError(c *fiber.Ctx, errMsg string) error {

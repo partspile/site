@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/entrylog"
-	"github.com/rocky-ads/site/internal/rock"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/entrylog"
+	"github.com/partspile/site/internal/rock"
+	"github.com/partspile/site/internal/user"
 )
 
 type Conversation struct {

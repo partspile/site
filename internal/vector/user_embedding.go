@@ -3,7 +3,7 @@ package vector
 import (
 	"fmt"
 
-	"github.com/rocky-ads/site/internal/db"
+	"github.com/partspile/site/internal/db"
 )
 
 // Buyer signals only: listings the user posted would pull browse

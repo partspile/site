@@ -12,8 +12,8 @@
                         "port": 5432,
                         "driver": "PostgreSQL",
                         "name": "render postgress",
-                        "database": "rockyads_db",
-                        "username": "rockyads_db_user",
+                        "database": "partspile_db",
+                        "username": "partspile_db_user",
                         "password": "si37Z6nUvGEj7Ey8mp63G31idRiOHqoG"
                 },
                 {
@@ -26,7 +26,7 @@
                         },
                         "driver": "PostgreSQL",
                         "name": "local postgres",
-                        "database": "rockyads",
+                        "database": "partspile",
                         "username": "postgres",
                         "password": "postgres"
                 }

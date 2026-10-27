@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rocky-ads/site/internal/ad"
+	"github.com/partspile/site/internal/ad"
 )
 
 func TestRenderSearchResultsGeoNoInArea(t *testing.T) {

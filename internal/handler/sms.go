@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/accountrecovery"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/service/sms"
-	"github.com/rocky-ads/site/internal/ui"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/accountrecovery"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/service/sms"
+	"github.com/partspile/site/internal/ui"
+	"github.com/partspile/site/internal/user"
 )
 
 var smsOptOutKeywords = map[string]struct{}{

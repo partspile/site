@@ -9,7 +9,7 @@ import (
 	"io"
 	"path/filepath"
 
-	"github.com/rocky-ads/site/internal/config"
+	"github.com/partspile/site/internal/config"
 	"github.com/skip2/go-qrcode"
 )
 

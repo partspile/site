@@ -4,15 +4,15 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/imagestore"
-	"github.com/rocky-ads/site/internal/local"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/param"
-	"github.com/rocky-ads/site/internal/rockopinion"
-	"github.com/rocky-ads/site/internal/vector"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/imagestore"
+	"github.com/partspile/site/internal/local"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/param"
+	"github.com/partspile/site/internal/rockopinion"
+	"github.com/partspile/site/internal/vector"
 )
 
 type presignImagesRequest struct {

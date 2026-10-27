@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rocky-ads/site/internal/businesscard"
+	"github.com/partspile/site/internal/businesscard"
 )
 
 func TestLoadCategoriesAlphabeticalIDs(t *testing.T) {
@@ -28,8 +28,8 @@ func TestLoadCategoriesAlphabeticalIDs(t *testing.T) {
 }
 
 func TestCategoryURL(t *testing.T) {
-	got := businesscard.CategoryURL("rockyads.com", 4)
-	want := "https://rockyads.com/c/4"
+	got := businesscard.CategoryURL("parts-pile.com", 4)
+	want := "https://parts-pile.com/c/4"
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
@@ -47,7 +47,7 @@ func TestRenderPrintCard(t *testing.T) {
 
 	img, err := businesscard.RenderPrintCard(businesscard.PrintCardOptions{
 		Category:   cat,
-		Host:       "rockyads.com",
+		Host:       "parts-pile.com",
 		ImagesRoot: businesscard.ResolveRepoPath("static/images/category"),
 	})
 	if err != nil {
@@ -104,7 +104,7 @@ func TestRenderPrintCardAllCategories(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			_, err := businesscard.RenderPrintCard(businesscard.PrintCardOptions{
 				Category:   cat,
-				Host:       "rockyads.com",
+				Host:       "parts-pile.com",
 				ImagesRoot: businesscard.ResolveRepoPath("static/images/category"),
 			})
 			if err != nil {
@@ -125,7 +125,7 @@ func TestLongCategoryNameFits(t *testing.T) {
 	}
 	_, err = businesscard.RenderPrintCard(businesscard.PrintCardOptions{
 		Category:   cat,
-		Host:       "rockyads.com",
+		Host:       "parts-pile.com",
 		ImagesRoot: businesscard.ResolveRepoPath("static/images/category"),
 	})
 	if err != nil {
@@ -163,7 +163,7 @@ func abs(n int) int {
 }
 
 func TestCategoryURLUsesHTTPS(t *testing.T) {
-	url := businesscard.CategoryURL("rockyads.com", 1)
+	url := businesscard.CategoryURL("parts-pile.com", 1)
 	if !strings.HasPrefix(url, "https://") {
 		t.Fatalf("expected https URL, got %q", url)
 	}

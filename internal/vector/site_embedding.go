@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/rocky-ads/site/internal/db"
+	"github.com/partspile/site/internal/db"
 )
 
 func getSiteActivities(categoryID int, _ string, limit int) ([]AdActivity, error) {

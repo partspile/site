@@ -7,9 +7,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/rocky-ads/site/internal/imagestore"
-	"github.com/rocky-ads/site/internal/imgconv"
-	"github.com/rocky-ads/site/internal/logger"
+	"github.com/partspile/site/internal/imagestore"
+	"github.com/partspile/site/internal/imgconv"
+	"github.com/partspile/site/internal/logger"
 )
 
 func main() {

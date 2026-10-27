@@ -2,13 +2,13 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/local"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/loginlimit"
-	"github.com/rocky-ads/site/internal/password"
-	"github.com/rocky-ads/site/internal/ui"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/local"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/loginlimit"
+	"github.com/partspile/site/internal/password"
+	"github.com/partspile/site/internal/ui"
+	"github.com/partspile/site/internal/user"
 )
 
 func LoginHandler(c *fiber.Ctx) error {

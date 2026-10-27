@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/location"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/location"
 )
 
 func TestIntegrationResolveLocationCacheHit(t *testing.T) {

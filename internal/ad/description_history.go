@@ -7,11 +7,11 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/currency"
-	"github.com/rocky-ads/site/internal/entrylog"
-	"github.com/rocky-ads/site/internal/facet"
-	"github.com/rocky-ads/site/internal/location"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/currency"
+	"github.com/partspile/site/internal/entrylog"
+	"github.com/partspile/site/internal/facet"
+	"github.com/partspile/site/internal/location"
 )
 
 const OriginalLabel = "original"

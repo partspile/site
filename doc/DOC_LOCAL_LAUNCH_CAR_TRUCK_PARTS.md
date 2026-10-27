@@ -2,15 +2,15 @@
 
 **Document type:** Go-to-market playbook  
 **Audience:** Founder / operator  
-**Scope:** How to create early marketplace liquidity for Rocky Ads in **Car & Truck Parts**, starting in one local metro, without waiting for national scale.  
-**Live site:** https://rockyads.com  
+**Scope:** How to create early marketplace liquidity for Parts Pile in **Car & Truck Parts**, starting in one local metro, without waiting for national scale.  
+**Live site:** https://parts-pile.com  
 **Related:** [README.md](../README.md) (product thesis), [DOC_PHONE_ONLY_IDENTITY_AND_SECURITY.md](DOC_PHONE_ONLY_IDENTITY_AND_SECURITY.md) (trust story).
 
 ---
 
 ## 1. Why this category, why local first
 
-Rocky Ads already defaults to **Car & Truck Parts**. That matches both founder expertise and public scam-volume data: vehicles / vehicle parts lead Facebook Marketplace purchase-fraud categories in the clearest public breakdown (~21% of scam volume in [TSB’s Marketplace analysis](https://www.tsb.co.uk/news-releases/urgent-consumer-warning-as-tsb-finds-over-a-third-of-adverts-on-facebook-marketplace-could-be-scams.html)). Frustration with fakes and flaky counterparties is the wedge; Rocky’s phone-gated accounts, hidden numbers, in-app messaging, and rocks are the retention story once people show up.
+Parts Pile already defaults to **Car & Truck Parts**. That matches both founder expertise and public scam-volume data: vehicles / vehicle parts lead Facebook Marketplace purchase-fraud categories in the clearest public breakdown (~21% of scam volume in [TSB’s Marketplace analysis](https://www.tsb.co.uk/news-releases/urgent-consumer-warning-as-tsb-finds-over-a-third-of-adverts-on-facebook-marketplace-could-be-scams.html)). Frustration with fakes and flaky counterparties is the wedge; Parts Pile’s phone-gated accounts, hidden numbers, in-app messaging, and rocks are the retention story once people show up.
 
 Phone + rocks do **not** invent network effects by themselves. Liquidity does: enough relevant inventory that a buyer finds something, and enough messages that a seller bothers to stay. Cold start is therefore a **geography × niche** problem, not a “ship more features” problem.
 
@@ -53,13 +53,13 @@ Track weekly. Vanity pageviews without messages do not count as liquidity.
 
 - [ ] Buyers browsing without being asked (search, direct links, dual-posts).
 - [ ] ≥ **5–10** in-app conversations started.
-- [ ] ≥ **1–3** completed local meetups / sales attributed to Rocky (even if also listed elsewhere).
+- [ ] ≥ **1–3** completed local meetups / sales attributed to Parts Pile (even if also listed elsewhere).
 - [ ] At least one seller who is **not you** posts a second ad after a reply.
 
 ### Day 60–90 — Early network effect signals
 
 - [ ] Returning buyers ask “got anything else?”
-- [ ] Sellers dual-post *Rocky-first* or Rocky-only for some items.
+- [ ] Sellers dual-post *Parts Pile-first* or Parts Pile-only for some items.
 - [ ] Organic word of mouth inside one club / group / shop.
 - [ ] You can name the next niche or adjacent zip cluster with evidence, not hope.
 
@@ -74,8 +74,8 @@ Marketplace order of operations: **inventory → buyers → more sellers**. Empt
 ### 4.1 Seed supply (week 1–2)
 
 1. **List your own real inventory** — parts you would actually sell. Same bar as a good FB/CL ad: fitment, photos, price, pickup area.
-2. **Ask friendly sellers** (shops, friends, club members) to cross-post one item with “reply on Rocky Ads” as the contact path. Offer to help them register (phone OTP is the only friction).
-3. **Dual-post strategically** — keep the listing on FB/CL if needed for reach, but move chat to Rocky so the product gets the conversation and the trust story gets used.
+2. **Ask friendly sellers** (shops, friends, club members) to cross-post one item with “reply on Parts Pile” as the contact path. Offer to help them register (phone OTP is the only friction).
+3. **Dual-post strategically** — keep the listing on FB/CL if needed for reach, but move chat to Parts Pile so the product gets the conversation and the trust story gets used.
 4. **Do not fake scarcity with spam accounts.** Thin, honest inventory beats a wall of ghost ads; rocks and phone costs exist partly so junk is expensive.
 
 ### 4.2 Bring buyers to that inventory (week 2–6)
@@ -84,8 +84,8 @@ Use channels where parts people already complain about Marketplace:
 
 | Channel | How to use it | Caution |
 |---------|---------------|---------|
-| Local / niche Facebook groups | Share a specific listing or “local parts board without the Marketplace circus,” link to rockyads.com | Follow group rules; soft-sell; no blast spam |
-| Craigslist | Dual-post high-intent items; point replies to Rocky | Same as today; Rocky is the better contact layer |
+| Local / niche Facebook groups | Share a specific listing or “local parts board without the Marketplace circus,” link to parts-pile.com | Follow group rules; soft-sell; no blast spam |
+| Craigslist | Dual-post high-intent items; point replies to Parts Pile | Same as today; Parts Pile is the better contact layer |
 | Car clubs / meets / swap meets | Business cards, QR to category home or a flagship ad, help people post on the spot | Bring a phone; walk registration |
 | Independent shops / yards | Leave cards; offer a free listing for one takeoff part | Respect their time; one concrete ask |
 | Forums / Discord / Reddit (niche) | Answer fitment questions; link your own listing when relevant | No drive-by promo threads |
@@ -95,14 +95,14 @@ Use channels where parts people already complain about Marketplace:
 
 > Classifieds without the Marketplace mess: no posting fees, no credit card, phone stays hidden, message in-app. Built for people who actually buy and sell parts.
 
-Point to the live product, not a slide deck: https://rockyads.com
+Point to the live product, not a slide deck: https://parts-pile.com
 
 ### 4.3 Convert sellers after the first reply
 
-When a dual-posted item gets interest on Rocky:
+When a dual-posted item gets interest on Parts Pile:
 
 - Ask the seller what felt better/worse than Marketplace.
-- Get the **next** part listed Rocky-first.
+- Get the **next** part listed Parts Pile-first.
 - If they got a flake-free meetup, ask for a short quote you can reuse in groups (with permission).
 
 ### 4.4 Widen only after density
@@ -119,9 +119,9 @@ Do not open “all categories, nationwide” as a growth plan until one beachhea
 
 ## 5. Positioning vs Facebook Marketplace & Craigslist
 
-Use Rocky’s real differences; do not claim magic.
+Use Parts Pile’s real differences; do not claim magic.
 
-| Pain on FB / CL | Rocky Ads angle |
+| Pain on FB / CL | Parts Pile angle |
 |-----------------|-----------------|
 | Fake accounts / bots | Phone verification raises cost of throwaway spam |
 | Phone number harvested / deposit scams | Number hidden; contact stays in-app |
@@ -172,8 +172,8 @@ Everything else waits until the beachhead has closed loops. Engineering docs sta
 ## 9. First actions this week
 
 1. Fill the beachhead table in §2 (metro + niche).  
-2. Get to **20** strong Car & Truck Parts listings in that niche/metro on https://rockyads.com.  
-3. Dual-post the best **5** on FB/CL with Rocky as the reply path.  
+2. Get to **20** strong Car & Truck Parts listings in that niche/metro on https://parts-pile.com.  
+3. Dual-post the best **5** on FB/CL with Parts Pile as the reply path.  
 4. Tell **10** local wrench people and post once in **one** relevant group (rules-respecting).  
 5. Attend or plan **one** in-person touch (club, swap, shop) with a QR to the site.  
 6. Revisit §3 metrics every Friday; adjust niche or radius before changing the product story.
@@ -184,7 +184,7 @@ Everything else waits until the beachhead has closed loops. Engineering docs sta
 
 | Item | Status |
 |------|--------|
-| Site live | https://rockyads.com |
+| Site live | https://parts-pile.com |
 | Beachhead category | Car & Truck Parts (product default) |
 | Metro / niche chosen | *Fill in §2* |
 | Seed inventory target | 20–40 quality ads |

@@ -3,9 +3,9 @@ package ui
 import (
 	"fmt"
 
-	"github.com/rocky-ads/site/internal/facet"
-	"github.com/rocky-ads/site/internal/local"
-	uiads "github.com/rocky-ads/site/internal/ui/ads"
+	"github.com/partspile/site/internal/facet"
+	"github.com/partspile/site/internal/local"
+	uiads "github.com/partspile/site/internal/ui/ads"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"

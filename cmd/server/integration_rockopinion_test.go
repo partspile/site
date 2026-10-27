@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/message"
-	"github.com/rocky-ads/site/internal/rockopinion"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/message"
+	"github.com/partspile/site/internal/rockopinion"
 )
 
 func setupIntegrationRockOpinion(t *testing.T) (message.Conversation, int) {

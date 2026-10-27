@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/service/grok"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/service/grok"
 )
 
 const (

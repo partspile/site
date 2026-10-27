@@ -8,17 +8,17 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/nyaruka/phonenumbers"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/otplimit"
-	"github.com/rocky-ads/site/internal/password"
-	"github.com/rocky-ads/site/internal/registrationticket"
-	"github.com/rocky-ads/site/internal/service/grok"
-	"github.com/rocky-ads/site/internal/service/turnstile"
-	"github.com/rocky-ads/site/internal/service/verify"
-	"github.com/rocky-ads/site/internal/ui"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/otplimit"
+	"github.com/partspile/site/internal/password"
+	"github.com/partspile/site/internal/registrationticket"
+	"github.com/partspile/site/internal/service/grok"
+	"github.com/partspile/site/internal/service/turnstile"
+	"github.com/partspile/site/internal/service/verify"
+	"github.com/partspile/site/internal/ui"
+	"github.com/partspile/site/internal/user"
 )
 
 func RegisterHandler(c *fiber.Ctx) error {
