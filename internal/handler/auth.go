@@ -4,7 +4,7 @@ import (
 	"net/url"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/local"
+	"github.com/partspile/site/internal/local"
 )
 
 func loginURL(returnPath string) string {

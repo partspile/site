@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/imagestore"
-	"github.com/rocky-ads/site/internal/logger"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/imagestore"
+	"github.com/partspile/site/internal/logger"
 )
 
 var imageFilePattern = regexp.MustCompile(`^(\d+)-(\d+w)\.jpg$`)

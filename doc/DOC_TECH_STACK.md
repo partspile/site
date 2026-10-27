@@ -1,6 +1,6 @@
 # Tech Stack
 
-This document outlines the technologies, frameworks, and tools used in the Rocky Ads web application.
+This document outlines the technologies, frameworks, and tools used in the Parts Pile web application.
 
 ## Backend
 
@@ -200,7 +200,7 @@ Request flow: **handler → domain → handler maps to UI inputs → `ui/` rende
 ## Configuration
 
 Configuration is managed through environment variables:
-- **Database connection** — set `DATABASE_URL` to a PostgreSQL DSN (e.g. `postgres://localhost:5432/rockyads?sslmode=disable` for local dev). For local Postgres via Docker: `docker compose up -d postgres`, then use `postgres://postgres:postgres@localhost:5432/rockyads?sslmode=disable`. Use the Admin TUI to reset schema and categories (optionally with seed users and ads). Integration tests live in `cmd/server` (`integration_*.go`) and share one seeded database via `TestMain`.
+- **Database connection** — set `DATABASE_URL` to a PostgreSQL DSN (e.g. `postgres://localhost:5432/partspile?sslmode=disable` for local dev). For local Postgres via Docker: `docker compose up -d postgres`, then use `postgres://postgres:postgres@localhost:5432/partspile?sslmode=disable`. Use the Admin TUI to reset schema and categories (optionally with seed users and ads). Integration tests live in `cmd/server` (`integration_*.go`) and share one seeded database via `TestMain`.
 - MinIO credentials
 - API keys (Grok, Geoapify, Twilio)
 - Ollama server URL (`OLLAMA_URL`, default `http://localhost:11434`)

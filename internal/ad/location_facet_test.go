@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rocky-ads/site/internal/facet"
+	"github.com/partspile/site/internal/facet"
 )
 
 func TestLocationFacetHelpers(t *testing.T) {

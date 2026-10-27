@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/facet"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/facet"
 )
 
 func TestExpiresAtFromSaleEnd(t *testing.T) {

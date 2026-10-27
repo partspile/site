@@ -3,9 +3,9 @@ package handler
 import (
 	"time"
 
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/logger"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/logger"
 )
 
 // StartAdExpireWorker pauses active ads past the auto-expire age.

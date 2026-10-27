@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/user"
 )
 
 // StartSMSWorker starts the background worker that processes SMS notifications

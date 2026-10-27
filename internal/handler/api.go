@@ -2,10 +2,10 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/param"
-	"github.com/rocky-ads/site/internal/ui"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/param"
+	"github.com/partspile/site/internal/ui"
 	g "maragu.dev/gomponents"
 )
 

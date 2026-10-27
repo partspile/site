@@ -1,4 +1,4 @@
-module github.com/rocky-ads/site
+module github.com/partspile/site
 
 go 1.26.5
 

@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/facet"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/facet"
 )
 
 type Ad struct {

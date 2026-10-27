@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/rock"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/rock"
+	"github.com/partspile/site/internal/user"
 )
 
 var (

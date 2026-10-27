@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/partspile/site/internal/config"
 	"github.com/pgvector/pgvector-go"
-	"github.com/rocky-ads/site/internal/config"
 )
 
 const (

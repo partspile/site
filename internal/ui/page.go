@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/local"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/local"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	"maragu.dev/gomponents/components"

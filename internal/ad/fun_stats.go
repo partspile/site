@@ -3,7 +3,7 @@ package ad
 import (
 	"time"
 
-	"github.com/rocky-ads/site/internal/db"
+	"github.com/partspile/site/internal/db"
 )
 
 // MonthlyFunStat is a month-end snapshot of public site totals.

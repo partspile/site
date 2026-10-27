@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/db/testdb"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/db/testdb"
+	"github.com/partspile/site/internal/user"
 )
 
 func resetFunStatsDB(t *testing.T) {

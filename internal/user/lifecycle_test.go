@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/db/testdb"
-	"github.com/rocky-ads/site/internal/logger"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/db/testdb"
+	"github.com/partspile/site/internal/logger"
 )
 
 const testDBEncryptionKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="

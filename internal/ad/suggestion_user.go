@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rocky-ads/site/internal/facet"
+	"github.com/partspile/site/internal/facet"
 )
 
 func suggestionsUserPrompt(in SuggestInput) string {

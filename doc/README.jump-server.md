@@ -5,7 +5,7 @@ The jump server image includes database utilities (`psql`), Redis CLI (`redis-cl
 ## Building
 
 ```bash
-docker build -f dockerfiles/Dockerfile.jump-server -t rockyads-jump-server:dev .
+docker build -f dockerfiles/Dockerfile.jump-server -t partspile-jump-server:dev .
 ```
 
 With docker-compose (includes Postgres and MinIO):
@@ -106,11 +106,11 @@ The MinIO client is pre-installed:
 
 ```bash
 mc alias set local http://minio:9000 minioadmin minioadmin
-mc mb local/rockyads --ignore-existing
-mc mirror static/images/ad/ local/rockyads/
+mc mb local/partspile --ignore-existing
+mc mirror static/images/ad/ local/partspile/
 mc --version
-mc ls local/rockyads
-mc cp local/rockyads/23/1-480w.jpg ./
+mc ls local/partspile
+mc cp local/partspile/23/1-480w.jpg ./
 ```
 
 See the [MinIO Client documentation](https://docs.min.io/docs/minio-client-quickstart-guide.html).

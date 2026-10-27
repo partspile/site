@@ -9,10 +9,10 @@ import (
 	"sort"
 	"time"
 
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/password"
-	"github.com/rocky-ads/site/internal/rock"
-	"github.com/rocky-ads/site/internal/vector"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/password"
+	"github.com/partspile/site/internal/rock"
+	"github.com/partspile/site/internal/vector"
 )
 
 // UserStatus represents the status of a user

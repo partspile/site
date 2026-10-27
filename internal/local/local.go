@@ -2,7 +2,7 @@ package local
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/logger"
+	"github.com/partspile/site/internal/logger"
 )
 
 func GetUserID(c *fiber.Ctx) int {

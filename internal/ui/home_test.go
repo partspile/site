@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	uiads "github.com/rocky-ads/site/internal/ui/ads"
+	uiads "github.com/partspile/site/internal/ui/ads"
 )
 
 func TestCategorySelectLooksLikePicker(t *testing.T) {

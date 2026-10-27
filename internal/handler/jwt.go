@@ -7,10 +7,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/local"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/local"
+	"github.com/partspile/site/internal/user"
 )
 
 // JWTMiddleware is a middleware that validates a JWT token and sets the user in the context.

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/cookie"
+	"github.com/partspile/site/internal/cookie"
 )
 
 func TestCategorySwitchRedirect(t *testing.T) {

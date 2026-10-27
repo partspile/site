@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/rocky-ads/site/internal/businesscard"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/logger"
+	"github.com/partspile/site/internal/businesscard"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/logger"
 )
 
 func main() {
@@ -83,5 +83,5 @@ func slugFilename(cat businesscard.Category) string {
 	slug = strings.ReplaceAll(slug, " ", "-")
 	slug = strings.ReplaceAll(slug, "/", "-")
 	slug = strings.ReplaceAll(slug, "&", "and")
-	return "rocky-ads-" + slug
+	return "partspile-" + slug
 }

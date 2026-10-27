@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/currency"
-	"github.com/rocky-ads/site/internal/facet"
-	"github.com/rocky-ads/site/internal/local"
-	"github.com/rocky-ads/site/internal/vector"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/currency"
+	"github.com/partspile/site/internal/facet"
+	"github.com/partspile/site/internal/local"
+	"github.com/partspile/site/internal/vector"
 )
 
 func CreateAdHandler(c *fiber.Ctx) error {

@@ -7,12 +7,12 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/config"
+	"github.com/partspile/site/internal/config"
 )
 
 func TestRobotsTxt(t *testing.T) {
 	prev := config.PublicSiteURL
-	config.PublicSiteURL = "https://rockyads.com"
+	config.PublicSiteURL = "https://parts-pile.com"
 	t.Cleanup(func() { config.PublicSiteURL = prev })
 
 	body := robotsTxt()
@@ -23,7 +23,7 @@ func TestRobotsTxt(t *testing.T) {
 		"Disallow: /admin/",
 		"Disallow: /api/",
 		"Disallow: /u/",
-		"Sitemap: https://rockyads.com/sitemap.xml",
+		"Sitemap: https://parts-pile.com/sitemap.xml",
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("robots.txt missing %q\n%s", want, body)
@@ -33,14 +33,14 @@ func TestRobotsTxt(t *testing.T) {
 
 func TestSitemapXML(t *testing.T) {
 	prev := config.PublicSiteURL
-	config.PublicSiteURL = "https://rockyads.com"
+	config.PublicSiteURL = "https://parts-pile.com"
 	t.Cleanup(func() { config.PublicSiteURL = prev })
 
 	body := sitemapXML()
 	wants := []string{
-		"https://rockyads.com/",
-		"https://rockyads.com/about",
-		"https://rockyads.com/login",
+		"https://parts-pile.com/",
+		"https://parts-pile.com/about",
+		"https://parts-pile.com/login",
 	}
 	for _, want := range wants {
 		if !strings.Contains(body, "<loc>"+want+"</loc>") {
@@ -56,7 +56,7 @@ func TestSitemapXML(t *testing.T) {
 
 func TestRobotsAndSitemapHandlers(t *testing.T) {
 	prev := config.PublicSiteURL
-	config.PublicSiteURL = "https://rockyads.com"
+	config.PublicSiteURL = "https://parts-pile.com"
 	t.Cleanup(func() { config.PublicSiteURL = prev })
 
 	app := fiber.New()

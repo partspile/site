@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rocky-ads/site/internal/accountrecovery"
-	"github.com/rocky-ads/site/internal/password"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/accountrecovery"
+	"github.com/partspile/site/internal/password"
+	"github.com/partspile/site/internal/user"
 )
 
 func TestRecoverAccountFlow(t *testing.T) {

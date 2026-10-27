@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rocky-ads/site/internal/imagestore"
-	"github.com/rocky-ads/site/internal/message"
-	"github.com/rocky-ads/site/internal/rock"
+	"github.com/partspile/site/internal/imagestore"
+	"github.com/partspile/site/internal/message"
+	"github.com/partspile/site/internal/rock"
 )
 
 func TestBuildUserPromptIncludesReasonAndImages(t *testing.T) {

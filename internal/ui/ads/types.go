@@ -3,7 +3,7 @@ package ads
 import (
 	"fmt"
 
-	"github.com/rocky-ads/site/internal/facet"
+	"github.com/partspile/site/internal/facet"
 )
 
 // PriceRowView holds state for the price row (initial render and HTMX swaps).

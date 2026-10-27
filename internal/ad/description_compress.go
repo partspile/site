@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/rocky-ads/site/internal/service/grok"
+	"github.com/partspile/site/internal/service/grok"
 )
 
 const (

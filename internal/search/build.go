@@ -1,8 +1,8 @@
 package search
 
 import (
-	"github.com/rocky-ads/site/internal/facet"
-	"github.com/rocky-ads/site/internal/location"
+	"github.com/partspile/site/internal/facet"
+	"github.com/partspile/site/internal/location"
 )
 
 // BuildParams converts filter fields into search Params, resolving geo when applicable.

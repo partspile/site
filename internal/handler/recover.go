@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/accountrecovery"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/ui"
+	"github.com/partspile/site/internal/accountrecovery"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/ui"
 )
 
 func setNoStore(c *fiber.Ctx) {

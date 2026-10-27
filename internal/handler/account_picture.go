@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/local"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/ui"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/local"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/ui"
+	"github.com/partspile/site/internal/user"
 )
 
 // PresignAccountPictureHandler returns a short-lived PUT URL for account.jpg.

@@ -3,10 +3,10 @@ package handler
 import (
 	"fmt"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/imagestore"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/ui"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/imagestore"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/ui"
 )
 
 var adImageStore imagestore.Store

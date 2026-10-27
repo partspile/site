@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/message"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/message"
+	"github.com/partspile/site/internal/user"
 )
 
 // ShouldSuppressSMS checks if SMS should be suppressed for a recipient

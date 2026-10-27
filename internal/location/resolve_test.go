@@ -3,7 +3,7 @@ package location
 import (
 	"testing"
 
-	"github.com/rocky-ads/site/internal/service/geoapify"
+	"github.com/partspile/site/internal/service/geoapify"
 )
 
 func TestLocationFromGeoapifyUS(t *testing.T) {

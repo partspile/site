@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rocky-ads/site/internal/cache"
+	"github.com/partspile/site/internal/cache"
 )
 
 // ImageSizes are the JPEG derivative suffixes stored per ad image.

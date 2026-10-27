@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/kv"
 	"github.com/redis/go-redis/v9"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/kv"
 )
 
 var (

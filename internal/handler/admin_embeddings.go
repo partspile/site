@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/local"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/ui"
-	"github.com/rocky-ads/site/internal/user"
-	"github.com/rocky-ads/site/internal/vector"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/local"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/ui"
+	"github.com/partspile/site/internal/user"
+	"github.com/partspile/site/internal/vector"
 )
 
 func AdminEmbeddingsHandler(c *fiber.Ctx) error {

@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/logger"
 	"github.com/pgvector/pgvector-go"
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/logger"
 )
 
 func replacePlaceholders(query string, startIndex int) string {

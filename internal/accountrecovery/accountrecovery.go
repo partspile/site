@@ -16,11 +16,11 @@ import (
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nyaruka/phonenumbers"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/password"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/password"
+	"github.com/partspile/site/internal/user"
 )
 
 const (

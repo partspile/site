@@ -1,6 +1,6 @@
 # Embeddings
 
-How Rocky Ads turns ads and activity into vectors, and how empty-box
+How Parts Pile turns ads and activity into vectors, and how empty-box
 and typed search use them.
 
 **Code:** `internal/vector/`, `internal/search/`  

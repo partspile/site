@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rocky-ads/site/internal/rock"
+	"github.com/partspile/site/internal/rock"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"

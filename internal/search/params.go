@@ -1,6 +1,6 @@
 package search
 
-import "github.com/rocky-ads/site/internal/facet"
+import "github.com/partspile/site/internal/facet"
 
 // WithinMileOptions are valid search within-distance dropdown values (miles).
 var WithinMileOptions = []int{1, 5, 10, 25, 50, 100, 500, 1000}

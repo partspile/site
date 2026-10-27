@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/location"
+	"github.com/partspile/site/internal/location"
 )
 
 func TestGetDistanceUnit(t *testing.T) {

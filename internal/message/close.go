@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/journal"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/journal"
 )
 
 func CloseConversationsForDeletedAd(adID, actorID int) ([]Conversation, error) {

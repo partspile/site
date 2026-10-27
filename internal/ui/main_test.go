@@ -4,11 +4,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/rocky-ads/site/internal/config"
+	"github.com/partspile/site/internal/config"
 )
 
 func TestMain(m *testing.M) {
-	config.ServerName = "Rocky Ads"
-	config.ContactEmail = "contact@rockyads.com"
+	config.ServerName = "Parts Pile"
+	config.ContactEmail = "contact@parts-pile.com"
 	os.Exit(m.Run())
 }

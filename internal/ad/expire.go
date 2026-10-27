@@ -3,8 +3,8 @@ package ad
 import (
 	"time"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/facet"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/facet"
 )
 
 // ExpiresAtFromSaleEnd is end of sale_end_date (UTC) plus the sale-end delay.

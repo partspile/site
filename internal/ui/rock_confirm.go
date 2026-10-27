@@ -3,8 +3,8 @@ package ui
 import (
 	"fmt"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/rock"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/rock"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"

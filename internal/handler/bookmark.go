@@ -2,10 +2,10 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/bookmark"
-	"github.com/rocky-ads/site/internal/local"
-	"github.com/rocky-ads/site/internal/param"
-	"github.com/rocky-ads/site/internal/ui"
+	"github.com/partspile/site/internal/bookmark"
+	"github.com/partspile/site/internal/local"
+	"github.com/partspile/site/internal/param"
+	"github.com/partspile/site/internal/ui"
 )
 
 func BookmarkHandler(c *fiber.Ctx) error {

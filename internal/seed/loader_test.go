@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/entrylog"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/entrylog"
 )
 
 func TestMain(m *testing.M) {

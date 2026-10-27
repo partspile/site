@@ -3,7 +3,7 @@ package message
 import (
 	"time"
 
-	"github.com/rocky-ads/site/internal/journal"
+	"github.com/partspile/site/internal/journal"
 )
 
 const (

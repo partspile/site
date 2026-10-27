@@ -9,15 +9,15 @@ import (
 	g "maragu.dev/gomponents"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/currency"
-	"github.com/rocky-ads/site/internal/facet"
-	"github.com/rocky-ads/site/internal/local"
-	"github.com/rocky-ads/site/internal/message"
-	"github.com/rocky-ads/site/internal/search"
-	"github.com/rocky-ads/site/internal/ui"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/currency"
+	"github.com/partspile/site/internal/facet"
+	"github.com/partspile/site/internal/local"
+	"github.com/partspile/site/internal/message"
+	"github.com/partspile/site/internal/search"
+	"github.com/partspile/site/internal/ui"
 )
 
 // render renders a gomponents Node as HTML response

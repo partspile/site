@@ -3,8 +3,8 @@ package main
 import (
 	"testing"
 
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/message"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/message"
 )
 
 func TestIntegrationOpenConversationReadMarking(t *testing.T) {

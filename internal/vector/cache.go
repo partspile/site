@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rocky-ads/site/internal/cache"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/logger"
+	"github.com/partspile/site/internal/cache"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/logger"
 )
 
 var (

@@ -4,12 +4,12 @@ import (
 	"encoding/base64"
 	"regexp"
 
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/imagestore"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/message"
-	"github.com/rocky-ads/site/internal/rock"
-	"github.com/rocky-ads/site/internal/service/grok"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/imagestore"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/message"
+	"github.com/partspile/site/internal/rock"
+	"github.com/partspile/site/internal/service/grok"
 )
 
 var opinionImageStore imagestore.Store

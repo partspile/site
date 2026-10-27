@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rocky-ads/site/internal/imagestore"
-	"github.com/rocky-ads/site/internal/logger"
+	"github.com/partspile/site/internal/imagestore"
+	"github.com/partspile/site/internal/logger"
 )
 
 const DefaultDir = "backups"

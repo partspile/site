@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/rocky-ads/site/internal/vector"
+	"github.com/partspile/site/internal/vector"
 )
 
 func TestIsEmbeddingUnavailable(t *testing.T) {

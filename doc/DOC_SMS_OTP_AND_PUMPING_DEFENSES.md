@@ -1,6 +1,6 @@
 # SMS OTP and Pumping Defenses
 
-Rocky Ads uses **Twilio Verify** (with Fraud Guard) for registration and
+Parts Pile uses **Twilio Verify** (with Fraud Guard) for registration and
 change-phone one-time codes, and **Programmable Messaging** for unread-message
 alerts and inbound SMS (`STOP`, `RECOVER`).
 

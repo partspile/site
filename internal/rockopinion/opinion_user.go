@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/message"
-	"github.com/rocky-ads/site/internal/rock"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/message"
+	"github.com/partspile/site/internal/rock"
 )
 
 type promptInput struct {

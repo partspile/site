@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/facet"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/facet"
 )
 
 const searchCookieName = "search"

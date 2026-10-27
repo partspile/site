@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rocky-ads/site/internal/config"
+	"github.com/partspile/site/internal/config"
 )
 
 func renderPageHTML(t *testing.T, title, path string) string {
@@ -20,17 +20,17 @@ func renderPageHTML(t *testing.T, title, path string) string {
 
 func TestPageHomeSEO(t *testing.T) {
 	prev := config.PublicSiteURL
-	config.PublicSiteURL = "https://rockyads.com"
+	config.PublicSiteURL = "https://parts-pile.com"
 	t.Cleanup(func() { config.PublicSiteURL = prev })
 
 	html := renderPageHTML(t, "Car & Truck Parts", "/")
 	wants := []string{
-		"<title>Rocky Ads - Car &amp; Truck Parts</title>",
-		`rel="canonical" href="https://rockyads.com/"`,
-		`name="description" content="Rocky Ads - Classified Ads.`,
-		`property="og:title" content="Rocky Ads - Car &amp; Truck Parts"`,
+		"<title>Parts Pile - Car &amp; Truck Parts</title>",
+		`rel="canonical" href="https://parts-pile.com/"`,
+		`name="description" content="Parts Pile - Classified Ads.`,
+		`property="og:title" content="Parts Pile - Car &amp; Truck Parts"`,
 		`"@type":"WebSite"`,
-		`"url":"https://rockyads.com/"`,
+		`"url":"https://parts-pile.com/"`,
 		`name="robots" content="index, follow"`,
 	}
 	for _, want := range wants {
@@ -42,14 +42,14 @@ func TestPageHomeSEO(t *testing.T) {
 
 func TestPageLoginSEO(t *testing.T) {
 	prev := config.PublicSiteURL
-	config.PublicSiteURL = "https://rockyads.com"
+	config.PublicSiteURL = "https://parts-pile.com"
 	t.Cleanup(func() { config.PublicSiteURL = prev })
 
 	html := renderPageHTML(t, "Login", "/login")
 	wants := []string{
-		"<title>Rocky Ads - Login</title>",
-		`rel="canonical" href="https://rockyads.com/login"`,
-		`name="description" content="Log in to Rocky Ads`,
+		"<title>Parts Pile - Login</title>",
+		`rel="canonical" href="https://parts-pile.com/login"`,
+		`name="description" content="Log in to Parts Pile`,
 		`name="robots" content="index, follow"`,
 	}
 	for _, want := range wants {
@@ -64,14 +64,14 @@ func TestPageLoginSEO(t *testing.T) {
 
 func TestPageCategoryLandingSEO(t *testing.T) {
 	prev := config.PublicSiteURL
-	config.PublicSiteURL = "https://rockyads.com"
+	config.PublicSiteURL = "https://parts-pile.com"
 	t.Cleanup(func() { config.PublicSiteURL = prev })
 
 	html := renderPageHTML(t, "Cars & Trucks", "/c/6")
 	wants := []string{
-		"<title>Rocky Ads - Cars &amp; Trucks</title>",
-		`rel="canonical" href="https://rockyads.com/c/6"`,
-		`property="og:url" content="https://rockyads.com/c/6"`,
+		"<title>Parts Pile - Cars &amp; Trucks</title>",
+		`rel="canonical" href="https://parts-pile.com/c/6"`,
+		`property="og:url" content="https://parts-pile.com/c/6"`,
 		`name="robots" content="index, follow"`,
 	}
 	for _, want := range wants {
@@ -86,14 +86,14 @@ func TestPageCategoryLandingSEO(t *testing.T) {
 
 func TestPageSharedProfileSEO(t *testing.T) {
 	prev := config.PublicSiteURL
-	config.PublicSiteURL = "https://rockyads.com"
+	config.PublicSiteURL = "https://parts-pile.com"
 	t.Cleanup(func() { config.PublicSiteURL = prev })
 
 	html := renderPageHTML(t, "test", "/u/AAAAAAAAAAAAAAAAAAAAAA")
 	wants := []string{
 		`name="robots" content="noindex, nofollow"`,
-		`rel="canonical" href="https://rockyads.com/u/AAAAAAAAAAAAAAAAAAAAAA"`,
-		`property="og:url" content="https://rockyads.com/u/AAAAAAAAAAAAAAAAAAAAAA"`,
+		`rel="canonical" href="https://parts-pile.com/u/AAAAAAAAAAAAAAAAAAAAAA"`,
+		`property="og:url" content="https://parts-pile.com/u/AAAAAAAAAAAAAAAAAAAAAA"`,
 		`property="og:type" content="profile"`,
 	}
 	for _, want := range wants {

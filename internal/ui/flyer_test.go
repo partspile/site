@@ -5,11 +5,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/rocky-ads/site/internal/config"
+	"github.com/partspile/site/internal/config"
 )
 
 func TestAdShareModalFlyer(t *testing.T) {
-	path := "https://rockyads.com/ad/7"
+	path := "https://parts-pile.com/ad/7"
 	var buf bytes.Buffer
 	if err := AdShareModal(path, "/auth/ad/7/flyer").Render(&buf); err != nil {
 		t.Fatal(err)
@@ -46,7 +46,7 @@ func TestAdShareModalFlyer(t *testing.T) {
 
 func TestAdFlyerPage(t *testing.T) {
 	prev := config.PublicSiteURL
-	config.PublicSiteURL = "https://rockyads.com"
+	config.PublicSiteURL = "https://parts-pile.com"
 	t.Cleanup(func() { config.PublicSiteURL = prev })
 
 	d := AdFlyerData{
@@ -60,7 +60,7 @@ func TestAdFlyerPage(t *testing.T) {
 		FacetLabel:   "2K mi",
 		FacetDetails: []string{"Year: 2018"},
 		Tags:         []string{"road"},
-		AdURL:        "https://rockyads.com/ad/7",
+		AdURL:        "https://parts-pile.com/ad/7",
 	}
 	var buf bytes.Buffer
 	if err := AdFlyerPage(d).Render(&buf); err != nil {
@@ -75,7 +75,7 @@ func TestAdFlyerPage(t *testing.T) {
 		"2K mi",
 		"Year: 2018",
 		"road",
-		"https://rockyads.com/ad/7",
+		"https://parts-pile.com/ad/7",
 		"data:image/png;base64,",
 		"Print",
 		`href="/ad/7"`,
@@ -91,7 +91,7 @@ func TestAdFlyerPage(t *testing.T) {
 		}
 	}
 	if strings.Contains(html, `class="text-xl font-bold"`) {
-		t.Fatal("did not expect Rocky Ads heading on flyer")
+		t.Fatal("did not expect Parts Pile heading on flyer")
 	}
 	descAt := strings.Index(html, "Gently used.")
 	qrAt := strings.Index(html, "QR code for this ad")
@@ -104,7 +104,7 @@ func TestAdFlyerPageNoImages(t *testing.T) {
 	d := AdFlyerData{
 		ID:    3,
 		Title: "No Photos",
-		AdURL: "https://rockyads.com/ad/3",
+		AdURL: "https://parts-pile.com/ad/3",
 	}
 	var buf bytes.Buffer
 	if err := AdFlyerPage(d).Render(&buf); err != nil {
@@ -121,7 +121,7 @@ func TestAdFlyerPageCapsImages(t *testing.T) {
 		ID:         7,
 		ImageCount: 9,
 		Title:      "Many Photos",
-		AdURL:      "https://rockyads.com/ad/7",
+		AdURL:      "https://parts-pile.com/ad/7",
 	}
 	var buf bytes.Buffer
 	if err := AdFlyerPage(d).Render(&buf); err != nil {
@@ -141,7 +141,7 @@ func TestAdFlyerPageImageGrid(t *testing.T) {
 		ID:         7,
 		ImageCount: 2,
 		Title:      "Two Photos",
-		AdURL:      "https://rockyads.com/ad/7",
+		AdURL:      "https://parts-pile.com/ad/7",
 	}
 	var buf bytes.Buffer
 	if err := AdFlyerPage(d).Render(&buf); err != nil {

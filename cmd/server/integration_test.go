@@ -24,19 +24,19 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gofiber/fiber/v2"
+	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/db/testdb"
+	"github.com/partspile/site/internal/handler"
+	"github.com/partspile/site/internal/imagestore"
+	"github.com/partspile/site/internal/kv"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/rockopinion"
+	"github.com/partspile/site/internal/seed"
+	"github.com/partspile/site/internal/vector"
 	"github.com/redis/go-redis/v9"
-	"github.com/rocky-ads/site/internal/ad"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/cookie"
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/db/testdb"
-	"github.com/rocky-ads/site/internal/handler"
-	"github.com/rocky-ads/site/internal/imagestore"
-	"github.com/rocky-ads/site/internal/kv"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/rockopinion"
-	"github.com/rocky-ads/site/internal/seed"
-	"github.com/rocky-ads/site/internal/vector"
 )
 
 var baseURL = "http://localhost:" + config.TestPort
@@ -106,9 +106,9 @@ func TestMain(m *testing.M) {
 	configValue.Set(reflect.ValueOf([]byte(testJWTSecret)))
 
 	reflect.ValueOf(&config.CookieSecure).Elem().SetBool(false)
-	reflect.ValueOf(&config.ServerName).Elem().SetString("Rocky Ads")
+	reflect.ValueOf(&config.ServerName).Elem().SetString("Parts Pile")
 	reflect.ValueOf(&config.ContactEmail).Elem().SetString(
-		"contact@rockyads.com")
+		"contact@parts-pile.com")
 
 	if config.TwilioFromNumber == "" {
 		reflect.ValueOf(&config.TwilioFromNumber).Elem().SetString("+15555550100")

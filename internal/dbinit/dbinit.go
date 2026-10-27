@@ -3,8 +3,8 @@ package dbinit
 import (
 	"fmt"
 
-	"github.com/rocky-ads/site/internal/db"
-	"github.com/rocky-ads/site/internal/seed"
+	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/seed"
 )
 
 // Rebuild drops all tables, applies schema.sql, then loads categories

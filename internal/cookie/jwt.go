@@ -2,7 +2,7 @@ package cookie
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/config"
+	"github.com/partspile/site/internal/config"
 )
 
 func SetJWT(c *fiber.Ctx, token string) {

@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/rocky-ads/site/internal/config"
-	"github.com/rocky-ads/site/internal/logger"
-	"github.com/rocky-ads/site/internal/user"
+	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/logger"
+	"github.com/partspile/site/internal/user"
 	"github.com/twilio/twilio-go"
 	"github.com/twilio/twilio-go/client"
 	Api "github.com/twilio/twilio-go/rest/api/v2010"

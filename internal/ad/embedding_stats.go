@@ -1,7 +1,7 @@
 package ad
 
 import (
-	"github.com/rocky-ads/site/internal/db"
+	"github.com/partspile/site/internal/db"
 )
 
 type EmbeddingStats struct {
