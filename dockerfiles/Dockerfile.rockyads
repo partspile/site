@@ -2,7 +2,7 @@
 
 # rockyads.com stand-in: 301 to PUBLIC_SITE_URL.
 
-FROM golang:1.26.5 AS go-builder
+FROM golang:1.27.3 AS go-builder
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download

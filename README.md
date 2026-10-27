@@ -35,7 +35,7 @@ flowchart LR
 
 ### Prerequisites
 
-- Go 1.26.5+ — https://go.dev/dl
+- Go 1.27.3+ — https://go.dev/dl
 - Node.js (includes npm) — https://nodejs.org, or e.g. `brew install node` on macOS
 
 ### CSS (Tailwind)

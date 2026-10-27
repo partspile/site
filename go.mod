@@ -1,6 +1,6 @@
 module github.com/partspile/site
 
-go 1.26.5
+go 1.27.3
 
 require (
 	github.com/alicebob/miniredis/v2 v2.38.0
