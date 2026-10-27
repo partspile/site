@@ -106,6 +106,24 @@ projects:
       - parts-pile.com
       - www.parts-pile.com
       autoDeployTrigger: commit
+    # Stand-in for rockyads.com: rename landing → Parts Pile.
+    # Value is duplicated from BASE: fromGroup would also attach
+    # that group's secrets, which this service must not have.
+    - type: web
+      name: rockyads
+      runtime: image
+      image:
+        url: docker.io/partspile/rockyads:latest
+      plan: starter
+      envVars:
+      - key: PUBLIC_SITE_URL
+        value: https://parts-pile.com
+      region: oregon
+      healthCheckPath: /health
+      domains:
+      - rockyads.com
+      - www.rockyads.com
+      autoDeployTrigger: commit
     - type: keyvalue
       name: redis
       plan: starter

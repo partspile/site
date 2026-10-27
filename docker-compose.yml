@@ -92,6 +92,17 @@ services:
       timeout: 5s
       retries: 5
 
+  rockyads:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.rockyads
+    image: partspile-rockyads:dev
+    container_name: partspile-rockyads
+    ports:
+      - "8010:10000"
+    environment:
+      PUBLIC_SITE_URL: https://parts-pile.com
+
   ollama-pull:
     image: ollama/ollama:latest
     depends_on:

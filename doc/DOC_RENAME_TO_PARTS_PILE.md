@@ -92,5 +92,5 @@ Rename path chosen to keep the same LLC registry number and EIN with less migrat
 ## Related notes
 
 - GitHub org `partspile` already exists and points at `https://parts-pile.com`.
-- `parts-pile.com` currently redirects to `rockyads.com`.
+- `parts-pile.com` is the live site. The `rockyads` starter service hosts `rockyads.com` / `www.rockyads.com` with a rename landing page (manual link to `PUBLIC_SITE_URL`, no auto-redirect).
 - Knock-out search found no exact “Parts Pile” USPTO mark; name is descriptive (weaker mark, clearer product). Not a clearance opinion.

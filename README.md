@@ -131,7 +131,7 @@ redis-cli -u "$REDIS_URL"
 ### Local dev with docker-compose
 
 ```bash
-docker compose up -d   # starts postgres, redis, minio, jump-server, ollama
+docker compose up -d   # postgres, redis, minio, jump-server, ollama, rockyads
 ```
 
 Set in `.env`:
@@ -176,3 +176,7 @@ go run ./cmd/server
 ```
 
 Open http://localhost:10000.
+
+The `rockyads` container is the rockyads.com stand-in. It listens on
+http://localhost:8010 and serves a rename landing page (link to
+`PUBLIC_SITE_URL`, no auto-redirect). `/health` is for probes.
