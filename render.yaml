@@ -126,7 +126,7 @@ projects:
         value: "off"
       region: oregon
       healthCheckPath: /minio/health/live
-      dockerCommand: mkdir -p /data && exec /usr/bin/minio server --address $HOST:$PORT /data
+      dockerCommand: /usr/bin/minio server --address 0.0.0.0:9000 /data
       disk:
         name: disk
         mountPath: /data
