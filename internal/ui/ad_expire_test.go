@@ -26,9 +26,9 @@ func TestFormatExpiresIn(t *testing.T) {
 		{"one_month_days", now.AddDate(0, 1, 12), "Expires in 1 month 12 days"},
 		{"months", now.AddDate(0, 2, 0), "Expires in 2 months"},
 		{"months_days", now.AddDate(0, 2, 12), "Expires in 2 months 12 days"},
-		// Fresh AdExpireMonths grant is AddDate(0, 3, 0); must not pick up
-		// leftover days from 30-day-month math (~91–92 real days).
-		{"initial_grant", now.AddDate(0, 3, 0), "Expires in 3 months"},
+		// Fresh AdExpireMonths grant is AddDate(0, 12, 0); must not pick up
+		// leftover days from 30-day-month math.
+		{"initial_grant", now.AddDate(0, 12, 0), "Expires in 12 months"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -73,7 +73,7 @@ func TestAdExpireToolbarVisibility(t *testing.T) {
 		Title:     "Test Ad",
 		Active:    true,
 		CreatedAt: created,
-		ExpiresAt: created.AddDate(0, 3, 0),
+		ExpiresAt: created.AddDate(0, 12, 0),
 	}
 
 	t.Run("owner_active", func(t *testing.T) {
@@ -82,7 +82,7 @@ func TestAdExpireToolbarVisibility(t *testing.T) {
 			t.Fatal("expected expire countdown for owner")
 		}
 		if strings.Contains(html, `/auth/ad/1/renew`) {
-			t.Fatal("did not expect Renew for fresh 3-month expires_at")
+			t.Fatal("did not expect Renew for fresh 12-month expires_at")
 		}
 		if !strings.Contains(html, "/images/post_add.svg") {
 			t.Fatal("expected new-ad icon for owner")

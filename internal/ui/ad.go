@@ -574,8 +574,8 @@ func formatExpiresInAt(expiresAt, now time.Time) string {
 		return "Expires soon"
 	}
 	// Calendar months match AdExpireMonths (AddDate months), not
-	// fixed 30-day blocks — else a fresh 3-month grant reads as
-	// "3 months 1 day" / "3 months 2 days".
+	// fixed 30-day blocks — else a fresh 12-month grant can pick up
+	// leftover days from 30-day-month math.
 	months, days := calendarMonthsDays(now, expiresAt)
 
 	monthPart := ""
