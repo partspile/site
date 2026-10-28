@@ -213,6 +213,13 @@ func TestMain(m *testing.M) {
 		panic(fmt.Sprintf("Failed to initialize logger: %v", err))
 	}
 
+	// Isolate from the local/dev "partspile" database.
+	testURL := testdb.PackageDatabaseURL("server")
+	if err := testdb.EnsureDatabase(testURL); err != nil {
+		panic(fmt.Sprintf("Failed to ensure test database: %v", err))
+	}
+	os.Setenv("DATABASE_URL", testURL)
+
 	if err := testdb.InitSchema(); err != nil {
 		panic(fmt.Sprintf("Failed to initialize test database: %v", err))
 	}

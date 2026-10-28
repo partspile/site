@@ -13,16 +13,21 @@ import (
 	"github.com/partspile/site/internal/db"
 )
 
+// defaultTestDatabase is used when DATABASE_URL is unset. It is never the
+// local/dev database name ("partspile") so accidental InitSchema is safe.
+const defaultTestDatabase = "partspile_test"
+
 // DatabaseURL returns the test database connection string.
 func DatabaseURL() string {
-	if url := os.Getenv("DATABASE_URL"); url != "" {
-		return url
+	if u := os.Getenv("DATABASE_URL"); u != "" {
+		return u
 	}
-	return "postgres://postgres:postgres@localhost:5432/partspile?sslmode=disable"
+	return "postgres://postgres:postgres@localhost:5432/" +
+		defaultTestDatabase + "?sslmode=disable"
 }
 
 // PackageDatabaseURL returns a DATABASE_URL with an isolated database name
-// for the given package suffix (e.g. partspile -> partspile_backup_db).
+// for the given package suffix (e.g. partspile -> partspile_backup).
 func PackageDatabaseURL(suffix string) string {
 	base := DatabaseURL()
 	u, err := url.Parse(base)
@@ -34,7 +39,7 @@ func PackageDatabaseURL(suffix string) string {
 		dbName = dbName[:i]
 	}
 	if dbName == "" {
-		dbName = "partspile"
+		dbName = defaultTestDatabase
 	}
 	u.Path = "/" + dbName + "_" + suffix
 	return u.String()
@@ -92,8 +97,16 @@ func validDatabaseName(name string) bool {
 }
 
 // InitSchema drops all tables and applies schema.sql.
+// Refuses the local/dev database name so `go test` cannot wipe it.
 func InitSchema() error {
 	url := DatabaseURL()
+	_, dbName := db.ConnectionTarget(url)
+	if dbName == "partspile" {
+		return fmt.Errorf(
+			"refusing to reset database %q; use PackageDatabaseURL",
+			dbName,
+		)
+	}
 	db.ResetForTest()
 	if err := db.Init(url); err != nil {
 		return fmt.Errorf("init db: %w", err)
