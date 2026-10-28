@@ -63,7 +63,7 @@ func TestLandingAndHealth(t *testing.T) {
 			t.Fatalf("%s redirected to %q", path, loc)
 		}
 		html := string(body)
-		if !strings.Contains(html, "Rocky Ads has been renamed") {
+		if !strings.Contains(html, "has been renamed") {
 			t.Fatalf("%s missing rename note", path)
 		}
 		if !strings.Contains(html, `href="https://parts-pile.com/"`) {
@@ -72,6 +72,24 @@ func TestLandingAndHealth(t *testing.T) {
 		if !strings.Contains(html, "Go To Parts Pile") {
 			t.Fatalf("%s missing CTA label", path)
 		}
+		if !strings.Contains(html, `/images/rock.svg`) {
+			t.Fatalf("%s missing rock icon", path)
+		}
+		if !strings.Contains(html, `"Rocky" is a trademark`) {
+			t.Fatalf("%s missing trademark note", path)
+		}
+	}
+
+	rock, err := client.Get(srv.URL + "/images/rock.svg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rock.Body.Close()
+	if rock.StatusCode != http.StatusOK {
+		t.Fatalf("rock.svg status = %d", rock.StatusCode)
+	}
+	if ct := rock.Header.Get("Content-Type"); ct != "image/svg+xml" {
+		t.Fatalf("rock.svg content-type = %q", ct)
 	}
 
 	health, err := client.Get(srv.URL + "/health")
