@@ -192,6 +192,11 @@ projects:
           property: hostport
       - key: MINIO_BUCKET_NAME
         value: partspile
+      - key: OLLAMA_URL
+        fromService:
+          name: ollama
+          type: pserv
+          property: hostport
       region: oregon
       disk:
         name: disk

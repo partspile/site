@@ -69,6 +69,7 @@ services:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
       MINIO_BUCKET_NAME: partspile
+      OLLAMA_URL: http://ollama:11434
     depends_on:
       postgres:
         condition: service_healthy
