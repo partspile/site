@@ -29,12 +29,14 @@ import (
 	"github.com/partspile/site/internal/cookie"
 	"github.com/partspile/site/internal/db"
 	"github.com/partspile/site/internal/db/testdb"
+	"github.com/partspile/site/internal/dbinit"
+	"github.com/partspile/site/internal/facet"
 	"github.com/partspile/site/internal/handler"
 	"github.com/partspile/site/internal/imagestore"
 	"github.com/partspile/site/internal/kv"
 	"github.com/partspile/site/internal/logger"
 	"github.com/partspile/site/internal/rockopinion"
-	"github.com/partspile/site/internal/seed"
+	"github.com/partspile/site/internal/user"
 	"github.com/partspile/site/internal/vector"
 	"github.com/redis/go-redis/v9"
 )
@@ -50,9 +52,101 @@ const (
 	integrationGarageCategory = 7
 )
 
+// loadIntegrationFixtures creates users and sample ads used by integration tests.
+func loadIntegrationFixtures() error {
+	testUser, err := user.CreateUser("test", "+15550100123", "test")
+	if err != nil {
+		return fmt.Errorf("create test user: %w", err)
+	}
+	if testUser.ID != integrationTestUserID {
+		return fmt.Errorf("test user id=%d, want %d",
+			testUser.ID, integrationTestUserID)
+	}
+	adminUser, err := user.CreateUser("admin", "+15550100124", "admin")
+	if err != nil {
+		return fmt.Errorf("create admin user: %w", err)
+	}
+	if err := user.PromoteToAdmin(adminUser.ID); err != nil {
+		return fmt.Errorf("promote admin: %w", err)
+	}
+	if adminUser.ID != integrationInquirerUserID {
+		return fmt.Errorf("admin user id=%d, want %d",
+			adminUser.ID, integrationInquirerUserID)
+	}
+
+	currency := "USD"
+	unit := "mi"
+	hondaYear, hondaPrice, hondaMiles := 2020, 22500, 45300
+	hondaID, err := ad.CreateAd(ad.CreateInput{
+		CategoryID:  integrationCarsCategory,
+		UserID:      testUser.ID,
+		Title:       "2020 Honda Civic LX",
+		Description: "Clean 2020 Honda Civic in excellent condition.",
+		Facets: map[string]facet.Value{
+			"year":    {Num: &hondaYear},
+			"price":   {Num: &hondaPrice, Text: &currency},
+			"mileage": {Num: &hondaMiles, Text: &unit},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("create honda: %w", err)
+	}
+	if _, err := db.Exec(`
+		UPDATE ads
+		SET latitude = $1, longitude = $2
+		WHERE id = $3`,
+		34.0522, -118.2437, hondaID,
+	); err != nil {
+		return fmt.Errorf("set honda location: %w", err)
+	}
+
+	fordYear, fordPrice, fordMiles := 2021, 35000, 28000
+	fordID, err := ad.CreateAd(ad.CreateInput{
+		CategoryID:  integrationCarsCategory,
+		UserID:      testUser.ID,
+		Title:       "2021 Ford F-150 XLT",
+		Description: "2021 Ford F-150 with low miles.",
+		Facets: map[string]facet.Value{
+			"year":    {Num: &fordYear},
+			"price":   {Num: &fordPrice, Text: &currency},
+			"mileage": {Num: &fordMiles, Text: &unit},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("create ford: %w", err)
+	}
+	if _, err := db.Exec(`
+		UPDATE ads
+		SET latitude = $1, longitude = $2
+		WHERE id = $3`,
+		32.7767, -96.797, fordID,
+	); err != nil {
+		return fmt.Errorf("set ford location: %w", err)
+	}
+
+	for _, loc := range []struct {
+		raw, city, admin, country string
+		lat, lon                  float64
+	}{
+		{"Los Angeles, CA, US", "Los Angeles", "CA", "US", 34.0522, -118.2437},
+		{"Portland, OR, US", "Portland", "OR", "US", 45.5152, -122.6784},
+	} {
+		if _, err := db.Exec(`
+			INSERT INTO locations
+			(raw_text, city, admin_area, country, latitude, longitude)
+			VALUES ($1, $2, $3, $4, $5, $6)
+			ON CONFLICT (raw_text) DO NOTHING`,
+			loc.raw, loc.city, loc.admin, loc.country, loc.lat, loc.lon,
+		); err != nil {
+			return fmt.Errorf("insert location %s: %w", loc.raw, err)
+		}
+	}
+	return nil
+}
+
 // chdirModuleRoot sets the working directory to the module root (directory
-// containing go.mod). Tests run with cwd in cmd/server; paths and seed data
-// expect the repo root.
+// containing go.mod). Tests run with cwd in cmd/server; relative paths expect
+// the repo root.
 func chdirModuleRoot() error {
 	dir, err := os.Getwd()
 	if err != nil {
@@ -123,15 +217,17 @@ func TestMain(m *testing.M) {
 		panic(fmt.Sprintf("Failed to initialize test database: %v", err))
 	}
 
-	if err := seed.LoadAll(); err != nil {
+	if err := dbinit.LoadCategories(); err != nil {
 		db.Close()
-		panic(fmt.Sprintf("Failed to load seed data: %v", err))
+		panic(fmt.Sprintf("Failed to load categories: %v", err))
 	}
-
-	// Database is already initialized and seeded, now load categories
 	if err := ad.LoadCategories(); err != nil {
 		db.Close()
 		panic(fmt.Sprintf("Failed to initialize ads: %v", err))
+	}
+	if err := loadIntegrationFixtures(); err != nil {
+		db.Close()
+		panic(fmt.Sprintf("Failed to load fixtures: %v", err))
 	}
 
 	vector.SetEmbedder(vector.NewFakeEmbedder())

@@ -23,9 +23,8 @@ type categoryJSON struct {
 	ImageFile string `json:"image_file"`
 }
 
-// LoadCategories reads ad-category.json and assigns stable IDs using the
-// same alphabetical ordering as internal/seed. Pass an empty path to use the
-// embedded category list.
+// LoadCategories reads ad-category.json and assigns stable IDs using
+// alphabetical ordering by name. Pass an empty path to use the embedded list.
 func LoadCategories(path string) ([]Category, error) {
 	data := embeddedCategoriesJSON
 	if path != "" {

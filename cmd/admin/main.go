@@ -13,7 +13,6 @@ import (
 	"github.com/partspile/site/internal/backup"
 	"github.com/partspile/site/internal/config"
 	"github.com/partspile/site/internal/db"
-	"github.com/partspile/site/internal/dbinit"
 	"github.com/partspile/site/internal/imagestore"
 	"github.com/partspile/site/internal/logger"
 	"github.com/partspile/site/internal/message"
@@ -33,8 +32,6 @@ const (
 	screenRestoreKey
 	screenRestoreConfirm
 	screenRestoreRunning
-	screenInitConfirm
-	screenInitRunning
 	screenUsersList
 	screenUserDeleteConfirm
 	screenUserRunning
@@ -62,7 +59,6 @@ type model struct {
 	keyInput      textinput.Model
 	users         []user.User
 	userCursor    int
-	initSeed      bool
 	selected      string
 	status        string
 	err           string
@@ -142,8 +138,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.updateRestoreKey(msg)
 		case screenRestoreConfirm:
 			return m.updateRestoreConfirm(msg)
-		case screenInitConfirm:
-			return m.updateInitConfirm(msg)
 		case screenUsersList:
 			return m.updateUsersList(msg)
 		case screenUserDeleteConfirm:
@@ -226,19 +220,13 @@ func (m model) updateDBMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.dbCursor--
 		}
 	case "down", "j":
-		if m.dbCursor < 4 {
+		if m.dbCursor < 2 {
 			m.dbCursor++
 		}
 	case "b", "B":
 		m.screen = screenBackupConfirm
 	case "r", "R":
 		return m.startRestorePick()
-	case "i", "I":
-		m.initSeed = false
-		m.screen = screenInitConfirm
-	case "s", "S":
-		m.initSeed = true
-		m.screen = screenInitConfirm
 	case "enter":
 		switch m.dbCursor {
 		case 0:
@@ -246,12 +234,6 @@ func (m model) updateDBMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case 1:
 			return m.startRestorePick()
 		case 2:
-			m.initSeed = false
-			m.screen = screenInitConfirm
-		case 3:
-			m.initSeed = true
-			m.screen = screenInitConfirm
-		case 4:
 			m.screen = screenMenu
 		}
 	}
@@ -457,27 +439,6 @@ func (m model) updateBackupConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) updateInitConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "esc", "n":
-		m.screen = screenDBMenu
-	case "y":
-		m.screen = screenInitRunning
-		m.resultBack = screenDBMenu
-		loadSeed := m.initSeed
-		return m, func() tea.Msg {
-			if err := dbinit.Rebuild(loadSeed); err != nil {
-				return doneMsg{err: err}
-			}
-			if loadSeed {
-				return doneMsg{ok: "Database rebuilt with seed data"}
-			}
-			return doneMsg{ok: "Database rebuilt (categories only)"}
-		}
-	}
-	return m, nil
-}
-
 func (m model) updateRestorePick(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "esc":
@@ -570,8 +531,6 @@ func (m model) View() string {
 		body = menuView(m.dbCursor, []string{
 			"[B] Backup database",
 			"[R] Restore database",
-			"[I] Init database (categories only)",
-			"[S] Init database with seed",
 			"Back",
 		}, "↑/↓ or letter · enter select · esc back")
 	case screenEmbMenu:
@@ -593,15 +552,7 @@ func (m model) View() string {
 	case screenBackupConfirm:
 		body = "Create backup in " + backup.DefaultDir + "/ ?\n\n" +
 			"y/enter confirm · esc cancel"
-	case screenInitConfirm:
-		if m.initSeed {
-			body = "Wipe DB and reload schema + seed users/ads?\n\n" +
-				"y confirm · n/esc cancel"
-		} else {
-			body = "Wipe DB and reload schema + categories only?\n\n" +
-				"y confirm · n/esc cancel"
-		}
-	case screenBackupRunning, screenRestoreRunning, screenInitRunning,
+	case screenBackupRunning, screenRestoreRunning,
 		screenUserRunning, screenEmbRunning:
 		body = "Working…"
 	case screenRestorePick:

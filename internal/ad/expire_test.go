@@ -13,9 +13,9 @@ import (
 	"github.com/partspile/site/internal/config"
 	"github.com/partspile/site/internal/db"
 	"github.com/partspile/site/internal/db/testdb"
+	"github.com/partspile/site/internal/dbinit"
 	"github.com/partspile/site/internal/facet"
 	"github.com/partspile/site/internal/logger"
-	"github.com/partspile/site/internal/seed"
 	"github.com/partspile/site/internal/user"
 )
 
@@ -68,11 +68,11 @@ func resetAdDB(t *testing.T) {
 	if err := testdb.InitSchema(); err != nil {
 		t.Fatalf("init schema: %v", err)
 	}
-	if err := seed.LoadAll(); err != nil {
-		t.Fatalf("seed: %v", err)
+	if err := dbinit.LoadCategories(); err != nil {
+		t.Fatalf("load categories: %v", err)
 	}
 	if err := ad.LoadCategories(); err != nil {
-		t.Fatalf("load categories: %v", err)
+		t.Fatalf("cache categories: %v", err)
 	}
 }
 

@@ -160,13 +160,13 @@ OLLAMA_URL=http://localhost:11434
 
 Add Twilio (`TWILIO_*`), `GROK_API_KEY`, `GEOAPIFY_API_KEY`, and `FAL_API_KEY` when you need real SMS, Grok, location geocoding, or image generation. For real SMS locally, set `PUBLIC_SITE_URL` to an ngrok (or similar) HTTPS URL so Twilio can reach `/api/sms/webhook`.
 
-Initialize the database via the jump-server admin TUI:
+Restore a database backup via the jump-server admin TUI:
 
 ```bash
 docker compose exec -it jump-server admin
 ```
 
-Main menu: **Database** · **Users** · **Embeddings**. Under Database, choose **Init database** (`[I]`). User PII and promote/demote/delete live under Users (not the web admin dashboard).
+Main menu: **Database** · **Users** · **Embeddings**. Under Database, choose **Restore**. User PII and promote/demote/delete live under Users (not the web admin dashboard).
 
 Run the site (loads `.env` into the environment):
 

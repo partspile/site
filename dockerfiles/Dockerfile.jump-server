@@ -92,9 +92,8 @@ RUN chmod +x /usr/local/bin/mc && \
 # Create workspace directory
 RUN mkdir -p /workspace && chmod 777 /workspace
 
-# Seed JSON + schema (paths expected by seed loader / ResetSchema at runtime)
-RUN mkdir -p /workspace/internal/seed /workspace/internal/db /workspace/internal/scripts
-COPY --from=go-builder /build/internal/seed/*.json /workspace/internal/seed/
+# Schema + scripts (ResetSchema / restore look up relative paths at runtime)
+RUN mkdir -p /workspace/internal/db /workspace/internal/scripts
 COPY --from=go-builder /build/internal/db/schema.sql /workspace/internal/db/schema.sql
 COPY --from=go-builder /build/internal/scripts/*.sql /workspace/internal/scripts/
 

@@ -18,13 +18,13 @@ import (
 	"github.com/partspile/site/internal/config"
 	"github.com/partspile/site/internal/db"
 	"github.com/partspile/site/internal/db/testdb"
+	"github.com/partspile/site/internal/dbinit"
 	"github.com/partspile/site/internal/encryption"
 	"github.com/partspile/site/internal/facet"
 	"github.com/partspile/site/internal/imagestore"
 	"github.com/partspile/site/internal/journal"
 	"github.com/partspile/site/internal/logger"
 	"github.com/partspile/site/internal/message"
-	"github.com/partspile/site/internal/seed"
 	"github.com/partspile/site/internal/user"
 	"github.com/partspile/site/internal/vector"
 	"github.com/pgvector/pgvector-go"
@@ -91,11 +91,11 @@ func TestBackupRestoreCrossKey(t *testing.T) {
 	if err := testdb.InitSchema(); err != nil {
 		t.Fatalf("init schema: %v", err)
 	}
-	if err := seed.LoadAll(); err != nil {
-		t.Fatalf("seed: %v", err)
+	if err := dbinit.LoadCategories(); err != nil {
+		t.Fatalf("load categories: %v", err)
 	}
 	if err := ad.LoadCategories(); err != nil {
-		t.Fatalf("load categories: %v", err)
+		t.Fatalf("cache categories: %v", err)
 	}
 
 	setDBKey(keyA)
@@ -106,6 +106,14 @@ func TestBackupRestoreCrossKey(t *testing.T) {
 	bob, err := user.CreateUser("bob", "+15559876544", "secret")
 	if err != nil {
 		t.Fatalf("create user: %v", err)
+	}
+	// User with no ads must still be included in the backup.
+	adminUser, err := user.CreateUser("admin", "+15559876545", "secret")
+	if err != nil {
+		t.Fatalf("create admin: %v", err)
+	}
+	if err := user.PromoteToAdmin(adminUser.ID); err != nil {
+		t.Fatalf("promote admin: %v", err)
 	}
 
 	price := 12000
@@ -249,16 +257,12 @@ func TestBackupRestoreCrossKey(t *testing.T) {
 		t.Fatal("restored account picture mismatch")
 	}
 
-	// Seed admin has no ads; backup must still include all users.
 	admin, err := user.GetByName("admin")
 	if err != nil {
-		t.Fatalf("get seed admin after restore: %v", err)
+		t.Fatalf("get admin after restore: %v", err)
 	}
 	if !admin.IsAdmin {
 		t.Fatal("expected restored admin.is_admin")
-	}
-	if _, err := user.GetByName("test"); err != nil {
-		t.Fatalf("get seed test after restore: %v", err)
 	}
 
 	var sealedJournal string

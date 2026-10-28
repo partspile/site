@@ -2,55 +2,46 @@
   {
     "name": "Cars & Trucks",
     "image_file": "car.svg",
-    "seed_ad_file": "ad-car.json",
     "facets": ["condition", "title_status", "year", "mileage", "price"]
   },
   {
     "name": "Car & Truck Parts",
     "image_file": "car.svg",
-    "seed_ad_file": "ad-car-part.json",
     "facets": ["condition", "local_pickup", "price"]
   },
   {
     "name": "Motorcycles",
     "image_file": "motorcycle.svg",
-    "seed_ad_file": "ad-motorcycle.json",
     "facets": ["condition", "year", "mileage", "price"]
   },
   {
     "name": "Motorcycle Parts",
     "image_file": "motorcycle.svg",
-    "seed_ad_file": "ad-motorcycle-part.json",
     "facets": ["condition", "local_pickup", "price"]
   },
   {
     "name": "Bicycles",
     "image_file": "bicycle.svg",
-    "seed_ad_file": "ad-bicycle.json",
     "facets": ["condition", "price"]
   },
   {
     "name": "Bicycle Parts",
     "image_file": "bicycle.svg",
-    "seed_ad_file": "ad-bicycle-part.json",
     "facets": ["condition", "local_pickup", "price"]
   },
   {
     "name": "Agricultural Equipment",
     "image_file": "ag.svg",
-    "seed_ad_file": "ad-agricultural.json",
     "facets": ["condition", "hours", "price"]
   },
   {
     "name": "Agricultural Equipment Parts",
     "image_file": "ag.svg",
-    "seed_ad_file": "ad-agricultural-part.json",
     "facets": ["condition", "local_pickup", "price"]
   },
   {
     "name": "Garage/Estate Sale",
     "image_file": "garage-sale.svg",
-    "seed_ad_file": "ad-garage-sale.json",
     "facets": ["sale_type", "sale_start_date", "sale_end_date", "pricing_style", "address"]
   }
 ]

@@ -533,7 +533,7 @@ func syncIdentitySequences() error {
 
 func prepareFreshDatabase() error {
 	logger.Info("Resetting database for restore")
-	if err := dbinit.Rebuild(false); err != nil {
+	if err := dbinit.Rebuild(); err != nil {
 		return err
 	}
 	return nil

@@ -53,7 +53,7 @@ func TestLoginSubmitHandler(t *testing.T) {
 	testUser, err := user.GetByName("test")
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			t.Fatalf("Test user not found in database. Database may need to be seeded (Admin TUI → Init with seed)")
+			t.Fatalf("Test user not found in database")
 		}
 		t.Fatalf("Failed to retrieve test user (error: %v). This might be a decryption error if DB_ENCRYPTION_KEY doesn't match the key used to seed the database.", err)
 	}

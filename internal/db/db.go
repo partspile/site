@@ -104,7 +104,7 @@ func CheckSchema() error {
 		return fmt.Errorf("checking database schema: %w", err)
 	}
 	if !exists {
-		return fmt.Errorf("database not initialized — run Admin TUI → Init database")
+		return fmt.Errorf("database not initialized — restore a backup via Admin TUI")
 	}
 	return nil
 }
