@@ -1,6 +1,6 @@
 # Jump Server
 
-The jump server image includes database utilities (`psql`), Redis CLI (`redis-cli`), image migration, JPEG conversion, description-addition fold, and the MinIO client (`mc`).
+The jump server image includes database utilities (`psql`), Redis CLI (`redis-cli`), and the MinIO client (`mc`).
 
 ## Building
 
@@ -48,42 +48,7 @@ Backup verify-decrypts users with `DB_ENCRYPTION_KEY` and stores ciphertext in t
 
 ## Ad images
 
-Images are stored in MinIO (required). Populate images from your dev machine with `go run ./cmd/gen_images` (requires `FAL_API_KEY`) or upload existing local files with `migrate_images` on the jump server (see below).
-
-### Migrate existing local files (one-time)
-
-If you have files under `static/images/ad/` (or another directory):
-
-```bash
-migrate_images -dir static/images/ad
-```
-
-Use `-dry-run` to preview without uploading. MinIO connection uses `MINIO_API_URL`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, and `MINIO_BUCKET_NAME` from the service environment.
-
-On the jump server, you can also mirror files with `mc` (see below).
-
-### Convert legacy WebP/PNG objects to JPEG
-
-Stop the site first. Then on the jump server:
-
-```bash
-convert_images -dry-run
-convert_images
-```
-
-Rewrites MinIO objects in place to `.jpg` (`image/jpeg`, quality 80). Idempotent. Uses `MINIO_API_URL`, `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, and `MINIO_BUCKET_NAME`. Restart the JPEG-only site after it finishes.
-
-### Fold legacy description additions (one-time)
-
-Append-only description edits used to store extra paragraphs as history
-blocks. Fold them into the listing body, then drop those blocks:
-
-```bash
-migrate_desc_additions -dry-run
-migrate_desc_additions
-```
-
-Idempotent. Uses `DATABASE_URL`. Run after restore if the archive predates this fold.
+Images are stored in MinIO (required). Populate images from your dev machine with `go run ./cmd/gen_images` (requires `FAL_API_KEY`). On the jump server, mirror existing objects with `mc` (see below).
 
 ## Using redis-cli
 
@@ -120,9 +85,6 @@ See the [MinIO Client documentation](https://docs.min.io/docs/minio-client-quick
 |--------|---------|
 | `admin` | Interactive TUI: backup/restore, init DB, promote/demote |
 | `dumpusers` | CSV of decrypted names, phones, and password hashes |
-| `migrate_images` | One-time upload of local ad image files to MinIO |
-| `convert_images` | One-time MinIO WebP/PNG → JPEG rewrite |
-| `migrate_desc_additions` | One-time fold of appended description history into the listing body |
 | `quote_server` | Quote-of-the-day page on port 10000 |
 | `mc` | MinIO command-line client |
 | `redis-cli` | Redis / Render Key Value CLI (`redis-tools`) |

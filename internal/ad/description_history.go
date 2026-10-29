@@ -17,7 +17,6 @@ import (
 const OriginalLabel = "original"
 
 // DescriptionAdditionLabel is the legacy append-via-edit history marker.
-// FoldDescriptionAdditions merges those bodies into the original block.
 const DescriptionAdditionLabel = "Description Addition"
 
 // DescriptionChangeLabel is the history label for a description rewrite.
@@ -120,47 +119,6 @@ func replaceOriginalBody(desc, newBody string, at time.Time,
 	orig := blocks[0]
 	orig.Body = newBody
 	return entrylog.Join(append([]entrylog.Block{orig}, blocks[1:]...), tz)
-}
-
-// FoldDescriptionAdditions merges legacy Description Addition bodies into
-// the original block (oldest first) and removes those history entries.
-// Other history is unchanged. changed is false when there is nothing to fold.
-func FoldDescriptionAdditions(desc string) (string, bool) {
-	blocks := entrylog.Parse(desc)
-	if len(blocks) == 0 {
-		return desc, false
-	}
-	history := blocks[1:]
-	var chrono []string
-	found := false
-	for i := len(history) - 1; i >= 0; i-- {
-		b := history[i]
-		if b.Label != DescriptionAdditionLabel {
-			continue
-		}
-		found = true
-		if body := strings.TrimSpace(b.Body); body != "" {
-			chrono = append(chrono, body)
-		}
-	}
-	if !found {
-		return desc, false
-	}
-	rest := make([]entrylog.Block, 0, len(history))
-	for _, b := range history {
-		if b.Label == DescriptionAdditionLabel {
-			continue
-		}
-		rest = append(rest, b)
-	}
-	parts := make([]string, 0, 1+len(chrono))
-	if original := strings.TrimSpace(blocks[0].Body); original != "" {
-		parts = append(parts, original)
-	}
-	parts = append(parts, chrono...)
-	orig := blocks[0]
-	orig.Body = strings.Join(parts, "\n\n")
-	return entrylog.Join(append([]entrylog.Block{orig}, rest...), nil), true
 }
 
 // SplitDescription separates the original body from server history.

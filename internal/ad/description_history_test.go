@@ -77,69 +77,6 @@ func TestAppendHistoryEntryPrependsNewest(t *testing.T) {
 	}
 }
 
-func TestFoldDescriptionAdditions(t *testing.T) {
-	loc := time.UTC
-	origAt := time.Date(2026, 1, 5, 12, 0, 0, 0, loc)
-	first := time.Date(2026, 1, 7, 0, 34, 0, 0, loc)
-	second := time.Date(2026, 1, 8, 10, 0, 0, 0, loc)
-
-	desc := WrapDescription("Original.", origAt, loc)
-	desc = AppendHistoryEntry(desc, DescriptionAdditionLabel, "asdfasdf", first, loc)
-	desc = AppendHistoryEntry(desc, "Price change", "now free", first, loc)
-	desc = AppendHistoryEntry(desc, DescriptionAdditionLabel, "more info", second, loc)
-
-	got, changed := FoldDescriptionAdditions(desc)
-	if !changed {
-		t.Fatal("expected fold to change description")
-	}
-	parts := ParseDescriptionForDisplay(got)
-	if parts.Original != "Original.\n\nasdfasdf\n\nmore info" {
-		t.Errorf("original = %q", parts.Original)
-	}
-	if parts.Body != parts.Original {
-		t.Errorf("body = %q, want original", parts.Body)
-	}
-	if len(parts.History) != 1 {
-		t.Fatalf("history len = %d, want 1", len(parts.History))
-	}
-	if !strings.Contains(parts.History[0].Header, "Price change") {
-		t.Errorf("kept history = %q", parts.History[0].Header)
-	}
-	if _, changed := FoldDescriptionAdditions(got); changed {
-		t.Fatal("second fold should be a no-op")
-	}
-}
-
-func TestFoldDescriptionAdditionsEmptyOriginal(t *testing.T) {
-	loc := time.UTC
-	origAt := time.Date(2026, 1, 5, 12, 0, 0, 0, loc)
-	addAt := time.Date(2026, 1, 7, 0, 34, 0, 0, loc)
-
-	desc := WrapDescription("", origAt, loc)
-	desc = AppendHistoryEntry(
-		desc, DescriptionAdditionLabel, "only addition", addAt, loc,
-	)
-	got, changed := FoldDescriptionAdditions(desc)
-	if !changed {
-		t.Fatal("expected fold")
-	}
-	parts := ParseDescriptionForDisplay(got)
-	if parts.Original != "only addition" {
-		t.Errorf("original = %q", parts.Original)
-	}
-	if len(parts.History) != 0 {
-		t.Fatalf("history = %+v", parts.History)
-	}
-}
-
-func TestFoldDescriptionAdditionsNoOp(t *testing.T) {
-	desc := WrapDescription("no additions", time.Now(), time.UTC)
-	got, changed := FoldDescriptionAdditions(desc)
-	if changed || got != desc {
-		t.Fatalf("changed=%v got=%q", changed, got)
-	}
-}
-
 func TestAppendHistoryEntry(t *testing.T) {
 	loc, _ := time.LoadLocation("America/Los_Angeles")
 	origAt := time.Date(2026, 1, 5, 12, 0, 0, 0, loc)

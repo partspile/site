@@ -303,58 +303,6 @@ func (s *MinioStore) PresignGetUserAccount(userID int,
 	return u.String(), nil
 }
 
-// ListKeys returns every object key in the bucket.
-func (s *MinioStore) ListKeys() ([]string, error) {
-	ctx := context.Background()
-	var keys []string
-	for obj := range s.client.ListObjects(ctx, s.bucket, minio.ListObjectsOptions{
-		Recursive: true,
-	}) {
-		if obj.Err != nil {
-			return nil, fmt.Errorf("list objects: %w", obj.Err)
-		}
-		keys = append(keys, obj.Key)
-	}
-	return keys, nil
-}
-
-// ReadKey returns the object body for a raw bucket key.
-func (s *MinioStore) ReadKey(key string) ([]byte, error) {
-	data, err := s.getObject(key)
-	if err != nil {
-		return nil, fmt.Errorf("read %s: %w", key, err)
-	}
-	return data, nil
-}
-
-// WriteJPEG writes JPEG bytes to a raw bucket key.
-func (s *MinioStore) WriteJPEG(key string, data []byte) error {
-	if err := s.putObject(key, data); err != nil {
-		return fmt.Errorf("write %s: %w", key, err)
-	}
-	return nil
-}
-
-// DeleteKey removes a raw bucket key.
-func (s *MinioStore) DeleteKey(key string) error {
-	ctx := context.Background()
-	err := s.client.RemoveObject(ctx, s.bucket, key,
-		minio.RemoveObjectOptions{})
-	if err != nil {
-		errResp := minio.ToErrorResponse(err)
-		if errResp.Code == "NoSuchKey" || errResp.StatusCode == 404 {
-			return nil
-		}
-		return fmt.Errorf("delete %s: %w", key, err)
-	}
-	return nil
-}
-
-// KeyExists reports whether a raw bucket key is present.
-func (s *MinioStore) KeyExists(key string) (bool, error) {
-	return s.statKey(key)
-}
-
 func toObjectInfoCh(keys []string) <-chan minio.ObjectInfo {
 	ch := make(chan minio.ObjectInfo, len(keys))
 	go func() {

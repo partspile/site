@@ -22,21 +22,6 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -o /build/quote_server \
     ./cmd/quote_server
 
-# Build migrate_images binary (statically linked)
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -o /build/migrate_images \
-    ./cmd/migrate_images
-
-# Build convert_images binary (statically linked)
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -o /build/convert_images \
-    ./cmd/convert_images
-
-# Build migrate_desc_additions binary (statically linked)
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -o /build/migrate_desc_additions \
-    ./cmd/migrate_desc_additions
-
 # Build dumpusers binary (statically linked)
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -o /build/dumpusers \
@@ -74,18 +59,12 @@ RUN apt-get update && \
 COPY --from=minio-client /usr/bin/mc /usr/local/bin/mc
 COPY --from=go-builder /build/admin /usr/local/bin/admin
 COPY --from=go-builder /build/quote_server /usr/local/bin/quote_server
-COPY --from=go-builder /build/migrate_images /usr/local/bin/migrate_images
-COPY --from=go-builder /build/convert_images /usr/local/bin/convert_images
-COPY --from=go-builder /build/migrate_desc_additions /usr/local/bin/migrate_desc_additions
 COPY --from=go-builder /build/dumpusers /usr/local/bin/dumpusers
 
 # Make them executable
 RUN chmod +x /usr/local/bin/mc && \
     chmod +x /usr/local/bin/admin && \
     chmod +x /usr/local/bin/quote_server && \
-    chmod +x /usr/local/bin/migrate_images && \
-    chmod +x /usr/local/bin/convert_images && \
-    chmod +x /usr/local/bin/migrate_desc_additions && \
     chmod +x /usr/local/bin/dumpusers && \
     mc --version
 
