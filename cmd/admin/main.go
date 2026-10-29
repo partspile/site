@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -34,6 +35,7 @@ const (
 	screenRestoreRunning
 	screenUsersList
 	screenUserDeleteConfirm
+	screenUserDumpConfirm
 	screenUserRunning
 	screenEmbMenu
 	screenEmbRunning
@@ -142,6 +144,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.updateUsersList(msg)
 		case screenUserDeleteConfirm:
 			return m.updateUserDeleteConfirm(msg)
+		case screenUserDumpConfirm:
+			return m.updateUserDumpConfirm(msg)
 		case screenEmbMenu:
 			return m.updateEmbMenu(msg)
 		case screenResult:
@@ -326,6 +330,8 @@ func (m model) updateUsersList(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.runUserAction("demote")
 	case "s", "S":
 		return m.runUserAction("phone")
+	case "c", "C":
+		m.screen = screenUserDumpConfirm
 	case "x", "X":
 		if len(m.users) == 0 {
 			return m, nil
@@ -416,6 +422,36 @@ func (m model) updateUserDeleteConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.screen = screenUsersList
 	case "y":
 		return m.runUserAction("delete")
+	}
+	return m, nil
+}
+
+func (m model) updateUserDumpConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc", "n":
+		m.screen = screenUsersList
+	case "y":
+		m.screen = screenUserRunning
+		m.resultBack = screenUsersList
+		return m, func() tea.Msg {
+			if err := os.MkdirAll(backup.DefaultDir, 0755); err != nil {
+				return doneMsg{err: err}
+			}
+			path := filepath.Join(backup.DefaultDir, "users.csv")
+			f, err := os.OpenFile(path,
+				os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+			if err != nil {
+				return doneMsg{err: err}
+			}
+			defer f.Close()
+			n, err := user.WriteCSV(f)
+			if err != nil {
+				return doneMsg{err: err}
+			}
+			return doneMsg{ok: fmt.Sprintf(
+				"Wrote %d users to %s", n, path,
+			)}
+		}
 	}
 	return m, nil
 }
@@ -549,6 +585,10 @@ func (m model) View() string {
 			"Delete user %s?\nThis soft-deletes the account.\n\ny confirm · n/esc cancel",
 			name,
 		)
+	case screenUserDumpConfirm:
+		body = "Write " + backup.DefaultDir + "/users.csv?\n" +
+			"Includes names, phones, and password hashes.\n\n" +
+			"y confirm · n/esc cancel"
 	case screenBackupConfirm:
 		body = "Create backup in " + backup.DefaultDir + "/ ?\n\n" +
 			"y/enter confirm · esc cancel"
@@ -635,7 +675,8 @@ func (m model) usersListView() string {
 			u.CreatedAt.Format(time.DateTime), deleted,
 		))
 	}
-	b.WriteString("\n↑/↓ select · [P]romote [D]emote [S]how phone [X] delete · esc back")
+	b.WriteString("\n↑/↓ select · [P]romote [D]emote [S]how phone " +
+		"[C]sv [X] delete · esc back")
 	return b.String()
 }
 

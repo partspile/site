@@ -33,6 +33,7 @@ Menu:
 - **Backup** — writes `backups/backup-YYYYMMDD-HHMMSS.tar.gz`
 - **Restore** — pick a file from `backups/`, optionally enter source `BACKUP_DB_ENCRYPTION_KEY`, confirm wipe, restore. Leave the key blank to decrypt with `DB_ENCRYPTION_KEY`.
 - **Promote / Demote admin** — by username
+- **Dump users** — from Users, `[C]` writes `backups/users.csv` (decrypted names, phones, and password hashes)
 
 `./backups` on the host is mounted at `/workspace/backups`.
 
@@ -83,8 +84,7 @@ See the [MinIO Client documentation](https://docs.min.io/docs/minio-client-quick
 
 | Binary | Purpose |
 |--------|---------|
-| `admin` | Interactive TUI: backup/restore, init DB, promote/demote |
-| `dumpusers` | CSV of decrypted names, phones, and password hashes |
+| `admin` | Interactive TUI: backup/restore, users (including CSV dump), embeddings |
 | `quote_server` | Quote-of-the-day page on port 10000 |
 | `mc` | MinIO command-line client |
 | `redis-cli` | Redis / Render Key Value CLI (`redis-tools`) |
