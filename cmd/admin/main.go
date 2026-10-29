@@ -79,7 +79,7 @@ type usersLoadedMsg struct {
 
 func initialModel(store imagestore.Store, dbTarget string) model {
 	ki := textinput.New()
-	ki.Placeholder = "BACKUP_DB_ENCRYPTION_KEY (empty = users.csv or DB key)"
+	ki.Placeholder = "BACKUP_DB_ENCRYPTION_KEY (empty = DB key)"
 	ki.EchoMode = textinput.EchoPassword
 	ki.EchoCharacter = '•'
 	ki.Width = 60

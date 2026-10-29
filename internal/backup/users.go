@@ -29,8 +29,7 @@ func verifyUserDecrypt(u UserRow) error {
 	return nil
 }
 
-func resolveUserID(u UserRow, backupKey []byte,
-	fromCSV map[string]csvUser) (int, error) {
+func resolveUserID(u UserRow, backupKey []byte) (int, error) {
 	var id int
 	err := db.QueryRow(
 		`SELECT id FROM users WHERE name_hash = $1`, u.NameHash,
@@ -86,7 +85,7 @@ func resolveUserID(u UserRow, backupKey []byte,
 		return 0, fmt.Errorf("insert user %s: %w", u.NameHash, err)
 	}
 
-	name, phone, err := userPlaintext(u, backupKey, fromCSV)
+	name, phone, err := userPlaintext(u, backupKey)
 	if err != nil {
 		return 0, err
 	}
@@ -127,18 +126,7 @@ func resolveUserID(u UserRow, backupKey []byte,
 	return id, nil
 }
 
-func userPlaintext(u UserRow, backupKey []byte,
-	fromCSV map[string]csvUser) (string, string, error) {
-	if fromCSV != nil {
-		p, ok := fromCSV[csvUserKey(u.PasswordHash, u.PasswordSalt)]
-		if !ok {
-			return "", "", fmt.Errorf(
-				"users.csv has no password_hash match for user %s",
-				u.NameHash)
-		}
-		return p.name, p.phone, nil
-	}
-
+func userPlaintext(u UserRow, backupKey []byte) (string, string, error) {
 	decryptKey := backupKey
 	if len(decryptKey) != 32 {
 		decryptKey = config.DBEncryptionKey

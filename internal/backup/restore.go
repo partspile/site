@@ -82,19 +82,6 @@ func runRestore(fromDir string, store imagestore.Store, backupKey []byte,
 		return nil
 	}
 
-	var fromCSV map[string]csvUser
-	if len(backupKey) != 32 {
-		loaded, err := loadUsersCSV(usersCSVPath())
-		if err != nil && !os.IsNotExist(err) {
-			return err
-		}
-		if err == nil {
-			fromCSV = loaded
-			logger.Info("Using users.csv for names and phones",
-				"path", usersCSVPath(), "users", len(fromCSV))
-		}
-	}
-
 	if err := prepareFreshDatabase(); err != nil {
 		return err
 	}
@@ -116,7 +103,7 @@ func runRestore(fromDir string, store imagestore.Store, backupKey []byte,
 
 	userHashToID := make(map[string]int, len(users))
 	for _, u := range users {
-		id, err := resolveUserID(u, backupKey, fromCSV)
+		id, err := resolveUserID(u, backupKey)
 		if err != nil {
 			return err
 		}

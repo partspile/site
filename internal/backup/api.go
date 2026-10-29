@@ -87,8 +87,8 @@ func BackupToArchive(out string, store imagestore.Store, dryRun, verbose bool) (
 }
 
 // RestoreFromArchive restores from a .tar.gz path (relative names use backups/).
-// backupKey decrypts archive user fields. Empty uses backups/users.csv
-// when that file exists, otherwise config.DBEncryptionKey.
+// backupKey decrypts archive user fields. Empty uses
+// config.DBEncryptionKey.
 func RestoreFromArchive(from string, store imagestore.Store,
 	backupKey []byte, dryRun, verbose bool) error {
 	archivePath := ArchivePath(from)
