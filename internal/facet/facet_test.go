@@ -235,130 +235,9 @@ func TestCardLabel(t *testing.T) {
 			t.Errorf("%s should not appear on listing cards", key)
 		}
 	}
-	if d, ok := Get("sale_start_date"); !ok || !d.CardLabel() {
-		t.Error("sale_start_date should appear on listing cards")
-	}
 	pickup, ok := Get("local_pickup")
 	if !ok || pickup.CardLabel() {
 		t.Error("local_pickup should not appear on listing cards")
-	}
-}
-
-func TestDateFacet(t *testing.T) {
-	start, ok := Get("sale_start_date")
-	if !ok {
-		t.Fatal("sale_start_date facet not registered")
-	}
-	if start.Kind != Date {
-		t.Fatalf("Kind = %v, want Date", start.Kind)
-	}
-	if start.Form != FormDate {
-		t.Fatalf("Form = %v, want FormDate", start.Form)
-	}
-	if start.Filter != FilterExact {
-		t.Fatalf("Filter = %v, want FilterExact", start.Filter)
-	}
-	end, ok := Get("sale_end_date")
-	if !ok {
-		t.Fatal("sale_end_date facet not registered")
-	}
-	if end.Filterable {
-		t.Error("sale_end_date should not be filterable")
-	}
-	v := Value{Text: strPtr("2026-06-14")}
-	if err := start.Validate(v); err != nil {
-		t.Errorf("valid date rejected: %v", err)
-	}
-	if got := start.FormatFull(v); got != "Jun 14, 2026" {
-		t.Errorf("FormatFull = %q, want Jun 14, 2026", got)
-	}
-	if err := start.Validate(Value{Text: strPtr("not-a-date")}); err == nil {
-		t.Error("invalid date should be rejected")
-	}
-	if got := FormatDateRange("2026-06-14", "2026-06-14"); got != "Jun 14, 2026" {
-		t.Errorf("same-day range = %q", got)
-	}
-	if got := FormatDateRange("2026-06-14", "2026-06-16"); got != "Jun 14–16, 2026" {
-		t.Errorf("multi-day range = %q", got)
-	}
-	if got := SaleDateDetailDisplays("2026-06-14", "2026-06-14"); len(got) != 1 || got[0] != "Sale Date: Jun 14, 2026" {
-		t.Errorf("same-day detail = %v", got)
-	}
-	if got := SaleDateDetailDisplays("2026-06-07", "2026-06-08"); len(got) != 1 || got[0] != "Sale Date: Jun 7–8, 2026" {
-		t.Errorf("multi-day detail = %v", got)
-	}
-}
-
-func TestSaleWeekRange(t *testing.T) {
-	loc := time.FixedZone("test", -7*3600)
-	wed := time.Date(2026, 6, 10, 15, 0, 0, 0, loc)
-
-	t.Run("this week", func(t *testing.T) {
-		min, max, ok := SaleWeekRange("This week", wed)
-		if !ok {
-			t.Fatal("expected ok")
-		}
-		if min.Format(dateLayout) != "2026-06-07" || max.Format(dateLayout) != "2026-06-13" {
-			t.Fatalf("range = %s to %s", min.Format(dateLayout), max.Format(dateLayout))
-		}
-	})
-	t.Run("next week", func(t *testing.T) {
-		min, max, ok := SaleWeekRange("Next week", wed)
-		if !ok {
-			t.Fatal("expected ok")
-		}
-		if min.Format(dateLayout) != "2026-06-14" || max.Format(dateLayout) != "2026-06-20" {
-			t.Fatalf("range = %s to %s", min.Format(dateLayout), max.Format(dateLayout))
-		}
-	})
-	t.Run("this weekend", func(t *testing.T) {
-		min, max, ok := SaleWeekRange("This weekend", wed)
-		if !ok {
-			t.Fatal("expected ok")
-		}
-		if min.Format(dateLayout) != "2026-06-13" || max.Format(dateLayout) != "2026-06-14" {
-			t.Fatalf("range = %s to %s", min.Format(dateLayout), max.Format(dateLayout))
-		}
-	})
-	t.Run("resolve filter", func(t *testing.T) {
-		preset := "Next week"
-		got := ResolveFilterForSearch("sale_start_date", Filter{Value: &preset}, wed)
-		if got.TextMin == nil || *got.TextMin != "2026-06-14" {
-			t.Fatalf("TextMin = %v", got.TextMin)
-		}
-		if got.TextMax == nil || *got.TextMax != "2026-06-20" {
-			t.Fatalf("TextMax = %v", got.TextMax)
-		}
-	})
-}
-
-func TestMultiEnumFacet(t *testing.T) {
-	pricing, ok := Get("pricing_style")
-	if !ok {
-		t.Fatal("pricing_style facet not registered")
-	}
-	if pricing.Kind != MultiEnum {
-		t.Fatalf("Kind = %v, want MultiEnum", pricing.Kind)
-	}
-	if pricing.Form != FormCheckboxes {
-		t.Fatalf("Form = %v, want FormCheckboxes", pricing.Form)
-	}
-	v := EncodeMultiEnum([]string{
-		"Everything Priced",
-		"Free Items Included",
-	})
-	if err := pricing.Validate(v); err != nil {
-		t.Errorf("valid multi enum rejected: %v", err)
-	}
-	if got := pricing.FormatFull(v); got != "Everything Priced, Free Items Included" {
-		t.Errorf("FormatFull = %q", got)
-	}
-	vals := v.MultiEnumValues()
-	if len(vals) != 2 || vals[0] != "Everything Priced" {
-		t.Errorf("MultiEnumValues = %v", vals)
-	}
-	if err := pricing.Validate(EncodeMultiEnum([]string{"bogus"})); err == nil {
-		t.Error("invalid multi enum value should be rejected")
 	}
 }
 
@@ -406,35 +285,27 @@ func TestFlagFacet(t *testing.T) {
 }
 
 func TestLocationFacet(t *testing.T) {
-	address, ok := Get("address")
-	if !ok {
-		t.Fatal("address facet not registered")
-	}
-	if address.Kind != Location {
-		t.Fatalf("Kind = %v, want Location", address.Kind)
-	}
-	if address.Form != FormLocation {
-		t.Fatalf("Form = %v, want FormLocation", address.Form)
-	}
-	if !address.Required {
-		t.Error("address should be required when present on a category")
-	}
-	v := Value{Text: strPtr("123 Main St, Portland, OR 97201")}
-	if err := address.Validate(v); err != nil {
-		t.Errorf("valid address rejected: %v", err)
-	}
-	if got := address.FormatFull(v); got != *v.Text {
-		t.Errorf("FormatFull = %q", got)
-	}
-	if got := address.LocationPlaceholder(); got == "" {
-		t.Error("expected address placeholder")
-	}
-
 	location, ok := Get("location")
 	if !ok {
 		t.Fatal("location facet not registered")
 	}
+	if location.Kind != Location {
+		t.Fatalf("Kind = %v, want Location", location.Kind)
+	}
+	if location.Form != FormLocation {
+		t.Fatalf("Form = %v, want FormLocation", location.Form)
+	}
 	if location.Required {
 		t.Error("location facet should be optional")
+	}
+	v := Value{Text: strPtr("Portland, OR")}
+	if err := location.Validate(v); err != nil {
+		t.Errorf("valid location rejected: %v", err)
+	}
+	if got := location.FormatFull(v); got != *v.Text {
+		t.Errorf("FormatFull = %q", got)
+	}
+	if got := location.LocationPlaceholder(); got == "" {
+		t.Error("expected location placeholder")
 	}
 }

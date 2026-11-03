@@ -49,7 +49,6 @@ const (
 	integrationTestUserID     = 1
 	integrationInquirerUserID = 2
 	integrationCarsCategory   = 6
-	integrationGarageCategory = 7
 )
 
 // loadIntegrationFixtures creates users and sample ads used by integration tests.

@@ -147,7 +147,7 @@ func TestFormatLocationHistoryChangeNoOp(t *testing.T) {
 		AdminArea:   "OR",
 		Country:     "US",
 	}
-	if body := formatLocationHistoryChange(old, "97333", Category{}); body != "" {
+	if body := formatLocationHistoryChange(old, "97333"); body != "" {
 		t.Fatalf("want no change, got %q", body)
 	}
 }
@@ -158,29 +158,6 @@ func TestSanitizeStripsHistoryMarker(t *testing.T) {
 	}
 	if got := SanitizeAdText("before\u001fafter"); got != "beforeafter" {
 		t.Errorf("SanitizeAdText end marker = %q", got)
-	}
-}
-
-func TestFormatLocationHistoryChangeAddressCategory(t *testing.T) {
-	addr := "123 Main St"
-	old := Ad{
-		Facets: map[string]facet.Value{
-			"address": {Text: &addr},
-		},
-	}
-	garage := Category{FacetKeys: []string{"address"}}
-
-	if body := formatLocationHistoryChange(old, "456 Oak Ave", garage); body != "Address changed" {
-		t.Fatalf("change = %q, want Address changed", body)
-	}
-	if body := formatLocationHistoryChange(old, "", garage); body != "Address removed" {
-		t.Fatalf("remove = %q, want Address removed", body)
-	}
-	if body := formatLocationHistoryChange(Ad{}, "123 Main St", garage); body != "Address changed" {
-		t.Fatalf("set = %q, want Address changed", body)
-	}
-	if body := formatLocationHistoryChange(old, addr, garage); body != "" {
-		t.Fatalf("no-op = %q, want empty", body)
 	}
 }
 

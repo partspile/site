@@ -70,7 +70,6 @@ const (
 	MaxAdDescriptionLength    = 1000 // Maximum length for ad description
 	AdExpireMonths            = 12   // create, reactivate, and renew lifetime
 	AdExpireRenewWithinMonths = 1    // show Renew when this little time remains
-	AdExpireSaleEndDelay      = 7 * 24 * time.Hour
 	AdExpireWorkerInterval    = 1 * time.Hour
 
 	// Password/Argon2 configuration

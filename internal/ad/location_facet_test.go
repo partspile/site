@@ -8,17 +8,12 @@ import (
 )
 
 func TestLocationFacetHelpers(t *testing.T) {
-	garage := Category{FacetKeys: []string{
-		"sale_type", "address",
-	}}
-	if !HasLocationFacet(garage) {
+	withLoc := Category{FacetKeys: []string{"location"}}
+	if !HasLocationFacet(withLoc) {
 		t.Fatal("expected location facet")
 	}
-	if LocationFacetKey(garage) != "address" {
-		t.Fatalf("key = %q", LocationFacetKey(garage))
-	}
-	if !UsesFullAddressDisplay(garage) {
-		t.Fatal("garage sale should use full address display")
+	if LocationFacetKey(withLoc) != "location" {
+		t.Fatalf("key = %q", LocationFacetKey(withLoc))
 	}
 
 	car := Category{FacetKeys: []string{"mileage", "price"}}
@@ -26,60 +21,23 @@ func TestLocationFacetHelpers(t *testing.T) {
 		t.Fatal("car category should not have location facet")
 	}
 
-	addr := "123 Main St, Portland, OR"
+	loc := "Portland, OR"
 	facets := map[string]facet.Value{
-		"address": {Text: &addr},
+		"location": {Text: &loc},
 	}
-	if got := LocationTextFromFacets(garage, facets); got != addr {
+	if got := LocationTextFromFacets(withLoc, facets); got != loc {
 		t.Fatalf("LocationTextFromFacets = %q", got)
 	}
 }
 
-func TestAdLocationDisplayAddressPrivacy(t *testing.T) {
-	garage := Category{FacetKeys: []string{"address"}}
-	addr := "123 Main St, Portland, OR"
+func TestAdLocationDisplay(t *testing.T) {
 	a := Ad{
 		City:      "Portland",
 		AdminArea: "OR",
 		Country:   "US",
-		Facets: map[string]facet.Value{
-			"address": {Text: &addr},
-		},
 	}
-
-	if got := locationDisplayForCategory(a, garage, 0); got != addressLoginPrompt {
-		t.Fatalf("logged out = %q, want %q", got, addressLoginPrompt)
-	}
-	if got := locationDisplayForCategory(a, garage, 1); got != addr {
-		t.Fatalf("logged in = %q, want address", got)
-	}
-
-	car := Category{FacetKeys: []string{"mileage", "price"}}
-	if got := locationDisplayForCategory(a, car, 0); got == "" {
-		t.Fatal("non-address category should still show city for logged-out viewers")
-	}
-}
-
-func TestAdFlyerLocationHidesLoginPrompt(t *testing.T) {
-	garage := Category{FacetKeys: []string{"address"}}
-	addr := "123 Main St, Portland, OR"
-	a := Ad{
-		City:      "Portland",
-		AdminArea: "OR",
-		Country:   "US",
-		Facets: map[string]facet.Value{
-			"address": {Text: &addr},
-		},
-	}
-
-	got := flyerLocationForCategory(a, garage, 0)
-	if got == addressLoginPrompt {
-		t.Fatal("guest flyer should not print login prompt")
-	}
+	got := AdLocationDisplay(a)
 	if !strings.Contains(got, "Portland") {
-		t.Fatalf("guest flyer location %q, want city", got)
-	}
-	if got := flyerLocationForCategory(a, garage, 1); got != addr {
-		t.Fatalf("logged-in flyer = %q, want address", got)
+		t.Fatalf("location = %q, want city", got)
 	}
 }

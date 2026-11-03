@@ -126,9 +126,6 @@ func UpdateAd(input UpdateInput) error {
 	newImageCount := a.ImageCount + input.ImagesAdded
 
 	expiresAt := a.ExpiresAt.UTC()
-	if _, ok := SaleEndDateString(values); ok {
-		expiresAt = ComputeExpiresAt(values, now.UTC())
-	}
 
 	_, err = tx.Exec(
 		`UPDATE ads SET title = $1, description = $2, location_id = $3,

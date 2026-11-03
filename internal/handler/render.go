@@ -66,7 +66,7 @@ func searchAndRender(c *fiber.Ctx, state cookie.SearchState, categoryID,
 	distanceUnit := cookie.GetDistanceUnit(c)
 	page = c.QueryInt("page", 1)
 
-	p := parseSearchParams(state, page, categoryID, userID, distanceUnit, tz)
+	p := parseSearchParams(state, page, categoryID, userID, distanceUnit)
 	ads, geoMeta, err := searchForAds(p, userID, tz)
 	if err != nil {
 		return 0, nil, err
@@ -159,7 +159,7 @@ func adCardFrom(a ad.Ad, viewerUserID int, tz *time.Location) ui.AdCard {
 	return ui.AdCardFromFields(
 		a.ID, a.ImageCount, a.FlagCount,
 		priceDisplay, a.Title,
-		ad.AdLocationDisplay(a, viewerUserID), adFacetLabel(a),
+		ad.AdLocationDisplay(a), adFacetLabel(a),
 		hasPrice, a.CreatedAt.In(tz),
 		a.IsActive(), a.Bookmarked,
 	)
@@ -178,21 +178,6 @@ func adDetailFacetDisplays(a ad.Ad) []string {
 	var labels []string
 	for _, d := range cat.Facets() {
 		if d.Key == "price" || d.Kind == facet.Location {
-			continue
-		}
-		if d.Key == "sale_end_date" {
-			continue
-		}
-		if d.Key == "sale_start_date" {
-			start := ""
-			if v, ok := a.Facets["sale_start_date"]; ok {
-				start = v.DateString()
-			}
-			end := ""
-			if v, ok := a.Facets["sale_end_date"]; ok {
-				end = v.DateString()
-			}
-			labels = append(labels, facet.SaleDateDetailDisplays(start, end)...)
 			continue
 		}
 		if d.CardLabel() {
@@ -226,27 +211,8 @@ func adFacetLabels(a ad.Ad, compact bool) []string {
 		if d.Key == "price" {
 			continue
 		}
-		if compact {
-			if d.Key == "sale_end_date" {
-				continue
-			}
-			if !d.CardLabel() {
-				continue
-			}
-			if d.Key == "sale_start_date" {
-				start := ""
-				if v, ok := a.Facets["sale_start_date"]; ok {
-					start = v.DateString()
-				}
-				end := ""
-				if v, ok := a.Facets["sale_end_date"]; ok {
-					end = v.DateString()
-				}
-				if s := facet.FormatDateRange(start, end); s != "" {
-					labels = append(labels, s)
-				}
-				continue
-			}
+		if compact && !d.CardLabel() {
+			continue
 		}
 		v, ok := a.Facets[d.Key]
 		if !ok {

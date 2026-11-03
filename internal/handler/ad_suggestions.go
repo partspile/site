@@ -108,19 +108,6 @@ func parseFormFacetValues(c *fiber.Ctx,
 			if val != "" {
 				values[d.Key] = facet.Value{Text: &val}
 			}
-		case facet.Date:
-			raw := strings.TrimSpace(c.FormValue(d.Key))
-			if raw == "" {
-				continue
-			}
-			if v, err := facet.ParseDateValue(raw); err == nil {
-				values[d.Key] = v
-			}
-		case facet.MultiEnum:
-			vals := parseFormEnumCheckboxes(c, d.Key, d.Enum)
-			if len(vals) > 0 {
-				values[d.Key] = facet.EncodeMultiEnum(vals)
-			}
 		case facet.Flag:
 			if c.FormValue(d.Key) == "1" {
 				values[d.Key] = facet.EncodeFlag(true)

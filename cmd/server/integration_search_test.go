@@ -257,43 +257,6 @@ func TestIntegrationSearchGeoAndFacetFilters(t *testing.T) {
 			t.Fatalf("expected ads in mileage range, got %v", result.IDs)
 		}
 	})
-	t.Run("sale start date range", func(t *testing.T) {
-		insertIntegrationAdWithDate(t, "Early sale", "2026-06-01")
-		insertIntegrationAdWithDate(t, "Late sale", "2026-06-20")
-		min := "2026-06-10"
-		result, err := search.Search(search.Params{
-			CategoryID: integrationGarageCategory,
-			Expanded:   true,
-			Limit:      10,
-			FacetFilters: map[string]facet.Filter{"sale_start_date": {
-				TextMin: &min,
-			}},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(result.IDs) == 0 {
-			t.Fatalf("expected ads after sale date min, got %v", result.IDs)
-		}
-	})
-	t.Run("pricing style multi enum", func(t *testing.T) {
-		insertIntegrationAdWithPricingStyle(t, "Priced sale", `["Everything Priced"]`)
-		insertIntegrationAdWithPricingStyle(t, "Negotiable sale", `["Negotiable / Make Offer"]`)
-		result, err := search.Search(search.Params{
-			CategoryID: integrationGarageCategory,
-			Expanded:   true,
-			Limit:      10,
-			FacetFilters: map[string]facet.Filter{"pricing_style": {
-				Values: []string{"Everything Priced"},
-			}},
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if len(result.IDs) == 0 {
-			t.Fatalf("expected priced sale ads, got %v", result.IDs)
-		}
-	})
 }
 
 func insertIntegrationAdWithCondition(t *testing.T, title, condition string) {
@@ -336,40 +299,6 @@ func insertIntegrationAdWithMileage(t *testing.T, title string, mileage int) {
 		t.Fatal(err)
 	}
 	if _, err := db.Exec(`INSERT INTO ad_facets (ad_id, "key", num, "text") VALUES ($1, 'mileage', $2, 'mi')`, id, mileage); err != nil {
-		t.Fatal(err)
-	}
-	rebuildIntegrationAdVector(t, id)
-}
-
-func insertIntegrationAdWithDate(t *testing.T, title, date string) {
-	t.Helper()
-	var id int
-	err := db.QueryRow(`INSERT INTO ads (category_id, title, description, user_id,
-		 expires_at)
-		VALUES ($1, $2, 'desc', $3,
-		        NOW() + INTERVAL '3 months') RETURNING id`,
-		integrationGarageCategory, title, integrationTestUserID).Scan(&id)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := db.Exec(`INSERT INTO ad_facets (ad_id, "key", num, "text") VALUES ($1, 'sale_start_date', NULL, $2)`, id, date); err != nil {
-		t.Fatal(err)
-	}
-	rebuildIntegrationAdVector(t, id)
-}
-
-func insertIntegrationAdWithPricingStyle(t *testing.T, title, jsonVal string) {
-	t.Helper()
-	var id int
-	err := db.QueryRow(`INSERT INTO ads (category_id, title, description, user_id,
-		 expires_at)
-		VALUES ($1, $2, 'desc', $3,
-		        NOW() + INTERVAL '3 months') RETURNING id`,
-		integrationGarageCategory, title, integrationTestUserID).Scan(&id)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := db.Exec(`INSERT INTO ad_facets (ad_id, "key", num, "text") VALUES ($1, 'pricing_style', NULL, $2)`, id, jsonVal); err != nil {
 		t.Fatal(err)
 	}
 	rebuildIntegrationAdVector(t, id)

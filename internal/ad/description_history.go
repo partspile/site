@@ -316,19 +316,6 @@ func facetValuesEqual(a, b facet.Value) bool {
 	if a.Num != nil && b.Num != nil && *a.Num != *b.Num {
 		return false
 	}
-	aVals := a.MultiEnumValues()
-	bVals := b.MultiEnumValues()
-	if len(aVals) > 0 || len(bVals) > 0 {
-		if len(aVals) != len(bVals) {
-			return false
-		}
-		for i := range aVals {
-			if aVals[i] != bVals[i] {
-				return false
-			}
-		}
-		return true
-	}
 	if a.Text == nil && b.Text != nil || a.Text != nil && b.Text == nil {
 		return false
 	}
@@ -424,20 +411,8 @@ func formatLocationChange(oldText, newText string) string {
 	return fmt.Sprintf("Location changed from %s to %s", oldText, newText)
 }
 
-func formatLocationHistoryChange(oldAd Ad, newLocationText string,
-	category Category) string {
+func formatLocationHistoryChange(oldAd Ad, newLocationText string) string {
 	newRaw := strings.TrimSpace(newLocationText)
-	if UsesFullAddressDisplay(category) {
-		oldRaw := fullAddressText(oldAd)
-		if strings.EqualFold(oldRaw, newRaw) {
-			return ""
-		}
-		if newRaw == "" {
-			return "Address removed"
-		}
-		return "Address changed"
-	}
-
 	oldRaw := strings.TrimSpace(oldAd.RawLocation)
 	if strings.EqualFold(oldRaw, newRaw) {
 		return ""
@@ -472,15 +447,11 @@ func BuildFieldChangeEntries(oldAd Ad, newTitle string, newLocationText string,
 			body  string
 		}{"Title change", body})
 	}
-	if body := formatLocationHistoryChange(oldAd, newLocationText, category); body != "" {
-		label := "Location change"
-		if UsesFullAddressDisplay(category) {
-			label = "Address change"
-		}
+	if body := formatLocationHistoryChange(oldAd, newLocationText); body != "" {
 		entries = append(entries, struct {
 			label string
 			body  string
-		}{label, body})
+		}{"Location change", body})
 	}
 	for _, d := range category.Facets() {
 		oldV, oldOK := oldAd.Facets[d.Key]

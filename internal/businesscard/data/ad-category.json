@@ -46,11 +46,5 @@
     "image_file": "ag.svg",
     "seed_ad_file": "ad-agricultural-part.json",
     "facets": ["condition", "local_pickup", "price"]
-  },
-  {
-    "name": "Garage/Estate Sale",
-    "image_file": "garage-sale.svg",
-    "seed_ad_file": "ad-garage-sale.json",
-    "facets": ["sale_type", "sale_start_date", "sale_end_date", "pricing_style", "address"]
   }
 ]

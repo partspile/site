@@ -69,7 +69,7 @@ func CreateAd(input CreateInput) (int, error) {
 
 	var id int
 	now := time.Now().UTC()
-	expiresAt := ComputeExpiresAt(values, now)
+	expiresAt := ComputeExpiresAt(now)
 	err = tx.QueryRow(
 		`INSERT INTO ads (category_id, title, description, user_id, location_id,
 		 latitude, longitude, tags, image_count, expires_at)

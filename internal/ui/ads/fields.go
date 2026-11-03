@@ -49,10 +49,6 @@ func (f adFields) facetInput(d facet.Def) g.Node {
 		return f.formSelect(d)
 	case facet.FormRadio:
 		return f.formRadio(d)
-	case facet.FormDate:
-		return f.formDate(d)
-	case facet.FormCheckboxes:
-		return f.formCheckboxes(d)
 	case facet.FormFlag:
 		return f.formFlag(d)
 	case facet.FormLocation:
@@ -167,46 +163,6 @@ func (f adFields) formFlag(d facet.Def) g.Node {
 	)
 }
 
-func (f adFields) formDate(d facet.Def) g.Node {
-	attrs := []g.Node{
-		Type("date"),
-		Name(d.Key),
-		ID(f.cfg.fieldID(d.Key)),
-		Class(controlClass),
-	}
-	if v := strings.TrimSpace(f.cfg.Values.Facets[d.Key]); v != "" {
-		attrs = append(attrs, Value(v))
-	}
-	return Input(attrs...)
-}
-
-func (f adFields) formCheckboxes(d facet.Def) g.Node {
-	selected := make(map[string]bool)
-	for _, v := range f.cfg.Values.FacetMulti[d.Key] {
-		selected[v] = true
-	}
-	opts := d.FormOptions()
-	nodes := make([]g.Node, len(opts))
-	for i, o := range opts {
-		id := fmt.Sprintf("%s-%s-%d", f.cfg.FieldPrefix, d.Key, i)
-		attrs := []g.Node{
-			Type("checkbox"),
-			Name(d.Key),
-			Value(o),
-			ID(id),
-		}
-		if selected[o] {
-			attrs = append(attrs, g.Attr("checked", "checked"))
-		}
-		nodes[i] = Label(
-			Class("field-option"),
-			Input(attrs...),
-			Span(g.Text(o)),
-		)
-	}
-	return Div(Class("field-options"), g.Group(nodes))
-}
-
 func (f adFields) facetNumberInput(d facet.Def) g.Node {
 	attrs := []g.Node{
 		Type("number"),
@@ -272,7 +228,7 @@ func (f adFields) facetFieldBlock(d facet.Def, input g.Node) g.Node {
 	}
 	fieldID := ""
 	switch d.Form {
-	case facet.FormRadio, facet.FormCheckboxes:
+	case facet.FormRadio:
 		// Group headings are not tied to a single control.
 	default:
 		fieldID = f.cfg.fieldID(d.Key)

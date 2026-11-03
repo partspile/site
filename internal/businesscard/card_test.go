@@ -16,8 +16,8 @@ func TestLoadCategoriesAlphabeticalIDs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("LoadCategories: %v", err)
 	}
-	if len(cats) != 9 {
-		t.Fatalf("expected 9 categories, got %d", len(cats))
+	if len(cats) != 8 {
+		t.Fatalf("expected 8 categories, got %d", len(cats))
 	}
 	if cats[0].Name != "Agricultural Equipment" || cats[0].ID != 1 {
 		t.Fatalf("unexpected first category: %+v", cats[0])

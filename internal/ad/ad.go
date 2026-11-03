@@ -179,11 +179,7 @@ func attachFacets(ads []Ad) error {
 	}
 	for _, r := range rows {
 		if i, ok := index[r.AdID]; ok {
-			v := facet.Value{Num: r.Num, Text: r.Text}
-			if d, ok := facet.Get(r.Key); ok && d.Kind == facet.MultiEnum {
-				v = facet.EncodeMultiEnum(v.MultiEnumValues())
-			}
-			ads[i].Facets[r.Key] = v
+			ads[i].Facets[r.Key] = facet.Value{Num: r.Num, Text: r.Text}
 		}
 	}
 	return nil
@@ -276,7 +272,7 @@ func Activate(id int) error {
 	if !a.IsInactive() {
 		return fmt.Errorf("ad is not inactive")
 	}
-	expiresAt := ComputeExpiresAt(a.Facets, time.Now().UTC())
+	expiresAt := ComputeExpiresAt(time.Now().UTC())
 	_, err = db.Exec(`
 		UPDATE ads
 		SET inactive_at = NULL, expires_at = $1

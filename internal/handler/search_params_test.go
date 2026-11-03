@@ -23,7 +23,7 @@ func TestSearchVisibleToggle(t *testing.T) {
 func TestParseSearchParamsCollapsedNoFacets(t *testing.T) {
 	app := fiber.New()
 	app.Get("/search", func(c *fiber.Ctx) error {
-		p := parseSearchParams(cookie.SearchState{Q: "Honda"}, c.QueryInt("page", 1), 6, 0, cookie.GetDistanceUnit(c), cookie.GetTimezone(c))
+		p := parseSearchParams(cookie.SearchState{Q: "Honda"}, c.QueryInt("page", 1), 6, 0, cookie.GetDistanceUnit(c))
 		if p.Expanded {
 			t.Fatal("expected Expanded false when filter panel collapsed")
 		}
@@ -76,25 +76,5 @@ func TestParseFacetFiltersConditionCheckboxes(t *testing.T) {
 	got := filters["condition"]
 	if len(got.Values) != 2 || got.Values[0] != "New" || got.Values[1] != "Used - Good" {
 		t.Fatalf("condition filter = %+v", got)
-	}
-}
-
-func TestParseFacetFiltersSaleWeek(t *testing.T) {
-	category := ad.Category{FacetKeys: []string{"sale_start_date"}}
-
-	app := fiber.New()
-	var filters map[string]facet.Filter
-	app.Get("/search", func(c *fiber.Ctx) error {
-		filters = parseFacetFilters(c, category)
-		return c.SendStatus(fiber.StatusOK)
-	})
-
-	req := httptest.NewRequest("GET", "/search?sale_start_date=Next+week", nil)
-	if _, err := app.Test(req); err != nil {
-		t.Fatal(err)
-	}
-	got := filters["sale_start_date"]
-	if got.Value == nil || *got.Value != "Next week" {
-		t.Fatalf("Value = %v", got.Value)
 	}
 }

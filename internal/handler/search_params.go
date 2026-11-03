@@ -3,7 +3,6 @@ package handler
 import (
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/partspile/site/internal/ad"
@@ -82,13 +81,13 @@ func filterFacetsForExpanded(cat ad.Category, expanded bool) []facet.Def {
 }
 
 func parseSearchParams(state cookie.SearchState, page, categoryID, userID int,
-	distanceUnit string, tz *time.Location) search.Params {
+	distanceUnit string) search.Params {
 	limit := config.SearchPageSize
 	offset := (page - 1) * limit
 
 	var facetFilters map[string]facet.Filter
 	if state.Expanded {
-		facetFilters = expandFacetFilters(state.Facets, tz)
+		facetFilters = state.Facets
 	}
 
 	p := search.BuildParams(
@@ -144,11 +143,6 @@ func parseFacetFilters(c *fiber.Ctx,
 			continue
 		}
 		switch d.Filter {
-		case facet.FilterExact:
-			val := strings.TrimSpace(c.Query(d.Key))
-			if val != "" && d.ValidFilterValue(val) {
-				filters[d.Key] = facet.Filter{Value: &val}
-			}
 		case facet.FilterCheckboxes:
 			if vals := parseEnumCheckboxQuery(c, d.Key, d.Enum); len(vals) > 0 {
 				filters[d.Key] = facet.Filter{Values: vals}
@@ -159,14 +153,6 @@ func parseFacetFilters(c *fiber.Ctx,
 				filters[d.Key] = facet.Filter{Value: &one}
 			}
 		default:
-			if d.Kind == facet.Date {
-				min := parseOptionalDate(c.Query(d.Key + "_min"))
-				max := parseOptionalDate(c.Query(d.Key + "_max"))
-				if min != nil || max != nil {
-					filters[d.Key] = facet.Filter{TextMin: min, TextMax: max}
-				}
-				continue
-			}
 			min := parseOptionalAmount(c.Query(d.Key + "_min"))
 			max := parseOptionalAmount(c.Query(d.Key + "_max"))
 			if min != nil || max != nil {
@@ -178,19 +164,6 @@ func parseFacetFilters(c *fiber.Ctx,
 		return nil
 	}
 	return filters
-}
-
-func expandFacetFilters(filters map[string]facet.Filter,
-	tz *time.Location) map[string]facet.Filter {
-	if len(filters) == 0 {
-		return filters
-	}
-	now := time.Now().In(tz)
-	out := make(map[string]facet.Filter, len(filters))
-	for k, f := range filters {
-		out[k] = facet.ResolveFilterForSearch(k, f, now)
-	}
-	return out
 }
 
 func parseEnumCheckboxQuery(c *fiber.Ctx, key string, allowed []string) []string {
@@ -215,17 +188,6 @@ func parseEnumCheckboxQuery(c *fiber.Ctx, key string, allowed []string) []string
 		vals = append(vals, s)
 	})
 	return vals
-}
-
-func parseOptionalDate(raw string) *string {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return nil
-	}
-	if _, err := time.Parse("2006-01-02", raw); err != nil {
-		return nil
-	}
-	return &raw
 }
 
 func parseOptionalAmount(raw string) *int {
@@ -289,6 +251,6 @@ func BuildSearchParamsForTest(c *fiber.Ctx, state cookie.SearchState,
 	categoryID int) search.Params {
 	return parseSearchParams(
 		state, c.QueryInt("page", 1), categoryID,
-		local.GetUserID(c), cookie.GetDistanceUnit(c), cookie.GetTimezone(c),
+		local.GetUserID(c), cookie.GetDistanceUnit(c),
 	)
 }

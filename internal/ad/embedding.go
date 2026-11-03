@@ -139,11 +139,7 @@ func loadFacetsForAd(adID int) (map[string]facet.Value, error) {
 	}
 	out := make(map[string]facet.Value, len(rows))
 	for _, r := range rows {
-		v := facet.Value{Num: r.Num, Text: r.Text}
-		if d, ok := facet.Get(r.Key); ok && d.Kind == facet.MultiEnum {
-			v = facet.EncodeMultiEnum(v.MultiEnumValues())
-		}
-		out[r.Key] = v
+		out[r.Key] = facet.Value{Num: r.Num, Text: r.Text}
 	}
 	return out, nil
 }

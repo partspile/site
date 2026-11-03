@@ -51,41 +51,13 @@ func facetFilterNodes(facets []facet.Def, f SearchFilters) []g.Node {
 
 func facetFilterRow(d facet.Def, filter facet.Filter) g.Node {
 	switch d.Filter {
-	case facet.FilterExact:
-		return enumFilterRow(d, filter)
 	case facet.FilterCheckboxes:
 		return enumCheckboxesFilterRow(d, filter)
 	case facet.FilterFlag:
 		return flagFilterRow(d, filter)
 	default:
-		if d.Kind == facet.Date {
-			return dateRangeFilterRow(d.Key, d.Label, filter.TextMin, filter.TextMax)
-		}
 		return rangeFilterRow(d.Key, d.Label, filter.Min, filter.Max)
 	}
-}
-
-func enumFilterRow(d facet.Def, filter facet.Filter) g.Node {
-	selected := ""
-	if filter.Value != nil {
-		selected = *filter.Value
-	}
-	id := "filter-" + d.Key
-	opts := make([]g.Node, 0, len(d.Enum)+1)
-	opts = append(opts, enumOption("", "Any", selected))
-	for _, e := range d.Enum {
-		opts = append(opts, enumOption(e, e, selected))
-	}
-	return Div(
-		Class("col-span-2 field-group"),
-		Label(For(id), Class("field-label"), g.Text(d.Label)),
-		Select(
-			Name(d.Key),
-			ID(id),
-			Class("w-full "+controlClass),
-			g.Group(opts),
-		),
-	)
 }
 
 func enumCheckboxesFilterRow(d facet.Def, filter facet.Filter) g.Node {
@@ -148,13 +120,6 @@ func flagFilterGroup(defs []facet.Def, f SearchFilters) g.Node {
 	)
 }
 
-func enumOption(value, label, selected string) g.Node {
-	if value == selected {
-		return Option(Value(value), g.Attr("selected", "selected"), g.Text(label))
-	}
-	return Option(Value(value), g.Text(label))
-}
-
 func rangeFilterRow(name, label string, min, max *int) g.Node {
 	minID := "filter-" + name + "-min"
 	maxID := "filter-" + name + "-max"
@@ -182,40 +147,6 @@ func rangeFilterRow(name, label string, min, max *int) g.Node {
 				g.Attr("min", "0"),
 				g.Attr("inputmode", "numeric"),
 				g.If(priceAmount(max) != "", Value(priceAmount(max))),
-			),
-		),
-	)
-}
-
-func dateRangeFilterRow(name, label string, min, max *string) g.Node {
-	minID := "filter-" + name + "-min"
-	maxID := "filter-" + name + "-max"
-	minVal := ""
-	if min != nil {
-		minVal = *min
-	}
-	maxVal := ""
-	if max != nil {
-		maxVal = *max
-	}
-	return Div(
-		Class("col-span-2 field-group"),
-		Label(For(minID), Class("field-label"), g.Text(label)),
-		Div(Class("ad-filter-price-range flex flex-wrap items-center gap-2"),
-			Input(
-				Type("date"),
-				Name(name+"_min"),
-				ID(minID),
-				Class(controlClass),
-				g.If(minVal != "", Value(minVal)),
-			),
-			Span(Class("ad-filter-range-sep"), g.Text("–")),
-			Input(
-				Type("date"),
-				Name(name+"_max"),
-				ID(maxID),
-				Class(controlClass),
-				g.If(maxVal != "", Value(maxVal)),
 			),
 		),
 	)
