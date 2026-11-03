@@ -127,13 +127,17 @@ func setupApp() *fiber.App {
 	auth.Post("/user/settings/phone/verify", handler.ChangePhoneVerifyHandler)
 	auth.Get("/user/settings/delete-confirm", handler.DeleteAccountConfirmModalHandler)
 	auth.Post("/user/settings/delete", handler.DeleteAccountHandler)
-	auth.Post("/user/settings/account-picture/presign",
+	auth.Get("/user/profile/picture",
+		handler.ProfilePictureDisplayHandler)
+	auth.Get("/user/profile/picture/edit",
+		handler.ProfilePictureEditHandler)
+	auth.Post("/user/profile/picture/presign",
 		handler.PresignAccountPictureHandler)
-	auth.Post("/user/settings/account-picture/confirm",
+	auth.Post("/user/profile/picture/confirm",
 		handler.ConfirmAccountPictureHandler)
-	auth.Post("/user/settings/account-picture",
+	auth.Post("/user/profile/picture",
 		handler.SaveAccountPictureURLHandler)
-	auth.Post("/user/settings/account-picture/remove",
+	auth.Post("/user/profile/picture/remove",
 		handler.RemoveAccountPictureHandler)
 	auth.Get("/user/:id", handler.UserProfileHandler)
 	auth.Get("/user/:id/view/:view", handler.UserProfileViewHandler)

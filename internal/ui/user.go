@@ -106,7 +106,7 @@ func UserProfilePage(d UserProfileData, view int, adNodes []g.Node) []g.Node {
 			shareProfileButton(),
 		)
 	}
-	return []g.Node{
+	nodes := []g.Node{
 		title,
 		Div(
 			Class("mt-8 space-y-4 max-w-md"),
@@ -122,9 +122,15 @@ func UserProfilePage(d UserProfileData, view int, adNodes []g.Node) []g.Node {
 				),
 			),
 		),
-		UserAccountPictureBanner(d),
+		UserAccountPictureArea(d, false, ""),
 		UserProfileAds(d.AdsViewPathPrefix, view, adNodes),
 	}
+	if d.IsOwn {
+		nodes = append(nodes,
+			g.Raw(`<script src="/js/account-picture.js" defer></script>`),
+		)
+	}
+	return nodes
 }
 
 func shareProfileButton() g.Node {
@@ -140,8 +146,20 @@ func shareProfileButton() g.Node {
 	})
 }
 
-// UserAccountPictureBanner shows the optional full-width account picture.
-func UserAccountPictureBanner(d UserProfileData) g.Node {
+// UserAccountPictureArea renders the profile picture block. For other users
+// it is display-only (nil when no picture). For the owner it includes Edit.
+func UserAccountPictureArea(d UserProfileData, editing bool,
+	errMsg string) g.Node {
+	if !d.IsOwn {
+		return userAccountPictureBanner(d)
+	}
+	if editing {
+		return AccountPictureEditSection(d, errMsg)
+	}
+	return AccountPictureDisplaySection(d)
+}
+
+func userAccountPictureBanner(d UserProfileData) g.Node {
 	if !d.HasAccountPicture {
 		return nil
 	}
@@ -165,6 +183,66 @@ func UserAccountPictureBanner(d UserProfileData) g.Node {
 			Rel("noopener noreferrer"),
 			img,
 		),
+	)
+}
+
+// AccountPictureDisplaySection is the owner-facing picture with an overlay
+// edit control. Empty state is a dotted placeholder frame.
+func AccountPictureDisplaySection(d UserProfileData) g.Node {
+	var media g.Node
+	if d.HasAccountPicture {
+		src := UserAccountPictureSrc(d.ID)
+		if src != "" {
+			img := Img(
+				Src(src),
+				Alt(d.Name+" account picture"),
+				Class("w-full max-h-[300px] object-cover rounded"),
+			)
+			if d.AccountPictureURL != "" {
+				media = A(
+					Href(d.AccountPictureURL),
+					Target("_blank"),
+					Rel("noopener noreferrer"),
+					Class("block"),
+					img,
+				)
+			} else {
+				media = img
+			}
+		}
+	}
+	if media == nil {
+		media = Div(
+			Class("w-full h-40 rounded border-2 border-dashed "+
+				"border-zinc-300 dark:border-zinc-600 "+
+				"bg-zinc-50 dark:bg-zinc-800/50"),
+			g.Attr("aria-label", "No profile picture"),
+		)
+	}
+
+	editBtn := Button(
+		Type("button"),
+		Class("absolute bottom-3 right-3 p-2 rounded-full "+
+			"bg-white/90 dark:bg-zinc-800/90 border "+
+			"border-zinc-300 dark:border-zinc-600 shadow "+
+			"hover:bg-white dark:hover:bg-zinc-700 cursor-pointer"),
+		g.Attr("aria-label", "Edit picture"),
+		g.Attr("title", "Edit picture"),
+		hx.Get("/auth/user/profile/picture/edit"),
+		hx.Target("#account-picture-section"),
+		hx.Swap("outerHTML"),
+		Img(
+			Src("/images/edit.svg"),
+			Alt(""),
+			Class("w-5 h-5 dark:invert dark:opacity-80"),
+		),
+	)
+
+	return Div(
+		ID("account-picture-section"),
+		Class("mt-8 relative"),
+		media,
+		editBtn,
 	)
 }
 
@@ -525,12 +603,10 @@ func notificationsSection(smsOptedOut bool, oob bool) g.Node {
 	)
 }
 
-func SettingsPage(name, phoneE64 string, smsOptedOut bool,
-	userID int, hasAccountPicture bool, accountPictureURL string) []g.Node {
+func SettingsPage(name, phoneE64 string, smsOptedOut bool) []g.Node {
 	return []g.Node{
 		pageTitle("Settings"),
 		settingsAccountSection(name, phoneE64),
-		AccountPictureSection(userID, hasAccountPicture, accountPictureURL, ""),
 		NotificationsSSESink(),
 		NotificationsSection(smsOptedOut),
 		ChangePhoneSection(),
@@ -580,32 +656,22 @@ func SettingsPage(name, phoneE64 string, smsOptedOut bool,
 				}, SettingsDeleteAccountErrorID),
 			),
 		),
-		g.Raw(`<script src="/js/account-picture.js" defer></script>`),
 	}
 }
 
-// AccountPictureSection is the settings block for upload/URL/remove.
-func AccountPictureSection(userID int, hasPicture bool,
-	pictureURL, errMsg string) g.Node {
+// AccountPictureEditSection is the owner edit form for upload/URL/remove.
+// Picture and link changes save silently (no Done / Save buttons).
+func AccountPictureEditSection(d UserProfileData, errMsg string) g.Node {
 	previewSrc := ""
-	if hasPicture {
-		previewSrc = UserAccountPictureSrc(userID)
+	if d.HasAccountPicture {
+		previewSrc = UserAccountPictureSrc(d.ID)
 	}
-	uploadLabel := "Upload picture"
-	if hasPicture {
-		uploadLabel = "Replace picture"
-	}
-
-	nodes := []g.Node{
-		H2(Class("text-xl font-semibold mb-4"), g.Text("Account Picture")),
-		P(
-			Class("text-sm text-zinc-600 dark:text-zinc-400 mb-4"),
-			g.Text("Shown full-width on your public profile below your "+
-				"member info. Optional link opens in a new tab when the "+
-				"picture is clicked."),
-		),
+	changeLabel := "Add picture"
+	if d.HasAccountPicture {
+		changeLabel = "Change picture"
 	}
 
+	var nodes []g.Node
 	if previewSrc != "" {
 		nodes = append(nodes,
 			Div(
@@ -619,80 +685,72 @@ func AccountPictureSection(userID int, hasPicture bool,
 		)
 	}
 
-	nodes = append(nodes,
-		Div(
-			Class("space-y-4"),
-			Div(
-				Label(
-					Class("block text-sm font-medium mb-1"),
-					g.Text(uploadLabel),
-				),
-				Input(
-					Type("file"),
-					ID("account-picture-file"),
-					Accept("image/*"),
-					Class("block w-full text-sm text-zinc-600 dark:text-zinc-400 "+
-						"file:mr-4 file:py-2 file:px-4 file:rounded "+
-						"file:border-0 file:bg-zinc-200 dark:file:bg-zinc-700 "+
-						"file:text-zinc-900 dark:file:text-zinc-100"),
-				),
-				Div(
-					Class("mt-2 flex items-center gap-4"),
-					standardButton(buttonProps{
-						Type: "button",
-						Text: uploadLabel,
-						Attrs: []g.Node{
-							ID("account-picture-upload-btn"),
-						},
-					}),
-					Span(
-						ID("account-picture-status"),
-						Class("text-sm text-zinc-500 dark:text-zinc-400 hidden"),
-					),
-				),
-			),
-			Form(
-				Class("space-y-4"),
-				hx.Post("/auth/user/settings/account-picture"),
-				hx.Target("#account-picture-section"),
-				hx.Swap("outerHTML"),
-				labeledTextInput("Link URL (optional)", "account_picture_url",
-					Type("url"),
-					Name("account_picture_url"),
-					Value(pictureURL),
-					Placeholder("https://example.com"),
-				),
-				Div(
-					Class("flex items-center gap-4"),
-					standardButton(buttonProps{
-						Type: "submit",
-						Text: "Save link",
-					}),
-					Div(
-						ID(SettingsAccountPictureErrorID),
-						Class("text-red-500 text-lg"),
-						g.If(errMsg != "", g.Text(errMsg)),
-					),
-				),
-			),
+	pictureActions := []g.Node{
+		Input(
+			Type("file"),
+			ID("account-picture-file"),
+			Accept("image/*"),
+			Class("hidden"),
 		),
-	)
-
-	if hasPicture {
-		nodes = append(nodes,
+		standardButton(buttonProps{
+			Type: "button",
+			Text: changeLabel,
+			Attrs: []g.Node{
+				ID("account-picture-upload-btn"),
+			},
+		}),
+	}
+	if d.HasAccountPicture {
+		pictureActions = append(pictureActions,
 			Form(
-				Class("mt-4"),
-				hx.Post("/auth/user/settings/account-picture/remove"),
+				Class("inline"),
+				hx.Post("/auth/user/profile/picture/remove"),
 				hx.Target("#account-picture-section"),
 				hx.Swap("outerHTML"),
 				standardButton(buttonProps{
 					Type:  "submit",
-					Text:  "Remove picture",
+					Text:  "Remove",
 					Class: "bg-zinc-600 hover:bg-zinc-700",
 				}),
 			),
 		)
 	}
+	nodes = append(nodes,
+		Div(
+			Class("flex flex-wrap items-center gap-3"),
+			g.Group(pictureActions),
+			Span(
+				ID("account-picture-status"),
+				Class("text-sm text-zinc-500 dark:text-zinc-400 hidden"),
+			),
+		),
+		Div(
+			ID(SettingsAccountPictureErrorID),
+			Class("mt-2 text-red-500 text-sm"),
+			g.If(errMsg != "", g.Text(errMsg)),
+		),
+		Div(
+			Class("mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-700 space-y-2"),
+			Label(
+				Class("block text-sm font-medium"),
+				For("account_picture_url"),
+				g.Text("Link when picture is clicked"),
+			),
+			Input(
+				Type("url"),
+				ID("account_picture_url"),
+				Name("account_picture_url"),
+				Value(d.AccountPictureURL),
+				Placeholder("https://example.com (optional)"),
+				Class(textFieldClass),
+				hx.Post("/auth/user/profile/picture"),
+				hx.Trigger("change delay:400ms, blur"),
+				hx.Target("#account-picture-section"),
+				hx.Swap("outerHTML"),
+				hx.Include("this"),
+			),
+		),
+	)
 
 	return Div(
 		ID("account-picture-section"),

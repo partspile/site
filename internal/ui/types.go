@@ -16,6 +16,7 @@ type UserProfileData struct {
 	HasAccountPicture bool
 	AccountPictureURL string
 	ShowShare         bool
+	IsOwn             bool // viewer is this profile's owner
 	AdsViewPathPrefix string
 }
 

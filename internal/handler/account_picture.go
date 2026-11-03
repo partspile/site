@@ -4,14 +4,56 @@ import (
 	"errors"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/partspile/site/internal/ad"
 	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/flag"
 	"github.com/partspile/site/internal/local"
 	"github.com/partspile/site/internal/logger"
 	"github.com/partspile/site/internal/ui"
 	"github.com/partspile/site/internal/user"
 )
+
+func ownProfilePictureData(c *fiber.Ctx) (ui.UserProfileData, error) {
+	userID := local.GetUserID(c)
+	u, err := user.GetByID(userID)
+	if err != nil {
+		return ui.UserProfileData{},
+			fiber.NewError(fiber.StatusNotFound, "User not found")
+	}
+	activeAdCount, _ := ad.CountActiveAdsByUser(userID)
+	userFlagCount, _ := flag.GetFlagCountForUser(userID)
+	tz := cookie.GetTimezone(c)
+	if tz == nil {
+		tz = time.UTC
+	}
+	d := userProfileData(u, activeAdCount, userFlagCount, tz,
+		memberSinceLayoutPage)
+	d.IsOwn = true
+	d.ShowShare = true
+	return d, nil
+}
+
+// ProfilePictureDisplayHandler returns the owner display block (Edit button).
+func ProfilePictureDisplayHandler(c *fiber.Ctx) error {
+	d, err := ownProfilePictureData(c)
+	if err != nil {
+		return err
+	}
+	return render(c, ui.AccountPictureDisplaySection(d))
+}
+
+// ProfilePictureEditHandler returns the owner edit form.
+func ProfilePictureEditHandler(c *fiber.Ctx) error {
+	d, err := ownProfilePictureData(c)
+	if err != nil {
+		return err
+	}
+	return render(c, ui.AccountPictureEditSection(d, ""))
+}
 
 // PresignAccountPictureHandler returns a short-lived PUT URL for account.jpg.
 func PresignAccountPictureHandler(c *fiber.Ctx) error {
@@ -51,32 +93,28 @@ func ConfirmAccountPictureHandler(c *fiber.Ctx) error {
 
 // SaveAccountPictureURLHandler saves or clears the click-through URL.
 func SaveAccountPictureURLHandler(c *fiber.Ctx) error {
-	userID := local.GetUserID(c)
 	raw := strings.TrimSpace(c.FormValue("account_picture_url"))
-	u, err := user.GetByID(userID)
+	d, err := ownProfilePictureData(c)
 	if err != nil {
-		return fiber.NewError(fiber.StatusNotFound, "User not found")
+		return err
 	}
 	if raw != "" {
 		if err := validateAccountPictureURL(raw); err != nil {
-			return render(c, ui.AccountPictureSection(
-				u.ID, u.HasAccountPicture, raw, err.Error(),
-			))
+			d.AccountPictureURL = raw
+			return render(c, ui.AccountPictureEditSection(d, err.Error()))
 		}
 	}
-	if err := user.SetAccountPictureURL(userID, raw); err != nil {
+	if err := user.SetAccountPictureURL(d.ID, raw); err != nil {
 		logger.Error("Failed to save account picture URL",
-			"error", err, "userID", userID)
+			"error", err, "userID", d.ID)
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to save link")
 	}
-	u, err = user.GetByID(userID)
+	d, err = ownProfilePictureData(c)
 	if err != nil {
-		return fiber.NewError(fiber.StatusNotFound, "User not found")
+		return err
 	}
-	return render(c, ui.AccountPictureSection(
-		u.ID, u.HasAccountPicture, u.AccountPictureURL, "",
-	))
+	return render(c, ui.AccountPictureDisplaySection(d))
 }
 
 // RemoveAccountPictureHandler clears the picture flag and deletes MinIO object.
@@ -89,13 +127,11 @@ func RemoveAccountPictureHandler(c *fiber.Ctx) error {
 			"Failed to remove picture")
 	}
 	deleteUserAccountPicture(userID)
-	u, err := user.GetByID(userID)
+	d, err := ownProfilePictureData(c)
 	if err != nil {
-		return fiber.NewError(fiber.StatusNotFound, "User not found")
+		return err
 	}
-	return render(c, ui.AccountPictureSection(
-		u.ID, u.HasAccountPicture, u.AccountPictureURL, "",
-	))
+	return render(c, ui.AccountPictureDisplaySection(d))
 }
 
 func validateAccountPictureURL(raw string) error {

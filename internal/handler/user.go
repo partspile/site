@@ -124,7 +124,6 @@ func UserSettingsHandler(c *fiber.Ctx) error {
 	}
 	return renderPage(c, "Settings", ui.SettingsPage(
 		u.Name, u.PhoneE64, u.SMSOptedOut,
-		u.ID, u.HasAccountPicture, u.AccountPictureURL,
 	))
 }
 
@@ -411,6 +410,7 @@ func renderUserProfile(c *fiber.Ctx, id int, adsViewPrefix string,
 	}
 	d := userProfileData(u, activeAdCount, userFlagCount, tz, memberSinceLayoutPage)
 	d.ShowShare = showShare
+	d.IsOwn = showShare
 	d.AdsViewPathPrefix = adsViewPrefix
 	return renderPage(c, u.Name, ui.UserProfilePage(d, view, adNodes))
 }

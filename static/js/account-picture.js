@@ -1,4 +1,4 @@
-// account-picture.js: JPEG encode + MinIO presigned PUT for settings
+// account-picture.js: JPEG encode + MinIO presigned PUT for profile picture
 
 const ACCOUNT_PICTURE_MAX_WIDTH = 1200;
 const ACCOUNT_PICTURE_QUALITY = 0.8;
@@ -122,7 +122,7 @@ async function uploadAccountPicture(file) {
 	}
 	setAccountPictureStatus('Preparing upload...');
 	const presignRes = await fetch(
-		'/auth/user/settings/account-picture/presign', {
+		'/auth/user/profile/picture/presign', {
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
@@ -144,7 +144,7 @@ async function uploadAccountPicture(file) {
 
 	setAccountPictureStatus('Finishing...');
 	const confirmRes = await fetch(
-		'/auth/user/settings/account-picture/confirm', {
+		'/auth/user/profile/picture/confirm', {
 			method: 'POST',
 			headers: {
 				'Accept': 'application/json',
@@ -167,9 +167,13 @@ function bindAccountPictureUpload() {
 		return;
 	}
 	btn.dataset.bound = '1';
-	btn.addEventListener('click', async () => {
+	btn.addEventListener('click', () => {
+		clearAccountPictureError();
+		input.value = '';
+		input.click();
+	});
+	input.addEventListener('change', async () => {
 		if (!input.files || input.files.length === 0) {
-			showAccountPictureError('Choose an image file first');
 			return;
 		}
 		btn.disabled = true;
