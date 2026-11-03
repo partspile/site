@@ -56,8 +56,8 @@ func calculateWeightedVectors(activities []AdActivity) ([][]float32, []float32) 
 }
 
 func calculateSiteLevelVector(categoryID int, campaignKey string) ([]float32, error) {
-	if categoryID <= 0 {
-		return nil, fmt.Errorf("categoryID must be greater than 0")
+	if categoryID < 0 {
+		return nil, fmt.Errorf("categoryID must be >= 0")
 	}
 	limit := config.VectorSiteEmbeddingLimit
 	activities, err := getSiteActivities(categoryID, campaignKey, limit)

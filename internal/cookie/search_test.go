@@ -14,11 +14,12 @@ func TestSearchStateRoundTrip(t *testing.T) {
 	min := 100
 	max := 5000
 	want := SearchState{
-		Q:        "Honda",
-		Facets:   map[string]facet.Filter{"price": {Min: &min, Max: &max}},
-		Location: "Denver",
-		Within:   25,
-		Expanded: true,
+		Q:          "Honda",
+		CategoryID: 6,
+		Facets:     map[string]facet.Filter{"price": {Min: &min, Max: &max}},
+		Location:   "Denver",
+		Within:     25,
+		Expanded:   true,
 	}
 	app := fiber.New()
 	var got SearchState
@@ -51,7 +52,8 @@ func TestSearchStateRoundTrip(t *testing.T) {
 	if _, err := app.Test(getReq); err != nil {
 		t.Fatal(err)
 	}
-	if got.Q != want.Q || got.Location != want.Location ||
+	if got.Q != want.Q || got.CategoryID != want.CategoryID ||
+		got.Location != want.Location ||
 		got.Within != want.Within || got.Expanded != want.Expanded {
 		t.Fatalf("got %+v, want %+v", got, want)
 	}

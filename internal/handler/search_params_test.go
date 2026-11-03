@@ -23,7 +23,10 @@ func TestSearchVisibleToggle(t *testing.T) {
 func TestParseSearchParamsCollapsedNoFacets(t *testing.T) {
 	app := fiber.New()
 	app.Get("/search", func(c *fiber.Ctx) error {
-		p := parseSearchParams(cookie.SearchState{Q: "Honda"}, c.QueryInt("page", 1), 6, 0, cookie.GetDistanceUnit(c))
+		p := parseSearchParams(
+			cookie.SearchState{Q: "Honda", CategoryID: 6},
+			c.QueryInt("page", 1), 0, cookie.GetDistanceUnit(c),
+		)
 		if p.Expanded {
 			t.Fatal("expected Expanded false when filter panel collapsed")
 		}
@@ -33,10 +36,24 @@ func TestParseSearchParamsCollapsedNoFacets(t *testing.T) {
 		if p.Q != "Honda" {
 			t.Fatalf("q = %q", p.Q)
 		}
+		if p.CategoryID != 0 {
+			t.Fatalf("collapsed search should ignore category filter, got %d",
+				p.CategoryID)
+		}
 		return c.SendStatus(fiber.StatusOK)
 	})
 	if _, err := app.Test(httptest.NewRequest("GET", "/search", nil)); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestParseSearchParamsExpandedAppliesCategory(t *testing.T) {
+	p := parseSearchParams(
+		cookie.SearchState{Q: "Honda", CategoryID: 6, Expanded: true},
+		1, 0, "",
+	)
+	if p.CategoryID != 6 {
+		t.Fatalf("category = %d", p.CategoryID)
 	}
 }
 
@@ -57,12 +74,12 @@ func TestSaveSearchStateAlwaysPersistsLocation(t *testing.T) {
 }
 
 func TestParseFacetFiltersConditionCheckboxes(t *testing.T) {
-	category := ad.Category{FacetKeys: []string{"condition"}}
+	defs := filterableFacets(ad.Category{FacetKeys: []string{"condition"}}.Facets())
 
 	app := fiber.New()
 	var filters map[string]facet.Filter
 	app.Get("/search", func(c *fiber.Ctx) error {
-		filters = parseFacetFilters(c, category)
+		filters = parseFacetFilters(c, defs)
 		return c.SendStatus(fiber.StatusOK)
 	})
 

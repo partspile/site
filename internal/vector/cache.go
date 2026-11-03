@@ -119,8 +119,8 @@ func setUserEmbedding(userID, categoryID int, embedding []float32) error {
 }
 
 func GetSiteEmbedding(categoryID int, campaignKey string) ([]float32, error) {
-	if categoryID <= 0 {
-		return nil, fmt.Errorf("categoryID must be greater than 0")
+	if categoryID < 0 {
+		return nil, fmt.Errorf("categoryID must be >= 0")
 	}
 	key := fmt.Sprintf("site_cat_%d_%s", categoryID, campaignKey)
 	if cached, ok := siteEmbeddingCache.Get(key); ok {

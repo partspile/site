@@ -138,7 +138,9 @@ func TestShowFiltersCategoryFacets(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create client: %v", err)
 		}
-		if err := setSearchCookieOnClient(client, cookie.SearchState{Expanded: true}); err != nil {
+		if err := setSearchCookieOnClient(client, cookie.SearchState{
+			Expanded: true, CategoryID: 6,
+		}); err != nil {
 			t.Fatalf("set search cookie: %v", err)
 		}
 		resp, body := getRequestWithCookies(t, client, baseURL+"/api/show-filters")
@@ -154,7 +156,9 @@ func TestShowFiltersCategoryFacets(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to create client: %v", err)
 		}
-		if err := setSearchCookieOnClient(client, cookie.SearchState{Expanded: true}); err != nil {
+		if err := setSearchCookieOnClient(client, cookie.SearchState{
+			Expanded: true, CategoryID: 5,
+		}); err != nil {
 			t.Fatalf("set search cookie: %v", err)
 		}
 		resp, body := getRequestWithCookies(t, client, baseURL+"/api/show-filters")
@@ -165,35 +169,73 @@ func TestShowFiltersCategoryFacets(t *testing.T) {
 			t.Error("expected no mileage filter for parts category")
 		}
 	})
+	t.Run("all categories show only common facets", func(t *testing.T) {
+		client, err := getClientWithCategoryCookie(5)
+		if err != nil {
+			t.Fatalf("Failed to create client: %v", err)
+		}
+		if err := setSearchCookieOnClient(client, cookie.SearchState{
+			Expanded: true, CategoryID: 0,
+		}); err != nil {
+			t.Fatalf("set search cookie: %v", err)
+		}
+		resp, body := getRequestWithCookies(t, client, baseURL+"/api/show-filters")
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("Expected status 200, got %d", resp.StatusCode)
+		}
+		if !strings.Contains(body, "filter-price-min") {
+			t.Error("expected price in all-categories common facets")
+		}
+		if !strings.Contains(body, "filter-condition-0") {
+			t.Error("expected condition in all-categories common facets")
+		}
+		if !strings.Contains(body, "filter-local_pickup") {
+			t.Error("expected local_pickup in all-categories common facets")
+		}
+		for _, ban := range []string{
+			"filter-mileage-min",
+			"filter-hours-min",
+			"filter-year-min",
+			"filter-title_status-0",
+		} {
+			if strings.Contains(body, ban) {
+				t.Errorf("unexpected non-common facet %q", ban)
+			}
+		}
+	})
 }
 
-func TestSwitchCategoryClearsMileageFilter(t *testing.T) {
+func TestCategoryFilterClearsMileageFilter(t *testing.T) {
 	client, err := getClientWithCategoryCookie(6)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
-	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		return http.ErrUseLastResponse
-	}
 	min := 10000
 	if err := setSearchCookieOnClient(client, cookie.SearchState{
-		Q: "Honda", Facets: map[string]facet.Filter{"mileage": {Min: &min}}, Expanded: true,
+		Q: "Honda", CategoryID: 6, Expanded: true,
+		Facets: map[string]facet.Filter{"mileage": {Min: &min}},
 	}); err != nil {
 		t.Fatalf("set search cookie: %v", err)
 	}
 
-	switchURL := baseURL + "/api/category/5/switch?q=Honda&mileage_min=10000"
-	resp, _ := getRequestWithCookies(t, client, switchURL)
-	if resp.StatusCode != http.StatusFound {
-		t.Fatalf("switch: expected 302, got %d", resp.StatusCode)
-	}
-
-	resp, body := getRequestWithCookies(t, client, baseURL+"/api/show-filters")
+	resp, body := getRequestWithCookies(t, client,
+		baseURL+"/api/show-filters?category=5&q=Honda&mileage_min=10000")
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("show-filters: expected 200, got %d", resp.StatusCode)
 	}
-	if strings.Contains(body, `name="mileage_min"`) && strings.Contains(body, `value="10000"`) {
-		t.Error("expected mileage filter cleared after switching to parts category")
+	state, err := getSearchStateFromClient(client)
+	if err != nil {
+		t.Fatalf("read search cookie: %v", err)
+	}
+	if state.CategoryID != 5 {
+		t.Fatalf("expected CategoryID 5, got %d", state.CategoryID)
+	}
+	if _, ok := state.Facets["mileage"]; ok {
+		t.Fatalf("expected mileage cleared, got %+v", state.Facets)
+	}
+	if strings.Contains(body, `name="mileage_min"`) &&
+		strings.Contains(body, `value="10000"`) {
+		t.Error("expected mileage filter cleared after selecting parts category")
 	}
 }
 

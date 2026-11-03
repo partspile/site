@@ -26,8 +26,6 @@ func pageDescription(path string) string {
 	case path == "/login":
 		return "Log in to " + name + " to post ads, message sellers, " +
 			"and manage your account."
-	case strings.HasPrefix(path, "/c/"):
-		return name + " classified ads by category."
 	default:
 		return ""
 	}
@@ -100,11 +98,9 @@ func seoHead(docTitle, currentPath string) []g.Node {
 	if desc != "" {
 		nodes = append(nodes, Meta(Name("description"), Content(desc)))
 	}
-	if currentPath == "/" || strings.HasPrefix(currentPath, "/c/") {
+	if currentPath == "/" {
 		nodes = append(nodes, homepageSocialMeta(docTitle, desc, currentPath)...)
-		if currentPath == "/" {
-			nodes = append(nodes, websiteJSONLD())
-		}
+		nodes = append(nodes, websiteJSONLD())
 	}
 	if strings.HasPrefix(currentPath, "/u/") {
 		nodes = append(nodes,

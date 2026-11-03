@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/partspile/site/internal/businesscard"
 	"github.com/partspile/site/internal/config"
@@ -13,18 +12,14 @@ import (
 )
 
 func main() {
-	categoryFile := flag.String(
-		"categories",
-		"",
-		"Path to ad-category.json (default: embedded list)",
-	)
 	host := flag.String("host", config.PublicHost(),
 		"Site hostname for QR URLs")
 	outDir := flag.String("outdir", "cards", "Output directory")
+	outName := flag.String("out", "partspile.png", "Output PNG filename")
 	imagesRoot := flag.String(
 		"images",
 		"",
-		"Directory containing category SVG icons (default: repo static/images/category)",
+		"Directory containing flag.svg and block.svg (default: repo static/images)",
 	)
 	flag.Parse()
 
@@ -33,35 +28,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	cats, err := businesscard.LoadCategories(*categoryFile)
-	if err != nil {
-		logger.Fatal("load categories", "error", err)
-	}
-
 	iconsDir := *imagesRoot
 	if iconsDir == "" {
-		iconsDir = businesscard.ResolveRepoPath("static/images/category")
+		iconsDir = businesscard.ResolveRepoPath("static/images")
 	}
 
 	if err := os.MkdirAll(*outDir, 0o755); err != nil {
 		logger.Fatal("create output dir", "error", err)
 	}
 
-	for _, cat := range cats {
-		path := filepath.Join(*outDir, slugFilename(cat)+".png")
-		if err := writeCard(cat, *host, iconsDir, path); err != nil {
-			logger.Fatal("generate card", "category", cat.Name, "error", err)
-		}
-		logger.Info("wrote card", "path", path, "category", cat.Name)
+	path := filepath.Join(*outDir, *outName)
+	if err := writeCard(*host, iconsDir, path); err != nil {
+		logger.Fatal("generate card", "error", err)
 	}
+	logger.Info("wrote card", "path", path)
 }
 
-func writeCard(
-	cat businesscard.Category,
-	host, imagesRoot, outPath string,
-) error {
+func writeCard(host, imagesRoot, outPath string) error {
 	img, err := businesscard.RenderPrintCard(businesscard.PrintCardOptions{
-		Category:   cat,
 		Host:       host,
 		ImagesRoot: imagesRoot,
 	})
@@ -76,12 +60,4 @@ func writeCard(
 	defer f.Close()
 
 	return businesscard.WritePNG(f, img)
-}
-
-func slugFilename(cat businesscard.Category) string {
-	slug := strings.ToLower(cat.Name)
-	slug = strings.ReplaceAll(slug, " ", "-")
-	slug = strings.ReplaceAll(slug, "/", "-")
-	slug = strings.ReplaceAll(slug, "&", "and")
-	return "partspile-" + slug
 }

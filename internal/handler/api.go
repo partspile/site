@@ -2,7 +2,6 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/partspile/site/internal/ad"
 	"github.com/partspile/site/internal/cookie"
 	"github.com/partspile/site/internal/param"
 	"github.com/partspile/site/internal/ui"
@@ -15,12 +14,6 @@ func SwitchCategoryHandler(c *fiber.Ctx) error {
 	categoryID := param.GetCategoryID(c)
 	cookie.SetCategoryID(c, categoryID)
 
-	// Search state is owned by the home page search widget; other pages
-	// (new ad, edit ad, etc.) only change the category cookie.
-	if redirect == "/" {
-		switchCategoryHome(c, categoryID)
-	}
-
 	if c.Get("HX-Request") == "true" {
 		c.Set("HX-Redirect", redirect)
 		return c.SendStatus(fiber.StatusOK)
@@ -31,26 +24,6 @@ func SwitchCategoryHandler(c *fiber.Ctx) error {
 func ModalRemoveHandler(c *fiber.Ctx) error {
 	name := c.Params("name")
 	return render(c, g.Group(ui.RemoveModal(name)))
-}
-
-// ShortCategoryHandler handles QR / deep links (/c/:id). Always switches to
-// that category (cookie + facet cleanup), same as a manual home category
-// change, regardless of any previous category cookie.
-func ShortCategoryHandler(c *fiber.Ctx) error {
-	categoryID := param.GetCategoryID(c)
-	cookie.SetCategoryID(c, categoryID)
-	state := clearFacetFilters(cookie.GetSearchState(c), categoryID)
-	cookie.SetSearchState(c, state)
-	if categoryID == ad.DefaultCategoryID() {
-		return c.Redirect("/", fiber.StatusMovedPermanently)
-	}
-	return HomeHandler(c)
-}
-
-func switchCategoryHome(c *fiber.Ctx, categoryID int) {
-	state := saveSearchStateFromRequest(c, nil, true)
-	state = clearFacetFilters(state, categoryID)
-	cookie.SetSearchState(c, state)
 }
 
 func categorySwitchRedirect(c *fiber.Ctx) string {
@@ -67,9 +40,8 @@ func renderFilterPanelResponse(c *fiber.Ctx, state cookie.SearchState) error {
 	}
 
 	distanceUnit := cookie.GetDistanceUnit(c)
-	category := ad.GetCategory(cookie.GetCategoryID(c))
 	visible := searchVisible(state)
-	filterFacets := filterFacetsForExpanded(category, state.Expanded)
+	filterFacets := filterFacetsForExpanded(state.CategoryID, state.Expanded)
 	filters := searchStateToFilters(state, distanceUnit)
 
 	return render(c, g.Group([]g.Node{
@@ -81,6 +53,9 @@ func renderFilterPanelResponse(c *fiber.Ctx, state cookie.SearchState) error {
 
 func ShowFiltersHandler(c *fiber.Ctx) error {
 	expanded := true
+	// fromForm false preserves cookie q/location when the expand button
+	// does not include the search widget; category is still applied when
+	// the category select includes the widget and posts "category".
 	state := saveSearchStateFromRequest(c, &expanded, false)
 	state.SearchOpen = true
 	cookie.SetSearchState(c, state)

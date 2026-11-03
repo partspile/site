@@ -17,12 +17,16 @@ cosine distance `<=>`). Every request needs a **query vector**:
 | Search box | Who | Query vector |
 |---|---|---|
 | Non-empty | anyone | Embedding of the typed text |
-| Empty | logged-in, has activity in this category | User embedding |
+| Empty | logged-in, has activity in scope | User embedding |
 | Empty | anonymous, or user with no activity | Site embedding |
 
-Hard filters (category, flag count, optional facets, geo) apply after
-the vector is chosen. Ads without an embedding, paused, deleted, or
-over the flag limit are excluded.
+Scope follows the optional category search filter: a selected category
+builds a per-category centroid; no category filter uses a **global**
+centroid (`categoryID = 0`).
+
+Hard filters (optional category, flag count, optional facets, geo)
+apply after the vector is chosen. Ads without an embedding, paused,
+deleted, or over the flag limit are excluded.
 
 If no ad embeddings exist yet (backfill still running), search returns
 no results instead of HTTP 500.
@@ -63,11 +67,13 @@ clears them.
 
 ## User embedding
 
-**Intent:** what this person is looking at in this category.
+**Intent:** what this person is looking at (in the selected category,
+or across all categories when unfiltered).
 
-Per category, take that user’s bookmarks, ad clicks, and image clicks
-on active embedded ads. Posting an ad does **not** count. Your own
-listing counts only if you bookmarked or clicked it.
+Take that user’s bookmarks, ad clicks, and image clicks on active
+embedded ads, optionally scoped by category filter. Posting an ad does
+**not** count. Your own listing counts only if you bookmarked or
+clicked it.
 
 Event weight (then age decay):
 
@@ -87,14 +93,16 @@ user_vec = Σ (weight_i × embedding_i) / Σ weight_i
 ```
 
 No events → search uses the site embedding. Cache key
-`user_{id}_cat_{category}`, TTL 1 hour.
+`user_{id}_cat_{category}` (`category` is `0` when unfiltered), TTL 1
+hour.
 
 ---
 
 ## Site embedding
 
-**Intent:** what people in this category are interested in, without
-letting one front-page ad run away on repeat clicks.
+**Intent:** what people are interested in (in the selected category,
+or site-wide when unfiltered), without letting one front-page ad run
+away on repeat clicks.
 
 Same event types and decay, **all users**. Then:
 
@@ -103,12 +111,12 @@ Same event types and decay, **all users**. Then:
 3. Damp each score: `log(1 + sum)` so extra clicks help less and less
 4. Same weighted average of those 8 ad embeddings
 
-No usable activity → average of up to 100 recent ads in the category
-(`VectorSystemEmbeddingLimit`), then site-wide if that category is
-empty.
+No usable activity → average of up to 100 recent ads in scope
+(`VectorSystemEmbeddingLimit`). For a specific category that is empty,
+fall back to site-wide recent ads.
 
-Cache key `site_cat_{category}_default`, TTL 1 hour. `campaignKey` is
-accepted but unused.
+Cache key `site_cat_{category}_default` (`category` is `0` when
+unfiltered), TTL 1 hour. `campaignKey` is accepted but unused.
 
 Top 8 **ads** is not top 8 **events**. With many users, an ad 40
 people clicked outranks an ad one person bookmarked yesterday.
@@ -120,10 +128,10 @@ people clicked outranks an ad one person bookmarked yesterday.
 Postgres orders by `embedding <=> query` (cosine distance). Results
 with distance ≥ `SearchThreshold` (0.6) are dropped.
 
-Always filtered to the current category and `flag_count <= 2`.
-Expanded search adds facet predicates on `vector_metadata`. Location
-+ within still ranks by the same vector; in-area ads are listed
-before out-of-area.
+Always filtered by `flag_count <= 2`. Category is applied only when
+the category filter is set. Expanded search adds facet predicates on
+`vector_metadata`. Location + within still ranks by the same vector;
+in-area ads are listed before out-of-area.
 
 Empty-box ranking is **only** this distance. Bookmarks are not pinned
 to the front of the list. They influence order only through the

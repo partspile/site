@@ -9,46 +9,32 @@ import (
 	"testing"
 
 	"github.com/partspile/site/internal/businesscard"
+	"github.com/partspile/site/internal/config"
 )
 
-func TestLoadCategoriesAlphabeticalIDs(t *testing.T) {
-	cats, err := businesscard.LoadCategories("")
-	if err != nil {
-		t.Fatalf("LoadCategories: %v", err)
-	}
-	if len(cats) != 8 {
-		t.Fatalf("expected 8 categories, got %d", len(cats))
-	}
-	if cats[0].Name != "Agricultural Equipment" || cats[0].ID != 1 {
-		t.Fatalf("unexpected first category: %+v", cats[0])
-	}
-	if cats[3].Name != "Bicycles" || cats[3].ID != 4 {
-		t.Fatalf("unexpected bicycles category: %+v", cats[3])
-	}
-}
-
-func TestCategoryURL(t *testing.T) {
-	got := businesscard.CategoryURL("parts-pile.com", 4)
-	want := "https://parts-pile.com/c/4"
+func TestSiteURL(t *testing.T) {
+	got := businesscard.SiteURL("parts-pile.com")
+	want := "https://parts-pile.com/"
 	if got != want {
 		t.Fatalf("got %q, want %q", got, want)
 	}
 }
 
+func TestSiteURLUsesHTTPS(t *testing.T) {
+	url := businesscard.SiteURL("parts-pile.com")
+	if !strings.HasPrefix(url, "https://") {
+		t.Fatalf("expected https URL, got %q", url)
+	}
+}
+
 func TestRenderPrintCard(t *testing.T) {
-	cats, err := businesscard.LoadCategories("")
-	if err != nil {
-		t.Fatalf("LoadCategories: %v", err)
-	}
-	cat, err := businesscard.FindCategory(cats, "Bicycles")
-	if err != nil {
-		t.Fatalf("FindCategory: %v", err)
-	}
+	prev := config.ServerName
+	config.ServerName = "Parts Pile"
+	t.Cleanup(func() { config.ServerName = prev })
 
 	img, err := businesscard.RenderPrintCard(businesscard.PrintCardOptions{
-		Category:   cat,
 		Host:       "parts-pile.com",
-		ImagesRoot: businesscard.ResolveRepoPath("static/images/category"),
+		ImagesRoot: businesscard.ResolveRepoPath("static/images"),
 	})
 	if err != nil {
 		t.Fatalf("RenderPrintCard: %v", err)
@@ -78,68 +64,17 @@ func TestRenderPrintCard(t *testing.T) {
 
 	bg := countColorNear(img, 0x18, 0x18, 0x1B)
 	if bg < 1000 {
-		t.Fatalf("expected dark zinc-900 background, got %d pixels", bg)
-	}
-	light := countColorNear(img, 0xE4, 0xE4, 0xE7)
-	if light < 500 {
-		t.Fatalf("expected zinc-200 content, got %d pixels", light)
-	}
-	blue := countColorNear(img, 0x60, 0xA5, 0xFA)
-	if blue < 100 {
-		t.Fatalf("expected category pill border, got %d blue pixels", blue)
-	}
-	pillBG := countColorNear(img, 0x1E, 0x3A, 0x8A)
-	if pillBG < 100 {
-		t.Fatalf("expected category pill fill, got %d blue-900 pixels", pillBG)
-	}
-}
-
-func TestRenderPrintCardAllCategories(t *testing.T) {
-	cats, err := businesscard.LoadCategories("")
-	if err != nil {
-		t.Fatalf("LoadCategories: %v", err)
-	}
-	for _, cat := range cats {
-		name := cat.Name
-		t.Run(name, func(t *testing.T) {
-			_, err := businesscard.RenderPrintCard(businesscard.PrintCardOptions{
-				Category:   cat,
-				Host:       "parts-pile.com",
-				ImagesRoot: businesscard.ResolveRepoPath("static/images/category"),
-			})
-			if err != nil {
-				t.Fatalf("RenderPrintCard: %v", err)
-			}
-		})
-	}
-}
-
-func TestLongCategoryNameFits(t *testing.T) {
-	cats, err := businesscard.LoadCategories("")
-	if err != nil {
-		t.Fatalf("LoadCategories: %v", err)
-	}
-	cat, err := businesscard.FindCategory(cats, "Agricultural Equipment Parts")
-	if err != nil {
-		t.Fatalf("FindCategory: %v", err)
-	}
-	_, err = businesscard.RenderPrintCard(businesscard.PrintCardOptions{
-		Category:   cat,
-		Host:       "parts-pile.com",
-		ImagesRoot: businesscard.ResolveRepoPath("static/images/category"),
-	})
-	if err != nil {
-		t.Fatalf("RenderPrintCard: %v", err)
+		t.Fatalf("expected dark card background, got %d matching pixels", bg)
 	}
 }
 
 func countColorNear(img *image.RGBA, r, g, b uint8) int {
-	n := 0
 	bounds := img.Bounds()
+	n := 0
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			c := img.RGBAAt(x, y)
-			if colorNear(c, r, g, b) {
+			if near(c, r, g, b, 8) {
 				n++
 			}
 		}
@@ -147,24 +82,16 @@ func countColorNear(img *image.RGBA, r, g, b uint8) int {
 	return n
 }
 
-func colorNear(c color.RGBA, r, g, b uint8) bool {
-	const tol = 20
-	return abs(int(c.R)-int(r)) <= tol &&
-		abs(int(c.G)-int(g)) <= tol &&
-		abs(int(c.B)-int(b)) <= tol &&
-		c.A > 200
+func near(c color.RGBA, r, g, b, tol uint8) bool {
+	dr := absDiff(c.R, r)
+	dg := absDiff(c.G, g)
+	db := absDiff(c.B, b)
+	return dr <= tol && dg <= tol && db <= tol
 }
 
-func abs(n int) int {
-	if n < 0 {
-		return -n
+func absDiff(a, b uint8) uint8 {
+	if a > b {
+		return a - b
 	}
-	return n
-}
-
-func TestCategoryURLUsesHTTPS(t *testing.T) {
-	url := businesscard.CategoryURL("parts-pile.com", 1)
-	if !strings.HasPrefix(url, "https://") {
-		t.Fatalf("expected https URL, got %q", url)
-	}
+	return b - a
 }

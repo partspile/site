@@ -52,12 +52,12 @@ func renderPage(c *fiber.Ctx, title string, body []gomponents.Node) error {
 func searchFromRequest(c *fiber.Ctx,
 	state cookie.SearchState) (view, page int, results []g.Node, err error) {
 	view = ui.ValidateView(cookie.GetView(c))
-	page, results, err = searchAndRender(c, state, cookie.GetCategoryID(c), view)
+	page, results, err = searchAndRender(c, state, view)
 	return view, page, results, err
 }
 
 // searchAndRender runs search for the current page and returns rendered ad nodes.
-func searchAndRender(c *fiber.Ctx, state cookie.SearchState, categoryID,
+func searchAndRender(c *fiber.Ctx, state cookie.SearchState,
 	view int) (page int, results []g.Node, err error) {
 
 	userID := local.GetUserID(c)
@@ -66,7 +66,7 @@ func searchAndRender(c *fiber.Ctx, state cookie.SearchState, categoryID,
 	distanceUnit := cookie.GetDistanceUnit(c)
 	page = c.QueryInt("page", 1)
 
-	p := parseSearchParams(state, page, categoryID, userID, distanceUnit)
+	p := parseSearchParams(state, page, userID, distanceUnit)
 	ads, geoMeta, err := searchForAds(p, userID, tz)
 	if err != nil {
 		return 0, nil, err

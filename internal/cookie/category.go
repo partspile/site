@@ -9,8 +9,8 @@ import (
 )
 
 func GetCategoryID(c *fiber.Ctx) int {
-	// Prefer a category set earlier in this request (e.g. /c/:id) so a
-	// later GetCategoryID does not overwrite it with the default.
+	// Prefer a category set earlier in this request (e.g. new-ad switch)
+	// so a later GetCategoryID does not overwrite it with the default.
 	if v, ok := c.Locals("categoryID").(int); ok && v > 0 {
 		return v
 	}

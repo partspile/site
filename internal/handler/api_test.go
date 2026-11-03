@@ -41,11 +41,12 @@ func TestCategorySwitchRedirect(t *testing.T) {
 	}
 }
 
-func TestSwitchCategorySkipsSearchStateOffHome(t *testing.T) {
+func TestSwitchCategoryLeavesSearchStateAlone(t *testing.T) {
 	want := cookie.SearchState{
-		Location: "Denver, CO",
-		Within:   25,
-		Q:        "Honda",
+		Location:   "Denver, CO",
+		Within:     25,
+		Q:          "Honda",
+		CategoryID: 6,
 	}
 	app := fiber.New()
 	app.Get("/seed", func(c *fiber.Ctx) error {
@@ -54,11 +55,7 @@ func TestSwitchCategorySkipsSearchStateOffHome(t *testing.T) {
 	})
 	var saved cookie.SearchState
 	app.Get("/api/category/:category/switch", func(c *fiber.Ctx) error {
-		redirect := categorySwitchRedirect(c)
-		if redirect == "/" {
-			state := saveSearchStateFromRequest(c, nil, true)
-			cookie.SetSearchState(c, state)
-		}
+		_ = categorySwitchRedirect(c)
 		saved = cookie.GetSearchState(c)
 		return c.SendStatus(fiber.StatusFound)
 	})
@@ -75,30 +72,14 @@ func TestSwitchCategorySkipsSearchStateOffHome(t *testing.T) {
 		}
 	}
 
-	req := httptest.NewRequest("GET", "/api/category/5/switch?return=%2Fauth%2Fad%2Fnew", nil)
+	req := httptest.NewRequest("GET",
+		"/api/category/5/switch?return=%2Fauth%2Fad%2Fnew", nil)
 	req.Header.Set("Cookie", "search="+cookieVal)
 	if _, err := app.Test(req); err != nil {
 		t.Fatal(err)
 	}
-	if saved.Location != "Denver, CO" || saved.Within != 25 || saved.Q != "Honda" {
+	if saved.Location != "Denver, CO" || saved.Within != 25 ||
+		saved.Q != "Honda" || saved.CategoryID != 6 {
 		t.Fatalf("expected search cookie untouched, got %+v", saved)
 	}
-}
-
-func TestShortCategoryHandler(t *testing.T) {
-	app := fiber.New()
-	app.Get("/c/:category", ShortCategoryHandler)
-
-	resp, err := app.Test(httptest.NewRequest("GET", "/c/4", nil))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if resp.StatusCode != fiber.StatusMovedPermanently {
-		t.Fatalf("status = %d, want 301", resp.StatusCode)
-	}
-	if got := resp.Header.Get("Location"); got != "/" {
-		t.Fatalf("Location = %q, want /", got)
-	}
-	// Cookie value needs loaded categories (see integration TestShortCategoryRoute).
-	// Locals + Set-Cookie overwrite is covered by cookie.TestSetCategoryID*.
 }

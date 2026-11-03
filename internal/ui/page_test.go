@@ -62,28 +62,6 @@ func TestPageLoginSEO(t *testing.T) {
 	}
 }
 
-func TestPageCategoryLandingSEO(t *testing.T) {
-	prev := config.PublicSiteURL
-	config.PublicSiteURL = "https://parts-pile.com"
-	t.Cleanup(func() { config.PublicSiteURL = prev })
-
-	html := renderPageHTML(t, "Cars & Trucks", "/c/6")
-	wants := []string{
-		"<title>Parts Pile - Cars &amp; Trucks</title>",
-		`rel="canonical" href="https://parts-pile.com/c/6"`,
-		`property="og:url" content="https://parts-pile.com/c/6"`,
-		`name="robots" content="index, follow"`,
-	}
-	for _, want := range wants {
-		if !strings.Contains(html, want) {
-			t.Errorf("category landing missing %q", want)
-		}
-	}
-	if strings.Contains(html, `"@type":"WebSite"`) {
-		t.Error("WebSite JSON-LD should only be on /")
-	}
-}
-
 func TestPageSharedProfileSEO(t *testing.T) {
 	prev := config.PublicSiteURL
 	config.PublicSiteURL = "https://parts-pile.com"

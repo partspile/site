@@ -1,11 +1,9 @@
 package handler
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/partspile/site/internal/ad"
 	"github.com/partspile/site/internal/config"
 )
 
@@ -22,7 +20,6 @@ func SitemapHandler(c *fiber.Ctx) error {
 func robotsTxt() string {
 	return "User-agent: *\n" +
 		"Allow: /\n" +
-		"Allow: /c/\n" +
 		"Disallow: /auth/\n" +
 		"Disallow: /admin/\n" +
 		"Disallow: /api/\n" +
@@ -32,19 +29,7 @@ func robotsTxt() string {
 }
 
 func sitemapPaths() []string {
-	paths := []string{"/", "/about", "/login"}
-	cats, err := ad.GetCategories()
-	if err != nil {
-		return paths
-	}
-	defaultID := ad.DefaultCategoryID()
-	for _, cat := range cats {
-		if cat.ID == defaultID {
-			continue
-		}
-		paths = append(paths, "/c/"+strconv.Itoa(cat.ID))
-	}
-	return paths
+	return []string{"/", "/about", "/login"}
 }
 
 func sitemapXML() string {

@@ -8,6 +8,7 @@ import (
 
 // Buyer signals only: listings the user posted would pull browse
 // ranking toward their own inventory.
+// categoryID 0 means all categories (no category filter).
 func getUserActivities(userID, categoryID, limit int) ([]AdActivity, error) {
 	query := `
 		SELECT COALESCE(
@@ -44,7 +45,7 @@ func getUserActivities(userID, categoryID, limit int) ([]AdActivity, error) {
 					JOIN ads a ON b.ad_id = a.id
 					WHERE b.user_id = $1
 					  AND a.inactive_at IS NULL AND a.deleted_at IS NULL
-					  AND a.category_id = $2
+					  AND ($2 = 0 OR a.category_id = $2)
 					  AND a.embedding IS NOT NULL
 
 					UNION ALL
@@ -55,7 +56,7 @@ func getUserActivities(userID, categoryID, limit int) ([]AdActivity, error) {
 					JOIN ads a ON uac.ad_id = a.id
 					WHERE uac.user_id = $1
 					  AND a.inactive_at IS NULL AND a.deleted_at IS NULL
-					  AND a.category_id = $2
+					  AND ($2 = 0 OR a.category_id = $2)
 					  AND a.embedding IS NOT NULL
 
 					UNION ALL
@@ -66,7 +67,7 @@ func getUserActivities(userID, categoryID, limit int) ([]AdActivity, error) {
 					JOIN ads a ON uaic.ad_id = a.id
 					WHERE uaic.user_id = $1
 					  AND a.inactive_at IS NULL AND a.deleted_at IS NULL
-					  AND a.category_id = $2
+					  AND ($2 = 0 OR a.category_id = $2)
 					AND a.embedding IS NOT NULL
 				) combined
 			) with_age

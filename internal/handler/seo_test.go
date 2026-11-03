@@ -18,7 +18,7 @@ func TestRobotsTxt(t *testing.T) {
 	body := robotsTxt()
 	for _, want := range []string{
 		"User-agent: *",
-		"Allow: /c/",
+		"Allow: /",
 		"Disallow: /auth/",
 		"Disallow: /admin/",
 		"Disallow: /api/",
@@ -28,6 +28,9 @@ func TestRobotsTxt(t *testing.T) {
 		if !strings.Contains(body, want) {
 			t.Errorf("robots.txt missing %q\n%s", want, body)
 		}
+	}
+	if strings.Contains(body, "Allow: /c/") {
+		t.Errorf("robots should not allow /c/\n%s", body)
 	}
 }
 
@@ -47,7 +50,9 @@ func TestSitemapXML(t *testing.T) {
 			t.Errorf("sitemap missing %q\n%s", want, body)
 		}
 	}
-	for _, extra := range []string{"/faq", "/privacy", "/terms", "/register", "/u/"} {
+	for _, extra := range []string{
+		"/faq", "/privacy", "/terms", "/register", "/u/", "/c/",
+	} {
 		if strings.Contains(body, extra) {
 			t.Errorf("sitemap should not include %q\n%s", extra, body)
 		}

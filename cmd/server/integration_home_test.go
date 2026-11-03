@@ -168,13 +168,13 @@ func TestRobotsAndSitemap(t *testing.T) {
 		t.Fatalf("sitemap.xml status %d", resp.StatusCode)
 	}
 	sm := string(body)
-	for _, path := range []string{"/about", "/login", "/c/6"} {
+	for _, path := range []string{"/about", "/login"} {
 		if !strings.Contains(sm, path+"</loc>") {
 			t.Errorf("sitemap missing %s\n%s", path, sm)
 		}
 	}
-	if strings.Contains(sm, "/c/5") {
-		t.Errorf("sitemap should not include default /c/5\n%s", sm)
+	if strings.Contains(sm, "/c/") {
+		t.Errorf("sitemap should not include /c/ paths\n%s", sm)
 	}
 	if strings.Contains(sm, "/faq") {
 		t.Errorf("sitemap should not include /faq\n%s", sm)
@@ -191,26 +191,17 @@ func TestHomeHandlerSearchHiddenByDefault(t *testing.T) {
 		t.Fatalf("Expected status 200, got %d", resp.StatusCode)
 	}
 	if !strings.Contains(body, `id="search-toggle"`) {
-		t.Error("Expected search toggle on category row")
+		t.Error("Expected search toggle on home")
 	}
 	if !strings.Contains(body, `/images/search.svg`) {
-		t.Error("Expected search icon on category row")
+		t.Error("Expected search icon on home")
 	}
 	if !strings.Contains(body, `id="search-area" class="flex flex-col hidden"`) {
 		t.Error("Expected hidden #search-area on fresh home page")
 	}
-	if strings.Contains(body, `id="category-modal"`) ||
-		strings.Contains(body, `id="category-modal-backdrop"`) {
-		t.Error("home page should not embed category modal")
-	}
-	if !strings.Contains(body, `aria-haspopup="listbox"`) {
-		t.Error("expected category picker to be a listbox dropdown")
-	}
-	if !strings.Contains(body, "category-select-dismiss") {
-		t.Error("expected category picker outside-click dismiss")
-	}
-	if !strings.Contains(body, "Bicycles") {
-		t.Error("expected category dropdown to list other categories")
+	if strings.Contains(body, `aria-haspopup="listbox"`) ||
+		strings.Contains(body, "category-select-dismiss") {
+		t.Error("home page should not show category picker")
 	}
 	if strings.Contains(body, `/images/post_add.svg`) {
 		t.Error("new ad link should not appear when logged out")
@@ -230,7 +221,7 @@ func TestHomeHandlerNewAdLinkWhenLoggedIn(t *testing.T) {
 		t.Fatalf("Expected status 200, got %d", resp.StatusCode)
 	}
 	if !strings.Contains(body, `/images/post_add.svg`) {
-		t.Error("Expected new ad icon on category row when logged in")
+		t.Error("Expected new ad icon on home when logged in")
 	}
 	if !strings.Contains(body, `href="/auth/ad/new"`) {
 		t.Error("Expected new ad link to /auth/ad/new when logged in")
@@ -263,7 +254,7 @@ func TestHomeHandlerFiltersExpanded(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	if err := setSearchCookieOnClient(client, cookie.SearchState{
-		Q: "Honda", Expanded: true,
+		Q: "Honda", Expanded: true, CategoryID: 6,
 	}); err != nil {
 		t.Fatalf("set search cookie: %v", err)
 	}
@@ -273,6 +264,9 @@ func TestHomeHandlerFiltersExpanded(t *testing.T) {
 	}
 	if !strings.Contains(body, "filter-price-min") {
 		t.Error("Expected expanded filter panel with price field")
+	}
+	if !strings.Contains(body, `id="filter-category"`) {
+		t.Error("Expected category filter in expanded panel")
 	}
 	if !strings.Contains(body, `id="search-area"`) {
 		t.Error("Expected #search-area on home page")
@@ -380,67 +374,47 @@ func TestSwitchCategoryHandler(t *testing.T) {
 	}
 }
 
-func TestShortCategoryRoute(t *testing.T) {
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		t.Fatalf("Failed to create cookie jar: %v", err)
-	}
-	client := &http.Client{
-		Jar: jar,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-
-	// Prior navigation left a different category cookie.
-	u, err := url.Parse(baseURL)
-	if err != nil {
-		t.Fatalf("parse baseURL: %v", err)
-	}
-	jar.SetCookies(u, []*http.Cookie{{Name: "category", Value: "5"}})
-
-	resp, body := getRequestWithCookies(t, client, baseURL+"/c/6")
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", resp.StatusCode)
-	}
-	if !strings.Contains(body, "Cars") || !strings.Contains(body, "Trucks") {
-		t.Fatalf("expected Cars & Trucks title, body snippet missing")
-	}
-
-	var categoryVal string
-	for _, c := range resp.Cookies() {
-		if c.Name == "category" {
-			categoryVal = c.Value
-		}
-	}
-	if categoryVal != "6" {
-		t.Fatalf("expected category cookie 6 (path wins over prior 5), got %q", categoryVal)
-	}
-}
-
-func TestSwitchCategoryPreservesSearchCookie(t *testing.T) {
+func TestShortCategoryRouteGone(t *testing.T) {
 	client, err := getClientWithCategoryCookie(6)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
+	resp, _ := getRequestWithCookies(t, client, baseURL+"/c/6")
+	if resp.StatusCode != http.StatusNotFound &&
+		resp.StatusCode != http.StatusInternalServerError {
+		// Fiber may render a custom error page; anything but a category
+		// landing is fine. Prefer 404 when no catch-all exists.
+		if resp.StatusCode == http.StatusOK {
+			t.Fatal("expected /c/:id route removed")
+		}
+	}
+}
+
+func TestCategoryCookieSwitchDoesNotChangeSearchFilter(t *testing.T) {
+	client, err := getClientWithCategoryCookie(6)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+	if err := setSearchCookieOnClient(client, cookie.SearchState{
+		Q: "Honda", CategoryID: 6,
+	}); err != nil {
+		t.Fatalf("set search cookie: %v", err)
+	}
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
-	switchURL := baseURL + "/api/category/5/switch?q=Honda&price_min=10000"
+	switchURL := baseURL + "/api/category/5/switch"
 	resp, _ := getRequestWithCookies(t, client, switchURL)
 	if resp.StatusCode != http.StatusFound {
 		t.Fatalf("switch: expected 302, got %d", resp.StatusCode)
 	}
-	if got := resp.Header.Get("Location"); got != "/" {
-		t.Fatalf("expected redirect /, got %q", got)
-	}
 
-	resp, body := getRequestWithCookies(t, client, baseURL+"/")
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("home: expected 200, got %d", resp.StatusCode)
+	state, err := getSearchStateFromClient(client)
+	if err != nil {
+		t.Fatalf("read search cookie: %v", err)
 	}
-	if !strings.Contains(body, "Honda") {
-		t.Error("expected home page to show search query from cookie")
+	if state.Q != "Honda" || state.CategoryID != 6 {
+		t.Fatalf("expected browse search state unchanged, got %+v", state)
 	}
 }
 
@@ -485,41 +459,7 @@ func TestSwitchCategoryFromNewAdPreservesLocation(t *testing.T) {
 	}
 }
 
-func TestSwitchCategoryPreservesSearchOpen(t *testing.T) {
-	client, err := getClientWithCategoryCookie(6)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	if err := setSearchCookieOnClient(client, cookie.SearchState{
-		SearchOpen: true,
-	}); err != nil {
-		t.Fatalf("set search cookie: %v", err)
-	}
-
-	switchURL := baseURL + "/api/category/5/switch"
-	resp, _ := getRequestWithCookies(t, client, switchURL)
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("switch: expected 200, got %d", resp.StatusCode)
-	}
-
-	state, err := getSearchStateFromClient(client)
-	if err != nil {
-		t.Fatalf("read search cookie: %v", err)
-	}
-	if !state.SearchOpen {
-		t.Fatal("expected SearchOpen preserved after category switch")
-	}
-
-	resp, body := getRequestWithCookies(t, client, baseURL+"/")
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("home: expected 200, got %d", resp.StatusCode)
-	}
-	if strings.Contains(body, `id="search-area" class="flex flex-col hidden"`) {
-		t.Error("expected search bar to stay visible after category switch")
-	}
-}
-
-func TestSwitchCategoryPreservesExpanded(t *testing.T) {
+func TestApplyCategoryFilterViaShowFilters(t *testing.T) {
 	client, err := getClientWithCategoryCookie(6)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
@@ -531,26 +471,23 @@ func TestSwitchCategoryPreservesExpanded(t *testing.T) {
 		t.Fatalf("set search cookie: %v", err)
 	}
 
-	switchURL := baseURL + "/api/category/5/switch"
-	resp, _ := getRequestWithCookies(t, client, switchURL)
+	resp, body := getRequestWithCookies(t, client,
+		baseURL+"/api/show-filters?category=6")
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("switch: expected 200, got %d", resp.StatusCode)
+		t.Fatalf("show-filters: expected 200, got %d", resp.StatusCode)
 	}
-
 	state, err := getSearchStateFromClient(client)
 	if err != nil {
 		t.Fatalf("read search cookie: %v", err)
 	}
-	if !state.Expanded {
-		t.Fatal("expected Expanded preserved after category switch")
+	if state.CategoryID != 6 {
+		t.Fatalf("expected CategoryID 6, got %d", state.CategoryID)
 	}
-
-	resp, body := getRequestWithCookies(t, client, baseURL+"/")
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("home: expected 200, got %d", resp.StatusCode)
+	if !strings.Contains(body, "filter-mileage-min") {
+		t.Error("expected mileage filter for Cars & Trucks")
 	}
-	if !strings.Contains(body, `title="Collapse filters"`) {
-		t.Error("expected expanded filter panel after category switch")
+	if !strings.Contains(body, `id="filter-category"`) {
+		t.Error("expected category select in filter panel")
 	}
 }
 
@@ -580,7 +517,7 @@ func TestSearchPaginationKeepsSearchHidden(t *testing.T) {
 	}
 }
 
-func TestMultipleCategorySwitchesKeepSearchHidden(t *testing.T) {
+func TestCreateAdCategorySwitchKeepsSearchHidden(t *testing.T) {
 	client, err := getClientWithCategoryCookie(6)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
@@ -593,10 +530,15 @@ func TestMultipleCategorySwitchesKeepSearchHidden(t *testing.T) {
 
 	categories := []int{5, 4, 3}
 	for _, id := range categories {
-		switchURL := fmt.Sprintf("%s/api/category/%d/switch", baseURL, id)
+		switchURL := fmt.Sprintf(
+			"%s/api/category/%d/switch?return=%s",
+			baseURL, id, url.QueryEscape("/auth/ad/new"),
+		)
 		resp, _ = getRequestWithCookies(t, client, switchURL)
-		if resp.StatusCode != http.StatusOK {
-			t.Fatalf("switch to category %d: expected 200, got %d", id, resp.StatusCode)
+		if resp.StatusCode != http.StatusOK &&
+			resp.StatusCode != http.StatusFound {
+			t.Fatalf("switch to category %d: unexpected status %d",
+				id, resp.StatusCode)
 		}
 		state, err := getSearchStateFromClient(client)
 		if err != nil {
@@ -612,7 +554,7 @@ func TestMultipleCategorySwitchesKeepSearchHidden(t *testing.T) {
 		t.Fatalf("home: expected 200, got %d", resp.StatusCode)
 	}
 	if !strings.Contains(body, `id="search-area" class="flex flex-col hidden"`) {
-		t.Error("expected search area hidden after multiple category switches")
+		t.Error("expected search area hidden after create-ad category switches")
 	}
 }
 

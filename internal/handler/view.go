@@ -10,9 +10,8 @@ func ViewHandler(c *fiber.Ctx) error {
 
 	view := ui.ValidateView(c.Params("view"))
 	searchState := cookie.GetSearchState(c)
-	categoryID := cookie.GetCategoryID(c)
 
-	_, results, err := searchAndRender(c, searchState, categoryID, view)
+	_, results, err := searchAndRender(c, searchState, view)
 	if err != nil {
 		return err
 	}

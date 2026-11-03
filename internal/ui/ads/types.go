@@ -13,8 +13,17 @@ type PriceRowView struct {
 	Currency string
 }
 
+// CategoryOption is a category choice for the search filter select.
+type CategoryOption struct {
+	ID   int
+	Name string
+}
+
 // SearchFilters holds search filter panel state passed from handlers.
+// CategoryID 0 means all categories.
 type SearchFilters struct {
+	CategoryID      int
+	Categories      []CategoryOption
 	Facets          map[string]facet.Filter
 	Location        string
 	LocationDisplay string

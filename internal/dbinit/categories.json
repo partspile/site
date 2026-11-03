@@ -2,7 +2,7 @@
   {
     "name": "Cars & Trucks",
     "image_file": "car.svg",
-    "facets": ["condition", "title_status", "year", "mileage", "price"]
+    "facets": ["condition", "title_status", "year", "mileage", "local_pickup", "price"]
   },
   {
     "name": "Car & Truck Parts",
@@ -12,7 +12,7 @@
   {
     "name": "Motorcycles",
     "image_file": "motorcycle.svg",
-    "facets": ["condition", "year", "mileage", "price"]
+    "facets": ["condition", "year", "mileage", "local_pickup", "price"]
   },
   {
     "name": "Motorcycle Parts",
@@ -22,7 +22,7 @@
   {
     "name": "Bicycles",
     "image_file": "bicycle.svg",
-    "facets": ["condition", "price"]
+    "facets": ["condition", "local_pickup", "price"]
   },
   {
     "name": "Bicycle Parts",
@@ -32,7 +32,7 @@
   {
     "name": "Agricultural Equipment",
     "image_file": "ag.svg",
-    "facets": ["condition", "hours", "price"]
+    "facets": ["condition", "hours", "local_pickup", "price"]
   },
   {
     "name": "Agricultural Equipment Parts",

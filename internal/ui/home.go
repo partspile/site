@@ -12,24 +12,22 @@ import (
 )
 
 func HomePage(userID, view int, q string, filtersExpanded, searchVisible bool,
-	category CategoryOption, categories []CategoryOption,
 	filterFacets []facet.Def, filters uiads.SearchFilters,
 	results []g.Node) []g.Node {
 	return []g.Node{SearchContainer(userID, view, q, filtersExpanded,
-		searchVisible, category, categories, filterFacets, filters, results)}
+		searchVisible, filterFacets, filters, results)}
 }
 
 func SearchContainer(userID, view int, q string, filtersExpanded,
-	searchVisible bool, category CategoryOption, categories []CategoryOption,
-	filterFacets []facet.Def, filters uiads.SearchFilters,
+	searchVisible bool, filterFacets []facet.Def, filters uiads.SearchFilters,
 	results []g.Node) g.Node {
 	return Div(
 		ID("search-container"),
 		Div(
 			Class("flex flex-col gap-4"),
-			categorySearchRow(userID, category, categories, "/",
-				searchVisible),
-			SearchWidget(userID, view, q, filtersExpanded, searchVisible, category, filterFacets, filters, results),
+			homeActionsRow(userID, searchVisible),
+			SearchWidget(userID, view, q, filtersExpanded, searchVisible,
+				filterFacets, filters, results),
 		),
 	)
 }
@@ -100,11 +98,9 @@ func searchArea(q string, expanded bool, filterFacets []facet.Def,
 	return Div(attrs...)
 }
 
-func categorySearchRow(userID int, category CategoryOption,
-	categories []CategoryOption, returnParam string, searchVisible bool) g.Node {
+func homeActionsRow(userID int, searchVisible bool) g.Node {
 	return Div(
-		Class("flex items-center gap-2 justify-between"),
-		CategorySelect(category, categories, returnParam),
+		Class("flex items-center gap-2 justify-end"),
 		Div(
 			Class("flex items-center gap-2 shrink-0"),
 			g.Iff(local.IsLoggedIn(userID), func() g.Node { return newAdLink() }),
@@ -236,7 +232,7 @@ func viewRow(filters uiads.SearchFilters, view int) g.Node {
 }
 
 func SearchWidget(userID, view int, q string, filtersExpanded,
-	searchVisible bool, category CategoryOption, filterFacets []facet.Def,
+	searchVisible bool, filterFacets []facet.Def,
 	filters uiads.SearchFilters, results []g.Node) g.Node {
 	attrs := []g.Node{
 		Class("flex flex-col gap-4"),

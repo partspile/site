@@ -12,8 +12,10 @@ import (
 const searchCookieName = "search"
 
 // SearchState holds persisted search filters and panel expand/collapse.
+// CategoryID 0 means all categories (no category filter).
 type SearchState struct {
 	Q          string                  `json:"q,omitempty"`
+	CategoryID int                     `json:"category_id,omitempty"`
 	Facets     map[string]facet.Filter `json:"facets,omitempty"`
 	Location   string                  `json:"location,omitempty"`
 	Within     int                     `json:"within,omitempty"`

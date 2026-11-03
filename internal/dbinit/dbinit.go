@@ -51,7 +51,10 @@ func LoadCategories() error {
 		}
 		_, err = db.Exec(
 			`INSERT INTO categories (name, image_file, facets)
-			 VALUES ($1, $2, $3)`,
+			 VALUES ($1, $2, $3)
+			 ON CONFLICT (name) DO UPDATE SET
+			   image_file = EXCLUDED.image_file,
+			   facets = EXCLUDED.facets`,
 			cat.Name, cat.ImageFile, string(facetsJSON),
 		)
 		if err != nil {

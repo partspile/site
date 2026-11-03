@@ -7,6 +7,7 @@ import (
 	"github.com/partspile/site/internal/db"
 )
 
+// categoryID 0 means all categories (no category filter).
 func getSiteActivities(categoryID int, _ string, limit int) ([]AdActivity, error) {
 	query := `
 		SELECT COALESCE(
@@ -49,7 +50,7 @@ func getSiteActivities(categoryID int, _ string, limit int) ([]AdActivity, error
 						FROM bookmarks b
 						JOIN ads a ON b.ad_id = a.id
 						WHERE a.inactive_at IS NULL AND a.deleted_at IS NULL
-						  AND a.category_id = $1
+						  AND ($1 = 0 OR a.category_id = $1)
 						  AND a.embedding IS NOT NULL
 
 						UNION ALL
@@ -59,7 +60,7 @@ func getSiteActivities(categoryID int, _ string, limit int) ([]AdActivity, error
 						FROM user_ad_clicks uac
 						JOIN ads a ON uac.ad_id = a.id
 						WHERE a.inactive_at IS NULL AND a.deleted_at IS NULL
-						  AND a.category_id = $1
+						  AND ($1 = 0 OR a.category_id = $1)
 						  AND a.embedding IS NOT NULL
 
 						UNION ALL
@@ -69,7 +70,7 @@ func getSiteActivities(categoryID int, _ string, limit int) ([]AdActivity, error
 						FROM user_ad_image_clicks uaic
 						JOIN ads a ON uaic.ad_id = a.id
 						WHERE a.inactive_at IS NULL AND a.deleted_at IS NULL
-						  AND a.category_id = $1
+						  AND ($1 = 0 OR a.category_id = $1)
 						  AND a.embedding IS NOT NULL
 					) combined
 				) with_age

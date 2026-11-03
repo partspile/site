@@ -15,6 +15,20 @@ func TestBuildVectorMetadataWhereUsesFlagColumn(t *testing.T) {
 	if !strings.Contains(clause, "flag_count <=") {
 		t.Fatalf("expected flag_count column filter: %s", clause)
 	}
+	if !strings.Contains(clause, "category_id") {
+		t.Fatalf("expected category filter when CategoryID set: %s", clause)
+	}
+}
+
+func TestBuildVectorMetadataWhereOptionalCategory(t *testing.T) {
+	var pa pgArgs
+	clause := buildVectorMetadataWhere(Params{}, &pa)
+	if strings.Contains(clause, "category_id") {
+		t.Fatalf("expected no category filter when CategoryID is 0: %s", clause)
+	}
+	if !strings.Contains(clause, "flag_count <=") {
+		t.Fatalf("expected flag_count column filter: %s", clause)
+	}
 }
 
 func TestBuildVectorMetadataWhereNoGeoFilter(t *testing.T) {

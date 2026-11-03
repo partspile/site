@@ -5,18 +5,14 @@ import (
 	"testing"
 )
 
-func TestPartsCategoriesIncludeLocalPickup(t *testing.T) {
+func TestAllCategoriesIncludeLocalPickup(t *testing.T) {
 	var cats []categoryJSON
 	if err := json.Unmarshal(categoriesJSON, &cats); err != nil {
 		t.Fatal(err)
 	}
-	wantPickup := map[string]bool{
-		"Car & Truck Parts":            true,
-		"Motorcycle Parts":             true,
-		"Bicycle Parts":                true,
-		"Agricultural Equipment Parts": true,
+	if len(cats) == 0 {
+		t.Fatal("expected categories")
 	}
-	found := make(map[string]bool)
 	for _, cat := range cats {
 		hasPickup := false
 		for _, key := range cat.Facets {
@@ -25,21 +21,8 @@ func TestPartsCategoriesIncludeLocalPickup(t *testing.T) {
 				break
 			}
 		}
-		if want, ok := wantPickup[cat.Name]; ok {
-			found[cat.Name] = true
-			if hasPickup != want {
-				t.Errorf("%s local_pickup=%v, want %v",
-					cat.Name, hasPickup, want)
-			}
-			continue
-		}
-		if hasPickup {
-			t.Errorf("%s should not have local_pickup facet", cat.Name)
-		}
-	}
-	for name := range wantPickup {
-		if !found[name] {
-			t.Errorf("missing category %s", name)
+		if !hasPickup {
+			t.Errorf("%s missing local_pickup facet", cat.Name)
 		}
 	}
 }

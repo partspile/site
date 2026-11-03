@@ -26,20 +26,14 @@ var (
 	// Site dark mode: body bg-zinc-900, text-zinc-200.
 	cardBG    = color.RGBA{R: 0x18, G: 0x18, B: 0x1B, A: 0xFF}
 	brandText = color.RGBA{R: 0xE4, G: 0xE4, B: 0xE7, A: 0xFF}
-	// Category pill: dark:border-blue-400 dark:bg-blue-900.
-	pillBorder = color.RGBA{R: 0x60, G: 0xA5, B: 0xFA, A: 0xFF}
-	pillFill   = color.RGBA{R: 0x1E, G: 0x3A, B: 0x8A, A: 0xFF}
-	// Category icons: dark:invert dark:opacity-80 (NRGBA; Go RGBA is premul).
-	pillIcon = color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xCC}
 	// About-page block.svg red filter approximation.
 	noIconRed = color.RGBA{R: 0xDC, G: 0x26, B: 0x26, A: 0xFF}
 )
 
 // PrintCardOptions configures flat business card image generation.
 type PrintCardOptions struct {
-	Category   Category
 	Host       string
-	ImagesRoot string
+	ImagesRoot string // directory with flag.svg and block.svg
 }
 
 // RenderPrintCard draws a Staples-ready business card at 300 DPI:
@@ -50,7 +44,7 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 		return nil, fmt.Errorf("host is required")
 	}
 	if opts.ImagesRoot == "" {
-		opts.ImagesRoot = "static/images/category"
+		opts.ImagesRoot = "static/images"
 	}
 
 	totalW := inchesToPx(trimWidthIn + 2*bleedIn)
@@ -65,28 +59,19 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 
 	trim := image.Rect(bleedPx, bleedPx, bleedPx+trimW, bleedPx+trimH)
 
-	// Match site homepage visual proportions: icon ink slightly taller than
-	// adjacent capitals (nav flag vs site title; pill icon vs category).
 	const cssScale = 3.0
 	px := func(cssPx float64) int {
 		return int(cssPx*cssScale + 0.5)
 	}
 	titleSize := 20.0 * cssScale * 72 / printDPI
-	categorySize := 16.0 * cssScale * 72 / printDPI
 	logoGap := px(8)
-	pillIconGap := px(8)
-	pillPadX := px(20)
-	pillPadY := px(8)
-	pillBorderW := px(2)
 	colGap := px(20)
-	stackGap := px(10)
 	bodyGap := px(18)
 
 	titleText := config.ServerName
 	const (
-		iconToText    = 1.35 // CSS boxes are larger than ink; bias icons up
-		titleHeavy    = 1    // light embolden for title
-		categoryHeavy = 0    // bold only for category
+		iconToText = 1.35
+		titleHeavy = 1
 	)
 
 	contentLeft := trim.Min.X + contentPad
@@ -100,7 +85,6 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 		return nil, err
 	}
 
-	// QR on the right; leave room for the left column and host label.
 	qrSize := int(float64(trimH)*0.48 + 0.5)
 	maxQRH := trimH - 2*contentPad - hostGap - hostH
 	if qrSize > maxQRH {
@@ -121,14 +105,9 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 	if err != nil {
 		return nil, err
 	}
-	catH, err := textHeight(opts.Category.Name, categorySize, fontBold)
-	if err != nil {
-		return nil, err
-	}
 	flagTargetH := int(float64(titleH)*iconToText + 0.5)
-	iconTargetH := int(float64(catH)*iconToText + 0.5)
 
-	flagPath := filepath.Join(filepath.Dir(opts.ImagesRoot), "flag.svg")
+	flagPath := filepath.Join(opts.ImagesRoot, "flag.svg")
 	flag, err := renderSVGScaledToInkHeight(flagPath, flagTargetH, nil)
 	if err != nil {
 		return nil, fmt.Errorf("render flag icon: %w", err)
@@ -141,61 +120,24 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 		return nil, err
 	}
 	logoW := flagW + logoGap + titleW + 2*titleHeavy
-
-	// Shrink category text until the pill fits the left column.
-	var (
-		icon         *image.RGBA
-		pillIconSize int
-		catW         int
-		pillH        int
-		pillW        int
-	)
-	for try := 0; try < 8; try++ {
-		catH, err = textHeight(opts.Category.Name, categorySize, fontBold)
+	for try := 0; try < 8 && logoW > leftMaxW; try++ {
+		titleSize *= 0.9
+		titleH, err = textHeight(titleText, titleSize, fontBold)
 		if err != nil {
 			return nil, err
 		}
-		iconTargetH = int(float64(catH)*iconToText + 0.5)
-		iconPath := filepath.Join(opts.ImagesRoot, opts.Category.ImageFile)
-		icon, err = renderSVGScaledToInkHeight(iconPath, iconTargetH, pillIcon)
-		if err != nil {
-			return nil, fmt.Errorf("render icon %s: %w", iconPath, err)
-		}
-		pillIconSize = icon.Bounds().Dy()
-		catW, err = textWidth(opts.Category.Name, categorySize, fontBold)
+		flagTargetH = int(float64(titleH)*iconToText + 0.5)
+		flag, err = renderSVGScaledToInkHeight(flagPath, flagTargetH, nil)
 		if err != nil {
 			return nil, err
 		}
-		pillInnerH := pillIconSize
-		if catH > pillInnerH {
-			pillInnerH = catH
+		flagSize = flag.Bounds().Dy()
+		flagW = flag.Bounds().Dx()
+		titleW, err = textWidth(titleText, titleSize, fontBold)
+		if err != nil {
+			return nil, err
 		}
-		pillH = pillInnerH + 2*pillPadY
-		pillW = icon.Bounds().Dx() + pillIconGap + catW + 2*pillPadX +
-			2*categoryHeavy
-		if pillW <= leftMaxW && logoW <= leftMaxW {
-			break
-		}
-		categorySize *= 0.9
-		if logoW > leftMaxW {
-			titleSize *= 0.9
-			titleH, err = textHeight(titleText, titleSize, fontBold)
-			if err != nil {
-				return nil, err
-			}
-			flagTargetH = int(float64(titleH)*iconToText + 0.5)
-			flag, err = renderSVGScaledToInkHeight(flagPath, flagTargetH, nil)
-			if err != nil {
-				return nil, err
-			}
-			flagSize = flag.Bounds().Dy()
-			flagW = flag.Bounds().Dx()
-			titleW, err = textWidth(titleText, titleSize, fontBold)
-			if err != nil {
-				return nil, err
-			}
-			logoW = flagW + logoGap + titleW + 2*titleHeavy
-		}
+		logoW = flagW + logoGap + titleW + 2*titleHeavy
 	}
 
 	logoH := flagSize
@@ -220,39 +162,7 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 		return nil, err
 	}
 
-	pillTop := leftTop + logoH + stackGap
-	pillRect := image.Rect(
-		contentLeft, pillTop, contentLeft+pillW, pillTop+pillH,
-	)
-	fillRoundedRect(canvas, pillRect, pillH/2, pillBorder)
-	inner := image.Rect(
-		pillRect.Min.X+pillBorderW,
-		pillRect.Min.Y+pillBorderW,
-		pillRect.Max.X-pillBorderW,
-		pillRect.Max.Y-pillBorderW,
-	)
-	fillRoundedRect(canvas, inner, (pillH-2*pillBorderW)/2, pillFill)
-
-	pillCenterY := pillTop + pillH/2
-	pillContentLeft := pillRect.Min.X + pillPadX
-	iconW := icon.Bounds().Dx()
-	drawAt(canvas, icon, pillContentLeft, pillCenterY-pillIconSize/2)
-
-	catBaseline, err := textBaselineForCenterY(
-		opts.Category.Name, pillCenterY, categorySize, fontBold,
-	)
-	if err != nil {
-		return nil, err
-	}
-	if err := drawLeftTextEmboldened(
-		canvas, opts.Category.Name,
-		pillContentLeft+iconW+pillIconGap, catBaseline,
-		categorySize, fontBold, brandText, categoryHeavy,
-	); err != nil {
-		return nil, err
-	}
-
-	bodyTop := pillTop + pillH + bodyGap
+	bodyTop := leftTop + logoH + bodyGap
 
 	aboutBlurb := "Remember classified ads? Post ad with your number and " +
 		"folks contact you. " + config.ServerName +
@@ -275,7 +185,7 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 	itemGap := px(3)
 	noIconGap := px(4)
 
-	blockPath := filepath.Join(filepath.Dir(opts.ImagesRoot), "block.svg")
+	blockPath := filepath.Join(opts.ImagesRoot, "block.svg")
 	var (
 		bodyLines []string
 		lineH     int
@@ -372,7 +282,7 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 	if qrY < trim.Min.Y+contentPad {
 		qrY = trim.Min.Y + contentPad
 	}
-	qrURL := CategoryURL(opts.Host, opts.Category.ID)
+	qrURL := SiteURL(opts.Host)
 	qr, err := renderQRRGBA(qrURL, qrSize, brandText)
 	if err != nil {
 		return nil, err

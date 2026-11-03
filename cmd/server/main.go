@@ -7,6 +7,7 @@ import (
 	"github.com/partspile/site/internal/ad"
 	"github.com/partspile/site/internal/config"
 	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/dbinit"
 	"github.com/partspile/site/internal/flagopinion"
 	"github.com/partspile/site/internal/handler"
 	"github.com/partspile/site/internal/imagestore"
@@ -80,7 +81,6 @@ func setupApp() *fiber.App {
 	app.Get("/faq/:section", handler.FAQHandler)
 	app.Get("/ad/:id", handler.AdHandler)
 	app.Get("/ad/:id/flag/:ordinal", handler.PublicAdFlagOpinionHandler)
-	app.Get("/c/:category", handler.ShortCategoryHandler)
 	app.Get("/u/:token", handler.SharedUserProfileHandler)
 	app.Get("/u/:token/view/:view", handler.SharedUserProfileViewHandler)
 	app.Get("/media/ad/:id/:index/:size", handler.MediaAdImageHandler)
@@ -227,6 +227,9 @@ func main() {
 		logger.Fatal("Database not ready", "error", err)
 	}
 
+	if err := dbinit.LoadCategories(); err != nil {
+		logger.Fatal("Failed to sync categories", "error", err)
+	}
 	if err := ad.LoadCategories(); err != nil {
 		logger.Fatal("Failed to initialize ads", "error", err)
 	}
