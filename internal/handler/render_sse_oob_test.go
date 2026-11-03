@@ -48,7 +48,7 @@ func TestRenderFlagEventAppendOOB(t *testing.T) {
 		Kind:    ui.FlagEventThrown,
 		EventAt: time.Now().UTC(),
 		OwnerID: 3, InquirerID: 4,
-		OwnerName:          "sfeldma",
+		OwnerName:          "alice",
 		InquirerName:       "bob",
 		ShowAssessmentHint: true,
 	}

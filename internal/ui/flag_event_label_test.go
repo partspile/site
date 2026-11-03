@@ -6,7 +6,7 @@ func TestFlagEventLabel(t *testing.T) {
 	base := FlagEventData{
 		OwnerID:      1,
 		InquirerID:   2,
-		OwnerName:    "sfeldma",
+		OwnerName:    "alice",
 		InquirerName: "bob",
 	}
 
@@ -53,7 +53,7 @@ func TestFlagEventLabel(t *testing.T) {
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
-			want: "Flag raised at you by sfeldma",
+			want: "Flag raised at you by alice",
 		},
 		{
 			name: "owner threw, self view",
@@ -73,7 +73,7 @@ func TestFlagEventLabel(t *testing.T) {
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
-			want: "Flag raised at bob by sfeldma",
+			want: "Flag raised at bob by alice",
 		},
 		{
 			name: "inquirer threw with policy reason",
