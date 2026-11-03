@@ -31,11 +31,11 @@ import (
 	"github.com/partspile/site/internal/db/testdb"
 	"github.com/partspile/site/internal/dbinit"
 	"github.com/partspile/site/internal/facet"
+	"github.com/partspile/site/internal/flagopinion"
 	"github.com/partspile/site/internal/handler"
 	"github.com/partspile/site/internal/imagestore"
 	"github.com/partspile/site/internal/kv"
 	"github.com/partspile/site/internal/logger"
-	"github.com/partspile/site/internal/rockopinion"
 	"github.com/partspile/site/internal/user"
 	"github.com/partspile/site/internal/vector"
 	"github.com/redis/go-redis/v9"
@@ -255,7 +255,7 @@ func TestMain(m *testing.M) {
 		panic(fmt.Sprintf("Failed to create test image dir: %v", err))
 	}
 	handler.SetAdImageStore(imagestore.NewLocal(testImageDir))
-	rockopinion.SetImageStore(imagestore.NewLocal(testImageDir))
+	flagopinion.SetImageStore(imagestore.NewLocal(testImageDir))
 
 	mr, err := miniredis.Run()
 	if err != nil {

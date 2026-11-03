@@ -9,9 +9,9 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-// RockOpinionModalData holds presentation fields for a dispute assessment modal.
+// FlagOpinionModalData holds presentation fields for a dispute assessment modal.
 // Party identities are never shown; roles are Owner / Inquirer only.
-type RockOpinionModalData struct {
+type FlagOpinionModalData struct {
 	ConversationID   int
 	AdID             int
 	AdTitle          string
@@ -116,9 +116,9 @@ func opinionSection(title, body string) g.Node {
 	)
 }
 
-// RockOpinionModal renders the cached or generated dispute assessment.
-func RockOpinionModal(d RockOpinionModalData) g.Node {
-	modalName := fmt.Sprintf("rock-opinion-%d", d.ConversationID)
+// FlagOpinionModal renders the cached or generated dispute assessment.
+func FlagOpinionModal(d FlagOpinionModalData) g.Node {
+	modalName := fmt.Sprintf("flag-opinion-%d", d.ConversationID)
 
 	return g.Group([]g.Node{
 		modalBackdrop(modalName),
@@ -202,14 +202,14 @@ func adFactItems(facts []string) []g.Node {
 	return items
 }
 
-// RockOpinionLink renders a link for participants to view the assessment.
-func RockOpinionLink(conversationID int) g.Node {
+// FlagOpinionLink renders a link for participants to view the assessment.
+func FlagOpinionLink(conversationID int) g.Node {
 	const label = "View dispute assessment"
 	return A(
 		Href("#"),
-		ID(fmt.Sprintf("rock-opinion-link-%d", conversationID)),
-		Class("flex-shrink-0 cursor-pointer rock-opinion-link"),
-		hx.Get(fmt.Sprintf("/auth/conversation/%d/rock-opinion", conversationID)),
+		ID(fmt.Sprintf("flag-opinion-link-%d", conversationID)),
+		Class("flex-shrink-0 cursor-pointer flag-opinion-link"),
+		hx.Get(fmt.Sprintf("/auth/conversation/%d/flag-opinion", conversationID)),
 		hx.Target("body"),
 		hx.Swap("beforeend"),
 		hx.Indicator("this"),

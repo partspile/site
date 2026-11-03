@@ -303,6 +303,6 @@ func RegisterStep3Handler(c *fiber.Ctx) error {
 }
 
 func WelcomeHandler(c *fiber.Ctx) error {
-	rockCount := config.MaxOutstandingRocks
-	return renderPage(c, "Welcome", ui.WelcomePage(rockCount))
+	flagCount := config.MaxOutstandingFlags
+	return renderPage(c, "Welcome", ui.WelcomePage(flagCount))
 }

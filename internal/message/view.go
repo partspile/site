@@ -7,7 +7,7 @@ import (
 
 	"github.com/partspile/site/internal/ad"
 	"github.com/partspile/site/internal/config"
-	"github.com/partspile/site/internal/rock"
+	"github.com/partspile/site/internal/flag"
 	"github.com/partspile/site/internal/user"
 )
 
@@ -25,13 +25,13 @@ type ConversationModalView struct {
 	OwnerDeleted      bool
 	InquirerDeleted   bool
 	Messages          []Message
-	RockEvents        []RockJournalEvent
+	FlagEvents        []FlagJournalEvent
 	CloseEvents       []CloseJournalEvent
-	InquirerRockCount int
-	OwnerRockCount    int
+	InquirerFlagCount int
+	OwnerFlagCount    int
 	CanPost           bool
-	HasThrownRock     bool
-	CanThrowRock      bool
+	HasRaisedFlag     bool
+	CanRaiseFlag      bool
 }
 
 func CanViewConversation(conv Conversation, userID int) bool {
@@ -106,20 +106,20 @@ func BuildConversationModal(conv Conversation, currentUserID int,
 		InquirerName:      inquirerName,
 		OwnerDeleted:      ownerDeleted,
 		InquirerDeleted:   inquirerDeleted,
-		InquirerRockCount: rockCountForUser(conv.InquirerID),
-		OwnerRockCount:    rockCountForUser(conv.OwnerID),
+		InquirerFlagCount: flagCountForUser(conv.InquirerID),
+		OwnerFlagCount:    flagCountForUser(conv.OwnerID),
 		Messages:          []Message{},
 	}
 
 	messagingOK := MessagingAllowed(conv)
 	if conv.ID == 0 {
 		view.CanPost = messagingOK && a.IsActive()
-		view.CanThrowRock = view.CanPost && userUnderRockLimit(currentUserID)
+		view.CanRaiseFlag = view.CanPost && userUnderFlagLimit(currentUserID)
 		return view, nil
 	}
 
 	view.Messages = MessagesFromJournal(conv.ID, conv.Journal, tz)
-	view.RockEvents = RockEventsFromJournal(conv.Journal, tz)
+	view.FlagEvents = FlagEventsFromJournal(conv.Journal, tz)
 	view.CloseEvents = CloseEventsFromJournal(conv.Journal, tz)
 
 	canPost, err := CanUserPost(conv.ID, currentUserID)
@@ -128,43 +128,43 @@ func BuildConversationModal(conv Conversation, currentUserID int,
 	}
 	view.CanPost = canPost && messagingOK
 
-	hasThrown, canThrow := rockThrowPermissions(conv.ID, currentUserID, view.CanPost)
-	view.HasThrownRock = hasThrown
-	view.CanThrowRock = canThrow
+	hasThrown, canThrow := flagThrowPermissions(conv.ID, currentUserID, view.CanPost)
+	view.HasRaisedFlag = hasThrown
+	view.CanRaiseFlag = canThrow
 
 	return view, nil
 }
 
-func rockCountForUser(userID int) int {
-	count, err := rock.GetRockCountForUser(userID)
+func flagCountForUser(userID int) int {
+	count, err := flag.GetFlagCountForUser(userID)
 	if err != nil {
 		return 0
 	}
 	return count
 }
 
-func userUnderRockLimit(userID int) bool {
-	userRockCount, err := rock.GetUserRockCount(userID)
-	if err != nil || userRockCount >= config.MaxOutstandingRocks {
+func userUnderFlagLimit(userID int) bool {
+	userFlagCount, err := flag.GetUserFlagCount(userID)
+	if err != nil || userFlagCount >= config.MaxOutstandingFlags {
 		return false
 	}
 	return true
 }
 
-func rockThrowPermissions(conversationID, userID int,
+func flagThrowPermissions(conversationID, userID int,
 	canPost bool) (hasThrown, canThrow bool) {
-	hasThrown, err := rock.HasUserThrownRock(userID, conversationID)
+	hasThrown, err := flag.HasUserRaisedFlag(userID, conversationID)
 	if err != nil {
 		hasThrown = false
 	}
 	if !canPost {
 		return hasThrown, false
 	}
-	rockCount, err := rock.GetRockCountForConversation(conversationID)
-	if err != nil || rockCount > 0 {
+	flagCount, err := flag.GetFlagCountForConversation(conversationID)
+	if err != nil || flagCount > 0 {
 		return hasThrown, false
 	}
-	if !userUnderRockLimit(userID) {
+	if !userUnderFlagLimit(userID) {
 		return hasThrown, false
 	}
 	return hasThrown, true

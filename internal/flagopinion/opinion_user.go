@@ -1,4 +1,4 @@
-package rockopinion
+package flagopinion
 
 import (
 	"fmt"
@@ -6,24 +6,24 @@ import (
 	"time"
 
 	"github.com/partspile/site/internal/ad"
+	"github.com/partspile/site/internal/flag"
 	"github.com/partspile/site/internal/message"
-	"github.com/partspile/site/internal/rock"
 )
 
 type promptInput struct {
-	AdTitle       string
-	AdOriginal    string
-	AdHistory     []ad.HistoryEntryDisplay
-	FormalFacets  []string
-	Tags          []string
-	Messages      []message.Message
-	OwnerID       int
-	InquirerID    int
-	RockThrowerID int
-	RockThrownAt  time.Time
-	Reason        string
-	Tz            *time.Location
-	ImageCount    int
+	AdTitle      string
+	AdOriginal   string
+	AdHistory    []ad.HistoryEntryDisplay
+	FormalFacets []string
+	Tags         []string
+	Messages     []message.Message
+	OwnerID      int
+	InquirerID   int
+	FlagRaiserID int
+	FlagRaisedAt time.Time
+	Reason       string
+	Tz           *time.Location
+	ImageCount   int
 }
 
 func buildUserPrompt(in promptInput) string {
@@ -59,12 +59,12 @@ func buildUserPrompt(in promptInput) string {
 				"for visual review.\n", in.ImageCount)
 	}
 
-	complaintAt := in.RockThrownAt
+	complaintAt := in.FlagRaisedAt
 	if in.Tz != nil {
 		complaintAt = complaintAt.In(in.Tz)
 	}
 	b.WriteString("\nDispute metadata:\n")
-	if in.RockThrowerID == in.InquirerID {
+	if in.FlagRaiserID == in.InquirerID {
 		b.WriteString(
 			"The inquirer filed a complaint about the ad with the owner.\n",
 		)
@@ -76,8 +76,8 @@ func buildUserPrompt(in promptInput) string {
 	fmt.Fprintf(&b, "Complaint filed at: %s\n",
 		complaintAt.Format(time.RFC3339))
 	if in.Reason != "" {
-		atAd := in.RockThrowerID == in.InquirerID
-		label := rock.ReasonLabelForTarget(in.Reason, atAd)
+		atAd := in.FlagRaiserID == in.InquirerID
+		label := flag.ReasonLabelForTarget(in.Reason, atAd)
 		if label == "" {
 			label = in.Reason
 		}

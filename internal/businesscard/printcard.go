@@ -66,7 +66,7 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 	trim := image.Rect(bleedPx, bleedPx, bleedPx+trimW, bleedPx+trimH)
 
 	// Match site homepage visual proportions: icon ink slightly taller than
-	// adjacent capitals (nav rock vs site title; pill icon vs category).
+	// adjacent capitals (nav flag vs site title; pill icon vs category).
 	const cssScale = 3.0
 	px := func(cssPx float64) int {
 		return int(cssPx*cssScale + 0.5)
@@ -125,22 +125,22 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 	if err != nil {
 		return nil, err
 	}
-	rockTargetH := int(float64(titleH)*iconToText + 0.5)
+	flagTargetH := int(float64(titleH)*iconToText + 0.5)
 	iconTargetH := int(float64(catH)*iconToText + 0.5)
 
-	rockPath := filepath.Join(filepath.Dir(opts.ImagesRoot), "flag.svg")
-	rock, err := renderSVGScaledToInkHeight(rockPath, rockTargetH, nil)
+	flagPath := filepath.Join(filepath.Dir(opts.ImagesRoot), "flag.svg")
+	flag, err := renderSVGScaledToInkHeight(flagPath, flagTargetH, nil)
 	if err != nil {
 		return nil, fmt.Errorf("render flag icon: %w", err)
 	}
-	rockSize := rock.Bounds().Dy()
-	rockW := rock.Bounds().Dx()
+	flagSize := flag.Bounds().Dy()
+	flagW := flag.Bounds().Dx()
 
 	titleW, err := textWidth(titleText, titleSize, fontBold)
 	if err != nil {
 		return nil, err
 	}
-	logoW := rockW + logoGap + titleW + 2*titleHeavy
+	logoW := flagW + logoGap + titleW + 2*titleHeavy
 
 	// Shrink category text until the pill fits the left column.
 	var (
@@ -183,22 +183,22 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 			if err != nil {
 				return nil, err
 			}
-			rockTargetH = int(float64(titleH)*iconToText + 0.5)
-			rock, err = renderSVGScaledToInkHeight(rockPath, rockTargetH, nil)
+			flagTargetH = int(float64(titleH)*iconToText + 0.5)
+			flag, err = renderSVGScaledToInkHeight(flagPath, flagTargetH, nil)
 			if err != nil {
 				return nil, err
 			}
-			rockSize = rock.Bounds().Dy()
-			rockW = rock.Bounds().Dx()
+			flagSize = flag.Bounds().Dy()
+			flagW = flag.Bounds().Dx()
 			titleW, err = textWidth(titleText, titleSize, fontBold)
 			if err != nil {
 				return nil, err
 			}
-			logoW = rockW + logoGap + titleW + 2*titleHeavy
+			logoW = flagW + logoGap + titleW + 2*titleHeavy
 		}
 	}
 
-	logoH := rockSize
+	logoH := flagSize
 	if titleH > logoH {
 		logoH = titleH
 	}
@@ -212,9 +212,9 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 		return nil, err
 	}
 
-	drawAt(canvas, rock, contentLeft, logoCenterY-rockSize/2)
+	drawAt(canvas, flag, contentLeft, logoCenterY-flagSize/2)
 	if err := drawLeftTextEmboldened(
-		canvas, titleText, contentLeft+rockW+logoGap, titleBaseline,
+		canvas, titleText, contentLeft+flagW+logoGap, titleBaseline,
 		titleSize, fontBold, brandText, titleHeavy,
 	); err != nil {
 		return nil, err

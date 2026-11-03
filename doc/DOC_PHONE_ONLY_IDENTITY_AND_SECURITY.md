@@ -245,7 +245,7 @@ Web admin is insights-only (SMS queue, embeddings, clicks aggregates)—no usern
 | `PUBLIC_SITE_URL` misconfig | Webhooks and SMS deep links both use this base; wrong host breaks Twilio and/or phishes users |
 | Cloudflare Turnstile | Misconfig / downtime can block registration or (if bypassed in code paths) weaken bot friction |
 | Redis | Compromise exposes rate-limit keys (including recent E.164s) and can disable OTP/IP throttles |
-| Grok | Usernames (and other AI features: rock opinions, suggestions, compress) leave the trust boundary |
+| Grok | Usernames (and other AI features: flag opinions, suggestions, compress) leave the trust boundary |
 | Geoapify | Location query text leaves the trust boundary; durable cache in Postgres is intentional |
 | MinIO / presigned URLs | Stolen long-lived GET URLs leak images; PUT URL abuse if minting is too loose |
 | `ALLOW_TEST_REGISTRATION` | Skips Turnstile and Verify for allowlisted numbers if enabled in prod |

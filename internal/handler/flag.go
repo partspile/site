@@ -9,18 +9,18 @@ import (
 	"github.com/partspile/site/internal/ad"
 	"github.com/partspile/site/internal/config"
 	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/flag"
+	"github.com/partspile/site/internal/flagopinion"
 	"github.com/partspile/site/internal/local"
 	"github.com/partspile/site/internal/logger"
 	"github.com/partspile/site/internal/message"
 	"github.com/partspile/site/internal/param"
-	"github.com/partspile/site/internal/rock"
-	"github.com/partspile/site/internal/rockopinion"
 	"github.com/partspile/site/internal/ui"
 	"github.com/partspile/site/internal/user"
 	g "maragu.dev/gomponents"
 )
 
-func ConfirmRockHandler(c *fiber.Ctx) error {
+func ConfirmFlagHandler(c *fiber.Ctx) error {
 	conversationID, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid conversation ID")
@@ -41,10 +41,10 @@ func ConfirmRockHandler(c *fiber.Ctx) error {
 			"Messaging is closed for this conversation")
 	}
 
-	return renderRockThrowConfirm(c, conv, currentUserID, csrfToken)
+	return renderFlagThrowConfirm(c, conv, currentUserID, csrfToken)
 }
 
-func ConfirmRockOnAdHandler(c *fiber.Ctx) error {
+func ConfirmFlagOnAdHandler(c *fiber.Ctx) error {
 	adID, err := param.GetAdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -57,7 +57,7 @@ func ConfirmRockOnAdHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	if err := ensureCanRockAd(a, currentUserID); err != nil {
+	if err := ensureCanFlagAd(a, currentUserID); err != nil {
 		return err
 	}
 
@@ -79,13 +79,13 @@ func ConfirmRockOnAdHandler(c *fiber.Ctx) error {
 			"Messaging is closed for this conversation")
 	}
 
-	return renderRockThrowConfirm(c, conv, currentUserID, csrfToken)
+	return renderFlagThrowConfirm(c, conv, currentUserID, csrfToken)
 }
 
-func renderRockThrowConfirm(c *fiber.Ctx, conv message.Conversation,
+func renderFlagThrowConfirm(c *fiber.Ctx, conv message.Conversation,
 	currentUserID int, csrfToken string) error {
-	outstanding, _ := rock.GetUserRockCount(currentUserID)
-	remaining := config.MaxOutstandingRocks - outstanding
+	outstanding, _ := flag.GetUserFlagCount(currentUserID)
+	remaining := config.MaxOutstandingFlags - outstanding
 	if remaining < 0 {
 		remaining = 0
 	}
@@ -102,7 +102,7 @@ func renderRockThrowConfirm(c *fiber.Ctx, conv message.Conversation,
 		label = fmt.Sprintf("Raise flag on %s", inquirerName)
 	}
 
-	return render(c, ui.RockThrowConfirmModal(ui.RockThrowConfirmData{
+	return render(c, ui.FlagThrowConfirmModal(ui.FlagThrowConfirmData{
 		ConversationID: conv.ID,
 		AdID:           conv.AdID,
 		CSRFToken:      csrfToken,
@@ -114,7 +114,7 @@ func renderRockThrowConfirm(c *fiber.Ctx, conv message.Conversation,
 	}))
 }
 
-func PreviewRockHandler(c *fiber.Ctx) error {
+func PreviewFlagHandler(c *fiber.Ctx) error {
 	conversationID, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid conversation ID")
@@ -122,7 +122,7 @@ func PreviewRockHandler(c *fiber.Ctx) error {
 	currentUserID := local.GetUserID(c)
 	tz := cookie.GetTimezone(c)
 	reason := c.FormValue("reason")
-	if !rock.ValidReason(reason) {
+	if !flag.ValidReason(reason) {
 		return fiber.NewError(fiber.StatusBadRequest, "Choose a reason")
 	}
 
@@ -135,10 +135,10 @@ func PreviewRockHandler(c *fiber.Ctx) error {
 			"Only conversation participants can preview")
 	}
 
-	return renderRockPreview(c, conv, currentUserID, reason, tz)
+	return renderFlagPreview(c, conv, currentUserID, reason, tz)
 }
 
-func PreviewRockOnAdHandler(c *fiber.Ctx) error {
+func PreviewFlagOnAdHandler(c *fiber.Ctx) error {
 	adID, err := param.GetAdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -146,7 +146,7 @@ func PreviewRockOnAdHandler(c *fiber.Ctx) error {
 	currentUserID := local.GetUserID(c)
 	tz := cookie.GetTimezone(c)
 	reason := c.FormValue("reason")
-	if !rock.ValidReason(reason) {
+	if !flag.ValidReason(reason) {
 		return fiber.NewError(fiber.StatusBadRequest, "Choose a reason")
 	}
 
@@ -154,7 +154,7 @@ func PreviewRockOnAdHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	if err := ensureCanRockAd(a, currentUserID); err != nil {
+	if err := ensureCanFlagAd(a, currentUserID); err != nil {
 		return err
 	}
 
@@ -173,26 +173,26 @@ func PreviewRockOnAdHandler(c *fiber.Ctx) error {
 		}
 	}
 
-	return renderRockPreview(c, conv, currentUserID, reason, tz)
+	return renderFlagPreview(c, conv, currentUserID, reason, tz)
 }
 
-func renderRockPreview(c *fiber.Ctx, conv message.Conversation,
+func renderFlagPreview(c *fiber.Ctx, conv message.Conversation,
 	currentUserID int, reason string, tz *time.Location) error {
-	op, err := rockopinion.Preview(conv, currentUserID, reason, tz)
-	if errors.Is(err, rockopinion.ErrUnavailable) || err != nil {
-		if errors.Is(err, rock.ErrInvalidReason) {
+	op, err := flagopinion.Preview(conv, currentUserID, reason, tz)
+	if errors.Is(err, flagopinion.ErrUnavailable) || err != nil {
+		if errors.Is(err, flag.ErrInvalidReason) {
 			return fiber.NewError(fiber.StatusBadRequest, "Choose a reason")
 		}
-		if err != nil && !errors.Is(err, rockopinion.ErrUnavailable) {
-			logger.Error("Failed to preview rock opinion", "error", err,
+		if err != nil && !errors.Is(err, flagopinion.ErrUnavailable) {
+			logger.Error("Failed to preview flag opinion", "error", err,
 				"conversationID", conv.ID, "userID", currentUserID)
 		}
-		return render(c, ui.RockThrowPreviewModal(ui.RockThrowPreviewData{
+		return render(c, ui.FlagThrowPreviewModal(ui.FlagThrowPreviewData{
 			Unavailable: true,
 		}))
 	}
 
-	return render(c, ui.RockThrowPreviewModal(ui.RockThrowPreviewData{
+	return render(c, ui.FlagThrowPreviewModal(ui.FlagThrowPreviewData{
 		Summary:          op.Summary,
 		AssessmentScore:  op.Assessment,
 		AssessmentDetail: op.AssessmentDetail,
@@ -201,7 +201,7 @@ func renderRockPreview(c *fiber.Ctx, conv message.Conversation,
 	}))
 }
 
-func ThrowRockHandler(c *fiber.Ctx) error {
+func RaiseFlagHandler(c *fiber.Ctx) error {
 	conversationID, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid conversation ID")
@@ -211,7 +211,7 @@ func ThrowRockHandler(c *fiber.Ctx) error {
 	tz := cookie.GetTimezone(c)
 	csrfToken := local.GetCSRFToken(c)
 	reason := c.FormValue("reason")
-	if !rock.ValidReason(reason) {
+	if !flag.ValidReason(reason) {
 		return fiber.NewError(fiber.StatusBadRequest, "Choose a reason")
 	}
 
@@ -229,8 +229,8 @@ func ThrowRockHandler(c *fiber.Ctx) error {
 			"Messaging is closed for this conversation")
 	}
 
-	if err := rock.ThrowRock(currentUserID, conversationID, reason); err != nil {
-		return throwRockError(err, conversationID, currentUserID)
+	if err := flag.RaiseFlag(currentUserID, conversationID, reason); err != nil {
+		return raiseFlagError(err, conversationID, currentUserID)
 	}
 
 	conv, err = message.GetConversationByID(conversationID)
@@ -239,14 +239,14 @@ func ThrowRockHandler(c *fiber.Ctx) error {
 			"Failed to get conversation")
 	}
 
-	sendRockEventSSE(conv, currentUserID)
-	return renderConversationRockEventAppend(c, conv, currentUserID, tz,
+	sendFlagEventSSE(conv, currentUserID)
+	return renderConversationFlagEventAppend(c, conv, currentUserID, tz,
 		csrfToken, true)
 }
 
-// ThrowRockOnAdHandler creates the conversation if needed, then throws a rock.
+// RaiseFlagOnAdHandler creates the conversation if needed, then throws a flag.
 // Used when the inquirer opens a new conversation modal (conversation ID 0).
-func ThrowRockOnAdHandler(c *fiber.Ctx) error {
+func RaiseFlagOnAdHandler(c *fiber.Ctx) error {
 	adID, err := param.GetAdID(c)
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -256,7 +256,7 @@ func ThrowRockOnAdHandler(c *fiber.Ctx) error {
 	tz := cookie.GetTimezone(c)
 	csrfToken := local.GetCSRFToken(c)
 	reason := c.FormValue("reason")
-	if !rock.ValidReason(reason) {
+	if !flag.ValidReason(reason) {
 		return fiber.NewError(fiber.StatusBadRequest, "Choose a reason")
 	}
 
@@ -264,7 +264,7 @@ func ThrowRockOnAdHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Ad not found")
 	}
-	if err := ensureCanRockAd(a, currentUserID); err != nil {
+	if err := ensureCanFlagAd(a, currentUserID); err != nil {
 		return err
 	}
 
@@ -277,7 +277,7 @@ func ThrowRockOnAdHandler(c *fiber.Ctx) error {
 		}
 		conv, err = message.CreateConversation(adID, a.UserID, currentUserID)
 		if err != nil {
-			logger.Error("Failed to create conversation for rock throw",
+			logger.Error("Failed to create conversation for flag throw",
 				"error", err, "adID", adID, "ownerID", a.UserID,
 				"inquirerID", currentUserID)
 			return fiber.NewError(fiber.StatusInternalServerError,
@@ -290,8 +290,8 @@ func ThrowRockOnAdHandler(c *fiber.Ctx) error {
 			"Messaging is closed for this conversation")
 	}
 
-	if err := rock.ThrowRock(currentUserID, conv.ID, reason); err != nil {
-		return throwRockError(err, conv.ID, currentUserID)
+	if err := flag.RaiseFlag(currentUserID, conv.ID, reason); err != nil {
+		return raiseFlagError(err, conv.ID, currentUserID)
 	}
 
 	conv, err = message.GetConversationByID(conv.ID)
@@ -300,7 +300,7 @@ func ThrowRockOnAdHandler(c *fiber.Ctx) error {
 			"Failed to get conversation")
 	}
 
-	sendRockEventSSE(conv, currentUserID)
+	sendFlagEventSSE(conv, currentUserID)
 
 	view, err := message.BuildConversationModal(conv, currentUserID, tz)
 	if err != nil {
@@ -310,11 +310,11 @@ func ThrowRockOnAdHandler(c *fiber.Ctx) error {
 	data := conversationModalDataFromView(view, currentUserID, csrfToken,
 		"conversation-0-modal", messageNodes)
 	nodes := []g.Node{ui.ConversationModalSwapOOB(data)}
-	nodes = append(nodes, ui.CloseRockThrowModalsOOB()...)
+	nodes = append(nodes, ui.CloseFlagThrowModalsOOB()...)
 	return render(c, g.Group(nodes))
 }
 
-func UnthrowRockHandler(c *fiber.Ctx) error {
+func LowerFlagHandler(c *fiber.Ctx) error {
 	conversationID, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid conversation ID")
@@ -334,18 +334,18 @@ func UnthrowRockHandler(c *fiber.Ctx) error {
 			"Only conversation participants can lower flags")
 	}
 
-	err = rock.UnthrowRock(currentUserID, conversationID)
+	err = flag.LowerFlag(currentUserID, conversationID)
 	if err != nil {
-		if err == rock.ErrRockNotFound {
+		if err == flag.ErrFlagNotFound {
 			return fiber.NewError(fiber.StatusNotFound, "Flag not found")
 		}
-		logger.Error("Failed to unthrow rock", "error", err,
+		logger.Error("Failed to lower flag", "error", err,
 			"conversationID", conversationID, "userID", currentUserID)
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to lower flag")
 	}
-	if err := rockopinion.Invalidate(conversationID); err != nil {
-		logger.Error("Failed to invalidate rock opinion",
+	if err := flagopinion.Invalidate(conversationID); err != nil {
+		logger.Error("Failed to invalidate flag opinion",
 			"error", err, "conversationID", conversationID)
 	}
 
@@ -355,12 +355,12 @@ func UnthrowRockHandler(c *fiber.Ctx) error {
 			"Failed to get conversation")
 	}
 
-	sendRockEventSSE(conv, currentUserID)
-	return renderConversationRockEventAppend(c, conv, currentUserID, tz,
+	sendFlagEventSSE(conv, currentUserID)
+	return renderConversationFlagEventAppend(c, conv, currentUserID, tz,
 		csrfToken, false)
 }
 
-func ensureCanRockAd(a ad.Ad, currentUserID int) error {
+func ensureCanFlagAd(a ad.Ad, currentUserID int) error {
 	if !a.IsActive() {
 		return fiber.NewError(fiber.StatusBadRequest,
 			"Cannot raise a flag on an inactive or deleted ad")
@@ -376,21 +376,21 @@ func ensureCanRockAd(a ad.Ad, currentUserID int) error {
 	return nil
 }
 
-func throwRockError(err error, conversationID, userID int) error {
-	if err == rock.ErrMaxRocksReached {
+func raiseFlagError(err error, conversationID, userID int) error {
+	if err == flag.ErrMaxFlagsReached {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf(
 			"You have reached the maximum of %d outstanding flags",
-			config.MaxOutstandingRocks,
+			config.MaxOutstandingFlags,
 		))
 	}
-	if err == rock.ErrRockAlreadyThrown {
+	if err == flag.ErrFlagAlreadyRaised {
 		return fiber.NewError(fiber.StatusBadRequest,
 			"A flag has already been raised on this conversation")
 	}
-	if err == rock.ErrInvalidReason {
+	if err == flag.ErrInvalidReason {
 		return fiber.NewError(fiber.StatusBadRequest, "Choose a reason")
 	}
-	logger.Error("Failed to throw rock", "error", err,
+	logger.Error("Failed to throw flag", "error", err,
 		"conversationID", conversationID, "userID", userID)
 	return fiber.NewError(fiber.StatusInternalServerError,
 		"Failed to raise flag")

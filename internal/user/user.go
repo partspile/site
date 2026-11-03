@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/flag"
 	"github.com/partspile/site/internal/password"
-	"github.com/partspile/site/internal/rock"
 	"github.com/partspile/site/internal/vector"
 )
 
@@ -622,9 +622,9 @@ func DeleteUser(userID int) error {
 		return err
 	}
 
-	_ = rock.UnthrowActiveForUser(userID)
+	_ = flag.LowerActiveForUser(userID)
 	for _, adID := range adIDs {
-		_ = rock.UnthrowActiveForAd(adID)
+		_ = flag.LowerActiveForAd(adID)
 		_ = vector.DeleteAdEmbedding(adID)
 		_, _ = db.Exec(`
 			DELETE FROM flag_opinions

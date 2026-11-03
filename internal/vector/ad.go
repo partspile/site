@@ -52,7 +52,7 @@ func BuildAdEmbeddings(inputs []ad.EmbeddingInput) error {
 func buildAdEmbeddingPrompt(in ad.EmbeddingInput) string {
 	var parts []string
 	parts = append(parts, `Encode the following ad for semantic search.
-Focus on title, description, tags, location, price, rock disputes, and field values.
+Focus on title, description, tags, location, price, flag disputes, and field values.
 
 Title: `+in.Title)
 	parts = append(parts, "Description: "+in.Description)
@@ -77,19 +77,19 @@ Title: `+in.Title)
 			"Price: %s", currency.Format(amount, code),
 		))
 	}
-	parts = append(parts, rockContext(in.RockCount))
+	parts = append(parts, flagContext(in.FlagCount))
 	return strings.Join(parts, "\n")
 }
 
-func rockContext(count int) string {
+func flagContext(count int) string {
 	switch count {
 	case 0:
-		return "This ad has no reported disputes (0 rocks thrown)."
+		return "This ad has no reported disputes (0 flags raised)."
 	case 1:
-		return "This ad has 1 reported dispute (1 rock thrown)."
+		return "This ad has 1 reported dispute (1 flag raised)."
 	default:
 		return fmt.Sprintf(
-			"This ad has %d reported disputes (%d rocks thrown).",
+			"This ad has %d reported disputes (%d flags raised).",
 			count, count,
 		)
 	}

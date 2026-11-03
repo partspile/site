@@ -5,9 +5,9 @@ import "testing"
 func TestCanViewConversationParticipantsOnly(t *testing.T) {
 	thrower := 2
 	conv := Conversation{
-		OwnerID:       1,
-		InquirerID:    2,
-		RockThrowerID: &thrower,
+		OwnerID:      1,
+		InquirerID:   2,
+		FlagRaiserID: &thrower,
 	}
 
 	if !CanViewConversation(conv, 1) {
@@ -17,13 +17,13 @@ func TestCanViewConversationParticipantsOnly(t *testing.T) {
 		t.Fatal("inquirer should view thread")
 	}
 	if CanViewConversation(conv, 99) {
-		t.Fatal("bystander must not view thread even when rocked")
+		t.Fatal("bystander must not view thread even when flaged")
 	}
 	if CanViewConversation(conv, 0) {
 		t.Fatal("anonymous must not view thread")
 	}
 
-	conv.RockThrowerID = nil
+	conv.FlagRaiserID = nil
 	if CanViewConversation(conv, 99) {
 		t.Fatal("bystander must not view private thread")
 	}

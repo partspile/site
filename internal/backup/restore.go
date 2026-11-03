@@ -68,8 +68,8 @@ func runRestore(fromDir string, store imagestore.Store, backupKey []byte,
 	if err := readJSON(filepath.Join(fromDir, fileMessages), &messages); err != nil {
 		return err
 	}
-	var opinions []RockOpinionRow
-	if err := readJSON(filepath.Join(fromDir, fileRockOpinions), &opinions); err != nil {
+	var opinions []FlagOpinionRow
+	if err := readJSON(filepath.Join(fromDir, fileFlagOpinions), &opinions); err != nil {
 		return err
 	}
 
@@ -280,15 +280,15 @@ func runRestore(fromDir string, store imagestore.Store, backupKey []byte,
 		if !ok {
 			return fmt.Errorf("unknown inquirer for conversation %d", c.Ref)
 		}
-		var rockThrowerID any
-		if c.RockThrowerHash != nil {
-			id, ok := userHashToID[*c.RockThrowerHash]
+		var flagRaiserID any
+		if c.FlagRaiserHash != nil {
+			id, ok := userHashToID[*c.FlagRaiserHash]
 			if !ok {
 				return fmt.Errorf(
-					"unknown rock thrower for conversation %d", c.Ref,
+					"unknown flag thrower for conversation %d", c.Ref,
 				)
 			}
-			rockThrowerID = id
+			flagRaiserID = id
 		}
 		msgs := msgsByConv[c.Ref]
 		journalText := buildConversationJournal(c, msgs, userHashToID)
@@ -303,7 +303,7 @@ func runRestore(fromDir string, store imagestore.Store, backupKey []byte,
 			RETURNING id`,
 			adID, ownerID, inquirerID,
 			c.OwnerHasUnread, c.InquirerHasUnread,
-			rockThrowerID, c.RockThrownAt,
+			flagRaiserID, c.FlagRaisedAt,
 			"", updatedAt,
 		).Scan(&newID)
 		if err != nil {
@@ -346,7 +346,7 @@ func runRestore(fromDir string, store imagestore.Store, backupKey []byte,
 			o.AssessmentDetail, o.Resolution, o.Reasoning,
 		)
 		if err != nil {
-			return fmt.Errorf("insert rock opinion: %w", err)
+			return fmt.Errorf("insert flag opinion: %w", err)
 		}
 	}
 
@@ -463,13 +463,13 @@ func buildConversationJournal(c ConversationRow, msgs []MessageRow,
 	}
 	var events []journalEvent
 
-	if c.RockThrowerHash != nil && c.RockThrownAt != nil {
-		throwerID := userHashToID[*c.RockThrowerHash]
-		thrownAt := *c.RockThrownAt
+	if c.FlagRaiserHash != nil && c.FlagRaisedAt != nil {
+		throwerID := userHashToID[*c.FlagRaiserHash]
+		thrownAt := *c.FlagRaisedAt
 		events = append(events, journalEvent{
 			at: thrownAt,
 			append: func(j string) string {
-				return journal.AppendRock(j, journal.RockThrown, throwerID, "",
+				return journal.AppendFlag(j, journal.FlagRaised, throwerID, "",
 					thrownAt, time.UTC)
 			},
 		})
@@ -500,8 +500,8 @@ func buildConversationJournal(c ConversationRow, msgs []MessageRow,
 
 func conversationUpdatedAt(c ConversationRow, msgs []MessageRow) time.Time {
 	var t time.Time
-	if c.RockThrownAt != nil {
-		t = *c.RockThrownAt
+	if c.FlagRaisedAt != nil {
+		t = *c.FlagRaisedAt
 	}
 	for _, m := range msgs {
 		if m.CreatedAt.After(t) {

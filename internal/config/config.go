@@ -63,8 +63,8 @@ const (
 
 	// Ad configuration
 	MaxImagesPerAd            = 20
-	MaxRockCount              = 2 // Maximum rock count to allow in search results
-	MaxOutstandingRocks       = 3 // Rocks granted at signup; max a user can have thrown at once
+	MaxFlagCount              = 2 // Maximum flag count to allow in search results
+	MaxOutstandingFlags       = 3 // Flags granted at signup; max a user can have raised at once
 	DefaultAdCategoryName     = "Car & Truck Parts"
 	MaxAdTitleLength          = 64   // Maximum length for ad title
 	MaxAdDescriptionLength    = 1000 // Maximum length for ad description

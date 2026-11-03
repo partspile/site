@@ -7,7 +7,7 @@ import (
 )
 
 // AdCardFromFields builds an AdCard from presentation field values.
-func AdCardFromFields(id, imageCount, rockCount int, priceDisplay, title,
+func AdCardFromFields(id, imageCount, flagCount int, priceDisplay, title,
 	location, facetLabel string, hasPrice bool, createdAt time.Time, active,
 	bookmarked bool) AdCard {
 	return AdCard{
@@ -21,7 +21,7 @@ func AdCardFromFields(id, imageCount, rockCount int, priceDisplay, title,
 		ImageCount:   imageCount,
 		Active:       active,
 		Bookmarked:   bookmarked,
-		RockCount:    rockCount,
+		FlagCount:    flagCount,
 	}
 }
 
@@ -43,13 +43,13 @@ func adCardNode(card AdCard, userID, view, nextPage int, csrfToken string,
 		return AdGridNode(
 			userID, card.ID, card.ImageCount, nextPage,
 			card.PriceDisplay, card.Title, card.Location, card.FacetLabel, csrfToken,
-			card.HasPrice, card.CreatedAt, card.Active, card.Bookmarked, isLast, card.RockCount,
+			card.HasPrice, card.CreatedAt, card.Active, card.Bookmarked, isLast, card.FlagCount,
 		)
 	case ViewList:
 		return AdListNode(
 			userID, card.ID, card.PriceDisplay, card.Title, card.Location, card.FacetLabel,
 			card.HasPrice, card.CreatedAt, card.Active, card.Bookmarked, csrfToken, isLast, nextPage,
-			card.RockCount,
+			card.FlagCount,
 		)
 	default:
 		return g.Text("bad view")

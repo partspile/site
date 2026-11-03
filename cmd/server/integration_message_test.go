@@ -26,7 +26,7 @@ func TestIntegrationOpenConversationReadMarking(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("denies non-participant even when rocked", func(t *testing.T) {
+	t.Run("denies non-participant even when flaged", func(t *testing.T) {
 		_, marked, err := message.OpenConversation(convID, 5)
 		if err != message.ErrModalAccess {
 			t.Fatalf("err = %v, want ErrModalAccess", err)

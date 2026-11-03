@@ -4,14 +4,14 @@ import (
 	"fmt"
 
 	"github.com/partspile/site/internal/config"
-	"github.com/partspile/site/internal/rock"
+	"github.com/partspile/site/internal/flag"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
 )
 
-// RockThrowConfirmData drives the pre-throw confirmation modal.
-type RockThrowConfirmData struct {
+// FlagThrowConfirmData drives the pre-throw confirmation modal.
+type FlagThrowConfirmData struct {
 	ConversationID int
 	AdID           int
 	CSRFToken      string
@@ -24,8 +24,8 @@ type RockThrowConfirmData struct {
 	OtherName   string
 }
 
-// RockThrowPreviewData is the inline assessment preview inside the confirm modal.
-type RockThrowPreviewData struct {
+// FlagThrowPreviewData is the inline assessment preview inside the confirm modal.
+type FlagThrowPreviewData struct {
 	Unavailable      bool
 	Summary          string
 	AssessmentScore  int
@@ -34,29 +34,29 @@ type RockThrowPreviewData struct {
 	Reasoning        string
 }
 
-const rockThrowConfirmModalName = "rock-throw-confirm"
-const rockThrowPreviewModalName = "rock-throw-preview"
-const rockThrowUserPopupID = "rock-throw-confirm-user-popup"
+const flagThrowConfirmModalName = "flag-raise-confirm"
+const flagThrowPreviewModalName = "flag-raise-preview"
+const flagThrowUserPopupID = "flag-raise-confirm-user-popup"
 
-// CloseRockThrowModalsOOB removes confirm/preview modals after a successful throw.
-func CloseRockThrowModalsOOB() []g.Node {
+// CloseFlagThrowModalsOOB removes confirm/preview modals after a successful throw.
+func CloseFlagThrowModalsOOB() []g.Node {
 	return append(
-		RemoveModal(rockThrowConfirmModalName),
-		RemoveModal(rockThrowPreviewModalName)...,
+		RemoveModal(flagThrowConfirmModalName),
+		RemoveModal(flagThrowPreviewModalName)...,
 	)
 }
 
-// RockThrowConfirmModal is a single scrollable confirm before raising a flag.
-func RockThrowConfirmModal(d RockThrowConfirmData) g.Node {
+// FlagThrowConfirmModal is a single scrollable confirm before raising a flag.
+func FlagThrowConfirmModal(d FlagThrowConfirmData) g.Node {
 	csrfHeader := fmt.Sprintf(`{"X-Csrf-Token": %q}`, d.CSRFToken)
 	previewURL := fmt.Sprintf(
-		"/auth/conversation/%d/rock/preview", d.ConversationID)
+		"/auth/conversation/%d/flag/preview", d.ConversationID)
 	throwURL := fmt.Sprintf(
-		"/auth/conversation/%d/rock/throw", d.ConversationID)
+		"/auth/conversation/%d/flag/raise", d.ConversationID)
 	msgTarget := ConversationMessagesSelector(d.ConversationID)
 	if d.ConversationID == 0 {
-		previewURL = fmt.Sprintf("/auth/ad/%d/rock/preview", d.AdID)
-		throwURL = fmt.Sprintf("/auth/ad/%d/rock/throw", d.AdID)
+		previewURL = fmt.Sprintf("/auth/ad/%d/flag/preview", d.AdID)
+		throwURL = fmt.Sprintf("/auth/ad/%d/flag/raise", d.AdID)
 		msgTarget = "#conversation-0-messages"
 	}
 
@@ -66,9 +66,9 @@ func RockThrowConfirmModal(d RockThrowConfirmData) g.Node {
 	}
 
 	return g.Group([]g.Node{
-		modalBackdrop(rockThrowConfirmModalName),
+		modalBackdrop(flagThrowConfirmModalName),
 		Div(
-			ID(rockThrowConfirmModalName+"-modal"),
+			ID(flagThrowConfirmModalName+"-modal"),
 			Class("fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-8 pointer-events-none"),
 			Div(
 				Class("bg-white dark:bg-zinc-800 rounded-lg w-full max-w-lg shadow-2xl border-2 border-zinc-300 dark:border-zinc-600 flex flex-col pointer-events-auto max-h-[90vh]"),
@@ -78,22 +78,22 @@ func RockThrowConfirmModal(d RockThrowConfirmData) g.Node {
 						Class("text-lg font-bold text-zinc-900 dark:text-zinc-200"),
 						g.Text("Raise a flag?"),
 					),
-					modalClose(rockThrowConfirmModalName),
+					modalClose(flagThrowConfirmModalName),
 				),
 				Form(
-					ID("rock-throw-confirm-form"),
+					ID("flag-raise-confirm-form"),
 					Class("flex flex-col flex-1 min-h-0"),
 					Div(
 						Class("flex-1 overflow-y-auto p-4 space-y-4"),
-						remainingRocksSection(d.Remaining),
-						rockThrowCautionBullets(d),
+						remainingFlagsSection(d.Remaining),
+						flagThrowCautionBullets(d),
 						g.If(d.Remaining <= 0,
 							P(
 								Class("text-sm text-red-600 dark:text-red-400"),
 								g.Text("You cannot raise a flag until you lower an outstanding one."),
 							),
 						),
-						g.If(d.Remaining > 0, rockReasonRadios(d)),
+						g.If(d.Remaining > 0, flagReasonRadios(d)),
 					),
 					Div(
 						Class("flex flex-wrap gap-2 justify-end p-4 border-t border-zinc-200 dark:border-zinc-700 flex-shrink-0"),
@@ -101,27 +101,27 @@ func RockThrowConfirmModal(d RockThrowConfirmData) g.Node {
 							Type("button"),
 							Class("px-4 py-2 rounded-md border border-zinc-300 dark:border-zinc-600 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-700"),
 							hx.Get(fmt.Sprintf("/api/modal-remove/%s",
-								rockThrowConfirmModalName)),
+								flagThrowConfirmModalName)),
 							hx.Swap("none"),
 							g.Text("Cancel"),
 						),
 						g.If(d.Remaining > 0, g.Group([]g.Node{
 							Button(
 								Type("button"),
-								ID("rock-throw-review-btn"),
-								Class("rock-throw-review-btn inline-flex items-center gap-2 px-4 py-2 rounded-md bg-zinc-700 text-white hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed"),
+								ID("flag-raise-review-btn"),
+								Class("flag-raise-review-btn inline-flex items-center gap-2 px-4 py-2 rounded-md bg-zinc-700 text-white hover:bg-zinc-800 disabled:opacity-40 disabled:cursor-not-allowed"),
 								Disabled(),
 								hx.Post(previewURL),
 								hx.Headers(csrfHeader),
-								hx.Include("#rock-throw-confirm-form"),
+								hx.Include("#flag-raise-confirm-form"),
 								hx.Target("body"),
 								hx.Swap("beforeend"),
 								hx.Indicator("this"),
 								g.Attr("hx-on::before-request",
 									"if(document.getElementById('"+
-										rockThrowPreviewModalName+
+										flagThrowPreviewModalName+
 										"-modal')){htmx.ajax('GET','/api/modal-remove/"+
-										rockThrowPreviewModalName+
+										flagThrowPreviewModalName+
 										"',{swap:'none'});}"),
 								Img(
 									Src("/images/balance.svg"),
@@ -132,12 +132,12 @@ func RockThrowConfirmModal(d RockThrowConfirmData) g.Node {
 							),
 							Button(
 								Type("button"),
-								ID("rock-throw-submit-btn"),
+								ID("flag-raise-submit-btn"),
 								Class("px-4 py-2 rounded-md bg-red-500 text-white hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed"),
 								Disabled(),
 								hx.Post(throwURL),
 								hx.Headers(csrfHeader),
-								hx.Include("#rock-throw-confirm-form"),
+								hx.Include("#flag-raise-confirm-form"),
 								hx.Target(msgTarget),
 								hx.Swap(conversationMessagesAppendSwap()),
 								g.Text(throwLabel),
@@ -149,7 +149,7 @@ func RockThrowConfirmModal(d RockThrowConfirmData) g.Node {
 			// Viewport-fixed host (sibling of the card) so summaries aren't
 			// clipped by the modal body's overflow-y-auto.
 			Div(
-				ID(rockThrowUserPopupID),
+				ID(flagThrowUserPopupID),
 				Class("fixed z-[100] hidden w-64 p-3 bg-white dark:bg-zinc-800 rounded shadow-lg border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-700 dark:text-zinc-300 pointer-events-auto"),
 				g.Attr("onmouseenter",
 					"this.dataset.hover='1'"),
@@ -160,7 +160,7 @@ func RockThrowConfirmModal(d RockThrowConfirmData) g.Node {
 	})
 }
 
-func remainingRocksSection(remaining int) g.Node {
+func remainingFlagsSection(remaining int) g.Node {
 	msg := fmt.Sprintf("You have %d flags", remaining)
 	if remaining == 1 {
 		msg = "You have 1 flag"
@@ -170,7 +170,7 @@ func remainingRocksSection(remaining int) g.Node {
 	}
 	return Div(
 		Class("flex flex-col items-center gap-2 py-2"),
-		g.If(remaining > 0, confirmRockIcons(remaining)),
+		g.If(remaining > 0, confirmFlagIcons(remaining)),
 		P(
 			Class("text-sm font-medium text-zinc-800 dark:text-zinc-200"),
 			g.Text(msg),
@@ -178,9 +178,9 @@ func remainingRocksSection(remaining int) g.Node {
 	)
 }
 
-func confirmRockIcons(rockCount int) g.Node {
-	icons := make([]g.Node, 0, rockCount)
-	for range rockCount {
+func confirmFlagIcons(flagCount int) g.Node {
+	icons := make([]g.Node, 0, flagCount)
+	for range flagCount {
 		icons = append(icons, Img(
 			Src("/images/flag.svg"),
 			Alt("Flag"),
@@ -193,7 +193,7 @@ func confirmRockIcons(rockCount int) g.Node {
 	)
 }
 
-func rockThrowCautionBullets(d RockThrowConfirmData) g.Node {
+func flagThrowCautionBullets(d FlagThrowConfirmData) g.Node {
 	left := d.Remaining - 1
 	if left < 0 {
 		left = 0
@@ -206,7 +206,7 @@ func rockThrowCautionBullets(d RockThrowConfirmData) g.Node {
 		leftMsg = "You'll have no flags left."
 	}
 
-	reviewLink := rockConfirmReviewLink()
+	reviewLink := flagConfirmReviewLink()
 
 	var markLine, resolveLine g.Node
 	if d.AtAd {
@@ -217,19 +217,19 @@ func rockThrowCautionBullets(d RockThrowConfirmData) g.Node {
 		)
 		resolveLine = Li(
 			g.Text("If you resolve the dispute with "),
-			rockConfirmUserLinkID(d.OtherUserID, d.OtherName, "resolve"),
+			flagConfirmUserLinkID(d.OtherUserID, d.OtherName, "resolve"),
 			g.Text(", you can lower the flag and get it back."),
 		)
 	} else {
 		markLine = Li(
-			rockConfirmUserLinkID(d.OtherUserID, d.OtherName, "mark"),
+			flagConfirmUserLinkID(d.OtherUserID, d.OtherName, "mark"),
 			g.Text(" will have a flag on their profile that anyone can see, with a dispute assessment (use "),
 			reviewLink,
 			g.Text(" for a neutral take first)."),
 		)
 		resolveLine = Li(
 			g.Text("If you resolve the dispute with "),
-			rockConfirmUserLinkID(d.OtherUserID, d.OtherName, "resolve"),
+			flagConfirmUserLinkID(d.OtherUserID, d.OtherName, "resolve"),
 			g.Text(", you can lower the flag and get it back."),
 		)
 	}
@@ -252,7 +252,7 @@ func rockThrowCautionBullets(d RockThrowConfirmData) g.Node {
 	)
 }
 
-func rockConfirmUserLinkID(userID int, name, _ string) g.Node {
+func flagConfirmUserLinkID(userID int, name, _ string) g.Node {
 	if name == "" {
 		name = "them"
 	}
@@ -263,7 +263,7 @@ func rockConfirmUserLinkID(userID int, name, _ string) g.Node {
 	summaryURL := fmt.Sprintf("/auth/user/%d/summary", userID)
 	// Fixed popup host avoids clipping by the modal's overflow-y-auto body.
 	// Desktop: hover loads/shows summary. Mobile: tap follows href to profile.
-	showJS := "var p=document.getElementById('" + rockThrowUserPopupID + "');" +
+	showJS := "var p=document.getElementById('" + flagThrowUserPopupID + "');" +
 		"if(!p)return;" +
 		"var r=this.getBoundingClientRect();" +
 		"var w=256;" +
@@ -273,7 +273,7 @@ func rockConfirmUserLinkID(userID int, name, _ string) g.Node {
 		"p.style.left=left+'px';" +
 		"p.style.top=top+'px';" +
 		"p.classList.remove('hidden');"
-	hideJS := "var p=document.getElementById('" + rockThrowUserPopupID + "');" +
+	hideJS := "var p=document.getElementById('" + flagThrowUserPopupID + "');" +
 		"if(!p)return;" +
 		"setTimeout(function(){if(p.dataset.hover!=='1')p.classList.add('hidden');},120);"
 	return A(
@@ -281,7 +281,7 @@ func rockConfirmUserLinkID(userID int, name, _ string) g.Node {
 		Class("text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"),
 		hx.Get(summaryURL),
 		hx.Trigger("mouseenter delay:200ms"),
-		hx.Target("#"+rockThrowUserPopupID),
+		hx.Target("#"+flagThrowUserPopupID),
 		hx.Swap("innerHTML"),
 		g.Attr("onmouseenter", showJS),
 		g.Attr("onmouseleave", hideJS),
@@ -289,34 +289,34 @@ func rockConfirmUserLinkID(userID int, name, _ string) g.Node {
 	)
 }
 
-func rockConfirmReviewLink() g.Node {
+func flagConfirmReviewLink() g.Node {
 	return Button(
 		Type("button"),
-		ID("rock-throw-review-link"),
+		ID("flag-raise-review-link"),
 		Class("underline font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 p-0 bg-transparent border-0 cursor-pointer inline text-xs disabled:opacity-40 disabled:cursor-not-allowed disabled:no-underline disabled:hover:text-blue-600 dark:disabled:hover:text-blue-400"),
 		Disabled(),
 		g.Attr("onclick",
-			"var b=document.getElementById('rock-throw-review-btn');"+
+			"var b=document.getElementById('flag-raise-review-btn');"+
 				"if(b&&!b.disabled){b.click();}"),
 		g.Text("Review assessment"),
 	)
 }
 
-func rockThrowEnableActionsJS() string {
-	return "document.getElementById('rock-throw-review-btn').disabled=false;" +
-		"document.getElementById('rock-throw-review-link').disabled=false;" +
-		"document.getElementById('rock-throw-submit-btn').disabled=false;" +
-		"if(document.getElementById('" + rockThrowPreviewModalName +
+func flagThrowEnableActionsJS() string {
+	return "document.getElementById('flag-raise-review-btn').disabled=false;" +
+		"document.getElementById('flag-raise-review-link').disabled=false;" +
+		"document.getElementById('flag-raise-submit-btn').disabled=false;" +
+		"if(document.getElementById('" + flagThrowPreviewModalName +
 		"-modal')){htmx.ajax('GET','/api/modal-remove/" +
-		rockThrowPreviewModalName + "',{swap:'none'});}"
+		flagThrowPreviewModalName + "',{swap:'none'});}"
 }
 
-func rockReasonRadios(d RockThrowConfirmData) g.Node {
-	reasons := rock.ReasonsForTarget(d.AtAd)
+func flagReasonRadios(d FlagThrowConfirmData) g.Node {
+	reasons := flag.ReasonsForTarget(d.AtAd)
 	var options []g.Node
 	for _, r := range reasons {
 		code := r.Code
-		exID := fmt.Sprintf("rock-reason-ex-%s", code)
+		exID := fmt.Sprintf("flag-reason-ex-%s", code)
 		var exItems []g.Node
 		for _, ex := range r.Examples {
 			exItems = append(exItems, Li(g.Text(ex)))
@@ -327,7 +327,7 @@ func rockReasonRadios(d RockThrowConfirmData) g.Node {
 				g.Text(r.Label),
 			),
 		}
-		if code == rock.ReasonPolicy {
+		if code == flag.ReasonPolicy {
 			labelBody = append(labelBody, P(
 				Class("text-xs mt-0.5"),
 				A(
@@ -352,15 +352,15 @@ func rockReasonRadios(d RockThrowConfirmData) g.Node {
 						Class("mt-1"),
 						Required(),
 						g.Attr("onchange",
-							"document.querySelectorAll('.rock-reason-ex').forEach(function(e){e.classList.add('hidden')});"+
+							"document.querySelectorAll('.flag-reason-ex').forEach(function(e){e.classList.add('hidden')});"+
 								"document.getElementById('"+exID+"').classList.remove('hidden');"+
-								rockThrowEnableActionsJS()),
+								flagThrowEnableActionsJS()),
 					),
 					Div(Class("min-w-0"), g.Group(labelBody)),
 				),
 				Ul(
 					ID(exID),
-					Class("rock-reason-ex hidden text-sm text-zinc-600 dark:text-zinc-400 list-disc pl-8 mt-2 space-y-0.5"),
+					Class("flag-reason-ex hidden text-sm text-zinc-600 dark:text-zinc-400 list-disc pl-8 mt-2 space-y-0.5"),
 					g.Group(exItems),
 				),
 			),
@@ -373,7 +373,7 @@ func rockReasonRadios(d RockThrowConfirmData) g.Node {
 	} else {
 		why = g.Group([]g.Node{
 			g.Text("Why are you raising this flag on "),
-			rockConfirmUserLinkID(d.OtherUserID, d.OtherName, "why"),
+			flagConfirmUserLinkID(d.OtherUserID, d.OtherName, "why"),
 			g.Text("?"),
 		})
 	}
@@ -388,9 +388,9 @@ func rockReasonRadios(d RockThrowConfirmData) g.Node {
 	)
 }
 
-// RockThrowPreviewModal is a stacked modal for pre-throw dispute assessment.
-func RockThrowPreviewModal(d RockThrowPreviewData) g.Node {
-	name := rockThrowPreviewModalName
+// FlagThrowPreviewModal is a stacked modal for pre-throw dispute assessment.
+func FlagThrowPreviewModal(d FlagThrowPreviewData) g.Node {
+	name := flagThrowPreviewModalName
 	var body g.Node
 	if d.Unavailable {
 		body = Div(

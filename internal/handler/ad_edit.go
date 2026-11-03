@@ -7,10 +7,10 @@ import (
 	"github.com/partspile/site/internal/ad"
 	"github.com/partspile/site/internal/cookie"
 	"github.com/partspile/site/internal/facet"
+	"github.com/partspile/site/internal/flagopinion"
 	"github.com/partspile/site/internal/local"
 	"github.com/partspile/site/internal/logger"
 	"github.com/partspile/site/internal/param"
-	"github.com/partspile/site/internal/rockopinion"
 	"github.com/partspile/site/internal/ui"
 	uiads "github.com/partspile/site/internal/ui/ads"
 	"github.com/partspile/site/internal/vector"
@@ -90,8 +90,8 @@ func UpdateAdHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return showError(c, err.Error())
 	}
-	if err := rockopinion.InvalidateForAd(adID); err != nil {
-		logger.Error("Failed to invalidate rock opinions",
+	if err := flagopinion.InvalidateForAd(adID); err != nil {
+		logger.Error("Failed to invalidate flag opinions",
 			"error", err, "adID", adID)
 	}
 	vector.QueueAd(adID)

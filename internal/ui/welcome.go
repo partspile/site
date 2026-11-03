@@ -6,10 +6,10 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-func welcomeRocks(count int) g.Node {
-	var rocks []g.Node
+func welcomeFlags(count int) g.Node {
+	var flags []g.Node
 	for range count {
-		rocks = append(rocks,
+		flags = append(flags,
 			Img(
 				Src("/images/flag.svg"),
 				Alt("Flag"),
@@ -19,11 +19,11 @@ func welcomeRocks(count int) g.Node {
 	}
 	return Div(
 		Class("flex items-end justify-center gap-3"),
-		g.Group(rocks),
+		g.Group(flags),
 	)
 }
 
-func WelcomePage(rockCount int) []g.Node {
+func WelcomePage(flagCount int) []g.Node {
 	return []g.Node{
 		Div(
 			Class("bg-gradient-to-br from-blue-50 to-indigo-50 "+
@@ -45,10 +45,10 @@ func WelcomePage(rockCount int) []g.Node {
 						),
 						P(
 							Class("text-base text-zinc-700 dark:text-zinc-300"),
-							g.Textf("Here are your %d flags", rockCount),
+							g.Textf("Here are your %d flags", flagCount),
 						),
 					),
-					welcomeRocks(rockCount),
+					welcomeFlags(flagCount),
 					P(
 						Class("text-base text-zinc-600 dark:text-zinc-400 leading-snug"),
 						faqLink("/faq/flags", "What are the flags for?"),

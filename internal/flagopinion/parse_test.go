@@ -1,4 +1,4 @@
-package rockopinion
+package flagopinion
 
 import "testing"
 

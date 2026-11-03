@@ -8,8 +8,8 @@ import (
 
 const (
 	JournalMessage        = journal.Message
-	JournalRockThrown     = journal.RockThrown
-	JournalRockUnthrown   = journal.RockUnthrown
+	JournalFlagRaised     = journal.FlagRaised
+	JournalFlagLowered    = journal.FlagLowered
 	JournalAccountDeleted = journal.AccountDeleted
 	JournalAdDeleted      = journal.AdDeleted
 	JournalAdPaused       = journal.AdPaused
@@ -28,9 +28,9 @@ func AppendMessageEntry(j string, senderID int, body string, at time.Time,
 	return journal.AppendMessage(j, senderID, body, at, tz)
 }
 
-func AppendRockEntry(j, kind string, userID int, reason string, at time.Time,
+func AppendFlagEntry(j, kind string, userID int, reason string, at time.Time,
 	tz *time.Location) string {
-	return journal.AppendRock(j, kind, userID, reason, at, tz)
+	return journal.AppendFlag(j, kind, userID, reason, at, tz)
 }
 
 func AppendCloseEntry(j, kind string, userID int, at time.Time,
@@ -74,24 +74,24 @@ func MessagesFromJournal(conversationID int, j string, tz *time.Location) []Mess
 	return messages
 }
 
-// RockJournalEvent is a rock throw/unthrow timeline entry from the journal.
-type RockJournalEvent struct {
+// FlagJournalEvent is a flag throw/lower timeline entry from the journal.
+type FlagJournalEvent struct {
 	UserID    int
 	Kind      string
 	Reason    string
 	CreatedAt time.Time
 }
 
-func RockEventsFromJournal(j string, tz *time.Location) []RockJournalEvent {
+func FlagEventsFromJournal(j string, tz *time.Location) []FlagJournalEvent {
 	entries := journal.Parse(j)
-	var events []RockJournalEvent
+	var events []FlagJournalEvent
 	for _, e := range entries {
 		var kind string
 		switch e.Kind {
-		case journal.RockThrown:
+		case journal.FlagRaised:
 			kind = "thrown"
-		case journal.RockUnthrown:
-			kind = "unthrown"
+		case journal.FlagLowered:
+			kind = "lowern"
 		default:
 			continue
 		}
@@ -99,7 +99,7 @@ func RockEventsFromJournal(j string, tz *time.Location) []RockJournalEvent {
 		if tz != nil {
 			at = at.In(tz)
 		}
-		events = append(events, RockJournalEvent{
+		events = append(events, FlagJournalEvent{
 			UserID:    e.UserID,
 			Kind:      kind,
 			Reason:    e.Body,
@@ -109,11 +109,11 @@ func RockEventsFromJournal(j string, tz *time.Location) []RockJournalEvent {
 	return events
 }
 
-// LatestThrownReason returns the reason on the most recent rock-thrown entry.
+// LatestThrownReason returns the reason on the most recent flag-raisen entry.
 func LatestThrownReason(j string) string {
 	entries := journal.Parse(j)
 	for i := len(entries) - 1; i >= 0; i-- {
-		if entries[i].Kind == journal.RockThrown {
+		if entries[i].Kind == journal.FlagRaised {
 			return entries[i].Body
 		}
 	}

@@ -8,12 +8,12 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/partspile/site/internal/ad"
 	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/flag"
+	"github.com/partspile/site/internal/flagopinion"
 	"github.com/partspile/site/internal/local"
 	"github.com/partspile/site/internal/logger"
 	"github.com/partspile/site/internal/message"
 	"github.com/partspile/site/internal/param"
-	"github.com/partspile/site/internal/rock"
-	"github.com/partspile/site/internal/rockopinion"
 	"github.com/partspile/site/internal/service/sms"
 	"github.com/partspile/site/internal/ui"
 	"github.com/partspile/site/internal/user"
@@ -28,8 +28,8 @@ const (
 )
 
 func conversationModalData(conv message.Conversation, currentUserID,
-	inquirerRockCount, ownerRockCount int, adTitle, ownerName, inquirerName,
-	csrfToken string, canPost, hasThrownRock, canThrowRock bool,
+	inquirerFlagCount, ownerFlagCount int, adTitle, ownerName, inquirerName,
+	csrfToken string, canPost, hasThrownFlag, canRaiseFlag bool,
 	ownerDeleted, inquirerDeleted bool,
 	messageNodes []g.Node, targetModalID string) ui.ConversationModalData {
 	return ui.ConversationModalData{
@@ -38,8 +38,8 @@ func conversationModalData(conv message.Conversation, currentUserID,
 		OwnerID:           conv.OwnerID,
 		InquirerID:        conv.InquirerID,
 		CurrentUserID:     currentUserID,
-		InquirerRockCount: inquirerRockCount,
-		OwnerRockCount:    ownerRockCount,
+		InquirerFlagCount: inquirerFlagCount,
+		OwnerFlagCount:    ownerFlagCount,
 		AdTitle:           adTitle,
 		OwnerName:         ownerName,
 		InquirerName:      inquirerName,
@@ -47,10 +47,10 @@ func conversationModalData(conv message.Conversation, currentUserID,
 		InquirerDeleted:   inquirerDeleted,
 		CSRFToken:         csrfToken,
 		CanPost:           canPost,
-		HasThrownRock:     hasThrownRock,
-		CanThrowRock:      canThrowRock,
+		HasRaisedFlag:     hasThrownFlag,
+		CanRaiseFlag:      canRaiseFlag,
 		MessageNodes:      messageNodes,
-		RockThrowerID:     conv.RockThrowerID,
+		FlagRaiserID:      conv.FlagRaiserID,
 		TargetModalID:     targetModalID,
 	}
 }
@@ -65,14 +65,14 @@ func messageItemData(msg message.Message, currentUserID int,
 	}
 }
 
-func rockEventData(event message.RockJournalEvent, conversationID,
+func flagEventData(event message.FlagJournalEvent, conversationID,
 	currentUserID, ownerID, inquirerID int,
-	ownerName, inquirerName string) ui.RockEventData {
-	kind := ui.RockEventThrown
-	if event.Kind == "unthrown" {
-		kind = ui.RockEventUnthrown
+	ownerName, inquirerName string) ui.FlagEventData {
+	kind := ui.FlagEventThrown
+	if event.Kind == "lowern" {
+		kind = ui.FlagEventLowern
 	}
-	return ui.RockEventData{
+	return ui.FlagEventData{
 		ConversationID: conversationID,
 		ThrowerID:      event.UserID,
 		CurrentUserID:  currentUserID,
@@ -86,17 +86,17 @@ func rockEventData(event message.RockJournalEvent, conversationID,
 	}
 }
 
-func rockEventsFromView(view message.ConversationModalView,
-	currentUserID int) []ui.RockEventData {
+func flagEventsFromView(view message.ConversationModalView,
+	currentUserID int) []ui.FlagEventData {
 	conv := view.Conversation
-	events := make([]ui.RockEventData, len(view.RockEvents))
-	for i, event := range view.RockEvents {
-		events[i] = rockEventData(event, conv.ID, currentUserID, conv.OwnerID,
+	events := make([]ui.FlagEventData, len(view.FlagEvents))
+	for i, event := range view.FlagEvents {
+		events[i] = flagEventData(event, conv.ID, currentUserID, conv.OwnerID,
 			conv.InquirerID, view.OwnerName, view.InquirerName)
 	}
-	if conv.RockThrowerID != nil && len(events) > 0 {
+	if conv.FlagRaiserID != nil && len(events) > 0 {
 		last := &events[len(events)-1]
-		if last.Kind == ui.RockEventThrown && last.ConversationID > 0 {
+		if last.Kind == ui.FlagEventThrown && last.ConversationID > 0 {
 			last.ShowAssessmentHint = true
 		}
 	}
@@ -121,14 +121,14 @@ func messageTimelineFromView(view message.ConversationModalView,
 	for i, event := range view.CloseEvents {
 		closes[i] = closeEventData(event)
 	}
-	return ui.MessageTimeline(msgs, rockEventsFromView(view, currentUserID),
+	return ui.MessageTimeline(msgs, flagEventsFromView(view, currentUserID),
 		closes)
 }
 
 func conversationListItemData(conversationID, adID, ownerID, inquirerID,
 	currentUserID int, adTitle, lastMessageContent, otherUserName string,
-	lastMessageAt *time.Time, updatedAt time.Time, hasUnread bool, rockCount,
-	otherUserRockCount int, tz *time.Location) ui.ConversationListItemData {
+	lastMessageAt *time.Time, updatedAt time.Time, hasUnread bool, flagCount,
+	otherUserFlagCount int, tz *time.Location) ui.ConversationListItemData {
 	d := ui.ConversationListItemData{
 		ConversationID:     conversationID,
 		AdID:               adID,
@@ -140,8 +140,8 @@ func conversationListItemData(conversationID, adID, ownerID, inquirerID,
 		OtherUserName:      otherUserName,
 		UpdatedAt:          updatedAt.In(tz),
 		HasUnread:          hasUnread,
-		RockCount:          rockCount,
-		OtherUserRockCount: otherUserRockCount,
+		FlagCount:          flagCount,
+		OtherUserFlagCount: otherUserFlagCount,
 	}
 	if lastMessageAt != nil {
 		t := lastMessageAt.In(tz)
@@ -164,8 +164,8 @@ func conversationListItemFromConv(conv message.ConversationWithLastMessage,
 		LastMessageAt:      conv.LastMessageAt,
 		UpdatedAt:          conv.UpdatedAt,
 		HasUnread:          conv.HasUnread,
-		RockCount:          conv.RockCount,
-		OtherUserRockCount: conv.OtherUserRockCount,
+		FlagCount:          conv.FlagCount,
+		OtherUserFlagCount: conv.OtherUserFlagCount,
 		OtherUserDeleted:   conv.OtherUserDeleted,
 	}
 }
@@ -174,9 +174,9 @@ func conversationModalDataFromView(view message.ConversationModalView,
 	currentUserID int, csrfToken, targetModalID string, messageNodes []g.Node) ui.ConversationModalData {
 	return conversationModalData(
 		view.Conversation, currentUserID,
-		view.InquirerRockCount, view.OwnerRockCount,
+		view.InquirerFlagCount, view.OwnerFlagCount,
 		view.AdTitle, view.OwnerName, view.InquirerName, csrfToken,
-		view.CanPost, view.HasThrownRock, view.CanThrowRock,
+		view.CanPost, view.HasRaisedFlag, view.CanRaiseFlag,
 		view.OwnerDeleted, view.InquirerDeleted,
 		messageNodes, targetModalID,
 	)
@@ -197,7 +197,7 @@ func renderConversationModalView(c *fiber.Ctx,
 	data := conversationModalDataFromView(view, currentUserID, csrfToken, targetModalID, messageNodes)
 	switch mode {
 	case modalRenderInitial:
-		return render(c, ui.ConversationModalWithRock(data))
+		return render(c, ui.ConversationModalWithFlag(data))
 	case modalRenderSwapOOB:
 		return render(c, ui.ConversationModalSwapOOB(data))
 	default:
@@ -214,34 +214,34 @@ func renderConversationModal(c *fiber.Ctx, conv message.Conversation,
 	return renderConversationModalView(c, view, currentUserID, tz, csrfToken, "", modalRenderInitial)
 }
 
-func buildRockEventUpdateNodes(conv message.Conversation, viewerID int,
-	tz *time.Location, csrfToken string, rockEventOOB bool) ([]g.Node, error) {
+func buildFlagEventUpdateNodes(conv message.Conversation, viewerID int,
+	tz *time.Location, csrfToken string, flagEventOOB bool) ([]g.Node, error) {
 	view, err := message.BuildConversationModal(conv, viewerID, tz)
 	if err != nil {
 		return nil, err
 	}
 
-	events := message.RockEventsFromJournal(conv.Journal, tz)
+	events := message.FlagEventsFromJournal(conv.Journal, tz)
 	if len(events) == 0 {
-		return nil, fmt.Errorf("no rock events in journal")
+		return nil, fmt.Errorf("no flag events in journal")
 	}
 	lastEvent := events[len(events)-1]
 	clearEmpty := len(view.Messages) == 0 && len(events) == 1
 
-	var rockAttrs []g.Node
-	if rockEventOOB {
-		rockAttrs = append(rockAttrs,
+	var flagAttrs []g.Node
+	if flagEventOOB {
+		flagAttrs = append(flagAttrs,
 			ui.ConversationMessageAppendOOB(conv.ID))
 	}
 
-	d := rockEventData(lastEvent, conv.ID, viewerID,
+	d := flagEventData(lastEvent, conv.ID, viewerID,
 		conv.OwnerID, conv.InquirerID, view.OwnerName, view.InquirerName)
-	if conv.RockThrowerID != nil && d.Kind == ui.RockEventThrown {
+	if conv.FlagRaiserID != nil && d.Kind == ui.FlagEventThrown {
 		d.ShowAssessmentHint = true
 	}
 
 	nodes := []g.Node{
-		ui.RockEventMessage(d, rockAttrs...),
+		ui.FlagEventMessage(d, flagAttrs...),
 		ui.ConversationMessageActionsSwapOOB(
 			conversationModalDataFromView(view, viewerID, csrfToken, "", nil)),
 	}
@@ -252,40 +252,40 @@ func buildRockEventUpdateNodes(conv message.Conversation, viewerID int,
 	return nodes, nil
 }
 
-func renderConversationRockEventAppend(c *fiber.Ctx, conv message.Conversation,
+func renderConversationFlagEventAppend(c *fiber.Ctx, conv message.Conversation,
 	currentUserID int, tz *time.Location, csrfToken string,
 	closeThrowConfirm bool) error {
-	nodes, err := buildRockEventUpdateNodes(conv, currentUserID, tz,
+	nodes, err := buildFlagEventUpdateNodes(conv, currentUserID, tz,
 		csrfToken, false)
 	if err != nil {
-		logger.Error("Failed to build rock event response", "error", err,
+		logger.Error("Failed to build flag event response", "error", err,
 			"conversationID", conv.ID)
 		return fiber.NewError(fiber.StatusInternalServerError,
 			"Failed to update conversation")
 	}
 	if closeThrowConfirm {
-		nodes = append(nodes, ui.CloseRockThrowModalsOOB()...)
+		nodes = append(nodes, ui.CloseFlagThrowModalsOOB()...)
 	}
 	return render(c, g.Group(nodes))
 }
 
-func sendRockEventSSE(conv message.Conversation, throwerID int) {
+func sendFlagEventSSE(conv message.Conversation, throwerID int) {
 	recipientID := conv.OwnerID
 	if conv.OwnerID == throwerID {
 		recipientID = conv.InquirerID
 	}
 
 	tz := time.UTC
-	nodes, err := buildRockEventUpdateNodes(conv, recipientID, tz, "", true)
+	nodes, err := buildFlagEventUpdateNodes(conv, recipientID, tz, "", true)
 	if err != nil {
-		logger.Error("Failed to build rock event for SSE", "error", err,
+		logger.Error("Failed to build flag event for SSE", "error", err,
 			"conversationID", conv.ID, "recipientID", recipientID)
 		return
 	}
 
 	modalHTML, err := renderToString(g.Group(nodes))
 	if err != nil {
-		logger.Error("Failed to render rock event for SSE", "error", err,
+		logger.Error("Failed to render flag event for SSE", "error", err,
 			"conversationID", conv.ID, "recipientID", recipientID)
 		return
 	}
@@ -329,7 +329,7 @@ func sendConversationStatusSSE(conv message.Conversation, actorID int) {
 	}
 
 	clearEmpty := len(view.Messages) == 0 &&
-		len(view.RockEvents) == 0 && len(view.CloseEvents) == 1
+		len(view.FlagEvents) == 0 && len(view.CloseEvents) == 1
 
 	nodes := []g.Node{
 		ui.CloseEventMessage(closeEventData(last),
@@ -374,7 +374,7 @@ func sendClosedConversationListItemUpdate(conv message.Conversation,
 		return
 	}
 	otherUserID := message.OtherParticipantID(conv, viewerID)
-	otherUserRockCount, _ := rock.GetRockCountForUser(otherUserID)
+	otherUserFlagCount, _ := flag.GetFlagCountForUser(otherUserID)
 	_, otherDeleted := message.DisplayName(otherUserID)
 
 	content, at, ok := message.LastMessagePreview(conv.Journal)
@@ -403,8 +403,8 @@ func sendClosedConversationListItemUpdate(conv message.Conversation,
 		LastMessageAt:      lastMessageAt,
 		UpdatedAt:          conv.UpdatedAt.In(tz),
 		HasUnread:          hasUnread,
-		RockCount:          a.RockCount,
-		OtherUserRockCount: otherUserRockCount,
+		FlagCount:          a.FlagCount,
+		OtherUserFlagCount: otherUserFlagCount,
 		OtherUserDeleted:   otherDeleted,
 	})
 	itemHTML, err := renderToString(ui.ConversationListItemSwapOOB(conv.ID, item))
@@ -507,8 +507,8 @@ func sendMessageAndRenderUpdate(c *fiber.Ctx, conv message.Conversation,
 		}
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to send message")
 	}
-	if err := rockopinion.Invalidate(conv.ID); err != nil {
-		logger.Error("Failed to invalidate rock opinion",
+	if err := flagopinion.Invalidate(conv.ID); err != nil {
+		logger.Error("Failed to invalidate flag opinion",
 			"error", err, "conversationID", conv.ID)
 	}
 
@@ -578,8 +578,8 @@ func sendConversationListItemUpdate(conv message.Conversation, currentUserID int
 		otherUserID = conv.OwnerID
 	}
 
-	// Get rock count for the other user
-	otherUserRockCount, _ := rock.GetRockCountForUser(otherUserID)
+	// Get flag count for the other user
+	otherUserFlagCount, _ := flag.GetFlagCountForUser(otherUserID)
 
 	// Get last message for preview
 	messages, err := message.GetConversationMessages(conv.ID, currentUserID, time.UTC)
@@ -596,7 +596,7 @@ func sendConversationListItemUpdate(conv message.Conversation, currentUserID int
 		conv.ID, conv.AdID, conv.OwnerID, conv.InquirerID, currentUserID,
 		a.Title, lastMessageContent, otherUserName,
 		lastMessageAt, conv.UpdatedAt,
-		hasUnread, a.RockCount, otherUserRockCount,
+		hasUnread, a.FlagCount, otherUserFlagCount,
 		time.UTC,
 	))
 	conversationItemSwapOOB := ui.ConversationListItemSwapOOB(conv.ID, conversationItem)
@@ -645,12 +645,12 @@ func MessageModalHandler(c *fiber.Ctx) error {
 			// No conversation exists yet - create a temporary conversation struct for the modal
 			// The conversation will be created when the first message is sent
 			conv = message.Conversation{
-				ID:            0, // 0 indicates conversation doesn't exist yet
-				AdID:          adID,
-				OwnerID:       a.UserID,
-				InquirerID:    currentUserID,
-				RockThrowerID: nil,
-				RockThrownAt:  nil,
+				ID:           0, // 0 indicates conversation doesn't exist yet
+				AdID:         adID,
+				OwnerID:      a.UserID,
+				InquirerID:   currentUserID,
+				FlagRaiserID: nil,
+				FlagRaisedAt: nil,
 			}
 		} else {
 			logger.Error("Failed to get conversation", "error", err, "adID", adID, "ownerID", a.UserID, "inquirerID", currentUserID)
@@ -676,7 +676,7 @@ func renderLoggedOutConversationModal(c *fiber.Ctx, a ad.Ad) error {
 		false, false, nil, "",
 	)
 	data.DisabledInputPlaceholder = "Login to send a message"
-	return render(c, ui.ConversationModalWithRock(data))
+	return render(c, ui.ConversationModalWithFlag(data))
 }
 
 func SendMessageHandler(c *fiber.Ctx) error {
@@ -745,27 +745,27 @@ func SendConversationMessageHandler(c *fiber.Ctx) error {
 	return sendMessageAndRenderUpdate(c, conv, currentUserID, tz, false)
 }
 
-func rockOpinionModalData(conv message.Conversation, currentUserID int,
-	tz *time.Location) (ui.RockOpinionModalData, error) {
+func flagOpinionModalData(conv message.Conversation, currentUserID int,
+	tz *time.Location) (ui.FlagOpinionModalData, error) {
 	a, err := ad.GetAd(currentUserID, conv.AdID, tz)
 	if err != nil {
-		return ui.RockOpinionModalData{}, err
+		return ui.FlagOpinionModalData{}, err
 	}
 
-	d := ui.RockOpinionModalData{
+	d := ui.FlagOpinionModalData{
 		ConversationID: conv.ID,
 		AdID:           conv.AdID,
 		AdTitle:        a.Title,
-		AdFacts:        rockopinion.AdFactLines(a, tz),
+		AdFacts:        flagopinion.AdFactLines(a, tz),
 	}
 
-	op, err := rockopinion.GetOrGenerate(conv, tz)
-	if errors.Is(err, rockopinion.ErrUnavailable) {
+	op, err := flagopinion.GetOrGenerate(conv, tz)
+	if errors.Is(err, flagopinion.ErrUnavailable) {
 		d.Unavailable = true
 		return d, nil
 	}
 	if err != nil {
-		return ui.RockOpinionModalData{}, err
+		return ui.FlagOpinionModalData{}, err
 	}
 
 	d.Summary = op.Summary
@@ -781,20 +781,20 @@ func rockOpinionModalData(conv message.Conversation, currentUserID int,
 	return d, nil
 }
 
-func renderRockOpinionModal(c *fiber.Ctx, conv message.Conversation,
+func renderFlagOpinionModal(c *fiber.Ctx, conv message.Conversation,
 	currentUserID int, tz *time.Location) error {
-	d, err := rockOpinionModalData(conv, currentUserID, tz)
+	d, err := flagOpinionModalData(conv, currentUserID, tz)
 	if err != nil {
-		logger.Error("Failed to build rock opinion modal", "error", err)
+		logger.Error("Failed to build flag opinion modal", "error", err)
 		return fiber.NewError(
 			fiber.StatusInternalServerError,
 			"Failed to load dispute assessment",
 		)
 	}
-	return render(c, ui.RockOpinionModal(d))
+	return render(c, ui.FlagOpinionModal(d))
 }
 
-func RockOpinionHandler(c *fiber.Ctx) error {
+func FlagOpinionHandler(c *fiber.Ctx) error {
 	conversationID, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid conversation ID")
@@ -807,11 +807,11 @@ func RockOpinionHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Conversation not found")
 	}
-	if conv.RockThrowerID == nil {
+	if conv.FlagRaiserID == nil {
 		return fiber.NewError(fiber.StatusNotFound, "No dispute assessment")
 	}
 
-	return renderRockOpinionModal(c, conv, currentUserID, tz)
+	return renderFlagOpinionModal(c, conv, currentUserID, tz)
 }
 
 func ConversationModalHandler(c *fiber.Ctx) error {

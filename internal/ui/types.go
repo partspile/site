@@ -12,7 +12,7 @@ type UserProfileData struct {
 	Name              string
 	MemberSince       string
 	ActiveAdCount     int
-	UserRockCount     int
+	UserFlagCount     int
 	HasAccountPicture bool
 	AccountPictureURL string
 	ShowShare         bool
@@ -48,7 +48,7 @@ type AdDetail struct {
 	Deleted             bool
 	IsTest              bool
 	Reachable           bool
-	RockCount           int
+	FlagCount           int
 	FacetLabel          string
 	FacetDetails        []string // formal facets not shown in title or price row
 	Tags                []string
@@ -80,7 +80,7 @@ type AdCard struct {
 	ImageCount   int
 	Active       bool
 	Bookmarked   bool
-	RockCount    int
+	FlagCount    int
 	FacetLabel   string
 }
 
@@ -91,8 +91,8 @@ type ConversationModalData struct {
 	OwnerID           int
 	InquirerID        int
 	CurrentUserID     int
-	InquirerRockCount int
-	OwnerRockCount    int
+	InquirerFlagCount int
+	OwnerFlagCount    int
 	AdTitle           string
 	OwnerName         string
 	InquirerName      string
@@ -100,10 +100,10 @@ type ConversationModalData struct {
 	InquirerDeleted   bool
 	CSRFToken         string
 	CanPost           bool
-	HasThrownRock     bool
-	CanThrowRock      bool
+	HasRaisedFlag     bool
+	CanRaiseFlag      bool
 	MessageNodes      []g.Node
-	RockThrowerID     *int
+	FlagRaiserID      *int
 	TargetModalID     string
 	// DisabledInputPlaceholder overrides the closed send-field placeholder.
 	DisabledInputPlaceholder string
@@ -123,8 +123,8 @@ type ConversationListItemData struct {
 	LastMessageAt      *time.Time
 	UpdatedAt          time.Time
 	HasUnread          bool
-	RockCount          int
-	OtherUserRockCount int
+	FlagCount          int
+	OtherUserFlagCount int
 	OtherUserDeleted   bool
 }
 
@@ -153,21 +153,21 @@ type MessageItemData struct {
 	CreatedAt     time.Time
 }
 
-// RockEventKind identifies a rock journal entry type.
-type RockEventKind int
+// FlagEventKind identifies a flag journal entry type.
+type FlagEventKind int
 
 const (
-	RockEventThrown RockEventKind = iota
-	RockEventUnthrown
+	FlagEventThrown FlagEventKind = iota
+	FlagEventLowern
 )
 
-// RockEventData holds presentation fields for a rock journal timeline entry.
+// FlagEventData holds presentation fields for a flag journal timeline entry.
 // EventAt is in the viewer's timezone.
-type RockEventData struct {
+type FlagEventData struct {
 	ConversationID     int
 	ThrowerID          int
 	CurrentUserID      int
-	Kind               RockEventKind
+	Kind               FlagEventKind
 	EventAt            time.Time
 	OwnerID            int
 	InquirerID         int

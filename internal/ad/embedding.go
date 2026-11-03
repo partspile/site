@@ -20,7 +20,7 @@ type EmbeddingInput struct {
 	Latitude    float64
 	Longitude   float64
 	HasLocation bool
-	RockCount   int
+	FlagCount   int
 	Facets      map[string]facet.Value
 	FacetDefs   []facet.Def
 }
@@ -66,7 +66,7 @@ func GetForEmbedding(adID int) (EmbeddingInput, error) {
 		Latitude    float64 `db:"latitude"`
 		Longitude   float64 `db:"longitude"`
 		HasLocation int     `db:"has_location"`
-		RockCount   int     `db:"flag_count"`
+		FlagCount   int     `db:"flag_count"`
 	}
 	if err := db.QueryRow(query, adID).Scan(
 		&row.ID,
@@ -80,7 +80,7 @@ func GetForEmbedding(adID int) (EmbeddingInput, error) {
 		&row.Latitude,
 		&row.Longitude,
 		&row.HasLocation,
-		&row.RockCount,
+		&row.FlagCount,
 	); err != nil {
 		return EmbeddingInput{}, fmt.Errorf("embedding ad %d: %w", adID, err)
 	}
@@ -111,7 +111,7 @@ func GetForEmbedding(adID int) (EmbeddingInput, error) {
 		Latitude:    row.Latitude,
 		Longitude:   row.Longitude,
 		HasLocation: row.HasLocation != 0,
-		RockCount:   row.RockCount,
+		FlagCount:   row.FlagCount,
 		Facets:      facets,
 		FacetDefs:   category.Facets(),
 	}, nil

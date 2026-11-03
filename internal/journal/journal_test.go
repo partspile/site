@@ -41,15 +41,15 @@ func TestAppendOldestFirst(t *testing.T) {
 	t3 := time.Date(2026, 7, 10, 22, 40, 0, 0, loc)
 
 	j := AppendMessage("", 12, "hello", t1, loc)
-	j = AppendRock(j, RockThrown, 12, "policy", t2, loc)
-	j = AppendRock(j, RockUnthrown, 12, "", t3, loc)
+	j = AppendFlag(j, FlagRaised, 12, "policy", t2, loc)
+	j = AppendFlag(j, FlagLowered, 12, "", t3, loc)
 
 	entries := Parse(j)
 	if len(entries) != 3 {
 		t.Fatalf("got %d entries, want 3", len(entries))
 	}
-	if entries[0].Kind != Message || entries[1].Kind != RockThrown ||
-		entries[2].Kind != RockUnthrown {
+	if entries[0].Kind != Message || entries[1].Kind != FlagRaised ||
+		entries[2].Kind != FlagLowered {
 		t.Fatalf("unexpected kinds: %+v", entries)
 	}
 	if entries[1].Body != "policy" {
@@ -102,7 +102,7 @@ func TestAppendAndParsePause(t *testing.T) {
 	}
 }
 
-func TestLastMessagePreviewSkipsRock(t *testing.T) {
+func TestLastMessagePreviewSkipsFlag(t *testing.T) {
 	loc := time.UTC
 	t1 := time.Date(2026, 7, 10, 22, 33, 0, 0, loc)
 	t2 := time.Date(2026, 7, 10, 22, 35, 0, 0, loc)
@@ -110,7 +110,7 @@ func TestLastMessagePreviewSkipsRock(t *testing.T) {
 
 	j := AppendMessage("", 1, "first", t1, loc)
 	j = AppendMessage(j, 2, "second", t2, loc)
-	j = AppendRock(j, RockThrown, 1, "deal", t3, loc)
+	j = AppendFlag(j, FlagRaised, 1, "deal", t3, loc)
 
 	content, at, ok := LastMessagePreview(j)
 	if !ok {

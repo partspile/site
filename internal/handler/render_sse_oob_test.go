@@ -41,11 +41,11 @@ func TestRenderMessageAppendOOB(t *testing.T) {
 	}
 }
 
-func TestRenderRockEventAppendOOB(t *testing.T) {
-	event := ui.RockEventData{
+func TestRenderFlagEventAppendOOB(t *testing.T) {
+	event := ui.FlagEventData{
 		ConversationID: 5,
 		ThrowerID:      4, CurrentUserID: 3,
-		Kind:    ui.RockEventThrown,
+		Kind:    ui.FlagEventThrown,
 		EventAt: time.Now().UTC(),
 		OwnerID: 3, InquirerID: 4,
 		OwnerName:          "sfeldma",
@@ -53,7 +53,7 @@ func TestRenderRockEventAppendOOB(t *testing.T) {
 		ShowAssessmentHint: true,
 	}
 	var buf bytes.Buffer
-	node := ui.RockEventMessage(event, ui.ConversationMessageAppendOOB(5))
+	node := ui.FlagEventMessage(event, ui.ConversationMessageAppendOOB(5))
 	if err := node.Render(&buf); err != nil {
 		t.Fatal(err)
 	}
@@ -62,18 +62,18 @@ func TestRenderRockEventAppendOOB(t *testing.T) {
 		t.Fatalf("missing oob attr: %s", html)
 	}
 	if !strings.Contains(html, "Flag raised at ad by bob") {
-		t.Fatalf("missing rock event label: %s", html)
+		t.Fatalf("missing flag event label: %s", html)
 	}
 	if !strings.Contains(html, "for dispute assessment") {
 		t.Fatalf("missing assessment hint: %s", html)
 	}
-	if !strings.Contains(html, "rock-assessment-hint") {
+	if !strings.Contains(html, "flag-assessment-hint") {
 		t.Fatalf("missing assessment hint class: %s", html)
 	}
 
 	event.ShowAssessmentHint = false
 	buf.Reset()
-	if err := ui.RockEventMessage(event).Render(&buf); err != nil {
+	if err := ui.FlagEventMessage(event).Render(&buf); err != nil {
 		t.Fatal(err)
 	}
 	if strings.Contains(buf.String(), "for dispute assessment") {

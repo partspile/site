@@ -165,7 +165,7 @@ func priceSpan(priceDisplay string, hasPrice bool) g.Node {
 
 func AdGridNode(userID, adID, imageCount, nextPage int, priceDisplay, title,
 	location, facetLabel, csrfToken string, hasPrice bool, createdAt time.Time,
-	active, bookmarked, isLast bool, rockCount int) g.Node {
+	active, bookmarked, isLast bool, flagCount int) g.Node {
 	class := "flex flex-col cursor-pointer gap-1 py-3"
 	if !active {
 		class += " bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg"
@@ -190,7 +190,7 @@ func AdGridNode(userID, adID, imageCount, nextPage int, priceDisplay, title,
 		Div(
 			Class("flex items-start gap-2 min-w-0"),
 			g.If(local.IsLoggedIn(userID) && bookmarked, BookmarkButton(adID, bookmarked, csrfToken)),
-			g.If(rockCount > 0, RockIcons(adID, rockCount)),
+			g.If(flagCount > 0, FlagIcons(adID, flagCount)),
 			adCardTitle(title, facetLabel),
 		),
 	)
@@ -207,7 +207,7 @@ func AdGridNode(userID, adID, imageCount, nextPage int, priceDisplay, title,
 
 func AdListNode(userID, adID int, priceDisplay, title, location,
 	facetLabel string, hasPrice bool, createdAt time.Time, active, bookmarked bool,
-	csrfToken string, isLast bool, nextPage int, rockCount int) g.Node {
+	csrfToken string, isLast bool, nextPage int, flagCount int) g.Node {
 	class := "grid grid-cols-[minmax(0,1fr)_auto_auto] " +
 		"gap-x-2 items-baseline py-2 cursor-pointer"
 	if active {
@@ -222,7 +222,7 @@ func AdListNode(userID, adID int, priceDisplay, title, location,
 		Div(
 			Class("flex items-start gap-2 min-w-0"),
 			g.If(local.IsLoggedIn(userID) && bookmarked, BookmarkButton(adID, bookmarked, csrfToken)),
-			g.If(rockCount > 0, RockIcons(adID, rockCount)),
+			g.If(flagCount > 0, FlagIcons(adID, flagCount)),
 			adCardTitleWithBadge(title, facetLabel, true, createdAt),
 		),
 		Div(
@@ -497,7 +497,7 @@ func Ad(d AdDetail, userID int, csrfToken string) []g.Node {
 				Class("grid grid-cols-[minmax(0,1fr)_auto] gap-x-2 gap-y-1 items-start"),
 				Div(
 					Class("flex items-center gap-2 min-w-0"),
-					g.If(d.RockCount > 0, RockIcons(d.ID, d.RockCount)),
+					g.If(d.FlagCount > 0, FlagIcons(d.ID, d.FlagCount)),
 					adCardTitle(d.Title, d.FacetLabel),
 				),
 				adButtons(d.ID, userID, d.OwnerID, d.Bookmarked, d.Active, d.Inactive, d.Reachable, csrfToken),

@@ -367,7 +367,7 @@ func TermsOfServicePage() []g.Node {
 					legalLi(g.Textf(
 						"An ad with more than %d flags is excluded "+
 							"from search listings",
-						config.MaxRockCount,
+						config.MaxFlagCount,
 					)),
 					legalLi(g.Text(
 						"Raising a flag requires choosing a reason; "+

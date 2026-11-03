@@ -107,7 +107,7 @@ redis-cli -u "$REDIS_URL"
 
 ### LLM / geocoding APIs
 
-- `GROK_API_KEY` — xAI Grok API key (chat completions for rock opinions / AI features).
+- `GROK_API_KEY` — xAI Grok API key (chat completions for flag opinions / AI features).
 - `GEOAPIFY_API_KEY` — Geoapify API key (forward geocoding for locations table cache misses).
 - `OLLAMA_URL` — Ollama HTTP endpoint for embeddings (`nomic-embed-text`). Default: `http://localhost:11434`.
 - `FAL_API_KEY` — fal.ai key for `go run ./cmd/gen_images` only (not required by the server).

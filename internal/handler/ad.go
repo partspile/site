@@ -9,12 +9,12 @@ import (
 	"github.com/partspile/site/internal/config"
 	"github.com/partspile/site/internal/cookie"
 	"github.com/partspile/site/internal/currency"
+	"github.com/partspile/site/internal/flag"
+	"github.com/partspile/site/internal/flagopinion"
 	"github.com/partspile/site/internal/local"
 	"github.com/partspile/site/internal/logger"
 	"github.com/partspile/site/internal/message"
 	"github.com/partspile/site/internal/param"
-	"github.com/partspile/site/internal/rock"
-	"github.com/partspile/site/internal/rockopinion"
 	"github.com/partspile/site/internal/ui"
 	"github.com/partspile/site/internal/user"
 	"github.com/partspile/site/internal/vector"
@@ -105,7 +105,7 @@ func adDetailFrom(a ad.Ad, viewerUserID int, reachable, isTest bool) ui.AdDetail
 		Deleted:             a.IsDeleted(),
 		IsTest:              isTest,
 		Reachable:           reachable,
-		RockCount:           a.RockCount,
+		FlagCount:           a.FlagCount,
 		FacetLabel:          adFacetLabel(a),
 		FacetDetails:        adDetailFacetDisplays(a),
 		Tags:                adTagDisplays(a),
@@ -123,15 +123,15 @@ func adTagDisplays(a ad.Ad) []string {
 	return out
 }
 
-func AdRockConversationHandler(c *fiber.Ctx) error {
-	return renderAdRockOpinion(c)
+func AdFlagConversationHandler(c *fiber.Ctx) error {
+	return renderAdFlagOpinion(c)
 }
 
-func PublicAdRockOpinionHandler(c *fiber.Ctx) error {
-	return renderAdRockOpinion(c)
+func PublicAdFlagOpinionHandler(c *fiber.Ctx) error {
+	return renderAdFlagOpinion(c)
 }
 
-func renderAdRockOpinion(c *fiber.Ctx) error {
+func renderAdFlagOpinion(c *fiber.Ctx) error {
 	adID, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid ad ID")
@@ -145,7 +145,7 @@ func renderAdRockOpinion(c *fiber.Ctx) error {
 	currentUserID := local.GetUserID(c)
 	tz := cookie.GetTimezone(c)
 
-	conversationID, err := rock.GetPublicConversationIDByOrdinal(adID, ordinal)
+	conversationID, err := flag.GetPublicConversationIDByOrdinal(adID, ordinal)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Flag not found")
 	}
@@ -154,11 +154,11 @@ func renderAdRockOpinion(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Conversation not found")
 	}
-	if conv.RockThrowerID == nil {
+	if conv.FlagRaiserID == nil {
 		return fiber.NewError(fiber.StatusNotFound, "No dispute assessment")
 	}
 
-	return renderRockOpinionModal(c, conv, currentUserID, tz)
+	return renderFlagOpinionModal(c, conv, currentUserID, tz)
 }
 
 func AdShareHandler(c *fiber.Ctx) error {
@@ -290,15 +290,15 @@ func PauseAdHandler(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusOK)
 }
 
-// pauseAdWithSideEffects pauses an ad and cleans up embeddings, rocks,
+// pauseAdWithSideEffects pauses an ad and cleans up embeddings, flags,
 // opinions, and conversations. actorID is recorded in conversation journals.
 func pauseAdWithSideEffects(adID, actorID int) error {
 	if err := ad.Pause(adID); err != nil {
 		return err
 	}
 	_ = vector.DeleteAdEmbedding(adID)
-	_ = rock.UnthrowActiveForAd(adID)
-	_ = rockopinion.InvalidateForAd(adID)
+	_ = flag.LowerActiveForAd(adID)
+	_ = flagopinion.InvalidateForAd(adID)
 
 	convs, err := message.SuspendConversationsForPausedAd(adID, actorID)
 	if err != nil {
@@ -335,8 +335,8 @@ func DeleteAdHandler(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to delete ad")
 	}
 	_ = vector.DeleteAdEmbedding(adID)
-	_ = rock.UnthrowActiveForAd(adID)
-	_ = rockopinion.InvalidateForAd(adID)
+	_ = flag.LowerActiveForAd(adID)
+	_ = flagopinion.InvalidateForAd(adID)
 
 	convs, err := message.CloseConversationsForDeletedAd(adID, userID)
 	if err != nil {

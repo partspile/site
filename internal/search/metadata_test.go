@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestBuildVectorMetadataWhereUsesRockColumn(t *testing.T) {
+func TestBuildVectorMetadataWhereUsesFlagColumn(t *testing.T) {
 	var pa pgArgs
 	p := Params{CategoryID: 6}
 	clause := buildVectorMetadataWhere(p, &pa)

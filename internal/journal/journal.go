@@ -11,8 +11,8 @@ import (
 
 const (
 	Message        = "message"
-	RockThrown     = "flag raised"
-	RockUnthrown   = "flag lowered"
+	FlagRaised     = "flag raised"
+	FlagLowered    = "flag lowered"
 	AccountDeleted = "account deleted"
 	AdDeleted      = "ad deleted"
 	AdPaused       = "ad paused"
@@ -37,7 +37,7 @@ func AppendMessage(j string, senderID int, body string, at time.Time,
 	return entrylog.Append(j, Message, meta, body, at, tz)
 }
 
-func AppendRock(j, kind string, userID int, reason string, at time.Time,
+func AppendFlag(j, kind string, userID int, reason string, at time.Time,
 	tz *time.Location) string {
 	meta := fmt.Sprintf("user:%d", userID)
 	return entrylog.Append(j, kind, meta, reason, at, tz)
@@ -54,7 +54,7 @@ func Parse(j string) []Entry {
 	var entries []Entry
 	for _, b := range blocks {
 		switch b.Label {
-		case Message, RockThrown, RockUnthrown, AccountDeleted, AdDeleted,
+		case Message, FlagRaised, FlagLowered, AccountDeleted, AdDeleted,
 			AdPaused, AdUnpaused:
 			entries = append(entries, Entry{
 				Kind:   b.Label,

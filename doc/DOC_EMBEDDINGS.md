@@ -20,9 +20,9 @@ cosine distance `<=>`). Every request needs a **query vector**:
 | Empty | logged-in, has activity in this category | User embedding |
 | Empty | anonymous, or user with no activity | Site embedding |
 
-Hard filters (category, rock count, optional facets, geo) apply after
+Hard filters (category, flag count, optional facets, geo) apply after
 the vector is chosen. Ads without an embedding, paused, deleted, or
-over the rock limit are excluded.
+over the flag limit are excluded.
 
 If no ad embeddings exist yet (backfill still running), search returns
 no results instead of HTTP 500.
@@ -48,7 +48,7 @@ no results instead of HTTP 500.
 ## Ad embeddings
 
 Each active ad is encoded from title, description, tags, facet
-snippets, location, price, and a short rock-count sentence.
+snippets, location, price, and a short flag-count sentence.
 
 Rebuilt when an ad is created, edited, reactivated, or gets images.
 Paused ads drop their embedding. A background queue (and startup
@@ -120,7 +120,7 @@ people clicked outranks an ad one person bookmarked yesterday.
 Postgres orders by `embedding <=> query` (cosine distance). Results
 with distance ≥ `SearchThreshold` (0.6) are dropped.
 
-Always filtered to the current category and `rock_count <= 2`.
+Always filtered to the current category and `flag_count <= 2`.
 Expanded search adds facet predicates on `vector_metadata`. Location
 + within still ranks by the same vector; in-area ads are listed
 before out-of-area.
@@ -176,7 +176,7 @@ Defined in `internal/config/config.go`:
 | `VectorSiteEmbeddingLimit` | 8 | Site ads in the average |
 | `VectorSystemEmbeddingLimit` | 100 | Recent-ad fallback |
 | `Vector*EmbeddingCacheTTL` | 1 hour | Query / user / site TTL |
-| `MaxRockCount` | 2 | Hidden from search at 3 rocks |
+| `MaxFlagCount` | 2 | Hidden from search at 3 flags |
 
 ---
 
@@ -192,4 +192,4 @@ Defined in `internal/config/config.go`:
 | `internal/vector/embedding.go` | Weighted average, recent-ad fallback |
 | `internal/vector/cache.go` | Caches and `ResolveSearchEmbedding` |
 | `internal/search/search.go` | Ranking and geo |
-| `internal/search/metadata.go` | Category / facet / rock filters |
+| `internal/search/metadata.go` | Category / facet / flag filters |

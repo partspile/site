@@ -1,4 +1,4 @@
-package rockopinion
+package flagopinion
 
 import (
 	"database/sql"
@@ -8,14 +8,14 @@ import (
 
 	"github.com/partspile/site/internal/ad"
 	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/flag"
 	"github.com/partspile/site/internal/logger"
 	"github.com/partspile/site/internal/message"
-	"github.com/partspile/site/internal/rock"
 	"github.com/partspile/site/internal/service/grok"
 	"github.com/partspile/site/internal/user"
 )
 
-var ErrUnavailable = errors.New("rock opinion unavailable")
+var ErrUnavailable = errors.New("flag opinion unavailable")
 
 // Opinion is a cached or freshly generated dispute assessment.
 type Opinion struct {
@@ -31,8 +31,8 @@ type Opinion struct {
 // GetOrGenerate returns a cached opinion or generates and stores one.
 func GetOrGenerate(conv message.Conversation,
 	tz *time.Location) (Opinion, error) {
-	if conv.RockThrowerID == nil {
-		return Opinion{}, fmt.Errorf("conversation has no rock")
+	if conv.FlagRaiserID == nil {
+		return Opinion{}, fmt.Errorf("conversation has no flag")
 	}
 
 	cached, err := loadOpinion(conv.ID)
@@ -44,7 +44,7 @@ func GetOrGenerate(conv message.Conversation,
 	}
 
 	reason := message.LatestThrownReason(conv.Journal)
-	op, err := generate(conv, *conv.RockThrowerID, reason, tz)
+	op, err := generate(conv, *conv.FlagRaiserID, reason, tz)
 	if err != nil {
 		return Opinion{}, err
 	}
@@ -54,11 +54,11 @@ func GetOrGenerate(conv message.Conversation,
 	return loadOpinion(conv.ID)
 }
 
-// Preview generates an ephemeral opinion without storing or requiring a rock.
+// Preview generates an ephemeral opinion without storing or requiring a flag.
 func Preview(conv message.Conversation, throwerID int, reason string,
 	tz *time.Location) (Opinion, error) {
-	if !rock.ValidReason(reason) {
-		return Opinion{}, rock.ErrInvalidReason
+	if !flag.ValidReason(reason) {
+		return Opinion{}, flag.ErrInvalidReason
 	}
 	return generate(conv, throwerID, reason, tz)
 }
@@ -94,7 +94,7 @@ func storeOpinion(op Opinion) error {
 	`, op.ConversationID, op.Summary, op.Assessment,
 		op.AssessmentDetail, op.Resolution, op.Reasoning)
 	if err != nil {
-		return fmt.Errorf("store rock opinion: %w", err)
+		return fmt.Errorf("store flag opinion: %w", err)
 	}
 	return nil
 }
@@ -106,7 +106,7 @@ func Invalidate(conversationID int) error {
 		conversationID,
 	)
 	if err != nil {
-		return fmt.Errorf("invalidate rock opinion: %w", err)
+		return fmt.Errorf("invalidate flag opinion: %w", err)
 	}
 	return nil
 }
@@ -120,7 +120,7 @@ func InvalidateForAd(adID int) error {
 		)
 	`, adID)
 	if err != nil {
-		return fmt.Errorf("invalidate rock opinions for ad: %w", err)
+		return fmt.Errorf("invalidate flag opinions for ad: %w", err)
 	}
 	return nil
 }
@@ -166,8 +166,8 @@ func generate(conv message.Conversation, throwerID int, reason string,
 	}
 
 	thrownAt := time.Now()
-	if conv.RockThrownAt != nil {
-		thrownAt = *conv.RockThrownAt
+	if conv.FlagRaisedAt != nil {
+		thrownAt = *conv.FlagRaisedAt
 	}
 
 	attachImages := shouldAttachImages(reason, redacted, a.ImageCount)
@@ -177,34 +177,34 @@ func generate(conv message.Conversation, throwerID int, reason string,
 	}
 
 	userPrompt := buildUserPrompt(promptInput{
-		AdTitle:       a.Title,
-		AdOriginal:    desc.Original,
-		AdHistory:     desc.History,
-		FormalFacets:  ad.FormalFacetLines(category, a.Facets),
-		Tags:          tags,
-		Messages:      redacted,
-		OwnerID:       conv.OwnerID,
-		InquirerID:    conv.InquirerID,
-		RockThrowerID: throwerID,
-		RockThrownAt:  thrownAt,
-		Reason:        reason,
-		Tz:            tz,
-		ImageCount:    promptImageCount,
+		AdTitle:      a.Title,
+		AdOriginal:   desc.Original,
+		AdHistory:    desc.History,
+		FormalFacets: ad.FormalFacetLines(category, a.Facets),
+		Tags:         tags,
+		Messages:     redacted,
+		OwnerID:      conv.OwnerID,
+		InquirerID:   conv.InquirerID,
+		FlagRaiserID: throwerID,
+		FlagRaisedAt: thrownAt,
+		Reason:       reason,
+		Tz:           tz,
+		ImageCount:   promptImageCount,
 	})
 
 	parts := buildGrokParts(userPrompt, a.ID, a.ImageCount, attachImages)
 	resp, err := grok.CallGrokConvParts(
-		opinionSystemPrompt(), parts, rockOpinionConvID,
+		opinionSystemPrompt(), parts, flagOpinionConvID,
 	)
 	if err != nil {
-		logger.Warn("rock opinion: grok call failed",
+		logger.Warn("flag opinion: grok call failed",
 			"error", err, "conversationID", conv.ID)
 		return Opinion{}, ErrUnavailable
 	}
 
 	op, err := parseOpinionResponse(resp)
 	if err != nil {
-		logger.Warn("rock opinion: parse failed",
+		logger.Warn("flag opinion: parse failed",
 			"error", err, "conversationID", conv.ID)
 		return Opinion{}, ErrUnavailable
 	}

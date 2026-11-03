@@ -9,12 +9,12 @@ import (
 	"github.com/partspile/site/internal/ad"
 	"github.com/partspile/site/internal/config"
 	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/flag"
 	"github.com/partspile/site/internal/local"
 	"github.com/partspile/site/internal/logger"
 	"github.com/partspile/site/internal/message"
 	"github.com/partspile/site/internal/otplimit"
 	"github.com/partspile/site/internal/password"
-	"github.com/partspile/site/internal/rock"
 	"github.com/partspile/site/internal/service/turnstile"
 	"github.com/partspile/site/internal/service/verify"
 	"github.com/partspile/site/internal/ui"
@@ -27,42 +27,42 @@ const (
 	memberSinceLayoutSummary = "Jan 2006"
 )
 
-func userProfileData(u user.User, activeAdCount, userRockCount int,
+func userProfileData(u user.User, activeAdCount, userFlagCount int,
 	tz *time.Location, memberSinceLayout string) ui.UserProfileData {
 	return ui.UserProfileData{
 		ID:                u.ID,
 		Name:              u.Name,
 		MemberSince:       u.CreatedAt.In(tz).Format(memberSinceLayout),
 		ActiveAdCount:     activeAdCount,
-		UserRockCount:     userRockCount,
+		UserFlagCount:     userFlagCount,
 		HasAccountPicture: u.HasAccountPicture,
 		AccountPictureURL: u.AccountPictureURL,
 	}
 }
 
 func loadUserMenuContext(userID int, tz *time.Location) (name, memberSince string,
-	hasUnread bool, rockCount, userRockCount int, err error) {
+	hasUnread bool, flagCount, userFlagCount int, err error) {
 	u, err := user.GetByID(userID)
 	if err != nil {
 		return "", "", false, 0, 0, err
 	}
 	hasUnread, _ = message.GetHasUnread(userID)
-	rockCount, _ = rock.GetUserRockCount(userID)
-	userRockCount, _ = rock.GetRockCountForUser(userID)
+	flagCount, _ = flag.GetUserFlagCount(userID)
+	userFlagCount, _ = flag.GetFlagCountForUser(userID)
 	memberSince = u.CreatedAt.In(tz).Format(memberSinceLayoutSummary)
-	return u.Name, memberSince, hasUnread, rockCount, userRockCount, nil
+	return u.Name, memberSince, hasUnread, flagCount, userFlagCount, nil
 }
 
 func UserMenuHandler(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
 	tz := cookie.GetTimezone(c)
-	name, memberSince, hasUnread, rockCount, userRockCount, err :=
+	name, memberSince, hasUnread, flagCount, userFlagCount, err :=
 		loadUserMenuContext(userID, tz)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to load user menu")
 	}
 	isAdmin := local.GetUserIsAdmin(c)
-	return render(c, ui.UserMenu(name, memberSince, userID, isAdmin, hasUnread, rockCount, userRockCount))
+	return render(c, ui.UserMenu(name, memberSince, userID, isAdmin, hasUnread, flagCount, userFlagCount))
 }
 
 func UserMyAdsHandler(c *fiber.Ctx) error {
@@ -402,14 +402,14 @@ func renderUserProfile(c *fiber.Ctx, id int, adsViewPrefix string,
 		return fiber.NewError(fiber.StatusNotFound, "User not found")
 	}
 	activeAdCount, _ := ad.CountActiveAdsByUser(id)
-	userRockCount, _ := rock.GetRockCountForUser(id)
+	userFlagCount, _ := flag.GetFlagCountForUser(id)
 	tz := cookie.GetTimezone(c)
 	view := ui.ValidateView(cookie.GetView(c))
 	adNodes, err := userActiveAdNodes(c, id, view)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to load ads")
 	}
-	d := userProfileData(u, activeAdCount, userRockCount, tz, memberSinceLayoutPage)
+	d := userProfileData(u, activeAdCount, userFlagCount, tz, memberSinceLayoutPage)
 	d.ShowShare = showShare
 	d.AdsViewPathPrefix = adsViewPrefix
 	return renderPage(c, u.Name, ui.UserProfilePage(d, view, adNodes))
@@ -489,13 +489,13 @@ func UserSummaryHandler(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "User not found")
 	}
 	activeAdCount, _ := ad.CountActiveAdsByUser(id)
-	userRockCount, _ := rock.GetRockCountForUser(id)
+	userFlagCount, _ := flag.GetFlagCountForUser(id)
 	tz := cookie.GetTimezone(c)
-	d := userProfileData(u, activeAdCount, userRockCount, tz, memberSinceLayoutSummary)
+	d := userProfileData(u, activeAdCount, userFlagCount, tz, memberSinceLayoutSummary)
 	return render(c, ui.UserSummaryFragment(d))
 }
 
-func UserRockConversationHandler(c *fiber.Ctx) error {
+func UserFlagConversationHandler(c *fiber.Ctx) error {
 	userID, err := c.ParamsInt("id")
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid user ID")
@@ -510,7 +510,7 @@ func UserRockConversationHandler(c *fiber.Ctx) error {
 	tz := cookie.GetTimezone(c)
 	csrfToken := local.GetCSRFToken(c)
 
-	conversationID, err := rock.GetConversationIDForUserRockByOrdinal(userID, ordinal)
+	conversationID, err := flag.GetConversationIDForUserFlagByOrdinal(userID, ordinal)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Flag not found")
 	}
@@ -519,12 +519,12 @@ func UserRockConversationHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "Conversation not found")
 	}
-	if conv.RockThrowerID == nil {
+	if conv.FlagRaiserID == nil {
 		return fiber.NewError(fiber.StatusNotFound, "No dispute assessment")
 	}
 
 	if message.IsParticipant(conv, currentUserID) {
 		return renderConversationModal(c, conv, currentUserID, tz, csrfToken)
 	}
-	return renderRockOpinionModal(c, conv, currentUserID, tz)
+	return renderFlagOpinionModal(c, conv, currentUserID, tz)
 }

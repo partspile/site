@@ -10,9 +10,9 @@
 
 ## 1. Why this category, why local first
 
-Parts Pile already defaults to **Car & Truck Parts**. That matches both founder expertise and public scam-volume data: vehicles / vehicle parts lead Facebook Marketplace purchase-fraud categories in the clearest public breakdown (~21% of scam volume in [TSB’s Marketplace analysis](https://www.tsb.co.uk/news-releases/urgent-consumer-warning-as-tsb-finds-over-a-third-of-adverts-on-facebook-marketplace-could-be-scams.html)). Frustration with fakes and flaky counterparties is the wedge; Parts Pile’s phone-gated accounts, hidden numbers, in-app messaging, and rocks are the retention story once people show up.
+Parts Pile already defaults to **Car & Truck Parts**. That matches both founder expertise and public scam-volume data: vehicles / vehicle parts lead Facebook Marketplace purchase-fraud categories in the clearest public breakdown (~21% of scam volume in [TSB’s Marketplace analysis](https://www.tsb.co.uk/news-releases/urgent-consumer-warning-as-tsb-finds-over-a-third-of-adverts-on-facebook-marketplace-could-be-scams.html)). Frustration with fakes and flaky counterparties is the wedge; Parts Pile’s phone-gated accounts, hidden numbers, in-app messaging, and flags are the retention story once people show up.
 
-Phone + rocks do **not** invent network effects by themselves. Liquidity does: enough relevant inventory that a buyer finds something, and enough messages that a seller bothers to stay. Cold start is therefore a **geography × niche** problem, not a “ship more features” problem.
+Phone + flags do **not** invent network effects by themselves. Liquidity does: enough relevant inventory that a buyer finds something, and enough messages that a seller bothers to stay. Cold start is therefore a **geography × niche** problem, not a “ship more features” problem.
 
 **Rule:** one metro + one parts niche until you can point at repeat buyers and second-wave sellers. Then widen.
 
@@ -76,7 +76,7 @@ Marketplace order of operations: **inventory → buyers → more sellers**. Empt
 1. **List your own real inventory** — parts you would actually sell. Same bar as a good FB/CL ad: fitment, photos, price, pickup area.
 2. **Ask friendly sellers** (shops, friends, club members) to cross-post one item with “reply on Parts Pile” as the contact path. Offer to help them register (phone OTP is the only friction).
 3. **Dual-post strategically** — keep the listing on FB/CL if needed for reach, but move chat to Parts Pile so the product gets the conversation and the trust story gets used.
-4. **Do not fake scarcity with spam accounts.** Thin, honest inventory beats a wall of ghost ads; rocks and phone costs exist partly so junk is expensive.
+4. **Do not fake scarcity with spam accounts.** Thin, honest inventory beats a wall of ghost ads; flags and phone costs exist partly so junk is expensive.
 
 ### 4.2 Bring buyers to that inventory (week 2–6)
 
@@ -126,7 +126,7 @@ Use Parts Pile’s real differences; do not claim magic.
 | Fake accounts / bots | Phone verification raises cost of throwaway spam |
 | Phone number harvested / deposit scams | Number hidden; contact stays in-app |
 | Posting friction / fees elsewhere | No posting fees, no card required |
-| No shared trust signal | Rocks mark bad actors; ads assumed good until rocked |
+| No shared trust signal | Flags mark bad actors; ads assumed good until flaged |
 | Flaky chat on FB | Dedicated messages + SMS nudge for unread |
 
 Be honest about cold start: early users come for **your inventory and your niche**, not for a full Marketplace replacement yet. Promise a better lane for parts people, then earn the rest.
@@ -153,7 +153,7 @@ During local launch, only escalate product work that blocks liquidity:
 1. Registration or posting friction that loses a live seller at a meet  
 2. Search/browse failing for common fitment queries in your niche  
 3. Messaging / SMS alerts not reliable enough for a real meetup  
-4. Trust incidents (scams, rocks) that need clearer UX or policy  
+4. Trust incidents (scams, flags) that need clearer UX or policy  
 
 Everything else waits until the beachhead has closed loops. Engineering docs stay in [DOC_TECH_STACK.md](DOC_TECH_STACK.md) and the README; this playbook is about people and inventory.
 
@@ -165,7 +165,7 @@ Everything else waits until the beachhead has closed loops. Engineering docs sta
 - Seeding dozens of unrelated categories before parts has density  
 - Pretending multi-account inventory is a community  
 - Leading with feature lectures instead of “here’s a turbo / axle / hood in town”  
-- Expecting rocks + phone-only to substitute for supply  
+- Expecting flags + phone-only to substitute for supply  
 
 ---
 

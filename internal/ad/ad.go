@@ -32,7 +32,7 @@ type Ad struct {
 
 	// Computed fields
 	Bookmarked bool `db:"bookmarked"`
-	RockCount  int  `db:"flag_count"`
+	FlagCount  int  `db:"flag_count"`
 
 	// Category-specific facet values
 	Facets map[string]facet.Value

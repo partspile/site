@@ -1,14 +1,14 @@
-package rockopinion
+package flagopinion
 
 import (
 	"encoding/base64"
 	"regexp"
 
 	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/flag"
 	"github.com/partspile/site/internal/imagestore"
 	"github.com/partspile/site/internal/logger"
 	"github.com/partspile/site/internal/message"
-	"github.com/partspile/site/internal/rock"
 	"github.com/partspile/site/internal/service/grok"
 )
 
@@ -35,7 +35,7 @@ func shouldAttachImages(reason string, messages []message.Message,
 	if messagesMentionImages(messages) {
 		return true
 	}
-	if reason == rock.ReasonPolicy && len(messages) == 0 {
+	if reason == flag.ReasonPolicy && len(messages) == 0 {
 		return true
 	}
 	return false
@@ -62,7 +62,7 @@ func imageDataURIParts(adID, imageCount int) []grok.ContentPart {
 	for i := 1; i <= n; i++ {
 		data, err := opinionImageStore.Get(adID, i, "480w")
 		if err != nil || len(data) == 0 {
-			logger.Debug("rock opinion: skip image",
+			logger.Debug("flag opinion: skip image",
 				"adID", adID, "index", i, "error", err)
 			continue
 		}
@@ -77,7 +77,7 @@ func imageDataURIParts(adID, imageCount int) []grok.ContentPart {
 		})
 	}
 	if len(parts) > 0 {
-		logger.Debug("rock opinion: attached images",
+		logger.Debug("flag opinion: attached images",
 			"adID", adID, "count", len(parts))
 	}
 	return parts

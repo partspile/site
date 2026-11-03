@@ -7,11 +7,11 @@ import (
 	"github.com/partspile/site/internal/ad"
 	"github.com/partspile/site/internal/config"
 	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/flagopinion"
 	"github.com/partspile/site/internal/handler"
 	"github.com/partspile/site/internal/imagestore"
 	"github.com/partspile/site/internal/kv"
 	"github.com/partspile/site/internal/logger"
-	"github.com/partspile/site/internal/rockopinion"
 	"github.com/partspile/site/internal/service/sms"
 	"github.com/partspile/site/internal/service/turnstile"
 	"github.com/partspile/site/internal/service/verify"
@@ -79,7 +79,7 @@ func setupApp() *fiber.App {
 	app.Get("/faq", handler.FAQHandler)
 	app.Get("/faq/:section", handler.FAQHandler)
 	app.Get("/ad/:id", handler.AdHandler)
-	app.Get("/ad/:id/rock/:ordinal", handler.PublicAdRockOpinionHandler)
+	app.Get("/ad/:id/flag/:ordinal", handler.PublicAdFlagOpinionHandler)
 	app.Get("/c/:category", handler.ShortCategoryHandler)
 	app.Get("/u/:token", handler.SharedUserProfileHandler)
 	app.Get("/u/:token/view/:view", handler.SharedUserProfileViewHandler)
@@ -109,10 +109,10 @@ func setupApp() *fiber.App {
 	auth.Post("/ad/:id/renew", handler.RenewAdHandler)
 	auth.Get("/ad/:id/new-conversation", handler.MessageModalHandler)
 	auth.Post("/ad/:id/send", handler.SendMessageHandler)
-	auth.Post("/ad/:id/rock/throw", handler.ThrowRockOnAdHandler)
-	auth.Get("/ad/:id/rock/confirm", handler.ConfirmRockOnAdHandler)
-	auth.Post("/ad/:id/rock/preview", handler.PreviewRockOnAdHandler)
-	auth.Get("/ad/:id/rock/:ordinal", handler.AdRockConversationHandler)
+	auth.Post("/ad/:id/flag/raise", handler.RaiseFlagOnAdHandler)
+	auth.Get("/ad/:id/flag/confirm", handler.ConfirmFlagOnAdHandler)
+	auth.Post("/ad/:id/flag/preview", handler.PreviewFlagOnAdHandler)
+	auth.Get("/ad/:id/flag/:ordinal", handler.AdFlagConversationHandler)
 
 	auth.Get("/user/menu", handler.UserMenuHandler)
 	auth.Get("/user/share", handler.UserShareHandler)
@@ -138,16 +138,16 @@ func setupApp() *fiber.App {
 	auth.Get("/user/:id", handler.UserProfileHandler)
 	auth.Get("/user/:id/view/:view", handler.UserProfileViewHandler)
 	auth.Get("/user/:id/summary", handler.UserSummaryHandler)
-	auth.Get("/user/:id/rock/:ordinal", handler.UserRockConversationHandler)
+	auth.Get("/user/:id/flag/:ordinal", handler.UserFlagConversationHandler)
 	auth.Get("/welcome", handler.WelcomeHandler)
 
 	auth.Get("/conversation/:id", handler.ConversationModalHandler)
-	auth.Get("/conversation/:id/rock-opinion", handler.RockOpinionHandler)
-	auth.Get("/conversation/:id/rock/confirm", handler.ConfirmRockHandler)
-	auth.Post("/conversation/:id/rock/preview", handler.PreviewRockHandler)
+	auth.Get("/conversation/:id/flag-opinion", handler.FlagOpinionHandler)
+	auth.Get("/conversation/:id/flag/confirm", handler.ConfirmFlagHandler)
+	auth.Post("/conversation/:id/flag/preview", handler.PreviewFlagHandler)
 	auth.Post("/conversation/:id/send", handler.SendConversationMessageHandler)
-	auth.Post("/conversation/:id/rock/throw", handler.ThrowRockHandler)
-	auth.Delete("/conversation/:id/rock/unthrow", handler.UnthrowRockHandler)
+	auth.Post("/conversation/:id/flag/raise", handler.RaiseFlagHandler)
+	auth.Delete("/conversation/:id/flag/lower", handler.LowerFlagHandler)
 
 	auth.Post("/bookmark/:id", handler.BookmarkHandler)
 	auth.Delete("/bookmark/:id", handler.BookmarkHandler)
@@ -256,7 +256,7 @@ func main() {
 		logger.Fatal("Failed to initialize image store", "error", err)
 	}
 	handler.SetAdImageStore(imageStore)
-	rockopinion.SetImageStore(imageStore)
+	flagopinion.SetImageStore(imageStore)
 	logger.Info("Image store configured",
 		"bucket", config.MinIOBucketName, "url", config.MinIOAPIURL)
 

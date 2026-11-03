@@ -1,4 +1,4 @@
-package rock
+package flag
 
 import (
 	"database/sql"
@@ -12,19 +12,19 @@ import (
 	"github.com/partspile/site/internal/journal"
 )
 
-var ErrRockNotFound = errors.New("flag not found")
-var ErrMaxRocksReached = errors.New("user has reached maximum outstanding flags")
-var ErrRockAlreadyThrown = errors.New("a flag has already been raised on this conversation")
+var ErrFlagNotFound = errors.New("flag not found")
+var ErrMaxFlagsReached = errors.New("user has reached maximum outstanding flags")
+var ErrFlagAlreadyRaised = errors.New("a flag has already been raised on this conversation")
 
-// ThrowRock throws a rock at a conversation, making it public
-// If inquirer throws: flag_raiser_id = inquirer_id (bound to ad)
-// If owner throws: flag_raiser_id = owner_id (bound to inquirer)
-func ThrowRock(userID, conversationID int, reason string) error {
+// RaiseFlag raises a flag on a conversation, making it public.
+// If the inquirer raises it, flag_raiser_id is the inquirer (bound to the ad).
+// If the owner raises it, flag_raiser_id is the owner (bound to the inquirer).
+func RaiseFlag(userID, conversationID int, reason string) error {
 	if !ValidReason(reason) {
 		return ErrInvalidReason
 	}
 
-	conv, err := getConversationForRock(conversationID)
+	conv, err := getConversationForFlag(conversationID)
 	if err != nil {
 		return fmt.Errorf("failed to get conversation: %w", err)
 	}
@@ -33,20 +33,20 @@ func ThrowRock(userID, conversationID int, reason string) error {
 		return fmt.Errorf("only conversation participants can raise flags")
 	}
 
-	count, err := GetUserRockCount(userID)
+	count, err := GetUserFlagCount(userID)
 	if err != nil {
-		return fmt.Errorf("failed to check rock count: %w", err)
+		return fmt.Errorf("failed to check flag count: %w", err)
 	}
-	if count >= config.MaxOutstandingRocks {
-		return ErrMaxRocksReached
+	if count >= config.MaxOutstandingFlags {
+		return ErrMaxFlagsReached
 	}
 
-	rockCount, err := GetRockCountForConversation(conversationID)
+	flagCount, err := GetFlagCountForConversation(conversationID)
 	if err != nil {
-		return fmt.Errorf("failed to check existing rocks: %w", err)
+		return fmt.Errorf("failed to check existing flags: %w", err)
 	}
-	if rockCount > 0 {
-		return ErrRockAlreadyThrown
+	if flagCount > 0 {
+		return ErrFlagAlreadyRaised
 	}
 
 	now := time.Now().UTC()
@@ -54,7 +54,7 @@ func ThrowRock(userID, conversationID int, reason string) error {
 	if err != nil {
 		return fmt.Errorf("open journal: %w", err)
 	}
-	newJournal := journal.AppendRock(plain, journal.RockThrown, userID,
+	newJournal := journal.AppendFlag(plain, journal.FlagRaised, userID,
 		reason, now, time.UTC)
 	sealed, err := encryption.Seal(conversationID, newJournal, config.DBEncryptionKey)
 	if err != nil {
@@ -68,19 +68,19 @@ func ThrowRock(userID, conversationID int, reason string) error {
 		WHERE id = $4
 	`, userID, now, sealed, conversationID)
 	if err != nil {
-		return fmt.Errorf("failed to throw rock: %w", err)
+		return fmt.Errorf("failed to throw flag: %w", err)
 	}
 
 	if userID == conv.InquirerID {
-		if err := SyncAdRockCount(conv.AdID); err != nil {
-			return fmt.Errorf("sync ad rock count: %w", err)
+		if err := SyncAdFlagCount(conv.AdID); err != nil {
+			return fmt.Errorf("sync ad flag count: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func getConversationForRock(conversationID int) (struct {
+func getConversationForFlag(conversationID int) (struct {
 	OwnerID    int
 	InquirerID int
 	AdID       int
@@ -110,39 +110,39 @@ func getConversationForRock(conversationID int) (struct {
 	return conv, nil
 }
 
-// UnthrowRock removes a rock from a conversation
-func UnthrowRock(userID, conversationID int) error {
-	var rockThrowerID sql.NullInt64
+// LowerFlag removes a flag from a conversation
+func LowerFlag(userID, conversationID int) error {
+	var flagRaiserID sql.NullInt64
 	var inquirerID, adID int
 	var j string
 	err := db.QueryRow(`
 		SELECT flag_raiser_id, inquirer_id, ad_id, journal
 		FROM conversations
 		WHERE id = $1
-	`, conversationID).Scan(&rockThrowerID, &inquirerID, &adID, &j)
+	`, conversationID).Scan(&flagRaiserID, &inquirerID, &adID, &j)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return ErrRockNotFound
+			return ErrFlagNotFound
 		}
 		return fmt.Errorf("failed to get conversation: %w", err)
 	}
 
-	if !rockThrowerID.Valid {
-		return ErrRockNotFound
+	if !flagRaiserID.Valid {
+		return ErrFlagNotFound
 	}
 
-	if int(rockThrowerID.Int64) != userID {
+	if int(flagRaiserID.Int64) != userID {
 		return fmt.Errorf("only the person who raised the flag can lower it")
 	}
 
-	adBound := int(rockThrowerID.Int64) == inquirerID
+	adBound := int(flagRaiserID.Int64) == inquirerID
 
 	now := time.Now().UTC()
 	plain, err := encryption.Open(conversationID, j, config.DBEncryptionKey)
 	if err != nil {
 		return fmt.Errorf("open journal: %w", err)
 	}
-	newJournal := journal.AppendRock(plain, journal.RockUnthrown, userID, "",
+	newJournal := journal.AppendFlag(plain, journal.FlagLowered, userID, "",
 		now, time.UTC)
 	sealed, err := encryption.Seal(conversationID, newJournal, config.DBEncryptionKey)
 	if err != nil {
@@ -156,20 +156,20 @@ func UnthrowRock(userID, conversationID int) error {
 		WHERE id = $3
 	`, sealed, now, conversationID)
 	if err != nil {
-		return fmt.Errorf("failed to remove rock: %w", err)
+		return fmt.Errorf("failed to remove flag: %w", err)
 	}
 
 	if adBound {
-		if err := SyncAdRockCount(adID); err != nil {
-			return fmt.Errorf("sync ad rock count: %w", err)
+		if err := SyncAdFlagCount(adID); err != nil {
+			return fmt.Errorf("sync ad flag count: %w", err)
 		}
 	}
 
 	return nil
 }
 
-// SyncAdRockCount sets ads.flag_count from ad-bound rocks on conversations.
-func SyncAdRockCount(adID int) error {
+// SyncAdFlagCount sets ads.flag_count from ad-bound flags on conversations.
+func SyncAdFlagCount(adID int) error {
 	_, err := db.Exec(`
 		UPDATE ads
 		SET flag_count = (
@@ -188,7 +188,7 @@ func SyncAdRockCount(adID int) error {
 }
 
 // GetPublicConversationsForAd returns public conversation IDs for an ad
-// Only returns conversations with rocks bound to the ad (flag_raiser_id = inquirer_id)
+// Only returns conversations with flags bound to the ad (flag_raiser_id = inquirer_id)
 func GetPublicConversationsForAd(adID int) ([]int, error) {
 	query := `
 		SELECT c.id
@@ -205,7 +205,7 @@ func GetPublicConversationsForAd(adID int) ([]int, error) {
 }
 
 // GetPublicConversationIDByOrdinal returns the conversation ID at the given ordinal position (0-based)
-// for public conversations with rocks bound to the ad (flag_raiser_id = inquirer_id), ordered by latest activity DESC
+// for public conversations with flags bound to the ad (flag_raiser_id = inquirer_id), ordered by latest activity DESC
 func GetPublicConversationIDByOrdinal(adID int, ordinal int) (int, error) {
 	query := `
 		SELECT c.id
@@ -225,8 +225,8 @@ func GetPublicConversationIDByOrdinal(adID int, ordinal int) (int, error) {
 	return conversationID, nil
 }
 
-// GetUserRockCount returns the count of outstanding rocks thrown by a user
-func GetUserRockCount(userID int) (int, error) {
+// GetUserFlagCount returns the count of outstanding flags thrown by a user
+func GetUserFlagCount(userID int) (int, error) {
 	var count int
 	err := db.QueryRow(`
 		SELECT COUNT(*)
@@ -234,51 +234,51 @@ func GetUserRockCount(userID int) (int, error) {
 		WHERE flag_raiser_id = $1
 	`, userID).Scan(&count)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get user rock count: %w", err)
+		return 0, fmt.Errorf("failed to get user flag count: %w", err)
 	}
 	return count, nil
 }
 
-// GetRockCountForConversation returns whether a rock exists for a conversation
-func GetRockCountForConversation(conversationID int) (int, error) {
-	var rockThrowerID sql.NullInt64
+// GetFlagCountForConversation returns whether a flag exists for a conversation
+func GetFlagCountForConversation(conversationID int) (int, error) {
+	var flagRaiserID sql.NullInt64
 	err := db.QueryRow(`
 		SELECT flag_raiser_id
 		FROM conversations
 		WHERE id = $1
-	`, conversationID).Scan(&rockThrowerID)
+	`, conversationID).Scan(&flagRaiserID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return 0, fmt.Errorf("conversation not found: %w", err)
 		}
-		return 0, fmt.Errorf("failed to get rock count for conversation: %w", err)
+		return 0, fmt.Errorf("failed to get flag count for conversation: %w", err)
 	}
-	if !rockThrowerID.Valid {
+	if !flagRaiserID.Valid {
 		return 0, nil
 	}
 	return 1, nil
 }
 
-// HasUserThrownRock checks if a user has thrown a rock at a conversation
-func HasUserThrownRock(userID, conversationID int) (bool, error) {
-	var rockThrowerID sql.NullInt64
+// HasUserRaisedFlag checks if a user has thrown a flag at a conversation
+func HasUserRaisedFlag(userID, conversationID int) (bool, error) {
+	var flagRaiserID sql.NullInt64
 	err := db.QueryRow(`
 		SELECT flag_raiser_id
 		FROM conversations
 		WHERE id = $1
-	`, conversationID).Scan(&rockThrowerID)
+	`, conversationID).Scan(&flagRaiserID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, fmt.Errorf("conversation not found: %w", err)
 		}
-		return false, fmt.Errorf("failed to check if user threw rock: %w", err)
+		return false, fmt.Errorf("failed to check if user threw flag: %w", err)
 	}
-	return rockThrowerID.Valid && int(rockThrowerID.Int64) == userID, nil
+	return flagRaiserID.Valid && int(flagRaiserID.Int64) == userID, nil
 }
 
-// GetConversationIDsForUserRocks returns conversation IDs for rocks bound to a user
-// (where flag_raiser_id = owner_id, meaning owner threw rock at inquirer)
-func GetConversationIDsForUserRocks(userID int) ([]int, error) {
+// GetConversationIDsForUserFlags returns conversation IDs for flags bound to a user
+// (where flag_raiser_id = owner_id, meaning owner threw flag at inquirer)
+func GetConversationIDsForUserFlags(userID int) ([]int, error) {
 	query := `
 		SELECT id
 		FROM conversations
@@ -288,14 +288,14 @@ func GetConversationIDsForUserRocks(userID int) ([]int, error) {
 	var conversationIDs []int
 	err := db.Select(&conversationIDs, query, userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get conversation IDs for user rocks: %w", err)
+		return nil, fmt.Errorf("failed to get conversation IDs for user flags: %w", err)
 	}
 	return conversationIDs, nil
 }
 
-// GetRockCountForUser returns the count of rocks bound to a user
-// (rocks where owner threw at this user)
-func GetRockCountForUser(userID int) (int, error) {
+// GetFlagCountForUser returns the count of flags bound to a user
+// (flags where owner threw at this user)
+func GetFlagCountForUser(userID int) (int, error) {
 	var count int
 	err := db.QueryRow(`
 		SELECT COUNT(*)
@@ -303,14 +303,14 @@ func GetRockCountForUser(userID int) (int, error) {
 		WHERE flag_raiser_id IS NOT NULL AND flag_raiser_id = owner_id AND inquirer_id = $1
 	`, userID).Scan(&count)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get rock count for user: %w", err)
+		return 0, fmt.Errorf("failed to get flag count for user: %w", err)
 	}
 	return count, nil
 }
 
-// GetConversationIDForUserRockByOrdinal returns the conversation ID at the given ordinal position (0-based)
-// for rocks bound to a user (where flag_raiser_id = owner_id AND inquirer_id = userID), ordered by flag_raised_at DESC
-func GetConversationIDForUserRockByOrdinal(userID int, ordinal int) (int, error) {
+// GetConversationIDForUserFlagByOrdinal returns the conversation ID at the given ordinal position (0-based)
+// for flags bound to a user (where flag_raiser_id = owner_id AND inquirer_id = userID), ordered by flag_raised_at DESC
+func GetConversationIDForUserFlagByOrdinal(userID int, ordinal int) (int, error) {
 	query := `
 		SELECT id
 		FROM conversations
@@ -324,27 +324,27 @@ func GetConversationIDForUserRockByOrdinal(userID int, ordinal int) (int, error)
 		if err == sql.ErrNoRows {
 			return 0, fmt.Errorf("conversation not found at ordinal %d for user %d", ordinal, userID)
 		}
-		return 0, fmt.Errorf("failed to get conversation ID for user rock by ordinal: %w", err)
+		return 0, fmt.Errorf("failed to get conversation ID for user flag by ordinal: %w", err)
 	}
 	return conversationID, nil
 }
 
-// UnthrowActiveForAd clears active rocks on all conversations for an ad.
-func UnthrowActiveForAd(adID int) error {
+// LowerActiveForAd clears active flags on all conversations for an ad.
+func LowerActiveForAd(adID int) error {
 	rows, err := db.Query(`
 		SELECT id, flag_raiser_id, journal
 		FROM conversations
 		WHERE ad_id = $1 AND flag_raiser_id IS NOT NULL
 	`, adID)
 	if err != nil {
-		return fmt.Errorf("failed to list rocks for ad: %w", err)
+		return fmt.Errorf("failed to list flags for ad: %w", err)
 	}
 	defer rows.Close()
-	return unthrowRows(rows)
+	return lowerRows(rows)
 }
 
-// UnthrowActiveForUser clears rocks thrown by or bound to the user.
-func UnthrowActiveForUser(userID int) error {
+// LowerActiveForUser clears flags thrown by or bound to the user.
+func LowerActiveForUser(userID int) error {
 	rows, err := db.Query(`
 		SELECT id, flag_raiser_id, journal
 		FROM conversations
@@ -355,23 +355,23 @@ func UnthrowActiveForUser(userID int) error {
 		  )
 	`, userID)
 	if err != nil {
-		return fmt.Errorf("failed to list rocks for user: %w", err)
+		return fmt.Errorf("failed to list flags for user: %w", err)
 	}
 	defer rows.Close()
-	return unthrowRows(rows)
+	return lowerRows(rows)
 }
 
-func unthrowRows(rows *sql.Rows) error {
-	type rockRow struct {
+func lowerRows(rows *sql.Rows) error {
+	type flagRow struct {
 		id      int
 		thrower int
 		journal string
 	}
-	var list []rockRow
+	var list []flagRow
 	for rows.Next() {
-		var r rockRow
+		var r flagRow
 		if err := rows.Scan(&r.id, &r.thrower, &r.journal); err != nil {
-			return fmt.Errorf("failed to scan rock row: %w", err)
+			return fmt.Errorf("failed to scan flag row: %w", err)
 		}
 		list = append(list, r)
 	}
@@ -379,20 +379,20 @@ func unthrowRows(rows *sql.Rows) error {
 		return err
 	}
 	for _, r := range list {
-		if err := forceUnthrow(r.id, r.thrower, r.journal); err != nil {
+		if err := forceLower(r.id, r.thrower, r.journal); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func forceUnthrow(conversationID, throwerID int, j string) error {
+func forceLower(conversationID, throwerID int, j string) error {
 	now := time.Now().UTC()
 	plain, err := encryption.Open(conversationID, j, config.DBEncryptionKey)
 	if err != nil {
 		return fmt.Errorf("open journal: %w", err)
 	}
-	newJournal := journal.AppendRock(plain, journal.RockUnthrown, throwerID, "",
+	newJournal := journal.AppendFlag(plain, journal.FlagLowered, throwerID, "",
 		now, time.UTC)
 	sealed, err := encryption.Seal(conversationID, newJournal, config.DBEncryptionKey)
 	if err != nil {
@@ -405,7 +405,7 @@ func forceUnthrow(conversationID, throwerID int, j string) error {
 		WHERE id = $3 AND flag_raiser_id IS NOT NULL
 	`, sealed, now, conversationID)
 	if err != nil {
-		return fmt.Errorf("failed to force-unthrow rock: %w", err)
+		return fmt.Errorf("failed to force-lower flag: %w", err)
 	}
 	return nil
 }

@@ -5,16 +5,16 @@ import (
 	"time"
 
 	"github.com/partspile/site/internal/db"
+	"github.com/partspile/site/internal/flagopinion"
 	"github.com/partspile/site/internal/message"
-	"github.com/partspile/site/internal/rockopinion"
 )
 
-func setupIntegrationRockOpinion(t *testing.T) (message.Conversation, int) {
+func setupIntegrationFlagOpinion(t *testing.T) (message.Conversation, int) {
 	t.Helper()
 	var adID int
 	err := db.QueryRow(`INSERT INTO ads (category_id, title, description, user_id,
 		 expires_at)
-		VALUES ($1, 'Rock opinion test ad', 'desc', $2,
+		VALUES ($1, 'Flag opinion test ad', 'desc', $2,
 		        NOW() + INTERVAL '3 months') RETURNING id`,
 		integrationCarsCategory, integrationTestUserID).Scan(&adID)
 	if err != nil {
@@ -36,7 +36,7 @@ func setupIntegrationRockOpinion(t *testing.T) (message.Conversation, int) {
 	return conv, convID
 }
 
-func insertIntegrationRockOpinion(t *testing.T, convID int) {
+func insertIntegrationFlagOpinion(t *testing.T, convID int) {
 	t.Helper()
 	_, err := db.Exec(`INSERT INTO flag_opinions (
 		conversation_id, summary, assessment, assessment_detail,
@@ -49,14 +49,14 @@ func insertIntegrationRockOpinion(t *testing.T, convID int) {
 	}
 }
 
-func TestIntegrationRockOpinionDB(t *testing.T) {
-	conv, convID := setupIntegrationRockOpinion(t)
+func TestIntegrationFlagOpinionDB(t *testing.T) {
+	conv, convID := setupIntegrationFlagOpinion(t)
 	loc := time.UTC
 
 	t.Run("returns cached opinion", func(t *testing.T) {
-		insertIntegrationRockOpinion(t, convID)
+		insertIntegrationFlagOpinion(t, convID)
 
-		op, err := rockopinion.GetOrGenerate(conv, loc)
+		op, err := flagopinion.GetOrGenerate(conv, loc)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -69,7 +69,7 @@ func TestIntegrationRockOpinionDB(t *testing.T) {
 	})
 
 	t.Run("invalidate conversation", func(t *testing.T) {
-		if err := rockopinion.Invalidate(convID); err != nil {
+		if err := flagopinion.Invalidate(convID); err != nil {
 			t.Fatal(err)
 		}
 		var count int
@@ -84,9 +84,9 @@ func TestIntegrationRockOpinionDB(t *testing.T) {
 	})
 
 	t.Run("invalidate for ad", func(t *testing.T) {
-		insertIntegrationRockOpinion(t, convID)
+		insertIntegrationFlagOpinion(t, convID)
 
-		if err := rockopinion.InvalidateForAd(conv.AdID); err != nil {
+		if err := flagopinion.InvalidateForAd(conv.AdID); err != nil {
 			t.Fatal(err)
 		}
 		var count int

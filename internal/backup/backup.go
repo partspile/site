@@ -51,7 +51,7 @@ func runBackup(outDir string, store imagestore.Store, dryRun, verbose bool) erro
 	var imageClickDB []userAdImageClickDBRow
 	var facetDB []adFacetDBRow
 	var convDB []conversationDBRow
-	var opinionDB []rockOpinionDBRow
+	var opinionDB []flagOpinionDBRow
 
 	if len(adRefs) > 0 {
 		clause, args := intInClause(adRefs)
@@ -257,11 +257,11 @@ func runBackup(outDir string, store imagestore.Store, dryRun, verbose bool) erro
 			InquirerHash:      userIDToHash[c.InquirerID],
 			OwnerHasUnread:    c.OwnerHasUnread,
 			InquirerHasUnread: c.InquirerHasUnread,
-			RockThrownAt:      c.RockThrownAt,
+			FlagRaisedAt:      c.FlagRaisedAt,
 		}
-		if c.RockThrowerID != nil {
-			h := userIDToHash[*c.RockThrowerID]
-			row.RockThrowerHash = &h
+		if c.FlagRaiserID != nil {
+			h := userIDToHash[*c.FlagRaiserID]
+			row.FlagRaiserHash = &h
 		}
 		conversations[i] = row
 	}
@@ -276,9 +276,9 @@ func runBackup(outDir string, store imagestore.Store, dryRun, verbose bool) erro
 		}
 	}
 
-	opinions := make([]RockOpinionRow, len(opinionDB))
+	opinions := make([]FlagOpinionRow, len(opinionDB))
 	for i, o := range opinionDB {
-		opinions[i] = RockOpinionRow{
+		opinions[i] = FlagOpinionRow{
 			ConversationRef:  convIDToRef[o.ConversationID],
 			GeneratedAt:      o.GeneratedAt,
 			Summary:          o.Summary,
@@ -371,7 +371,7 @@ func runBackup(outDir string, store imagestore.Store, dryRun, verbose bool) erro
 			UserAdImageClicks: len(imageClicks),
 			Conversations:     len(conversations),
 			Messages:          len(messages),
-			RockOpinions:      len(opinions),
+			FlagOpinions:      len(opinions),
 			Images:            imageCount,
 			AccountPictures:   accountCount,
 			Embeddings:        embeddingCount,
@@ -392,7 +392,7 @@ func runBackup(outDir string, store imagestore.Store, dryRun, verbose bool) erro
 		{fileUserAdImageClicks, imageClicks},
 		{fileConversations, conversations},
 		{fileMessages, messages},
-		{fileRockOpinions, opinions},
+		{fileFlagOpinions, opinions},
 	}
 	for _, f := range files {
 		if err := writeJSON(filepath.Join(outDir, f.name), f.data); err != nil {

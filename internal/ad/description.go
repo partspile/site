@@ -30,7 +30,7 @@ func SanitizeAdText(s string) string {
 }
 
 // TitleContainsEmoji reports whether s includes emoji or other pictographs
-// unsuitable for ad titles (e.g. rock or warning icons).
+// unsuitable for ad titles (e.g. flag or warning icons).
 func TitleContainsEmoji(s string) bool {
 	for _, r := range s {
 		if isEmojiRune(r) {

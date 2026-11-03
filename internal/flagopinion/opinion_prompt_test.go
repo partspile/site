@@ -1,26 +1,26 @@
-package rockopinion
+package flagopinion
 
 import (
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/partspile/site/internal/flag"
 	"github.com/partspile/site/internal/imagestore"
 	"github.com/partspile/site/internal/message"
-	"github.com/partspile/site/internal/rock"
 )
 
 func TestBuildUserPromptIncludesReasonAndImages(t *testing.T) {
 	prompt := buildUserPrompt(promptInput{
-		AdTitle:       "Widget",
-		AdOriginal:    "Nice widget",
-		OwnerID:       1,
-		InquirerID:    2,
-		RockThrowerID: 2,
-		RockThrownAt:  time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
-		Reason:        "policy",
-		ImageCount:    2,
-		Tz:            time.UTC,
+		AdTitle:      "Widget",
+		AdOriginal:   "Nice widget",
+		OwnerID:      1,
+		InquirerID:   2,
+		FlagRaiserID: 2,
+		FlagRaisedAt: time.Date(2026, 8, 1, 12, 0, 0, 0, time.UTC),
+		Reason:       "policy",
+		ImageCount:   2,
+		Tz:           time.UTC,
 	})
 	if !strings.Contains(prompt, "Complainant selected reason: policy") {
 		t.Fatalf("missing reason in prompt: %s", prompt)
@@ -45,27 +45,27 @@ func TestShouldAttachImages(t *testing.T) {
 	t.Cleanup(func() { opinionImageStore = prev })
 
 	opinionImageStore = nil
-	if shouldAttachImages(rock.ReasonPolicy, nil, 2) {
+	if shouldAttachImages(flag.ReasonPolicy, nil, 2) {
 		t.Fatal("expected no attach without store")
 	}
 
 	opinionImageStore = imagestore.NewLocal(t.TempDir())
 
-	if !shouldAttachImages(rock.ReasonPolicy, nil, 2) {
+	if !shouldAttachImages(flag.ReasonPolicy, nil, 2) {
 		t.Fatal("policy + no messages should attach")
 	}
-	if shouldAttachImages(rock.ReasonDeal, nil, 2) {
+	if shouldAttachImages(flag.ReasonDeal, nil, 2) {
 		t.Fatal("deal + no messages should not attach")
 	}
-	if shouldAttachImages(rock.ReasonPolicy,
+	if shouldAttachImages(flag.ReasonPolicy,
 		[]message.Message{{Content: "still available?"}}, 2) {
 		t.Fatal("policy + messages without image mention should not attach")
 	}
-	if !shouldAttachImages(rock.ReasonDeal,
+	if !shouldAttachImages(flag.ReasonDeal,
 		[]message.Message{{Content: "the photo looks wrong"}}, 2) {
 		t.Fatal("image mention should attach")
 	}
-	if shouldAttachImages(rock.ReasonPolicy, nil, 0) {
+	if shouldAttachImages(flag.ReasonPolicy, nil, 0) {
 		t.Fatal("no images on ad should not attach")
 	}
 }

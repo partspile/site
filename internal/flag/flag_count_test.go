@@ -1,4 +1,4 @@
-package rock_test
+package flag_test
 
 import (
 	"encoding/base64"
@@ -15,8 +15,8 @@ import (
 	"github.com/partspile/site/internal/dbinit"
 	"github.com/partspile/site/internal/encryption"
 	"github.com/partspile/site/internal/facet"
+	"github.com/partspile/site/internal/flag"
 	"github.com/partspile/site/internal/logger"
-	"github.com/partspile/site/internal/rock"
 	"github.com/partspile/site/internal/user"
 )
 
@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 	if err := chdirModuleRoot(); err != nil {
 		panic(err)
 	}
-	testURL := testdb.PackageDatabaseURL("rock")
+	testURL := testdb.PackageDatabaseURL("flag")
 	if err := testdb.EnsureDatabase(testURL); err != nil {
 		panic(err)
 	}
@@ -77,7 +77,7 @@ func resetSchema(t *testing.T) {
 	}
 }
 
-func adRockCount(t *testing.T, adID int) int {
+func adFlagCount(t *testing.T, adID int) int {
 	t.Helper()
 	var n int
 	err := db.QueryRow(`SELECT flag_count FROM ads WHERE id = $1`, adID).Scan(&n)
@@ -133,56 +133,56 @@ func createPricedAd(t *testing.T, userID int, title string) int {
 	return adID
 }
 
-func TestAdRockCountSyncOnThrowUnthrow(t *testing.T) {
+func TestAdFlagCountSyncOnThrowLower(t *testing.T) {
 	resetSchema(t)
 
-	owner, err := user.CreateUser("rockowner", "+15559873001", "password1")
+	owner, err := user.CreateUser("flagowner", "+15559873001", "password1")
 	if err != nil {
 		t.Fatalf("owner: %v", err)
 	}
-	buyer, err := user.CreateUser("rockbuyer", "+15559873002", "password1")
+	buyer, err := user.CreateUser("flagbuyer", "+15559873002", "password1")
 	if err != nil {
 		t.Fatalf("buyer: %v", err)
 	}
-	adID := createPricedAd(t, owner.ID, "Rock Count Part")
-	if adRockCount(t, adID) != 0 {
-		t.Fatalf("initial flag_count = %d", adRockCount(t, adID))
+	adID := createPricedAd(t, owner.ID, "Flag Count Part")
+	if adFlagCount(t, adID) != 0 {
+		t.Fatalf("initial flag_count = %d", adFlagCount(t, adID))
 	}
 
 	convID := createConv(t, adID, owner.ID, buyer.ID)
-	if err := rock.ThrowRock(buyer.ID, convID, rock.ReasonPolicy); err != nil {
+	if err := flag.RaiseFlag(buyer.ID, convID, flag.ReasonPolicy); err != nil {
 		t.Fatalf("throw: %v", err)
 	}
-	if got := adRockCount(t, adID); got != 1 {
+	if got := adFlagCount(t, adID); got != 1 {
 		t.Fatalf("after throw flag_count = %d, want 1", got)
 	}
 
-	if err := rock.UnthrowRock(buyer.ID, convID); err != nil {
-		t.Fatalf("unthrow: %v", err)
+	if err := flag.LowerFlag(buyer.ID, convID); err != nil {
+		t.Fatalf("lower: %v", err)
 	}
-	if got := adRockCount(t, adID); got != 0 {
-		t.Fatalf("after unthrow flag_count = %d, want 0", got)
+	if got := adFlagCount(t, adID); got != 0 {
+		t.Fatalf("after lower flag_count = %d, want 0", got)
 	}
 }
 
-func TestOwnerThrowDoesNotChangeAdRockCount(t *testing.T) {
+func TestOwnerThrowDoesNotChangeAdFlagCount(t *testing.T) {
 	resetSchema(t)
 
-	owner, err := user.CreateUser("rockowner2", "+15559873003", "password1")
+	owner, err := user.CreateUser("flagowner2", "+15559873003", "password1")
 	if err != nil {
 		t.Fatalf("owner: %v", err)
 	}
-	buyer, err := user.CreateUser("rockbuyer2", "+15559873004", "password1")
+	buyer, err := user.CreateUser("flagbuyer2", "+15559873004", "password1")
 	if err != nil {
 		t.Fatalf("buyer: %v", err)
 	}
-	adID := createPricedAd(t, owner.ID, "Owner Rock Part")
+	adID := createPricedAd(t, owner.ID, "Owner Flag Part")
 	convID := createConv(t, adID, owner.ID, buyer.ID)
 
-	if err := rock.ThrowRock(owner.ID, convID, rock.ReasonConduct); err != nil {
+	if err := flag.RaiseFlag(owner.ID, convID, flag.ReasonConduct); err != nil {
 		t.Fatalf("owner throw: %v", err)
 	}
-	if got := adRockCount(t, adID); got != 0 {
+	if got := adFlagCount(t, adID); got != 0 {
 		t.Fatalf("owner throw should not bump ad flag_count, got %d", got)
 	}
 }

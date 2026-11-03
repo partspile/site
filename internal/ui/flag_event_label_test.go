@@ -2,8 +2,8 @@ package ui
 
 import "testing"
 
-func TestRockEventLabel(t *testing.T) {
-	base := RockEventData{
+func TestFlagEventLabel(t *testing.T) {
+	base := FlagEventData{
 		OwnerID:      1,
 		InquirerID:   2,
 		OwnerName:    "sfeldma",
@@ -12,14 +12,14 @@ func TestRockEventLabel(t *testing.T) {
 
 	tests := []struct {
 		name string
-		d    RockEventData
+		d    FlagEventData
 		want string
 	}{
 		{
 			name: "inquirer threw, self view",
-			d: RockEventData{
+			d: FlagEventData{
 				ThrowerID: 2, CurrentUserID: 2,
-				Kind:    RockEventThrown,
+				Kind:    FlagEventThrown,
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
@@ -27,9 +27,9 @@ func TestRockEventLabel(t *testing.T) {
 		},
 		{
 			name: "inquirer unthrew, self view",
-			d: RockEventData{
+			d: FlagEventData{
 				ThrowerID: 2, CurrentUserID: 2,
-				Kind:    RockEventUnthrown,
+				Kind:    FlagEventLowern,
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
@@ -37,9 +37,9 @@ func TestRockEventLabel(t *testing.T) {
 		},
 		{
 			name: "inquirer threw, owner view",
-			d: RockEventData{
+			d: FlagEventData{
 				ThrowerID: 2, CurrentUserID: 1,
-				Kind:    RockEventThrown,
+				Kind:    FlagEventThrown,
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
@@ -47,9 +47,9 @@ func TestRockEventLabel(t *testing.T) {
 		},
 		{
 			name: "owner threw, inquirer view",
-			d: RockEventData{
+			d: FlagEventData{
 				ThrowerID: 1, CurrentUserID: 2,
-				Kind:    RockEventThrown,
+				Kind:    FlagEventThrown,
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
@@ -57,9 +57,9 @@ func TestRockEventLabel(t *testing.T) {
 		},
 		{
 			name: "owner threw, self view",
-			d: RockEventData{
+			d: FlagEventData{
 				ThrowerID: 1, CurrentUserID: 1,
-				Kind:    RockEventThrown,
+				Kind:    FlagEventThrown,
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
@@ -67,9 +67,9 @@ func TestRockEventLabel(t *testing.T) {
 		},
 		{
 			name: "owner threw, public view",
-			d: RockEventData{
+			d: FlagEventData{
 				ThrowerID: 1, CurrentUserID: 99,
-				Kind:    RockEventThrown,
+				Kind:    FlagEventThrown,
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
@@ -77,9 +77,9 @@ func TestRockEventLabel(t *testing.T) {
 		},
 		{
 			name: "inquirer threw with policy reason",
-			d: RockEventData{
+			d: FlagEventData{
 				ThrowerID: 2, CurrentUserID: 2,
-				Kind:    RockEventThrown,
+				Kind:    FlagEventThrown,
 				Reason:  "policy",
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
@@ -88,9 +88,9 @@ func TestRockEventLabel(t *testing.T) {
 		},
 		{
 			name: "owner threw with deal reason",
-			d: RockEventData{
+			d: FlagEventData{
 				ThrowerID: 1, CurrentUserID: 1,
-				Kind:    RockEventThrown,
+				Kind:    FlagEventThrown,
 				Reason:  "deal",
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
@@ -101,7 +101,7 @@ func TestRockEventLabel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := rockEventLabel(tt.d)
+			got := flagEventLabel(tt.d)
 			if got != tt.want {
 				t.Fatalf("got %q, want %q", got, tt.want)
 			}

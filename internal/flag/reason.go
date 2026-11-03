@@ -1,4 +1,4 @@
-package rock
+package flag
 
 import "errors"
 

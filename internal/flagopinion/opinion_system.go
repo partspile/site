@@ -1,4 +1,4 @@
-package rockopinion
+package flagopinion
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"github.com/partspile/site/internal/config"
 )
 
-const rockOpinionConvID = "rock-opinion"
+const flagOpinionConvID = "flag-opinion"
 
 func opinionSystemPrompt() string {
 	return fmt.Sprintf(opinionSystemPromptTmpl, config.ServerName)

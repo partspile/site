@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/partspile/site/internal/rock"
+	"github.com/partspile/site/internal/flag"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
 	. "maragu.dev/gomponents/html"
@@ -66,9 +66,9 @@ func MessageItem(d MessageItemData, attrs ...g.Node) g.Node {
 	)
 }
 
-func rockEventLabel(d RockEventData) string {
+func flagEventLabel(d FlagEventData) string {
 	action := "Flag raised"
-	if d.Kind == RockEventUnthrown {
+	if d.Kind == FlagEventLowern {
 		action = "Flag lowered"
 	}
 
@@ -94,17 +94,17 @@ func rockEventLabel(d RockEventData) string {
 	}
 
 	label := fmt.Sprintf("%s %s by %s", action, target, actor)
-	if d.Kind == RockEventThrown && d.Reason != "" {
+	if d.Kind == FlagEventThrown && d.Reason != "" {
 		atAd := d.ThrowerID == d.InquirerID
-		if reasonLabel := rock.ReasonLabelForTarget(d.Reason, atAd); reasonLabel != "" {
+		if reasonLabel := flag.ReasonLabelForTarget(d.Reason, atAd); reasonLabel != "" {
 			label += " · " + reasonLabel
 		}
 	}
 	return label
 }
 
-// RockEventMessage renders a journal entry for a rock throw or unthrow.
-func RockEventMessage(d RockEventData, attrs ...g.Node) g.Node {
+// FlagEventMessage renders a journal entry for a flag throw or lower.
+func FlagEventMessage(d FlagEventData, attrs ...g.Node) g.Node {
 	isSent := d.ThrowerID == d.CurrentUserID
 
 	var bubbleClass string
@@ -117,7 +117,7 @@ func RockEventMessage(d RockEventData, attrs ...g.Node) g.Node {
 		containerClass = "flex justify-start"
 	}
 
-	label := rockEventLabel(d)
+	label := flagEventLabel(d)
 
 	fullTimestamp := d.EventAt.Format("2006-01-02 03:04:05 PM MST")
 
@@ -149,7 +149,7 @@ func RockEventMessage(d RockEventData, attrs ...g.Node) g.Node {
 					Span(g.Text(label)),
 					g.If(d.ShowAssessmentHint,
 						Span(
-							Class("rock-assessment-hint"),
+							Class("flag-assessment-hint"),
 							g.Text("Click "),
 							Img(
 								Src("/images/balance.svg"),
@@ -192,21 +192,21 @@ func CloseEventMessage(d CloseEventData, attrs ...g.Node) g.Node {
 	)
 }
 
-// MessageTimeline renders chat messages with rock and close journal entries
+// MessageTimeline renders chat messages with flag and close journal entries
 // inserted chronologically. Timestamps must already be in the viewer's timezone.
 func MessageTimeline(messages []MessageItemData,
-	rocks []RockEventData, closes []CloseEventData) []g.Node {
+	flags []FlagEventData, closes []CloseEventData) []g.Node {
 	var nodes []g.Node
 	ri, mi, ci := 0, 0, 0
-	for ri < len(rocks) || mi < len(messages) || ci < len(closes) {
+	for ri < len(flags) || mi < len(messages) || ci < len(closes) {
 		var nextAt time.Time
-		pick := -1 // 0=msg, 1=rock, 2=close
+		pick := -1 // 0=msg, 1=flag, 2=close
 		if mi < len(messages) {
 			nextAt = messages[mi].CreatedAt
 			pick = 0
 		}
-		if ri < len(rocks) && (pick < 0 || !rocks[ri].EventAt.After(nextAt)) {
-			nextAt = rocks[ri].EventAt
+		if ri < len(flags) && (pick < 0 || !flags[ri].EventAt.After(nextAt)) {
+			nextAt = flags[ri].EventAt
 			pick = 1
 		}
 		if ci < len(closes) && (pick < 0 || !closes[ci].EventAt.After(nextAt)) {
@@ -217,7 +217,7 @@ func MessageTimeline(messages []MessageItemData,
 			nodes = append(nodes, MessageItem(messages[mi]))
 			mi++
 		case 1:
-			nodes = append(nodes, RockEventMessage(rocks[ri]))
+			nodes = append(nodes, FlagEventMessage(flags[ri]))
 			ri++
 		case 2:
 			nodes = append(nodes, CloseEventMessage(closes[ci]))
@@ -283,10 +283,10 @@ func ConversationMessagesArea(conversationID int, canPost bool,
 }
 
 func messageActionsBannerVisible(d ConversationModalData) bool {
-	if d.CanPost && d.RockThrowerID != nil {
+	if d.CanPost && d.FlagRaiserID != nil {
 		return true
 	}
-	return d.HasThrownRock || d.CanThrowRock
+	return d.HasRaisedFlag || d.CanRaiseFlag
 }
 
 func ConversationMessageActionsBanner(d ConversationModalData,
@@ -305,10 +305,10 @@ func ConversationMessageActionsBanner(d ConversationModalData,
 	}
 	return Div(
 		g.Group(attrs),
-		g.If(d.CanPost && d.RockThrowerID != nil,
-			RockOpinionLink(d.ConversationID),
+		g.If(d.CanPost && d.FlagRaiserID != nil,
+			FlagOpinionLink(d.ConversationID),
 		),
-		RockThrowLink(d),
+		FlagThrowLink(d),
 	)
 }
 
@@ -442,9 +442,9 @@ func ConversationModalSwapOOB(d ConversationModalData) g.Node {
 		modalID = d.TargetModalID
 	}
 
-	var rockUserID int
-	if d.RockThrowerID != nil {
-		rockUserID = *d.RockThrowerID
+	var flagUserID int
+	if d.FlagRaiserID != nil {
+		flagUserID = *d.FlagRaiserID
 	}
 
 	// Return just the modal div (not the backdrop) with OOB swap
@@ -463,12 +463,12 @@ func ConversationModalSwapOOB(d ConversationModalData) g.Node {
 					Div(
 						Class("text-sm text-zinc-600 dark:text-zinc-400"),
 						Span(Class("font-semibold"), g.Text("From: ")),
-						UserRockIcons(d.InquirerID, d.InquirerRockCount),
+						UserFlagIcons(d.InquirerID, d.InquirerFlagCount),
 						conversationParticipantName(d.InquirerID, d.InquirerName,
 							d.InquirerDeleted),
 						g.Text(", "),
 						Span(Class("font-semibold"), g.Text("To: ")),
-						UserRockIcons(d.OwnerID, d.OwnerRockCount),
+						UserFlagIcons(d.OwnerID, d.OwnerFlagCount),
 						conversationParticipantName(d.OwnerID, d.OwnerName,
 							d.OwnerDeleted),
 						g.Text(" (ad owner)"),
@@ -479,26 +479,26 @@ func ConversationModalSwapOOB(d ConversationModalData) g.Node {
 							),
 						),
 					),
-					g.If(!d.CanPost && d.RockThrowerID != nil,
+					g.If(!d.CanPost && d.FlagRaiserID != nil,
 						Div(
 							Class("text-xs text-zinc-500 dark:text-zinc-400 mt-1"),
 							g.Text("Flag raised by: "),
-							g.If(rockUserID == d.CurrentUserID,
+							g.If(flagUserID == d.CurrentUserID,
 								Span(Class("text-blue-600 dark:text-blue-400 font-medium"),
-									g.If(rockUserID == d.OwnerID,
+									g.If(flagUserID == d.OwnerID,
 										conversationParticipantName(d.OwnerID,
 											d.OwnerName, d.OwnerDeleted)),
-									g.If(rockUserID == d.InquirerID,
+									g.If(flagUserID == d.InquirerID,
 										conversationParticipantName(d.InquirerID,
 											d.InquirerName, d.InquirerDeleted)),
 								),
 							),
-							g.If(rockUserID != d.CurrentUserID,
+							g.If(flagUserID != d.CurrentUserID,
 								Span(Class("text-zinc-700 dark:text-zinc-300 font-medium"),
-									g.If(rockUserID == d.OwnerID,
+									g.If(flagUserID == d.OwnerID,
 										conversationParticipantName(d.OwnerID,
 											d.OwnerName, d.OwnerDeleted)),
-									g.If(rockUserID == d.InquirerID,
+									g.If(flagUserID == d.InquirerID,
 										conversationParticipantName(d.InquirerID,
 											d.InquirerName, d.InquirerDeleted)),
 								),
@@ -532,12 +532,12 @@ func ConversationModalSwapOOB(d ConversationModalData) g.Node {
 	)
 }
 
-func ConversationModalWithRock(d ConversationModalData) g.Node {
+func ConversationModalWithFlag(d ConversationModalData) g.Node {
 	modalName := fmt.Sprintf("conversation-%d", d.ConversationID)
 
-	var rockUserID int
-	if d.RockThrowerID != nil {
-		rockUserID = *d.RockThrowerID
+	var flagUserID int
+	if d.FlagRaiserID != nil {
+		flagUserID = *d.FlagRaiserID
 	}
 
 	return g.Group([]g.Node{
@@ -556,12 +556,12 @@ func ConversationModalWithRock(d ConversationModalData) g.Node {
 						Div(
 							Class("text-sm text-zinc-600 dark:text-zinc-400"),
 							Span(Class("font-semibold"), g.Text("From: ")),
-							UserRockIcons(d.InquirerID, d.InquirerRockCount),
+							UserFlagIcons(d.InquirerID, d.InquirerFlagCount),
 							conversationParticipantName(d.InquirerID, d.InquirerName,
 								d.InquirerDeleted),
 							g.Text(", "),
 							Span(Class("font-semibold"), g.Text("To: ")),
-							UserRockIcons(d.OwnerID, d.OwnerRockCount),
+							UserFlagIcons(d.OwnerID, d.OwnerFlagCount),
 							conversationParticipantName(d.OwnerID, d.OwnerName,
 								d.OwnerDeleted),
 							g.Text(" (ad owner)"),
@@ -572,26 +572,26 @@ func ConversationModalWithRock(d ConversationModalData) g.Node {
 								),
 							),
 						),
-						g.If(!d.CanPost && d.RockThrowerID != nil,
+						g.If(!d.CanPost && d.FlagRaiserID != nil,
 							Div(
 								Class("text-xs text-zinc-500 dark:text-zinc-400 mt-1"),
 								g.Text("Flag raised by: "),
-								g.If(rockUserID == d.CurrentUserID,
+								g.If(flagUserID == d.CurrentUserID,
 									Span(Class("text-blue-600 dark:text-blue-400 font-medium"),
-										g.If(rockUserID == d.OwnerID,
+										g.If(flagUserID == d.OwnerID,
 											conversationParticipantName(d.OwnerID,
 												d.OwnerName, d.OwnerDeleted)),
-										g.If(rockUserID == d.InquirerID,
+										g.If(flagUserID == d.InquirerID,
 											conversationParticipantName(d.InquirerID,
 												d.InquirerName, d.InquirerDeleted)),
 									),
 								),
-								g.If(rockUserID != d.CurrentUserID,
+								g.If(flagUserID != d.CurrentUserID,
 									Span(Class("text-zinc-700 dark:text-zinc-300 font-medium"),
-										g.If(rockUserID == d.OwnerID,
+										g.If(flagUserID == d.OwnerID,
 											conversationParticipantName(d.OwnerID,
 												d.OwnerName, d.OwnerDeleted)),
-										g.If(rockUserID == d.InquirerID,
+										g.If(flagUserID == d.InquirerID,
 											conversationParticipantName(d.InquirerID,
 												d.InquirerName, d.InquirerDeleted)),
 									),
@@ -627,14 +627,14 @@ func ConversationModalWithRock(d ConversationModalData) g.Node {
 }
 
 func conversationPeerName(userID int, name string, deleted bool,
-	rockCount int) g.Node {
+	flagCount int) g.Node {
 	if deleted {
 		return Span(
 			Class("text-zinc-500 dark:text-zinc-400"),
 			g.Text(name),
 		)
 	}
-	return UserNameLink(userID, name, StaticRockIcons(rockCount))
+	return UserNameLink(userID, name, StaticFlagIcons(flagCount))
 }
 
 func conversationSubjectLine(adID int, adTitle string) g.Node {
@@ -695,7 +695,7 @@ func ConversationListItem(d ConversationListItemData) g.Node {
 							Class("bg-green-500 rounded-full w-2 h-2 flex-shrink-0"),
 						),
 					),
-					g.If(d.RockCount > 0, StaticRockIcons(d.RockCount)),
+					g.If(d.FlagCount > 0, StaticFlagIcons(d.FlagCount)),
 					Span(
 						Class("text-lg font-semibold text-zinc-900 dark:text-zinc-200"),
 						g.Text(d.AdTitle),
@@ -714,14 +714,14 @@ func ConversationListItem(d ConversationListItemData) g.Node {
 						g.Group([]g.Node{
 							g.Text("To: "),
 							conversationPeerName(d.OwnerID, d.OtherUserName,
-								d.OtherUserDeleted, d.OtherUserRockCount),
+								d.OtherUserDeleted, d.OtherUserFlagCount),
 						}),
 					),
 					g.If(d.OwnerID == d.CurrentUserID,
 						g.Group([]g.Node{
 							g.Text("From: "),
 							conversationPeerName(d.InquirerID, d.OtherUserName,
-								d.OtherUserDeleted, d.OtherUserRockCount),
+								d.OtherUserDeleted, d.OtherUserFlagCount),
 						}),
 					),
 				),

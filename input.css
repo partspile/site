@@ -43,29 +43,29 @@
     animation: nav-loading-sweep 1.2s ease-in-out infinite;
   }
 
-  .rock-opinion-link.htmx-request,
-  .rock-throw-review-btn.htmx-request {
+  .flag-opinion-link.htmx-request,
+  .flag-raise-review-btn.htmx-request {
     @apply pointer-events-none;
   }
 
-  .rock-opinion-link.htmx-request img,
-  .rock-throw-review-btn.htmx-request img {
+  .flag-opinion-link.htmx-request img,
+  .flag-raise-review-btn.htmx-request img {
     @apply animate-spin;
   }
 
-  .rock-assessment-hint {
+  .flag-assessment-hint {
     @apply hidden items-center gap-1 text-xs opacity-90;
   }
 
-  body:has(.rock-opinion-link) .rock-assessment-hint {
+  body:has(.flag-opinion-link) .flag-assessment-hint {
     @apply inline-flex;
   }
 
-  .rock-throw-link {
+  .flag-raise-link {
     @apply inline-flex flex-shrink-0 cursor-pointer no-underline;
   }
 
-  .rock-plunger {
+  .flag-plunger {
     @apply relative inline-flex items-center justify-center w-[4.5rem] h-[4.5rem] p-1 rounded-full flex-shrink-0;
     background: linear-gradient(
       180deg,
@@ -78,7 +78,7 @@
       inset 0 1px 0 rgb(255 255 255 / 0.08);
   }
 
-  .rock-plunger__face {
+  .flag-plunger__face {
     @apply flex items-center justify-center w-full h-full rounded-full text-center text-xs leading-tight font-bold text-white select-none;
     padding: 0.375rem;
     background: radial-gradient(
@@ -97,7 +97,7 @@
       background 120ms ease;
   }
 
-  .rock-throw-link:not([aria-pressed="true"]):hover .rock-plunger__face {
+  .flag-raise-link:not([aria-pressed="true"]):hover .flag-plunger__face {
     background: radial-gradient(
       circle at 50% 30%,
       rgb(254 133 133) 0%,
@@ -106,9 +106,9 @@
     );
   }
 
-  .rock-throw-link:not([aria-pressed="true"]):active .rock-plunger__face,
-  .rock-plunger--thrown .rock-plunger__face,
-  .rock-throw-link[aria-pressed="true"] .rock-plunger__face {
+  .flag-raise-link:not([aria-pressed="true"]):active .flag-plunger__face,
+  .flag-plunger--raised .flag-plunger__face,
+  .flag-raise-link[aria-pressed="true"] .flag-plunger__face {
     background: radial-gradient(
       circle at 50% 40%,
       rgb(220 38 38) 0%,
@@ -146,7 +146,7 @@
   }
 
   @media (prefers-color-scheme: dark) {
-    .rock-plunger {
+    .flag-plunger {
       background: linear-gradient(
         180deg,
         rgb(63 63 70) 0%,

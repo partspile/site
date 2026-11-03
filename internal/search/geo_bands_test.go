@@ -23,6 +23,6 @@ func TestSearchGeoBandsUseColumns(t *testing.T) {
 		t.Fatal("geo bands should extend base where")
 	}
 	if got := len(pa.args); got != 6 {
-		t.Fatalf("expected category+rock+bbox args (6), got %d", got)
+		t.Fatalf("expected category+flag+bbox args (6), got %d", got)
 	}
 }

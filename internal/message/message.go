@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/partspile/site/internal/db"
 	"github.com/partspile/site/internal/entrylog"
-	"github.com/partspile/site/internal/rock"
+	"github.com/partspile/site/internal/flag"
 	"github.com/partspile/site/internal/user"
 )
 
@@ -23,8 +23,8 @@ type Conversation struct {
 	UpdatedAt         time.Time  `db:"updated_at"`
 	OwnerHasUnread    bool       `db:"owner_has_unread"`
 	InquirerHasUnread bool       `db:"inquirer_has_unread"`
-	RockThrowerID     *int       `db:"flag_raiser_id"`
-	RockThrownAt      *time.Time `db:"flag_raised_at"`
+	FlagRaiserID      *int       `db:"flag_raiser_id"`
+	FlagRaisedAt      *time.Time `db:"flag_raised_at"`
 	Journal           string     `db:"journal"`
 }
 
@@ -47,9 +47,9 @@ type ConversationWithLastMessage struct {
 	LastMessageAt      *time.Time `db:"last_message_at"`
 	OtherUserID        int        `db:"other_user_id"`
 	HasUnread          bool       `db:"has_unread"`
-	RockCount          int        `db:"flag_count"`
+	FlagCount          int        `db:"flag_count"`
 	OtherUserName      string
-	OtherUserRockCount int
+	OtherUserFlagCount int
 	OtherUserDeleted   bool
 }
 
@@ -62,8 +62,8 @@ func applyJournalDerivedTimes(conv *Conversation) {
 		conv.CreatedAt = at
 		return
 	}
-	if conv.RockThrownAt != nil {
-		conv.CreatedAt = *conv.RockThrownAt
+	if conv.FlagRaisedAt != nil {
+		conv.CreatedAt = *conv.FlagRaisedAt
 		return
 	}
 	conv.CreatedAt = conv.UpdatedAt
@@ -73,8 +73,8 @@ func scanConversationRow(scanner interface {
 	Scan(dest ...any) error
 }) (Conversation, error) {
 	var conv Conversation
-	var rockThrowerID sql.NullInt64
-	var rockThrownAt sql.NullTime
+	var flagRaiserID sql.NullInt64
+	var flagRaisedAt sql.NullTime
 	err := scanner.Scan(
 		&conv.ID,
 		&conv.AdID,
@@ -82,20 +82,20 @@ func scanConversationRow(scanner interface {
 		&conv.InquirerID,
 		&conv.OwnerHasUnread,
 		&conv.InquirerHasUnread,
-		&rockThrowerID,
-		&rockThrownAt,
+		&flagRaiserID,
+		&flagRaisedAt,
 		&conv.Journal,
 		&conv.UpdatedAt,
 	)
 	if err != nil {
 		return Conversation{}, err
 	}
-	if rockThrowerID.Valid {
-		id := int(rockThrowerID.Int64)
-		conv.RockThrowerID = &id
+	if flagRaiserID.Valid {
+		id := int(flagRaiserID.Int64)
+		conv.FlagRaiserID = &id
 	}
-	if rockThrownAt.Valid {
-		conv.RockThrownAt = &rockThrownAt.Time
+	if flagRaisedAt.Valid {
+		conv.FlagRaisedAt = &flagRaisedAt.Time
 	}
 	plain, err := openJournal(conv.ID, conv.Journal)
 	if err != nil {
@@ -211,22 +211,22 @@ func GetConversationByID(conversationID int) (Conversation, error) {
 	return conv, nil
 }
 
-// HasRock reports whether a conversation currently has a rock thrown
+// HasFlag reports whether a conversation currently has a flag thrown
 // (assessment may be public; the message thread is not).
 func IsPublic(conversationID int) (bool, error) {
-	var rockThrowerID sql.NullInt64
+	var flagRaiserID sql.NullInt64
 	err := db.QueryRow(`
 		SELECT flag_raiser_id
 		FROM conversations
 		WHERE id = $1
-	`, conversationID).Scan(&rockThrowerID)
+	`, conversationID).Scan(&flagRaiserID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, ErrConversationNotFound
 		}
 		return false, fmt.Errorf("failed to check if conversation is public: %w", err)
 	}
-	return rockThrowerID.Valid, nil
+	return flagRaiserID.Valid, nil
 }
 
 // CanUserPost checks if a user can post to a conversation (must be participant)
@@ -243,7 +243,7 @@ func CanUserPost(conversationID, userID int) (bool, error) {
 	return count > 0, nil
 }
 
-// MessagingAllowed reports whether new messages/rocks are allowed on this thread.
+// MessagingAllowed reports whether new messages/flags are allowed on this thread.
 func MessagingAllowed(conv Conversation) bool {
 	if !user.Exists(conv.OwnerID) || !user.Exists(conv.InquirerID) {
 		return false
@@ -332,8 +332,8 @@ func GetUserConversations(userID int,
 	var conversations []ConversationWithLastMessage
 	for rows.Next() {
 		var conv ConversationWithLastMessage
-		var rockThrowerID sql.NullInt64
-		var rockThrownAt sql.NullTime
+		var flagRaiserID sql.NullInt64
+		var flagRaisedAt sql.NullTime
 
 		err := rows.Scan(
 			&conv.ID,
@@ -342,12 +342,12 @@ func GetUserConversations(userID int,
 			&conv.InquirerID,
 			&conv.OwnerHasUnread,
 			&conv.InquirerHasUnread,
-			&rockThrowerID,
-			&rockThrownAt,
+			&flagRaiserID,
+			&flagRaisedAt,
 			&conv.Journal,
 			&conv.UpdatedAt,
 			&conv.AdTitle,
-			&conv.RockCount,
+			&conv.FlagCount,
 			&conv.OtherUserID,
 			&conv.HasUnread,
 		)
@@ -355,12 +355,12 @@ func GetUserConversations(userID int,
 			return nil, fmt.Errorf("failed to scan conversation: %w", err)
 		}
 
-		if rockThrowerID.Valid {
-			id := int(rockThrowerID.Int64)
-			conv.RockThrowerID = &id
+		if flagRaiserID.Valid {
+			id := int(flagRaiserID.Int64)
+			conv.FlagRaiserID = &id
 		}
-		if rockThrownAt.Valid {
-			conv.RockThrownAt = &rockThrownAt.Time
+		if flagRaisedAt.Valid {
+			conv.FlagRaisedAt = &flagRaisedAt.Time
 		}
 		plain, err := openJournal(conv.ID, conv.Journal)
 		if err != nil {
@@ -408,7 +408,7 @@ func enrichConversationListItems(conversations []ConversationWithLastMessage) {
 
 	names := make(map[int]string, len(otherIDs))
 	deleted := make(map[int]bool, len(otherIDs))
-	rockCounts := make(map[int]int, len(otherIDs))
+	flagCounts := make(map[int]int, len(otherIDs))
 	for id := range otherIDs {
 		if u, err := user.GetByIDIncludingDeleted(id); err == nil {
 			names[id] = u.Name
@@ -417,9 +417,9 @@ func enrichConversationListItems(conversations []ConversationWithLastMessage) {
 			names[id] = "Unknown"
 			deleted[id] = true
 		}
-		count, err := rock.GetRockCountForUser(id)
+		count, err := flag.GetFlagCountForUser(id)
 		if err == nil {
-			rockCounts[id] = count
+			flagCounts[id] = count
 		}
 	}
 
@@ -427,7 +427,7 @@ func enrichConversationListItems(conversations []ConversationWithLastMessage) {
 		id := conversations[i].OtherUserID
 		conversations[i].OtherUserName = names[id]
 		conversations[i].OtherUserDeleted = deleted[id]
-		conversations[i].OtherUserRockCount = rockCounts[id]
+		conversations[i].OtherUserFlagCount = flagCounts[id]
 	}
 }
 

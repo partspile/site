@@ -25,7 +25,7 @@ var faqSections = map[string]faqSectionData{
 			return []g.Node{
 				faqParagraph(g.Textf(
 					"When you join %s, you receive %d flags.",
-					config.ServerName, config.MaxOutstandingRocks,
+					config.ServerName, config.MaxOutstandingFlags,
 				)),
 				faqParagraph(g.Text(
 					"Raise a flag on an ad that violates our policies " +
@@ -40,7 +40,7 @@ var faqSections = map[string]faqSectionData{
 						"dispute assessment first. Once the issue is "+
 						"resolved, you can lower the flag and get it "+
 						"back. Flags are limited — use them wisely.",
-					config.MaxRockCount,
+					config.MaxFlagCount,
 				)),
 			}
 		},

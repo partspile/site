@@ -157,7 +157,7 @@ func adCardFrom(a ad.Ad, viewerUserID int, tz *time.Location) ui.AdCard {
 		priceDisplay = currency.Format(price, priceCurrency)
 	}
 	return ui.AdCardFromFields(
-		a.ID, a.ImageCount, a.RockCount,
+		a.ID, a.ImageCount, a.FlagCount,
 		priceDisplay, a.Title,
 		ad.AdLocationDisplay(a, viewerUserID), adFacetLabel(a),
 		hasPrice, a.CreatedAt.In(tz),

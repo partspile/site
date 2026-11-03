@@ -21,7 +21,7 @@ const (
 	fileUserAdImageClicks = "user_ad_image_clicks.json"
 	fileConversations     = "conversations.json"
 	fileMessages          = "messages.json"
-	fileRockOpinions      = "rock_opinions.json"
+	fileFlagOpinions      = "flag_opinions.json"
 	dirImages             = "images"
 	dirUserAccounts       = "user_accounts"
 )
@@ -41,7 +41,7 @@ type Counts struct {
 	UserAdImageClicks int `json:"user_ad_image_clicks"`
 	Conversations     int `json:"conversations"`
 	Messages          int `json:"messages"`
-	RockOpinions      int `json:"rock_opinions"`
+	FlagOpinions      int `json:"flag_opinions"`
 	Images            int `json:"images"`
 	AccountPictures   int `json:"account_pictures"`
 	Embeddings        int `json:"embeddings"`
@@ -274,8 +274,8 @@ type ConversationRow struct {
 	InquirerHash      string     `json:"inquirer_hash"`
 	OwnerHasUnread    int        `json:"owner_has_unread" db:"owner_has_unread"`
 	InquirerHasUnread int        `json:"inquirer_has_unread" db:"inquirer_has_unread"`
-	RockThrowerHash   *string    `json:"rock_thrower_hash,omitempty"`
-	RockThrownAt      *time.Time `json:"rock_thrown_at,omitempty"`
+	FlagRaiserHash    *string    `json:"flag_raiser_hash,omitempty"`
+	FlagRaisedAt      *time.Time `json:"flag_raised_at,omitempty"`
 }
 
 type conversationDBRow struct {
@@ -285,8 +285,8 @@ type conversationDBRow struct {
 	InquirerID        int        `db:"inquirer_id"`
 	OwnerHasUnread    int        `db:"owner_has_unread"`
 	InquirerHasUnread int        `db:"inquirer_has_unread"`
-	RockThrowerID     *int       `db:"flag_raiser_id"`
-	RockThrownAt      *time.Time `db:"flag_raised_at"`
+	FlagRaiserID      *int       `db:"flag_raiser_id"`
+	FlagRaisedAt      *time.Time `db:"flag_raised_at"`
 	Journal           string     `db:"journal"`
 }
 
@@ -305,7 +305,7 @@ type messageDBRow struct {
 	CreatedAt      time.Time `db:"created_at"`
 }
 
-type RockOpinionRow struct {
+type FlagOpinionRow struct {
 	ConversationRef  int       `json:"conversation_ref"`
 	GeneratedAt      time.Time `json:"generated_at" db:"generated_at"`
 	Summary          string    `json:"summary" db:"summary"`
@@ -315,7 +315,7 @@ type RockOpinionRow struct {
 	Reasoning        string    `json:"reasoning" db:"reasoning"`
 }
 
-type rockOpinionDBRow struct {
+type flagOpinionDBRow struct {
 	ConversationID   int       `db:"conversation_id"`
 	GeneratedAt      time.Time `db:"generated_at"`
 	Summary          string    `db:"summary"`
