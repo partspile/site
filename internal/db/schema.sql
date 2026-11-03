@@ -89,12 +89,12 @@ CREATE TABLE ads (
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
     tags TEXT NOT NULL DEFAULT '[]', -- JSON array of {label, value}
-    rock_count INTEGER NOT NULL DEFAULT 0,
+    flag_count INTEGER NOT NULL DEFAULT 0,
     embedding vector(768),
     vector_metadata JSONB
 );
 CREATE INDEX idx_ads_category ON ads(category_id);
-CREATE INDEX idx_ads_rock_count ON ads(rock_count);
+CREATE INDEX idx_ads_flag_count ON ads(flag_count);
 CREATE INDEX idx_ads_lat_lon ON ads (latitude, longitude)
     WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
 CREATE INDEX idx_ads_embedding ON ads USING hnsw (embedding vector_cosine_ops);
@@ -154,8 +154,8 @@ CREATE TABLE conversations (
     inquirer_id INTEGER NOT NULL REFERENCES users(id),
     owner_has_unread INTEGER NOT NULL DEFAULT 0,
     inquirer_has_unread INTEGER NOT NULL DEFAULT 0,
-    rock_thrower_id INTEGER REFERENCES users(id), -- NULL = no rock (private), NOT NULL = public, owner_id = bound to inquirer, inquirer_id = bound to ad
-    rock_thrown_at TIMESTAMP, -- Only valid if rock_thrower_id IS NOT NULL
+    flag_raiser_id INTEGER REFERENCES users(id), -- NULL = no flag (private), NOT NULL = public, owner_id = bound to inquirer, inquirer_id = bound to ad
+    flag_raised_at TIMESTAMP, -- Only valid if flag_raiser_id IS NOT NULL
     journal TEXT NOT NULL DEFAULT '',
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(ad_id, inquirer_id)
@@ -163,11 +163,11 @@ CREATE TABLE conversations (
 CREATE INDEX idx_conversations_owner ON conversations(owner_id);
 CREATE INDEX idx_conversations_inquirer ON conversations(inquirer_id);
 CREATE INDEX idx_conversations_ad ON conversations(ad_id);
-CREATE INDEX idx_conversations_rock_thrower ON conversations(rock_thrower_id);
+CREATE INDEX idx_conversations_flag_raiser ON conversations(flag_raiser_id);
 CREATE INDEX idx_conversations_updated_at ON conversations(updated_at);
 
--- Cached LLM arbitrator opinions for public rock conversations
-CREATE TABLE rock_opinions (
+-- Cached LLM arbitrator opinions for public flag conversations
+CREATE TABLE flag_opinions (
     conversation_id INTEGER PRIMARY KEY REFERENCES conversations(id),
     generated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     summary TEXT NOT NULL,

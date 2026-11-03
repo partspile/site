@@ -627,7 +627,7 @@ func DeleteUser(userID int) error {
 		_ = rock.UnthrowActiveForAd(adID)
 		_ = vector.DeleteAdEmbedding(adID)
 		_, _ = db.Exec(`
-			DELETE FROM rock_opinions
+			DELETE FROM flag_opinions
 			WHERE conversation_id IN (
 				SELECT id FROM conversations WHERE ad_id = $1
 			)

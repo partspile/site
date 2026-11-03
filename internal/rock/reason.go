@@ -8,7 +8,7 @@ const (
 	ReasonDeal    = "deal"
 )
 
-var ErrInvalidReason = errors.New("invalid rock reason")
+var ErrInvalidReason = errors.New("invalid flag reason")
 
 type ReasonInfo struct {
 	Code     string

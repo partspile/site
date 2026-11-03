@@ -79,7 +79,7 @@ func userProfileStats(d UserProfileData, memberSinceClass,
 	if d.UserRockCount > 0 {
 		nodes = append(nodes,
 			Div(Class(statClass),
-				g.Text(fmt.Sprintf("%d rock(s)", d.UserRockCount)),
+				g.Text(flagCountLabel(d.UserRockCount)),
 			),
 		)
 	}
@@ -985,10 +985,10 @@ func AboutPage() []g.Node {
 				P(
 					Class("text-lg inline-flex items-center flex-wrap"),
 					g.Text("And the fun part? You get to "),
-					faqLink("/faq/rocks", "throw rocks"),
+					faqLink("/faq/flags", "raise flags"),
 					Img(
 						Class("w-9 h-9 ml-1"),
-						Src("/images/rock.svg"),
+						Src("/images/flag.svg"),
 						Alt(""),
 					),
 				),

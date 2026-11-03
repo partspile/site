@@ -11,8 +11,8 @@ import (
 
 const (
 	Message        = "message"
-	RockThrown     = "rock thrown"
-	RockUnthrown   = "rock unthrown"
+	RockThrown     = "flag raised"
+	RockUnthrown   = "flag lowered"
 	AccountDeleted = "account deleted"
 	AdDeleted      = "ad deleted"
 	AdPaused       = "ad paused"

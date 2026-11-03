@@ -58,8 +58,8 @@ func TestAppendOldestFirst(t *testing.T) {
 	if !strings.Contains(j, "message  sender:12") {
 		t.Errorf("missing message meta: %q", j)
 	}
-	if !strings.Contains(j, "rock thrown  user:12") {
-		t.Errorf("missing rock thrown: %q", j)
+	if !strings.Contains(j, "flag raised  user:12") {
+		t.Errorf("missing flag raised: %q", j)
 	}
 }
 

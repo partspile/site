@@ -128,10 +128,10 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 	rockTargetH := int(float64(titleH)*iconToText + 0.5)
 	iconTargetH := int(float64(catH)*iconToText + 0.5)
 
-	rockPath := filepath.Join(filepath.Dir(opts.ImagesRoot), "rock.svg")
+	rockPath := filepath.Join(filepath.Dir(opts.ImagesRoot), "flag.svg")
 	rock, err := renderSVGScaledToInkHeight(rockPath, rockTargetH, nil)
 	if err != nil {
-		return nil, fmt.Errorf("render rock icon: %w", err)
+		return nil, fmt.Errorf("render flag icon: %w", err)
 	}
 	rockSize := rock.Bounds().Dy()
 	rockW := rock.Bounds().Dx()

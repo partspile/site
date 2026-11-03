@@ -298,7 +298,7 @@ func runRestore(fromDir string, store imagestore.Store, backupKey []byte,
 			INSERT INTO conversations (
 				ad_id, owner_id, inquirer_id,
 				owner_has_unread, inquirer_has_unread,
-				rock_thrower_id, rock_thrown_at, journal, updated_at
+				flag_raiser_id, flag_raised_at, journal, updated_at
 			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			RETURNING id`,
 			adID, ownerID, inquirerID,
@@ -325,6 +325,10 @@ func runRestore(fromDir string, store imagestore.Store, backupKey []byte,
 		convRefToID[c.Ref] = newID
 	}
 
+	if err := syncFlagCounts(); err != nil {
+		return err
+	}
+
 	for _, o := range opinions {
 		convID, ok := convRefToID[o.ConversationRef]
 		if !ok {
@@ -333,7 +337,7 @@ func runRestore(fromDir string, store imagestore.Store, backupKey []byte,
 			)
 		}
 		_, err := db.Exec(`
-			INSERT INTO rock_opinions (
+			INSERT INTO flag_opinions (
 				conversation_id, generated_at, summary, assessment,
 				assessment_detail, resolution, reasoning
 			) VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -406,6 +410,23 @@ func runRestore(fromDir string, store imagestore.Store, backupKey []byte,
 	logger.Info("Restore complete",
 		"dir", fromDir, "ads", len(ads), "images", uploaded,
 		"account_pictures", uploadedAccounts)
+	return nil
+}
+
+func syncFlagCounts() error {
+	_, err := db.Exec(`
+		UPDATE ads
+		SET flag_count = (
+			SELECT COUNT(*)::int
+			FROM conversations c
+			WHERE c.ad_id = ads.id
+			  AND c.flag_raiser_id IS NOT NULL
+			  AND c.flag_raiser_id = c.inquirer_id
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("sync flag counts: %w", err)
+	}
 	return nil
 }
 

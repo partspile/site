@@ -61,7 +61,7 @@ func TestRenderRockEventAppendOOB(t *testing.T) {
 	if !strings.Contains(html, `hx-swap-oob="beforeend:#conversation-5-messages-list"`) {
 		t.Fatalf("missing oob attr: %s", html)
 	}
-	if !strings.Contains(html, "Rock thrown at ad by bob") {
+	if !strings.Contains(html, "Flag raised at ad by bob") {
 		t.Fatalf("missing rock event label: %s", html)
 	}
 	if !strings.Contains(html, "for dispute assessment") {

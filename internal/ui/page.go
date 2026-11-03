@@ -251,7 +251,7 @@ func navigation(userID int, userName, currentPath string,
 			Href("/"),
 			Class("flex items-center gap-2 shrink-0 whitespace-nowrap"),
 			Img(
-				Src("/images/rock.svg"),
+				Src("/images/flag.svg"),
 				Alt(""),
 				Class("w-9 h-9 flex-shrink-0"),
 			),
@@ -299,7 +299,7 @@ func Page(userID int, hasUnread bool, userName, title, currentPath,
 		Link(
 			Rel("icon"),
 			Type("image/svg+xml"),
-			Href("/images/rock.svg"),
+			Href("/images/flag.svg"),
 		),
 	)
 

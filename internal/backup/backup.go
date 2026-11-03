@@ -78,7 +78,7 @@ func runBackup(outDir string, store imagestore.Store, dryRun, verbose bool) erro
 		if err := db.Select(&convDB, fmt.Sprintf(`
 			SELECT id, ad_id, owner_id, inquirer_id,
 			       owner_has_unread, inquirer_has_unread,
-			       rock_thrower_id, rock_thrown_at, journal
+			       flag_raiser_id, flag_raised_at, journal
 			FROM conversations WHERE ad_id IN (%s)
 			ORDER BY id`, clause), args...); err != nil {
 			return fmt.Errorf("query conversations: %w", err)
@@ -121,8 +121,8 @@ func runBackup(outDir string, store imagestore.Store, dryRun, verbose bool) erro
 		if err := db.Select(&opinionDB, fmt.Sprintf(`
 			SELECT conversation_id, generated_at, summary, assessment,
 			       assessment_detail, resolution, reasoning
-			FROM rock_opinions WHERE conversation_id IN (%s)`, clause), args...); err != nil {
-			return fmt.Errorf("query rock_opinions: %w", err)
+			FROM flag_opinions WHERE conversation_id IN (%s)`, clause), args...); err != nil {
+			return fmt.Errorf("query flag_opinions: %w", err)
 		}
 	}
 

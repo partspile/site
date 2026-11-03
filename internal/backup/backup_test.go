@@ -230,13 +230,13 @@ func TestBackupRestoreCrossKey(t *testing.T) {
 
 	var restoredRockCount int
 	err = db.QueryRow(
-		`SELECT rock_count FROM ads WHERE id = $1`, restoredID,
+		`SELECT flag_count FROM ads WHERE id = $1`, restoredID,
 	).Scan(&restoredRockCount)
 	if err != nil {
-		t.Fatalf("query restored rock_count: %v", err)
+		t.Fatalf("query restored flag_count: %v", err)
 	}
 	if restoredRockCount != 0 {
-		t.Fatalf("rock_count = %d, want 0", restoredRockCount)
+		t.Fatalf("flag_count = %d, want 0", restoredRockCount)
 	}
 
 	restoredAlice, err := user.GetByName("alice")

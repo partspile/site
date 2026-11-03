@@ -83,7 +83,7 @@ func AdFlyerPage(d AdFlyerData) g.Node {
 			Link(
 				Rel("icon"),
 				Type("image/svg+xml"),
-				Href("/images/rock.svg"),
+				Href("/images/flag.svg"),
 			),
 			Link(Rel("stylesheet"), Href("/css/output.css")),
 			g.El("style", g.Raw(flyerPrintCSS)),

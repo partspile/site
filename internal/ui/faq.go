@@ -12,34 +12,34 @@ type faqSectionData struct {
 }
 
 var faqOrder = []string{
-	"rocks",
+	"flags",
 	"phone-number",
 	"account-recovery",
 	"sms-notifications",
 }
 
 var faqSections = map[string]faqSectionData{
-	"rocks": {
-		title: "What are rocks for?",
+	"flags": {
+		title: "What are flags for?",
 		body: func() []g.Node {
 			return []g.Node{
 				faqParagraph(g.Textf(
-					"When you join %s, you receive %d rocks.",
+					"When you join %s, you receive %d flags.",
 					config.ServerName, config.MaxOutstandingRocks,
 				)),
 				faqParagraph(g.Text(
-					"Throw a rock on an ad that violates our policies " +
+					"Raise a flag on an ad that violates our policies " +
 						"or has problems. That starts a conversation " +
 						"with the ad owner so you can work together to " +
 						"resolve the issue.",
 				)),
 				faqParagraph(g.Textf(
-					"Ads with more than %d rocks are excluded from "+
+					"Ads with more than %d flags are excluded from "+
 						"search listings. Choose a reason before you "+
-						"throw; you can review a provisional dispute "+
-						"assessment first. Once the issue is resolved, "+
-						"you (the thrower) can Unthrow and get your "+
-						"rock back. Rocks are limited — use them wisely.",
+						"raise one; you can review a provisional "+
+						"dispute assessment first. Once the issue is "+
+						"resolved, you can lower the flag and get it "+
+						"back. Flags are limited — use them wisely.",
 					config.MaxRockCount,
 				)),
 			}

@@ -11,8 +11,8 @@ func welcomeRocks(count int) g.Node {
 	for range count {
 		rocks = append(rocks,
 			Img(
-				Src("/images/rock.svg"),
-				Alt("Rock"),
+				Src("/images/flag.svg"),
+				Alt("Flag"),
 				Class("w-full max-w-[80px]"),
 			),
 		)
@@ -45,13 +45,13 @@ func WelcomePage(rockCount int) []g.Node {
 						),
 						P(
 							Class("text-base text-zinc-700 dark:text-zinc-300"),
-							g.Textf("Here are your %d rocks", rockCount),
+							g.Textf("Here are your %d flags", rockCount),
 						),
 					),
 					welcomeRocks(rockCount),
 					P(
 						Class("text-base text-zinc-600 dark:text-zinc-400 leading-snug"),
-						faqLink("/faq/rocks", "What are the rocks for?"),
+						faqLink("/faq/flags", "What are the flags for?"),
 					),
 					standardButton(buttonProps{
 						Type:  "submit",

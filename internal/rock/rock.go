@@ -12,13 +12,13 @@ import (
 	"github.com/partspile/site/internal/journal"
 )
 
-var ErrRockNotFound = errors.New("rock not found")
-var ErrMaxRocksReached = errors.New("user has reached maximum outstanding rocks")
-var ErrRockAlreadyThrown = errors.New("a rock has already been thrown at this conversation")
+var ErrRockNotFound = errors.New("flag not found")
+var ErrMaxRocksReached = errors.New("user has reached maximum outstanding flags")
+var ErrRockAlreadyThrown = errors.New("a flag has already been raised on this conversation")
 
 // ThrowRock throws a rock at a conversation, making it public
-// If inquirer throws: rock_thrower_id = inquirer_id (bound to ad)
-// If owner throws: rock_thrower_id = owner_id (bound to inquirer)
+// If inquirer throws: flag_raiser_id = inquirer_id (bound to ad)
+// If owner throws: flag_raiser_id = owner_id (bound to inquirer)
 func ThrowRock(userID, conversationID int, reason string) error {
 	if !ValidReason(reason) {
 		return ErrInvalidReason
@@ -30,7 +30,7 @@ func ThrowRock(userID, conversationID int, reason string) error {
 	}
 
 	if conv.OwnerID != userID && conv.InquirerID != userID {
-		return fmt.Errorf("only conversation participants can throw rocks")
+		return fmt.Errorf("only conversation participants can raise flags")
 	}
 
 	count, err := GetUserRockCount(userID)
@@ -63,7 +63,7 @@ func ThrowRock(userID, conversationID int, reason string) error {
 
 	_, err = db.Exec(`
 		UPDATE conversations
-		SET rock_thrower_id = $1, rock_thrown_at = $2,
+		SET flag_raiser_id = $1, flag_raised_at = $2,
 			journal = $3, updated_at = $2
 		WHERE id = $4
 	`, userID, now, sealed, conversationID)
@@ -116,7 +116,7 @@ func UnthrowRock(userID, conversationID int) error {
 	var inquirerID, adID int
 	var j string
 	err := db.QueryRow(`
-		SELECT rock_thrower_id, inquirer_id, ad_id, journal
+		SELECT flag_raiser_id, inquirer_id, ad_id, journal
 		FROM conversations
 		WHERE id = $1
 	`, conversationID).Scan(&rockThrowerID, &inquirerID, &adID, &j)
@@ -132,7 +132,7 @@ func UnthrowRock(userID, conversationID int) error {
 	}
 
 	if int(rockThrowerID.Int64) != userID {
-		return fmt.Errorf("only the rock thrower can remove the rock")
+		return fmt.Errorf("only the person who raised the flag can lower it")
 	}
 
 	adBound := int(rockThrowerID.Int64) == inquirerID
@@ -151,7 +151,7 @@ func UnthrowRock(userID, conversationID int) error {
 
 	_, err = db.Exec(`
 		UPDATE conversations
-		SET rock_thrower_id = NULL, rock_thrown_at = NULL,
+		SET flag_raiser_id = NULL, flag_raised_at = NULL,
 			journal = $1, updated_at = $2
 		WHERE id = $3
 	`, sealed, now, conversationID)
@@ -168,32 +168,32 @@ func UnthrowRock(userID, conversationID int) error {
 	return nil
 }
 
-// SyncAdRockCount sets ads.rock_count from ad-bound rocks on conversations.
+// SyncAdRockCount sets ads.flag_count from ad-bound rocks on conversations.
 func SyncAdRockCount(adID int) error {
 	_, err := db.Exec(`
 		UPDATE ads
-		SET rock_count = (
+		SET flag_count = (
 			SELECT COUNT(*)::int
 			FROM conversations c
 			WHERE c.ad_id = $1
-			  AND c.rock_thrower_id IS NOT NULL
-			  AND c.rock_thrower_id = c.inquirer_id
+			  AND c.flag_raiser_id IS NOT NULL
+			  AND c.flag_raiser_id = c.inquirer_id
 		)
 		WHERE id = $1
 	`, adID)
 	if err != nil {
-		return fmt.Errorf("update ads.rock_count: %w", err)
+		return fmt.Errorf("update ads.flag_count: %w", err)
 	}
 	return nil
 }
 
 // GetPublicConversationsForAd returns public conversation IDs for an ad
-// Only returns conversations with rocks bound to the ad (rock_thrower_id = inquirer_id)
+// Only returns conversations with rocks bound to the ad (flag_raiser_id = inquirer_id)
 func GetPublicConversationsForAd(adID int) ([]int, error) {
 	query := `
 		SELECT c.id
 		FROM conversations c
-		WHERE c.ad_id = $1 AND c.rock_thrower_id IS NOT NULL AND c.rock_thrower_id = c.inquirer_id
+		WHERE c.ad_id = $1 AND c.flag_raiser_id IS NOT NULL AND c.flag_raiser_id = c.inquirer_id
 		ORDER BY c.updated_at DESC
 	`
 	var conversationIDs []int
@@ -205,12 +205,12 @@ func GetPublicConversationsForAd(adID int) ([]int, error) {
 }
 
 // GetPublicConversationIDByOrdinal returns the conversation ID at the given ordinal position (0-based)
-// for public conversations with rocks bound to the ad (rock_thrower_id = inquirer_id), ordered by latest activity DESC
+// for public conversations with rocks bound to the ad (flag_raiser_id = inquirer_id), ordered by latest activity DESC
 func GetPublicConversationIDByOrdinal(adID int, ordinal int) (int, error) {
 	query := `
 		SELECT c.id
 		FROM conversations c
-		WHERE c.ad_id = $1 AND c.rock_thrower_id IS NOT NULL AND c.rock_thrower_id = c.inquirer_id
+		WHERE c.ad_id = $1 AND c.flag_raiser_id IS NOT NULL AND c.flag_raiser_id = c.inquirer_id
 		ORDER BY c.updated_at DESC
 		LIMIT 1 OFFSET $2
 	`
@@ -231,7 +231,7 @@ func GetUserRockCount(userID int) (int, error) {
 	err := db.QueryRow(`
 		SELECT COUNT(*)
 		FROM conversations
-		WHERE rock_thrower_id = $1
+		WHERE flag_raiser_id = $1
 	`, userID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get user rock count: %w", err)
@@ -243,7 +243,7 @@ func GetUserRockCount(userID int) (int, error) {
 func GetRockCountForConversation(conversationID int) (int, error) {
 	var rockThrowerID sql.NullInt64
 	err := db.QueryRow(`
-		SELECT rock_thrower_id
+		SELECT flag_raiser_id
 		FROM conversations
 		WHERE id = $1
 	`, conversationID).Scan(&rockThrowerID)
@@ -263,7 +263,7 @@ func GetRockCountForConversation(conversationID int) (int, error) {
 func HasUserThrownRock(userID, conversationID int) (bool, error) {
 	var rockThrowerID sql.NullInt64
 	err := db.QueryRow(`
-		SELECT rock_thrower_id
+		SELECT flag_raiser_id
 		FROM conversations
 		WHERE id = $1
 	`, conversationID).Scan(&rockThrowerID)
@@ -277,13 +277,13 @@ func HasUserThrownRock(userID, conversationID int) (bool, error) {
 }
 
 // GetConversationIDsForUserRocks returns conversation IDs for rocks bound to a user
-// (where rock_thrower_id = owner_id, meaning owner threw rock at inquirer)
+// (where flag_raiser_id = owner_id, meaning owner threw rock at inquirer)
 func GetConversationIDsForUserRocks(userID int) ([]int, error) {
 	query := `
 		SELECT id
 		FROM conversations
-		WHERE rock_thrower_id IS NOT NULL AND rock_thrower_id = owner_id AND inquirer_id = $1
-		ORDER BY rock_thrown_at DESC
+		WHERE flag_raiser_id IS NOT NULL AND flag_raiser_id = owner_id AND inquirer_id = $1
+		ORDER BY flag_raised_at DESC
 	`
 	var conversationIDs []int
 	err := db.Select(&conversationIDs, query, userID)
@@ -300,7 +300,7 @@ func GetRockCountForUser(userID int) (int, error) {
 	err := db.QueryRow(`
 		SELECT COUNT(*)
 		FROM conversations
-		WHERE rock_thrower_id IS NOT NULL AND rock_thrower_id = owner_id AND inquirer_id = $1
+		WHERE flag_raiser_id IS NOT NULL AND flag_raiser_id = owner_id AND inquirer_id = $1
 	`, userID).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get rock count for user: %w", err)
@@ -309,13 +309,13 @@ func GetRockCountForUser(userID int) (int, error) {
 }
 
 // GetConversationIDForUserRockByOrdinal returns the conversation ID at the given ordinal position (0-based)
-// for rocks bound to a user (where rock_thrower_id = owner_id AND inquirer_id = userID), ordered by rock_thrown_at DESC
+// for rocks bound to a user (where flag_raiser_id = owner_id AND inquirer_id = userID), ordered by flag_raised_at DESC
 func GetConversationIDForUserRockByOrdinal(userID int, ordinal int) (int, error) {
 	query := `
 		SELECT id
 		FROM conversations
-		WHERE rock_thrower_id IS NOT NULL AND rock_thrower_id = owner_id AND inquirer_id = $1
-		ORDER BY rock_thrown_at DESC
+		WHERE flag_raiser_id IS NOT NULL AND flag_raiser_id = owner_id AND inquirer_id = $1
+		ORDER BY flag_raised_at DESC
 		LIMIT 1 OFFSET $2
 	`
 	var conversationID int
@@ -332,9 +332,9 @@ func GetConversationIDForUserRockByOrdinal(userID int, ordinal int) (int, error)
 // UnthrowActiveForAd clears active rocks on all conversations for an ad.
 func UnthrowActiveForAd(adID int) error {
 	rows, err := db.Query(`
-		SELECT id, rock_thrower_id, journal
+		SELECT id, flag_raiser_id, journal
 		FROM conversations
-		WHERE ad_id = $1 AND rock_thrower_id IS NOT NULL
+		WHERE ad_id = $1 AND flag_raiser_id IS NOT NULL
 	`, adID)
 	if err != nil {
 		return fmt.Errorf("failed to list rocks for ad: %w", err)
@@ -346,12 +346,12 @@ func UnthrowActiveForAd(adID int) error {
 // UnthrowActiveForUser clears rocks thrown by or bound to the user.
 func UnthrowActiveForUser(userID int) error {
 	rows, err := db.Query(`
-		SELECT id, rock_thrower_id, journal
+		SELECT id, flag_raiser_id, journal
 		FROM conversations
-		WHERE rock_thrower_id IS NOT NULL
+		WHERE flag_raiser_id IS NOT NULL
 		  AND (
-			rock_thrower_id = $1
-			OR (inquirer_id = $1 AND rock_thrower_id = owner_id)
+			flag_raiser_id = $1
+			OR (inquirer_id = $1 AND flag_raiser_id = owner_id)
 		  )
 	`, userID)
 	if err != nil {
@@ -400,9 +400,9 @@ func forceUnthrow(conversationID, throwerID int, j string) error {
 	}
 	_, err = db.Exec(`
 		UPDATE conversations
-		SET rock_thrower_id = NULL, rock_thrown_at = NULL,
+		SET flag_raiser_id = NULL, flag_raised_at = NULL,
 			journal = $1, updated_at = $2
-		WHERE id = $3 AND rock_thrower_id IS NOT NULL
+		WHERE id = $3 AND flag_raiser_id IS NOT NULL
 	`, sealed, now, conversationID)
 	if err != nil {
 		return fmt.Errorf("failed to force-unthrow rock: %w", err)

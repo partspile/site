@@ -34,7 +34,7 @@ func ConfirmRockHandler(c *fiber.Ctx) error {
 	}
 	if conv.OwnerID != currentUserID && conv.InquirerID != currentUserID {
 		return fiber.NewError(fiber.StatusForbidden,
-			"Only conversation participants can throw rocks")
+			"Only conversation participants can raise flags")
 	}
 	if !message.MessagingAllowed(conv) {
 		return fiber.NewError(fiber.StatusBadRequest,
@@ -95,11 +95,11 @@ func renderRockThrowConfirm(c *fiber.Ctx, conv message.Conversation,
 	ownerName, _ := message.DisplayName(conv.OwnerID)
 	otherName := ownerName
 	otherID := conv.OwnerID
-	label := "Throw rock"
+	label := "Raise flag"
 	if !atAd {
 		otherName = inquirerName
 		otherID = conv.InquirerID
-		label = fmt.Sprintf("Throw rock at %s", inquirerName)
+		label = fmt.Sprintf("Raise flag on %s", inquirerName)
 	}
 
 	return render(c, ui.RockThrowConfirmModal(ui.RockThrowConfirmData{
@@ -222,7 +222,7 @@ func ThrowRockHandler(c *fiber.Ctx) error {
 
 	if conv.OwnerID != currentUserID && conv.InquirerID != currentUserID {
 		return fiber.NewError(fiber.StatusForbidden,
-			"Only conversation participants can throw rocks")
+			"Only conversation participants can raise flags")
 	}
 	if !message.MessagingAllowed(conv) {
 		return fiber.NewError(fiber.StatusBadRequest,
@@ -331,18 +331,18 @@ func UnthrowRockHandler(c *fiber.Ctx) error {
 
 	if conv.OwnerID != currentUserID && conv.InquirerID != currentUserID {
 		return fiber.NewError(fiber.StatusForbidden,
-			"Only conversation participants can remove rocks")
+			"Only conversation participants can lower flags")
 	}
 
 	err = rock.UnthrowRock(currentUserID, conversationID)
 	if err != nil {
 		if err == rock.ErrRockNotFound {
-			return fiber.NewError(fiber.StatusNotFound, "Rock not found")
+			return fiber.NewError(fiber.StatusNotFound, "Flag not found")
 		}
 		logger.Error("Failed to unthrow rock", "error", err,
 			"conversationID", conversationID, "userID", currentUserID)
 		return fiber.NewError(fiber.StatusInternalServerError,
-			"Failed to remove rock")
+			"Failed to lower flag")
 	}
 	if err := rockopinion.Invalidate(conversationID); err != nil {
 		logger.Error("Failed to invalidate rock opinion",
@@ -363,7 +363,7 @@ func UnthrowRockHandler(c *fiber.Ctx) error {
 func ensureCanRockAd(a ad.Ad, currentUserID int) error {
 	if !a.IsActive() {
 		return fiber.NewError(fiber.StatusBadRequest,
-			"Cannot throw a rock at an inactive or deleted ad")
+			"Cannot raise a flag on an inactive or deleted ad")
 	}
 	if !user.Exists(a.UserID) {
 		return fiber.NewError(fiber.StatusBadRequest,
@@ -371,7 +371,7 @@ func ensureCanRockAd(a ad.Ad, currentUserID int) error {
 	}
 	if a.UserID == currentUserID {
 		return fiber.NewError(fiber.StatusForbidden,
-			"You cannot throw a rock at your own ad")
+			"You cannot raise a flag on your own ad")
 	}
 	return nil
 }
@@ -379,13 +379,13 @@ func ensureCanRockAd(a ad.Ad, currentUserID int) error {
 func throwRockError(err error, conversationID, userID int) error {
 	if err == rock.ErrMaxRocksReached {
 		return fiber.NewError(fiber.StatusBadRequest, fmt.Sprintf(
-			"You have reached the maximum of %d outstanding rocks",
+			"You have reached the maximum of %d outstanding flags",
 			config.MaxOutstandingRocks,
 		))
 	}
 	if err == rock.ErrRockAlreadyThrown {
 		return fiber.NewError(fiber.StatusBadRequest,
-			"An rock has already been thrown at this conversation")
+			"A flag has already been raised on this conversation")
 	}
 	if err == rock.ErrInvalidReason {
 		return fiber.NewError(fiber.StatusBadRequest, "Choose a reason")
@@ -393,5 +393,5 @@ func throwRockError(err error, conversationID, userID int) error {
 	logger.Error("Failed to throw rock", "error", err,
 		"conversationID", conversationID, "userID", userID)
 	return fiber.NewError(fiber.StatusInternalServerError,
-		"Failed to throw rock")
+		"Failed to raise flag")
 }

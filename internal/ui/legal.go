@@ -202,9 +202,9 @@ func PrivacyPolicyPage() []g.Node {
 						faqLink("/auth/user/settings", "Settings"),
 					),
 					legalLi(
-						g.Text("Report problem ads by throwing a rock. "+
+						g.Text("Report problem ads by raising a flag. "+
 							"See "),
-						faqLink("/faq/rocks", "What are rocks for?"),
+						faqLink("/faq/flags", "What are flags for?"),
 					),
 				),
 			),
@@ -227,8 +227,8 @@ func PrivacyPolicyPage() []g.Node {
 			legalSection("Content reports",
 				legalP(
 					g.Text("Listing and content problems are handled "+
-						"in-product: throw a rock on the ad. See "),
-					faqLink("/faq/rocks", "What are rocks for?"),
+						"in-product: raise a flag on the ad. See "),
+					faqLink("/faq/flags", "What are flags for?"),
 					g.Text(" and our "),
 					faqLink("/terms", "Terms of Service"),
 					g.Text("."),
@@ -348,38 +348,39 @@ func TermsOfServicePage() []g.Node {
 			legalSection("Reporting and removal",
 				legalP(
 					g.Textf(
-						"%s is self-policed with rocks. If an ad "+
+						"%s is self-policed with flags. If an ad "+
 							"violates these Terms or has other "+
-							"problems, throw a rock on it. That starts "+
+							"problems, raise a flag on it. That starts "+
 							"a conversation with the ad owner so you "+
 							"can work it out. See ",
 						name,
 					),
-					faqLink("/faq/rocks", "What are rocks for?"),
+					faqLink("/faq/flags", "What are flags for?"),
 					g.Text("."),
 				),
 				legalList(
 					legalLi(g.Text(
-						"Rocks on an ad are visible on the listing; "+
+						"Flags on an ad are visible on the listing; "+
 							"anyone can open the dispute assessment "+
 							"(parties labeled only as Owner and "+
 							"Inquirer)")),
 					legalLi(g.Textf(
-						"An ad with more than %d rocks is excluded "+
+						"An ad with more than %d flags is excluded "+
 							"from search listings",
 						config.MaxRockCount,
 					)),
 					legalLi(g.Text(
-						"Throwing requires choosing a reason; you may "+
-							"review a provisional assessment first")),
+						"Raising a flag requires choosing a reason; "+
+							"you may review a provisional assessment "+
+							"first")),
 					legalLi(g.Text(
-						"When the issue is resolved, the thrower can "+
-							"unthrow and reclaim the rock")),
+						"When the issue is resolved, you can lower "+
+							"the flag and get it back")),
 				),
 				legalP(g.Text(
 					"Do not email us to report listing problems, "+
 						"copyright claims, or other content issues — "+
-						"use rocks. We may still remove content or "+
+						"use flags. We may still remove content or "+
 						"restrict accounts when needed to protect the "+
 						"service or comply with law.",
 				)),

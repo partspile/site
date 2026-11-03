@@ -275,7 +275,7 @@ type ConversationRow struct {
 	OwnerHasUnread    int        `json:"owner_has_unread" db:"owner_has_unread"`
 	InquirerHasUnread int        `json:"inquirer_has_unread" db:"inquirer_has_unread"`
 	RockThrowerHash   *string    `json:"rock_thrower_hash,omitempty"`
-	RockThrownAt      *time.Time `json:"rock_thrown_at,omitempty" db:"rock_thrown_at"`
+	RockThrownAt      *time.Time `json:"rock_thrown_at,omitempty"`
 }
 
 type conversationDBRow struct {
@@ -285,8 +285,8 @@ type conversationDBRow struct {
 	InquirerID        int        `db:"inquirer_id"`
 	OwnerHasUnread    int        `db:"owner_has_unread"`
 	InquirerHasUnread int        `db:"inquirer_has_unread"`
-	RockThrowerID     *int       `db:"rock_thrower_id"`
-	RockThrownAt      *time.Time `db:"rock_thrown_at"`
+	RockThrowerID     *int       `db:"flag_raiser_id"`
+	RockThrownAt      *time.Time `db:"flag_raised_at"`
 	Journal           string     `db:"journal"`
 }
 

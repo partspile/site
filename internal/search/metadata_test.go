@@ -9,11 +9,11 @@ func TestBuildVectorMetadataWhereUsesRockColumn(t *testing.T) {
 	var pa pgArgs
 	p := Params{CategoryID: 6}
 	clause := buildVectorMetadataWhere(p, &pa)
-	if strings.Contains(clause, "rock_count')") {
-		t.Fatalf("should not use metadata rock_count: %s", clause)
+	if strings.Contains(clause, "flag_count')") {
+		t.Fatalf("should not use metadata flag_count: %s", clause)
 	}
-	if !strings.Contains(clause, "rock_count <=") {
-		t.Fatalf("expected rock_count column filter: %s", clause)
+	if !strings.Contains(clause, "flag_count <=") {
+		t.Fatalf("expected flag_count column filter: %s", clause)
 	}
 }
 

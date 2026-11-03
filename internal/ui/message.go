@@ -67,9 +67,9 @@ func MessageItem(d MessageItemData, attrs ...g.Node) g.Node {
 }
 
 func rockEventLabel(d RockEventData) string {
-	action := "Rock thrown"
+	action := "Flag raised"
 	if d.Kind == RockEventUnthrown {
-		action = "Rock unthrown"
+		action = "Flag lowered"
 	}
 
 	var target string
@@ -140,7 +140,7 @@ func RockEventMessage(d RockEventData, attrs ...g.Node) g.Node {
 			Div(
 				Class("px-4 py-2 "+bubbleClass+" flex items-center gap-2"),
 				Img(
-					Src("/images/rock.svg"),
+					Src("/images/flag.svg"),
 					Alt(label),
 					Class("w-8 h-8 flex-shrink-0"),
 				),
@@ -482,7 +482,7 @@ func ConversationModalSwapOOB(d ConversationModalData) g.Node {
 					g.If(!d.CanPost && d.RockThrowerID != nil,
 						Div(
 							Class("text-xs text-zinc-500 dark:text-zinc-400 mt-1"),
-							g.Text("Rock thrown by: "),
+							g.Text("Flag raised by: "),
 							g.If(rockUserID == d.CurrentUserID,
 								Span(Class("text-blue-600 dark:text-blue-400 font-medium"),
 									g.If(rockUserID == d.OwnerID,
@@ -575,7 +575,7 @@ func ConversationModalWithRock(d ConversationModalData) g.Node {
 						g.If(!d.CanPost && d.RockThrowerID != nil,
 							Div(
 								Class("text-xs text-zinc-500 dark:text-zinc-400 mt-1"),
-								g.Text("Rock thrown by: "),
+								g.Text("Flag raised by: "),
 								g.If(rockUserID == d.CurrentUserID,
 									Span(Class("text-blue-600 dark:text-blue-400 font-medium"),
 										g.If(rockUserID == d.OwnerID,

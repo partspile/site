@@ -139,7 +139,7 @@ func renderAdRockOpinion(c *fiber.Ctx) error {
 
 	ordinal, err := c.ParamsInt("ordinal")
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid rock ordinal")
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid flag")
 	}
 
 	currentUserID := local.GetUserID(c)
@@ -147,7 +147,7 @@ func renderAdRockOpinion(c *fiber.Ctx) error {
 
 	conversationID, err := rock.GetPublicConversationIDByOrdinal(adID, ordinal)
 	if err != nil {
-		return fiber.NewError(fiber.StatusNotFound, "Rock conversation not found")
+		return fiber.NewError(fiber.StatusNotFound, "Flag not found")
 	}
 
 	conv, err := message.GetConversationByID(conversationID)

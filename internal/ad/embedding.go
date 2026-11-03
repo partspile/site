@@ -50,7 +50,7 @@ func GetForEmbedding(adID int) (EmbeddingInput, error) {
 			COALESCE(l.latitude, 0) AS latitude,
 			COALESCE(l.longitude, 0) AS longitude,
 			CASE WHEN l.id IS NOT NULL THEN 1 ELSE 0 END AS has_location,
-			a.rock_count
+			a.flag_count
 		FROM ads a
 		LEFT JOIN locations l ON a.location_id = l.id
 		WHERE a.id = $1 AND a.inactive_at IS NULL AND a.deleted_at IS NULL`
@@ -66,7 +66,7 @@ func GetForEmbedding(adID int) (EmbeddingInput, error) {
 		Latitude    float64 `db:"latitude"`
 		Longitude   float64 `db:"longitude"`
 		HasLocation int     `db:"has_location"`
-		RockCount   int     `db:"rock_count"`
+		RockCount   int     `db:"flag_count"`
 	}
 	if err := db.QueryRow(query, adID).Scan(
 		&row.ID,

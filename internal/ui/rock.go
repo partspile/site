@@ -24,10 +24,10 @@ func renderRockIconsByOrdinal(rockCount int, urlPattern string, id int) g.Node {
 				hx.Target("body"),
 				hx.Swap("beforeend"),
 				Img(
-					Src("/images/rock.svg"),
-					Alt("Rock thrown"),
+					Src("/images/flag.svg"),
+					Alt("Flag raised"),
 					Class("w-5 h-5 flex-shrink-0"),
-					Title("Rock thrown - click to view dispute assessment"),
+					Title("Flag raised — click to view dispute assessment"),
 				),
 			),
 		)
@@ -57,8 +57,8 @@ func StaticRockIcons(rockCount int) g.Node {
 	icons := make([]g.Node, 0, rockCount)
 	for range rockCount {
 		icons = append(icons, Img(
-			Src("/images/rock.svg"),
-			Alt("Rock thrown"),
+			Src("/images/flag.svg"),
+			Alt("Flag raised"),
 			Class("w-5 h-5 flex-shrink-0"),
 		))
 	}
@@ -70,9 +70,9 @@ func StaticRockIcons(rockCount int) g.Node {
 
 func rockThrowLabel(currentUserID, ownerID int, inquirerName string) string {
 	if currentUserID == ownerID {
-		return fmt.Sprintf("Throw Rock at %s", inquirerName)
+		return fmt.Sprintf("Raise flag on %s", inquirerName)
 	}
-	return "Throw Rock at Ad"
+	return "Raise flag on ad"
 }
 
 // RockThrowLink renders a button to throw/unthrow a rock in the conversation modal
@@ -85,7 +85,7 @@ func RockThrowLink(d ConversationModalData) g.Node {
 	var label string
 
 	if d.HasThrownRock {
-		label = "Unthrow Rock"
+		label = "Lower flag"
 		attrs = []g.Node{
 			hx.Delete(fmt.Sprintf(
 				"/auth/conversation/%d/rock/unthrow", d.ConversationID)),
@@ -120,6 +120,13 @@ func RockThrowLink(d ConversationModalData) g.Node {
 	)
 }
 
+func flagCountLabel(n int) string {
+	if n == 1 {
+		return "1 flag"
+	}
+	return fmt.Sprintf("%d flags", n)
+}
+
 // RockCountBadge shows user's remaining rocks
 func RockCountBadge(rockCount int) g.Node {
 	if rockCount <= 0 {
@@ -128,6 +135,6 @@ func RockCountBadge(rockCount int) g.Node {
 
 	return Span(
 		Class("px-2 py-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-full text-xs font-medium"),
-		g.Text(fmt.Sprintf("%d rocks", rockCount)),
+		g.Text(flagCountLabel(rockCount)),
 	)
 }

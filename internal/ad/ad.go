@@ -32,7 +32,7 @@ type Ad struct {
 
 	// Computed fields
 	Bookmarked bool `db:"bookmarked"`
-	RockCount  int  `db:"rock_count"`
+	RockCount  int  `db:"flag_count"`
 
 	// Category-specific facet values
 	Facets map[string]facet.Value
@@ -98,7 +98,7 @@ func GetAds(userID int, ids []int, tz *time.Location) ([]Ad, error) {
 			COALESCE(l.country, '') AS country,
 			COALESCE(l.raw_text, '') AS raw_location,
 			CASE WHEN b.user_id IS NOT NULL THEN 1 ELSE 0 END AS bookmarked,
-			a.rock_count
+			a.flag_count
 		FROM ads a
 		LEFT JOIN locations l ON a.location_id = l.id
 		LEFT JOIN bookmarks b ON a.id = b.ad_id AND b.user_id = $1

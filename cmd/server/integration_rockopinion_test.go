@@ -22,7 +22,7 @@ func setupIntegrationRockOpinion(t *testing.T) (message.Conversation, int) {
 	}
 
 	var convID int
-	err = db.QueryRow(`INSERT INTO conversations (ad_id, owner_id, inquirer_id, rock_thrower_id, rock_thrown_at)
+	err = db.QueryRow(`INSERT INTO conversations (ad_id, owner_id, inquirer_id, flag_raiser_id, flag_raised_at)
 		VALUES ($1, $2, $3, $3, CURRENT_TIMESTAMP) RETURNING id`,
 		adID, integrationTestUserID, integrationInquirerUserID).Scan(&convID)
 	if err != nil {
@@ -38,7 +38,7 @@ func setupIntegrationRockOpinion(t *testing.T) (message.Conversation, int) {
 
 func insertIntegrationRockOpinion(t *testing.T, convID int) {
 	t.Helper()
-	_, err := db.Exec(`INSERT INTO rock_opinions (
+	_, err := db.Exec(`INSERT INTO flag_opinions (
 		conversation_id, summary, assessment, assessment_detail,
 		resolution, reasoning
 	) VALUES ($1, 'Cached summary text.', 5,
@@ -74,7 +74,7 @@ func TestIntegrationRockOpinionDB(t *testing.T) {
 		}
 		var count int
 		if err := db.QueryRow(
-			`SELECT COUNT(*) FROM rock_opinions WHERE conversation_id = $1`, convID,
+			`SELECT COUNT(*) FROM flag_opinions WHERE conversation_id = $1`, convID,
 		).Scan(&count); err != nil {
 			t.Fatal(err)
 		}
@@ -91,7 +91,7 @@ func TestIntegrationRockOpinionDB(t *testing.T) {
 		}
 		var count int
 		if err := db.QueryRow(
-			`SELECT COUNT(*) FROM rock_opinions WHERE conversation_id = $1`, convID,
+			`SELECT COUNT(*) FROM flag_opinions WHERE conversation_id = $1`, convID,
 		).Scan(&count); err != nil {
 			t.Fatal(err)
 		}

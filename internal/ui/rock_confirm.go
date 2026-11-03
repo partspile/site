@@ -46,7 +46,7 @@ func CloseRockThrowModalsOOB() []g.Node {
 	)
 }
 
-// RockThrowConfirmModal is a single scrollable confirm before throwing a rock.
+// RockThrowConfirmModal is a single scrollable confirm before raising a flag.
 func RockThrowConfirmModal(d RockThrowConfirmData) g.Node {
 	csrfHeader := fmt.Sprintf(`{"X-Csrf-Token": %q}`, d.CSRFToken)
 	previewURL := fmt.Sprintf(
@@ -62,7 +62,7 @@ func RockThrowConfirmModal(d RockThrowConfirmData) g.Node {
 
 	throwLabel := d.ThrowLabel
 	if throwLabel == "" {
-		throwLabel = "Throw rock"
+		throwLabel = "Raise flag"
 	}
 
 	return g.Group([]g.Node{
@@ -76,7 +76,7 @@ func RockThrowConfirmModal(d RockThrowConfirmData) g.Node {
 					Class("flex items-center justify-between p-4 border-b border-zinc-200 dark:border-zinc-700 flex-shrink-0"),
 					H3(
 						Class("text-lg font-bold text-zinc-900 dark:text-zinc-200"),
-						g.Text("Throw a rock?"),
+						g.Text("Raise a flag?"),
 					),
 					modalClose(rockThrowConfirmModalName),
 				),
@@ -90,7 +90,7 @@ func RockThrowConfirmModal(d RockThrowConfirmData) g.Node {
 						g.If(d.Remaining <= 0,
 							P(
 								Class("text-sm text-red-600 dark:text-red-400"),
-								g.Text("You cannot throw until you unthrow an outstanding rock."),
+								g.Text("You cannot raise a flag until you lower an outstanding one."),
 							),
 						),
 						g.If(d.Remaining > 0, rockReasonRadios(d)),
@@ -161,12 +161,12 @@ func RockThrowConfirmModal(d RockThrowConfirmData) g.Node {
 }
 
 func remainingRocksSection(remaining int) g.Node {
-	msg := fmt.Sprintf("You have %d rocks", remaining)
+	msg := fmt.Sprintf("You have %d flags", remaining)
 	if remaining == 1 {
-		msg = "You have 1 rock"
+		msg = "You have 1 flag"
 	}
 	if remaining <= 0 {
-		msg = "You have no rocks"
+		msg = "You have no flags"
 	}
 	return Div(
 		Class("flex flex-col items-center gap-2 py-2"),
@@ -182,8 +182,8 @@ func confirmRockIcons(rockCount int) g.Node {
 	icons := make([]g.Node, 0, rockCount)
 	for range rockCount {
 		icons = append(icons, Img(
-			Src("/images/rock.svg"),
-			Alt("Rock"),
+			Src("/images/flag.svg"),
+			Alt("Flag"),
 			Class("w-10 h-10 flex-shrink-0"),
 		))
 	}
@@ -198,12 +198,12 @@ func rockThrowCautionBullets(d RockThrowConfirmData) g.Node {
 	if left < 0 {
 		left = 0
 	}
-	leftMsg := fmt.Sprintf("You'll have %d rocks left.", left)
+	leftMsg := fmt.Sprintf("You'll have %d flags left.", left)
 	if left == 1 {
-		leftMsg = "You'll have 1 rock left."
+		leftMsg = "You'll have 1 flag left."
 	}
 	if left == 0 {
-		leftMsg = "You'll have no rocks left."
+		leftMsg = "You'll have no flags left."
 	}
 
 	reviewLink := rockConfirmReviewLink()
@@ -211,26 +211,26 @@ func rockThrowCautionBullets(d RockThrowConfirmData) g.Node {
 	var markLine, resolveLine g.Node
 	if d.AtAd {
 		markLine = Li(
-			g.Text("This ad will show a rock anyone can see, with a dispute assessment (use "),
+			g.Text("This ad will show a flag anyone can see, with a dispute assessment (use "),
 			reviewLink,
 			g.Text(" for a neutral take first)."),
 		)
 		resolveLine = Li(
 			g.Text("If you resolve the dispute with "),
 			rockConfirmUserLinkID(d.OtherUserID, d.OtherName, "resolve"),
-			g.Text(", you can Unthrow and get your rock back."),
+			g.Text(", you can lower the flag and get it back."),
 		)
 	} else {
 		markLine = Li(
 			rockConfirmUserLinkID(d.OtherUserID, d.OtherName, "mark"),
-			g.Text(" will have a rock on their profile that anyone can see, with a dispute assessment (use "),
+			g.Text(" will have a flag on their profile that anyone can see, with a dispute assessment (use "),
 			reviewLink,
 			g.Text(" for a neutral take first)."),
 		)
 		resolveLine = Li(
 			g.Text("If you resolve the dispute with "),
 			rockConfirmUserLinkID(d.OtherUserID, d.OtherName, "resolve"),
-			g.Text(", you can Unthrow and get your rock back."),
+			g.Text(", you can lower the flag and get it back."),
 		)
 	}
 
@@ -238,7 +238,7 @@ func rockThrowCautionBullets(d RockThrowConfirmData) g.Node {
 		Class("space-y-1.5"),
 		P(
 			Class("text-sm font-semibold text-zinc-800 dark:text-zinc-200"),
-			g.Text("If you throw a rock…"),
+			g.Text("If you raise a flag…"),
 		),
 		Ul(
 			Class("text-xs text-zinc-600 dark:text-zinc-400 list-disc pl-4 space-y-1"),
@@ -246,7 +246,7 @@ func rockThrowCautionBullets(d RockThrowConfirmData) g.Node {
 			markLine,
 			resolveLine,
 			Li(g.Text(
-				"If they are removed for repeated abuse, your rock is returned.",
+				"If they are removed for repeated abuse, your flag is returned.",
 			)),
 		),
 	)
@@ -369,10 +369,10 @@ func rockReasonRadios(d RockThrowConfirmData) g.Node {
 
 	var why g.Node
 	if d.AtAd {
-		why = g.Text("Why are you throwing this rock at the ad?")
+		why = g.Text("Why are you raising this flag on the ad?")
 	} else {
 		why = g.Group([]g.Node{
-			g.Text("Why are you throwing this rock at "),
+			g.Text("Why are you raising this flag on "),
 			rockConfirmUserLinkID(d.OtherUserID, d.OtherName, "why"),
 			g.Text("?"),
 		})
@@ -401,7 +401,7 @@ func RockThrowPreviewModal(d RockThrowPreviewData) g.Node {
 			),
 			P(
 				Class("text-sm text-zinc-600 dark:text-zinc-400 text-center"),
-				g.Text("You can still throw if you are sure. Prefer waiting and trying Review again."),
+				g.Text("You can still raise the flag if you are sure. Prefer waiting and trying Review again."),
 			),
 		)
 	} else {

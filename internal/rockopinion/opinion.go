@@ -68,7 +68,7 @@ func loadOpinion(conversationID int) (Opinion, error) {
 	err := db.QueryRow(`
 		SELECT conversation_id, generated_at, summary, assessment,
 			assessment_detail, resolution, reasoning
-		FROM rock_opinions
+		FROM flag_opinions
 		WHERE conversation_id = $1
 	`, conversationID).Scan(
 		&op.ConversationID,
@@ -87,7 +87,7 @@ func loadOpinion(conversationID int) (Opinion, error) {
 
 func storeOpinion(op Opinion) error {
 	_, err := db.Exec(`
-		INSERT INTO rock_opinions (
+		INSERT INTO flag_opinions (
 			conversation_id, generated_at, summary, assessment,
 			assessment_detail, resolution, reasoning
 		) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, $4, $5, $6)
@@ -102,7 +102,7 @@ func storeOpinion(op Opinion) error {
 // Invalidate removes the cached opinion for one conversation.
 func Invalidate(conversationID int) error {
 	_, err := db.Exec(
-		`DELETE FROM rock_opinions WHERE conversation_id = $1`,
+		`DELETE FROM flag_opinions WHERE conversation_id = $1`,
 		conversationID,
 	)
 	if err != nil {
@@ -114,7 +114,7 @@ func Invalidate(conversationID int) error {
 // InvalidateForAd removes cached opinions for all conversations on an ad.
 func InvalidateForAd(adID int) error {
 	_, err := db.Exec(`
-		DELETE FROM rock_opinions
+		DELETE FROM flag_opinions
 		WHERE conversation_id IN (
 			SELECT id FROM conversations WHERE ad_id = $1
 		)

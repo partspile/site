@@ -12,7 +12,7 @@ import (
 func buildVectorMetadataWhere(p Params, pa *pgArgs) string {
 	clause := `(vector_metadata->>'category_id')::int = ` +
 		pa.add(p.CategoryID)
-	clause += ` AND rock_count <= ` + pa.add(config.MaxRockCount)
+	clause += ` AND flag_count <= ` + pa.add(config.MaxRockCount)
 
 	if !p.Expanded {
 		return clause

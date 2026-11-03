@@ -23,8 +23,8 @@ type Conversation struct {
 	UpdatedAt         time.Time  `db:"updated_at"`
 	OwnerHasUnread    bool       `db:"owner_has_unread"`
 	InquirerHasUnread bool       `db:"inquirer_has_unread"`
-	RockThrowerID     *int       `db:"rock_thrower_id"`
-	RockThrownAt      *time.Time `db:"rock_thrown_at"`
+	RockThrowerID     *int       `db:"flag_raiser_id"`
+	RockThrownAt      *time.Time `db:"flag_raised_at"`
 	Journal           string     `db:"journal"`
 }
 
@@ -47,7 +47,7 @@ type ConversationWithLastMessage struct {
 	LastMessageAt      *time.Time `db:"last_message_at"`
 	OtherUserID        int        `db:"other_user_id"`
 	HasUnread          bool       `db:"has_unread"`
-	RockCount          int        `db:"rock_count"`
+	RockCount          int        `db:"flag_count"`
 	OtherUserName      string
 	OtherUserRockCount int
 	OtherUserDeleted   bool
@@ -108,7 +108,7 @@ func scanConversationRow(scanner interface {
 
 const conversationColumns = `
 	c.id, c.ad_id, c.owner_id, c.inquirer_id,
-	c.owner_has_unread, c.inquirer_has_unread, c.rock_thrower_id, c.rock_thrown_at,
+	c.owner_has_unread, c.inquirer_has_unread, c.flag_raiser_id, c.flag_raised_at,
 	c.journal, c.updated_at`
 
 // GetConversationByAdAndInquirer gets an existing conversation by ad ID and inquirer ID
@@ -155,7 +155,7 @@ func CreateConversation(adID, ownerID, inquirerID int) (Conversation, error) {
 	var id int
 	var updatedAt time.Time
 	err := db.QueryRow(`
-		INSERT INTO conversations (ad_id, owner_id, inquirer_id, owner_has_unread, inquirer_has_unread, rock_thrower_id, journal, updated_at)
+		INSERT INTO conversations (ad_id, owner_id, inquirer_id, owner_has_unread, inquirer_has_unread, flag_raiser_id, journal, updated_at)
 		VALUES ($1, $2, $3, 0, 0, NULL, '', CURRENT_TIMESTAMP)
 		RETURNING id, updated_at
 	`, adID, ownerID, inquirerID).Scan(&id, &updatedAt)
@@ -216,7 +216,7 @@ func GetConversationByID(conversationID int) (Conversation, error) {
 func IsPublic(conversationID int) (bool, error) {
 	var rockThrowerID sql.NullInt64
 	err := db.QueryRow(`
-		SELECT rock_thrower_id
+		SELECT flag_raiser_id
 		FROM conversations
 		WHERE id = $1
 	`, conversationID).Scan(&rockThrowerID)
@@ -263,7 +263,7 @@ func GetPublicConversations(adID int) ([]Conversation, error) {
 	query := `
 		SELECT ` + conversationColumns + `
 		FROM conversations c
-		WHERE c.ad_id = $1 AND c.rock_thrower_id IS NOT NULL
+		WHERE c.ad_id = $1 AND c.flag_raiser_id IS NOT NULL
 		ORDER BY c.updated_at DESC
 	`
 	rows, err := db.Query(query, adID)
@@ -298,8 +298,8 @@ func GetUserConversations(userID int,
 			c.inquirer_id,
 			c.owner_has_unread,
 			c.inquirer_has_unread,
-			c.rock_thrower_id,
-			c.rock_thrown_at,
+			c.flag_raiser_id,
+			c.flag_raised_at,
 			c.journal,
 			c.updated_at,
 			a.title AS ad_title,
@@ -307,9 +307,9 @@ func GetUserConversations(userID int,
 				SELECT COUNT(*)
 				FROM conversations c2
 				WHERE c2.ad_id = c.ad_id
-					AND c2.rock_thrower_id IS NOT NULL
-					AND c2.rock_thrower_id = c2.inquirer_id
-			), 0) AS rock_count,
+					AND c2.flag_raiser_id IS NOT NULL
+					AND c2.flag_raiser_id = c2.inquirer_id
+			), 0) AS flag_count,
 			CASE
 				WHEN c.owner_id = $1 THEN c.inquirer_id
 				ELSE c.owner_id

@@ -23,7 +23,7 @@ func TestRockEventLabel(t *testing.T) {
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
-			want: "Rock thrown at ad by you",
+			want: "Flag raised at ad by you",
 		},
 		{
 			name: "inquirer unthrew, self view",
@@ -33,7 +33,7 @@ func TestRockEventLabel(t *testing.T) {
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
-			want: "Rock unthrown at ad by you",
+			want: "Flag lowered at ad by you",
 		},
 		{
 			name: "inquirer threw, owner view",
@@ -43,7 +43,7 @@ func TestRockEventLabel(t *testing.T) {
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
-			want: "Rock thrown at ad by bob",
+			want: "Flag raised at ad by bob",
 		},
 		{
 			name: "owner threw, inquirer view",
@@ -53,7 +53,7 @@ func TestRockEventLabel(t *testing.T) {
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
-			want: "Rock thrown at you by sfeldma",
+			want: "Flag raised at you by sfeldma",
 		},
 		{
 			name: "owner threw, self view",
@@ -63,7 +63,7 @@ func TestRockEventLabel(t *testing.T) {
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
-			want: "Rock thrown at bob by you",
+			want: "Flag raised at bob by you",
 		},
 		{
 			name: "owner threw, public view",
@@ -73,7 +73,7 @@ func TestRockEventLabel(t *testing.T) {
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
-			want: "Rock thrown at bob by sfeldma",
+			want: "Flag raised at bob by sfeldma",
 		},
 		{
 			name: "inquirer threw with policy reason",
@@ -84,7 +84,7 @@ func TestRockEventLabel(t *testing.T) {
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
-			want: "Rock thrown at ad by you · Listing or content violates policies",
+			want: "Flag raised at ad by you · Listing or content violates policies",
 		},
 		{
 			name: "owner threw with deal reason",
@@ -95,7 +95,7 @@ func TestRockEventLabel(t *testing.T) {
 				OwnerID: base.OwnerID, InquirerID: base.InquirerID,
 				OwnerName: base.OwnerName, InquirerName: base.InquirerName,
 			},
-			want: "Rock thrown at bob by you · Deal or meetup went wrong",
+			want: "Flag raised at bob by you · Deal or meetup went wrong",
 		},
 	}
 

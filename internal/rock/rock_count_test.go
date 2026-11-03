@@ -80,9 +80,9 @@ func resetSchema(t *testing.T) {
 func adRockCount(t *testing.T, adID int) int {
 	t.Helper()
 	var n int
-	err := db.QueryRow(`SELECT rock_count FROM ads WHERE id = $1`, adID).Scan(&n)
+	err := db.QueryRow(`SELECT flag_count FROM ads WHERE id = $1`, adID).Scan(&n)
 	if err != nil {
-		t.Fatalf("query rock_count: %v", err)
+		t.Fatalf("query flag_count: %v", err)
 	}
 	return n
 }
@@ -146,7 +146,7 @@ func TestAdRockCountSyncOnThrowUnthrow(t *testing.T) {
 	}
 	adID := createPricedAd(t, owner.ID, "Rock Count Part")
 	if adRockCount(t, adID) != 0 {
-		t.Fatalf("initial rock_count = %d", adRockCount(t, adID))
+		t.Fatalf("initial flag_count = %d", adRockCount(t, adID))
 	}
 
 	convID := createConv(t, adID, owner.ID, buyer.ID)
@@ -154,14 +154,14 @@ func TestAdRockCountSyncOnThrowUnthrow(t *testing.T) {
 		t.Fatalf("throw: %v", err)
 	}
 	if got := adRockCount(t, adID); got != 1 {
-		t.Fatalf("after throw rock_count = %d, want 1", got)
+		t.Fatalf("after throw flag_count = %d, want 1", got)
 	}
 
 	if err := rock.UnthrowRock(buyer.ID, convID); err != nil {
 		t.Fatalf("unthrow: %v", err)
 	}
 	if got := adRockCount(t, adID); got != 0 {
-		t.Fatalf("after unthrow rock_count = %d, want 0", got)
+		t.Fatalf("after unthrow flag_count = %d, want 0", got)
 	}
 }
 
@@ -183,6 +183,6 @@ func TestOwnerThrowDoesNotChangeAdRockCount(t *testing.T) {
 		t.Fatalf("owner throw: %v", err)
 	}
 	if got := adRockCount(t, adID); got != 0 {
-		t.Fatalf("owner throw should not bump ad rock_count, got %d", got)
+		t.Fatalf("owner throw should not bump ad flag_count, got %d", got)
 	}
 }
