@@ -2,7 +2,6 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/partspile/site/internal/config"
 	"github.com/partspile/site/internal/cookie"
 	"github.com/partspile/site/internal/local"
 	"github.com/partspile/site/internal/ui"
@@ -19,7 +18,7 @@ func HomeHandler(c *fiber.Ctx) error {
 		return err
 	}
 
-	return renderPage(c, config.ServerName,
+	return renderPage(c, "",
 		ui.HomePage(userID, view, searchState.Q, searchState.Expanded,
 			searchVisible(searchState),
 			filterFacetsForExpanded(searchState.CategoryID, searchState.Expanded),

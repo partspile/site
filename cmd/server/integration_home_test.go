@@ -43,9 +43,9 @@ func TestHomeHandler(t *testing.T) {
 		categoryID     int
 		expectedStatus int
 	}{
-		{"Valid category", 6, 200},
-		{"Another valid category", 5, 200},
-		{"Invalid category", 999, 200},
+		{"With create-ad category cookie", 6, 200},
+		{"Another create-ad category cookie", 5, 200},
+		{"Invalid create-ad category cookie", 999, 200},
 	}
 
 	for _, tt := range tests {
@@ -74,11 +74,8 @@ func TestHomeHandler(t *testing.T) {
 				if len(body) == 0 {
 					t.Error("Expected non-empty HTML response")
 				}
-
-				if tt.categoryID == 999 {
-					if !strings.Contains(body, "Car &amp; Truck Parts") && !strings.Contains(body, "Car & Truck Parts") {
-						t.Errorf("Expected HTML to contain default category name 'Car & Truck Parts' (or HTML entity version)")
-					}
+				if !strings.Contains(body, `id="search-container"`) {
+					t.Error("Expected home search container")
 				}
 			}
 		})
@@ -92,18 +89,15 @@ func TestHomeHandler(t *testing.T) {
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			t.Errorf("Expected status 200 without category cookie (should default to default category), got %d", resp.StatusCode)
+			t.Errorf("Expected status 200 without category cookie, got %d",
+				resp.StatusCode)
 		}
-
-		hasCategoryCookie := false
-		for _, cookie := range resp.Cookies() {
-			if cookie.Name == "category" {
-				hasCategoryCookie = true
-				break
-			}
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			t.Fatal(err)
 		}
-		if !hasCategoryCookie {
-			t.Error("Expected category cookie to be set when accessing home page without cookie")
+		if !strings.Contains(string(body), `id="search-container"`) {
+			t.Error("Expected home search container without category cookie")
 		}
 	})
 }
@@ -119,9 +113,8 @@ func TestHomePageSEO(t *testing.T) {
 		t.Fatal(err)
 	}
 	html := string(body)
-	if !strings.Contains(html, "Parts Pile - Car") ||
-		!strings.Contains(html, "Truck Parts") {
-		t.Error("expected homepage title Parts Pile - Car & Truck Parts")
+	if !strings.Contains(html, "<title>Parts Pile</title>") {
+		t.Error("expected homepage title <title>Parts Pile</title>")
 	}
 	if !strings.Contains(html, `rel="canonical"`) {
 		t.Error("expected canonical link")

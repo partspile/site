@@ -81,12 +81,15 @@ func TestSearchPageHandler(t *testing.T) {
 }
 
 func TestSearchPageHandlerMileageDirect(t *testing.T) {
-	data, err := json.Marshal(cookie.SearchState{Expanded: true})
+	data, err := json.Marshal(cookie.SearchState{
+		Expanded: true, CategoryID: 6,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	encoded := base64.RawURLEncoding.EncodeToString(data)
-	req := httptest.NewRequest("GET", "/api/search/?mileage_min=40000&mileage_max=50000", nil)
+	req := httptest.NewRequest("GET",
+		"/api/search/?category=6&mileage_min=40000&mileage_max=50000", nil)
 	req.AddCookie(&http.Cookie{Name: "category", Value: "6"})
 	req.AddCookie(&http.Cookie{Name: "search", Value: encoded})
 	resp, err := testServer.Test(req, -1)
@@ -116,11 +119,14 @@ func TestMileageSearchFilter(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
-	if err := setSearchCookieOnClient(client, cookie.SearchState{Expanded: true}); err != nil {
+	if err := setSearchCookieOnClient(client, cookie.SearchState{
+		Expanded: true, CategoryID: 6,
+	}); err != nil {
 		t.Fatalf("set search cookie: %v", err)
 	}
 
-	resp, body := getRequestWithCookies(t, client, baseURL+"/api/search/?mileage_min=40000&mileage_max=50000")
+	resp, body := getRequestWithCookies(t, client,
+		baseURL+"/api/search/?category=6&mileage_min=40000&mileage_max=50000")
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Expected status 200, got %d", resp.StatusCode)
 	}
