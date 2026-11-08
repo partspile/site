@@ -25,7 +25,7 @@ func SearchLocationOOB(f SearchFilters) g.Node {
 func searchLocationDiv(f SearchFilters, oob bool) g.Node {
 	attrs := []g.Node{
 		ID("search-location"),
-		Class("min-w-0"),
+		Class("min-w-0 text-right"),
 		searchLocationHiddenFields(f),
 		locationSummaryLink(f),
 	}
@@ -56,13 +56,27 @@ func LocationSummaryText(f SearchFilters) string {
 }
 
 func locationSummaryLink(f SearchFilters) g.Node {
+	hasLocation := strings.TrimSpace(f.Location) != ""
 	return Button(
 		Type("button"),
-		Class("text-blue-600 dark:text-blue-400 hover:underline cursor-pointer bg-transparent border-0 p-0 text-left min-w-0"),
+		Class("inline-flex items-center justify-end gap-1 max-w-full "+
+			"text-blue-600 dark:text-blue-400 "+
+			"cursor-pointer bg-transparent border-0 p-0 text-right"),
 		hx.Get("/api/search-location-modal"),
 		hx.Target("body"),
 		hx.Swap("beforeend"),
-		g.Text(LocationSummaryText(f)),
+		g.If(hasLocation, locationPin()),
+		Span(
+			Class("hover:underline min-w-0"),
+			g.Text(LocationSummaryText(f)),
+		),
+	)
+}
+
+func locationPin() g.Node {
+	return Span(
+		Class("location-pin"),
+		g.Attr("aria-hidden", "true"),
 	)
 }
 

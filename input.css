@@ -19,6 +19,12 @@
     @apply flex items-center gap-2 text-sm font-normal text-zinc-600 dark:text-zinc-400 cursor-pointer;
   }
 
+  .location-pin {
+    @apply inline-block w-5 h-5 shrink-0 bg-blue-600 dark:bg-blue-400;
+    -webkit-mask: url("/images/distance.svg") center / contain no-repeat;
+    mask: url("/images/distance.svg") center / contain no-repeat;
+  }
+
   .watermark-test {
     @apply font-bold text-8xl text-transparent transform rotate-[-45deg];
     -webkit-text-stroke: 2px #3b82f6;

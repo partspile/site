@@ -2756,6 +2756,18 @@
       color: var(--color-zinc-400);
     }
   }
+  .location-pin {
+    display: inline-block;
+    height: calc(var(--spacing) * 5);
+    width: calc(var(--spacing) * 5);
+    flex-shrink: 0;
+    background-color: var(--color-blue-600);
+    @media (prefers-color-scheme: dark) {
+      background-color: var(--color-blue-400);
+    }
+    -webkit-mask: url("/images/distance.svg") center / contain no-repeat;
+    mask: url("/images/distance.svg") center / contain no-repeat;
+  }
   .watermark-test {
     rotate: -45deg;
     transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);

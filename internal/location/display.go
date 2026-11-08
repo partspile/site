@@ -7,29 +7,16 @@ import (
 	"github.com/partspile/site/internal/db"
 )
 
-// DisplayText formats city/admin area with a country flag for UI display.
+// DisplayText formats city and admin area for UI display.
+// country is accepted so callers can pass the stored record; it is not shown.
 func DisplayText(city, adminArea, country string) string {
-	if city == "" && adminArea == "" && country == "" {
-		return ""
-	}
-
-	var locationText string
 	if city != "" && adminArea != "" {
-		locationText = city + ", " + adminArea
-	} else if city != "" {
-		locationText = city
-	} else if adminArea != "" {
-		locationText = adminArea
+		return city + ", " + adminArea
 	}
-
-	var flag string
-	if len(country) == 2 {
-		code := strings.ToUpper(country)
-		flag = string(rune(int32(code[0])-'A'+0x1F1E6)) +
-			string(rune(int32(code[1])-'A'+0x1F1E6))
+	if city != "" {
+		return city
 	}
-
-	return strings.TrimSpace(flag + " " + locationText)
+	return adminArea
 }
 
 // DisplayTextForInput resolves raw user input and returns formatted display text.
