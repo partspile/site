@@ -37,7 +37,7 @@ const (
 	MinIOObjectCacheControl = "public, max-age=86400"
 
 	// Vector search configuration
-	SearchPageSize             = 20  // Number of results per page for list/grid views
+	SearchPageSize             = 20  // Number of search results per page
 	SearchThreshold            = 0.6 // Max cosine distance for vector search (pgvector <=>)
 	VectorProcessingQueueSize  = 100
 	VectorUserEmbeddingLimit   = 8

@@ -10,7 +10,7 @@ import (
 
 func TestHomeHasNoCategoryPicker(t *testing.T) {
 	var buf bytes.Buffer
-	n := SearchContainer(0, 0, "", false, false, nil, uiads.SearchFilters{}, nil)
+	n := SearchContainer(0, "", false, false, nil, uiads.SearchFilters{}, nil)
 	if err := n.Render(&buf); err != nil {
 		t.Fatal(err)
 	}

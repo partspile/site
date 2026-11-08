@@ -10,23 +10,19 @@ import (
 
 func TestUserProfilePageShareButton(t *testing.T) {
 	d := UserProfileData{
-		ID:                1,
-		Name:              "test",
-		MemberSince:       "January 2, 2006",
-		AdsViewPathPrefix: "/auth/user/1/view/",
-		ShowShare:         true,
-		IsOwn:             true,
+		ID:          1,
+		Name:        "test",
+		MemberSince: "January 2, 2006",
+		ShowShare:   true,
+		IsOwn:       true,
 	}
 	var buf bytes.Buffer
-	if err := g.Group(UserProfilePage(d, ViewList, nil)).Render(&buf); err != nil {
+	if err := g.Group(UserProfilePage(d, nil)).Render(&buf); err != nil {
 		t.Fatal(err)
 	}
 	html := buf.String()
 	if !strings.Contains(html, "/auth/user/share") {
 		t.Fatal("missing share button")
-	}
-	if !strings.Contains(html, "/auth/user/1/view/") {
-		t.Fatal("missing auth view prefix")
 	}
 	if !strings.Contains(html, "/auth/user/profile/picture/edit") {
 		t.Fatal("own profile should offer picture edit")
@@ -46,9 +42,8 @@ func TestUserProfilePageShareButton(t *testing.T) {
 
 	d.ShowShare = false
 	d.IsOwn = false
-	d.AdsViewPathPrefix = "/u/tokentokentokentoke/view/"
 	buf.Reset()
-	if err := g.Group(UserProfilePage(d, ViewList, nil)).Render(&buf); err != nil {
+	if err := g.Group(UserProfilePage(d, nil)).Render(&buf); err != nil {
 		t.Fatal(err)
 	}
 	html = buf.String()
@@ -57,9 +52,6 @@ func TestUserProfilePageShareButton(t *testing.T) {
 	}
 	if strings.Contains(html, "/auth/user/profile/picture") {
 		t.Fatal("guest page should not edit picture")
-	}
-	if !strings.Contains(html, "/u/tokentokentokentoke/view/") {
-		t.Fatal("missing shared view prefix")
 	}
 }
 

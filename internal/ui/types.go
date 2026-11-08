@@ -17,7 +17,6 @@ type UserProfileData struct {
 	AccountPictureURL string
 	ShowShare         bool
 	IsOwn             bool // viewer is this profile's owner
-	AdsViewPathPrefix string
 }
 
 // AdHistoryEntry holds one edit-history block on the ad detail page.
@@ -70,7 +69,7 @@ type AdFlyerData struct {
 	AdURL        string
 }
 
-// AdCard holds presentation fields for an ad in search or list views.
+// AdCard holds presentation fields for a listing card.
 type AdCard struct {
 	ID           int
 	PriceDisplay string

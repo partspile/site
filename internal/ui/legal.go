@@ -93,7 +93,7 @@ func PrivacyPolicyPage() []g.Node {
 						"Session and security cookies (login, CSRF)")),
 					legalLi(g.Text(
 						"Preference cookies (search filters, timezone, "+
-							"distance unit, view mode)")),
+							"distance unit)")),
 					legalLi(g.Text(
 						"Server logs needed to run and secure the "+
 							"service (such as IP address, user agent, "+

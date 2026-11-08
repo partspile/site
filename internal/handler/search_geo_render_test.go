@@ -13,7 +13,7 @@ func TestRenderSearchResultsGeoNoInArea(t *testing.T) {
 	nodes := renderSearchResults(
 		ads,
 		searchGeoMeta{InAreaOnPage: 0, HasAnyInArea: false},
-		1, true, 0, 0, time.UTC, "",
+		1, true, 0, time.UTC, "",
 		"Portland", 25, "mi",
 	)
 	html, err := renderToString(nodes[0])
@@ -33,7 +33,7 @@ func TestRenderSearchResultsGeoStraddle(t *testing.T) {
 	nodes := renderSearchResults(
 		ads,
 		searchGeoMeta{InAreaOnPage: 1, HasAnyInArea: true},
-		1, true, 0, 0, time.UTC, "",
+		1, true, 0, time.UTC, "",
 		"Portland", 25, "mi",
 	)
 	if len(nodes) < 3 {

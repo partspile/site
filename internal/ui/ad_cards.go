@@ -25,33 +25,20 @@ func AdCardFromFields(id, imageCount, flagCount int, priceDisplay, title,
 	}
 }
 
-// AdNodes renders search or list ad cards into gomponents nodes.
-func AdNodes(cards []AdCard, userID, view, page int, csrfToken string,
+const adsGridClass = "grid grid-cols-2 md:grid-cols-3 gap-2 -mx-5 md:mx-0"
+
+// AdNodes renders listing cards into gomponents nodes.
+func AdNodes(cards []AdCard, userID, page int, csrfToken string,
 	pagination bool) []g.Node {
 	results := make([]g.Node, len(cards))
 	for i, card := range cards {
 		isLast := i == len(cards)-1 && pagination
-		results[i] = adCardNode(card, userID, view, page+1, csrfToken, isLast)
+		results[i] = AdGridNode(
+			userID, card.ID, card.ImageCount, page+1,
+			card.PriceDisplay, card.Title, card.Location, card.FacetLabel,
+			csrfToken, card.HasPrice, card.CreatedAt, card.Active,
+			card.Bookmarked, isLast, card.FlagCount,
+		)
 	}
 	return results
-}
-
-func adCardNode(card AdCard, userID, view, nextPage int, csrfToken string,
-	isLast bool) g.Node {
-	switch view {
-	case ViewGrid:
-		return AdGridNode(
-			userID, card.ID, card.ImageCount, nextPage,
-			card.PriceDisplay, card.Title, card.Location, card.FacetLabel, csrfToken,
-			card.HasPrice, card.CreatedAt, card.Active, card.Bookmarked, isLast, card.FlagCount,
-		)
-	case ViewList:
-		return AdListNode(
-			userID, card.ID, card.PriceDisplay, card.Title, card.Location, card.FacetLabel,
-			card.HasPrice, card.CreatedAt, card.Active, card.Bookmarked, csrfToken, isLast, nextPage,
-			card.FlagCount,
-		)
-	default:
-		return g.Text("bad view")
-	}
 }

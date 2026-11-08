@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -66,7 +65,7 @@ func UserMenuHandler(c *fiber.Ctx) error {
 }
 
 func UserMyAdsHandler(c *fiber.Ctx) error {
-	return userMyAdsTabHandler(c, "active", 0)
+	return userMyAdsTabHandler(c, "active")
 }
 
 func UserMyAdsTabHandler(c *fiber.Ctx) error {
@@ -75,27 +74,13 @@ func UserMyAdsTabHandler(c *fiber.Ctx) error {
 		tabID != "inactive" && tabID != "deleted" {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid tab")
 	}
-	return userMyAdsTabHandler(c, tabID, 0)
+	return userMyAdsTabHandler(c, tabID)
 }
 
-func UserMyAdsViewHandler(c *fiber.Ctx) error {
-	tabID := c.Params("tab")
-	if tabID != "bookmarked" && tabID != "active" &&
-		tabID != "inactive" && tabID != "deleted" {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid tab")
-	}
-	view := ui.ValidateView(c.Params("view"))
-	cookie.SetView(c, view)
-	return userMyAdsTabHandler(c, tabID, view)
-}
-
-func userMyAdsTabHandler(c *fiber.Ctx, activeTab string, view int) error {
+func userMyAdsTabHandler(c *fiber.Ctx, activeTab string) error {
 	userID := local.GetUserID(c)
 	tz := cookie.GetTimezone(c)
 	csrfToken := local.GetCSRFToken(c)
-	if view == 0 {
-		view = ui.ValidateView(cookie.GetView(c))
-	}
 
 	adIDs, err := ad.GetUserAdIDs(userID, activeTab)
 	if err != nil {
@@ -107,13 +92,13 @@ func userMyAdsTabHandler(c *fiber.Ctx, activeTab string, view int) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to load ads")
 	}
 
-	adNodes := ui.AdNodes(adCardsFrom(ads, userID, tz), userID, view, 1, csrfToken, false)
+	adNodes := ui.AdNodes(adCardsFrom(ads, userID, tz), userID, 1, csrfToken, false)
 
 	if c.Get("HX-Request") != "" {
-		return render(c, ui.MyAdsContainer(activeTab, view, adNodes))
+		return render(c, ui.MyAdsContainer(activeTab, adNodes))
 	}
 
-	return renderPage(c, "My Ads", ui.MyAdsPage(activeTab, view, adNodes))
+	return renderPage(c, "My Ads", ui.MyAdsPage(activeTab, adNodes))
 }
 
 func UserSettingsHandler(c *fiber.Ctx) error {
@@ -378,9 +363,8 @@ func UserProfileHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid user ID")
 	}
-	prefix := fmt.Sprintf("/auth/user/%d/view/", id)
 	showShare := local.GetUserID(c) == id
-	return renderUserProfile(c, id, prefix, showShare)
+	return renderUserProfile(c, id, showShare)
 }
 
 func SharedUserProfileHandler(c *fiber.Ctx) error {
@@ -388,14 +372,11 @@ func SharedUserProfileHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	token := c.Params("token")
-	prefix := "/u/" + token + "/view/"
 	showShare := local.GetUserID(c) == id
-	return renderUserProfile(c, id, prefix, showShare)
+	return renderUserProfile(c, id, showShare)
 }
 
-func renderUserProfile(c *fiber.Ctx, id int, adsViewPrefix string,
-	showShare bool) error {
+func renderUserProfile(c *fiber.Ctx, id int, showShare bool) error {
 	u, err := user.GetByID(id)
 	if err != nil {
 		return fiber.NewError(fiber.StatusNotFound, "User not found")
@@ -403,47 +384,14 @@ func renderUserProfile(c *fiber.Ctx, id int, adsViewPrefix string,
 	activeAdCount, _ := ad.CountActiveAdsByUser(id)
 	userFlagCount, _ := flag.GetFlagCountForUser(id)
 	tz := cookie.GetTimezone(c)
-	view := ui.ValidateView(cookie.GetView(c))
-	adNodes, err := userActiveAdNodes(c, id, view)
+	adNodes, err := userActiveAdNodes(c, id)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, "Failed to load ads")
 	}
 	d := userProfileData(u, activeAdCount, userFlagCount, tz, memberSinceLayoutPage)
 	d.ShowShare = showShare
 	d.IsOwn = showShare
-	d.AdsViewPathPrefix = adsViewPrefix
-	return renderPage(c, u.Name, ui.UserProfilePage(d, view, adNodes))
-}
-
-func UserProfileViewHandler(c *fiber.Ctx) error {
-	id, err := c.ParamsInt("id")
-	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid user ID")
-	}
-	if _, err := user.GetByID(id); err != nil {
-		return fiber.NewError(fiber.StatusNotFound, "User not found")
-	}
-	prefix := fmt.Sprintf("/auth/user/%d/view/", id)
-	return renderUserProfileAds(c, id, prefix)
-}
-
-func SharedUserProfileViewHandler(c *fiber.Ctx) error {
-	id, err := sharedProfileUserID(c)
-	if err != nil {
-		return err
-	}
-	prefix := "/u/" + c.Params("token") + "/view/"
-	return renderUserProfileAds(c, id, prefix)
-}
-
-func renderUserProfileAds(c *fiber.Ctx, id int, adsViewPrefix string) error {
-	view := ui.ValidateView(c.Params("view"))
-	cookie.SetView(c, view)
-	adNodes, err := userActiveAdNodes(c, id, view)
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "Failed to load ads")
-	}
-	return render(c, ui.UserProfileAds(adsViewPrefix, view, adNodes))
+	return renderPage(c, u.Name, ui.UserProfilePage(d, adNodes))
 }
 
 func sharedProfileUserID(c *fiber.Ctx) (int, error) {
@@ -463,7 +411,7 @@ func UserShareHandler(c *fiber.Ctx) error {
 	return render(c, ui.UserShareModal(config.CanonicalURL("/u/"+token)))
 }
 
-func userActiveAdNodes(c *fiber.Ctx, profileUserID, view int) ([]g.Node, error) {
+func userActiveAdNodes(c *fiber.Ctx, profileUserID int) ([]g.Node, error) {
 	viewerID := local.GetUserID(c)
 	tz := cookie.GetTimezone(c)
 	csrfToken := local.GetCSRFToken(c)
@@ -475,7 +423,7 @@ func userActiveAdNodes(c *fiber.Ctx, profileUserID, view int) ([]g.Node, error) 
 	if err != nil {
 		return nil, err
 	}
-	return ui.AdNodes(adCardsFrom(ads, viewerID, tz), viewerID, view, 1,
+	return ui.AdNodes(adCardsFrom(ads, viewerID, tz), viewerID, 1,
 		csrfToken, false), nil
 }
 

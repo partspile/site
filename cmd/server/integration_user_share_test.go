@@ -86,20 +86,15 @@ func TestSharedUserProfile(t *testing.T) {
 	if !strings.Contains(guestBody, "Active Ads") {
 		t.Fatal("shared profile missing ads")
 	}
+	if !strings.Contains(guestBody, "user-profile-ads") {
+		t.Fatal("shared profile missing ads container")
+	}
 	if strings.Contains(guestBody, "/auth/user/share") {
 		t.Fatal("guest shared profile should not show share button")
 	}
-
-	resp, err = noRedirect.Get(baseURL + "/u/" + token + "/view/2")
-	if err != nil {
-		t.Fatal(err)
-	}
-	viewBody := readBody(t, resp)
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("shared view status %d", resp.StatusCode)
-	}
-	if !strings.Contains(viewBody, "user-profile-ads") {
-		t.Fatal("shared view missing ads container")
+	if strings.Contains(guestBody, "/images/list.svg") ||
+		strings.Contains(guestBody, "/images/grid.svg") {
+		t.Fatal("shared profile should not offer a list/grid toggle")
 	}
 }
 

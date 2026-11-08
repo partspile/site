@@ -18,7 +18,7 @@ func SearchLocationModalHandler(c *fiber.Ctx) error {
 func SearchLocationSaveHandler(c *fiber.Ctx) error {
 	state := saveSearchStateFromRequest(c, nil, true)
 
-	view, _, results, err := searchFromRequest(c, state)
+	_, results, err := searchFromRequest(c, state)
 	if err != nil {
 		return err
 	}
@@ -28,7 +28,7 @@ func SearchLocationSaveHandler(c *fiber.Ctx) error {
 
 	nodes := []g.Node{
 		uiads.SearchLocationOOB(filters),
-		ui.SearchResultsOOB(view, results),
+		ui.SearchResultsOOB(results),
 	}
 	nodes = append(nodes, ui.RemoveModal("search-location")...)
 	return render(c, g.Group(nodes))

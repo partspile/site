@@ -97,7 +97,7 @@ func UserSummaryFragment(d UserProfileData) g.Node {
 }
 
 // UserProfilePage renders the user profile page body
-func UserProfilePage(d UserProfileData, view int, adNodes []g.Node) []g.Node {
+func UserProfilePage(d UserProfileData, adNodes []g.Node) []g.Node {
 	title := pageTitle(d.Name)
 	if d.ShowShare {
 		title = Div(
@@ -123,7 +123,7 @@ func UserProfilePage(d UserProfileData, view int, adNodes []g.Node) []g.Node {
 			),
 		),
 		UserAccountPictureArea(d, false, ""),
-		UserProfileAds(d.AdsViewPathPrefix, view, adNodes),
+		UserProfileAds(adNodes),
 	}
 	if d.IsOwn {
 		nodes = append(nodes,
@@ -246,20 +246,16 @@ func AccountPictureDisplaySection(d UserProfileData) g.Node {
 	)
 }
 
-// UserProfileAds is the active-ads list with grid/list toggles.
-func UserProfileAds(pathPrefix string, view int, adNodes []g.Node) g.Node {
+// UserProfileAds is the active-ads section on a profile page.
+func UserProfileAds(adNodes []g.Node) g.Node {
 	return Div(
 		ID("user-profile-ads"),
 		Class("space-y-4 mt-8"),
-		Div(
-			Class("flex items-center justify-between gap-4"),
-			H2(
-				Class("text-lg font-semibold text-zinc-900 dark:text-zinc-100"),
-				g.Text("Active Ads"),
-			),
-			viewTogglesTargeting(view, pathPrefix, "#user-profile-ads"),
+		H2(
+			Class("text-lg font-semibold text-zinc-900 dark:text-zinc-100"),
+			g.Text("Active Ads"),
 		),
-		AdsContent(view, adNodes),
+		AdsContent(adNodes),
 	)
 }
 
@@ -385,7 +381,7 @@ func UserMenu(userName, memberSince string, userID int, isAdmin bool,
 	})
 }
 
-func MyAdsPage(activeTab string, view int, adNodes []g.Node) []g.Node {
+func MyAdsPage(activeTab string, adNodes []g.Node) []g.Node {
 	return []g.Node{
 		Div(
 			Class("flex items-center justify-between gap-4"),
@@ -395,19 +391,16 @@ func MyAdsPage(activeTab string, view int, adNodes []g.Node) []g.Node {
 				Text: "New Ad",
 			}),
 		),
-		MyAdsContainer(activeTab, view, adNodes),
+		MyAdsContainer(activeTab, adNodes),
 	}
 }
 
-func MyAdsContainer(activeTab string, view int, adNodes []g.Node) g.Node {
-	pathPrefix := fmt.Sprintf(
-		"/auth/user/myads/tab/%s/view/", activeTab)
+func MyAdsContainer(activeTab string, adNodes []g.Node) g.Node {
 	return Div(
 		ID("my-ads-container"),
 		Class("space-y-4 mt-6"),
 		MyAdsTabs(activeTab),
-		adsViewToggles(view, pathPrefix, "#my-ads-container"),
-		AdsContent(view, adNodes),
+		AdsContent(adNodes),
 	)
 }
 
@@ -445,7 +438,7 @@ func myAdsTab(name, tabID string, active bool) g.Node {
 	)
 }
 
-func AdsContent(view int, adNodes []g.Node) g.Node {
+func AdsContent(adNodes []g.Node) g.Node {
 	var content g.Node
 	if len(adNodes) == 0 {
 		content = Div(
@@ -457,7 +450,7 @@ func AdsContent(view int, adNodes []g.Node) g.Node {
 		content = g.Group(adNodes)
 	}
 	return Div(
-		Class(resultsContainerClass(view)),
+		Class(adsGridClass),
 		content,
 	)
 }

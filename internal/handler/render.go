@@ -50,15 +50,12 @@ func renderPage(c *fiber.Ctx, title string, body []gomponents.Node) error {
 
 // searchFromRequest runs search for the current request page and renders ad nodes.
 func searchFromRequest(c *fiber.Ctx,
-	state cookie.SearchState) (view, page int, results []g.Node, err error) {
-	view = ui.ValidateView(cookie.GetView(c))
-	page, results, err = searchAndRender(c, state, view)
-	return view, page, results, err
+	state cookie.SearchState) (page int, results []g.Node, err error) {
+	return searchAndRender(c, state)
 }
 
 // searchAndRender runs search for the current page and returns rendered ad nodes.
-func searchAndRender(c *fiber.Ctx, state cookie.SearchState,
-	view int) (page int, results []g.Node, err error) {
+func searchAndRender(c *fiber.Ctx, state cookie.SearchState) (page int, results []g.Node, err error) {
 
 	userID := local.GetUserID(c)
 	tz := cookie.GetTimezone(c)
@@ -75,7 +72,7 @@ func searchAndRender(c *fiber.Ctx, state cookie.SearchState,
 	location := searchLocationDisplay(state.Location)
 	results = renderSearchResults(
 		ads, geoMeta, page, p.HasGeo,
-		userID, view, tz, csrfToken,
+		userID, tz, csrfToken,
 		location, state.Within, distanceUnit,
 	)
 
@@ -108,11 +105,11 @@ func searchForAds(p search.Params, userID int,
 
 // renderSearchResults renders search result ads into gomponents nodes.
 func renderSearchResults(ads []ad.Ad, geoMeta searchGeoMeta, page int, hasGeo bool,
-	userID, view int, tz *time.Location, csrfToken,
+	userID int, tz *time.Location, csrfToken,
 	location string, within int, distanceUnit string) []g.Node {
 	cards := adCardsFrom(ads, userID, tz)
 	hasMore := len(ads) >= config.SearchPageSize
-	cardNodes := ui.AdNodes(cards, userID, view, page, csrfToken, hasMore)
+	cardNodes := ui.AdNodes(cards, userID, page, csrfToken, hasMore)
 
 	if !hasGeo {
 		return cardNodes

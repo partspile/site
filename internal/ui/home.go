@@ -11,14 +11,14 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-func HomePage(userID, view int, q string, filtersExpanded, searchVisible bool,
+func HomePage(userID int, q string, filtersExpanded, searchVisible bool,
 	filterFacets []facet.Def, filters uiads.SearchFilters,
 	results []g.Node) []g.Node {
-	return []g.Node{SearchContainer(userID, view, q, filtersExpanded,
+	return []g.Node{SearchContainer(userID, q, filtersExpanded,
 		searchVisible, filterFacets, filters, results)}
 }
 
-func SearchContainer(userID, view int, q string, filtersExpanded,
+func SearchContainer(userID int, q string, filtersExpanded,
 	searchVisible bool, filterFacets []facet.Def, filters uiads.SearchFilters,
 	results []g.Node) g.Node {
 	return Div(
@@ -26,29 +26,29 @@ func SearchContainer(userID, view int, q string, filtersExpanded,
 		Div(
 			Class("flex flex-col gap-4"),
 			homeActionsRow(userID, searchVisible),
-			SearchWidget(userID, view, q, filtersExpanded, searchVisible,
+			SearchWidget(userID, q, filtersExpanded, searchVisible,
 				filterFacets, filters, results),
 		),
 	)
 }
 
-func SearchResults(view int, results []g.Node) g.Node {
-	return searchResults(view, results, false)
+func SearchResults(results []g.Node) g.Node {
+	return searchResults(results, false)
 }
 
 // SearchResultsResponse is the HTMX body for /api/search/.
 // Page 1: #search-results with sorry message or first page of ads.
 // Page 2+: ad nodes only (replaces the scroll sentinel).
-func SearchResultsResponse(view, page int, results []g.Node) g.Node {
+func SearchResultsResponse(page int, results []g.Node) g.Node {
 	if page > 1 {
 		return g.Group(results)
 	}
-	return SearchResults(view, results)
+	return SearchResults(results)
 }
 
 // SearchResultsOOB swaps #search-results out-of-band (show/hide filters).
-func SearchResultsOOB(view int, results []g.Node) g.Node {
-	return searchResults(view, results, true)
+func SearchResultsOOB(results []g.Node) g.Node {
+	return searchResults(results, true)
 }
 
 // SearchArea renders the search box, filter toggle, and optional expanded facets.
@@ -214,24 +214,15 @@ func filterToggle(expanded bool) g.Node {
 	return Button(attrs...)
 }
 
-func SearchView(view int, filters uiads.SearchFilters, results []g.Node) g.Node {
+func SearchView(filters uiads.SearchFilters, results []g.Node) g.Node {
 	return Div(
 		Class("flex flex-col gap-4"),
-		ID("search-view"),
-		viewRow(filters, view),
-		searchResults(view, results, false),
-	)
-}
-
-func viewRow(filters uiads.SearchFilters, view int) g.Node {
-	return Div(
-		Class("flex justify-between items-center gap-2"),
 		uiads.SearchLocationBar(filters),
-		viewToggles(view),
+		searchResults(results, false),
 	)
 }
 
-func SearchWidget(userID, view int, q string, filtersExpanded,
+func SearchWidget(userID int, q string, filtersExpanded,
 	searchVisible bool, filterFacets []facet.Def,
 	filters uiads.SearchFilters, results []g.Node) g.Node {
 	attrs := []g.Node{
@@ -239,12 +230,12 @@ func SearchWidget(userID, view int, q string, filtersExpanded,
 		ID("search-widget"),
 		g.Attr("onsubmit", "event.preventDefault(); return false;"),
 		SearchArea(q, filtersExpanded, filterFacets, filters, searchVisible),
-		SearchView(view, filters, results),
+		SearchView(filters, results),
 	}
 	return Form(attrs...)
 }
 
-func searchResults(view int, results []g.Node, oob bool) g.Node {
+func searchResults(results []g.Node, oob bool) g.Node {
 	var content g.Node
 	if len(results) == 0 {
 		content = searchResultsEmpty()
@@ -254,7 +245,7 @@ func searchResults(view int, results []g.Node, oob bool) g.Node {
 
 	attrs := []g.Node{
 		ID("search-results"),
-		Class(resultsContainerClass(view)),
+		Class(adsGridClass),
 		content,
 	}
 	if oob {

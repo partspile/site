@@ -82,7 +82,6 @@ func setupApp() *fiber.App {
 	app.Get("/ad/:id", handler.AdHandler)
 	app.Get("/ad/:id/flag/:ordinal", handler.PublicAdFlagOpinionHandler)
 	app.Get("/u/:token", handler.SharedUserProfileHandler)
-	app.Get("/u/:token/view/:view", handler.SharedUserProfileViewHandler)
 	app.Get("/media/ad/:id/:index/:size", handler.MediaAdImageHandler)
 
 	// Auth routes
@@ -118,7 +117,6 @@ func setupApp() *fiber.App {
 	auth.Get("/user/share", handler.UserShareHandler)
 	auth.Get("/user/myads", handler.UserMyAdsHandler)
 	auth.Get("/user/myads/tab/:tab", handler.UserMyAdsTabHandler)
-	auth.Get("/user/myads/tab/:tab/view/:view", handler.UserMyAdsViewHandler)
 	auth.Get("/user/messages", handler.UserMessagesHandler)
 	auth.Get("/user/settings", handler.UserSettingsHandler)
 	auth.Post("/user/settings/notifications", handler.NotificationsToggleHandler)
@@ -140,7 +138,6 @@ func setupApp() *fiber.App {
 	auth.Post("/user/profile/picture/remove",
 		handler.RemoveAccountPictureHandler)
 	auth.Get("/user/:id", handler.UserProfileHandler)
-	auth.Get("/user/:id/view/:view", handler.UserProfileViewHandler)
 	auth.Get("/user/:id/summary", handler.UserSummaryHandler)
 	auth.Get("/user/:id/flag/:ordinal", handler.UserFlagConversationHandler)
 	auth.Get("/welcome", handler.WelcomeHandler)
@@ -179,7 +176,6 @@ func setupApp() *fiber.App {
 	api.Get("/recover/status", handler.RecoverStatusHandler)
 	api.Post("/recover/password", handler.RecoverPasswordHandler)
 	api.Post("/sms/webhook", handler.SMSWebhookHandler)
-	api.Get("/view/:view", handler.ViewHandler)
 	api.Get("/image-nav/:id", handler.ImageNavigationHandler)
 	api.Get("/image-full/:id", handler.ImageFullScreenHandler)
 	api.Get("/show-filters", handler.ShowFiltersHandler)

@@ -34,7 +34,7 @@ func categorySwitchRedirect(c *fiber.Ctx) string {
 }
 
 func renderFilterPanelResponse(c *fiber.Ctx, state cookie.SearchState) error {
-	view, _, results, err := searchFromRequest(c, state)
+	_, results, err := searchFromRequest(c, state)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func renderFilterPanelResponse(c *fiber.Ctx, state cookie.SearchState) error {
 	return render(c, g.Group([]g.Node{
 		ui.SearchAreaOOB(state.Q, state.Expanded, filterFacets, filters, visible),
 		ui.SearchToggleOOB(visible),
-		ui.SearchResultsOOB(view, results),
+		ui.SearchResultsOOB(results),
 	}))
 }
 
@@ -77,9 +77,9 @@ func ToggleSearchHandler(c *fiber.Ctx) error {
 
 func SearchPageHandler(c *fiber.Ctx) error {
 	state := saveSearchStateFromRequest(c, nil, true)
-	view, page, results, err := searchFromRequest(c, state)
+	page, results, err := searchFromRequest(c, state)
 	if err != nil {
 		return err
 	}
-	return render(c, ui.SearchResultsResponse(view, page, results))
+	return render(c, ui.SearchResultsResponse(page, results))
 }

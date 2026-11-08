@@ -129,27 +129,13 @@ func paginationDiv(nextPage int) g.Node {
 	)
 }
 
-func adCardMeta(location string) g.Node {
-	return Div(
-		Class("text-xs text-zinc-500 whitespace-nowrap"),
-		g.Text(location),
-	)
-}
-
 func adCardTitle(title, facetLabel string) g.Node {
-	return adCardTitleWithBadge(title, facetLabel, false, time.Time{})
-}
-
-func adCardTitleWithBadge(title, facetLabel string, showNewBadge bool,
-	createdAt time.Time) g.Node {
 	return Span(
 		Class("min-w-0"),
 		g.Text(title),
 		g.If(facetLabel != "",
 			Span(Class("text-xs text-zinc-500 whitespace-nowrap"),
 				g.Text(" · "+facetLabel))),
-		g.If(showNewBadge && time.Since(createdAt) < 4*time.Hour,
-			Span(Class("ml-1"), newBadge())),
 	)
 }
 
@@ -192,46 +178,6 @@ func AdGridNode(userID, adID, imageCount, nextPage int, priceDisplay, title,
 			g.If(local.IsLoggedIn(userID) && bookmarked, BookmarkButton(adID, bookmarked, csrfToken)),
 			g.If(flagCount > 0, FlagIcons(adID, flagCount)),
 			adCardTitle(title, facetLabel),
-		),
-	)
-
-	if isLast {
-		return g.Group([]g.Node{
-			node,
-			paginationDiv(nextPage),
-		})
-	}
-
-	return node
-}
-
-func AdListNode(userID, adID int, priceDisplay, title, location,
-	facetLabel string, hasPrice bool, createdAt time.Time, active, bookmarked bool,
-	csrfToken string, isLast bool, nextPage int, flagCount int) g.Node {
-	class := "grid grid-cols-[minmax(0,1fr)_auto_auto] " +
-		"gap-x-2 items-baseline py-2 cursor-pointer"
-	if active {
-		class += " hover:bg-zinc-50 dark:hover:bg-zinc-800"
-	} else {
-		class += " bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-700 rounded-lg"
-	}
-
-	node := A(
-		Href("/ad/"+strconv.Itoa(adID)),
-		Class(class),
-		Div(
-			Class("flex items-start gap-2 min-w-0"),
-			g.If(local.IsLoggedIn(userID) && bookmarked, BookmarkButton(adID, bookmarked, csrfToken)),
-			g.If(flagCount > 0, FlagIcons(adID, flagCount)),
-			adCardTitleWithBadge(title, facetLabel, true, createdAt),
-		),
-		Div(
-			Class("text-right"),
-			adCardMeta(location),
-		),
-		Div(
-			Class("justify-self-end"),
-			priceSpan(priceDisplay, hasPrice),
 		),
 	)
 

@@ -9,17 +9,16 @@ import (
 
 func HomeHandler(c *fiber.Ctx) error {
 	userID := local.GetUserID(c)
-	view := ui.ValidateView(cookie.GetView(c))
 	searchState := cookie.GetSearchState(c)
 	distanceUnit := cookie.GetDistanceUnit(c)
 
-	_, results, err := searchAndRender(c, searchState, view)
+	_, results, err := searchAndRender(c, searchState)
 	if err != nil {
 		return err
 	}
 
 	return renderPage(c, "",
-		ui.HomePage(userID, view, searchState.Q, searchState.Expanded,
+		ui.HomePage(userID, searchState.Q, searchState.Expanded,
 			searchVisible(searchState),
 			filterFacetsForExpanded(searchState.CategoryID, searchState.Expanded),
 			searchStateToFilters(searchState, distanceUnit),
