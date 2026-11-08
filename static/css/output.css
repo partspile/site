@@ -691,6 +691,9 @@
   .w-\[90px\] {
     width: 90px;
   }
+  .w-auto {
+    width: auto;
+  }
   .w-full {
     width: 100%;
   }

@@ -245,13 +245,12 @@ func navigation(userID int, userName, currentPath string,
 			"flex items-center justify-between mb-4 py-4 -mx-4 px-4"),
 		A(
 			Href("/"),
-			Class("flex items-center gap-2 shrink-0 whitespace-nowrap"),
+			Class("flex items-center shrink-0"),
 			Img(
-				Src("/images/flag.svg"),
-				Alt(""),
-				Class("w-9 h-9 flex-shrink-0"),
+				Src("/images/parts-pile-logo.png"),
+				Alt(config.ServerName),
+				Class("h-16 w-auto flex-shrink-0"),
 			),
-			Span(Class("text-xl font-bold"), g.Text(config.ServerName)),
 		),
 		Div(
 			Class("flex items-center gap-3 shrink-0"),
