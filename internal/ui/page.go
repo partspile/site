@@ -235,6 +235,25 @@ func introBanner() g.Node {
 	)
 }
 
+func navBackHome() g.Node {
+	const label = "Home"
+	return A(
+		Href("/"),
+		ID("nav-back-home"),
+		Class("absolute left-4 top-1/2 -translate-x-full "+
+			"-translate-y-1/2 flex items-center justify-center "+
+			"w-6 h-10 md:w-10 md:h-10 rounded-full "+
+			"hover:bg-zinc-100 dark:hover:bg-zinc-800"),
+		g.Attr("aria-label", label),
+		g.Attr("title", label),
+		Img(
+			Src("/images/left.svg"),
+			Alt(label),
+			Class("w-6 h-6 md:w-8 md:h-8 dark:invert dark:opacity-80"),
+		),
+	)
+}
+
 func navigation(userID int, userName, currentPath string,
 	hasUnread bool) g.Node {
 	return Nav(
@@ -243,6 +262,7 @@ func navigation(userID int, userName, currentPath string,
 			"bg-white/75 dark:bg-zinc-900/75 backdrop-blur-xl "+
 			"border-b border-zinc-200 dark:border-zinc-700 "+
 			"flex items-center justify-between mb-4 py-4 -mx-4 px-4"),
+		g.If(currentPath != "/", navBackHome()),
 		A(
 			Href("/"),
 			Class("flex items-center shrink-0"),

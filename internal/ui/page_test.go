@@ -81,6 +81,28 @@ func TestPageSharedProfileSEO(t *testing.T) {
 	}
 }
 
+func TestNavBackHome(t *testing.T) {
+	home := renderPageHTML(t, "Car & Truck Parts", "/")
+	if strings.Contains(home, `id="nav-back-home"`) {
+		t.Error("home page should not show the back-to-home link")
+	}
+
+	about := renderPageHTML(t, "About", "/about")
+	wants := []string{
+		`id="nav-back-home"`,
+		`href="/"`,
+		`aria-label="Home"`,
+		`src="/images/left.svg"`,
+		`absolute left-4`,
+		`-translate-x-full`,
+	}
+	for _, want := range wants {
+		if !strings.Contains(about, want) {
+			t.Errorf("about page missing %q", want)
+		}
+	}
+}
+
 func TestRobotsForPath(t *testing.T) {
 	if got := robotsForPath("/auth/user/settings"); got != "noindex, nofollow" {
 		t.Fatalf("auth: %q", got)
