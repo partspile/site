@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/partspile/site/internal/facet"
-	"github.com/partspile/site/internal/local"
 	uiads "github.com/partspile/site/internal/ui/ads"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -25,7 +24,7 @@ func SearchContainer(userID int, q string, filtersExpanded,
 		ID("search-container"),
 		Div(
 			Class("flex flex-col gap-4"),
-			homeActionsRow(userID, searchVisible),
+			homeActionsRow(searchVisible),
 			SearchWidget(userID, q, filtersExpanded, searchVisible,
 				filterFacets, filters, results),
 		),
@@ -98,29 +97,10 @@ func searchArea(q string, expanded bool, filterFacets []facet.Def,
 	return Div(attrs...)
 }
 
-func homeActionsRow(userID int, searchVisible bool) g.Node {
+func homeActionsRow(searchVisible bool) g.Node {
 	return Div(
 		Class("flex items-center gap-2 justify-end"),
-		Div(
-			Class("flex items-center gap-2 shrink-0"),
-			g.Iff(local.IsLoggedIn(userID), func() g.Node { return newAdLink() }),
-			searchToggle(searchVisible, false),
-		),
-	)
-}
-
-func newAdLink() g.Node {
-	const label = "New ad"
-	return A(
-		Href("/auth/ad/new"),
-		Class("flex-shrink-0 cursor-pointer"),
-		g.Attr("aria-label", label),
-		g.Attr("title", label),
-		Img(
-			Class("w-6 h-6 dark:invert dark:opacity-80"),
-			Src("/images/post_add.svg"),
-			Alt(label),
-		),
+		searchToggle(searchVisible, false),
 	)
 }
 

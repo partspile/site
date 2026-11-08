@@ -84,8 +84,8 @@ func TestAdExpireToolbarVisibility(t *testing.T) {
 		if strings.Contains(html, `/auth/ad/1/renew`) {
 			t.Fatal("did not expect Renew for fresh 12-month expires_at")
 		}
-		if !strings.Contains(html, "/images/post_add.svg") {
-			t.Fatal("expected new-ad icon for owner")
+		if strings.Contains(html, "/images/post_add.svg") {
+			t.Fatal("new-ad icon belongs in the navbar, not the ad")
 		}
 		if !strings.Contains(html, "/images/copy.svg") {
 			t.Fatal("expected copy-ad icon for owner")

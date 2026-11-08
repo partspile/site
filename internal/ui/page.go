@@ -254,6 +254,32 @@ func navBackHome() g.Node {
 	)
 }
 
+func showNewAdLink(path string) bool {
+	if path == "/auth/ad/new" {
+		return false
+	}
+	if strings.HasPrefix(path, "/auth/ad/") &&
+		strings.HasSuffix(path, "/copy") {
+		return false
+	}
+	return true
+}
+
+func newAdLink() g.Node {
+	const label = "New ad"
+	return A(
+		Href("/auth/ad/new"),
+		Class("flex-shrink-0 cursor-pointer"),
+		g.Attr("aria-label", label),
+		g.Attr("title", label),
+		Img(
+			Class("w-6 h-6 dark:invert dark:opacity-80"),
+			Src("/images/post_add.svg"),
+			Alt(label),
+		),
+	)
+}
+
 func navigation(userID int, userName, currentPath string,
 	hasUnread bool) g.Node {
 	return Nav(
@@ -274,8 +300,14 @@ func navigation(userID int, userName, currentPath string,
 		),
 		Div(
 			Class("flex items-center gap-3 shrink-0"),
-			g.Iff(local.IsLoggedIn(userID), func() g.Node { return navLoggedIn(userName, hasUnread) }),
-			g.Iff(!local.IsLoggedIn(userID), func() g.Node { return navLoggedOut(currentPath) }),
+			g.Iff(local.IsLoggedIn(userID) && showNewAdLink(currentPath),
+				func() g.Node { return newAdLink() }),
+			g.Iff(local.IsLoggedIn(userID), func() g.Node {
+				return navLoggedIn(userName, hasUnread)
+			}),
+			g.Iff(!local.IsLoggedIn(userID), func() g.Node {
+				return navLoggedOut(currentPath)
+			}),
 		),
 		indicator(),
 	)

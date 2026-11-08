@@ -103,6 +103,39 @@ func TestNavBackHome(t *testing.T) {
 	}
 }
 
+func TestNavNewAdLink(t *testing.T) {
+	loggedOut := renderPageHTML(t, "About", "/about")
+	if strings.Contains(loggedOut, "/images/post_add.svg") {
+		t.Error("new ad link should not appear when logged out")
+	}
+
+	var buf bytes.Buffer
+	n := Page(7, false, "Sam", "About", "/about", "csrf", false, nil)
+	if err := n.Render(&buf); err != nil {
+		t.Fatal(err)
+	}
+	html := buf.String()
+	newAt := strings.Index(html, `/images/post_add.svg`)
+	avatarAt := strings.Index(html, `id="user-avatar"`)
+	if newAt < 0 || !strings.Contains(html, `href="/auth/ad/new"`) {
+		t.Fatal("expected new ad link in the navbar when logged in")
+	}
+	if avatarAt < 0 || newAt > avatarAt {
+		t.Fatal("new ad link should sit left of the user icon")
+	}
+
+	for _, path := range []string{"/auth/ad/new", "/auth/ad/12/copy"} {
+		var hidden bytes.Buffer
+		page := Page(7, false, "Sam", "New Ad", path, "csrf", false, nil)
+		if err := page.Render(&hidden); err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(hidden.String(), "/images/post_add.svg") {
+			t.Errorf("new ad link should be hidden on %s", path)
+		}
+	}
+}
+
 func TestRobotsForPath(t *testing.T) {
 	if got := robotsForPath("/auth/user/settings"); got != "noindex, nofollow" {
 		t.Fatalf("auth: %q", got)

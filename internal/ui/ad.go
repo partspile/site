@@ -282,6 +282,7 @@ func adButtons(adID, userID, ownerID int, bookmarked, active, inactive, reachabl
 			BookmarkButton(adID, bookmarked, csrfToken)),
 		g.If(active && reachable && !isOwner, messageButton(adID)),
 		g.If(active && isOwner, editButton(adID)),
+		g.If(active && isOwner, copyAdLink(adID)),
 		g.If(active && isOwner, deleteButton(adID)),
 		g.If(inactive && isOwner, restoreButton(adID, csrfToken)),
 		g.If(active, shareButton(adID)),
@@ -469,18 +470,11 @@ func Ad(d AdDetail, userID int, csrfToken string) []g.Node {
 
 func adExpireToolbar(adID int, expiresAt time.Time, csrfToken string) g.Node {
 	return Div(
-		Class("flex items-center justify-between gap-2 mx-2 mt-4 mb-0 col-span-full"),
-		Div(
-			Class("flex items-center gap-2 min-w-0 text-xs text-zinc-500"),
-			Span(g.Text(formatExpiresIn(expiresAt))),
-			g.If(ad.RenewEligible(expiresAt, time.Now()),
-				renewExpireLink(adID, csrfToken)),
-		),
-		Div(
-			Class("flex items-center gap-2 shrink-0"),
-			newAdLink(),
-			copyAdLink(adID),
-		),
+		Class("flex items-center gap-2 mx-2 mt-4 mb-0 col-span-full "+
+			"text-xs text-zinc-500"),
+		Span(g.Text(formatExpiresIn(expiresAt))),
+		g.If(ad.RenewEligible(expiresAt, time.Now()),
+			renewExpireLink(adID, csrfToken)),
 	)
 }
 
