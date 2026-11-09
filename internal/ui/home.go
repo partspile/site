@@ -10,22 +10,21 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-func HomePage(userID int, q string, filtersExpanded, searchVisible bool,
+func HomePage(userID int, q string, filtersExpanded bool,
 	filterFacets []facet.Def, filters uiads.SearchFilters,
 	results []g.Node) []g.Node {
 	return []g.Node{SearchContainer(userID, q, filtersExpanded,
-		searchVisible, filterFacets, filters, results)}
+		filterFacets, filters, results)}
 }
 
-func SearchContainer(userID int, q string, filtersExpanded,
-	searchVisible bool, filterFacets []facet.Def, filters uiads.SearchFilters,
+func SearchContainer(userID int, q string, filtersExpanded bool,
+	filterFacets []facet.Def, filters uiads.SearchFilters,
 	results []g.Node) g.Node {
 	return Div(
 		ID("search-container"),
 		Div(
 			Class("flex flex-col gap-4"),
-			homeActionsRow(searchVisible),
-			SearchWidget(userID, q, filtersExpanded, searchVisible,
+			SearchWidget(userID, q, filtersExpanded,
 				filterFacets, filters, results),
 		),
 	)
@@ -52,36 +51,30 @@ func SearchResultsOOB(results []g.Node) g.Node {
 
 // SearchArea renders the search box, filter toggle, and optional expanded facets.
 func SearchArea(q string, expanded bool, filterFacets []facet.Def,
-	filters uiads.SearchFilters, searchVisible bool) g.Node {
-	return searchArea(q, expanded, filterFacets, filters, searchVisible, false)
+	filters uiads.SearchFilters) g.Node {
+	return searchArea(q, expanded, filterFacets, filters, false)
 }
 
 // SearchAreaOOB swaps #search-area when the filter panel is shown or hidden.
 func SearchAreaOOB(q string, expanded bool, filterFacets []facet.Def,
-	filters uiads.SearchFilters, searchVisible bool) g.Node {
-	return searchArea(q, expanded, filterFacets, filters, searchVisible, true)
+	filters uiads.SearchFilters) g.Node {
+	return searchArea(q, expanded, filterFacets, filters, true)
 }
 
 func searchArea(q string, expanded bool, filterFacets []facet.Def,
-	filters uiads.SearchFilters, searchVisible, oob bool) g.Node {
-	searchBlockClass := "flex flex-col gap-2"
-	if !searchVisible {
-		searchBlockClass += " hidden"
-	}
-	searchBlock := Div(
-		Class(searchBlockClass),
+	filters uiads.SearchFilters, oob bool) g.Node {
+	children := []g.Node{
 		Div(
-			Class("flex gap-2 items-center"),
-			Div(Class("flex-1 min-w-0"), searchBox(q)),
-			filterToggle(expanded),
+			Class("flex flex-col gap-2"),
+			Div(
+				Class("flex gap-2 items-center"),
+				Div(Class("flex-1 min-w-0"), searchBox(q)),
+				filterToggle(expanded),
+			),
 		),
-	)
-
-	children := []g.Node{searchBlock}
+	}
 	areaClass := "flex flex-col"
-	if !searchVisible && !expanded {
-		areaClass += " hidden"
-	} else if expanded {
+	if expanded {
 		areaClass += " border rounded-lg p-4 gap-4"
 		children = append(children, uiads.SearchFiltersPanel(filterFacets, filters))
 	}
@@ -95,46 +88,6 @@ func searchArea(q string, expanded bool, filterFacets []facet.Def,
 		attrs = append([]g.Node{hx.SwapOOB("outerHTML")}, attrs...)
 	}
 	return Div(attrs...)
-}
-
-func homeActionsRow(searchVisible bool) g.Node {
-	return Div(
-		Class("flex items-center gap-2 justify-end"),
-		searchToggle(searchVisible, false),
-	)
-}
-
-func searchToggle(searchVisible, oob bool) g.Node {
-	label := "Show search"
-	class := "flex-shrink-0 cursor-pointer"
-	if searchVisible {
-		class += " hidden"
-	}
-
-	attrs := []g.Node{
-		Type("button"),
-		ID("search-toggle"),
-		Class(class),
-		g.Attr("aria-label", label),
-		g.Attr("title", label),
-		hx.Get("/api/toggle-search"),
-		hx.Include("#search-widget"),
-		hx.Swap("none"),
-		Img(
-			Class("w-6 h-6 dark:invert dark:opacity-80"),
-			Src("/images/search.svg"),
-			Alt(label),
-		),
-	}
-	if oob {
-		attrs = append([]g.Node{hx.SwapOOB("outerHTML")}, attrs...)
-	}
-	return Button(attrs...)
-}
-
-// SearchToggleOOB swaps #search-toggle out-of-band after show/hide search.
-func SearchToggleOOB(searchVisible bool) g.Node {
-	return searchToggle(searchVisible, true)
 }
 
 func searchBox(q string) g.Node {
@@ -202,14 +155,14 @@ func SearchView(filters uiads.SearchFilters, results []g.Node) g.Node {
 	)
 }
 
-func SearchWidget(userID int, q string, filtersExpanded,
-	searchVisible bool, filterFacets []facet.Def,
-	filters uiads.SearchFilters, results []g.Node) g.Node {
+func SearchWidget(userID int, q string, filtersExpanded bool,
+	filterFacets []facet.Def, filters uiads.SearchFilters,
+	results []g.Node) g.Node {
 	attrs := []g.Node{
 		Class("flex flex-col gap-4"),
 		ID("search-widget"),
 		g.Attr("onsubmit", "event.preventDefault(); return false;"),
-		SearchArea(q, filtersExpanded, filterFacets, filters, searchVisible),
+		SearchArea(q, filtersExpanded, filterFacets, filters),
 		SearchView(filters, results),
 	}
 	return Form(attrs...)

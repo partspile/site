@@ -174,7 +174,7 @@ func TestRobotsAndSitemap(t *testing.T) {
 	}
 }
 
-func TestHomeHandlerSearchHiddenByDefault(t *testing.T) {
+func TestHomeHandlerSearchVisibleByDefault(t *testing.T) {
 	client, err := getClientWithCategoryCookie(6)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
@@ -183,14 +183,18 @@ func TestHomeHandlerSearchHiddenByDefault(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Expected status 200, got %d", resp.StatusCode)
 	}
-	if !strings.Contains(body, `id="search-toggle"`) {
-		t.Error("Expected search toggle on home")
+	if !strings.Contains(body, `id="searchBox"`) {
+		t.Error("Expected search box on home")
 	}
-	if !strings.Contains(body, `/images/search.svg`) {
-		t.Error("Expected search icon on home")
+	if !strings.Contains(body, `id="filter-toggle"`) {
+		t.Error("Expected filter toggle on home")
 	}
-	if !strings.Contains(body, `id="search-area" class="flex flex-col hidden"`) {
-		t.Error("Expected hidden #search-area on fresh home page")
+	if strings.Contains(body, `id="search-toggle"`) ||
+		strings.Contains(body, `/images/search.svg`) {
+		t.Error("search icon toggle should be removed")
+	}
+	if strings.Contains(body, `id="search-area" class="flex flex-col hidden"`) {
+		t.Error("Expected visible #search-area on fresh home page")
 	}
 	if strings.Contains(body, `aria-haspopup="listbox"`) ||
 		strings.Contains(body, "category-select-dismiss") {
@@ -218,26 +222,6 @@ func TestHomeHandlerNewAdLinkWhenLoggedIn(t *testing.T) {
 	}
 	if !strings.Contains(body, `href="/auth/ad/new"`) {
 		t.Error("Expected new ad link to /auth/ad/new when logged in")
-	}
-}
-
-func TestToggleSearchHandler(t *testing.T) {
-	client, err := getClientWithCategoryCookie(6)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	resp, body := getRequestWithCookies(t, client, baseURL+"/api/toggle-search")
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("toggle-search: expected 200, got %d", resp.StatusCode)
-	}
-	if !strings.Contains(body, `id="searchBox"`) {
-		t.Error("toggle-search should reveal search box")
-	}
-	if !strings.Contains(body, `id="search-toggle"`) || !strings.Contains(body, `id="search-toggle" class="`) || !strings.Contains(body, " hidden") {
-		t.Error("toggle-search should hide search icon when search is open")
-	}
-	if !strings.Contains(body, `hx-swap-oob="outerHTML"`) {
-		t.Error("toggle-search should OOB-swap search area and toggle")
 	}
 }
 
@@ -458,8 +442,7 @@ func TestApplyCategoryFilterViaShowFilters(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	if err := setSearchCookieOnClient(client, cookie.SearchState{
-		SearchOpen: true,
-		Expanded:   true,
+		Expanded: true,
 	}); err != nil {
 		t.Fatalf("set search cookie: %v", err)
 	}
@@ -481,73 +464,6 @@ func TestApplyCategoryFilterViaShowFilters(t *testing.T) {
 	}
 	if !strings.Contains(body, `id="filter-category"`) {
 		t.Error("expected category select in filter panel")
-	}
-}
-
-func TestSearchPaginationKeepsSearchHidden(t *testing.T) {
-	client, err := getClientWithCategoryCookie(6)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	resp, _ := getRequestWithCookies(t, client, baseURL+"/api/search/?page=2")
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("search pagination: expected 200, got %d", resp.StatusCode)
-	}
-	state, err := getSearchStateFromClient(client)
-	if err != nil {
-		t.Fatalf("read search cookie: %v", err)
-	}
-	if state.SearchOpen {
-		t.Fatal("scroll pagination should not open search bar")
-	}
-
-	resp, body := getRequestWithCookies(t, client, baseURL+"/")
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("home: expected 200, got %d", resp.StatusCode)
-	}
-	if !strings.Contains(body, `id="search-area" class="flex flex-col hidden"`) {
-		t.Error("expected search area hidden after scroll pagination request")
-	}
-}
-
-func TestCreateAdCategorySwitchKeepsSearchHidden(t *testing.T) {
-	client, err := getClientWithCategoryCookie(6)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	// Simulate scroll sentinel firing while browsing.
-	resp, _ := getRequestWithCookies(t, client, baseURL+"/api/search/?page=2")
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("search pagination: expected 200, got %d", resp.StatusCode)
-	}
-
-	categories := []int{5, 4, 3}
-	for _, id := range categories {
-		switchURL := fmt.Sprintf(
-			"%s/api/category/%d/switch?return=%s",
-			baseURL, id, url.QueryEscape("/auth/ad/new"),
-		)
-		resp, _ = getRequestWithCookies(t, client, switchURL)
-		if resp.StatusCode != http.StatusOK &&
-			resp.StatusCode != http.StatusFound {
-			t.Fatalf("switch to category %d: unexpected status %d",
-				id, resp.StatusCode)
-		}
-		state, err := getSearchStateFromClient(client)
-		if err != nil {
-			t.Fatalf("read search cookie: %v", err)
-		}
-		if state.SearchOpen {
-			t.Fatalf("category %d switch left SearchOpen true", id)
-		}
-	}
-
-	resp, body := getRequestWithCookies(t, client, baseURL+"/")
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("home: expected 200, got %d", resp.StatusCode)
-	}
-	if !strings.Contains(body, `id="search-area" class="flex flex-col hidden"`) {
-		t.Error("expected search area hidden after create-ad category switches")
 	}
 }
 

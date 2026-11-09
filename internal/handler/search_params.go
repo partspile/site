@@ -191,17 +191,6 @@ func queryHas(c *fiber.Ctx, key string) bool {
 	return found
 }
 
-func searchVisible(state cookie.SearchState) bool {
-	if state.SearchOpen {
-		return true
-	}
-	if strings.TrimSpace(state.Q) != "" || state.Expanded ||
-		state.CategoryID > 0 || len(state.Facets) > 0 {
-		return true
-	}
-	return false
-}
-
 func parseCategoryFilter(raw string) int {
 	raw = strings.TrimSpace(raw)
 	if raw == "" || raw == "0" {

@@ -40,13 +40,11 @@ func renderFilterPanelResponse(c *fiber.Ctx, state cookie.SearchState) error {
 	}
 
 	distanceUnit := cookie.GetDistanceUnit(c)
-	visible := searchVisible(state)
 	filterFacets := filterFacetsForExpanded(state.CategoryID, state.Expanded)
 	filters := searchStateToFilters(state, distanceUnit)
 
 	return render(c, g.Group([]g.Node{
-		ui.SearchAreaOOB(state.Q, state.Expanded, filterFacets, filters, visible),
-		ui.SearchToggleOOB(visible),
+		ui.SearchAreaOOB(state.Q, state.Expanded, filterFacets, filters),
 		ui.SearchResultsOOB(results),
 	}))
 }
@@ -57,21 +55,12 @@ func ShowFiltersHandler(c *fiber.Ctx) error {
 	// does not include the search widget; category is still applied when
 	// the category select includes the widget and posts "category".
 	state := saveSearchStateFromRequest(c, &expanded, false)
-	state.SearchOpen = true
-	cookie.SetSearchState(c, state)
 	return renderFilterPanelResponse(c, state)
 }
 
 func HideFiltersHandler(c *fiber.Ctx) error {
 	expanded := false
 	state := saveSearchStateFromRequest(c, &expanded, true)
-	return renderFilterPanelResponse(c, state)
-}
-
-func ToggleSearchHandler(c *fiber.Ctx) error {
-	state := cookie.GetSearchState(c)
-	state.SearchOpen = true
-	cookie.SetSearchState(c, state)
 	return renderFilterPanelResponse(c, state)
 }
 

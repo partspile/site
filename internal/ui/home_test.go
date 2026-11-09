@@ -10,15 +10,15 @@ import (
 
 func TestHomeHasNoCategoryPicker(t *testing.T) {
 	var buf bytes.Buffer
-	n := SearchContainer(0, "", false, false, nil, uiads.SearchFilters{}, nil)
+	n := SearchContainer(0, "", false, nil, uiads.SearchFilters{}, nil)
 	if err := n.Render(&buf); err != nil {
 		t.Fatal(err)
 	}
 	html := buf.String()
 	for _, want := range []string{
 		`id="search-container"`,
-		`id="search-toggle"`,
-		"/images/search.svg",
+		`id="searchBox"`,
+		`id="filter-toggle"`,
 	} {
 		if !strings.Contains(html, want) {
 			t.Errorf("home missing %q", want)
@@ -28,6 +28,8 @@ func TestHomeHasNoCategoryPicker(t *testing.T) {
 		"Change category",
 		"category-select-open",
 		"/api/category/",
+		`id="search-toggle"`,
+		"/images/search.svg",
 	} {
 		if strings.Contains(html, ban) {
 			t.Errorf("home should not include %q", ban)

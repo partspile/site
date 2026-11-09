@@ -2,6 +2,13 @@
 
 @custom-variant dark (@media (prefers-color-scheme: dark));
 
+/* Keep mx-auto page column steady when short pages (login) lack a scrollbar. */
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+}
+
 @layer components {
   .field-group {
     @apply rounded-lg bg-zinc-100 dark:bg-zinc-950 px-3 py-2.5;

@@ -20,7 +20,6 @@ type SearchState struct {
 	Location   string                  `json:"location,omitempty"`
 	Within     int                     `json:"within,omitempty"`
 	Expanded   bool                    `json:"expanded,omitempty"`
-	SearchOpen bool                    `json:"search_open,omitempty"`
 }
 
 func GetSearchState(c *fiber.Ctx) SearchState {
