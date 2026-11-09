@@ -60,6 +60,33 @@ func (s *LocalStore) Stat(adID, index int, suffix string) (bool, error) {
 	return true, nil
 }
 
+func (s *LocalStore) ModTime(adID, index int, suffix string) (time.Time, bool, error) {
+	info, err := os.Stat(s.adImagePath(adID, index, suffix))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return time.Time{}, false, nil
+		}
+		return time.Time{}, false, err
+	}
+	return info.ModTime(), true, nil
+}
+
+func (s *LocalStore) Copy(adID, fromIndex, toIndex int, suffix string) error {
+	data, err := s.Get(adID, fromIndex, suffix)
+	if err != nil {
+		return err
+	}
+	return s.Put(adID, toIndex, suffix, data)
+}
+
+func (s *LocalStore) Delete(adID, index int, suffix string) error {
+	path := s.adImagePath(adID, index, suffix)
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("delete image: %w", err)
+	}
+	return nil
+}
+
 func (s *LocalStore) ListAd(adID int) ([]ImageRef, error) {
 	dir := filepath.Join(s.baseDir, fmt.Sprintf("%d", adID))
 	entries, err := os.ReadDir(dir)

@@ -76,6 +76,13 @@ func UpdateAdHandler(c *fiber.Ctx) error {
 		return showError(c, err.Error())
 	}
 
+	imageOrder, err := ad.ParseImageOrder(
+		c.FormValue("image_order"), a.ImageCount,
+	)
+	if err != nil {
+		return showError(c, err.Error())
+	}
+
 	err = ad.UpdateAd(ad.UpdateInput{
 		AdID:         adID,
 		UserID:       userID,
@@ -85,11 +92,14 @@ func UpdateAdHandler(c *fiber.Ctx) error {
 		Facets:       facets,
 		Suggestions:  parseAdSuggestions(c),
 		ImagesAdded:  0,
+		ImageOrder:   imageOrder,
+		ImageStore:   adImageStore,
 		Tz:           tz,
 	})
 	if err != nil {
 		return showError(c, err.Error())
 	}
+	invalidateAdImageURLs(adID, a.ImageCount)
 	if err := flagopinion.InvalidateForAd(adID); err != nil {
 		logger.Error("Failed to invalidate flag opinions",
 			"error", err, "adID", adID)

@@ -34,15 +34,27 @@ func resolveAdImageURL(adID, index int, size string) string {
 	if adImageStore == nil || adImageURLCache == nil {
 		return ""
 	}
+	if proxyAdImages {
+		// Stable /media/... paths would otherwise keep showing pre-reorder
+		// bytes from the browser cache (max-age=86400). Bust with ModTime.
+		mod, ok, err := adImageStore.ModTime(adID, index, size)
+		if err != nil {
+			logger.Error("ad image modtime failed",
+				"adID", adID, "index", index, "size", size, "error", err)
+			return ""
+		}
+		if !ok {
+			return ""
+		}
+		return fmt.Sprintf("/media/ad/%d/%d/%s?v=%d",
+			adID, index, size, mod.UnixNano())
+	}
 	ok, err := adImageStore.Stat(adID, index, size)
 	if err != nil {
 		logger.Error("ad image stat failed",
 			"adID", adID, "index", index, "size", size, "error", err)
 	} else if !ok {
 		return ""
-	}
-	if proxyAdImages {
-		return fmt.Sprintf("/media/ad/%d/%d/%s", adID, index, size)
 	}
 	url, err := adImageURLCache.ReusedGetURL(adID, index, size,
 		config.MinIOPresignedGetExpiry)
@@ -78,5 +90,16 @@ func deleteUserAccountPicture(userID int) {
 	_ = adImageStore.DeleteUserAccount(userID)
 	if adImageURLCache != nil {
 		adImageURLCache.InvalidateUserAccountURL(userID)
+	}
+}
+
+func invalidateAdImageURLs(adID, imageCount int) {
+	if adImageURLCache == nil || imageCount < 1 {
+		return
+	}
+	for i := 1; i <= imageCount; i++ {
+		for _, size := range imagestore.ImageSizes {
+			adImageURLCache.InvalidateGetURL(adID, i, size)
+		}
 	}
 }

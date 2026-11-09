@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/partspile/site/internal/ad"
@@ -740,32 +741,48 @@ func editImagesField(adID, existingCount, maxImagesPerAd int) g.Node {
 		return imageUploadField(maxImagesPerAd, 0, false)
 	}
 
+	orderParts := make([]string, existingCount)
 	existingNodes := make([]g.Node, existingCount)
 	for i := 1; i <= existingCount; i++ {
-		class := "object-cover rounded w-[90px] h-[90px]"
+		orderParts[i-1] = strconv.Itoa(i)
+		class := "object-cover rounded w-[90px] h-[90px] pointer-events-none"
 		src := AdImageSrc(adID, i, "160w")
+		var thumb g.Node
 		if src == "" {
-			existingNodes[i-1] = GenerateSVG(adID, i, "160w", class)
+			thumb = GenerateSVG(adID, i, "160w", class)
 		} else {
-			existingNodes[i-1] = Img(
+			thumb = Img(
 				Src(src),
 				Alt(fmt.Sprintf("Image %d", i)),
 				Class(class),
 			)
 		}
+		existingNodes[i-1] = Div(
+			Class("inline-block cursor-move"),
+			g.Attr("draggable", "true"),
+			g.Attr("data-image-idx", strconv.Itoa(i)),
+			thumb,
+		)
 	}
 
 	nodes := []g.Node{
 		label("Images"),
 		Div(
 			Class("text-sm text-zinc-500 dark:text-zinc-400"),
-			g.Text("Original images cannot be changed."),
+			g.Text("Original images cannot be deleted. Drag to reorder."),
+		),
+		Input(
+			Type("hidden"),
+			ID("image_order"),
+			Name("image_order"),
+			Value(strings.Join(orderParts, ",")),
 		),
 		Div(
-			ID("existing-image-preview"),
+			ID("image-gallery"),
 			Class("flex flex-row flex-wrap gap-2"),
 			g.Group(existingNodes),
 		),
+		g.Raw(`<script src="/js/image-edit.js" defer></script>`),
 	}
 
 	if existingCount >= maxImagesPerAd {

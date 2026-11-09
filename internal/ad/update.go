@@ -9,6 +9,7 @@ import (
 	"github.com/partspile/site/internal/config"
 	"github.com/partspile/site/internal/db"
 	"github.com/partspile/site/internal/facet"
+	"github.com/partspile/site/internal/imagestore"
 )
 
 type UpdateInput struct {
@@ -20,6 +21,8 @@ type UpdateInput struct {
 	Facets       map[string]facet.Value
 	Suggestions  []Suggestion
 	ImagesAdded  int
+	ImageOrder   []int
+	ImageStore   imagestore.Store
 	Tz           *time.Location
 	Now          time.Time
 }
@@ -110,6 +113,24 @@ func UpdateAd(input UpdateInput) error {
 	desc, err = EnsureDescriptionFits(desc, now, input.Tz)
 	if err != nil {
 		return err
+	}
+
+	if len(input.ImageOrder) > 0 &&
+		!imagestore.IdentityOrder(input.ImageOrder) {
+		if input.ImageStore == nil {
+			return fmt.Errorf("image store required to reorder images")
+		}
+		if err := imagestore.ValidateReorderOrder(
+			input.ImageOrder, a.ImageCount,
+		); err != nil {
+			return err
+		}
+		if err := imagestore.ReorderAdImages(
+			input.ImageStore, input.AdID, input.ImageOrder,
+		); err != nil {
+			return fmt.Errorf("reorder images: %w", err)
+		}
+		desc = RemapDescriptionImageIndices(desc, input.ImageOrder)
 	}
 
 	locationID, latitude, longitude, err := resolveLocationFields(locText)

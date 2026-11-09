@@ -172,6 +172,56 @@ func (s *MinioStore) Stat(adID, index int, suffix string) (bool, error) {
 	return s.statKey(objectKey(adID, index, suffix))
 }
 
+func (s *MinioStore) ModTime(adID, index int, suffix string) (time.Time, bool, error) {
+	key := objectKey(adID, index, suffix)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	info, err := s.client.StatObject(ctx, s.bucket, key, minio.StatObjectOptions{})
+	if err != nil {
+		errResp := minio.ToErrorResponse(err)
+		if errResp.Code == "NoSuchKey" || errResp.StatusCode == 404 {
+			return time.Time{}, false, nil
+		}
+		return time.Time{}, false, fmt.Errorf("stat object in MinIO: %w", err)
+	}
+	return info.LastModified, true, nil
+}
+
+func (s *MinioStore) Copy(adID, fromIndex, toIndex int, suffix string) error {
+	srcKey := objectKey(adID, fromIndex, suffix)
+	dstKey := objectKey(adID, toIndex, suffix)
+	ctx := context.Background()
+	_, err := s.client.CopyObject(ctx,
+		minio.CopyDestOptions{
+			Bucket: s.bucket,
+			Object: dstKey,
+		},
+		minio.CopySrcOptions{
+			Bucket: s.bucket,
+			Object: srcKey,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("copy object in MinIO: %w", err)
+	}
+	return nil
+}
+
+func (s *MinioStore) Delete(adID, index int, suffix string) error {
+	key := objectKey(adID, index, suffix)
+	ctx := context.Background()
+	err := s.client.RemoveObject(ctx, s.bucket, key,
+		minio.RemoveObjectOptions{})
+	if err != nil {
+		errResp := minio.ToErrorResponse(err)
+		if errResp.Code == "NoSuchKey" || errResp.StatusCode == 404 {
+			return nil
+		}
+		return fmt.Errorf("delete object in MinIO: %w", err)
+	}
+	return nil
+}
+
 func (s *MinioStore) ListAd(adID int) ([]ImageRef, error) {
 	prefix := fmt.Sprintf("%d/", adID)
 	ctx := context.Background()

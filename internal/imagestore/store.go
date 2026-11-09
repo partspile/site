@@ -21,6 +21,10 @@ type Store interface {
 	Put(adID, index int, suffix string, data []byte) error
 	Get(adID, index int, suffix string) ([]byte, error)
 	Stat(adID, index int, suffix string) (bool, error)
+	// ModTime is used to cache-bust stable proxy URLs after reorder/replace.
+	ModTime(adID, index int, suffix string) (time.Time, bool, error)
+	Copy(adID, fromIndex, toIndex int, suffix string) error
+	Delete(adID, index int, suffix string) error
 	ListAd(adID int) ([]ImageRef, error)
 	DeleteAd(adID int) error
 	PresignPut(adID, index int, suffix string,
