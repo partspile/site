@@ -151,7 +151,7 @@ func filterToggle(expanded bool) g.Node {
 	}
 	attrs = append(attrs, actionAttrs...)
 	attrs = append(attrs, Img(
-		Class("w-6 h-6"),
+		Class("w-6 h-6 dark:invert dark:opacity-80"),
 		Src(icon),
 		Alt(label),
 	))
