@@ -283,25 +283,25 @@ func navigation(userID int, userName, currentPath string,
 		ID("main-nav"),
 		Class("nav-brand-edge sticky top-0 z-10 relative "+
 			"bg-white/75 dark:bg-zinc-900/75 backdrop-blur-xl "+
-			"flex items-center justify-between mb-4 py-4 -mx-4 px-4"),
+			"flex items-end justify-between mb-8 py-4 -mx-4 px-4"),
 		g.If(currentPath != "/", navBackHome()),
 		A(
 			Href("/"),
-			Class("flex items-center shrink-0"),
+			Class("flex items-end shrink-0"),
 			Img(
 				Src("/images/parts-pile-logo-light.png"),
 				Alt(config.ServerName),
-				Class("h-16 w-auto flex-shrink-0 dark:hidden"),
+				Class("h-24 w-auto flex-shrink-0 dark:hidden"),
 			),
 			Img(
 				Src("/images/parts-pile-logo-dark.png"),
 				Alt(""),
-				Class("h-16 w-auto flex-shrink-0 hidden dark:block"),
+				Class("h-24 w-auto flex-shrink-0 hidden dark:block"),
 				g.Attr("aria-hidden", "true"),
 			),
 		),
 		Div(
-			Class("flex items-center gap-3 shrink-0"),
+			Class("flex items-end gap-3 shrink-0 pb-1"),
 			g.Iff(local.IsLoggedIn(userID) && showNewAdLink(currentPath),
 				func() g.Node { return newAdLink() }),
 			g.Iff(local.IsLoggedIn(userID), func() g.Node {

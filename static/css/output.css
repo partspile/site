@@ -1370,6 +1370,9 @@
   .pr-10 {
     padding-right: calc(var(--spacing) * 10);
   }
+  .pb-1 {
+    padding-bottom: calc(var(--spacing) * 1);
+  }
   .pb-8 {
     padding-bottom: calc(var(--spacing) * 8);
   }
