@@ -82,8 +82,8 @@ func AdFlyerPage(d AdFlyerData) g.Node {
 			Meta(Name("color-scheme"), Content("light")),
 			Link(
 				Rel("icon"),
-				Type("image/svg+xml"),
-				Href("/images/flag.svg"),
+				Type("image/png"),
+				Href("/images/favicon.png"),
 			),
 			Link(Rel("stylesheet"), Href("/css/output.css")),
 			g.El("style", g.Raw(flyerPrintCSS)),

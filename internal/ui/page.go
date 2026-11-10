@@ -343,12 +343,16 @@ func Page(userID int, hasUnread bool, userName, title, currentPath,
 	var headNodes []g.Node
 	headNodes = append(headNodes, seoHead(docTitle, currentPath)...)
 
-	// Favicon
+	// Favicon — stylized Parts Pile "P" (flag.svg stays for flag UI)
 	headNodes = append(headNodes,
 		Link(
 			Rel("icon"),
-			Type("image/svg+xml"),
-			Href("/images/flag.svg"),
+			Type("image/png"),
+			Href("/images/favicon.png"),
+		),
+		Link(
+			Rel("apple-touch-icon"),
+			Href("/images/apple-touch-icon.png"),
 		),
 	)
 
