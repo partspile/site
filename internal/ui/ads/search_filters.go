@@ -11,11 +11,17 @@ import (
 )
 
 // SearchFiltersPanel renders category + facet controls for the search widget.
-func SearchFiltersPanel(facets []facet.Def, f SearchFilters) g.Node {
+// categoryControl is the shared icon category picker from package ui.
+func SearchFiltersPanel(facets []facet.Def, f SearchFilters,
+	categoryControl g.Node) g.Node {
 	return Div(
 		Class("flex flex-col gap-4"),
 		ID("search-filters"),
-		categoryFilterRow(f),
+		Div(
+			Class("field-group"),
+			Span(Class("field-label"), g.Text("Category")),
+			categoryControl,
+		),
 		Div(
 			Class("grid grid-cols-2 gap-4"),
 			hx.Get("/api/search/"),
@@ -27,36 +33,6 @@ func SearchFiltersPanel(facets []facet.Def, f SearchFilters) g.Node {
 			// not trigger a search here (it searches on enter/blur instead).
 			hx.Trigger("input delay:500ms, change delay:300ms"),
 			g.Group(facetFilterNodes(facets, f)),
-		),
-	)
-}
-
-func categoryFilterRow(f SearchFilters) g.Node {
-	opts := make([]g.Node, 0, len(f.Categories)+1)
-	opts = append(opts, Option(
-		Value("0"),
-		g.Text("All categories"),
-		g.If(f.CategoryID == 0, Selected()),
-	))
-	for _, cat := range f.Categories {
-		opts = append(opts, Option(
-			Value(strconv.Itoa(cat.ID)),
-			g.Text(cat.Name),
-			g.If(cat.ID == f.CategoryID, Selected()),
-		))
-	}
-	return Div(
-		Class("field-group"),
-		Label(For("filter-category"), Class("field-label"),
-			g.Text("Category")),
-		Select(
-			Name("category"),
-			ID("filter-category"),
-			Class(controlClass),
-			hx.Get("/api/show-filters"),
-			hx.Include("#search-widget"),
-			hx.Swap("none"),
-			g.Group(opts),
 		),
 	)
 }

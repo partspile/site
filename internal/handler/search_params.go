@@ -26,7 +26,9 @@ func searchStateToFilters(state cookie.SearchState,
 	cats := allCategoryOptions()
 	filterCats := make([]uiads.CategoryOption, len(cats))
 	for i, cat := range cats {
-		filterCats[i] = uiads.CategoryOption{ID: cat.ID, Name: cat.Name}
+		filterCats[i] = uiads.CategoryOption{
+			ID: cat.ID, Name: cat.Name, ImageFile: cat.ImageFile,
+		}
 	}
 	return uiads.SearchFilters{
 		CategoryID:      state.CategoryID,

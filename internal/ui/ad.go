@@ -964,28 +964,25 @@ func adForm(cfg uiads.AdFormConfig, fields g.Node) g.Node {
 func NewAd(category CategoryOption, categories []CategoryOption,
 	fields g.Node) []g.Node {
 	return []g.Node{
-		Div(Class("mb-4"),
-			CategorySelect(category, categories, "/auth/ad/new")),
-		pageTitle("Create New Ad"),
+		Div(Class("mb-6"), pageTitle("Create New Ad")),
+		Div(
+			Class("field-group mb-4"),
+			Span(Class("field-label"), g.Text("Category")),
+			CategorySelectForNewAd(category, categories),
+		),
 		newAdForm(fields),
 	}
 }
 
 func EditAd(category CategoryOption, cfg uiads.AdFormConfig,
 	fields g.Node) []g.Node {
-	imagePath := "/images/category/" + category.ImageFile
 	return []g.Node{
+		Div(Class("mb-6"), pageTitle("Edit Ad")),
 		Div(
-			Class("py-2 px-5 flex items-center gap-2 rounded-full border-2 mb-4 "+
-				"border-zinc-300 bg-zinc-100 dark:bg-zinc-800 dark:border-zinc-600"),
-			Img(
-				Src(imagePath),
-				Alt("Category icon"),
-				Class("w-6 h-6 dark:invert dark:opacity-80"),
-			),
-			Span(g.Text(category.Name)),
+			Class("field-group mb-4"),
+			Span(Class("field-label"), g.Text("Category")),
+			CategoryReadOnly(category),
 		),
-		pageTitle("Edit Ad"),
 		adForm(cfg, fields),
 	}
 }

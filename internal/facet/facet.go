@@ -393,6 +393,10 @@ func (d Def) Validate(v Value) error {
 
 // FormatCompact renders a value for dense contexts (listing cards).
 func (d Def) FormatCompact(v Value) string {
+	// Zero mileage/hours is noise on listing cards (" · 0 mi").
+	if d.Kind == Int && d.CardLabel() && v.Num != nil && *v.Num == 0 {
+		return ""
+	}
 	return d.format(v, d.Compact)
 }
 

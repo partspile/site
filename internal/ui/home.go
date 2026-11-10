@@ -76,7 +76,8 @@ func searchArea(q string, expanded bool, filterFacets []facet.Def,
 	areaClass := "flex flex-col"
 	if expanded {
 		areaClass += " brand-metal brand-metal-panel rounded-lg p-4 gap-4"
-		children = append(children, uiads.SearchFiltersPanel(filterFacets, filters))
+		children = append(children, uiads.SearchFiltersPanel(
+			filterFacets, filters, categoryFilterSelect(filters)))
 	}
 
 	attrs := []g.Node{
@@ -88,6 +89,16 @@ func searchArea(q string, expanded bool, filterFacets []facet.Def,
 		attrs = append([]g.Node{hx.SwapOOB("outerHTML")}, attrs...)
 	}
 	return Div(attrs...)
+}
+
+func categoryFilterSelect(filters uiads.SearchFilters) g.Node {
+	cats := make([]CategoryOption, len(filters.Categories))
+	for i, cat := range filters.Categories {
+		cats[i] = CategoryOption{
+			ID: cat.ID, Name: cat.Name, ImageFile: cat.ImageFile,
+		}
+	}
+	return CategorySelectForFilter(filters.CategoryID, cats)
 }
 
 func searchBox(q string) g.Node {

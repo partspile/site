@@ -369,7 +369,8 @@ func UserMenu(userName, memberSince string, userID int, isAdmin bool,
 			Div(
 				Class("w-full md:max-w-3xl md:mx-auto px-6 flex justify-end"),
 				Div(
-					Class("pointer-events-auto bg-white rounded-lg shadow-lg border border-zinc-200 w-40"),
+					Class("user-menu-panel pointer-events-auto bg-white "+
+						"rounded-lg shadow-lg border border-zinc-200 w-40"),
 					menuHeader(userID, userName, memberSince, flagCount, UserFlagIcons(userID, userFlagCount)),
 					Div(
 						Class("py-1"),

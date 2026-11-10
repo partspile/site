@@ -24,10 +24,21 @@ func TestIntFacetFormatting(t *testing.T) {
 		t.Errorf("FormatFull = %q, want %q", got, "45,300 mi")
 	}
 
+	zero := Value{Num: intPtr(0), Text: strPtr("mi")}
+	if got := mileage.FormatCompact(zero); got != "" {
+		t.Errorf("FormatCompact(0) = %q, want empty", got)
+	}
+	if got := mileage.FormatFull(zero); got != "0 mi" {
+		t.Errorf("FormatFull(0) = %q, want %q", got, "0 mi")
+	}
+
 	hours, _ := Get("hours")
 	hv := Value{Num: intPtr(1200)}
 	if got := hours.FormatFull(hv); got != "1,200 hrs" {
 		t.Errorf("hours FormatFull = %q, want %q", got, "1,200 hrs")
+	}
+	if got := hours.FormatCompact(Value{Num: intPtr(0)}); got != "" {
+		t.Errorf("hours FormatCompact(0) = %q, want empty", got)
 	}
 }
 

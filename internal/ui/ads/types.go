@@ -15,8 +15,9 @@ type PriceRowView struct {
 
 // CategoryOption is a category choice for the search filter select.
 type CategoryOption struct {
-	ID   int
-	Name string
+	ID        int
+	Name      string
+	ImageFile string
 }
 
 // SearchFilters holds search filter panel state passed from handlers.
