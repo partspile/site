@@ -283,7 +283,7 @@ func navigation(userID int, userName, currentPath string,
 		ID("main-nav"),
 		Class("nav-brand-edge sticky top-0 z-10 relative "+
 			"bg-white/75 dark:bg-zinc-900/75 backdrop-blur-xl "+
-			"flex items-end justify-between mb-8 py-4 -mx-4 px-4"),
+			"flex items-end justify-between mb-8 pt-6 pb-4 -mx-4 px-4"),
 		g.If(currentPath != "/", navBackHome()),
 		A(
 			Href("/"),
@@ -301,7 +301,7 @@ func navigation(userID int, userName, currentPath string,
 			),
 		),
 		Div(
-			Class("flex items-end gap-3 shrink-0 pb-1"),
+			Class("flex items-end gap-3 shrink-0 self-start"),
 			g.Iff(local.IsLoggedIn(userID) && showNewAdLink(currentPath),
 				func() g.Node { return newAdLink() }),
 			g.Iff(local.IsLoggedIn(userID), func() g.Node {

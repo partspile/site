@@ -387,10 +387,6 @@ func MyAdsPage(activeTab string, adNodes []g.Node) []g.Node {
 		Div(
 			Class("flex items-center justify-between gap-4"),
 			pageTitle("My Ads"),
-			standardButton(buttonProps{
-				Href: "/auth/ad/new",
-				Text: "New Ad",
-			}),
 		),
 		MyAdsContainer(activeTab, adNodes),
 	}
