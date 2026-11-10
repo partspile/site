@@ -23,9 +23,10 @@ const (
 )
 
 var (
-	// Site dark mode: body bg-zinc-900, text-zinc-200.
+	// Site dark mode: body bg-zinc-900. Reading text and the QR use
+	// --content-ink (#f4efe6), the warm parchment used instead of zinc gray.
 	cardBG    = color.RGBA{R: 0x18, G: 0x18, B: 0x1B, A: 0xFF}
-	brandText = color.RGBA{R: 0xE4, G: 0xE4, B: 0xE7, A: 0xFF}
+	brandText = color.RGBA{R: 0xF4, G: 0xEF, B: 0xE6, A: 0xFF}
 	// About-page block.svg red filter approximation.
 	noIconRed = color.RGBA{R: 0xDC, G: 0x26, B: 0x26, A: 0xFF}
 )
@@ -33,7 +34,7 @@ var (
 // PrintCardOptions configures flat business card image generation.
 type PrintCardOptions struct {
 	Host       string
-	ImagesRoot string // directory with flag.svg and block.svg
+	ImagesRoot string // directory with the logo PNG and block.svg
 }
 
 // RenderPrintCard draws a Staples-ready business card at 300 DPI:
@@ -63,16 +64,8 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 	px := func(cssPx float64) int {
 		return int(cssPx*cssScale + 0.5)
 	}
-	titleSize := 20.0 * cssScale * 72 / printDPI
-	logoGap := px(8)
 	colGap := px(20)
 	bodyGap := px(18)
-
-	titleText := config.ServerName
-	const (
-		iconToText = 1.35
-		titleHeavy = 1
-	)
 
 	contentLeft := trim.Min.X + contentPad
 	contentRight := trim.Max.X - contentPad
@@ -101,66 +94,18 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 		leftMaxW = qrX - colGap - contentLeft
 	}
 
-	titleH, err := textHeight(titleText, titleSize, fontBold)
+	// Dark card matches site dark mode, so use the dark-background wordmark.
+	// Cap height so the pitch still fits under the logo.
+	contentH := trimH - 2*contentPad
+	maxLogoH := int(float64(contentH)*0.40 + 0.5)
+	logoPath := filepath.Join(opts.ImagesRoot, "parts-pile-logo-dark.png")
+	logo, err := loadPNGScaledToFit(logoPath, leftMaxW, maxLogoH)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("render logo: %w", err)
 	}
-	flagTargetH := int(float64(titleH)*iconToText + 0.5)
-
-	flagPath := filepath.Join(opts.ImagesRoot, "flag.svg")
-	flag, err := renderSVGScaledToInkHeight(flagPath, flagTargetH, nil)
-	if err != nil {
-		return nil, fmt.Errorf("render flag icon: %w", err)
-	}
-	flagSize := flag.Bounds().Dy()
-	flagW := flag.Bounds().Dx()
-
-	titleW, err := textWidth(titleText, titleSize, fontBold)
-	if err != nil {
-		return nil, err
-	}
-	logoW := flagW + logoGap + titleW + 2*titleHeavy
-	for try := 0; try < 8 && logoW > leftMaxW; try++ {
-		titleSize *= 0.9
-		titleH, err = textHeight(titleText, titleSize, fontBold)
-		if err != nil {
-			return nil, err
-		}
-		flagTargetH = int(float64(titleH)*iconToText + 0.5)
-		flag, err = renderSVGScaledToInkHeight(flagPath, flagTargetH, nil)
-		if err != nil {
-			return nil, err
-		}
-		flagSize = flag.Bounds().Dy()
-		flagW = flag.Bounds().Dx()
-		titleW, err = textWidth(titleText, titleSize, fontBold)
-		if err != nil {
-			return nil, err
-		}
-		logoW = flagW + logoGap + titleW + 2*titleHeavy
-	}
-
-	logoH := flagSize
-	if titleH > logoH {
-		logoH = titleH
-	}
+	logoH := logo.Bounds().Dy()
 	leftTop := trim.Min.Y + contentPad
-
-	logoCenterY := leftTop + logoH/2
-	titleBaseline, err := textBaselineForCenterY(
-		titleText, logoCenterY, titleSize, fontBold,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	drawAt(canvas, flag, contentLeft, logoCenterY-flagSize/2)
-	if err := drawLeftTextEmboldened(
-		canvas, titleText, contentLeft+flagW+logoGap, titleBaseline,
-		titleSize, fontBold, brandText, titleHeavy,
-	); err != nil {
-		return nil, err
-	}
+	drawAt(canvas, logo, contentLeft, leftTop)
 
 	bodyTop := leftTop + logoH + bodyGap
 

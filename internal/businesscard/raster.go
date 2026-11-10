@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
+	"image/png"
 	"os"
 	"strings"
 
@@ -346,6 +347,62 @@ func textBaselineFromTop(
 
 	bounds, _ := font.BoundString(face, text)
 	return topY - bounds.Min.Y.Ceil(), nil
+}
+
+// loadPNGScaledToFit crops transparent padding and scales the ink
+// uniformly so it fits inside maxW×maxH.
+func loadPNGScaledToFit(path string, maxW, maxH int) (*image.RGBA, error) {
+	if maxW < 1 {
+		maxW = 1
+	}
+	if maxH < 1 {
+		maxH = 1
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	decoded, err := png.Decode(f)
+	if err != nil {
+		return nil, err
+	}
+	src := imageToRGBA(decoded)
+	ink := opaqueBounds(src)
+	if ink.Empty() {
+		return nil, fmt.Errorf("no ink in %s", path)
+	}
+	cropped := image.NewRGBA(image.Rect(0, 0, ink.Dx(), ink.Dy()))
+	draw.Draw(cropped, cropped.Bounds(), src, ink.Min, draw.Src)
+
+	scale := float64(maxW) / float64(ink.Dx())
+	if byH := float64(maxH) / float64(ink.Dy()); byH < scale {
+		scale = byH
+	}
+	outW := int(float64(ink.Dx())*scale + 0.5)
+	outH := int(float64(ink.Dy())*scale + 0.5)
+	if outW < 1 {
+		outW = 1
+	}
+	if outH < 1 {
+		outH = 1
+	}
+	out := image.NewRGBA(image.Rect(0, 0, outW, outH))
+	xdraw.CatmullRom.Scale(
+		out, out.Bounds(), cropped, cropped.Bounds(), xdraw.Over, nil,
+	)
+	return out, nil
+}
+
+func imageToRGBA(src image.Image) *image.RGBA {
+	if rgba, ok := src.(*image.RGBA); ok {
+		return rgba
+	}
+	b := src.Bounds()
+	dst := image.NewRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
+	draw.Draw(dst, dst.Bounds(), src, b.Min, draw.Src)
+	return dst
 }
 
 func renderSVGRGBA(path string, sizePx int, tint color.Color) (*image.RGBA, error) {

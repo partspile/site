@@ -19,7 +19,8 @@ func main() {
 	imagesRoot := flag.String(
 		"images",
 		"",
-		"Directory containing flag.svg and block.svg (default: repo static/images)",
+		"Directory with the logo PNG and block.svg "+
+			"(default: repo static/images)",
 	)
 	flag.Parse()
 

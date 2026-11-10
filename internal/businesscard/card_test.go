@@ -66,15 +66,48 @@ func TestRenderPrintCard(t *testing.T) {
 	if bg < 1000 {
 		t.Fatalf("expected dark card background, got %d matching pixels", bg)
 	}
+	if countLogoInk(img) < 500 {
+		t.Fatal("expected Parts Pile logo on the card")
+	}
+	if countColorNearRight(img, 0xF4, 0xEF, 0xE6) < 500 {
+		t.Fatal("expected warm content ink on the QR code")
+	}
 }
 
 func countColorNear(img *image.RGBA, r, g, b uint8) int {
+	return countColorNearFromX(img, img.Bounds().Min.X, r, g, b)
+}
+
+func countColorNearRight(img *image.RGBA, r, g, b uint8) int {
+	bounds := img.Bounds()
+	return countColorNearFromX(img, bounds.Min.X+bounds.Dx()*3/5, r, g, b)
+}
+
+func countColorNearFromX(img *image.RGBA, minX int, r, g, b uint8) int {
+	bounds := img.Bounds()
+	n := 0
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := minX; x < bounds.Max.X; x++ {
+			c := img.RGBAAt(x, y)
+			if near(c, r, g, b, 8) {
+				n++
+			}
+		}
+	}
+	return n
+}
+
+func countLogoInk(img *image.RGBA) int {
 	bounds := img.Bounds()
 	n := 0
 	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
 		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			c := img.RGBAAt(x, y)
-			if near(c, r, g, b, 8) {
+			if c.A < 200 {
+				continue
+			}
+			// Wordmark is warm gold. Body text is parchment (#f4efe6).
+			if c.R > 180 && c.G > 140 && int(c.R) > int(c.B)+40 {
 				n++
 			}
 		}
