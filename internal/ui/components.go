@@ -10,7 +10,7 @@ import (
 )
 
 const textFieldClass = "w-full p-2 border border-zinc-300 dark:border-zinc-200 rounded-md " +
-	"bg-transparent text-zinc-900 dark:text-zinc-200"
+	"bg-transparent"
 
 // Autofocus marks a field for initial focus. HTMX focuses [autofocus] after swaps.
 func Autofocus() g.Node {

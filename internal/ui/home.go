@@ -75,7 +75,7 @@ func searchArea(q string, expanded bool, filterFacets []facet.Def,
 	}
 	areaClass := "flex flex-col"
 	if expanded {
-		areaClass += " border rounded-lg p-4 gap-4"
+		areaClass += " brand-metal brand-metal-panel rounded-lg p-4 gap-4"
 		children = append(children, uiads.SearchFiltersPanel(filterFacets, filters))
 	}
 
@@ -92,7 +92,7 @@ func searchArea(q string, expanded bool, filterFacets []facet.Def,
 
 func searchBox(q string) g.Node {
 	return Input(
-		Class(textFieldClass),
+		Class("brand-metal brand-metal-control w-full p-2 rounded-md"),
 		Type("search"),
 		ID("searchBox"),
 		Name("q"),
@@ -134,13 +134,13 @@ func filterToggle(expanded bool) g.Node {
 	attrs := []g.Node{
 		Type("button"),
 		ID("filter-toggle"),
-		Class("p-2 border border-zinc-300 dark:border-zinc-600 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800"),
+		Class("brand-metal brand-metal-control p-2 rounded-md shrink-0"),
 		g.Attr("aria-label", label),
 		g.Attr("title", label),
 	}
 	attrs = append(attrs, actionAttrs...)
 	attrs = append(attrs, Img(
-		Class("w-6 h-6 dark:invert dark:opacity-80"),
+		Class("w-6 h-6"),
 		Src(icon),
 		Alt(label),
 	))

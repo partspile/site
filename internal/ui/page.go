@@ -209,12 +209,10 @@ func RemoveIntroBanner() g.Node {
 func introBanner() g.Node {
 	return Div(
 		ID("intro-banner"),
-		Class("relative -mx-4 px-4 h-8 flex items-center "+
-			"justify-center bg-yellow-400 "+
-			"border-b border-yellow-400 "+
-			"text-zinc-700"),
+		Class("intro-brand-banner relative -mx-4 px-4 h-8 flex "+
+			"items-center justify-center"),
 		A(
-			Class("font-medium text-zinc-900 "+
+			Class("intro-brand-banner-link font-medium "+
 				"hover:underline cursor-pointer"),
 			hx.Get("/api/intro-banner/dismiss?redirect=/about"),
 			hx.Swap("none"),
@@ -223,10 +221,9 @@ func introBanner() g.Node {
 		Button(
 			Type("button"),
 			g.Attr("aria-label", "Close"),
-			Class("absolute right-4 top-1/2 -translate-y-1/2 "+
-				"w-6 h-6 flex items-center justify-center "+
-				"rounded-full hover:bg-amber-200/60 "+
-				"dark:hover:bg-amber-900/50 cursor-pointer "+
+			Class("intro-brand-banner-close absolute right-4 top-1/2 "+
+				"-translate-y-1/2 w-6 h-6 flex items-center "+
+				"justify-center rounded-full cursor-pointer "+
 				"text-lg leading-none"),
 			hx.Get("/api/intro-banner/dismiss"),
 			hx.Swap("none"),
@@ -284,18 +281,23 @@ func navigation(userID int, userName, currentPath string,
 	hasUnread bool) g.Node {
 	return Nav(
 		ID("main-nav"),
-		Class("sticky top-0 z-10 relative "+
+		Class("nav-brand-edge sticky top-0 z-10 relative "+
 			"bg-white/75 dark:bg-zinc-900/75 backdrop-blur-xl "+
-			"border-b border-zinc-200 dark:border-zinc-700 "+
 			"flex items-center justify-between mb-4 py-4 -mx-4 px-4"),
 		g.If(currentPath != "/", navBackHome()),
 		A(
 			Href("/"),
 			Class("flex items-center shrink-0"),
 			Img(
-				Src("/images/parts-pile-logo.png"),
+				Src("/images/parts-pile-logo-light.png"),
 				Alt(config.ServerName),
-				Class("h-16 w-auto flex-shrink-0"),
+				Class("h-16 w-auto flex-shrink-0 dark:hidden"),
+			),
+			Img(
+				Src("/images/parts-pile-logo-dark.png"),
+				Alt(""),
+				Class("h-16 w-auto flex-shrink-0 hidden dark:block"),
+				g.Attr("aria-hidden", "true"),
 			),
 		),
 		Div(
@@ -382,7 +384,7 @@ func Page(userID int, hasUnread bool, userName, title, currentPath,
 	headersJSON := fmt.Sprintf(`{"X-Csrf-Token": %q}`, csrfToken)
 
 	contentClass := "w-full md:max-w-3xl md:mx-auto pb-8 px-6 " +
-		"text-zinc-900 dark:text-zinc-200 bg-white dark:bg-zinc-900"
+		"bg-white dark:bg-zinc-900"
 
 	bodyNodes := []g.Node{
 		Class("min-h-screen bg-white dark:bg-zinc-900"),
