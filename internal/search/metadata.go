@@ -15,10 +15,6 @@ func buildVectorMetadataWhere(p Params, pa *pgArgs) string {
 			pa.add(p.CategoryID) + ` AND ` + clause
 	}
 
-	if !p.Expanded {
-		return clause
-	}
-
 	for _, key := range sortedFacetKeys(p.FacetFilters) {
 		f := p.FacetFilters[key]
 		if !f.Active() {

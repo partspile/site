@@ -13,14 +13,12 @@ const searchCookieName = "search"
 
 // SearchState holds persisted search filters.
 // CategoryID 0 means all categories (no category filter).
-// Expanded is retained for cookie compatibility; filters are always applied.
 type SearchState struct {
 	Q          string                  `json:"q,omitempty"`
 	CategoryID int                     `json:"category_id,omitempty"`
 	Facets     map[string]facet.Filter `json:"facets,omitempty"`
 	Location   string                  `json:"location,omitempty"`
 	Within     int                     `json:"within,omitempty"`
-	Expanded   bool                    `json:"expanded,omitempty"`
 }
 
 func GetSearchState(c *fiber.Ctx) SearchState {

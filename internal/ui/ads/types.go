@@ -20,7 +20,7 @@ type CategoryOption struct {
 	ImageFile string
 }
 
-// SearchFilters holds search filter panel state passed from handlers.
+// SearchFilters holds search filter pill state passed from handlers.
 // CategoryID 0 means all categories.
 type SearchFilters struct {
 	CategoryID      int

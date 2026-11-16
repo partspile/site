@@ -192,14 +192,6 @@ func TestHomeHandlerSearchVisibleByDefault(t *testing.T) {
 	if !strings.Contains(body, `id="filter-category"`) {
 		t.Error("Expected category filter pill on home")
 	}
-	if strings.Contains(body, `id="filter-toggle"`) ||
-		strings.Contains(body, `/api/hide-filters`) {
-		t.Error("expand/collapse filter toggle should be removed")
-	}
-	if strings.Contains(body, `id="search-toggle"`) ||
-		strings.Contains(body, `/images/search.svg`) {
-		t.Error("search icon toggle should be removed")
-	}
 	if strings.Contains(body, `/images/post_add.svg`) {
 		t.Error("new ad link should not appear when logged out")
 	}
@@ -439,7 +431,7 @@ func TestSwitchCategoryFromNewAdPreservesLocation(t *testing.T) {
 	}
 }
 
-func TestApplyCategoryFilterViaShowFilters(t *testing.T) {
+func TestApplyCategoryFilterViaSearchFilters(t *testing.T) {
 	client, err := getClientWithCategoryCookie(6)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
@@ -449,9 +441,9 @@ func TestApplyCategoryFilterViaShowFilters(t *testing.T) {
 	}
 
 	resp, body := getRequestWithCookies(t, client,
-		baseURL+"/api/show-filters?category=6")
+		baseURL+"/api/search-filters?category=6")
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("show-filters: expected 200, got %d", resp.StatusCode)
+		t.Fatalf("search-filters: expected 200, got %d", resp.StatusCode)
 	}
 	state, err := getSearchStateFromClient(client)
 	if err != nil {

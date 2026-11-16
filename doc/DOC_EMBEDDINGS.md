@@ -129,7 +129,7 @@ Postgres orders by `embedding <=> query` (cosine distance). Results
 with distance ≥ `SearchThreshold` (0.6) are dropped.
 
 Always filtered by `flag_count <= 2`. Category is applied only when
-the category filter is set. Expanded search adds facet predicates on
+the category filter is set. Active facet filters add predicates on
 `vector_metadata`. Location + within still ranks by the same vector;
 in-area ads are listed before out-of-area.
 

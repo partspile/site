@@ -196,7 +196,7 @@
     border-bottom: none;
   }
 
-  /* Search box, filter toggle: brass rim + grit, readable fill. */
+  /* Search box: brass rim + grit, readable fill. */
   .brand-metal-control {
     border: 1.5px solid var(--nav-metal-mid);
     color: var(--content-ink);
@@ -234,54 +234,6 @@
 
   .brand-metal-control img.icon-ink {
     filter: url("/images/icon-filters.svg#icon-ink");
-  }
-
-  /* Expanded filters panel frame. */
-  .brand-metal-panel {
-    border: 1.5px solid var(--nav-metal-mid);
-    color: var(--content-ink);
-    background-color: rgb(255 252 245 / 0.55);
-    background-image:
-      var(--nav-metal-grit),
-      linear-gradient(
-        180deg,
-        rgb(255 252 245 / 0.7) 0%,
-        rgb(252 244 228 / 0.35) 100%
-      );
-    background-size: 160px 160px, auto;
-    background-blend-mode: soft-light, normal;
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.45),
-      0 0 0 1px color-mix(in srgb, var(--nav-metal-deep) 18%, transparent);
-  }
-
-  .brand-metal-panel .field-group {
-    background: rgb(255 252 245 / 0.72);
-    border: 1px solid color-mix(in srgb, var(--nav-metal-mid) 45%, transparent);
-    color: var(--content-ink);
-  }
-
-  .brand-metal-panel .field-label,
-  .brand-metal-panel .field-option,
-  .brand-metal-panel .ad-filter-range-sep {
-    color: var(--content-ink);
-  }
-
-  .brand-metal-panel input:not(.brand-metal-control),
-  .brand-metal-panel select:not(.brand-metal-control) {
-    color: var(--content-ink);
-    border-color: color-mix(in srgb, var(--nav-metal-mid) 70%, #a1a1aa);
-  }
-
-  .brand-metal-panel input:not(.brand-metal-control)::placeholder {
-    color: color-mix(in srgb, var(--content-ink) 55%, #a1a1aa);
-  }
-
-  .brand-metal-panel input:not(.brand-metal-control):focus,
-  .brand-metal-panel select:not(.brand-metal-control):focus {
-    outline: none;
-    border-color: var(--nav-metal-bright);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--nav-metal-mid) 35%, transparent);
   }
 
   .intro-brand-banner {
@@ -389,45 +341,6 @@
 
     .brand-metal-control img.icon-ink {
       filter: url("/images/icon-filters.svg#icon-ink-dark");
-    }
-
-    .brand-metal-panel {
-      color: var(--content-ink);
-      background-color: rgb(39 39 42 / 0.65);
-      background-image:
-        var(--nav-metal-grit),
-        linear-gradient(
-          180deg,
-          rgb(49 45 38 / 0.75) 0%,
-          rgb(32 30 27 / 0.4) 100%
-        );
-      background-blend-mode: soft-light, normal;
-      box-shadow:
-        inset 0 1px 0 rgb(255 236 190 / 0.1),
-        0 0 0 1px color-mix(in srgb, var(--nav-metal-deep) 30%, transparent);
-    }
-
-    .brand-metal-panel .field-group {
-      background: rgb(24 24 27 / 0.72);
-      border-color: color-mix(in srgb, var(--nav-metal-mid) 35%, transparent);
-      color: var(--content-ink);
-    }
-
-    .brand-metal-panel .field-label,
-    .brand-metal-panel .field-option,
-    .brand-metal-panel .ad-filter-range-sep {
-      color: var(--content-ink);
-    }
-
-    .brand-metal-panel input:not(.brand-metal-control),
-    .brand-metal-panel select:not(.brand-metal-control) {
-      border-color: color-mix(in srgb, var(--nav-metal-mid) 40%, #52525b);
-      background: transparent;
-      color: var(--content-ink);
-    }
-
-    .brand-metal-panel input:not(.brand-metal-control)::placeholder {
-      color: color-mix(in srgb, var(--content-ink-muted) 70%, #71717a);
     }
   }
 

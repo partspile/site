@@ -10,24 +10,20 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-func HomePage(userID int, q string, filterFacets []facet.Def,
+func HomePage(q string, filterFacets []facet.Def,
 	filters uiads.SearchFilters, results []g.Node) []g.Node {
-	return []g.Node{SearchContainer(userID, q, filterFacets, filters, results)}
+	return []g.Node{SearchContainer(q, filterFacets, filters, results)}
 }
 
-func SearchContainer(userID int, q string, filterFacets []facet.Def,
+func SearchContainer(q string, filterFacets []facet.Def,
 	filters uiads.SearchFilters, results []g.Node) g.Node {
 	return Div(
 		ID("search-container"),
 		Div(
 			Class("flex flex-col gap-4"),
-			SearchWidget(userID, q, filterFacets, filters, results),
+			SearchWidget(q, filterFacets, filters, results),
 		),
 	)
-}
-
-func SearchResults(results []g.Node) g.Node {
-	return searchResults(results, false)
 }
 
 // SearchResultsResponse is the HTMX body for /api/search/.
@@ -37,18 +33,12 @@ func SearchResultsResponse(page int, results []g.Node) g.Node {
 	if page > 1 {
 		return g.Group(results)
 	}
-	return SearchResults(results)
+	return searchResults(results, false)
 }
 
 // SearchResultsOOB swaps #search-results out-of-band.
 func SearchResultsOOB(results []g.Node) g.Node {
 	return searchResults(results, true)
-}
-
-// SearchArea renders the search box and always-visible filter pills.
-func SearchArea(q string, filterFacets []facet.Def,
-	filters uiads.SearchFilters) g.Node {
-	return searchArea(q, filterFacets, filters, false)
 }
 
 // SearchAreaOOB swaps #search-area after filter changes.
@@ -63,7 +53,7 @@ func searchArea(q string, filterFacets []facet.Def,
 		ID("search-area"),
 		Class("flex flex-col gap-3"),
 		searchBox(q),
-		uiads.SearchFiltersPanel(
+		uiads.SearchFilterPills(
 			filterFacets, filters, categoryFilterSelect(filters)),
 	}
 	if oob {
@@ -99,30 +89,25 @@ func searchBox(q string) g.Node {
 	)
 }
 
-func SearchView(filters uiads.SearchFilters, results []g.Node) g.Node {
-	return Div(
-		Class("flex flex-col gap-4"),
-		uiads.SearchLocationBar(filters),
-		searchResults(results, false),
-	)
-}
-
-func SearchWidget(userID int, q string, filterFacets []facet.Def,
+func SearchWidget(q string, filterFacets []facet.Def,
 	filters uiads.SearchFilters, results []g.Node) g.Node {
-	attrs := []g.Node{
+	return Form(
 		Class("flex flex-col gap-4"),
 		ID("search-widget"),
 		g.Attr("onsubmit", "event.preventDefault(); return false;"),
-		SearchArea(q, filterFacets, filters),
-		SearchView(filters, results),
-	}
-	return Form(attrs...)
+		searchArea(q, filterFacets, filters, false),
+		Div(
+			Class("flex flex-col gap-4"),
+			uiads.SearchLocationBar(filters),
+			searchResults(results, false),
+		),
+	)
 }
 
 func searchResults(results []g.Node, oob bool) g.Node {
 	var content g.Node
 	if len(results) == 0 {
-		content = searchResultsEmpty()
+		content = searchResultsEmptyMessage()
 	} else {
 		content = g.Group(results)
 	}
@@ -138,10 +123,6 @@ func searchResults(results []g.Node, oob bool) g.Node {
 	return Div(attrs...)
 }
 
-func searchResultsEmpty() g.Node {
-	return SearchResultsEmptyMessage()
-}
-
 func searchResultsMessage(text string) g.Node {
 	return P(
 		Class("col-span-full py-8 text-center text-zinc-500 dark:text-zinc-400"),
@@ -149,8 +130,7 @@ func searchResultsMessage(text string) g.Node {
 	)
 }
 
-// SearchResultsEmptyMessage is the standard no-results copy for search grids.
-func SearchResultsEmptyMessage() g.Node {
+func searchResultsEmptyMessage() g.Node {
 	return searchResultsMessage("Sorry, no ads found matching that criteria.")
 }
 

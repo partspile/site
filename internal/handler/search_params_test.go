@@ -11,14 +11,11 @@ import (
 	"github.com/partspile/site/internal/facet"
 )
 
-func TestParseSearchParamsAlwaysAppliesCategory(t *testing.T) {
+func TestParseSearchParamsAppliesCategory(t *testing.T) {
 	p := parseSearchParams(
 		cookie.SearchState{Q: "Honda", CategoryID: 6},
 		1, 0, "",
 	)
-	if !p.Expanded {
-		t.Fatal("expected Expanded true; filters are always applied")
-	}
 	if p.CategoryID != 6 {
 		t.Fatalf("category = %d", p.CategoryID)
 	}

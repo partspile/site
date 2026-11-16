@@ -5,13 +5,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/partspile/site/internal/facet"
 	uiads "github.com/partspile/site/internal/ui/ads"
 )
 
 func TestHomeShowsFilterPills(t *testing.T) {
 	var buf bytes.Buffer
-	n := SearchContainer(0, "", nil, uiads.SearchFilters{}, nil)
+	n := SearchContainer("", nil, uiads.SearchFilters{}, nil)
 	if err := n.Render(&buf); err != nil {
 		t.Fatal(err)
 	}
@@ -26,25 +25,15 @@ func TestHomeShowsFilterPills(t *testing.T) {
 			t.Errorf("home missing %q", want)
 		}
 	}
-	for _, ban := range []string{
-		`id="filter-toggle"`,
-		`id="search-toggle"`,
-		"/images/search.svg",
-		"/api/hide-filters",
-	} {
-		if strings.Contains(html, ban) {
-			t.Errorf("home should not include %q", ban)
-		}
-	}
 }
 
-func TestSearchFiltersPanelHasCategorySelect(t *testing.T) {
+func TestSearchFilterPillsHasCategorySelect(t *testing.T) {
 	var buf bytes.Buffer
 	cats := []CategoryOption{
 		{ID: 1, Name: "Car & Truck Parts", ImageFile: "car.svg"},
 		{ID: 2, Name: "Bicycles", ImageFile: "bicycle.svg"},
 	}
-	n := uiads.SearchFiltersPanel(nil, uiads.SearchFilters{
+	n := uiads.SearchFilterPills(nil, uiads.SearchFilters{
 		CategoryID: 0,
 		Categories: []uiads.CategoryOption{
 			{ID: 1, Name: "Car & Truck Parts", ImageFile: "car.svg"},
@@ -60,7 +49,7 @@ func TestSearchFiltersPanelHasCategorySelect(t *testing.T) {
 		"All Categories",
 		"Car &amp; Truck Parts",
 		"Bicycles",
-		"/api/show-filters?category=",
+		"/api/search-filters?category=",
 		"/images/category/car.svg",
 		"category-select-open",
 		"filter-pill",
@@ -71,19 +60,5 @@ func TestSearchFiltersPanelHasCategorySelect(t *testing.T) {
 	}
 	if strings.Contains(html, `name="category"`) {
 		t.Error("filter category should use icon picker, not native select")
-	}
-}
-
-func TestFacetPillLabels(t *testing.T) {
-	price, ok := facet.Get("price")
-	if !ok {
-		t.Fatal("price facet missing")
-	}
-	min, max := 0, 50
-	if got := uiads.FacetPillLabel(price, facet.Filter{}); got != "Price" {
-		t.Fatalf("empty price pill = %q", got)
-	}
-	if got := uiads.FacetPillLabel(price, facet.Filter{Min: &min, Max: &max}); got != "Price: 0-50" {
-		t.Fatalf("bounded price pill = %q", got)
 	}
 }

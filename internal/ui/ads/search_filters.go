@@ -10,9 +10,9 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-// SearchFiltersPanel renders always-visible filter pills under the search box.
+// SearchFilterPills renders always-visible filter pills under the search box.
 // categoryControl is the shared icon category picker from package ui.
-func SearchFiltersPanel(facets []facet.Def, f SearchFilters,
+func SearchFilterPills(facets []facet.Def, f SearchFilters,
 	categoryControl g.Node) g.Node {
 	pills := []g.Node{categoryControl}
 	for _, d := range facets {
@@ -36,7 +36,6 @@ func facetFilterPill(d facet.Def, filter facet.Filter) g.Node {
 
 func facetEditorPill(d facet.Def, filter facet.Filter) g.Node {
 	active := filter.Active()
-	label := facetPillLabel(d, filter)
 	return Div(
 		Class("contents"),
 		facetHiddenFields(d, filter),
@@ -49,7 +48,7 @@ func facetEditorPill(d facet.Def, filter facet.Filter) g.Node {
 			hx.Swap("beforeend"),
 			g.Attr("aria-label", "Edit "+d.Label+" filter"),
 			g.Attr("title", "Edit "+d.Label+" filter"),
-			g.Text(label),
+			g.Text(facetPillLabel(d, filter)),
 		),
 	)
 }
@@ -62,7 +61,7 @@ func flagFilterPill(d facet.Def, filter facet.Filter) g.Node {
 		Value("1"),
 		ID("filter-" + d.Key),
 		Class("shrink-0"),
-		hx.Get("/api/show-filters"),
+		hx.Get("/api/search-filters"),
 		hx.Include("#search-widget"),
 		hx.Swap("none"),
 		hx.Trigger("change"),
@@ -106,11 +105,6 @@ func facetHiddenFields(d facet.Def, filter facet.Filter) g.Node {
 		}
 		return g.Group(nodes)
 	}
-}
-
-// FacetPillLabel returns the compact status label for a filter pill.
-func FacetPillLabel(d facet.Def, filter facet.Filter) string {
-	return facetPillLabel(d, filter)
 }
 
 func facetPillLabel(d facet.Def, filter facet.Filter) string {
@@ -162,15 +156,13 @@ func FilterModalName(key string) string {
 func SearchFilterModalBody(d facet.Def, filter facet.Filter) g.Node {
 	switch d.Filter {
 	case facet.FilterCheckboxes:
-		return enumCheckboxesFilterRow(d, filter)
-	case facet.FilterFlag:
-		return flagFilterRow(d, filter)
+		return enumCheckboxesEditor(d, filter)
 	default:
-		return rangeFilterRow(d.Key, d.Label, filter.Min, filter.Max)
+		return rangeEditor(d.Key, filter.Min, filter.Max)
 	}
 }
 
-func enumCheckboxesFilterRow(d facet.Def, filter facet.Filter) g.Node {
+func enumCheckboxesEditor(d facet.Def, filter facet.Filter) g.Node {
 	selected := make(map[string]bool, len(filter.Values))
 	for _, v := range filter.Values {
 		selected[v] = true
@@ -195,36 +187,15 @@ func enumCheckboxesFilterRow(d facet.Def, filter facet.Filter) g.Node {
 	}
 	return Div(
 		Class("field-group"),
-		Span(Class("field-label"), g.Text(d.Label)),
 		Div(Class("field-options flex-col items-start gap-2"), g.Group(nodes)),
 	)
 }
 
-func flagFilterRow(d facet.Def, filter facet.Filter) g.Node {
-	id := "filter-" + d.Key
-	checked := filter.Value != nil && *filter.Value == "1"
-	attrs := []g.Node{
-		Type("checkbox"),
-		Name(d.Key),
-		Value("1"),
-		ID(id),
-	}
-	if checked {
-		attrs = append(attrs, g.Attr("checked", "checked"))
-	}
-	return Label(
-		Class("field-option"),
-		Input(attrs...),
-		g.Text(d.Label),
-	)
-}
-
-func rangeFilterRow(name, label string, min, max *int) g.Node {
+func rangeEditor(name string, min, max *int) g.Node {
 	minID := "filter-" + name + "-min"
 	maxID := "filter-" + name + "-max"
 	return Div(
 		Class("field-group"),
-		Label(For(minID), Class("field-label"), g.Text(label)),
 		Div(Class("ad-filter-price-range flex flex-wrap items-center gap-2"),
 			Input(
 				Type("number"),

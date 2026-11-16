@@ -53,7 +53,7 @@ func TestSearchPageHandler(t *testing.T) {
 				t.Fatalf("Failed to create client: %v", err)
 			}
 			if tt.query != "?q=Honda" && tt.name != "location and within" {
-				if err := setSearchCookieOnClient(client, cookie.SearchState{Expanded: true}); err != nil {
+				if err := setSearchCookieOnClient(client, cookie.SearchState{}); err != nil {
 					t.Fatalf("set search cookie: %v", err)
 				}
 			}
@@ -82,7 +82,7 @@ func TestSearchPageHandler(t *testing.T) {
 
 func TestSearchPageHandlerMileageDirect(t *testing.T) {
 	data, err := json.Marshal(cookie.SearchState{
-		Expanded: true, CategoryID: 6,
+		CategoryID: 6,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -120,7 +120,7 @@ func TestMileageSearchFilter(t *testing.T) {
 		t.Fatalf("Failed to create client: %v", err)
 	}
 	if err := setSearchCookieOnClient(client, cookie.SearchState{
-		Expanded: true, CategoryID: 6,
+		CategoryID: 6,
 	}); err != nil {
 		t.Fatalf("set search cookie: %v", err)
 	}
@@ -138,7 +138,7 @@ func TestMileageSearchFilter(t *testing.T) {
 	}
 }
 
-func TestShowFiltersCategoryFacets(t *testing.T) {
+func TestSearchFiltersCategoryFacets(t *testing.T) {
 	t.Run("cars show mileage filter", func(t *testing.T) {
 		client, err := getClientWithCategoryCookie(6)
 		if err != nil {
@@ -149,7 +149,7 @@ func TestShowFiltersCategoryFacets(t *testing.T) {
 		}); err != nil {
 			t.Fatalf("set search cookie: %v", err)
 		}
-		resp, body := getRequestWithCookies(t, client, baseURL+"/api/show-filters")
+		resp, body := getRequestWithCookies(t, client, baseURL+"/api/search-filters")
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("Expected status 200, got %d", resp.StatusCode)
 		}
@@ -167,7 +167,7 @@ func TestShowFiltersCategoryFacets(t *testing.T) {
 		}); err != nil {
 			t.Fatalf("set search cookie: %v", err)
 		}
-		resp, body := getRequestWithCookies(t, client, baseURL+"/api/show-filters")
+		resp, body := getRequestWithCookies(t, client, baseURL+"/api/search-filters")
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("Expected status 200, got %d", resp.StatusCode)
 		}
@@ -185,7 +185,7 @@ func TestShowFiltersCategoryFacets(t *testing.T) {
 		}); err != nil {
 			t.Fatalf("set search cookie: %v", err)
 		}
-		resp, body := getRequestWithCookies(t, client, baseURL+"/api/show-filters")
+		resp, body := getRequestWithCookies(t, client, baseURL+"/api/search-filters")
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("Expected status 200, got %d", resp.StatusCode)
 		}
@@ -218,16 +218,15 @@ func TestCategoryFilterClearsMileageFilter(t *testing.T) {
 	}
 	min := 10000
 	if err := setSearchCookieOnClient(client, cookie.SearchState{
-		Q: "Honda", CategoryID: 6, Expanded: true,
-		Facets: map[string]facet.Filter{"mileage": {Min: &min}},
+		Q: "Honda", CategoryID: 6, Facets: map[string]facet.Filter{"mileage": {Min: &min}},
 	}); err != nil {
 		t.Fatalf("set search cookie: %v", err)
 	}
 
 	resp, body := getRequestWithCookies(t, client,
-		baseURL+"/api/show-filters?category=5&q=Honda&mileage_min=10000")
+		baseURL+"/api/search-filters?category=5&q=Honda&mileage_min=10000")
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("show-filters: expected 200, got %d", resp.StatusCode)
+		t.Fatalf("search-filters: expected 200, got %d", resp.StatusCode)
 	}
 	state, err := getSearchStateFromClient(client)
 	if err != nil {
@@ -253,7 +252,6 @@ func TestIntegrationSearchGeoAndFacetFilters(t *testing.T) {
 
 	p := search.Params{
 		CategoryID: integrationCarsCategory,
-		Expanded:   true,
 		Limit:      50,
 		CenterLat:  lat,
 		CenterLon:  lon,
@@ -274,7 +272,6 @@ func TestIntegrationSearchGeoAndFacetFilters(t *testing.T) {
 		insertIntegrationAdWithCondition(t, "Poor bike", "Used - Poor")
 		result, err := search.Search(search.Params{
 			CategoryID: integrationCarsCategory,
-			Expanded:   true,
 			Limit:      10,
 			FacetFilters: map[string]facet.Filter{"condition": {
 				Values: []string{"New", "Used - Fair"},
@@ -294,7 +291,6 @@ func TestIntegrationSearchGeoAndFacetFilters(t *testing.T) {
 		max := 50000
 		result, err := search.Search(search.Params{
 			CategoryID:   integrationCarsCategory,
-			Expanded:     true,
 			Limit:        10,
 			FacetFilters: map[string]facet.Filter{"mileage": {Min: &min, Max: &max}},
 		})

@@ -13,7 +13,6 @@ func Search(p Params) (Results, error) {
 		"categoryID", p.CategoryID,
 		"userID", p.UserID,
 		"q", p.Q,
-		"expanded", p.Expanded,
 		"limit", p.Limit,
 		"offset", p.Offset,
 		"hasGeo", p.HasGeo,

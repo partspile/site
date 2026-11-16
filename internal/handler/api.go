@@ -35,7 +35,7 @@ func categorySwitchRedirect(c *fiber.Ctx) string {
 	return "/"
 }
 
-func renderFilterPanelResponse(c *fiber.Ctx, state cookie.SearchState,
+func renderSearchFiltersResponse(c *fiber.Ctx, state cookie.SearchState,
 	closeModal string) error {
 	_, results, err := searchFromRequest(c, state)
 	if err != nil {
@@ -57,11 +57,11 @@ func renderFilterPanelResponse(c *fiber.Ctx, state cookie.SearchState,
 	return render(c, g.Group(nodes))
 }
 
-func ShowFiltersHandler(c *fiber.Ctx) error {
-	// fromForm true so facet pill toggles and category changes refresh
-	// filters from the included search widget fields.
+// SearchFiltersHandler refreshes filter pills and results after a category
+// change or flag-pill toggle.
+func SearchFiltersHandler(c *fiber.Ctx) error {
 	state := saveSearchStateFromRequest(c, true)
-	return renderFilterPanelResponse(c, state, "")
+	return renderSearchFiltersResponse(c, state, "")
 }
 
 func FilterModalHandler(c *fiber.Ctx) error {
@@ -82,7 +82,7 @@ func FilterModalSaveHandler(c *fiber.Ctx) error {
 		return c.SendStatus(fiber.StatusNotFound)
 	}
 	state := applyFilterModalSave(c, d)
-	return renderFilterPanelResponse(c, state, key)
+	return renderSearchFiltersResponse(c, state, key)
 }
 
 func SearchPageHandler(c *fiber.Ctx) error {

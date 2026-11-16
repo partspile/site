@@ -16,7 +16,7 @@ type CategorySelectOpts struct {
 	Selected   CategoryOption
 	Categories []CategoryOption
 	// ReturnParam selects posting-category switch mode (e.g. "/auth/ad/new").
-	// Empty means search-filter mode via /api/show-filters.
+	// Empty means search-filter mode via /api/search-filters.
 	ReturnParam string
 	IncludeAll  bool
 	ID          string
@@ -181,7 +181,7 @@ func categorySelectItem(currentID, categoryID int, name, imageFile,
 		attrs = append(attrs, hx.Get(returnURL))
 	} else {
 		attrs = append(attrs,
-			hx.Get("/api/show-filters?category="+strconv.Itoa(categoryID)),
+			hx.Get("/api/search-filters?category="+strconv.Itoa(categoryID)),
 			hx.Include("#search-widget"),
 		)
 	}

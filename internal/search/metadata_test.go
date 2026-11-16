@@ -35,7 +35,6 @@ func TestBuildVectorMetadataWhereNoGeoFilter(t *testing.T) {
 	var pa pgArgs
 	p := Params{
 		CategoryID: 6,
-		Expanded:   true,
 		HasGeo:     true,
 		CenterLat:  34.0,
 		CenterLon:  -118.0,

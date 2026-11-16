@@ -12,7 +12,6 @@ var WithinKmOptions = []int{1, 5, 10, 25, 50, 100, 500, 1000}
 type Params struct {
 	CategoryID   int
 	UserID       int
-	Expanded     bool
 	Limit        int
 	Offset       int
 	Q            string

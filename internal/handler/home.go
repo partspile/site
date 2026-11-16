@@ -3,12 +3,10 @@ package handler
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/partspile/site/internal/cookie"
-	"github.com/partspile/site/internal/local"
 	"github.com/partspile/site/internal/ui"
 )
 
 func HomeHandler(c *fiber.Ctx) error {
-	userID := local.GetUserID(c)
 	searchState := cookie.GetSearchState(c)
 	distanceUnit := cookie.GetDistanceUnit(c)
 
@@ -18,7 +16,7 @@ func HomeHandler(c *fiber.Ctx) error {
 	}
 
 	return renderPage(c, "",
-		ui.HomePage(userID, searchState.Q,
+		ui.HomePage(searchState.Q,
 			filterableFacetsForSearch(searchState.CategoryID),
 			searchStateToFilters(searchState, distanceUnit),
 			results))

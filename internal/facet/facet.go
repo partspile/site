@@ -42,7 +42,7 @@ const (
 	FormFlag                       // single opt-in checkbox (Kind Flag)
 )
 
-// FilterWidget controls the search filter panel for a facet.
+// FilterWidget controls the search filter pill for a facet.
 type FilterWidget int
 
 const (
@@ -70,7 +70,7 @@ type Def struct {
 	Enum       []string // enum options for FormSelect and FormRadio
 	SelectMin  int      // FormSelect lower bound when Kind == Int (inclusive)
 	SelectMax  int      // FormSelect upper bound when Kind == Int; 0 = current calendar year + 1
-	Filterable bool     // show in the search filter panel
+	Filterable bool     // show as a search filter pill
 	Required   bool     // required on the new-ad form
 }
 

@@ -178,7 +178,7 @@ func setupApp() *fiber.App {
 	api.Post("/sms/webhook", handler.SMSWebhookHandler)
 	api.Get("/image-nav/:id", handler.ImageNavigationHandler)
 	api.Get("/image-full/:id", handler.ImageFullScreenHandler)
-	api.Get("/show-filters", handler.ShowFiltersHandler)
+	api.Get("/search-filters", handler.SearchFiltersHandler)
 	api.Get("/filter-modal/:key", handler.FilterModalHandler)
 	api.Get("/filter-modal/:key/save", handler.FilterModalSaveHandler)
 	api.Get("/search-location-modal", handler.SearchLocationModalHandler)

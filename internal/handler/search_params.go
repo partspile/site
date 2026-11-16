@@ -81,7 +81,7 @@ func filterableFacets(defs []facet.Def) []facet.Def {
 	return out
 }
 
-// filterableFacetsForSearch returns facets for the filter panel. When
+// filterableFacetsForSearch returns facets for the filter pills. When
 // categoryID is 0 (all categories), it is the intersection of filterable
 // facets shared by every category, in registry order.
 func filterableFacetsForSearch(categoryID int) []facet.Def {
@@ -129,8 +129,6 @@ func parseSearchParams(state cookie.SearchState, page, userID int,
 		state.Facets,
 	)
 	p.UserID = userID
-	// Filters are always visible; always apply category/facet constraints.
-	p.Expanded = true
 	return p
 }
 
@@ -161,7 +159,6 @@ func saveSearchStateFromRequest(c *fiber.Ctx,
 		state.Facets = parseFacetFilters(c,
 			filterableFacetsForSearch(state.CategoryID))
 	}
-	state.Expanded = true
 	cookie.SetSearchState(c, state)
 	return state
 }
@@ -185,7 +182,6 @@ func applyFilterModalSave(c *fiber.Ctx, d facet.Def) cookie.SearchState {
 		state.Facets = nil
 	}
 	state = clearFacetFilters(state, state.CategoryID)
-	state.Expanded = true
 	cookie.SetSearchState(c, state)
 	return state
 }

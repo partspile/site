@@ -19,7 +19,6 @@ func TestSearchStateRoundTrip(t *testing.T) {
 		Facets:     map[string]facet.Filter{"price": {Min: &min, Max: &max}},
 		Location:   "Denver",
 		Within:     25,
-		Expanded:   true,
 	}
 	app := fiber.New()
 	var got SearchState
@@ -53,8 +52,7 @@ func TestSearchStateRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got.Q != want.Q || got.CategoryID != want.CategoryID ||
-		got.Location != want.Location ||
-		got.Within != want.Within || got.Expanded != want.Expanded {
+		got.Location != want.Location || got.Within != want.Within {
 		t.Fatalf("got %+v, want %+v", got, want)
 	}
 	pf, ok := got.Facets["price"]
@@ -67,7 +65,7 @@ func TestGetSearchStateInvalidCookie(t *testing.T) {
 	app := fiber.New()
 	app.Get("/", func(c *fiber.Ctx) error {
 		state := GetSearchState(c)
-		if state.Q != "" || state.Expanded {
+		if state.Q != "" || state.Location != "" {
 			t.Fatalf("expected zero state, got %+v", state)
 		}
 		return c.SendStatus(fiber.StatusOK)
@@ -125,7 +123,7 @@ func TestClearSearchState(t *testing.T) {
 
 func TestSearchStateJSON(t *testing.T) {
 	min := 10
-	state := SearchState{Q: "test", Facets: map[string]facet.Filter{"price": {Min: &min}}, Expanded: true}
+	state := SearchState{Q: "test", Facets: map[string]facet.Filter{"price": {Min: &min}}}
 	data, err := json.Marshal(state)
 	if err != nil {
 		t.Fatal(err)
