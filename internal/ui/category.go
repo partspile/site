@@ -74,7 +74,7 @@ func CategorySelect(opts CategorySelectOpts) g.Node {
 	}
 
 	attrs := []g.Node{
-		Class("relative w-full z-50"),
+		Class("relative w-full z-0"),
 	}
 	if opts.ID != "" {
 		attrs = append(attrs, ID(opts.ID))
