@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/partspile/site/internal/config"
 	uiads "github.com/partspile/site/internal/ui/ads"
@@ -99,12 +100,24 @@ const flyerSheetCSS = `
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
 }
+.flyer-foot {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1.25rem;
+  align-items: baseline;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  color: #78716c;
+  white-space: nowrap;
+}
 `
 
 const flyerPrintCSS = flyerSheetCSS + `
 @page {
   size: letter portrait;
-  margin: 0.5in;
+  /* No margin: the browser draws the date, title, and URL there. */
+  margin: 0;
 }
 @media print {
   .flyer-screen-only { display: none !important; }
@@ -116,8 +129,9 @@ const flyerPrintCSS = flyerSheetCSS + `
   .flyer-sheet {
     max-width: none;
     margin: 0;
-    padding: 0;
-    height: 10in;
+    padding: 0.5in 0.5in 0.4in;
+    height: 11in;
+    max-height: 11in;
   }
 }
 `
@@ -200,6 +214,19 @@ func flyerSheet(d AdFlyerData, qrSrc string) g.Node {
 			g.If(qrSrc != "", flyerQR(qrSrc)),
 		),
 		flyerImages(d.ID, d.ImageCount),
+		flyerFoot(d),
+	)
+}
+
+func flyerFoot(d AdFlyerData) g.Node {
+	when := d.PrintedAt
+	if when.IsZero() {
+		when = time.Now()
+	}
+	return Div(
+		Class("flyer-foot"),
+		g.If(d.AdURL != "", Span(g.Text(d.AdURL))),
+		Span(g.Text("printed: "+when.Format("Jan 2, 2006"))),
 	)
 }
 

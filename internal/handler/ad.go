@@ -210,10 +210,10 @@ func AdFlyerHandler(c *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	return render(c, ui.AdFlyerPage(adFlyerData(a, userID, adID)))
+	return render(c, ui.AdFlyerPage(adFlyerData(a, userID, adID, tz)))
 }
 
-func adFlyerData(a ad.Ad, userID, adID int) ui.AdFlyerData {
+func adFlyerData(a ad.Ad, userID, adID int, tz *time.Location) ui.AdFlyerData {
 	d := adDetailFrom(a, userID, false, false)
 	return ui.AdFlyerData{
 		ID:           d.ID,
@@ -227,6 +227,7 @@ func adFlyerData(a ad.Ad, userID, adID int) ui.AdFlyerData {
 		FacetDetails: d.FacetDetails,
 		Tags:         d.Tags,
 		AdURL:        config.CanonicalURL(fmt.Sprintf("/ad/%d", adID)),
+		PrintedAt:    time.Now().In(tz),
 	}
 }
 

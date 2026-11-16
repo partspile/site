@@ -67,6 +67,7 @@ type AdFlyerData struct {
 	FacetDetails []string
 	Tags         []string
 	AdURL        string
+	PrintedAt    time.Time
 }
 
 // AdCard holds presentation fields for a listing card.

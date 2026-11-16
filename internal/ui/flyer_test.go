@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/partspile/site/internal/config"
 )
@@ -61,6 +62,7 @@ func TestAdFlyerPage(t *testing.T) {
 		FacetDetails: []string{"Year: 2018"},
 		Tags:         []string{"road"},
 		AdURL:        "https://parts-pile.com/ad/7",
+		PrintedAt:    time.Date(2026, 11, 16, 15, 4, 0, 0, time.UTC),
 	}
 	var buf bytes.Buffer
 	if err := AdFlyerPage(d).Render(&buf); err != nil {
@@ -91,13 +93,24 @@ func TestAdFlyerPage(t *testing.T) {
 		"flyer-logo",
 		"size: letter",
 		"max-height: 10in",
+		"flyer-foot",
+		"printed: Nov 16, 2026",
 	} {
 		if !strings.Contains(html, want) {
 			t.Errorf("flyer missing %q", want)
 		}
 	}
-	if strings.Contains(html, "https://parts-pile.com/ad/7") {
-		t.Fatal("flyer should not print the ad URL under the QR code")
+	if strings.Count(html, "https://parts-pile.com/ad/7") != 1 {
+		t.Fatal("ad URL should appear once, in the print footer")
+	}
+	footAt := strings.Index(html, "flyer-foot")
+	urlAt := strings.Index(html, "https://parts-pile.com/ad/7")
+	if footAt < 0 || urlAt < footAt {
+		t.Fatal("ad URL should sit in the print footer")
+	}
+	printedAt := strings.Index(html, "printed: Nov 16, 2026")
+	if printedAt < urlAt {
+		t.Fatal("printed date should follow the URL")
 	}
 	if strings.Contains(html, `class="text-xl font-bold"`) {
 		t.Fatal("did not expect Parts Pile heading on flyer")
