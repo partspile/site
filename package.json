@@ -1,7 +1,7 @@
 {
   "name": "site",
   "version": "1.0.0",
-  "description": "Classified Ads without the Newspaper",
+  "description": "Marketplace for cars, trucks, motorcycles, bicycles, and parts",
   "main": "index.js",
   "scripts": {
     "build-css": "tailwindcss -i ./input.css -o ./static/css/output.css --watch",

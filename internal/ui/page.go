@@ -18,11 +18,13 @@ func pageDescription(path string) string {
 	name := config.ServerName
 	switch {
 	case path == "/":
-		return name + " - Classified Ads. Buy and sell vehicles, " +
-			"parts, jobs, pets, housing, and more."
+		return name + " is a marketplace for things. Buy and sell " +
+			"cars, trucks, motorcycles, bicycles, farm equipment, " +
+			"and parts."
 	case path == "/about":
-		return name + " is classified ads for the Internet. Post with " +
-			"your phone number; it stays hidden."
+		return name + " is a marketplace for cars, trucks, " +
+			"motorcycles, bicycles, and parts. Your phone number " +
+			"stays hidden."
 	case path == "/login":
 		return "Log in to " + name + " to post ads, message sellers, " +
 			"and manage your account."
@@ -51,9 +53,9 @@ func homepageSocialMeta(docTitle, desc, path string) []g.Node {
 		Meta(
 			Name("keywords"),
 			Content(
-				"classifieds, marketplace, buy and sell, car parts, "+
-					"vehicles, jobs, pets, housing, automotive parts, "+
-					"bicycles, motorcycles, agricultural equipment",
+				"marketplace, buy and sell, cars, trucks, car parts, "+
+					"motorcycles, motorcycle parts, bicycles, "+
+					"bicycle parts, agricultural equipment",
 			),
 		),
 		Meta(Name("author"), Content(config.ServerName)),
@@ -74,7 +76,7 @@ func websiteJSONLD() g.Node {
 		"@type":    "WebSite",
 		"name":     config.ServerName,
 		"alternateName": []string{
-			config.ServerName + " - Classified Ads",
+			config.ServerName + " Marketplace",
 			config.PublicHost(),
 		},
 		"url": config.CanonicalURL("/"),

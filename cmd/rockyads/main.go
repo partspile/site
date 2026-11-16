@@ -182,8 +182,8 @@ main {
     <span>Rocky Ads</span>
   </div>
   <p class="note">Rocky Ads<sup>*</sup> has been renamed to
-  <strong>Parts Pile</strong>. Same classifieds, new name —
-  find us at parts-pile.com.</p>
+  <strong>Parts Pile</strong> — a marketplace for cars, trucks,
+  motorcycles, bicycles, and parts. Find us at parts-pile.com.</p>
   <a class="cta" href="` + href + `">Go To Parts Pile</a>
   <p class="tm">* "Rocky" is a trademark of others; we are switching
   to a new name.</p>

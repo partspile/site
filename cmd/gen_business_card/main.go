@@ -16,10 +16,12 @@ func main() {
 		"Site hostname for QR URLs")
 	outDir := flag.String("outdir", "cards", "Output directory")
 	outName := flag.String("out", "partspile.png", "Output PNG filename")
+	outBack := flag.String("outback", "partspile-back.png",
+		"Output back PNG filename")
 	imagesRoot := flag.String(
 		"images",
 		"",
-		"Directory with the logo PNG and block.svg "+
+		"Directory with the logo PNG and category icons "+
 			"(default: repo static/images)",
 	)
 	flag.Parse()
@@ -43,6 +45,12 @@ func main() {
 		logger.Fatal("generate card", "error", err)
 	}
 	logger.Info("wrote card", "path", path)
+
+	backPath := filepath.Join(*outDir, *outBack)
+	if err := writeCardBack(backPath); err != nil {
+		logger.Fatal("generate card back", "error", err)
+	}
+	logger.Info("wrote card back", "path", backPath)
 }
 
 func writeCard(host, imagesRoot, outPath string) error {
@@ -50,6 +58,21 @@ func writeCard(host, imagesRoot, outPath string) error {
 		Host:       host,
 		ImagesRoot: imagesRoot,
 	})
+	if err != nil {
+		return err
+	}
+
+	f, err := os.Create(outPath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	return businesscard.WritePNG(f, img)
+}
+
+func writeCardBack(outPath string) error {
+	img, err := businesscard.RenderPrintCardBack()
 	if err != nil {
 		return err
 	}

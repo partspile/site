@@ -1,12 +1,8 @@
 # Parts Pile Web Site
 
-[Parts Pile](https://parts-pile.com) is classified ads for the Internet.
+[Parts Pile](https://parts-pile.com) is a marketplace for things.
 
-<p align="center">
-  <img src="static/images/classifieds.jpg" alt="Newspaper classifieds" height="500">
-</p>
-
-Remember classified ads? Easy, simple. Post an ad with your phone number and folks contact you. Parts Pile works the same way, except your phone number stays hidden.
+Cars and trucks, motorcycles, bicycles, and the parts that go with them. Farm equipment too. Post what you have, and folks message you here. Your phone number stays hidden.
 
 &emsp;🚫 No email  
 &emsp;🚫 No Facebook friends  

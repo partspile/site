@@ -69,8 +69,43 @@ func TestRenderPrintCard(t *testing.T) {
 	if countLogoInk(img) < 500 {
 		t.Fatal("expected Parts Pile logo on the card")
 	}
-	if countColorNearRight(img, 0xF4, 0xEF, 0xE6) < 500 {
-		t.Fatal("expected warm content ink on the QR code")
+	if countColorNearRight(img, 0xEB, 0xD3, 0x9B) < 500 {
+		t.Fatal("expected logo gold on the QR code")
+	}
+}
+
+func TestRenderPrintCardBack(t *testing.T) {
+	img, err := businesscard.RenderPrintCardBack()
+	if err != nil {
+		t.Fatalf("RenderPrintCardBack: %v", err)
+	}
+
+	b := img.Bounds()
+	if b.Dx() != 1125 || b.Dy() != 675 {
+		t.Fatalf("expected 1125x675 (3.75\"x2.25\" @ 300 DPI), got %dx%d",
+			b.Dx(), b.Dy())
+	}
+	if countColorNear(img, 0x18, 0x18, 0x1B) < 1000 {
+		t.Fatal("expected dark card background")
+	}
+
+	goldY := b.Max.Y
+	n := 0
+	for y := b.Min.Y; y < b.Max.Y; y++ {
+		for x := b.Min.X; x < b.Max.X; x++ {
+			if near(img.RGBAAt(x, y), 0xEB, 0xD3, 0x9B, 8) {
+				n++
+				if y < goldY {
+					goldY = y
+				}
+			}
+		}
+	}
+	if n < 40 {
+		t.Fatalf("expected gold tagline, got %d pixels", n)
+	}
+	if goldY > b.Dy()/3 {
+		t.Fatalf("tagline should sit near the top, first gold at y=%d", goldY)
 	}
 }
 

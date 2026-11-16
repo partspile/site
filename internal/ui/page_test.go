@@ -27,7 +27,7 @@ func TestPageHomeSEO(t *testing.T) {
 	wants := []string{
 		"<title>Parts Pile - Car &amp; Truck Parts</title>",
 		`rel="canonical" href="https://parts-pile.com/"`,
-		`name="description" content="Parts Pile - Classified Ads.`,
+		`name="description" content="Parts Pile is a marketplace for things.`,
 		`property="og:title" content="Parts Pile - Car &amp; Truck Parts"`,
 		`"@type":"WebSite"`,
 		`"url":"https://parts-pile.com/"`,
@@ -154,5 +154,35 @@ func TestRobotsForPath(t *testing.T) {
 	}
 	if got := robotsForPath("/funstats"); got != "index, follow" {
 		t.Fatalf("funstats: %q", got)
+	}
+}
+
+func TestAboutHowItWorks(t *testing.T) {
+	var buf bytes.Buffer
+	n := Page(0, false, "", "About", "/about", "csrf", false, AboutPage())
+	if err := n.Render(&buf); err != nil {
+		t.Fatal(err)
+	}
+	html := buf.String()
+	wants := []string{
+		"Here&#39;s how it works",
+		"Bob posts an ad",
+		"Truck tailgate",
+		"Alice messages Bob",
+		"Is the tailgate still available?",
+		"Yes. Saturday morning works.",
+		"Phone numbers stay hidden.",
+		"neither one sees the other",
+	}
+	for _, want := range wants {
+		if !strings.Contains(html, want) {
+			t.Errorf("about page missing %q", want)
+		}
+	}
+	post := strings.Index(html, "Bob posts an ad")
+	ask := strings.Index(html, "Alice messages Bob")
+	hidden := strings.Index(html, "Phone numbers stay hidden.")
+	if post < 0 || ask < post || hidden < ask {
+		t.Fatal("how-it-works steps are out of order")
 	}
 }

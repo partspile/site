@@ -67,9 +67,9 @@ func PrivacyPolicyPage() []g.Node {
 			legalSection("Who we are",
 				legalP(
 					g.Textf("%s (“we”) operates %s, a "+
-						"classifieds marketplace. This policy "+
-						"explains how we handle information when "+
-						"you use the site.", name, host),
+						"marketplace for vehicles, equipment, and "+
+						"parts. This policy explains how we handle "+
+						"information when you use the site.", name, host),
 				),
 			),
 			legalSection("Information we collect",
@@ -273,7 +273,7 @@ func TermsOfServicePage() []g.Node {
 						"active account per phone number. Do not "+
 						"register with someone else’s number or "+
 						"impersonate another person. %s is for "+
-						"personal use as a classifieds marketplace.",
+						"personal use as a marketplace.",
 					name,
 				)),
 			),
@@ -291,7 +291,7 @@ func TermsOfServicePage() []g.Node {
 			legalSection("The service",
 				legalP(g.Textf(
 					"%s is a platform for posting and browsing "+
-						"classifieds and messaging about listings. We "+
+						"listings and messaging about them. We "+
 						"are not a party to transactions between users. "+
 						"We do not guarantee that listings are accurate, "+
 						"legal, or that users will complete deals.",
