@@ -73,11 +73,18 @@ const flyerSheetCSS = `
 .flyer-qr {
   position: relative;
   width: 10rem;
+  min-width: 10rem;
+  max-width: 10rem;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
+}
+.flyer-qr img {
+  border: 2px solid #1c1917;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 /* Cloud sits up-left of the QR. Origin is the leader tip on the code's left edge. */
 .flyer-scan {
@@ -190,25 +197,20 @@ func flyerSheet(d AdFlyerData, qrSrc string) g.Node {
 				),
 				flyerDetails(d),
 			),
-			g.If(qrSrc != "", flyerQR(d.AdURL, qrSrc)),
+			g.If(qrSrc != "", flyerQR(qrSrc)),
 		),
 		flyerImages(d.ID, d.ImageCount),
 	)
 }
 
-func flyerQR(adURL, qrSrc string) g.Node {
+func flyerQR(qrSrc string) g.Node {
 	return Div(
 		Class("flyer-qr"),
 		flyerScanBubble(),
 		Img(
-			Class("w-40 h-40 bg-white p-2 rounded-md "+
-				"border border-zinc-300"),
+			Class("w-40 h-40 bg-white p-2 rounded-md"),
 			Src(qrSrc),
 			Alt("QR code for this ad"),
-		),
-		Span(
-			Class("w-40 text-xs text-zinc-500 break-all text-center"),
-			g.Text(adURL),
 		),
 	)
 }

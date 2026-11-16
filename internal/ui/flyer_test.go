@@ -76,7 +76,6 @@ func TestAdFlyerPage(t *testing.T) {
 		"2K mi",
 		"Year: 2018",
 		"road",
-		"https://parts-pile.com/ad/7",
 		"data:image/png;base64,",
 		"Print",
 		`href="/ad/7"`,
@@ -96,6 +95,9 @@ func TestAdFlyerPage(t *testing.T) {
 		if !strings.Contains(html, want) {
 			t.Errorf("flyer missing %q", want)
 		}
+	}
+	if strings.Contains(html, "https://parts-pile.com/ad/7") {
+		t.Fatal("flyer should not print the ad URL under the QR code")
 	}
 	if strings.Contains(html, `class="text-xl font-bold"`) {
 		t.Fatal("did not expect Parts Pile heading on flyer")
