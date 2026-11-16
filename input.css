@@ -487,12 +487,13 @@
     }
 
     .filter-pill-active {
-      border-color: color-mix(in srgb, var(--nav-metal-mid) 50%, transparent);
+      border-color: color-mix(in srgb, var(--nav-metal-mid) 72%, transparent);
+      color: var(--nav-metal-bright);
       background:
         linear-gradient(
           180deg,
-          rgb(49 45 38 / 0.85) 0%,
-          rgb(32 30 27 / 0.55) 100%
+          color-mix(in srgb, var(--nav-metal-bright) 36%, rgb(62 46 24)) 0%,
+          color-mix(in srgb, var(--nav-metal-mid) 30%, rgb(40 30 16)) 100%
         );
     }
   }

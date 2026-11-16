@@ -13,6 +13,16 @@ import (
 const maxFlyerImages = 4
 
 const flyerSheetCSS = `
+.flyer-page {
+  --content-ink: #1c1917;
+  --content-ink-soft: #57534e;
+  --content-ink-muted: #78716c;
+  color: #1c1917;
+  background: #fff;
+}
+.flyer-page a {
+  color: #2563eb;
+}
 .flyer-sheet {
   display: flex;
   flex-direction: column;
@@ -44,6 +54,43 @@ const flyerSheetCSS = `
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 6;
+}
+.flyer-logo {
+  width: 10rem;
+  height: auto;
+  display: block;
+  margin-bottom: 2rem;
+}
+.flyer-price {
+  color: #1c1917;
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.flyer-qr {
+  position: relative;
+  width: 10rem;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+/* Cloud sits up-left of the QR. Origin is the leader tip on the code's left edge. */
+.flyer-scan {
+  position: absolute;
+  width: 12rem;
+  height: auto;
+  left: -11.15rem;
+  top: -1.15rem;
+  overflow: visible;
+  transform: rotate(-4deg);
+  transform-origin: 94% 89%;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 `
 
@@ -89,7 +136,7 @@ func AdFlyerPage(d AdFlyerData) g.Node {
 			g.El("style", g.Raw(flyerPrintCSS)),
 		},
 		Body: []g.Node{
-			Class("bg-white text-zinc-900 min-h-screen"),
+			Class("flyer-page bg-white text-zinc-900 min-h-screen"),
 			flyerToolbar(d.ID),
 			flyerSheet(d, qrSrc),
 		},
@@ -122,14 +169,21 @@ func flyerSheet(d AdFlyerData, qrSrc string) g.Node {
 			Class("flex items-start gap-6 shrink-0"),
 			Div(
 				Class("min-w-0 flex-1 flex flex-col gap-3"),
+				Img(
+					Class("flyer-logo"),
+					Src("/images/parts-pile-logo-light.png"),
+					Alt("Parts Pile"),
+				),
 				H1(
 					Class("text-3xl font-bold"),
 					adCardTitle(d.Title, d.FacetLabel),
 				),
 				Div(
 					Class("flex flex-wrap items-baseline "+
-						"gap-x-2 gap-y-0.5"),
-					priceSpan(d.PriceDisplay, d.HasPrice),
+						"gap-x-3 gap-y-0.5"),
+					g.If(d.HasPrice,
+						Span(Class("flyer-price shrink-0 whitespace-nowrap"),
+							g.Text(d.PriceDisplay))),
 					g.If(d.Location != "",
 						Span(Class("text-sm text-zinc-500"),
 							g.Text(d.Location))),
@@ -144,7 +198,8 @@ func flyerSheet(d AdFlyerData, qrSrc string) g.Node {
 
 func flyerQR(adURL, qrSrc string) g.Node {
 	return Div(
-		Class("shrink-0 flex flex-col items-center gap-2"),
+		Class("flyer-qr"),
+		flyerScanBubble(),
 		Img(
 			Class("w-40 h-40 bg-white p-2 rounded-md "+
 				"border border-zinc-300"),
@@ -154,6 +209,59 @@ func flyerQR(adURL, qrSrc string) g.Node {
 		Span(
 			Class("w-40 text-xs text-zinc-500 break-all text-center"),
 			g.Text(adURL),
+		),
+	)
+}
+
+func flyerScanBubble() g.Node {
+	hand := "Chalkboard SE, Marker Felt, Comic Sans MS, cursive"
+	return g.El("svg",
+		Class("flyer-scan"),
+		g.Attr("viewBox", "0 0 270 170"),
+		g.Attr("role", "img"),
+		g.Attr("aria-label", "Scan to inquire"),
+		g.El("path",
+			g.Attr("fill", "#fffef8"),
+			g.Attr("stroke", "#1c1917"),
+			g.Attr("stroke-width", "3.5"),
+			g.Attr("stroke-linejoin", "round"),
+			g.Attr("d", "M40 108C12 108 8 74 36 64C28 38 60 16 84 40"+
+				"C96 14 138 12 150 40C168 16 210 30 196 64"+
+				"C222 74 214 114 174 110C180 140 128 156 96 132"+
+				"C74 152 32 144 36 120C12 130 8 118 40 108Z"),
+		),
+		g.El("path",
+			g.Attr("fill", "none"),
+			g.Attr("stroke", "#1c1917"),
+			g.Attr("stroke-width", "3"),
+			g.Attr("stroke-linecap", "round"),
+			g.Attr("d", "M210 92Q232 120 252 150"),
+		),
+		g.El("circle",
+			g.Attr("cx", "254"),
+			g.Attr("cy", "152"),
+			g.Attr("r", "4.5"),
+			g.Attr("fill", "#1c1917"),
+		),
+		g.El("text",
+			g.Attr("x", "104"),
+			g.Attr("y", "78"),
+			g.Attr("text-anchor", "middle"),
+			g.Attr("font-size", "28"),
+			g.Attr("font-weight", "700"),
+			g.Attr("font-family", hand),
+			g.Attr("fill", "#1c1917"),
+			g.Text("Scan to"),
+		),
+		g.El("text",
+			g.Attr("x", "104"),
+			g.Attr("y", "110"),
+			g.Attr("text-anchor", "middle"),
+			g.Attr("font-size", "28"),
+			g.Attr("font-weight", "700"),
+			g.Attr("font-family", hand),
+			g.Attr("fill", "#1c1917"),
+			g.Text("inquire"),
 		),
 	)
 }

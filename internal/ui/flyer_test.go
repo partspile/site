@@ -70,6 +70,7 @@ func TestAdFlyerPage(t *testing.T) {
 	for _, want := range []string{
 		"Blue Bicycle",
 		"$50",
+		"flyer-price",
 		"Denver, CO",
 		"Gently used.",
 		"2K mi",
@@ -82,7 +83,13 @@ func TestAdFlyerPage(t *testing.T) {
 		"noindex, nofollow",
 		"window.print()",
 		"flyer-screen-only",
+		"flyer-page",
 		"flyer-sheet",
+		"Scan to",
+		"inquire",
+		"flyer-scan",
+		"/images/parts-pile-logo-light.png",
+		"flyer-logo",
 		"size: letter",
 		"max-height: 10in",
 	} {
@@ -92,6 +99,11 @@ func TestAdFlyerPage(t *testing.T) {
 	}
 	if strings.Contains(html, `class="text-xl font-bold"`) {
 		t.Fatal("did not expect Parts Pile heading on flyer")
+	}
+	logoAt := strings.Index(html, "/images/parts-pile-logo-light.png")
+	titleAt := strings.LastIndex(html, "Blue Bicycle")
+	if logoAt < 0 || titleAt < 0 || logoAt > titleAt {
+		t.Fatal("logo should sit above the ad copy")
 	}
 	descAt := strings.Index(html, "Gently used.")
 	qrAt := strings.Index(html, "QR code for this ad")
