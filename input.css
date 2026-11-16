@@ -537,6 +537,53 @@
       0 1px 2px rgb(0 0 0 / 0.15);
   }
 
+  /* Quiet secondary chips under the search box; active keeps a light brass cue. */
+  .filter-pill {
+    border: 1px solid color-mix(in srgb, var(--content-ink) 18%, transparent);
+    color: var(--content-ink-muted, color-mix(in srgb, var(--content-ink) 72%, #71717a));
+    background: color-mix(in srgb, var(--content-ink) 4%, transparent);
+  }
+
+  .filter-pill:hover {
+    border-color: color-mix(in srgb, var(--nav-metal-mid) 55%, transparent);
+    color: var(--content-ink);
+    background: color-mix(in srgb, var(--nav-metal-mid) 10%, transparent);
+  }
+
+  .filter-pill-active {
+    border-color: color-mix(in srgb, var(--nav-metal-mid) 65%, transparent);
+    color: var(--content-ink);
+    background:
+      linear-gradient(
+        180deg,
+        rgb(255 252 245 / 0.9) 0%,
+        rgb(252 244 228 / 0.55) 100%
+      );
+    font-weight: 600;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .filter-pill {
+      border-color: color-mix(in srgb, var(--content-ink) 22%, transparent);
+      background: color-mix(in srgb, var(--content-ink) 6%, transparent);
+    }
+
+    .filter-pill:hover {
+      border-color: color-mix(in srgb, var(--nav-metal-mid) 40%, transparent);
+      background: color-mix(in srgb, var(--nav-metal-mid) 14%, transparent);
+    }
+
+    .filter-pill-active {
+      border-color: color-mix(in srgb, var(--nav-metal-mid) 50%, transparent);
+      background:
+        linear-gradient(
+          180deg,
+          rgb(49 45 38 / 0.85) 0%,
+          rgb(32 30 27 / 0.55) 100%
+        );
+    }
+  }
+
   /* Sibling overlay, not inside <details>: fixed isn't trapped,
      and dismiss is a label so it needs no JS (CSP blocks hx-on). */
   .category-select-open {

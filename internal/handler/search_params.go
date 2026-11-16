@@ -118,38 +118,25 @@ func filterableFacetsForSearch(categoryID int) []facet.Def {
 	return out
 }
 
-func filterFacetsForExpanded(categoryID int, expanded bool) []facet.Def {
-	if !expanded {
-		return nil
-	}
-	return filterableFacetsForSearch(categoryID)
-}
-
 func parseSearchParams(state cookie.SearchState, page, userID int,
 	distanceUnit string) search.Params {
 	limit := config.SearchPageSize
 	offset := (page - 1) * limit
 
-	categoryID := 0
-	var facetFilters map[string]facet.Filter
-	if state.Expanded {
-		categoryID = state.CategoryID
-		facetFilters = state.Facets
-	}
-
 	p := search.BuildParams(
-		categoryID, limit, offset,
+		state.CategoryID, limit, offset,
 		state.Q, state.Location, state.Within, distanceUnit,
-		facetFilters,
+		state.Facets,
 	)
 	p.UserID = userID
-	p.Expanded = state.Expanded
+	// Filters are always visible; always apply category/facet constraints.
+	p.Expanded = true
 	return p
 }
 
 // saveSearchStateFromRequest updates the search cookie and returns the new
 // state (the request cookie is unchanged until the response is received).
-func saveSearchStateFromRequest(c *fiber.Ctx, expanded *bool,
+func saveSearchStateFromRequest(c *fiber.Ctx,
 	fromForm bool) cookie.SearchState {
 	distanceUnit := cookie.GetDistanceUnit(c)
 	state := cookie.GetSearchState(c)
@@ -161,24 +148,44 @@ func saveSearchStateFromRequest(c *fiber.Ctx, expanded *bool,
 			state.Within = 0
 		}
 	}
-	// Category select is included whenever #search-widget is posted; parse it
-	// even when only expanding filters so a category change refreshes facets.
 	if queryHas(c, "category") {
 		newCatID := parseCategoryFilter(c.Query("category"))
 		if newCatID != state.CategoryID {
 			state.CategoryID = newCatID
 			state = clearFacetFilters(state, newCatID)
-		} else if fromForm && state.Expanded {
+		} else if fromForm {
 			state.Facets = parseFacetFilters(c,
 				filterableFacetsForSearch(state.CategoryID))
 		}
-	} else if fromForm && state.Expanded {
+	} else if fromForm {
 		state.Facets = parseFacetFilters(c,
 			filterableFacetsForSearch(state.CategoryID))
 	}
-	if expanded != nil {
-		state.Expanded = *expanded
+	state.Expanded = true
+	cookie.SetSearchState(c, state)
+	return state
+}
+
+// applyFilterModalSave overlays one facet from the modal form onto cookie state.
+func applyFilterModalSave(c *fiber.Ctx, d facet.Def) cookie.SearchState {
+	state := cookie.GetSearchState(c)
+	if queryHas(c, "q") {
+		state.Q = strings.TrimSpace(c.Query("q"))
 	}
+	parsed := parseFacetFilters(c, []facet.Def{d})
+	if state.Facets == nil {
+		state.Facets = map[string]facet.Filter{}
+	}
+	if f, ok := parsed[d.Key]; ok {
+		state.Facets[d.Key] = f
+	} else {
+		delete(state.Facets, d.Key)
+	}
+	if len(state.Facets) == 0 {
+		state.Facets = nil
+	}
+	state = clearFacetFilters(state, state.CategoryID)
+	state.Expanded = true
 	cookie.SetSearchState(c, state)
 	return state
 }
@@ -318,7 +325,7 @@ func clearFacetFilters(state cookie.SearchState,
 
 // SaveSearchStateForTest exposes saveSearchStateFromRequest for integration tests.
 func SaveSearchStateForTest(c *fiber.Ctx, fromForm bool) cookie.SearchState {
-	return saveSearchStateFromRequest(c, nil, fromForm)
+	return saveSearchStateFromRequest(c, fromForm)
 }
 
 // BuildSearchParamsForTest exposes parseSearchParams for integration tests.

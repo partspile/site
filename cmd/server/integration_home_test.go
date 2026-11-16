@@ -186,19 +186,19 @@ func TestHomeHandlerSearchVisibleByDefault(t *testing.T) {
 	if !strings.Contains(body, `id="searchBox"`) {
 		t.Error("Expected search box on home")
 	}
-	if !strings.Contains(body, `id="filter-toggle"`) {
-		t.Error("Expected filter toggle on home")
+	if !strings.Contains(body, `id="search-filters"`) {
+		t.Error("Expected filter pills on home")
+	}
+	if !strings.Contains(body, `id="filter-category"`) {
+		t.Error("Expected category filter pill on home")
+	}
+	if strings.Contains(body, `id="filter-toggle"`) ||
+		strings.Contains(body, `/api/hide-filters`) {
+		t.Error("expand/collapse filter toggle should be removed")
 	}
 	if strings.Contains(body, `id="search-toggle"`) ||
 		strings.Contains(body, `/images/search.svg`) {
 		t.Error("search icon toggle should be removed")
-	}
-	if strings.Contains(body, `id="search-area" class="flex flex-col hidden"`) {
-		t.Error("Expected visible #search-area on fresh home page")
-	}
-	if strings.Contains(body, `aria-haspopup="listbox"`) ||
-		strings.Contains(body, "category-select-dismiss") {
-		t.Error("home page should not show category picker")
 	}
 	if strings.Contains(body, `/images/post_add.svg`) {
 		t.Error("new ad link should not appear when logged out")
@@ -225,13 +225,16 @@ func TestHomeHandlerNewAdLinkWhenLoggedIn(t *testing.T) {
 	}
 }
 
-func TestHomeHandlerFiltersExpanded(t *testing.T) {
+func TestHomeHandlerFilterPills(t *testing.T) {
 	client, err := getClientWithCategoryCookie(6)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
+	min := 0
+	max := 50
 	if err := setSearchCookieOnClient(client, cookie.SearchState{
-		Q: "Honda", Expanded: true, CategoryID: 6,
+		Q: "Honda", CategoryID: 6,
+		Facets: map[string]facet.Filter{"price": {Min: &min, Max: &max}},
 	}); err != nil {
 		t.Fatalf("set search cookie: %v", err)
 	}
@@ -239,11 +242,14 @@ func TestHomeHandlerFiltersExpanded(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("Expected status 200, got %d", resp.StatusCode)
 	}
-	if !strings.Contains(body, "filter-price-min") {
-		t.Error("Expected expanded filter panel with price field")
+	if !strings.Contains(body, "Price: 0-50") {
+		t.Error("Expected price pill to show current bounds")
+	}
+	if !strings.Contains(body, `id="filter-price"`) {
+		t.Error("Expected price filter pill")
 	}
 	if !strings.Contains(body, `id="filter-category"`) {
-		t.Error("Expected category filter in expanded panel")
+		t.Error("Expected category filter pill")
 	}
 	if !strings.Contains(body, `id="search-area"`) {
 		t.Error("Expected #search-area on home page")
@@ -251,11 +257,8 @@ func TestHomeHandlerFiltersExpanded(t *testing.T) {
 	if !strings.Contains(body, `id="search-location"`) {
 		t.Error("Expected #search-location on home page")
 	}
-	if !strings.Contains(body, `id="filter-toggle"`) {
-		t.Error("Expected filter toggle on home page")
-	}
-	if !strings.Contains(body, `title="Collapse filters"`) {
-		t.Error("Expected expanded filter toggle (^) when search cookie expanded")
+	if !strings.Contains(body, "/api/filter-modal/price") {
+		t.Error("Expected price pill to open filter modal")
 	}
 }
 
@@ -441,9 +444,7 @@ func TestApplyCategoryFilterViaShowFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
-	if err := setSearchCookieOnClient(client, cookie.SearchState{
-		Expanded: true,
-	}); err != nil {
+	if err := setSearchCookieOnClient(client, cookie.SearchState{}); err != nil {
 		t.Fatalf("set search cookie: %v", err)
 	}
 
@@ -459,59 +460,54 @@ func TestApplyCategoryFilterViaShowFilters(t *testing.T) {
 	if state.CategoryID != 6 {
 		t.Fatalf("expected CategoryID 6, got %d", state.CategoryID)
 	}
-	if !strings.Contains(body, "filter-mileage-min") {
-		t.Error("expected mileage filter for Cars & Trucks")
+	if !strings.Contains(body, `id="filter-mileage"`) {
+		t.Error("expected mileage filter pill for Cars & Trucks")
 	}
 	if !strings.Contains(body, `id="filter-category"`) {
-		t.Error("expected category select in filter panel")
+		t.Error("expected category select in filter pills")
 	}
 }
 
-func TestHideFiltersHandler(t *testing.T) {
+func TestFilterModalSaveHandler(t *testing.T) {
 	client, err := getClientWithCategoryCookie(6)
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
-	min := 10000
 	if err := setSearchCookieOnClient(client, cookie.SearchState{
-		Q: "Honda", Facets: map[string]facet.Filter{"price": {Min: &min}}, Expanded: true,
+		Q: "Honda", CategoryID: 6,
 	}); err != nil {
 		t.Fatalf("set search cookie: %v", err)
 	}
 
-	resp, body := getRequestWithCookies(t, client, baseURL+"/api/show-filters")
+	resp, body := getRequestWithCookies(t, client,
+		baseURL+"/api/filter-modal/price")
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("show-filters: expected 200, got %d", resp.StatusCode)
+		t.Fatalf("filter-modal: expected 200, got %d", resp.StatusCode)
 	}
 	if !strings.Contains(body, "filter-price-min") {
-		t.Error("show-filters should render filter panel fragment")
+		t.Error("filter modal should render price min/max fields")
 	}
-	if !strings.Contains(body, `id="filter-toggle"`) {
-		t.Error("show-filters should OOB-swap filter toggle")
-	}
-	if !strings.Contains(body, `title="Collapse filters"`) {
-		t.Error("show-filters should swap toggle to collapse (^)")
-	}
-	if !strings.Contains(body, `id="search-filters"`) {
-		t.Error("show-filters should render filter panel with search triggers")
-	}
-	if !strings.Contains(body, `hx-get="/api/search/"`) ||
-		!strings.Contains(body, "change delay:300ms") {
-		t.Error("show-filters filter panel should trigger /api/search on input change")
+	if !strings.Contains(body, `id="filter-price-modal"`) {
+		t.Error("filter modal should use filter-price modal id")
 	}
 
-	hideURL := baseURL + "/api/hide-filters?q=Honda&price_min=10000"
-	resp, body = getRequestWithCookies(t, client, hideURL)
+	resp, body = getRequestWithCookies(t, client,
+		baseURL+"/api/filter-modal/price/save?q=Honda&price_min=0&price_max=50")
 	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("hide-filters: expected 200, got %d", resp.StatusCode)
+		t.Fatalf("filter-modal save: expected 200, got %d", resp.StatusCode)
 	}
-	if strings.Contains(body, "filter-price-min") {
-		t.Error("hide-filters should clear filter panel")
+	state, err := getSearchStateFromClient(client)
+	if err != nil {
+		t.Fatalf("read search cookie: %v", err)
 	}
-	if !strings.Contains(body, `title="Expand filters"`) {
-		t.Error("hide-filters should swap toggle to expand (v)")
+	f := state.Facets["price"]
+	if f.Min == nil || *f.Min != 0 || f.Max == nil || *f.Max != 50 {
+		t.Fatalf("expected price 0-50, got %+v", f)
+	}
+	if !strings.Contains(body, "Price: 0-50") {
+		t.Error("save should OOB-swap price pill label")
 	}
 	if !strings.Contains(body, `id="search-results"`) {
-		t.Error("hide-filters should OOB-swap search results")
+		t.Error("save should OOB-swap search results")
 	}
 }

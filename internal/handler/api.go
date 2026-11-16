@@ -3,8 +3,10 @@ package handler
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/facet"
 	"github.com/partspile/site/internal/param"
 	"github.com/partspile/site/internal/ui"
+	uiads "github.com/partspile/site/internal/ui/ads"
 	g "maragu.dev/gomponents"
 )
 
@@ -33,39 +35,58 @@ func categorySwitchRedirect(c *fiber.Ctx) string {
 	return "/"
 }
 
-func renderFilterPanelResponse(c *fiber.Ctx, state cookie.SearchState) error {
+func renderFilterPanelResponse(c *fiber.Ctx, state cookie.SearchState,
+	closeModal string) error {
 	_, results, err := searchFromRequest(c, state)
 	if err != nil {
 		return err
 	}
 
 	distanceUnit := cookie.GetDistanceUnit(c)
-	filterFacets := filterFacetsForExpanded(state.CategoryID, state.Expanded)
+	filterFacets := filterableFacetsForSearch(state.CategoryID)
 	filters := searchStateToFilters(state, distanceUnit)
 
-	return render(c, g.Group([]g.Node{
-		ui.SearchAreaOOB(state.Q, state.Expanded, filterFacets, filters),
+	nodes := []g.Node{
+		ui.SearchAreaOOB(state.Q, filterFacets, filters),
 		ui.SearchResultsOOB(results),
-	}))
+	}
+	if closeModal != "" {
+		nodes = append(nodes,
+			ui.RemoveModal(uiads.FilterModalName(closeModal))...)
+	}
+	return render(c, g.Group(nodes))
 }
 
 func ShowFiltersHandler(c *fiber.Ctx) error {
-	expanded := true
-	// fromForm false preserves cookie q/location when the expand button
-	// does not include the search widget; category is still applied when
-	// the category select includes the widget and posts "category".
-	state := saveSearchStateFromRequest(c, &expanded, false)
-	return renderFilterPanelResponse(c, state)
+	// fromForm true so facet pill toggles and category changes refresh
+	// filters from the included search widget fields.
+	state := saveSearchStateFromRequest(c, true)
+	return renderFilterPanelResponse(c, state, "")
 }
 
-func HideFiltersHandler(c *fiber.Ctx) error {
-	expanded := false
-	state := saveSearchStateFromRequest(c, &expanded, true)
-	return renderFilterPanelResponse(c, state)
+func FilterModalHandler(c *fiber.Ctx) error {
+	key := c.Params("key")
+	d, ok := facet.Get(key)
+	if !ok || !d.Filterable || d.Filter == facet.FilterFlag {
+		return c.SendStatus(fiber.StatusNotFound)
+	}
+	state := cookie.GetSearchState(c)
+	filter := state.Facets[key]
+	return render(c, ui.SearchFilterModal(d, filter))
+}
+
+func FilterModalSaveHandler(c *fiber.Ctx) error {
+	key := c.Params("key")
+	d, ok := facet.Get(key)
+	if !ok || !d.Filterable || d.Filter == facet.FilterFlag {
+		return c.SendStatus(fiber.StatusNotFound)
+	}
+	state := applyFilterModalSave(c, d)
+	return renderFilterPanelResponse(c, state, key)
 }
 
 func SearchPageHandler(c *fiber.Ctx) error {
-	state := saveSearchStateFromRequest(c, nil, true)
+	state := saveSearchStateFromRequest(c, true)
 	page, results, err := searchFromRequest(c, state)
 	if err != nil {
 		return err

@@ -11,40 +11,19 @@ import (
 	"github.com/partspile/site/internal/facet"
 )
 
-func TestParseSearchParamsCollapsedNoFacets(t *testing.T) {
-	app := fiber.New()
-	app.Get("/search", func(c *fiber.Ctx) error {
-		p := parseSearchParams(
-			cookie.SearchState{Q: "Honda", CategoryID: 6},
-			c.QueryInt("page", 1), 0, cookie.GetDistanceUnit(c),
-		)
-		if p.Expanded {
-			t.Fatal("expected Expanded false when filter panel collapsed")
-		}
-		if p.FacetFilters != nil {
-			t.Fatal("expected no facet filters when collapsed")
-		}
-		if p.Q != "Honda" {
-			t.Fatalf("q = %q", p.Q)
-		}
-		if p.CategoryID != 0 {
-			t.Fatalf("collapsed search should ignore category filter, got %d",
-				p.CategoryID)
-		}
-		return c.SendStatus(fiber.StatusOK)
-	})
-	if _, err := app.Test(httptest.NewRequest("GET", "/search", nil)); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestParseSearchParamsExpandedAppliesCategory(t *testing.T) {
+func TestParseSearchParamsAlwaysAppliesCategory(t *testing.T) {
 	p := parseSearchParams(
-		cookie.SearchState{Q: "Honda", CategoryID: 6, Expanded: true},
+		cookie.SearchState{Q: "Honda", CategoryID: 6},
 		1, 0, "",
 	)
+	if !p.Expanded {
+		t.Fatal("expected Expanded true; filters are always applied")
+	}
 	if p.CategoryID != 6 {
 		t.Fatalf("category = %d", p.CategoryID)
+	}
+	if p.Q != "Honda" {
+		t.Fatalf("q = %q", p.Q)
 	}
 }
 
@@ -52,7 +31,7 @@ func TestSaveSearchStateAlwaysPersistsLocation(t *testing.T) {
 	app := fiber.New()
 	var state cookie.SearchState
 	app.Get("/search", func(c *fiber.Ctx) error {
-		state = saveSearchStateFromRequest(c, nil, true)
+		state = saveSearchStateFromRequest(c, true)
 		return c.SendStatus(fiber.StatusOK)
 	})
 	req := httptest.NewRequest("GET", "/search?location=Denver&within=50&q=test", nil)

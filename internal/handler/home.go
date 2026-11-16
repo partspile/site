@@ -18,8 +18,8 @@ func HomeHandler(c *fiber.Ctx) error {
 	}
 
 	return renderPage(c, "",
-		ui.HomePage(userID, searchState.Q, searchState.Expanded,
-			filterFacetsForExpanded(searchState.CategoryID, searchState.Expanded),
+		ui.HomePage(userID, searchState.Q,
+			filterableFacetsForSearch(searchState.CategoryID),
 			searchStateToFilters(searchState, distanceUnit),
 			results))
 }

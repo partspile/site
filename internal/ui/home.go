@@ -10,22 +10,18 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-func HomePage(userID int, q string, filtersExpanded bool,
-	filterFacets []facet.Def, filters uiads.SearchFilters,
-	results []g.Node) []g.Node {
-	return []g.Node{SearchContainer(userID, q, filtersExpanded,
-		filterFacets, filters, results)}
+func HomePage(userID int, q string, filterFacets []facet.Def,
+	filters uiads.SearchFilters, results []g.Node) []g.Node {
+	return []g.Node{SearchContainer(userID, q, filterFacets, filters, results)}
 }
 
-func SearchContainer(userID int, q string, filtersExpanded bool,
-	filterFacets []facet.Def, filters uiads.SearchFilters,
-	results []g.Node) g.Node {
+func SearchContainer(userID int, q string, filterFacets []facet.Def,
+	filters uiads.SearchFilters, results []g.Node) g.Node {
 	return Div(
 		ID("search-container"),
 		Div(
 			Class("flex flex-col gap-4"),
-			SearchWidget(userID, q, filtersExpanded,
-				filterFacets, filters, results),
+			SearchWidget(userID, q, filterFacets, filters, results),
 		),
 	)
 }
@@ -44,46 +40,31 @@ func SearchResultsResponse(page int, results []g.Node) g.Node {
 	return SearchResults(results)
 }
 
-// SearchResultsOOB swaps #search-results out-of-band (show/hide filters).
+// SearchResultsOOB swaps #search-results out-of-band.
 func SearchResultsOOB(results []g.Node) g.Node {
 	return searchResults(results, true)
 }
 
-// SearchArea renders the search box, filter toggle, and optional expanded facets.
-func SearchArea(q string, expanded bool, filterFacets []facet.Def,
+// SearchArea renders the search box and always-visible filter pills.
+func SearchArea(q string, filterFacets []facet.Def,
 	filters uiads.SearchFilters) g.Node {
-	return searchArea(q, expanded, filterFacets, filters, false)
+	return searchArea(q, filterFacets, filters, false)
 }
 
-// SearchAreaOOB swaps #search-area when the filter panel is shown or hidden.
-func SearchAreaOOB(q string, expanded bool, filterFacets []facet.Def,
+// SearchAreaOOB swaps #search-area after filter changes.
+func SearchAreaOOB(q string, filterFacets []facet.Def,
 	filters uiads.SearchFilters) g.Node {
-	return searchArea(q, expanded, filterFacets, filters, true)
+	return searchArea(q, filterFacets, filters, true)
 }
 
-func searchArea(q string, expanded bool, filterFacets []facet.Def,
+func searchArea(q string, filterFacets []facet.Def,
 	filters uiads.SearchFilters, oob bool) g.Node {
-	children := []g.Node{
-		Div(
-			Class("flex flex-col gap-2"),
-			Div(
-				Class("flex gap-2 items-center"),
-				Div(Class("flex-1 min-w-0"), searchBox(q)),
-				filterToggle(expanded),
-			),
-		),
-	}
-	areaClass := "flex flex-col"
-	if expanded {
-		areaClass += " brand-metal brand-metal-panel rounded-lg p-4 gap-4"
-		children = append(children, uiads.SearchFiltersPanel(
-			filterFacets, filters, categoryFilterSelect(filters)))
-	}
-
 	attrs := []g.Node{
 		ID("search-area"),
-		Class(areaClass),
-		g.Group(children),
+		Class("flex flex-col gap-3"),
+		searchBox(q),
+		uiads.SearchFiltersPanel(
+			filterFacets, filters, categoryFilterSelect(filters)),
 	}
 	if oob {
 		attrs = append([]g.Node{hx.SwapOOB("outerHTML")}, attrs...)
@@ -118,46 +99,6 @@ func searchBox(q string) g.Node {
 	)
 }
 
-func FilterToggle(expanded bool) g.Node {
-	return filterToggle(expanded)
-}
-
-func filterToggle(expanded bool) g.Node {
-	label := "Expand filters"
-	icon := "/images/expand.svg"
-	var actionAttrs []g.Node
-	if expanded {
-		label = "Collapse filters"
-		icon = "/images/collapse.svg"
-		actionAttrs = []g.Node{
-			hx.Get("/api/hide-filters"),
-			hx.Target("#search-area"),
-			hx.Swap("outerHTML"),
-			hx.Include("#search-widget"),
-		}
-	} else {
-		actionAttrs = []g.Node{
-			hx.Get("/api/show-filters"),
-			hx.Target("#search-area"),
-			hx.Swap("outerHTML"),
-		}
-	}
-	attrs := []g.Node{
-		Type("button"),
-		ID("filter-toggle"),
-		Class("brand-metal brand-metal-control p-2 rounded-md shrink-0"),
-		g.Attr("aria-label", label),
-		g.Attr("title", label),
-	}
-	attrs = append(attrs, actionAttrs...)
-	attrs = append(attrs, Img(
-		Class("w-6 h-6 dark:invert dark:opacity-80"),
-		Src(icon),
-		Alt(label),
-	))
-	return Button(attrs...)
-}
-
 func SearchView(filters uiads.SearchFilters, results []g.Node) g.Node {
 	return Div(
 		Class("flex flex-col gap-4"),
@@ -166,14 +107,13 @@ func SearchView(filters uiads.SearchFilters, results []g.Node) g.Node {
 	)
 }
 
-func SearchWidget(userID int, q string, filtersExpanded bool,
-	filterFacets []facet.Def, filters uiads.SearchFilters,
-	results []g.Node) g.Node {
+func SearchWidget(userID int, q string, filterFacets []facet.Def,
+	filters uiads.SearchFilters, results []g.Node) g.Node {
 	attrs := []g.Node{
 		Class("flex flex-col gap-4"),
 		ID("search-widget"),
 		g.Attr("onsubmit", "event.preventDefault(); return false;"),
-		SearchArea(q, filtersExpanded, filterFacets, filters),
+		SearchArea(q, filterFacets, filters),
 		SearchView(filters, results),
 	}
 	return Form(attrs...)

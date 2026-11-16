@@ -145,7 +145,7 @@ func TestShowFiltersCategoryFacets(t *testing.T) {
 			t.Fatalf("Failed to create client: %v", err)
 		}
 		if err := setSearchCookieOnClient(client, cookie.SearchState{
-			Expanded: true, CategoryID: 6,
+			CategoryID: 6,
 		}); err != nil {
 			t.Fatalf("set search cookie: %v", err)
 		}
@@ -153,8 +153,8 @@ func TestShowFiltersCategoryFacets(t *testing.T) {
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("Expected status 200, got %d", resp.StatusCode)
 		}
-		if !strings.Contains(body, "filter-mileage-min") {
-			t.Error("expected mileage filter for Cars & Trucks category")
+		if !strings.Contains(body, `id="filter-mileage"`) {
+			t.Error("expected mileage filter pill for Cars & Trucks category")
 		}
 	})
 	t.Run("parts hide mileage filter", func(t *testing.T) {
@@ -163,7 +163,7 @@ func TestShowFiltersCategoryFacets(t *testing.T) {
 			t.Fatalf("Failed to create client: %v", err)
 		}
 		if err := setSearchCookieOnClient(client, cookie.SearchState{
-			Expanded: true, CategoryID: 5,
+			CategoryID: 5,
 		}); err != nil {
 			t.Fatalf("set search cookie: %v", err)
 		}
@@ -171,8 +171,8 @@ func TestShowFiltersCategoryFacets(t *testing.T) {
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("Expected status 200, got %d", resp.StatusCode)
 		}
-		if strings.Contains(body, "filter-mileage-min") {
-			t.Error("expected no mileage filter for parts category")
+		if strings.Contains(body, `id="filter-mileage"`) {
+			t.Error("expected no mileage filter pill for parts category")
 		}
 	})
 	t.Run("all categories show only common facets", func(t *testing.T) {
@@ -181,7 +181,7 @@ func TestShowFiltersCategoryFacets(t *testing.T) {
 			t.Fatalf("Failed to create client: %v", err)
 		}
 		if err := setSearchCookieOnClient(client, cookie.SearchState{
-			Expanded: true, CategoryID: 0,
+			CategoryID: 0,
 		}); err != nil {
 			t.Fatalf("set search cookie: %v", err)
 		}
@@ -189,20 +189,20 @@ func TestShowFiltersCategoryFacets(t *testing.T) {
 		if resp.StatusCode != http.StatusOK {
 			t.Fatalf("Expected status 200, got %d", resp.StatusCode)
 		}
-		if !strings.Contains(body, "filter-price-min") {
+		if !strings.Contains(body, `id="filter-price"`) {
 			t.Error("expected price in all-categories common facets")
 		}
-		if !strings.Contains(body, "filter-condition-0") {
+		if !strings.Contains(body, `id="filter-condition"`) {
 			t.Error("expected condition in all-categories common facets")
 		}
-		if !strings.Contains(body, "filter-local_pickup") {
+		if !strings.Contains(body, `id="filter-local_pickup"`) {
 			t.Error("expected local_pickup in all-categories common facets")
 		}
 		for _, ban := range []string{
-			"filter-mileage-min",
-			"filter-hours-min",
-			"filter-year-min",
-			"filter-title_status-0",
+			`id="filter-mileage"`,
+			`id="filter-hours"`,
+			`id="filter-year"`,
+			`id="filter-title_status"`,
 		} {
 			if strings.Contains(body, ban) {
 				t.Errorf("unexpected non-common facet %q", ban)

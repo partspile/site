@@ -20,6 +20,8 @@ type CategorySelectOpts struct {
 	ReturnParam string
 	IncludeAll  bool
 	ID          string
+	// Pill uses compact rounded trigger styling for search filter chips.
+	Pill bool
 }
 
 // categoryIcon paints an SVG as content-ink via CSS mask so it matches text.
@@ -73,8 +75,30 @@ func CategorySelect(opts CategorySelectOpts) g.Node {
 			selected.ID, cat.ID, cat.Name, cat.ImageFile, opts.ReturnParam))
 	}
 
+	// z-50 so the open menu/dismiss beat later siblings (ad cards).
+	wrapClass := "relative w-full z-50"
+	triggerClass := "brand-metal brand-metal-control category-select-trigger " +
+		"w-full py-2 px-3 flex items-center gap-2 rounded-md " +
+		"cursor-pointer text-left min-w-0"
+	menuClass := "category-select-menu absolute left-0 right-0 z-50 mt-1 py-1 " +
+		"rounded-md overflow-y-auto max-h-[85vh]"
+	iconSize := "w-6 h-6"
+	chevronSize := "w-5 h-5"
+	if opts.Pill {
+		wrapClass = "relative z-50 shrink-0 max-w-full"
+		triggerClass = "filter-pill category-select-trigger inline-flex " +
+			"items-center gap-1.5 max-w-full px-2.5 py-1 rounded-full " +
+			"text-xs cursor-pointer text-left"
+		if selected.ID != 0 {
+			triggerClass += " filter-pill-active"
+		}
+		menuClass = "category-select-menu absolute left-0 z-50 mt-1 py-1 " +
+			"rounded-md overflow-y-auto max-h-[85vh] min-w-[14rem]"
+		iconSize = "w-3.5 h-3.5"
+		chevronSize = "w-3.5 h-3.5"
+	}
 	attrs := []g.Node{
-		Class("relative w-full z-0"),
+		Class(wrapClass),
 	}
 	if opts.ID != "" {
 		attrs = append(attrs, ID(opts.ID))
@@ -87,15 +111,13 @@ func CategorySelect(opts CategorySelectOpts) g.Node {
 		),
 		Label(
 			For(categorySelectOpenID),
-			Class("brand-metal brand-metal-control category-select-trigger "+
-				"w-full py-2 px-3 flex items-center gap-2 rounded-md "+
-				"cursor-pointer text-left min-w-0"),
+			Class(triggerClass),
 			g.Attr("aria-haspopup", "listbox"),
 			g.Attr("aria-label", action+", currently "+selected.Name),
 			g.Attr("title", action),
-			categoryIcon(selected.ImageFile, "w-6 h-6"),
-			Span(Class("font-medium truncate flex-1"), g.Text(selected.Name)),
-			inkIcon("/images/expand.svg", "w-5 h-5", "icon-ink-soft"),
+			categoryIcon(selected.ImageFile, iconSize),
+			Span(Class("font-medium truncate"), g.Text(selected.Name)),
+			inkIcon("/images/expand.svg", chevronSize, "icon-ink-soft"),
 		),
 		Label(
 			For(categorySelectOpenID),
@@ -103,8 +125,7 @@ func CategorySelect(opts CategorySelectOpts) g.Node {
 			g.Attr("aria-label", "Close category list"),
 		),
 		Div(
-			Class("category-select-menu absolute left-0 right-0 z-50 mt-1 py-1 "+
-				"rounded-md overflow-y-auto max-h-[85vh]"),
+			Class(menuClass),
 			g.Attr("role", "listbox"),
 			g.Group(items),
 		),
@@ -137,6 +158,7 @@ func CategorySelectForFilter(selectedID int,
 		Categories: categories,
 		IncludeAll: true,
 		ID:         "filter-category",
+		Pill:       true,
 	})
 }
 

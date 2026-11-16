@@ -16,7 +16,7 @@ func SearchLocationModalHandler(c *fiber.Ctx) error {
 }
 
 func SearchLocationSaveHandler(c *fiber.Ctx) error {
-	state := saveSearchStateFromRequest(c, nil, true)
+	state := saveSearchStateFromRequest(c, true)
 
 	_, results, err := searchFromRequest(c, state)
 	if err != nil {
