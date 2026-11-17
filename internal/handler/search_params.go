@@ -82,36 +82,44 @@ func filterableFacets(defs []facet.Def) []facet.Def {
 	return out
 }
 
-// filterableFacetsForSearch returns facets for the filter pills. When
-// categoryID is 0 (all categories), it is the intersection of filterable
-// facets shared by every category, in registry order.
+// filterableFacetsForSearch returns filter pills for a category, in facet
+// registry order. That order is shared across categories, so a pill stays
+// put when the category changes. categoryID 0 is the facets every category
+// has. Category JSON order is the new-ad form, not the pill rank.
 func filterableFacetsForSearch(categoryID int) []facet.Def {
+	allowed := map[string]bool{}
 	if categoryID > 0 {
-		return filterableFacets(ad.GetCategory(categoryID).Facets())
+		for _, key := range ad.GetCategory(categoryID).FacetKeys {
+			allowed[key] = true
+		}
+		return filterableInRegistryOrder(allowed)
 	}
 	cats, _ := ad.GetCategories()
 	if len(cats) == 0 {
 		return nil
 	}
-	common := map[string]bool{}
 	for i, cat := range cats {
 		keys := map[string]bool{}
 		for _, key := range cat.FacetKeys {
 			keys[key] = true
 		}
 		if i == 0 {
-			common = keys
+			allowed = keys
 			continue
 		}
-		for key := range common {
+		for key := range allowed {
 			if !keys[key] {
-				delete(common, key)
+				delete(allowed, key)
 			}
 		}
 	}
-	out := make([]facet.Def, 0, len(common))
+	return filterableInRegistryOrder(allowed)
+}
+
+func filterableInRegistryOrder(allowed map[string]bool) []facet.Def {
+	out := make([]facet.Def, 0, len(allowed))
 	for _, d := range facet.All() {
-		if !d.Filterable || !common[d.Key] {
+		if !d.Filterable || !allowed[d.Key] {
 			continue
 		}
 		out = append(out, d)

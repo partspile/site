@@ -41,6 +41,45 @@ func TestSaveSearchStateAlwaysPersistsLocation(t *testing.T) {
 	}
 }
 
+func TestFilterableInRegistryOrder(t *testing.T) {
+	// Cars & Trucks lists price last. Pills follow the registry.
+	allowed := map[string]bool{
+		"condition":    true,
+		"title_status": true,
+		"year":         true,
+		"mileage":      true,
+		"local_pickup": true,
+		"price":        true,
+		"location":     true,
+	}
+	got := filterableInRegistryOrder(allowed)
+	want := []string{
+		"price", "mileage", "year", "condition",
+		"title_status", "local_pickup",
+	}
+	if len(got) != len(want) {
+		t.Fatalf("len = %d, want %d", len(got), len(want))
+	}
+	for i, d := range got {
+		if d.Key != want[i] {
+			t.Errorf("[%d] = %s, want %s", i, d.Key, want[i])
+		}
+	}
+
+	parts := filterableInRegistryOrder(map[string]bool{
+		"condition": true, "local_pickup": true, "price": true,
+	})
+	partsWant := []string{"price", "condition", "local_pickup"}
+	if len(parts) != len(partsWant) {
+		t.Fatalf("parts len = %d, want %d", len(parts), len(partsWant))
+	}
+	for i, d := range parts {
+		if d.Key != partsWant[i] {
+			t.Errorf("parts[%d] = %s, want %s", i, d.Key, partsWant[i])
+		}
+	}
+}
+
 func TestParseFacetFiltersConditionCheckboxes(t *testing.T) {
 	defs := filterableFacets(ad.Category{FacetKeys: []string{"condition"}}.Facets())
 
