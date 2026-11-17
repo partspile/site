@@ -75,6 +75,21 @@ func LoginForm(returnPath string) g.Node {
 		))
 	}
 	nodes = append(nodes,
+		P(
+			Class("text-sm text-zinc-600 dark:text-zinc-400"),
+			g.Text("Don't have an account? "),
+			A(
+				Href("/register"),
+				Class("text-blue-600 dark:text-blue-400 hover:underline"),
+				g.Attr("onclick",
+					"event.preventDefault();"+
+						"var u=document.getElementById('username').value.trim();"+
+						"location.href=u"+
+						"?('/register?username='+encodeURIComponent(u))"+
+						":'/register';"),
+				g.Text("Sign up"),
+			),
+		),
 		userNameInput(false, "username", true, ""),
 		passwordInput("current-password"),
 		Div(
@@ -86,21 +101,6 @@ func LoginForm(returnPath string) g.Node {
 					Text: "Login",
 				}),
 				ErrorDiv(""),
-			),
-			P(
-				Class("text-sm text-zinc-600 dark:text-zinc-400"),
-				g.Text("Don't have an account? "),
-				A(
-					Href("/register"),
-					Class("text-blue-600 dark:text-blue-400 hover:underline"),
-					g.Attr("onclick",
-						"event.preventDefault();"+
-							"var u=document.getElementById('username').value.trim();"+
-							"location.href=u"+
-							"?('/register?username='+encodeURIComponent(u))"+
-							":'/register';"),
-					g.Text("Sign up"),
-				),
 			),
 			P(
 				Class("text-sm text-zinc-600 dark:text-zinc-400"),
