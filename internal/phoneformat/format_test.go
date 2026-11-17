@@ -7,7 +7,7 @@ func TestDisplay(t *testing.T) {
 		in   string
 		want string
 	}{
-		{"+15035238780", "(503) 523-8780"},
+		{"+12025550123", "(202) 555-0123"},
 		{"", ""},
 		{"not-a-phone", "not-a-phone"},
 	}

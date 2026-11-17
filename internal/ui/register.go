@@ -37,7 +37,7 @@ func phoneInput() g.Node {
 		),
 		Span(
 			Class("text-xs text-zinc-500 dark:text-zinc-400 mt-1"),
-			g.Text("Enter your phone in international format (e.g. +12025550123) or US/Canada format (e.g. 503-523-8780)."),
+			g.Text("Enter your phone in international format (e.g. +12025550123) or US/Canada format (e.g. 202-555-0123)."),
 		),
 	)
 }
