@@ -13,6 +13,14 @@ func AdminDashboardPage(stats QueueStats,
 	entries []SMSQueueEntry) []g.Node {
 	return []g.Node{
 		pageTitle("Admin Dashboard"),
+		P(
+			Class("mt-4"),
+			A(
+				Href("/admin/turnstile"),
+				Class("text-blue-600 dark:text-blue-400 hover:underline"),
+				g.Text("Turnstile check"),
+			),
+		),
 		AdminDashboardContainerWithQueue("sms-queue", stats, entries),
 	}
 }

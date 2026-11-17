@@ -180,6 +180,15 @@ func ChangePhoneRequestHandler(c *fiber.Ctx) error {
 		return showErrorTo(c, ui.SettingsChangePhoneErrorID, err.Error())
 	}
 
+	// Verify before the same-number rejection so that submit still calls
+	// siteverify and does not send an SMS.
+	ip := VisitorIP(c)
+	if err := turnstile.Verify(c.FormValue("cf-turnstile-response"), ip); err != nil {
+		logger.Warn("Turnstile failed on change-phone", "error", err, "ip", ip)
+		return showErrorTo(c, ui.SettingsChangePhoneErrorID,
+			"Please complete the verification challenge and try again.")
+	}
+
 	if phoneE64 == u.PhoneE64 {
 		return showErrorTo(c, ui.SettingsChangePhoneErrorID,
 			"That is already your current phone number")
@@ -202,13 +211,6 @@ func ChangePhoneRequestHandler(c *fiber.Ctx) error {
 
 	if allowTestRegistration(phoneE64) {
 		return render(c, ui.ChangePhoneVerifySection(phoneE64))
-	}
-
-	ip := VisitorIP(c)
-	if err := turnstile.Verify(c.FormValue("cf-turnstile-response"), ip); err != nil {
-		logger.Warn("Turnstile failed on change-phone", "error", err, "ip", ip)
-		return showErrorTo(c, ui.SettingsChangePhoneErrorID,
-			"Please complete the verification challenge and try again.")
 	}
 
 	if err := otplimit.AllowStart(phoneE64); err != nil {

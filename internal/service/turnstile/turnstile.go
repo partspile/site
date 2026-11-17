@@ -46,10 +46,23 @@ type siteverifyResponse struct {
 }
 
 // Verify checks a Turnstile response token with Cloudflare.
+// Test registration skips the call so register and change-phone can run
+// without a widget.
 func Verify(token, remoteIP string) error {
 	if !Required() {
 		return nil
 	}
+	return verifyToken(token, remoteIP)
+}
+
+// VerifyAlways checks a token even when test registration is on.
+// The admin probe uses this so a logged-in admin can exercise siteverify
+// without starting an SMS.
+func VerifyAlways(token, remoteIP string) error {
+	return verifyToken(token, remoteIP)
+}
+
+func verifyToken(token, remoteIP string) error {
 	if token == "" {
 		return fmt.Errorf("missing turnstile token")
 	}

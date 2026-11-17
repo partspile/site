@@ -10,8 +10,30 @@ import (
 // TurnstileWidget renders Cloudflare Turnstile when keys are configured and
 // enforcement is required (not under ALLOW_TEST_REGISTRATION).
 func TurnstileWidget() g.Node {
-	if !turnstile.Required() || config.TurnstileSiteKey == "" {
+	return turnstileWidget(false, "")
+}
+
+// TurnstileProbeWidget renders the widget even when test registration skips
+// the register and change-phone gates. action is sent as data-action.
+func TurnstileProbeWidget(action string) g.Node {
+	return turnstileWidget(true, action)
+}
+
+func turnstileWidget(always bool, action string) g.Node {
+	if config.TurnstileSiteKey == "" {
 		return nil
+	}
+	if !always && !turnstile.Required() {
+		return nil
+	}
+	widget := []g.Node{
+		Class("cf-turnstile"),
+		g.Attr("data-sitekey", config.TurnstileSiteKey),
+		g.Attr("data-theme", "auto"),
+		g.Attr("data-size", "flexible"),
+	}
+	if action != "" {
+		widget = append(widget, g.Attr("data-action", action))
 	}
 	return Div(
 		Class("my-4"),
@@ -20,11 +42,6 @@ func TurnstileWidget() g.Node {
 			Async(),
 			Defer(),
 		),
-		Div(
-			Class("cf-turnstile"),
-			g.Attr("data-sitekey", config.TurnstileSiteKey),
-			g.Attr("data-theme", "auto"),
-			g.Attr("data-size", "flexible"),
-		),
+		Div(widget...),
 	)
 }

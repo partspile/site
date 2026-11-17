@@ -68,3 +68,46 @@ func TestVerifySuccessAndFailure(t *testing.T) {
 		t.Fatal("expected failure for empty token")
 	}
 }
+
+func TestVerifyAlwaysWhenTestRegistration(t *testing.T) {
+	origAllow := config.AllowTestRegistration
+	origSecret := config.TurnstileSecretKey
+	origURL := siteverifyURL
+	config.AllowTestRegistration = true
+	config.TurnstileSecretKey = "test-secret"
+	t.Cleanup(func() {
+		config.AllowTestRegistration = origAllow
+		config.TurnstileSecretKey = origSecret
+		siteverifyURL = origURL
+	})
+
+	called := false
+	srv := httptest.NewServer(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			called = true
+			if err := r.ParseForm(); err != nil {
+				t.Errorf("parse form: %v", err)
+			}
+			if r.FormValue("response") != "probe-token" {
+				t.Errorf("response = %q", r.FormValue("response"))
+			}
+			_ = json.NewEncoder(w).Encode(siteverifyResponse{Success: true})
+		},
+	))
+	t.Cleanup(srv.Close)
+	siteverifyURL = srv.URL
+
+	if err := Verify("probe-token", ""); err != nil {
+		t.Fatalf("Verify should skip: %v", err)
+	}
+	if called {
+		t.Fatal("Verify called siteverify while test registration is on")
+	}
+
+	if err := VerifyAlways("probe-token", "127.0.0.1"); err != nil {
+		t.Fatalf("VerifyAlways: %v", err)
+	}
+	if !called {
+		t.Fatal("VerifyAlways did not call siteverify")
+	}
+}
