@@ -19,10 +19,8 @@ func TestAdminTurnstilePageRendersProbe(t *testing.T) {
 	})
 
 	var buf bytes.Buffer
-	for _, n := range AdminTurnstilePage() {
-		if err := n.Render(&buf); err != nil {
-			t.Fatal(err)
-		}
+	if err := AdminTurnstileTab().Render(&buf); err != nil {
+		t.Fatal(err)
 	}
 	html := buf.String()
 	for _, want := range []string{
@@ -31,6 +29,8 @@ func TestAdminTurnstilePageRendersProbe(t *testing.T) {
 		`data-sitekey="0x4AAAAAAEFpEa4IkHW7HWg3"`,
 		`data-action="admin-check"`,
 		`id="turnstile-probe-result"`,
+		`id="admin-turnstile-widget"`,
+		`api.js?render=explicit`,
 	} {
 		if !strings.Contains(html, want) {
 			t.Errorf("page missing %q", want)

@@ -157,7 +157,6 @@ func setupApp() *fiber.App {
 
 	admin := app.Group("/admin", handler.AdminRequired)
 	admin.Get("/dashboard", handler.AdminDashboardHandler)
-	admin.Get("/turnstile", handler.AdminTurnstilePageHandler)
 	admin.Post("/turnstile", handler.AdminTurnstileSubmitHandler)
 	admin.Get("/tab/:tab", handler.AdminTabHandler)
 	admin.Get("/embeddings/user-activities", handler.AdminEmbeddingsUserActivitiesHandler)

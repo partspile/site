@@ -13,14 +13,6 @@ func AdminDashboardPage(stats QueueStats,
 	entries []SMSQueueEntry) []g.Node {
 	return []g.Node{
 		pageTitle("Admin Dashboard"),
-		P(
-			Class("mt-4"),
-			A(
-				Href("/admin/turnstile"),
-				Class("text-blue-600 dark:text-blue-400 hover:underline"),
-				g.Text("Turnstile check"),
-			),
-		),
 		AdminDashboardContainerWithQueue("sms-queue", stats, entries),
 	}
 }
@@ -51,6 +43,7 @@ func AdminContentWithClicks(activeTab string, clicks ClickAdminData) g.Node {
 			SMSQueueTab(QueueStats{}, []SMSQueueEntry{})),
 		g.If(activeTab == "embeddings", EmbeddingsTab(EmbeddingAdminData{})),
 		g.If(activeTab == "clicks", ClicksTab(clicks)),
+		g.If(activeTab == "turnstile", AdminTurnstileTab()),
 		g.If(activeTab == "settings", AdminSettingsTab()),
 	)
 }
@@ -73,6 +66,7 @@ func AdminContentWithEmbeddings(activeTab string,
 			SMSQueueTab(QueueStats{}, []SMSQueueEntry{})),
 		g.If(activeTab == "embeddings", EmbeddingsTab(emb)),
 		g.If(activeTab == "clicks", ClicksTab(ClickAdminData{})),
+		g.If(activeTab == "turnstile", AdminTurnstileTab()),
 		g.If(activeTab == "settings", AdminSettingsTab()),
 	)
 }
@@ -96,6 +90,7 @@ func AdminTabs(activeTab string) g.Node {
 			adminTab("SMS Queue", "sms-queue", activeTab == "sms-queue"),
 			adminTab("Embeddings", "embeddings", activeTab == "embeddings"),
 			adminTab("Clicks", "clicks", activeTab == "clicks"),
+			adminTab("Turnstile", "turnstile", activeTab == "turnstile"),
 			adminTab("Settings", "settings", activeTab == "settings"),
 		),
 	)
@@ -128,6 +123,7 @@ func AdminContent(activeTab string) g.Node {
 			SMSQueueTab(QueueStats{}, []SMSQueueEntry{})),
 		g.If(activeTab == "embeddings", EmbeddingsTab(EmbeddingAdminData{})),
 		g.If(activeTab == "clicks", ClicksTab(ClickAdminData{})),
+		g.If(activeTab == "turnstile", AdminTurnstileTab()),
 		g.If(activeTab == "settings", AdminSettingsTab()),
 	)
 }
@@ -140,6 +136,7 @@ func AdminContentWithQueue(activeTab string, queueStats QueueStats,
 			SMSQueueTab(queueStats, queueEntries)),
 		g.If(activeTab == "embeddings", EmbeddingsTab(EmbeddingAdminData{})),
 		g.If(activeTab == "clicks", ClicksTab(ClickAdminData{})),
+		g.If(activeTab == "turnstile", AdminTurnstileTab()),
 		g.If(activeTab == "settings", AdminSettingsTab()),
 	)
 }

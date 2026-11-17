@@ -25,6 +25,8 @@ func AdminTabHandler(c *fiber.Ctx) error {
 		return AdminEmbeddingsHandler(c)
 	case "clicks":
 		return AdminClicksHandler(c)
+	case "turnstile":
+		return render(c, ui.AdminDashboardContainer("turnstile"))
 	case "settings":
 		return render(c, ui.AdminDashboardContainer("settings"))
 	default:

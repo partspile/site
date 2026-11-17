@@ -7,10 +7,6 @@ import (
 	"github.com/partspile/site/internal/ui"
 )
 
-func AdminTurnstilePageHandler(c *fiber.Ctx) error {
-	return renderPage(c, "Turnstile check", ui.AdminTurnstilePage())
-}
-
 func AdminTurnstileSubmitHandler(c *fiber.Ctx) error {
 	token := c.FormValue("cf-turnstile-response")
 	err := turnstile.VerifyAlways(token, VisitorIP(c))
