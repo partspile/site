@@ -22,7 +22,7 @@ type Kind int
 
 const (
 	Int      Kind = iota // numeric, range-filterable
-	Money                // amount + currency (Value.Text), FREE when amount == 0
+	Money                // amount + currency; 0 is FREE, -1 is WANTED
 	Enum                 // fixed string set, exact-match filter
 	Location             // user location text; resolves to ads.location_id
 	Flag                 // optional opt-in; Num == 1 when set
@@ -354,7 +354,7 @@ func (d Def) Validate(v Value) error {
 			}
 			return nil
 		}
-		if *v.Num < 0 {
+		if *v.Num < 0 && *v.Num != currency.WantedAmount {
 			return fmt.Errorf("%s must be zero or greater", d.Label)
 		}
 		if v.Text == nil || !currency.IsSupported(*v.Text) {

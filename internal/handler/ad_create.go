@@ -54,10 +54,19 @@ func parseAdFacets(c *fiber.Ctx,
 		switch d.Kind {
 		case facet.Money:
 			free := c.FormValue("price_free") == "1"
+			wanted := c.FormValue("price_wanted") == "1"
 			raw := strings.TrimSpace(c.FormValue(d.Key))
 			code := currency.Normalize(c.FormValue("price_currency"))
 			if !currency.IsSupported(code) {
 				code = defaultCurrencyForUser(c)
+			}
+			if free && wanted {
+				return nil, fmt.Errorf("choose either FREE or Wanted")
+			}
+			if wanted {
+				amount := currency.WantedAmount
+				values[d.Key] = facet.Value{Num: &amount, Text: &code}
+				continue
 			}
 			if free {
 				amount := 0

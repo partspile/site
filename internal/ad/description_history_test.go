@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/currency"
 	"github.com/partspile/site/internal/entrylog"
 	"github.com/partspile/site/internal/facet"
 )
@@ -137,6 +138,26 @@ func TestBuildFieldChangeEntries(t *testing.T) {
 	}
 	if !strings.Contains(entries[1].body, "Price dropped") {
 		t.Errorf("price body = %q", entries[1].body)
+	}
+}
+
+func TestFormatPriceChangeWanted(t *testing.T) {
+	code := "USD"
+	amt := 100
+	wanted := currency.WantedAmount
+	got := formatPriceChange(
+		facet.Value{Num: &amt, Text: &code},
+		facet.Value{Num: &wanted, Text: &code},
+	)
+	if got != "Listed as WANTED (was $ 100)" {
+		t.Fatalf("price body = %q", got)
+	}
+	back := formatPriceChange(
+		facet.Value{Num: &wanted, Text: &code},
+		facet.Value{Num: &amt, Text: &code},
+	)
+	if back != "Price set to $ 100" {
+		t.Fatalf("price body = %q", back)
 	}
 }
 

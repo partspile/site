@@ -3,6 +3,9 @@ package search
 import (
 	"strings"
 	"testing"
+
+	"github.com/partspile/site/internal/currency"
+	"github.com/partspile/site/internal/facet"
 )
 
 func TestBuildVectorMetadataWhereUsesFlagColumn(t *testing.T) {
@@ -28,6 +31,39 @@ func TestBuildVectorMetadataWhereOptionalCategory(t *testing.T) {
 	}
 	if !strings.Contains(clause, "flag_count <=") {
 		t.Fatalf("expected flag_count column filter: %s", clause)
+	}
+}
+
+func TestMoneyMaxFilterExcludesWanted(t *testing.T) {
+	var pa pgArgs
+	max := 50
+	p := Params{FacetFilters: map[string]facet.Filter{
+		"price": {Max: &max},
+	}}
+	clause := buildVectorMetadataWhere(p, &pa)
+	if !strings.Contains(clause, ">= $2") || !strings.Contains(clause, "<= $3") {
+		t.Fatalf("max price filter should bound both sides: %s", clause)
+	}
+	low, lowOK := pa.args[1].(int)
+	high, highOK := pa.args[2].(int)
+	if !lowOK || !highOK || low != 0 || high != max {
+		t.Fatalf("price args = %v", pa.args[1:])
+	}
+}
+
+func TestMoneyWantedFilter(t *testing.T) {
+	var pa pgArgs
+	wanted := currency.WantedFilter
+	p := Params{FacetFilters: map[string]facet.Filter{
+		"price": {Value: &wanted},
+	}}
+	clause := buildVectorMetadataWhere(p, &pa)
+	if !strings.Contains(clause, "= $2") {
+		t.Fatalf("wanted filter = %s", clause)
+	}
+	got, ok := pa.args[1].(int)
+	if !ok || got != currency.WantedAmount {
+		t.Fatalf("wanted arg = %v", pa.args[1])
 	}
 }
 

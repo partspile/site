@@ -9,6 +9,7 @@ import (
 // PriceRowView holds state for the price row (initial render and HTMX swaps).
 type PriceRowView struct {
 	IsFree   bool
+	IsWanted bool
 	Amount   string
 	Currency string
 }

@@ -81,13 +81,23 @@ func parseFormFacetValues(c *fiber.Ctx,
 	for _, d := range category.Facets() {
 		switch d.Kind {
 		case facet.Money:
-			if c.FormValue("price_free") == "1" {
-				amount := 0
-				code := currency.Normalize(c.FormValue("price_currency"))
-				if !currency.IsSupported(code) {
-					code = defaultCurrencyForUser(c)
-				}
+			free := c.FormValue("price_free") == "1"
+			wanted := c.FormValue("price_wanted") == "1"
+			code := currency.Normalize(c.FormValue("price_currency"))
+			if !currency.IsSupported(code) {
+				code = defaultCurrencyForUser(c)
+			}
+			if wanted && !free {
+				amount := currency.WantedAmount
 				values[d.Key] = facet.Value{Num: &amount, Text: &code}
+				continue
+			}
+			if free && !wanted {
+				amount := 0
+				values[d.Key] = facet.Value{Num: &amount, Text: &code}
+				continue
+			}
+			if free && wanted {
 				continue
 			}
 			raw := strings.TrimSpace(c.FormValue(d.Key))
@@ -97,10 +107,6 @@ func parseFormFacetValues(c *fiber.Ctx,
 			n, err := strconv.Atoi(raw)
 			if err != nil || n < 0 {
 				continue
-			}
-			code := currency.Normalize(c.FormValue("price_currency"))
-			if !currency.IsSupported(code) {
-				code = defaultCurrencyForUser(c)
 			}
 			values[d.Key] = facet.Value{Num: &n, Text: &code}
 		case facet.Enum:

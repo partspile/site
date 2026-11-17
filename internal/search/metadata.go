@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/currency"
 	"github.com/partspile/site/internal/facet"
 )
 
@@ -41,7 +42,9 @@ func vectorFilterClause(d facet.Def, f facet.Filter, pa *pgArgs) string {
 			return `(` + path + `)::int = ` + pa.add(1)
 		}
 		return ""
-	case facet.Money, facet.Int:
+	case facet.Money:
+		return moneyFilterClause(path, f, pa)
+	case facet.Int:
 		numPath := `(` + path + `)::int`
 		clause := ""
 		if f.Min != nil {
@@ -81,6 +84,27 @@ func vectorFilterClause(d facet.Def, f facet.Filter, pa *pgArgs) string {
 		}
 		return clause
 	}
+}
+
+func moneyFilterClause(path string, f facet.Filter, pa *pgArgs) string {
+	numPath := `(` + path + `)::int`
+	if f.Value != nil && *f.Value == currency.WantedFilter {
+		return numPath + ` = ` + pa.add(currency.WantedAmount)
+	}
+	clause := ""
+	if f.Min != nil {
+		clause = numPath + ` >= ` + pa.add(*f.Min)
+	} else if f.Max != nil {
+		// A max-only range would otherwise include the wanted sentinel.
+		clause = numPath + ` >= ` + pa.add(0)
+	}
+	if f.Max != nil {
+		if clause != "" {
+			clause += " AND "
+		}
+		clause += numPath + ` <= ` + pa.add(*f.Max)
+	}
+	return clause
 }
 
 func sortedFacetKeys(filters map[string]facet.Filter) []string {

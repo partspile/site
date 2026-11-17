@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -67,19 +68,40 @@ func NewAdPriceFieldHandler(c *fiber.Ctx) error {
 	}
 
 	defaults := newAdFormDefaults(c)
-	isFree := c.Query("price_free") == "1"
+	isFree, isWanted := priceToggles(c)
 	amount := strings.TrimSpace(c.Query("price"))
-	if isFree {
-		amount = ""
-	} else if amount == "0" {
+	if isFree || isWanted || amount == "0" ||
+		amount == strconv.Itoa(currency.WantedAmount) {
 		amount = ""
 	}
 
 	return render(c, uiads.NewAdPriceRow(d, defaults, uiads.PriceRowView{
 		IsFree:   isFree,
+		IsWanted: isWanted,
 		Amount:   amount,
 		Currency: c.Query("price_currency"),
 	}))
+}
+
+// priceToggles reads the FREE and Wanted checkboxes. The checkbox that just
+// changed wins when both are checked, so the two modes stay exclusive.
+func priceToggles(c *fiber.Ctx) (free, wanted bool) {
+	free = c.Query("price_free") == "1"
+	wanted = c.Query("price_wanted") == "1"
+	switch c.Query("toggled") {
+	case "free":
+		if free {
+			wanted = false
+		}
+	case "wanted":
+		if wanted {
+			free = false
+		}
+	}
+	if free && wanted {
+		wanted = false
+	}
+	return free, wanted
 }
 
 func newAdFormDefaults(c *fiber.Ctx) facet.FormDefaults {

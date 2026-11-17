@@ -332,22 +332,22 @@ func formatPriceChange(old, new facet.Value) string {
 		return ""
 	}
 	if !oldOK && newOK {
-		if newAmt == 0 {
-			return "Listed as FREE"
-		}
-		return fmt.Sprintf("Price set to %s", currency.Format(newAmt, newCur))
+		return priceSetLabel(newAmt, newCur)
 	}
 	if oldOK && !newOK {
 		return fmt.Sprintf("Price removed (was %s)", currency.Format(oldAmt, oldCur))
 	}
-	if oldAmt == 0 && newAmt == 0 {
+	if oldAmt == newAmt &&
+		(oldAmt == 0 || oldAmt == currency.WantedAmount) {
 		return ""
 	}
-	if oldAmt == 0 {
-		return fmt.Sprintf("Price set to %s", currency.Format(newAmt, newCur))
+	if oldAmt == 0 || oldAmt == currency.WantedAmount {
+		return priceSetLabel(newAmt, newCur)
 	}
-	if newAmt == 0 {
-		return fmt.Sprintf("Listed as FREE (was %s)", currency.Format(oldAmt, oldCur))
+	if newAmt == 0 || newAmt == currency.WantedAmount {
+		was := currency.Format(oldAmt, oldCur)
+		return fmt.Sprintf("Listed as %s (was %s)",
+			currency.Format(newAmt, newCur), was)
 	}
 	oldStr := currency.Format(oldAmt, oldCur)
 	newStr := currency.Format(newAmt, newCur)
@@ -361,6 +361,13 @@ func formatPriceChange(old, new facet.Value) string {
 		return fmt.Sprintf("Price currency changed from %s to %s", oldStr, newStr)
 	}
 	return ""
+}
+
+func priceSetLabel(amount int, code string) string {
+	if amount == 0 || amount == currency.WantedAmount {
+		return "Listed as " + currency.Format(amount, code)
+	}
+	return fmt.Sprintf("Price set to %s", currency.Format(amount, code))
 }
 
 func priceFromValue(v facet.Value) (amount int, code string, ok bool) {

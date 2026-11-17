@@ -132,6 +132,16 @@ func TestMoneyFacet(t *testing.T) {
 	if err := price.Validate(v); err != nil {
 		t.Errorf("valid price rejected: %v", err)
 	}
+	wanted := Value{Num: intPtr(currency.WantedAmount), Text: strPtr("USD")}
+	if err := price.Validate(wanted); err != nil {
+		t.Errorf("wanted price rejected: %v", err)
+	}
+	if got, want := price.FormatFull(wanted), currency.WantedLabel; got != want {
+		t.Errorf("wanted FormatFull = %q, want %q", got, want)
+	}
+	if err := price.Validate(Value{Num: intPtr(-2), Text: strPtr("USD")}); err == nil {
+		t.Error("price below the wanted sentinel should be invalid")
+	}
 }
 
 func TestRequiredFacet(t *testing.T) {

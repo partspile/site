@@ -3,6 +3,7 @@ package ads
 import (
 	"testing"
 
+	"github.com/partspile/site/internal/currency"
 	"github.com/partspile/site/internal/facet"
 )
 
@@ -17,5 +18,9 @@ func TestFacetPillLabels(t *testing.T) {
 	}
 	if got := facetPillLabel(price, facet.Filter{Min: &min, Max: &max}); got != "Price: 0-50" {
 		t.Fatalf("bounded price pill = %q", got)
+	}
+	wanted := currency.WantedFilter
+	if got := facetPillLabel(price, facet.Filter{Value: &wanted}); got != "Wanted" {
+		t.Fatalf("wanted price pill = %q", got)
 	}
 }

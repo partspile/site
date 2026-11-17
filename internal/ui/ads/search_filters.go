@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/partspile/site/internal/currency"
 	"github.com/partspile/site/internal/facet"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -88,6 +89,13 @@ func facetHiddenFields(d facet.Def, filter facet.Filter) g.Node {
 	case facet.FilterFlag:
 		return nil
 	default:
+		if priceFilterWanted(d, filter) {
+			return Input(
+				Type("hidden"),
+				Name(d.Key+"_wanted"),
+				Value("1"),
+			)
+		}
 		var nodes []g.Node
 		if filter.Min != nil {
 			nodes = append(nodes, Input(
@@ -121,8 +129,16 @@ func facetPillLabel(d facet.Def, filter facet.Filter) string {
 		return fmt.Sprintf("%s: %s +%d",
 			d.Label, filter.Values[0], len(filter.Values)-1)
 	default:
+		if priceFilterWanted(d, filter) {
+			return "Wanted"
+		}
 		return rangePillLabel(d.Label, filter.Min, filter.Max)
 	}
+}
+
+func priceFilterWanted(d facet.Def, filter facet.Filter) bool {
+	return d.Kind == facet.Money && filter.Value != nil &&
+		*filter.Value == currency.WantedFilter
 }
 
 func rangePillLabel(label string, min, max *int) string {
@@ -158,8 +174,38 @@ func SearchFilterModalBody(d facet.Def, filter facet.Filter) g.Node {
 	case facet.FilterCheckboxes:
 		return enumCheckboxesEditor(d, filter)
 	default:
+		if d.Kind == facet.Money {
+			return priceFilterEditor(d.Key, filter)
+		}
 		return rangeEditor(d.Key, filter.Min, filter.Max)
 	}
+}
+
+func priceFilterEditor(name string, filter facet.Filter) g.Node {
+	wanted := filter.Value != nil && *filter.Value == currency.WantedFilter
+	id := "filter-" + name + "-wanted"
+	attrs := []g.Node{
+		Type("checkbox"),
+		Name(name + "_wanted"),
+		Value("1"),
+		ID(id),
+	}
+	if wanted {
+		attrs = append(attrs, g.Attr("checked", "checked"))
+	}
+	var min, max *int
+	if !wanted {
+		min, max = filter.Min, filter.Max
+	}
+	return Div(
+		Class("space-y-4"),
+		Label(
+			Class("field-option"),
+			Input(attrs...),
+			g.Text("Wanted"),
+		),
+		rangeEditor(name, min, max),
+	)
 }
 
 func enumCheckboxesEditor(d facet.Def, filter facet.Filter) g.Node {

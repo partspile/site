@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/partspile/site/internal/config"
+	"github.com/partspile/site/internal/currency"
 	"github.com/partspile/site/internal/facet"
 	g "maragu.dev/gomponents"
 	hx "maragu.dev/gomponents-htmx"
@@ -306,26 +307,29 @@ func (f adFields) priceRow(d facet.Def) g.Node {
 	return AdPriceRow(f.cfg, d, f.cfg.Defaults, view)
 }
 
-// AdPriceRow renders the price facet with a "List as FREE" HTMX toggle.
+// AdPriceRow renders the price facet. FREE and Wanted are exclusive; either
+// one hides the amount and currency inputs.
 func AdPriceRow(cfg AdFormConfig, d facet.Def, defaults facet.FormDefaults,
 	view PriceRowView) g.Node {
 	currencyCode := priceCurrencyCode(d, defaults, view.Currency)
 	rowID := cfg.priceRowID()
 
-	freeCheckbox := Label(
-		Class("flex items-center gap-2 mb-2"),
-		Input(priceFreeCheckboxAttrs(cfg, rowID, view.IsFree)...),
-		Span(g.Text("List as FREE")),
+	checks := Div(
+		Class("flex flex-wrap items-center gap-x-4 gap-y-2 mb-2"),
+		priceToggle(cfg, rowID, "price_free", "price-free", "free",
+			"List as FREE", view.IsFree),
+		priceToggle(cfg, rowID, "price_wanted", "price-wanted", "wanted",
+			"Wanted", view.IsWanted),
 	)
 
 	var body g.Node
-	if view.IsFree {
-		body = Div(
-			Class("price-free-state"),
-			Input(Type("hidden"), Name(d.Key), Value("0")),
-			Input(Type("hidden"), Name("price_currency"), Value(currencyCode)),
-		)
-	} else {
+	switch {
+	case view.IsWanted:
+		body = priceHiddenState(d.Key, "price-wanted-state",
+			strconv.Itoa(currency.WantedAmount), currencyCode)
+	case view.IsFree:
+		body = priceHiddenState(d.Key, "price-free-state", "0", currencyCode)
+	default:
 		amountAttrs := []g.Node{
 			Type("number"),
 			Name(d.Key),
@@ -335,7 +339,9 @@ func AdPriceRow(cfg AdFormConfig, d facet.Def, defaults facet.FormDefaults,
 			g.Attr("step", "1"),
 			g.Attr("inputmode", "numeric"),
 		}
-		if amount := strings.TrimSpace(view.Amount); amount != "" && amount != "0" {
+		amount := strings.TrimSpace(view.Amount)
+		if amount != "" && amount != "0" &&
+			amount != strconv.Itoa(currency.WantedAmount) {
 			amountAttrs = append(amountAttrs, Value(amount))
 		}
 		body = Div(
@@ -350,19 +356,27 @@ func AdPriceRow(cfg AdFormConfig, d facet.Def, defaults facet.FormDefaults,
 
 	return Div(
 		ID(rowID),
-		freeCheckbox,
+		checks,
 		body,
 	)
 }
 
-func priceFreeCheckboxAttrs(cfg AdFormConfig, rowID string,
-	checked bool) []g.Node {
+func priceHiddenState(name, className, amount, currencyCode string) g.Node {
+	return Div(
+		Class(className),
+		Input(Type("hidden"), Name(name), Value(amount)),
+		Input(Type("hidden"), Name("price_currency"), Value(currencyCode)),
+	)
+}
+
+func priceToggle(cfg AdFormConfig, rowID, name, idSuffix, toggled,
+	label string, checked bool) g.Node {
 	attrs := []g.Node{
 		Type("checkbox"),
-		Name("price_free"),
+		Name(name),
 		Value("1"),
-		ID(cfg.fieldID("price-free")),
-		hx.Get(cfg.PriceFieldURL),
+		ID(cfg.fieldID(idSuffix)),
+		hx.Get(cfg.PriceFieldURL + "?toggled=" + toggled),
 		hx.Target("#" + rowID),
 		hx.Swap("outerHTML"),
 		hx.Trigger("change"),
@@ -371,7 +385,11 @@ func priceFreeCheckboxAttrs(cfg AdFormConfig, rowID string,
 	if checked {
 		attrs = append(attrs, g.Attr("checked", "checked"))
 	}
-	return attrs
+	return Label(
+		Class("flex items-center gap-2"),
+		Input(attrs...),
+		Span(g.Text(label)),
+	)
 }
 
 func priceCurrencyCode(d facet.Def, defaults facet.FormDefaults,

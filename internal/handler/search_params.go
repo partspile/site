@@ -8,6 +8,7 @@ import (
 	"github.com/partspile/site/internal/ad"
 	"github.com/partspile/site/internal/config"
 	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/currency"
 	"github.com/partspile/site/internal/facet"
 	"github.com/partspile/site/internal/local"
 	"github.com/partspile/site/internal/location"
@@ -232,6 +233,11 @@ func parseFacetFilters(c *fiber.Ctx,
 				filters[d.Key] = facet.Filter{Value: &one}
 			}
 		default:
+			if d.Kind == facet.Money && c.Query(d.Key+"_wanted") == "1" {
+				wanted := currency.WantedFilter
+				filters[d.Key] = facet.Filter{Value: &wanted}
+				continue
+			}
 			min := parseOptionalAmount(c.Query(d.Key + "_min"))
 			max := parseOptionalAmount(c.Query(d.Key + "_max"))
 			if min != nil || max != nil {

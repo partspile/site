@@ -28,6 +28,7 @@ func TestFormat(t *testing.T) {
 	}{
 		{0, "USD", "FREE"},
 		{0, "EUR", "FREE"},
+		{WantedAmount, "USD", WantedLabel},
 		{100, "USD", "$ 100"},
 		{250, "GBP", "£ 250"},
 		{1245, "USD", "$ 1,245"},

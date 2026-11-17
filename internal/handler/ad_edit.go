@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/partspile/site/internal/ad"
 	"github.com/partspile/site/internal/cookie"
+	"github.com/partspile/site/internal/currency"
 	"github.com/partspile/site/internal/facet"
 	"github.com/partspile/site/internal/flagopinion"
 	"github.com/partspile/site/internal/local"
@@ -156,15 +157,18 @@ func priceRowFromAd(a ad.Ad) uiads.PriceRowView {
 	if !ok || v.Num == nil {
 		return uiads.PriceRowView{}
 	}
-	currency := ""
+	code := ""
 	if v.Text != nil {
-		currency = *v.Text
+		code = *v.Text
+	}
+	if *v.Num == currency.WantedAmount {
+		return uiads.PriceRowView{IsWanted: true, Currency: code}
 	}
 	if *v.Num == 0 {
-		return uiads.PriceRowView{IsFree: true, Currency: currency}
+		return uiads.PriceRowView{IsFree: true, Currency: code}
 	}
 	return uiads.PriceRowView{
 		Amount:   strconv.Itoa(*v.Num),
-		Currency: currency,
+		Currency: code,
 	}
 }

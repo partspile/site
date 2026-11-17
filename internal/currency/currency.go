@@ -13,6 +13,15 @@ import (
 
 const Default = "USD"
 
+// WantedAmount is the price sentinel for a wanted listing.
+const WantedAmount = -1
+
+// WantedLabel is the display text for WantedAmount.
+const WantedLabel = "WANTED"
+
+// WantedFilter is the search-filter value that selects wanted listings.
+const WantedFilter = "wanted"
+
 // Supported lists ISO 4217 codes for the price currency dropdown.
 var Supported = []string{
 	"USD", "EUR", "GBP", "CAD", "AUD", "JPY", "CHF", "CNY", "INR", "MXN",
@@ -76,8 +85,11 @@ func DefaultFromRegion(region string) string {
 	return Default
 }
 
-// Format renders a price for display. Zero amount is always FREE.
+// Format renders a price for display. Zero is FREE. WantedAmount is WANTED.
 func Format(amount int, code string) string {
+	if amount == WantedAmount {
+		return WantedLabel
+	}
 	if amount == 0 {
 		return "FREE"
 	}
