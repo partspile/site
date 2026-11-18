@@ -139,8 +139,10 @@ var (
 	ShareSecret = getEncryptionKey("SHARE_SECRET")
 
 	// Server configuration
-	ServerPort   = getEnvWithDefault("PORT", "10000")
+	ServerPort = getEnvWithDefault("PORT", "10000")
+	// ServerName is the brand. LegalName is the Oregon registered entity.
 	ServerName   = os.Getenv("APP_NAME")
+	LegalName    = "Parts Pile, LLC"
 	ContactEmail = os.Getenv("CONTACT_EMAIL")
 
 	// Public Bitcoin address for /donate (on-chain receive address).

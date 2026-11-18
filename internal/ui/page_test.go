@@ -157,7 +157,7 @@ func TestRobotsForPath(t *testing.T) {
 	}
 }
 
-func TestAboutHowItWorks(t *testing.T) {
+func TestAboutIntro(t *testing.T) {
 	var buf bytes.Buffer
 	n := Page(0, false, "", "About", "/about", "csrf", false, AboutPage())
 	if err := n.Render(&buf); err != nil {
@@ -165,24 +165,78 @@ func TestAboutHowItWorks(t *testing.T) {
 	}
 	html := buf.String()
 	wants := []string{
-		"Here&#39;s how it works",
-		"Bob posts an ad",
-		"Truck tailgate",
-		"Alice messages Bob",
-		"Is the tailgate still available?",
-		"Yes. Saturday morning works.",
-		"Phone numbers stay hidden.",
-		"neither one sees the other",
+		"is an online marketplace to buy, sell, and trade.",
+		"brand-metal brand-metal-control mx-6 space-y-3 rounded-lg",
+		"Cars &amp; Trucks and Parts",
+		"/images/category/car.svg",
+		"Motorcycles and Parts",
+		"Bicycles and Parts",
+		"Ag Equipment and Parts",
+		"Posting is free.",
+		"don&#39;t sell your information or share it with " +
+			"third parties for their own use.",
+		"A phone number is all we ask for.",
+		"We keep your number private.",
+		"Parts Pile, LLC",
+		"Get Started",
 	}
 	for _, want := range wants {
 		if !strings.Contains(html, want) {
 			t.Errorf("about page missing %q", want)
 		}
 	}
-	post := strings.Index(html, "Bob posts an ad")
-	ask := strings.Index(html, "Alice messages Bob")
-	hidden := strings.Index(html, "Phone numbers stay hidden.")
-	if post < 0 || ask < post || hidden < ask {
-		t.Fatal("how-it-works steps are out of order")
+	intro := strings.Index(html, "buy, sell, and trade.")
+	cats := strings.Index(html, "Cars &amp; Trucks and Parts")
+	free := strings.Index(html, "Posting is free.")
+	sell := strings.Index(html, "third parties for their own use.")
+	phone := strings.Index(html, "A phone number is all we ask for.")
+	start := strings.Index(html, "Get Started")
+	if intro < 0 || cats < intro || free < cats || sell < free ||
+		phone < sell || start < phone {
+		t.Fatal("about intro is out of order")
+	}
+	for _, gone := range []string{
+		"online marketplace for",
+		"Buy - Sell - Trade",
+		"marketplace for things",
+		"Here&#39;s how it works",
+		"Bob posts an ad",
+		"Buyers and sellers message here.",
+		"share or sell your information.",
+		"stays private, and we don&#39;t sell it.",
+		"that number stays with us.",
+	} {
+		if strings.Contains(html, gone) {
+			t.Errorf("about page still has %q", gone)
+		}
+	}
+}
+
+func TestLegalEntityNamed(t *testing.T) {
+	const want = "Parts Pile, LLC"
+	for _, page := range []struct {
+		name string
+		html string
+	}{
+		{"privacy", renderNodes(t, PrivacyPolicyPage())},
+		{"terms", renderNodes(t, TermsOfServicePage())},
+	} {
+		if !strings.Contains(page.html, want) {
+			t.Errorf("%s missing %q", page.name, want)
+		}
+	}
+	privacy := renderNodes(t, PrivacyPolicyPage())
+	if !strings.Contains(privacy, "operates") {
+		t.Fatal("privacy should name the operator")
+	}
+	if strings.Contains(privacy, "under 13") {
+		t.Fatal("privacy should not set a lower age than the terms")
+	}
+	if !strings.Contains(privacy, "18 and older") {
+		t.Fatal("privacy should match the 18-year minimum")
+	}
+	terms := renderNodes(t, TermsOfServicePage())
+	if !strings.Contains(terms, "at least 18 years old") {
+		t.Fatal("terms should require 18")
 	}
 }

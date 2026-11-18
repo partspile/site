@@ -89,24 +89,81 @@ func TestRenderPrintCardBack(t *testing.T) {
 		t.Fatal("expected dark card background")
 	}
 
-	goldY := b.Max.Y
-	n := 0
+	goldY, goldN := firstColorY(img, 0xEB, 0xD3, 0x9B)
+	if goldN < 80 {
+		t.Fatalf("expected a strong gold tagline, got %d pixels", goldN)
+	}
+	bodyY, bodyN, bodyMid := colorSpan(img, 0xF4, 0xEF, 0xE6)
+	if bodyN < 400 {
+		t.Fatalf("expected the three points, got %d pixels", bodyN)
+	}
+	if bodyY <= goldY {
+		t.Fatalf("points should sit under the tagline, body y=%d gold y=%d",
+			bodyY, goldY)
+	}
+	center := b.Min.X + b.Dx()/2
+	if bodyMid < center-40 || bodyMid > center+40 {
+		t.Fatalf("points should be centered, mid x=%d center=%d",
+			bodyMid, center)
+	}
+
+	lowest := 0
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
-			if near(img.RGBAAt(x, y), 0xEB, 0xD3, 0x9B, 8) {
+			if near(img.RGBAAt(x, y), 0xF4, 0xEF, 0xE6, 8) && y > lowest {
+				lowest = y
+			}
+		}
+	}
+	if lowest < b.Dy()*3/4 {
+		t.Fatalf("legal name should sit near the bottom, lowest y=%d",
+			lowest)
+	}
+}
+
+func firstColorY(img *image.RGBA, r, g, b uint8) (int, int) {
+	bounds := img.Bounds()
+	y0 := bounds.Max.Y
+	n := 0
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			if near(img.RGBAAt(x, y), r, g, b, 8) {
 				n++
-				if y < goldY {
-					goldY = y
+				if y < y0 {
+					y0 = y
 				}
 			}
 		}
 	}
-	if n < 40 {
-		t.Fatalf("expected gold tagline, got %d pixels", n)
+	return y0, n
+}
+
+func colorSpan(img *image.RGBA, r, g, b uint8) (int, int, int) {
+	bounds := img.Bounds()
+	y0 := bounds.Max.Y
+	n := 0
+	minX, maxX := bounds.Max.X, bounds.Min.X
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			if !near(img.RGBAAt(x, y), r, g, b, 8) {
+				continue
+			}
+			n++
+			if y < y0 {
+				y0 = y
+			}
+			if x < minX {
+				minX = x
+			}
+			if x > maxX {
+				maxX = x
+			}
+		}
 	}
-	if goldY > b.Dy()/3 {
-		t.Fatalf("tagline should sit near the top, first gold at y=%d", goldY)
+	if n == 0 {
+		return y0, 0, 0
 	}
+	return y0, n, (minX + maxX) / 2
 }
 
 func countColorNear(img *image.RGBA, r, g, b uint8) int {

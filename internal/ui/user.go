@@ -970,14 +970,54 @@ func aboutItem(icon, alt, label, href string, external bool,
 	)
 }
 
+func aboutCategoryList() g.Node {
+	type item struct {
+		label string
+		icon  string
+	}
+	rows := []item{
+		{"Cars & Trucks and Parts", "car.svg"},
+		{"Motorcycles and Parts", "motorcycle.svg"},
+		{"Bicycles and Parts", "bicycle.svg"},
+		{"Ag Equipment and Parts", "ag.svg"},
+	}
+	items := make([]g.Node, len(rows))
+	for i, row := range rows {
+		items[i] = Li(
+			Class("flex items-center gap-3"),
+			categoryIcon(row.icon, "w-8 h-8"),
+			Span(g.Text(row.label)),
+		)
+	}
+	return Ul(
+		Class("brand-metal brand-metal-control mx-6 space-y-3 "+
+			"rounded-lg px-5 py-4 text-lg"),
+		g.Group(items),
+	)
+}
+
+func aboutPractices() g.Node {
+	lines := []string{
+		"Posting is free.",
+		"We don't sell your information or share it with " +
+			"third parties for their own use.",
+		"A phone number is all we ask for. " +
+			"We keep your number private.",
+	}
+	items := make([]g.Node, len(lines))
+	for i, line := range lines {
+		items[i] = Li(g.Text(line))
+	}
+	return Ul(
+		Class("list-disc space-y-2 pl-5 text-lg leading-relaxed "+
+			"text-zinc-800 dark:text-zinc-200"),
+		g.Group(items),
+	)
+}
+
 func AboutPage() []g.Node {
 	return []g.Node{
 		pageTitle("About"),
-		P(
-			Class("mt-4 text-xl font-medium text-zinc-800 dark:text-zinc-200"),
-			g.Textf("%s is a marketplace for things",
-				config.ServerName),
-		),
 		Div(
 			Class("mt-10 space-y-8 text-zinc-700 dark:text-zinc-300"),
 			Div(
@@ -985,14 +1025,12 @@ func AboutPage() []g.Node {
 				P(
 					Class("text-lg leading-relaxed text-zinc-800 "+
 						"dark:text-zinc-200"),
-					g.Text(
-						"Cars and trucks, motorcycles, bicycles, and "+
-							"the parts that go with them. Farm "+
-							"equipment too. Post what you have. "+
-							"Posting is free.",
-					),
+					g.Textf("%s is an online marketplace to "+
+						"buy, sell, and trade.",
+						config.ServerName),
 				),
-				aboutHowItWorks(),
+				aboutCategoryList(),
+				aboutPractices(),
 				standardButton(buttonProps{
 					Href: "/register",
 					Text: "Get Started",
@@ -1086,6 +1124,10 @@ func AboutPage() []g.Node {
 					g.Text("OpenStreetMap contributors"),
 				),
 				g.Text("."),
+			),
+			P(
+				Class("text-sm text-zinc-500 dark:text-zinc-400"),
+				g.Text(config.LegalName),
 			),
 		),
 	}

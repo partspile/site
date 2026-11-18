@@ -69,7 +69,8 @@ func PrivacyPolicyPage() []g.Node {
 					g.Textf("%s (“we”) operates %s, a "+
 						"marketplace for vehicles, equipment, and "+
 						"parts. This policy explains how we handle "+
-						"information when you use the site.", name, host),
+						"information when you use the site.",
+						config.LegalName, host),
 				),
 			),
 			legalSection("Information we collect",
@@ -209,20 +210,13 @@ func PrivacyPolicyPage() []g.Node {
 				),
 			),
 			legalSection("Children",
-				legalP(
-					g.Textf(
-						"%s is not directed to children under 13, and "+
-							"we do not knowingly collect personal "+
-							"information from them. If we learn that we "+
-							"have collected information from a child "+
-							"under 13, we will delete the account and "+
-							"related data. Minimum age to use the "+
-							"service is in our ",
-						name,
-					),
-					faqLink("/terms", "Terms of Service"),
-					g.Text("."),
-				),
+				legalP(g.Textf(
+					"%s is for people 18 and older. We do not "+
+						"knowingly collect personal information from "+
+						"anyone under 18. If we learn that we have, "+
+						"we will delete the account and related data.",
+					name,
+				)),
 			),
 			legalSection("Content reports",
 				legalP(
@@ -257,8 +251,9 @@ func TermsOfServicePage() []g.Node {
 			Class("mt-10 space-y-10"),
 			legalSection("Agreement",
 				legalP(
-					g.Textf("By using %s you agree to these "+
-						"Terms and our ", host),
+					g.Textf("These Terms are an agreement with %s. "+
+						"By using %s you agree to these Terms and our ",
+						config.LegalName, host),
 					faqLink("/privacy", "Privacy Policy"),
 					g.Text(". If you do not agree, do not use the "+
 						"service."),
@@ -400,7 +395,7 @@ func TermsOfServicePage() []g.Node {
 						"content belong to %s or our licensors. You may "+
 						"not copy or reverse engineer the service "+
 						"except as allowed by law.",
-					name,
+					config.LegalName,
 				)),
 			),
 			legalSection("Disclaimers",
@@ -415,14 +410,14 @@ func TermsOfServicePage() []g.Node {
 			),
 			legalSection("Limitation of liability",
 				legalP(g.Textf(
-					"To the fullest extent permitted by law, %s’ total "+
-						"liability for claims arising from the service "+
-						"is limited to one hundred US dollars ($100). "+
-						"We are not liable for indirect, incidental, "+
-						"or consequential damages, or for disputes "+
-						"between users. Some jurisdictions do not "+
-						"allow these limits.",
-					name,
+					"To the fullest extent permitted by law, the total "+
+						"liability of %s for claims arising from the "+
+						"service is limited to one hundred US dollars "+
+						"($100). We are not liable for indirect, "+
+						"incidental, or consequential damages, or for "+
+						"disputes between users. Some jurisdictions "+
+						"do not allow these limits.",
+					config.LegalName,
 				)),
 			),
 			legalSection("Indemnity",
@@ -431,7 +426,7 @@ func TermsOfServicePage() []g.Node {
 						"claims arising from your content, your use of "+
 						"the service, or your violation of these Terms "+
 						"or the law.",
-					name,
+					config.LegalName,
 				)),
 			),
 			legalSection("Termination",

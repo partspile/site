@@ -9,6 +9,7 @@ import (
 	"io"
 	"path/filepath"
 
+	"github.com/partspile/site/internal/config"
 	"github.com/skip2/go-qrcode"
 )
 
@@ -261,10 +262,13 @@ func RenderPrintCard(opts PrintCardOptions) (*image.RGBA, error) {
 }
 
 // RenderPrintCardBack draws the card back at the same size and background
-// as the front. The tagline sits inside the top content inset.
+// as the front. The tagline is the bold gold headline. The about-page
+// points sit under it, smaller and centered as one column.
 func RenderPrintCardBack() (*image.RGBA, error) {
 	totalW := inchesToPx(trimWidthIn + 2*bleedIn)
 	totalH := inchesToPx(trimHeightIn + 2*bleedIn)
+	trimW := inchesToPx(trimWidthIn)
+	trimH := inchesToPx(trimHeightIn)
 	bleedPx := inchesToPx(bleedIn)
 	contentPad := inchesToPx(safeInsetIn + marginIn)
 
@@ -272,21 +276,202 @@ func RenderPrintCardBack() (*image.RGBA, error) {
 	draw.Draw(canvas, canvas.Bounds(), &image.Uniform{C: cardBG}, image.Point{}, draw.Src)
 
 	const cssScale = 3.0
+	px := func(cssPx float64) int {
+		return int(cssPx*cssScale + 0.5)
+	}
 	tagline := "Buy - Sell - Trade"
-	tagSize := 12.0 * cssScale * 72 / printDPI
-	baseline, err := textBaselineFromTop(
-		tagline, bleedPx+contentPad, tagSize, fontRegular,
-	)
+	tagSize := 18.0 * cssScale * 72 / printDPI
+	bodySize := 9.5 * cssScale * 72 / printDPI
+	gap := px(20)
+
+	contentLeft := bleedPx + contentPad
+	contentRight := bleedPx + trimW - contentPad
+	contentTop := bleedPx + contentPad
+	contentBottom := bleedPx + trimH - contentPad
+
+	columnMax := inchesToPx(2.3)
+	if span := contentRight - contentLeft; span < columnMax {
+		columnMax = span
+	}
+	block, err := layoutCardBackBullets(columnMax, bodySize)
+	if err != nil {
+		return nil, err
+	}
+	legalSize := 7.5 * cssScale * 72 / printDPI
+	legalH, err := textHeight(config.LegalName, legalSize, fontRegular)
+	if err != nil {
+		return nil, err
+	}
+	legalGap := px(12)
+	legalTop := contentBottom - legalH
+	stackBottom := legalTop - legalGap
+
+	tagH, err := textHeight(tagline, tagSize, fontBold)
+	if err != nil {
+		return nil, err
+	}
+	stackH := tagH + gap + block.height
+	top := contentTop + (stackBottom-contentTop-stackH)/2
+	if top < contentTop {
+		top = contentTop
+	}
+
+	baseline, err := textBaselineFromTop(tagline, top, tagSize, fontBold)
 	if err != nil {
 		return nil, err
 	}
 	if err := drawCenteredText(
 		canvas, tagline, totalW/2, baseline,
-		tagSize, fontRegular, logoGold,
+		tagSize, fontBold, logoGold,
+	); err != nil {
+		return nil, err
+	}
+
+	tagBottom, err := textBottomY(tagline, baseline, tagSize, fontBold)
+	if err != nil {
+		return nil, err
+	}
+	colLeft := totalW/2 - block.width/2
+	if err := drawCardBackBullets(
+		canvas, block, colLeft, tagBottom+gap, stackBottom,
+	); err != nil {
+		return nil, err
+	}
+	legalBase, err := textBaselineFromTop(
+		config.LegalName, legalTop, legalSize, fontRegular,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if err := drawCenteredText(
+		canvas, config.LegalName, totalW/2, legalBase,
+		legalSize, fontRegular, brandText,
 	); err != nil {
 		return nil, err
 	}
 	return canvas, nil
+}
+
+func cardBackBullets() []string {
+	return []string{
+		"Posting is free.",
+		"We don't sell your information or share it with " +
+			"third parties for their own use.",
+		"A phone number is all we ask for. " +
+			"We keep your number private.",
+	}
+}
+
+type cardBackBlock struct {
+	items  [][]string
+	size   float64
+	textX  int
+	width  int
+	height int
+}
+
+func layoutCardBackBullets(maxW int, size float64) (cardBackBlock, error) {
+	const cssScale = 3.0
+	px := func(cssPx float64) int {
+		return int(cssPx*cssScale + 0.5)
+	}
+	var block cardBackBlock
+	block.size = size
+	markW, err := textWidth("•", size, fontRegular)
+	if err != nil {
+		return block, err
+	}
+	gap := px(6)
+	block.textX = markW + gap
+	textMax := maxW - block.textX
+	if textMax < 80 {
+		return block, fmt.Errorf("card back is too narrow for the points")
+	}
+
+	lineGap := px(2)
+	itemGap := px(7)
+	widest := 0
+	for n, point := range cardBackBullets() {
+		lines, err := wrapLines(point, textMax, size, fontRegular)
+		if err != nil {
+			return block, err
+		}
+		block.items = append(block.items, lines)
+		for _, line := range lines {
+			w, err := textWidth(line, size, fontRegular)
+			if err != nil {
+				return block, err
+			}
+			if w > widest {
+				widest = w
+			}
+			h, err := textHeight(line, size, fontRegular)
+			if err != nil {
+				return block, err
+			}
+			block.height += h + lineGap
+		}
+		if n < len(cardBackBullets())-1 {
+			block.height += itemGap
+		}
+	}
+	if block.height > lineGap {
+		block.height -= lineGap
+	}
+	block.width = block.textX + widest
+	return block, nil
+}
+
+func drawCardBackBullets(
+	canvas *image.RGBA,
+	block cardBackBlock,
+	left, top, bottom int,
+) error {
+	const cssScale = 3.0
+	px := func(cssPx float64) int {
+		return int(cssPx*cssScale + 0.5)
+	}
+	lineGap := px(2)
+	itemGap := px(7)
+	y := top
+	for n, lines := range block.items {
+		for i, line := range lines {
+			base, err := textBaselineFromTop(
+				line, y, block.size, fontRegular,
+			)
+			if err != nil {
+				return err
+			}
+			if i == 0 {
+				if err := drawLeftText(
+					canvas, "•", left, base,
+					block.size, fontRegular, brandText,
+				); err != nil {
+					return err
+				}
+			}
+			if err := drawLeftText(
+				canvas, line, left+block.textX, base,
+				block.size, fontRegular, brandText,
+			); err != nil {
+				return err
+			}
+			inkBottom, err := textBottomY(
+				line, base, block.size, fontRegular,
+			)
+			if err != nil {
+				return err
+			}
+			if inkBottom > bottom {
+				return fmt.Errorf("card back points overflow")
+			}
+			y = inkBottom + lineGap
+		}
+		if n < len(block.items)-1 {
+			y += itemGap
+		}
+	}
+	return nil
 }
 
 // WritePNG encodes img as a PNG with alpha transparency.
