@@ -35,8 +35,17 @@ func TestSummarizeDescriptionChangeUsesGrok(t *testing.T) {
 		if systemPrompt != summarizeDescChangeSystemPrompt {
 			t.Errorf("system prompt = %q", systemPrompt)
 		}
+		if !strings.Contains(systemPrompt, "Say \"removed\"") ||
+			!strings.Contains(systemPrompt, "Say \"added\"") {
+			t.Errorf("system prompt missing direction rules: %q",
+				systemPrompt)
+		}
 		if convID != descChangeConvID {
 			t.Errorf("convID = %q", convID)
+		}
+		if !strings.Contains(userPrompt,
+			"missing from Current was removed") {
+			t.Errorf("user prompt missing removal rule: %q", userPrompt)
 		}
 		if !strings.Contains(userPrompt, "Previous:\nOld copy.") {
 			t.Errorf("user prompt missing previous: %q", userPrompt)
