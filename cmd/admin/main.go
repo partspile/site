@@ -39,6 +39,7 @@ const (
 	screenUserRunning
 	screenEmbMenu
 	screenEmbRunning
+	screenEmbRebuildConfirm
 	screenResult
 )
 
@@ -148,6 +149,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.updateUserDumpConfirm(msg)
 		case screenEmbMenu:
 			return m.updateEmbMenu(msg)
+		case screenEmbRebuildConfirm:
+			return m.updateEmbRebuildConfirm(msg)
 		case screenResult:
 			if msg.String() == "enter" || msg.String() == "esc" {
 				back := m.resultBack
@@ -275,16 +278,34 @@ func (m model) updateEmbMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.embCursor--
 		}
 	case "down", "j":
-		if m.embCursor < 1 {
+		if m.embCursor < 2 {
 			m.embCursor++
 		}
 	case "b", "B":
 		return m.startBackfill()
+	case "r", "R":
+		m.screen = screenEmbRebuildConfirm
+		return m, nil
 	case "enter":
-		if m.embCursor == 0 {
+		switch m.embCursor {
+		case 0:
 			return m.startBackfill()
+		case 1:
+			m.screen = screenEmbRebuildConfirm
+			return m, nil
+		default:
+			m.screen = screenMenu
 		}
-		m.screen = screenMenu
+	}
+	return m, nil
+}
+
+func (m model) updateEmbRebuildConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc", "n":
+		m.screen = screenEmbMenu
+	case "y":
+		return m.startRebuild()
 	}
 	return m, nil
 }
@@ -305,6 +326,25 @@ func (m model) startBackfill() (tea.Model, tea.Cmd) {
 		}
 		return doneMsg{ok: fmt.Sprintf(
 			"Backfill pass done; %d ads still missing", remaining,
+		)}
+	}
+}
+
+func (m model) startRebuild() (tea.Model, tea.Cmd) {
+	m.screen = screenEmbRunning
+	m.resultBack = screenEmbMenu
+	return m, func() tea.Msg {
+		if err := vector.InitEmbedder(); err != nil {
+			return doneMsg{err: fmt.Errorf("embedder: %w", err)}
+		}
+		n, err := vector.RebuildAllAdsSync()
+		if err != nil {
+			return doneMsg{err: err}
+		}
+		return doneMsg{ok: fmt.Sprintf(
+			"Rebuilt embeddings for %d ads. "+
+				"Clear user/site caches on the web Embeddings tab.",
+			n,
 		)}
 	}
 }
@@ -572,8 +612,9 @@ func (m model) View() string {
 	case screenEmbMenu:
 		body = menuView(m.embCursor, []string{
 			"[B] Backfill missing embeddings",
+			"[R] Rebuild all embeddings",
 			"Back",
-		}, "↑/↓ or b · enter select · esc back")
+		}, "↑/↓ or letter · enter select · esc back")
 	case screenUsersList:
 		body = m.usersListView()
 	case screenUserDeleteConfirm:
@@ -588,6 +629,12 @@ func (m model) View() string {
 	case screenUserDumpConfirm:
 		body = "Write " + backup.DefaultDir + "/users.csv?\n" +
 			"Includes names, phones, and password hashes.\n\n" +
+			"y confirm · n/esc cancel"
+	case screenEmbRebuildConfirm:
+		body = "Rebuild embeddings for every active ad?\n" +
+			"Existing vectors are overwritten in place " +
+			"(search stays up).\n" +
+			"Each ad calls Grok, then Ollama.\n\n" +
 			"y confirm · n/esc cancel"
 	case screenBackupConfirm:
 		body = "Create backup in " + backup.DefaultDir + "/ ?\n\n" +

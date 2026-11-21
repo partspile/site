@@ -34,7 +34,11 @@ func BuildAdEmbeddings(inputs []ad.EmbeddingInput) error {
 	}
 	prompts := make([]string, len(inputs))
 	for i, in := range inputs {
-		prompts[i] = buildAdEmbeddingPrompt(in)
+		expansion := ""
+		if !skipEmbeddingExpand {
+			expansion = ad.ExpandForEmbedding(in)
+		}
+		prompts[i] = buildAdEmbeddingPrompt(in, expansion)
 	}
 	embeddings, err := embedDocuments(prompts)
 	if err != nil {
@@ -49,7 +53,7 @@ func BuildAdEmbeddings(inputs []ad.EmbeddingInput) error {
 	return UpsertAdEmbeddings(adIDs, embeddings, metas)
 }
 
-func buildAdEmbeddingPrompt(in ad.EmbeddingInput) string {
+func buildAdEmbeddingPrompt(in ad.EmbeddingInput, expansion string) string {
 	var parts []string
 	parts = append(parts, `Encode the following ad for semantic search.
 Focus on title, description, tags, location, price, flag disputes, and field values.
@@ -78,6 +82,10 @@ Title: `+in.Title)
 		))
 	}
 	parts = append(parts, flagContext(in.FlagCount))
+	if strings.TrimSpace(expansion) != "" {
+		parts = append(parts, "Search background:\n"+
+			strings.TrimSpace(expansion))
+	}
 	return strings.Join(parts, "\n")
 }
 
@@ -173,6 +181,9 @@ func ProcessAdsWithoutVectors() {
 }
 
 func BackfillAllAdsSync() (remaining int, err error) {
+	if err := ad.LoadCategories(); err != nil {
+		return 0, err
+	}
 	ids, err := ad.GetAdsWithoutVectors()
 	if err != nil {
 		return 0, err
@@ -181,8 +192,41 @@ func BackfillAllAdsSync() (remaining int, err error) {
 		return 0, nil
 	}
 	logger.Info("backfilling ad embeddings", "count", len(ids))
+	if err := encodeAdIDs(ids); err != nil {
+		remainingIDs, countErr := ad.GetAdsWithoutVectors()
+		if countErr != nil {
+			return 0, countErr
+		}
+		return len(remainingIDs), fmt.Errorf("backfill incomplete: %w", err)
+	}
+	remainingIDs, countErr := ad.GetAdsWithoutVectors()
+	if countErr != nil {
+		return 0, countErr
+	}
+	return len(remainingIDs), nil
+}
+
+func RebuildAllAdsSync() (int, error) {
+	if err := ad.LoadCategories(); err != nil {
+		return 0, err
+	}
+	ids, err := ad.GetActiveAdIDs()
+	if err != nil {
+		return 0, err
+	}
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	logger.Info("rebuilding ad embeddings", "count", len(ids))
+	if err := encodeAdIDs(ids); err != nil {
+		return 0, err
+	}
+	return len(ids), nil
+}
+
+func encodeAdIDs(ids []int) error {
 	const chunkSize = 10
-	var failed bool
+	var firstErr error
 	for i := 0; i < len(ids); i += chunkSize {
 		end := i + chunkSize
 		if end > len(ids) {
@@ -192,22 +236,17 @@ func BackfillAllAdsSync() (remaining int, err error) {
 		for _, id := range ids[i:end] {
 			in, loadErr := ad.GetForEmbedding(id)
 			if loadErr != nil {
-				return len(ids) - i, loadErr
+				return loadErr
 			}
 			inputs = append(inputs, in)
 		}
 		if chunkErr := BuildAdEmbeddings(inputs); chunkErr != nil {
-			logger.Error("backfill chunk failed",
+			logger.Error("embedding chunk failed",
 				"error", chunkErr, "offset", i, "size", len(inputs))
-			failed = true
+			if firstErr == nil {
+				firstErr = chunkErr
+			}
 		}
 	}
-	remainingIDs, countErr := ad.GetAdsWithoutVectors()
-	if countErr != nil {
-		return 0, countErr
-	}
-	if failed && len(remainingIDs) > 0 {
-		return len(remainingIDs), fmt.Errorf("backfill incomplete")
-	}
-	return len(remainingIDs), nil
+	return firstErr
 }

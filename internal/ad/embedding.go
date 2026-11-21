@@ -9,20 +9,21 @@ import (
 )
 
 type EmbeddingInput struct {
-	ID          int
-	CategoryID  int
-	Title       string
-	Description string
-	TagLabels   []string
-	City        string
-	AdminArea   string
-	Country     string
-	Latitude    float64
-	Longitude   float64
-	HasLocation bool
-	FlagCount   int
-	Facets      map[string]facet.Value
-	FacetDefs   []facet.Def
+	ID           int
+	CategoryID   int
+	CategoryName string
+	Title        string
+	Description  string
+	TagLabels    []string
+	City         string
+	AdminArea    string
+	Country      string
+	Latitude     float64
+	Longitude    float64
+	HasLocation  bool
+	FlagCount    int
+	Facets       map[string]facet.Value
+	FacetDefs    []facet.Def
 }
 
 func (in EmbeddingInput) PriceValue() (amount int, currency string, ok bool) {
@@ -100,20 +101,21 @@ func GetForEmbedding(adID int) (EmbeddingInput, error) {
 		}
 	}
 	return EmbeddingInput{
-		ID:          row.ID,
-		CategoryID:  row.CategoryID,
-		Title:       row.Title,
-		Description: row.Description,
-		TagLabels:   tagLabels,
-		City:        row.City,
-		AdminArea:   row.AdminArea,
-		Country:     row.Country,
-		Latitude:    row.Latitude,
-		Longitude:   row.Longitude,
-		HasLocation: row.HasLocation != 0,
-		FlagCount:   row.FlagCount,
-		Facets:      facets,
-		FacetDefs:   category.Facets(),
+		ID:           row.ID,
+		CategoryID:   row.CategoryID,
+		CategoryName: category.Name,
+		Title:        row.Title,
+		Description:  row.Description,
+		TagLabels:    tagLabels,
+		City:         row.City,
+		AdminArea:    row.AdminArea,
+		Country:      row.Country,
+		Latitude:     row.Latitude,
+		Longitude:    row.Longitude,
+		HasLocation:  row.HasLocation != 0,
+		FlagCount:    row.FlagCount,
+		Facets:       facets,
+		FacetDefs:    category.Facets(),
 	}, nil
 }
 
@@ -123,6 +125,15 @@ func GetAdsWithoutVectors() ([]int, error) {
 		SELECT COALESCE(json_agg(id), '[]'::json)
 		FROM ads
 		WHERE inactive_at IS NULL AND deleted_at IS NULL AND embedding IS NULL`)
+	return ids, err
+}
+
+func GetActiveAdIDs() ([]int, error) {
+	var ids []int
+	err := db.QueryJSON(&ids, `
+		SELECT COALESCE(json_agg(id ORDER BY id), '[]'::json)
+		FROM ads
+		WHERE inactive_at IS NULL AND deleted_at IS NULL`)
 	return ids, err
 }
 

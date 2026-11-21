@@ -143,9 +143,10 @@ func TestFormalFacetLinesIncludesEmpty(t *testing.T) {
 
 func TestSuggestionsUserPromptFormalFacets(t *testing.T) {
 	prompt := suggestionsUserPrompt(SuggestInput{
-		Title:       "1971 Chevrolet corvette",
-		Description: "Barn find",
-		Location:    "Denver",
+		CategoryName: "Cars & Trucks",
+		Title:        "1971 Chevrolet corvette",
+		Description:  "Barn find",
+		Location:     "Denver",
 		FormalFacets: []string{
 			"Condition: Used - Good",
 			"Price: $13,950",
@@ -154,6 +155,7 @@ func TestSuggestionsUserPromptFormalFacets(t *testing.T) {
 		AlreadySelected: []Suggestion{{Label: "transmission", Value: "manual"}},
 	})
 	for _, want := range []string{
+		"CATEGORY: Cars & Trucks",
 		"FORMAL FORM FIELDS (do not suggest)",
 		"Condition: Used - Good",
 		"Price: $13,950",
@@ -185,5 +187,16 @@ func TestFormatTagUpdates(t *testing.T) {
 	}
 	if FormatTagUpdates(old, old) != "" {
 		t.Fatal("expected no change body")
+	}
+}
+
+func TestSuggestionsSystemPromptIsGeneric(t *testing.T) {
+	got := suggestionsSystemPrompt()
+	if !strings.Contains(got, "Infer those specs from the CATEGORY") {
+		t.Fatal("system prompt should tell the model to use CATEGORY")
+	}
+	if strings.Contains(got, "Cars & Trucks") ||
+		strings.Contains(got, "Bicycle Parts") {
+		t.Fatal("system prompt should not name a category")
 	}
 }

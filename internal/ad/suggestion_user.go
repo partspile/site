@@ -9,6 +9,7 @@ import (
 
 func suggestionsUserPrompt(in SuggestInput) string {
 	var b strings.Builder
+	fmt.Fprintf(&b, "CATEGORY: %s\n\n", in.CategoryName)
 	b.WriteString("AD COPY:\n")
 	fmt.Fprintf(&b, "Title: %s\n", in.Title)
 	fmt.Fprintf(&b, "Description: %s\n", in.Description)

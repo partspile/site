@@ -211,10 +211,10 @@ func GenerateSuggestions(in SuggestInput) ([]Suggestion, error) {
 		return nil, nil
 	}
 
-	systemPrompt := suggestionsSystemPrompt(in.CategoryName, in.Facets)
+	systemPrompt := suggestionsSystemPrompt()
 	userPrompt := suggestionsUserPrompt(in)
 
-	resp, err := grok.CallGrokConv(systemPrompt, userPrompt, suggestionsConvID(in.CategoryID))
+	resp, err := grok.CallGrokConv(systemPrompt, userPrompt, suggestionsConvID)
 	if err != nil {
 		logger.Warn("generate suggestions: grok call failed", "error", err)
 		return nil, nil

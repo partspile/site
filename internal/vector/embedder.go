@@ -17,10 +17,14 @@ type Embedder interface {
 	EmbedDocuments(texts []string) ([][]float32, error)
 }
 
-var activeEmbedder Embedder
+var (
+	activeEmbedder      Embedder
+	skipEmbeddingExpand bool
+)
 
 func SetEmbedder(e Embedder) {
 	activeEmbedder = e
+	_, skipEmbeddingExpand = e.(fakeEmbedder)
 }
 
 // EmbedderInfo returns the Ollama provider identifier and model name.
