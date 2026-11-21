@@ -86,6 +86,9 @@ func TestAdFlyerPage(t *testing.T) {
 		"flyer-screen-only",
 		"flyer-page",
 		"flyer-sheet",
+		"flyer-preview",
+		"transform: scale(",
+		"--flyer-width",
 		"Scan to",
 		"inquire",
 		"flyer-scan",
@@ -160,6 +163,62 @@ func TestAdFlyerPageCapsImages(t *testing.T) {
 	}
 	if strings.Contains(html, "ad: 7, image: 5") {
 		t.Fatal("flyer should cap at 4 images")
+	}
+}
+
+func TestAdFlyerPageLongDescription(t *testing.T) {
+	desc := strings.Repeat(
+		"Factory four by four on a three quarter ton chassis. ", 10)
+	d := AdFlyerData{
+		ID:          7,
+		ImageCount:  4,
+		Title:       "Truck",
+		Description: desc,
+		AdURL:       "https://parts-pile.com/ad/7",
+	}
+	var buf bytes.Buffer
+	if err := AdFlyerPage(d).Render(&buf); err != nil {
+		t.Fatal(err)
+	}
+	html := buf.String()
+	if strings.Count(html, `class="flyer-image"`) != 2 {
+		t.Fatal("long description should use one row of photos")
+	}
+	if !strings.Contains(html, `class="flyer-more"`) {
+		t.Fatal("truncated description should use a distinct more prompt")
+	}
+	if !strings.Contains(html, "...scan QR code for more...") {
+		t.Fatal("truncated description should point at the QR code")
+	}
+	if strings.Count(html, "scan QR code for more") != 1 {
+		t.Fatal("more prompt should appear once")
+	}
+	if !strings.Contains(html, "Factory four by four") {
+		t.Fatal("truncated description should keep the start")
+	}
+	if strings.Contains(html, desc) {
+		t.Fatal("full description should not appear on the flyer")
+	}
+}
+
+func TestAdFlyerPageShortDescriptionKeepsFourImages(t *testing.T) {
+	d := AdFlyerData{
+		ID:          7,
+		ImageCount:  4,
+		Title:       "Truck",
+		Description: "Gently used.",
+		AdURL:       "https://parts-pile.com/ad/7",
+	}
+	var buf bytes.Buffer
+	if err := AdFlyerPage(d).Render(&buf); err != nil {
+		t.Fatal(err)
+	}
+	html := buf.String()
+	if strings.Count(html, `class="flyer-image"`) != 4 {
+		t.Fatal("short description should keep four photos")
+	}
+	if strings.Contains(html, "scan QR code for more") {
+		t.Fatal("short description should not be truncated")
 	}
 }
 

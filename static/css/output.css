@@ -697,9 +697,6 @@
   .w-full {
     width: 100%;
   }
-  .max-w-3xl {
-    max-width: var(--container-3xl);
-  }
   .max-w-\[50\%\%\] {
     max-width: 50%%;
   }

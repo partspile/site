@@ -2,7 +2,10 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/partspile/site/internal/config"
 	uiads "github.com/partspile/site/internal/ui/ads"
@@ -11,27 +14,45 @@ import (
 	. "maragu.dev/gomponents/html"
 )
 
-const maxFlyerImages = 4
+const (
+	maxFlyerImages      = 4
+	flyerImagesLongDesc = 2
+	flyerDescMaxRunes   = 240
+	flyerDescMore       = "...scan QR code for more..."
+)
 
 const flyerSheetCSS = `
 .flyer-page {
   --content-ink: #1c1917;
   --content-ink-soft: #57534e;
   --content-ink-muted: #78716c;
+  --flyer-width: 48rem;
   color: #1c1917;
   background: #fff;
 }
 .flyer-page a {
   color: #2563eb;
 }
+.flyer-preview {
+  --flyer-scale: min(1, calc(100vw / var(--flyer-width)));
+  width: 100%;
+  overflow: hidden;
+  height: calc(10in * var(--flyer-scale));
+}
 .flyer-sheet {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  width: var(--flyer-width);
+  max-width: var(--flyer-width);
+  margin-inline: auto;
   height: 10in;
   max-height: 10in;
   overflow: hidden;
   box-sizing: border-box;
+  transform-origin: top left;
+  /* Keep the letter layout; scale it to the viewport instead of reflowing. */
+  transform: scale(var(--flyer-scale));
 }
 .flyer-images {
   display: grid;
@@ -52,9 +73,17 @@ const flyerSheetCSS = `
 }
 .flyer-desc {
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 6;
+}
+.flyer-more {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.875rem;
+  font-style: italic;
+  font-weight: 600;
+  color: #78716c;
+  letter-spacing: 0.01em;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 .flyer-logo {
   width: 10rem;
@@ -126,7 +155,13 @@ const flyerPrintCSS = flyerSheetCSS + `
     overflow: hidden;
     background: white;
   }
+  .flyer-preview {
+    overflow: visible;
+    height: auto;
+  }
   .flyer-sheet {
+    transform: none;
+    width: auto;
     max-width: none;
     margin: 0;
     padding: 0.5in 0.5in 0.4in;
@@ -159,7 +194,7 @@ func AdFlyerPage(d AdFlyerData) g.Node {
 		Body: []g.Node{
 			Class("flyer-page bg-white text-zinc-900 min-h-screen"),
 			flyerToolbar(d.ID),
-			flyerSheet(d, qrSrc),
+			Div(Class("flyer-preview"), flyerSheet(d, qrSrc)),
 		},
 	})
 }
@@ -184,8 +219,12 @@ func flyerToolbar(adID int) g.Node {
 }
 
 func flyerSheet(d AdFlyerData, qrSrc string) g.Node {
+	desc, images, more := fitFlyerContent(
+		d.Description, d.ImageCount)
+	d.Description = desc
+	d.ImageCount = images
 	return Div(
-		Class("flyer-sheet max-w-3xl mx-auto p-6"),
+		Class("flyer-sheet p-6"),
 		Div(
 			Class("flex items-start gap-6 shrink-0"),
 			Div(
@@ -209,7 +248,7 @@ func flyerSheet(d AdFlyerData, qrSrc string) g.Node {
 						Span(Class("text-sm text-zinc-500"),
 							g.Text(d.Location))),
 				),
-				flyerDetails(d),
+				flyerDetails(d, more),
 			),
 			g.If(qrSrc != "", flyerQR(qrSrc)),
 		),
@@ -295,7 +334,7 @@ func flyerScanBubble() g.Node {
 	)
 }
 
-func flyerDetails(d AdFlyerData) g.Node {
+func flyerDetails(d AdFlyerData, descMore bool) g.Node {
 	var nodes []g.Node
 	if len(d.FacetDetails) > 0 {
 		items := make([]g.Node, len(d.FacetDetails))
@@ -308,9 +347,18 @@ func flyerDetails(d AdFlyerData) g.Node {
 		))
 	}
 	if d.Description != "" {
-		nodes = append(nodes, Div(
-			Class("flyer-desc whitespace-pre-wrap"),
+		descNodes := []g.Node{
 			uiads.DescriptionTextWithLinks(d.Description),
+		}
+		if descMore {
+			descNodes = append(descNodes, Span(
+				Class("flyer-more"),
+				g.Text(flyerDescMore),
+			))
+		}
+		nodes = append(nodes, Div(
+			Class("flyer-desc"),
+			g.Group(descNodes),
 		))
 	}
 	if len(d.Tags) > 0 {
@@ -333,12 +381,42 @@ func flyerDetails(d AdFlyerData) g.Node {
 	return Div(Class("text-base"), g.Group(nodes))
 }
 
+func fitFlyerContent(desc string, imageCount int) (string, int, bool) {
+	if imageCount < 0 {
+		imageCount = 0
+	}
+	if imageCount > maxFlyerImages {
+		imageCount = maxFlyerImages
+	}
+	plain := strings.Join(strings.Fields(strings.TrimSpace(desc)), " ")
+	if utf8.RuneCountInString(plain) <= flyerDescMaxRunes {
+		return plain, imageCount, false
+	}
+	// Long copy would push the photo grid off the letter page.
+	if imageCount > flyerImagesLongDesc {
+		imageCount = flyerImagesLongDesc
+	}
+	return truncateFlyerDesc(plain), imageCount, true
+}
+
+func truncateFlyerDesc(desc string) string {
+	runes := []rune(desc)
+	if len(runes) <= flyerDescMaxRunes {
+		return desc
+	}
+	s := string(runes[:flyerDescMaxRunes])
+	if i := strings.LastIndexFunc(s, unicode.IsSpace); i >= flyerDescMaxRunes/2 {
+		s = s[:i]
+	}
+	s = strings.TrimRightFunc(s, func(r rune) bool {
+		return unicode.IsSpace(r) || strings.ContainsRune(".,;:!-…", r)
+	})
+	return s
+}
+
 func flyerImages(adID, count int) g.Node {
 	if count < 1 {
 		return nil
-	}
-	if count > maxFlyerImages {
-		count = maxFlyerImages
 	}
 	imgs := make([]g.Node, count)
 	for i := 1; i <= count; i++ {
