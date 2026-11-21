@@ -61,4 +61,7 @@ func TestSearchFilterPillsHasCategorySelect(t *testing.T) {
 	if strings.Contains(html, `name="category"`) {
 		t.Error("filter category should use icon picker, not native select")
 	}
+	if strings.Contains(html, "relative z-50") {
+		t.Error("closed category select must not stack above the navbar")
+	}
 }

@@ -75,8 +75,9 @@ func CategorySelect(opts CategorySelectOpts) g.Node {
 			selected.ID, cat.ID, cat.Name, cat.ImageFile, opts.ReturnParam))
 	}
 
-	// z-50 so the open menu/dismiss beat later siblings (ad cards).
-	wrapClass := "relative w-full z-50"
+	// No z-index while closed. Open state is raised in CSS, but kept under
+	// the sticky navbar so this control scrolls beneath it.
+	wrapClass := "category-select relative w-full"
 	triggerClass := "brand-metal brand-metal-control category-select-trigger " +
 		"w-full py-2 px-3 flex items-center gap-2 rounded-md " +
 		"cursor-pointer text-left min-w-0"
@@ -85,7 +86,7 @@ func CategorySelect(opts CategorySelectOpts) g.Node {
 	iconSize := "w-6 h-6"
 	chevronSize := "w-5 h-5"
 	if opts.Pill {
-		wrapClass = "relative z-50 shrink-0 max-w-full"
+		wrapClass = "category-select relative shrink-0 max-w-full"
 		triggerClass = "filter-pill category-select-trigger inline-flex " +
 			"items-center gap-1.5 max-w-full px-2.5 py-1 rounded-full " +
 			"text-xs cursor-pointer text-left"

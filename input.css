@@ -499,7 +499,12 @@
   }
 
   /* Sibling overlay, not inside <details>: fixed isn't trapped,
-     and dismiss is a label so it needs no JS (CSP blocks hx-on). */
+     and dismiss is a label so it needs no JS (CSP blocks hx-on).
+     Below the sticky navbar (z-10) so an open list scrolls under it. */
+  .category-select:has(.category-select-open:checked) {
+    z-index: 1;
+  }
+
   .category-select-open {
     position: absolute;
     width: 1px;

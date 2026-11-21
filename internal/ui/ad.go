@@ -162,7 +162,9 @@ func AdGridNode(userID, adID, imageCount, nextPage int, priceDisplay, title,
 		Href("/ad/"+strconv.Itoa(adID)),
 		Class(class),
 		Div(
-			Class("relative"),
+			// Keep image chrome (badge z-10, nav z-20) inside this card so
+			// it cannot paint over the category menu.
+			Class("relative isolate"),
 			gridImageNode(adID, imageCount, 1),
 			g.If(time.Since(createdAt) < 4*time.Hour, newBadgeImageOverlay()),
 		),
